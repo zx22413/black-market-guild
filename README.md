@@ -6,7 +6,19 @@
 
 ## 專案狀態
 
-目前僅建立規則與開發協作骨架，尚未選定技術棧或建立可執行 MVP。
+已建立 TypeScript + Vite 專案骨架，尚未實作遊戲規則。
+
+## 開發
+
+需求：Node.js 20.19 以上。
+
+```bash
+npm install
+npm run dev        # 啟動開發伺服器
+npm test           # 執行測試
+npm run typecheck  # 型別檢查（含規則引擎的純度檢查）
+npm run build      # 型別檢查並建置
+```
 
 預計 MVP 會先驗證：
 
