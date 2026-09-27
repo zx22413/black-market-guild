@@ -21,9 +21,11 @@ export interface Rules {
   readonly jointShip: { readonly cost: number; readonly income: number };
   readonly roles: {
     readonly intel: { readonly fee: number };
-    readonly guard: { readonly fee: number; readonly modifier: number };
+    /** Each guard cancels this many pirates on its target; it never raises the roll. */
+    readonly guard: { readonly fee: number; readonly piratesCancelled: number };
     readonly pirate: { readonly fee: number; readonly modifier: number; readonly loot: number };
-    readonly smuggler: { readonly fee: number; readonly bonus: number };
+    /** Smuggled goods value; taken from a joint ship's base income on arrival. */
+    readonly smuggler: { readonly fee: number; readonly goodsValue: number };
   };
   readonly assets: {
     readonly shipyard: { readonly price: number; readonly costReduction: number };
@@ -31,7 +33,8 @@ export interface Rules {
       readonly price: number;
       readonly payout: number;
       readonly maxPayoutsPerRound: number;
-      readonly guardBonus: number;
+      /** Pirates cancelled by the holder's guard (instead of the normal guard value). */
+      readonly guardPiratesCancelled: number;
     };
     readonly salvage: { readonly price: number; readonly payout: number; readonly maxPayoutsPerRound: number };
     readonly exchange: {
@@ -59,7 +62,7 @@ export interface Rules {
     readonly seaFogModifier: number;
     readonly moonlessNightModifier: number;
     readonly highWavesModifier: number;
-    readonly blackMarketRushSmugglerBonus: number;
+    readonly blackMarketRushGoodsValue: number;
   };
 }
 
@@ -74,14 +77,14 @@ export const RULES_V06: Rules = {
   roles: {
     // §7
     intel: { fee: 50 },
-    guard: { fee: 50, modifier: 2 },
+    guard: { fee: 50, piratesCancelled: 1 },
     pirate: { fee: 100, modifier: -2, loot: 150 },
-    smuggler: { fee: 50, bonus: 100 },
+    smuggler: { fee: 0, goodsValue: 300 },
   },
   assets: {
     // §8
     shipyard: { price: 300, costReduction: 50 },
-    insurance: { price: 300, payout: 150, maxPayoutsPerRound: 1, guardBonus: 1 },
+    insurance: { price: 300, payout: 150, maxPayoutsPerRound: 1, guardPiratesCancelled: 2 },
     salvage: { price: 400, payout: 60, maxPayoutsPerRound: 2 },
     exchange: { price: 400, payout: 40, maxPayoutsPerRound: 2, jointIncomeBonus: 100 },
   },
@@ -119,6 +122,6 @@ export const RULES_V06: Rules = {
     seaFogModifier: 1,
     moonlessNightModifier: -1,
     highWavesModifier: -1,
-    blackMarketRushSmugglerBonus: 200,
+    blackMarketRushGoodsValue: 400,
   },
 };

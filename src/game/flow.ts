@@ -1,6 +1,7 @@
 import { drawCard } from './decks';
 import { getDeciders } from './decisions';
 import { settlePayouts } from './payouts';
+import { resolvePurchases } from './phases/assets';
 import { resolveApply, resolvePick, resolveRecruit } from './phases/recruitment';
 import { resolveDeployment, resolveIntelRerolls, revealRoles } from './phases/roles';
 import { launchShips, resolveSailingChoices } from './phases/sailing';
@@ -136,8 +137,8 @@ function resolvePhase(state: MatchState, phase: DecisionPhase): Step {
       return resolveDeployment(state);
     case 'intel-reroll':
       return resolveIntelRerolls(state);
-    case 'asset-purchase': // TODO(M5)
-      return { state, events: [] };
+    case 'asset-purchase':
+      return resolvePurchases(state);
   }
 }
 

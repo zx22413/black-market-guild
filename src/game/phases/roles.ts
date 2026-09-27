@@ -74,10 +74,11 @@ export function revealRoles(state: MatchState): Step {
     revealed,
     ROLE_IDS.map((role) => (current: MatchState): Step => {
       const group = deployments.filter((d) => d.role === role);
+      const fee = current.rules.roles[role].fee;
       const fees = chain(
         current,
-        group.map((d) => (inner: MatchState) =>
-          changeCash(inner, d.playerId, -inner.rules.roles[role].fee, 'role-fee', null),
+        (fee > 0 ? group : []).map((d) => (inner: MatchState) =>
+          changeCash(inner, d.playerId, -fee, 'role-fee', null),
         ),
       );
       return {

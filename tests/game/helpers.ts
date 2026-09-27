@@ -8,6 +8,7 @@ import {
   getPendingDecisions,
   type MatchConfig,
   type MatchEvent,
+  type AssetId,
   type MatchState,
   type RoleId,
   type Transition,
@@ -124,6 +125,8 @@ export function withCash(state: MatchState, playerId: string, cash: number): Mat
 }
 
 export interface Script {
+  /** player -> asset to buy whenever the purchase phase offers it */
+  readonly buy?: Readonly<Record<string, AssetId>>;
   readonly recruit?: readonly string[];
   /** applicant -> recruiter */
   readonly apply?: Readonly<Record<string, string>>;
@@ -147,6 +150,14 @@ export function scripted(script: Script): Chooser {
       return action;
     };
     switch (state.phase) {
+      case 'asset-purchase': {
+        const asset = script.buy?.[playerId];
+        const action = legal.find((a) => a.type === 'buy-asset' && a.asset === asset);
+        if (asset !== undefined && action !== undefined) {
+          return action;
+        }
+        break;
+      }
       case 'recruit':
         if (script.recruit?.includes(playerId)) {
           return find((a) => a.type === 'recruit' && a.recruit, 'recruit');
@@ -197,4 +208,12 @@ export function scripted(script: Script): Chooser {
 export function randomChooser(seed: number): Chooser {
   const rng = createRng(seed);
   return (_state, _playerId, legal) => legal[rng.int(0, legal.length - 1)]!;
+}
+
+/** Returns a copy of the state where the player holds exactly these assets. */
+export function withAssets(state: MatchState, playerId: string, assets: readonly AssetId[]): MatchState {
+  return {
+    ...state,
+    players: state.players.map((p) => (p.id === playerId ? { ...p, assets } : p)),
+  };
 }

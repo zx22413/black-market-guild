@@ -1,3 +1,4 @@
+import { holds } from './economics';
 import type { MatchState, Ship, Step, VoyageOutcome } from './types';
 
 /**
@@ -9,13 +10,30 @@ export function finalRoll(state: MatchState, ship: Ship): number {
     throw new Error(`ship ${ship.id} has not been rolled`);
   }
   const base = ship.rerolledRoll ?? ship.rawRoll;
-  const on = (role: 'guard' | 'pirate') =>
-    state.roundState.deployments.filter((d) => d.role === role && d.targetShipId === ship.id).length;
-  // TODO(M5): insurance gives its holder's guard +1. TODO(M6): market and voyage event modifiers.
-  const modified =
-    base + on('guard') * state.rules.roles.guard.modifier + on('pirate') * state.rules.roles.pirate.modifier;
+  // TODO(M6): market and voyage event modifiers.
+  const modified = base + activePirates(state, ship) * state.rules.roles.pirate.modifier;
   const { dieMin, dieMax } = state.rules.sailing;
   return Math.min(dieMax, Math.max(dieMin, modified));
+}
+
+/**
+ * Pirates left after guards cancel them: each guard cancels one pirate, an insured holder's
+ * guard cancels two; guards never raise the roll (game-design.md §7 護衛, §8 航運保險).
+ */
+export function activePirates(state: MatchState, ship: Ship): number {
+  const targeting = state.roundState.deployments.filter((d) => d.targetShipId === ship.id);
+  const pirates = targeting.filter((d) => d.role === 'pirate').length;
+  const cancelled = targeting
+    .filter((d) => d.role === 'guard')
+    .reduce(
+      (sum, d) =>
+        sum +
+        (holds(state, d.playerId, 'insurance')
+          ? state.rules.assets.insurance.guardPiratesCancelled
+          : state.rules.roles.guard.piratesCancelled),
+      0,
+    );
+  return Math.max(0, pirates - cancelled);
 }
 
 export function outcomeOf(state: MatchState, value: number): VoyageOutcome {

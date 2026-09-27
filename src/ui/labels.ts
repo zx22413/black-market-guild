@@ -36,9 +36,15 @@ export const ASSET_LABELS: Readonly<Record<AssetId, string>> = {
 };
 
 export const CASH_REASON_LABELS: Readonly<Record<CashReason, string>> = {
+  'asset-purchase': '購買資產',
   'ship-cost': '航運成本',
   'shipping-income': '航運收入',
   'role-fee': '角色部署費',
   smuggling: '走私收益',
+  'smuggling-confiscated': '查獲走私貨',
+  'smuggling-seized': '搶走走私貨',
   'pirate-loot': '海盜戰利品',
+  insurance: '航運保險補償',
+  salvage: '打撈收益',
+  exchange: '交易所收益',
 };

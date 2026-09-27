@@ -12,6 +12,7 @@ import {
   type MatchState,
 } from '../src/game';
 import {
+  ASSET_LABELS,
   CASH_REASON_LABELS,
   MARKET_EVENT_LABELS,
   ROLE_LABELS,
@@ -71,6 +72,13 @@ function formatLog(
       case 'market-event-revealed':
         lines.push(`  市場事件：${MARKET_EVENT_LABELS[event.event]}`);
         break;
+      case 'assets-purchased': {
+        const list = event.purchases.map((p) => `${name(p.playerId)} 購買${ASSET_LABELS[p.asset]}`);
+        if (list.length > 0) {
+          lines.push(`  資產：${list.join('、')}`);
+        }
+        break;
+      }
       case 'recruitments-announced':
         lines.push(`  發起合資招募：${event.recruiters.length > 0 ? event.recruiters.map(name).join('、') : '無'}`);
         break;
@@ -144,7 +152,7 @@ function main(): void {
   const names = new Map(players.map((p) => [p.id, p.name]));
   const header = [
     `黑市商會 對局紀錄（seed ${seed}，${playerCount} 人，所有決定隨機選擇）`,
-    '目前進度：獨資、合資、角色已生效；資產與事件效果尚未實作。',
+    '目前進度：獨資、合資、角色與資產已生效；市場與航海事件的效果尚未實作。',
   ];
   const lines = formatLog(events, names, created.value.state.rules.startingCash);
   console.log([...header, ...lines].join('\n'));

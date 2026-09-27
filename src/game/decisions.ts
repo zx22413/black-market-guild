@@ -1,5 +1,5 @@
-import { cashOf, jointShare, soloCost } from './economics';
-import { ROLE_IDS, type Action, type DecisionPhase, type MatchState, type PendingDecision, type PlayerId } from './types';
+import { applicantShare, cashOf, recruiterShare, soloCost } from './economics';
+import { ASSET_IDS, ROLE_IDS, type Action, type DecisionPhase, type MatchState, type PendingDecision, type PlayerId } from './types';
 
 /** Players who must make a decision in the given phase this round. */
 export function getDeciders(state: MatchState, phase: DecisionPhase): PlayerId[] {
@@ -44,8 +44,8 @@ export function getLegalActions(state: MatchState, playerId: PlayerId): Action[]
     return [];
   }
   switch (state.phase) {
-    case 'asset-purchase': // TODO(M5): buying assets
-      return [{ type: 'buy-asset', playerId, asset: null }];
+    case 'asset-purchase':
+      return purchaseOptions(state, playerId);
     case 'recruit':
       return recruitOptions(state, playerId);
     case 'apply':
@@ -66,39 +66,56 @@ export function getLegalActions(state: MatchState, playerId: PlayerId): Action[]
 
 /**
  * No role, or any affordable role on a sailing ship; the smuggler may only target the
- * player's own ship (game-design.md §7 角色部署規則).
+ * player's own joint ship (game-design.md §7 角色部署規則, 走私商人).
  */
 function deployOptions(state: MatchState, playerId: PlayerId): Action[] {
   const cash = cashOf(state, playerId);
   const { ships } = state.roundState;
-  const ownShip = ships.find((ship) => ship.owners.includes(playerId));
+  const ownJointShip = ships.find((ship) => ship.kind === 'joint' && ship.owners.includes(playerId));
   const options: Action[] = [{ type: 'deploy-role', playerId, role: null, targetShipId: null }];
   for (const role of ROLE_IDS) {
     if (cash < state.rules.roles[role].fee) {
       continue;
     }
-    const targets = role === 'smuggler' ? (ownShip ? [ownShip] : []) : ships;
+    const targets = role === 'smuggler' ? (ownJointShip ? [ownJointShip] : []) : ships;
     targets.forEach((ship) => options.push({ type: 'deploy-role', playerId, role, targetShipId: ship.id }));
   }
   return options;
 }
 
+/** Any affordable asset the player does not hold yet; buying is optional (game-design.md §8). */
+function purchaseOptions(state: MatchState, playerId: PlayerId): Action[] {
+  const player = state.players.find((p) => p.id === playerId);
+  const buyable = ASSET_IDS.filter(
+    (asset) => !(player?.assets.includes(asset) ?? true) && cashOf(state, playerId) >= state.rules.assets[asset].price,
+  );
+  return [
+    { type: 'buy-asset', playerId, asset: null },
+    ...buyable.map((asset): Action => ({ type: 'buy-asset', playerId, asset })),
+  ];
+}
+
 /** Recruiting commits the recruiter's share, so it needs that much cash (game-design.md §6). */
 function recruitOptions(state: MatchState, playerId: PlayerId): Action[] {
   const no: Action = { type: 'recruit', playerId, recruit: false };
-  return cashOf(state, playerId) >= jointShare(state, playerId)
+  return cashOf(state, playerId) >= recruiterShare(state, playerId)
     ? [no, { type: 'recruit', playerId, recruit: true }]
     : [no];
 }
 
-/** Any open recruitment, if the applicant can pay a share; applying is optional. */
+/**
+ * Any open recruitment the applicant can pay a share for; the share depends on the
+ * recruiter's shipyard, so affordability is checked per recruitment. Applying is optional.
+ */
 function applyOptions(state: MatchState, playerId: PlayerId): Action[] {
-  const none: Action = { type: 'apply', playerId, recruiterId: null };
-  if (cashOf(state, playerId) < jointShare(state, playerId)) {
-    return [none];
-  }
-  const { recruiters } = state.roundState.recruitment;
-  return [none, ...recruiters.map((recruiterId): Action => ({ type: 'apply', playerId, recruiterId }))];
+  const cash = cashOf(state, playerId);
+  const affordable = state.roundState.recruitment.recruiters.filter(
+    (recruiterId) => cash >= applicantShare(state, playerId, recruiterId),
+  );
+  return [
+    { type: 'apply', playerId, recruiterId: null },
+    ...affordable.map((recruiterId): Action => ({ type: 'apply', playerId, recruiterId })),
+  ];
 }
 
 /** A recruiter picks at most one of their own applicants. */

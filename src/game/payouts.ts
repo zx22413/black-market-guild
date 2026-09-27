@@ -1,44 +1,51 @@
 import { chain, changeCash } from './cash';
-import { splitEvenly } from './economics';
-import type { MatchState, Ship, Step } from './types';
+import { holds, incomeBonus, splitEvenly } from './economics';
+import { settleSmuggling, type Payment } from './smuggling';
+import type { AssetId, CashReason, MatchState, Ship, Step, VoyageOutcome } from './types';
 
 /**
  * Pays round income in the order of game-design.md §5 step 6:
- * shipping income → smuggler → pirate loot → insurance → salvage → exchange.
+ * smuggling → shipping income → pirate loot → insurance → salvage → exchange.
  */
 export function settlePayouts(state: MatchState): Step {
-  // TODO(M5): insurance, salvage and exchange. TODO(M6): event bonuses.
-  return chain(state, [payShippingIncome, paySmugglers, payPirateLoot]);
+  return chain(state, [paySmuggling, payShippingIncome, payPirateLoot, payInsurance, paySalvage, payExchange]);
 }
 
+function pay(payments: readonly Payment[], reason: CashReason, shipId: string) {
+  return payments
+    .filter((p) => p.amount > 0)
+    .map((p) => (current: MatchState) => changeCash(current, p.playerId, p.amount, reason, shipId));
+}
+
+/** Uncaught smugglers take their goods first; caught goods go to the guards (§7 走私結算). */
+function paySmuggling(state: MatchState): Step {
+  return chain(
+    state,
+    state.roundState.ships.flatMap((ship) => {
+      const settlement = settleSmuggling(state, ship);
+      return [...pay(settlement.takes, 'smuggling', ship.id), ...pay(settlement.confiscations, 'smuggling-confiscated', ship.id)];
+    }),
+  );
+}
+
+/** Base income left after smuggling, plus bonuses, split evenly among owners (§5 step 6, §6). */
 function payShippingIncome(state: MatchState): Step {
   const arrived = state.roundState.ships.filter((ship) => ship.outcome === 'arrived');
   return chain(
     state,
     arrived.flatMap((ship) => {
-      const share = splitEvenly(shipIncome(state, ship), ship.owners.length);
-      return ship.owners.map((owner) => (current: MatchState) =>
-        changeCash(current, owner, share, 'shipping-income', ship.id),
+      const total = settleSmuggling(state, ship).remainingBaseIncome + incomeBonus(state, ship);
+      const share = splitEvenly(total, ship.owners.length);
+      return pay(
+        ship.owners.map((playerId) => ({ playerId, amount: share })),
+        'shipping-income',
+        ship.id,
       );
     }),
   );
 }
 
-/** The smuggler alone gets the bonus when their own ship arrives (game-design.md §7 走私商人). */
-function paySmugglers(state: MatchState): Step {
-  const { ships, deployments } = state.roundState;
-  const paid = deployments.filter(
-    (d) => d.role === 'smuggler' && ships.find((s) => s.id === d.targetShipId)?.outcome === 'arrived',
-  );
-  return chain(
-    state,
-    paid.map((d) => (current: MatchState) =>
-      changeCash(current, d.playerId, current.rules.roles.smuggler.bonus, 'smuggling', d.targetShipId),
-    ),
-  );
-}
-
-/** Pirates on a sunk ship split the loot evenly, rounded down (game-design.md §7 海盜). */
+/** Pirates on a sunk ship split the loot, then any seized goods, rounded down (§7 海盜, 走私結算). */
 function payPirateLoot(state: MatchState): Step {
   const { ships, deployments } = state.roundState;
   return chain(
@@ -49,14 +56,68 @@ function payPirateLoot(state: MatchState): Step {
         const pirates = deployments.filter((d) => d.role === 'pirate' && d.targetShipId === ship.id);
         // TODO(M6): the black-market bounty adds to the loot pool.
         const each = pirates.length > 0 ? Math.floor(state.rules.roles.pirate.loot / pirates.length) : 0;
-        return pirates.map((d) => (current: MatchState) =>
-          changeCash(current, d.playerId, each, 'pirate-loot', ship.id),
+        return [
+          ...pay(
+            pirates.map((d) => ({ playerId: d.playerId, amount: each })),
+            'pirate-loot',
+            ship.id,
+          ),
+          ...pay(settleSmuggling(state, ship).seizures, 'smuggling-seized', ship.id),
+        ];
+      }),
+  );
+}
+
+/** The holder gets a payout when a ship they invested in sinks, once per round (§8 航運保險). */
+function payInsurance(state: MatchState): Step {
+  const { payout, maxPayoutsPerRound } = state.rules.assets.insurance;
+  return chain(
+    state,
+    state.players
+      .filter((p) => p.assets.includes('insurance'))
+      .flatMap((p) => {
+        const sunk = state.roundState.ships.filter((s) => s.outcome === 'sank' && s.owners.includes(p.id));
+        return sunk.slice(0, maxPayoutsPerRound).map((ship) => (current: MatchState) =>
+          changeCash(current, p.id, payout, 'insurance', ship.id),
         );
       }),
   );
 }
 
-/** Total income of an arrived ship; joint income is split evenly (game-design.md §6). */
-function shipIncome(state: MatchState, ship: Ship): number {
-  return ship.kind === 'joint' ? state.rules.jointShip.income : state.rules.soloShip.income;
+/** Salvage pays per sunk ship of other players, capped per round (§8 打撈公司). */
+function paySalvage(state: MatchState): Step {
+  // TODO(M6): the salvage boom market event raises the payout.
+  const { payout, maxPayoutsPerRound } = state.rules.assets.salvage;
+  return payPerOtherShip(state, 'salvage', 'sank', payout, maxPayoutsPerRound);
+}
+
+/** The exchange pays per arrived ship of other players, capped per round (§8 貿易交易所). */
+function payExchange(state: MatchState): Step {
+  const { payout, maxPayoutsPerRound } = state.rules.assets.exchange;
+  return payPerOtherShip(state, 'exchange', 'arrived', payout, maxPayoutsPerRound);
+}
+
+/**
+ * A joint ship counts as one ship; ships the holder sails on never count. When more ships
+ * qualify than the cap allows, the first ones in launch order count; every payout is the
+ * same amount, so the choice only affects which ship id the event names.
+ */
+function payPerOtherShip(
+  state: MatchState,
+  asset: Extract<AssetId, 'salvage' | 'exchange'>,
+  outcome: VoyageOutcome,
+  payout: number,
+  cap: number,
+): Step {
+  return chain(
+    state,
+    state.players
+      .filter((p) => holds(state, p.id, asset))
+      .flatMap((p) => {
+        const ships: Ship[] = state.roundState.ships.filter((s) => s.outcome === outcome && !s.owners.includes(p.id));
+        return ships.slice(0, cap).map((ship) => (current: MatchState) =>
+          changeCash(current, p.id, payout, asset, ship.id),
+        );
+      }),
+  );
 }

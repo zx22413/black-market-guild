@@ -8,6 +8,7 @@ import {
   type MatchEvent,
   type MatchState,
   type PrivateEvent,
+  RULES_V06,
 } from '../../src/game';
 import {
   atPhase,
@@ -15,6 +16,7 @@ import {
   scripted,
   startMatch,
   unwrap,
+  withAssets,
   withCash,
   withRawRolls,
   type Script,
@@ -66,7 +68,7 @@ describe('deployment options (game-design.md §7 角色部署規則)', () => {
     expect(deployKeys(getLegalActions(state, 'p1'))).toEqual(['-@-']);
   });
 
-  it('offers intel, guard and pirate on any sailing ship, and smuggler only on your own ship', () => {
+  it('offers intel, guard and pirate on any sailing ship, and no smuggler on a solo ship', () => {
     const { state } = toDeployment({ solo: ['p1', 'p2'] });
     expect(deployKeys(getLegalActions(state, 'p1'))).toEqual([
       '-@-',
@@ -76,8 +78,15 @@ describe('deployment options (game-design.md §7 角色部署規則)', () => {
       'guard@r1-s2',
       'pirate@r1-s1',
       'pirate@r1-s2',
-      'smuggler@r1-s1',
     ]);
+  });
+
+  it('offers the smuggler only to owners of a joint ship, for free', () => {
+    const { state } = toDeployment({ recruit: ['p1'], apply: { p2: 'p1' }, pick: { p1: 'p2' }, solo: ['p3'] });
+    expect(deployKeys(getLegalActions(state, 'p1'))).toContain('smuggler@r1-s1');
+    expect(deployKeys(getLegalActions(state, 'p2'))).toContain('smuggler@r1-s1');
+    expect(deployKeys(getLegalActions(state, 'p3')).filter((k) => k.startsWith('smuggler'))).toEqual([]);
+    expect(deployKeys(getLegalActions(withCash(state, 'p2', 0), 'p2'))).toEqual(['-@-', 'smuggler@r1-s1']);
   });
 
   it('does not let a player who stays in port deploy a smuggler', () => {
@@ -121,20 +130,29 @@ describe('secret deployment and single reveal (game-design.md §4, §5 step 5)',
   });
 
   it('reveals roles in action order after the voyage event, each group followed by its fees', () => {
-    const withSmuggler: Script = { ...script, deploy: { ...script.deploy, p3: { role: 'smuggler', target: 'r1-s3' } } };
-    const { state } = toDeployment(withSmuggler);
-    const cashAtLock = [cashOf(state, 'p1'), cashOf(state, 'p2'), cashOf(state, 'p3')];
-    const { events } = playUntilPrivate(state, (s) => s.round !== 1, withSmuggler);
+    const mixed: Script = {
+      recruit: ['p3'],
+      apply: { p4: 'p3' },
+      pick: { p3: 'p4' },
+      solo: ['p1', 'p2'],
+      deploy: {
+        p1: { role: 'pirate', target: 'r1-s3' },
+        p2: { role: 'guard', target: 'r1-s3' },
+        p3: { role: 'smuggler', target: 'r1-s1' },
+      },
+    };
+    const { state } = toDeployment(mixed);
+    const cashAtLock = ['p1', 'p2', 'p3'].map((id) => cashOf(state, id));
+    const { events } = playUntilPrivate(state, (s) => s.round !== 1, mixed);
     const voyageAt = events.findIndex((e) => e.type === 'voyage-event-revealed');
     const resolvedAt = events.findIndex((e) => e.type === 'ship-resolved');
-    const revealSection = events.slice(voyageAt + 1, resolvedAt);
-    expect(revealSection).toEqual([
+    expect(events.slice(voyageAt + 1, resolvedAt)).toEqual([
       { type: 'roles-revealed', round: 1, role: 'intel', deployments: [], rerolledShipIds: [] },
       {
         type: 'roles-revealed',
         round: 1,
         role: 'guard',
-        deployments: [{ playerId: 'p2', role: 'guard', targetShipId: 'r1-s2' }],
+        deployments: [{ playerId: 'p2', role: 'guard', targetShipId: 'r1-s3' }],
         rerolledShipIds: [],
       },
       { type: 'cash-changed', round: 1, playerId: 'p2', amount: -50, reason: 'role-fee', shipId: null },
@@ -142,7 +160,7 @@ describe('secret deployment and single reveal (game-design.md §4, §5 step 5)',
         type: 'roles-revealed',
         round: 1,
         role: 'pirate',
-        deployments: [{ playerId: 'p1', role: 'pirate', targetShipId: 'r1-s2' }],
+        deployments: [{ playerId: 'p1', role: 'pirate', targetShipId: 'r1-s3' }],
         rerolledShipIds: [],
       },
       { type: 'cash-changed', round: 1, playerId: 'p1', amount: -100, reason: 'role-fee', shipId: null },
@@ -150,14 +168,12 @@ describe('secret deployment and single reveal (game-design.md §4, §5 step 5)',
         type: 'roles-revealed',
         round: 1,
         role: 'smuggler',
-        deployments: [{ playerId: 'p3', role: 'smuggler', targetShipId: 'r1-s3' }],
+        deployments: [{ playerId: 'p3', role: 'smuggler', targetShipId: 'r1-s1' }],
         rerolledShipIds: [],
       },
-      { type: 'cash-changed', round: 1, playerId: 'p3', amount: -50, reason: 'role-fee', shipId: null },
     ]);
     expect(cashAtLock).toEqual([900, 900, 900]);
   });
-
 });
 
 describe('intel merchant (game-design.md §7 情報商人)', () => {
@@ -230,14 +246,15 @@ describe('intel merchant (game-design.md §7 情報商人)', () => {
 
 describe('guards and pirates (game-design.md §7 修正順序)', () => {
   it.each([
-    ['guard +2 saves a 2', { p2: { role: 'guard', target: 'r1-s1' } }, 2, 'arrived'],
-    ['two guards stack to +4', { p2: { role: 'guard', target: 'r1-s1' }, p3: { role: 'guard', target: 'r1-s1' } }, 1, 'arrived'],
+    ['a guard alone does not raise the roll', { p2: { role: 'guard', target: 'r1-s1' } }, 3, 'sank'],
+    ['two guards alone still do not raise the roll', { p2: { role: 'guard', target: 'r1-s1' }, p3: { role: 'guard', target: 'r1-s1' } }, 3, 'sank'],
     ['pirate −2 sinks a 5', { p2: { role: 'pirate', target: 'r1-s1' } }, 5, 'sank'],
     ['pirate −2 spares a 6', { p2: { role: 'pirate', target: 'r1-s1' } }, 6, 'arrived'],
     ['two pirates sink a 6', { p2: { role: 'pirate', target: 'r1-s1' }, p3: { role: 'pirate', target: 'r1-s1' } }, 6, 'sank'],
-    ['guard and pirate cancel out', { p2: { role: 'guard', target: 'r1-s1' }, p3: { role: 'pirate', target: 'r1-s1' } }, 4, 'arrived'],
-    ['guard and pirate cancel out (sink)', { p2: { role: 'guard', target: 'r1-s1' }, p3: { role: 'pirate', target: 'r1-s1' } }, 3, 'sank'],
-    ['a guard on another ship does not help', { p2: { role: 'guard', target: 'r1-s2' } }, 3, 'sank'],
+    ['a guard cancels a pirate (4 arrives)', { p2: { role: 'guard', target: 'r1-s1' }, p3: { role: 'pirate', target: 'r1-s1' } }, 4, 'arrived'],
+    ['a guard cancels a pirate (3 still sinks)', { p2: { role: 'guard', target: 'r1-s1' }, p3: { role: 'pirate', target: 'r1-s1' } }, 3, 'sank'],
+    ['one guard cancels only one of two pirates', { p2: { role: 'guard', target: 'r1-s1' }, p3: { role: 'pirate', target: 'r1-s1' }, p4: { role: 'pirate', target: 'r1-s1' } }, 5, 'sank'],
+    ['a guard on another ship does not help', { p2: { role: 'guard', target: 'r1-s2' }, p3: { role: 'pirate', target: 'r1-s1' } }, 5, 'sank'],
   ] as const)('%s', (_label, deploy, roll, outcome) => {
     const { events } = playRound({ ...ALL_SOLO, deploy }, { 'r1-s1': roll });
     expect(outcomeOf(events, 'r1-s1')).toMatchObject({ outcome });
@@ -291,59 +308,143 @@ describe('pirate loot (game-design.md §7 海盜)', () => {
   });
 });
 
-describe('smuggler (game-design.md §7 走私商人)', () => {
-  const jointSmuggler: Script = {
+describe('smuggling (game-design.md §7 走私結算)', () => {
+  /** p1 recruits p2; the joint ship is r1-s1. p3 and p4 sail solo on r1-s2 and r1-s3. */
+  const joint = (deploy: NonNullable<Script['deploy']>): Script => ({
     recruit: ['p1'],
     apply: { p2: 'p1' },
     pick: { p1: 'p2' },
-    deploy: { p2: { role: 'smuggler', target: 'r1-s1' } },
-  };
+    solo: ['p3', 'p4'],
+    deploy,
+  });
+  const gains = (events: readonly MatchEvent[], reason: string) =>
+    events.flatMap((e) => (e.type === 'cash-changed' && e.reason === reason ? [[e.playerId, e.amount]] : []));
 
-  it('pays the smuggler alone an extra 100 G when their ship arrives', () => {
-    const { state, events } = playRound(jointSmuggler, { 'r1-s1': 4 });
-    expect(events).toContainEqual({
-      type: 'cash-changed',
-      round: 1,
-      playerId: 'p2',
-      amount: 100,
-      reason: 'smuggling',
-      shipId: 'r1-s1',
-    });
-    // p1: 1000 - 100 + 350; p2: 1000 - 100 - 50 fee + 350 + 100
-    expect([cashOf(state, 'p1'), cashOf(state, 'p2')]).toEqual([1250, 1300]);
+  it('takes 300 G from the base income before the rest is split (arrived, not caught)', () => {
+    const { state, events } = playRound(joint({ p2: { role: 'smuggler', target: 'r1-s1' } }), { 'r1-s1': 4 });
+    expect(gains(events, 'smuggling')).toEqual([['p2', 300]]);
+    expect(gains(events, 'shipping-income')).toEqual([
+      ['p1', 200],
+      ['p2', 200],
+    ]);
+    // Smuggler deploys for free: p1 1000 - 100 + 200; p2 1000 - 100 + 300 + 200
+    expect([cashOf(state, 'p1'), cashOf(state, 'p2')]).toEqual([1100, 1400]);
   });
 
-  it('pays each smuggler independently for their own arrived ship', () => {
-    const script: Script = {
-      ...ALL_SOLO,
-      deploy: { p1: { role: 'smuggler', target: 'r1-s1' }, p3: { role: 'smuggler', target: 'r1-s3' } },
-    };
-    const { events } = playRound(script, { 'r1-s1': 6, 'r1-s3': 5 });
-    const paid = events.filter((e) => e.type === 'cash-changed' && e.reason === 'smuggling');
-    expect(paid.map((e) => e.type === 'cash-changed' && [e.playerId, e.amount, e.shipId])).toEqual([
-      ['p1', 100, 'r1-s1'],
-      ['p3', 100, 'r1-s3'],
+  it('is caught by the partner\'s guard when the ship arrives; the guard gets the goods', () => {
+    const { state, events } = playRound(
+      joint({ p1: { role: 'guard', target: 'r1-s1' }, p2: { role: 'smuggler', target: 'r1-s1' } }),
+      { 'r1-s1': 5 },
+    );
+    expect(gains(events, 'smuggling')).toEqual([]);
+    expect(gains(events, 'smuggling-confiscated')).toEqual([['p1', 300]]);
+    expect(gains(events, 'shipping-income')).toEqual([
+      ['p1', 350],
+      ['p2', 350],
+    ]);
+    expect([cashOf(state, 'p1'), cashOf(state, 'p2')]).toEqual([1000 - 100 - 50 + 300 + 350, 1000 - 100 + 350]);
+  });
+
+  it('splits confiscated goods among several guards, rounding down', () => {
+    const { events } = playRound(
+      joint({
+        p2: { role: 'smuggler', target: 'r1-s1' },
+        p1: { role: 'guard', target: 'r1-s1' },
+        p3: { role: 'guard', target: 'r1-s1' },
+        p4: { role: 'guard', target: 'r1-s1' },
+      }),
+      { 'r1-s1': 6 },
+    );
+    expect(gains(events, 'smuggling-confiscated')).toEqual([
+      ['p1', 100],
+      ['p3', 100],
+      ['p4', 100],
     ]);
   });
 
-  it('pays nothing extra when the ship sinks', () => {
-    const { events } = playRound(jointSmuggler, { 'r1-s1': 3 });
-    expect(events.some((e) => e.type === 'cash-changed' && e.reason === 'smuggling')).toBe(false);
+  it('is not caught when the guarded ship sinks; pirates seize the goods on top of the loot', () => {
+    const { events } = playRound(
+      joint({
+        p2: { role: 'smuggler', target: 'r1-s1' },
+        p3: { role: 'guard', target: 'r1-s1' },
+        p1: { role: 'pirate', target: 'r1-s1' },
+        p4: { role: 'pirate', target: 'r1-s1' },
+      }),
+      { 'r1-s1': 5 },
+    );
+    // one guard cancels one of two pirates: 5 - 2 = 3 sinks
+    expect(outcomeOf(events, 'r1-s1')).toMatchObject({ outcome: 'sank' });
+    expect(gains(events, 'smuggling-confiscated')).toEqual([]);
+    expect(gains(events, 'pirate-loot')).toEqual([
+      ['p1', 75],
+      ['p4', 75],
+    ]);
+    expect(gains(events, 'smuggling-seized')).toEqual([
+      ['p1', 150],
+      ['p4', 150],
+    ]);
+  });
+
+  it('loses the goods when the ship sinks without pirates', () => {
+    const { events } = playRound(joint({ p2: { role: 'smuggler', target: 'r1-s1' } }), { 'r1-s1': 2 });
+    for (const reason of ['smuggling', 'smuggling-confiscated', 'smuggling-seized']) {
+      expect(gains(events, reason)).toEqual([]);
+    }
+  });
+
+  it('lets both partners smuggle; the two takes cancel out', () => {
+    const { events } = playRound(
+      joint({ p1: { role: 'smuggler', target: 'r1-s1' }, p2: { role: 'smuggler', target: 'r1-s1' } }),
+      { 'r1-s1': 4 },
+    );
+    expect(gains(events, 'smuggling')).toEqual([
+      ['p1', 300],
+      ['p2', 300],
+    ]);
+    expect(gains(events, 'shipping-income')).toEqual([
+      ['p1', 50],
+      ['p2', 50],
+    ]);
+  });
+
+  it('adds income bonuses after the smuggling take', () => {
+    const initial = withAssets(startMatch().state, 'p1', ['exchange']);
+    const script = joint({ p2: { role: 'smuggler', target: 'r1-s1' } });
+    const toDeploy = playUntil(initial, atPhase('role-deployment', 1), scripted(script));
+    const { events } = playUntil(withRawRolls(toDeploy.state, { 'r1-s1': 6 }), (s) => s.round !== 1, scripted(script));
+    // 700 - 300 = 400, plus the recruiter's exchange bonus 100 = 500, split 250 each
+    expect(gains(events, 'smuggling')).toEqual([['p2', 300]]);
+    expect(gains(events, 'shipping-income')).toEqual([
+      ['p1', 250],
+      ['p2', 250],
+    ]);
+  });
+
+  it('splits the base income among smugglers when their goods exceed it', () => {
+    const rules = { ...RULES_V06, roles: { ...RULES_V06.roles, smuggler: { fee: 0, goodsValue: 400 } } };
+    const script = joint({ p1: { role: 'smuggler', target: 'r1-s1' }, p2: { role: 'smuggler', target: 'r1-s1' } });
+    const start = startMatch({ rules });
+    const toDeploy = playUntil(start.state, atPhase('role-deployment', 1), scripted(script));
+    const { events } = playUntil(withRawRolls(toDeploy.state, { 'r1-s1': 6 }), (s) => s.round !== 1, scripted(script));
+    expect(gains(events, 'smuggling')).toEqual([
+      ['p1', 350],
+      ['p2', 350],
+    ]);
+    expect(gains(events, 'shipping-income')).toEqual([]);
   });
 });
 
 describe('payout order (game-design.md §5 step 6)', () => {
-  it('pays shipping income, then smuggling, then pirate loot', () => {
+  it('pays smuggling first, then shipping income, then pirate loot', () => {
     const script: Script = {
-      ...ALL_SOLO,
-      deploy: { p1: { role: 'smuggler', target: 'r1-s1' }, p2: { role: 'pirate', target: 'r1-s3' } },
+      recruit: ['p1'],
+      apply: { p2: 'p1' },
+      pick: { p1: 'p2' },
+      solo: ['p3', 'p4'],
+      deploy: { p2: { role: 'smuggler', target: 'r1-s1' }, p3: { role: 'pirate', target: 'r1-s3' } },
     };
     const { events } = playRound(script, { 'r1-s1': 6, 'r1-s3': 1 });
-    const reasons: string[] = events
-      .filter((e) => e.type === 'cash-changed' && e.amount > 0)
-      .map((e) => (e.type === 'cash-changed' ? e.reason : ''));
-    const firstOf = (r: string) => reasons.indexOf(r);
-    expect(firstOf('shipping-income')).toBeLessThan(firstOf('smuggling'));
-    expect(firstOf('smuggling')).toBeLessThan(firstOf('pirate-loot'));
+    const reasons = events.flatMap((e) => (e.type === 'cash-changed' && e.amount > 0 ? [e.reason] : []));
+    expect(reasons).toEqual(['smuggling', 'shipping-income', 'shipping-income', 'pirate-loot']);
   });
 });

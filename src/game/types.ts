@@ -104,7 +104,24 @@ export interface PublicShip {
   readonly outcome: VoyageOutcome | null;
 }
 
-export type CashReason = 'ship-cost' | 'shipping-income' | 'role-fee' | 'smuggling' | 'pirate-loot';
+export type CashReason =
+  | 'asset-purchase'
+  | 'ship-cost'
+  | 'shipping-income'
+  | 'role-fee'
+  | 'smuggling'
+  | 'smuggling-confiscated'
+  | 'smuggling-seized'
+  | 'pirate-loot'
+  | 'insurance'
+  | 'salvage'
+  | 'exchange';
+
+/** One asset bought this round (game-design.md §8). */
+export interface Purchase {
+  readonly playerId: PlayerId;
+  readonly asset: AssetId;
+}
 
 /** A player applying to another player's recruitment (game-design.md §6 step 2). */
 export interface Application {
@@ -180,6 +197,7 @@ export type MatchEvent =
   | { readonly type: 'round-started'; readonly round: number }
   | { readonly type: 'market-event-revealed'; readonly round: number; readonly event: MarketEventId }
   | { readonly type: 'phase-started'; readonly round: number; readonly phase: DecisionPhase }
+  | { readonly type: 'assets-purchased'; readonly round: number; readonly purchases: readonly Purchase[] }
   | { readonly type: 'recruitments-announced'; readonly round: number; readonly recruiters: readonly PlayerId[] }
   | {
       readonly type: 'applications-announced';
