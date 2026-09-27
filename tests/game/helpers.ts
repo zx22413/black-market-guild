@@ -3,6 +3,7 @@ import {
   type Action,
   applyAction,
   createMatch,
+  createRng,
   getLegalActions,
   getPendingDecisions,
   type MatchConfig,
@@ -119,4 +120,61 @@ export function withCash(state: MatchState, playerId: string, cash: number): Mat
     ...state,
     players: state.players.map((p) => (p.id === playerId ? { ...p, cash } : p)),
   };
+}
+
+export interface Script {
+  readonly recruit?: readonly string[];
+  /** applicant -> recruiter */
+  readonly apply?: Readonly<Record<string, string>>;
+  /** recruiter -> chosen applicant */
+  readonly pick?: Readonly<Record<string, string>>;
+  readonly solo?: readonly string[];
+}
+
+/** Follows the script; unscripted decisions do nothing. Throws if a scripted action is illegal. */
+export function scripted(script: Script): Chooser {
+  return (state, playerId, legal) => {
+    const find = (predicate: (a: Action) => boolean, label: string): Action => {
+      const action = legal.find(predicate);
+      if (action === undefined) {
+        throw new Error(`scripted action not legal for ${playerId}: ${label}`);
+      }
+      return action;
+    };
+    switch (state.phase) {
+      case 'recruit':
+        if (script.recruit?.includes(playerId)) {
+          return find((a) => a.type === 'recruit' && a.recruit, 'recruit');
+        }
+        break;
+      case 'apply': {
+        const target = script.apply?.[playerId];
+        if (target !== undefined) {
+          return find((a) => a.type === 'apply' && a.recruiterId === target, `apply to ${target}`);
+        }
+        break;
+      }
+      case 'pick': {
+        const target = script.pick?.[playerId];
+        if (target !== undefined) {
+          return find((a) => a.type === 'pick' && a.applicantId === target, `pick ${target}`);
+        }
+        break;
+      }
+      case 'sailing-choice':
+        if (script.solo?.includes(playerId)) {
+          return find((a) => a.type === 'choose-sailing' && a.choice === 'solo', 'solo');
+        }
+        break;
+      default:
+        break;
+    }
+    return legal[0]!;
+  };
+}
+
+/** Chooses uniformly among legal actions with its own seeded rng. */
+export function randomChooser(seed: number): Chooser {
+  const rng = createRng(seed);
+  return (_state, _playerId, legal) => legal[rng.int(0, legal.length - 1)]!;
 }

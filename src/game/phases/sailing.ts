@@ -1,4 +1,5 @@
 import { chain, changeCash } from '../cash';
+import { shipCostFor } from '../economics';
 import { nextInt } from '../rng';
 import type { MatchState, Ship, Transition } from '../types';
 
@@ -42,11 +43,12 @@ export function launchShips(state: MatchState): Transition {
       },
     ],
   };
-  // TODO(M3): joint ships split the cost; TODO(M5): shipyard discounts.
   const paid = chain(
     announced.state,
-    ships.map((ship) => (current: MatchState) =>
-      changeCash(current, ship.owners[0]!, -current.rules.soloShip.cost, 'ship-cost', ship.id),
+    ships.flatMap((ship) =>
+      ship.owners.map((owner) => (current: MatchState) =>
+        changeCash(current, owner, -shipCostFor(current, ship, owner), 'ship-cost', ship.id),
+      ),
     ),
   );
   return { state: rollDice(paid.state), events: [...announced.events, ...paid.events] };

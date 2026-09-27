@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { changeCash } from '../../src/game/cash';
+import { splitEvenly } from '../../src/game/economics';
 import { finalRoll } from '../../src/game/resolution';
 import { startMatch } from './helpers';
 
@@ -25,5 +26,10 @@ describe('engine invariants', () => {
     const ship = (rawRoll: number) => ({ id: 'x', kind: 'solo' as const, owners: ['p1'], rawRoll, outcome: null });
     expect(finalRoll(state, ship(9))).toBe(6);
     expect(finalRoll(state, ship(-3))).toBe(1);
+  });
+
+  it('splits joint amounts evenly and refuses uneven splits (game-design.md §6)', () => {
+    expect(splitEvenly(700, 2)).toBe(350);
+    expect(() => splitEvenly(701, 2)).toThrow(/cannot be split evenly/);
   });
 });

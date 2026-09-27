@@ -1,6 +1,7 @@
 import { drawCard } from './decks';
 import { getDeciders } from './decisions';
 import { settlePayouts } from './payouts';
+import { resolveApply, resolvePick, resolveRecruit } from './phases/recruitment';
 import { launchShips, resolveSailingChoices } from './phases/sailing';
 import { resolveVoyages } from './resolution';
 import { computeResult } from './scoring';
@@ -87,7 +88,13 @@ export function openRound(base: Omit<MatchState, 'roundState'>, round: number): 
     round,
     phase: DECISION_PHASES[0],
     marketDeck: deck,
-    roundState: { marketEvent: card, voyageEvent: null, submissions: {}, ships: [] },
+    roundState: {
+      marketEvent: card,
+      voyageEvent: null,
+      submissions: {},
+      ships: [],
+      recruitment: { recruiters: [], applications: [], ventures: [] },
+    },
   };
   return runFrom(state, 0, [
     { type: 'round-started', round },
@@ -96,17 +103,20 @@ export function openRound(base: Omit<MatchState, 'roundState'>, round: number): 
 }
 
 /** Applies a completed phase's submissions to the round state. */
-function resolvePhase(state: MatchState, phase: DecisionPhase): MatchState {
+function resolvePhase(state: MatchState, phase: DecisionPhase): Transition {
   switch (phase) {
+    case 'recruit':
+      return resolveRecruit(state);
+    case 'apply':
+      return resolveApply(state);
+    case 'pick':
+      return resolvePick(state);
     case 'sailing-choice':
-      return resolveSailingChoices(state);
+      return { state: resolveSailingChoices(state), events: [] };
     case 'asset-purchase': // TODO(M5)
-    case 'recruit': // TODO(M3)
-    case 'apply': // TODO(M3)
-    case 'pick': // TODO(M3)
     case 'role-deployment': // TODO(M4)
     case 'intel-reroll': // TODO(M4)
-      return state;
+      return { state, events: [] };
   }
 }
 
@@ -122,6 +132,9 @@ export function submitDecision(state: MatchState, phase: DecisionPhase, action: 
     return { state: recorded, events: [] };
   }
   const resolved = resolvePhase(recorded, phase);
-  const cleared: MatchState = { ...resolved, roundState: { ...resolved.roundState, submissions: {} } };
-  return runFrom(cleared, sequenceIndexOf(phase) + 1, []);
+  const cleared: MatchState = {
+    ...resolved.state,
+    roundState: { ...resolved.state.roundState, submissions: {} },
+  };
+  return runFrom(cleared, sequenceIndexOf(phase) + 1, resolved.events);
 }

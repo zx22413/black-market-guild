@@ -70,6 +70,19 @@ function formatLog(
       case 'market-event-revealed':
         lines.push(`  市場事件：${MARKET_EVENT_LABELS[event.event]}`);
         break;
+      case 'recruitments-announced':
+        lines.push(`  發起合資招募：${event.recruiters.length > 0 ? event.recruiters.map(name).join('、') : '無'}`);
+        break;
+      case 'applications-announced': {
+        const list = event.applications.map((a) => `${name(a.applicantId)} → ${name(a.recruiterId)}`);
+        lines.push(`  應徵：${list.length > 0 ? list.join('、') : '無'}`);
+        break;
+      }
+      case 'joint-ventures-formed': {
+        const list = event.ventures.map((v) => `${name(v.recruiterId)} 挑選 ${name(v.applicantId)}`);
+        lines.push(`  合資成立：${list.length > 0 ? list.join('、') : '無'}`);
+        break;
+      }
       case 'ships-launched': {
         event.ships.forEach((s) => shipOwners.set(s.id, s.owners.map(name).join('＋')));
         const ships = event.ships.map((s) => `${s.id}（${shipOwners.get(s.id)}）`);
@@ -100,6 +113,10 @@ function formatLog(
         break;
       case 'phase-started':
         break;
+      default: {
+        const unhandled: never = event;
+        throw new Error(`unhandled event: ${JSON.stringify(unhandled)}`);
+      }
     }
   }
   return lines;
@@ -116,7 +133,7 @@ function main(): void {
   const names = new Map(players.map((p) => [p.id, p.name]));
   const header = [
     `黑市商會 對局紀錄（seed ${seed}，${playerCount} 人，所有決定隨機選擇）`,
-    '目前進度：只有獨資船與航運收入生效；合資、角色、資產與事件效果尚未實作。',
+    '目前進度：獨資、合資與航運收入已生效；角色、資產與事件效果尚未實作。',
   ];
   const lines = formatLog(events, names, created.value.state.rules.startingCash);
   console.log([...header, ...lines].join('\n'));

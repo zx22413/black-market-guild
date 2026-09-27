@@ -9,6 +9,7 @@ import type {
   Phase,
   PlayerId,
   PublicShip,
+  RecruitmentInfo,
   VoyageEventId,
 } from './types';
 
@@ -31,6 +32,8 @@ export interface PlayerView {
   readonly players: readonly PublicPlayer[];
   readonly marketEvent: MarketEventId;
   readonly voyageEvent: VoyageEventId | null;
+  /** This round's resolved recruiting, applications and ventures (public once each phase closes). */
+  readonly recruitment: RecruitmentInfo;
   /** This round's ships with owners and resolved outcomes; dice values stay hidden. */
   readonly ships: readonly PublicShip[];
   readonly marketDeckRemaining: number;
@@ -55,6 +58,7 @@ export function getPlayerView(state: MatchState, playerId: PlayerId): PlayerView
     players: state.players.map(({ id, name, cash, assets }) => ({ id, name, cash, assets })),
     marketEvent: state.roundState.marketEvent,
     voyageEvent: state.roundState.voyageEvent,
+    recruitment: state.roundState.recruitment,
     ships: state.roundState.ships.map(({ id, kind, owners, outcome }) => ({ id, kind, owners, outcome })),
     marketDeckRemaining: state.marketDeck.length,
     voyageDeckRemaining: state.voyageDeck.length,

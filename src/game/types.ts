@@ -97,6 +97,25 @@ export interface PublicShip {
 
 export type CashReason = 'ship-cost' | 'shipping-income';
 
+/** A player applying to another player's recruitment (game-design.md §6 step 2). */
+export interface Application {
+  readonly applicantId: PlayerId;
+  readonly recruiterId: PlayerId;
+}
+
+/** A recruiter picking one applicant (game-design.md §6 step 3). */
+export interface Venture {
+  readonly recruiterId: PlayerId;
+  readonly applicantId: PlayerId;
+}
+
+/** Public recruitment information for the current round (game-design.md §4). */
+export interface RecruitmentInfo {
+  readonly recruiters: readonly PlayerId[];
+  readonly applications: readonly Application[];
+  readonly ventures: readonly Venture[];
+}
+
 export interface PlayerState {
   readonly id: PlayerId;
   readonly name: string;
@@ -112,6 +131,8 @@ export interface RoundState {
   readonly submissions: Readonly<Record<PlayerId, Action>>;
   /** Ships sailing this round, in launch order. */
   readonly ships: readonly Ship[];
+  /** Resolved recruitment results; each list fills in once its phase closes. */
+  readonly recruitment: RecruitmentInfo;
 }
 
 export interface Standing {
@@ -147,6 +168,13 @@ export type MatchEvent =
   | { readonly type: 'round-started'; readonly round: number }
   | { readonly type: 'market-event-revealed'; readonly round: number; readonly event: MarketEventId }
   | { readonly type: 'phase-started'; readonly round: number; readonly phase: DecisionPhase }
+  | { readonly type: 'recruitments-announced'; readonly round: number; readonly recruiters: readonly PlayerId[] }
+  | {
+      readonly type: 'applications-announced';
+      readonly round: number;
+      readonly applications: readonly Application[];
+    }
+  | { readonly type: 'joint-ventures-formed'; readonly round: number; readonly ventures: readonly Venture[] }
   | {
       readonly type: 'ships-launched';
       readonly round: number;
