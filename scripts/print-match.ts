@@ -14,6 +14,7 @@ import {
 import {
   CASH_REASON_LABELS,
   MARKET_EVENT_LABELS,
+  ROLE_LABELS,
   VOYAGE_EVENT_LABELS,
 } from '../src/ui/labels';
 
@@ -99,6 +100,16 @@ function formatLog(
       case 'voyage-event-revealed':
         lines.push(`  航海事件：${VOYAGE_EVENT_LABELS[event.event]}`);
         break;
+      case 'roles-revealed': {
+        const list = event.deployments.map(
+          (d) => `${name(d.playerId)} → ${d.targetShipId}（${shipOwners.get(d.targetShipId)}）`,
+        );
+        lines.push(`  揭露${ROLE_LABELS[event.role]}：${list.length > 0 ? list.join('、') : '無'}`);
+        if (event.rerolledShipIds.length > 0) {
+          lines.push(`    重擲的船：${event.rerolledShipIds.join('、')}`);
+        }
+        break;
+      }
       case 'ship-resolved':
         lines.push(`  ${event.shipId}（${shipOwners.get(event.shipId)}）${event.outcome === 'arrived' ? '成功抵達' : '沉沒'}`);
         break;
@@ -133,7 +144,7 @@ function main(): void {
   const names = new Map(players.map((p) => [p.id, p.name]));
   const header = [
     `黑市商會 對局紀錄（seed ${seed}，${playerCount} 人，所有決定隨機選擇）`,
-    '目前進度：獨資、合資與航運收入已生效；角色、資產與事件效果尚未實作。',
+    '目前進度：獨資、合資、角色已生效；資產與事件效果尚未實作。',
   ];
   const lines = formatLog(events, names, created.value.state.rules.startingCash);
   console.log([...header, ...lines].join('\n'));

@@ -1,5 +1,5 @@
 import { cashOf, jointShare, soloCost } from './economics';
-import type { Action, DecisionPhase, MatchState, PendingDecision, PlayerId } from './types';
+import { ROLE_IDS, type Action, type DecisionPhase, type MatchState, type PendingDecision, type PlayerId } from './types';
 
 /** Players who must make a decision in the given phase this round. */
 export function getDeciders(state: MatchState, phase: DecisionPhase): PlayerId[] {
@@ -18,8 +18,8 @@ export function getDeciders(state: MatchState, phase: DecisionPhase): PlayerId[]
       const aboard = new Set(state.roundState.ships.flatMap((ship) => ship.owners));
       return everyone.filter((id) => !aboard.has(id));
     }
-    case 'intel-reroll': // TODO(M4): players who deployed the intel merchant
-      return [];
+    case 'intel-reroll':
+      return state.roundState.deployments.filter((d) => d.role === 'intel').map((d) => d.playerId);
   }
 }
 
@@ -54,11 +54,33 @@ export function getLegalActions(state: MatchState, playerId: PlayerId): Action[]
       return pickOptions(state, playerId);
     case 'sailing-choice':
       return sailingOptions(state, playerId);
-    case 'role-deployment': // TODO(M4): deploying roles
-      return [{ type: 'deploy-role', playerId, role: null, targetShipId: null }];
+    case 'role-deployment':
+      return deployOptions(state, playerId);
     case 'intel-reroll':
-      return [];
+      return [
+        { type: 'intel-reroll', playerId, reroll: false },
+        { type: 'intel-reroll', playerId, reroll: true },
+      ];
   }
+}
+
+/**
+ * No role, or any affordable role on a sailing ship; the smuggler may only target the
+ * player's own ship (game-design.md §7 角色部署規則).
+ */
+function deployOptions(state: MatchState, playerId: PlayerId): Action[] {
+  const cash = cashOf(state, playerId);
+  const { ships } = state.roundState;
+  const ownShip = ships.find((ship) => ship.owners.includes(playerId));
+  const options: Action[] = [{ type: 'deploy-role', playerId, role: null, targetShipId: null }];
+  for (const role of ROLE_IDS) {
+    if (cash < state.rules.roles[role].fee) {
+      continue;
+    }
+    const targets = role === 'smuggler' ? (ownShip ? [ownShip] : []) : ships;
+    targets.forEach((ship) => options.push({ type: 'deploy-role', playerId, role, targetShipId: ship.id }));
+  }
+  return options;
 }
 
 /** Recruiting commits the recruiter's share, so it needs that much cash (game-design.md §6). */

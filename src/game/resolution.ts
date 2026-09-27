@@ -1,4 +1,4 @@
-import type { MatchState, Ship, Transition, VoyageOutcome } from './types';
+import type { MatchState, Ship, Step, VoyageOutcome } from './types';
 
 /**
  * Final sailing value after the modifier order in game-design.md §7:
@@ -8,9 +8,14 @@ export function finalRoll(state: MatchState, ship: Ship): number {
   if (ship.rawRoll === null) {
     throw new Error(`ship ${ship.id} has not been rolled`);
   }
-  // TODO(M4): intel reroll, guard and pirate modifiers; TODO(M6): event modifiers.
+  const base = ship.rerolledRoll ?? ship.rawRoll;
+  const on = (role: 'guard' | 'pirate') =>
+    state.roundState.deployments.filter((d) => d.role === role && d.targetShipId === ship.id).length;
+  // TODO(M5): insurance gives its holder's guard +1. TODO(M6): market and voyage event modifiers.
+  const modified =
+    base + on('guard') * state.rules.roles.guard.modifier + on('pirate') * state.rules.roles.pirate.modifier;
   const { dieMin, dieMax } = state.rules.sailing;
-  return Math.min(dieMax, Math.max(dieMin, ship.rawRoll));
+  return Math.min(dieMax, Math.max(dieMin, modified));
 }
 
 export function outcomeOf(state: MatchState, value: number): VoyageOutcome {
@@ -18,7 +23,7 @@ export function outcomeOf(state: MatchState, value: number): VoyageOutcome {
 }
 
 /** Decides every ship's fate and announces only the outcome, never the dice. */
-export function resolveVoyages(state: MatchState): Transition {
+export function resolveVoyages(state: MatchState): Step {
   const ships = state.roundState.ships.map((ship) => ({
     ...ship,
     outcome: outcomeOf(state, finalRoll(state, ship)),

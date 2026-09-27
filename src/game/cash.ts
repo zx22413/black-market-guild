@@ -1,4 +1,4 @@
-import type { CashReason, MatchEvent, MatchState, PlayerId, ShipId, Transition } from './types';
+import type { CashReason, MatchEvent, MatchState, PlayerId, ShipId, Step } from './types';
 
 /**
  * Adds `amount` (negative to charge) to a player's cash and emits the public event.
@@ -10,7 +10,7 @@ export function changeCash(
   amount: number,
   reason: CashReason,
   shipId: ShipId | null,
-): Transition {
+): Step {
   const player = state.players.find((p) => p.id === playerId);
   if (player === undefined) {
     throw new Error(`unknown player: ${playerId}`);
@@ -31,13 +31,17 @@ export function changeCash(
 /** Applies a sequence of state steps, collecting their events in order. */
 export function chain(
   state: MatchState,
-  steps: readonly ((current: MatchState) => Transition)[],
-): Transition {
-  return steps.reduce<Transition>(
+  steps: readonly ((current: MatchState) => Step)[],
+): Step {
+  return steps.reduce<Step>(
     (acc, step) => {
       const next = step(acc.state);
-      return { state: next.state, events: [...acc.events, ...next.events] };
+      return {
+        state: next.state,
+        events: [...acc.events, ...next.events],
+        privateEvents: [...(acc.privateEvents ?? []), ...(next.privateEvents ?? [])],
+      };
     },
-    { state, events: [] },
+    { state, events: [], privateEvents: [] },
   );
 }

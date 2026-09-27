@@ -1,7 +1,7 @@
 import { chain, changeCash } from '../cash';
 import { shipCostFor } from '../economics';
 import { nextInt } from '../rng';
-import type { MatchState, Ship, Transition } from '../types';
+import type { MatchState, Ship, Step } from '../types';
 
 /**
  * Turns this phase's "solo" submissions into solo ships (game-design.md §6 合資邀請流程 step 4).
@@ -20,6 +20,7 @@ export function resolveSailingChoices(state: MatchState): MatchState {
     kind: 'solo',
     owners: [owner],
     rawRoll: null,
+    rerolledRoll: null,
     outcome: null,
   }));
   return { ...state, roundState: { ...state.roundState, ships: [...ships, ...newShips] } };
@@ -29,10 +30,10 @@ export function resolveSailingChoices(state: MatchState): MatchState {
  * Pays every ship's cost, announces the sailing ships, then rolls each ship's hidden raw 1d6
  * (game-design.md §5 step 3, §6 成本支付與資金限制).
  */
-export function launchShips(state: MatchState): Transition {
+export function launchShips(state: MatchState): Step {
   const { ships } = state.roundState;
   const sailors = new Set(ships.flatMap((ship) => ship.owners));
-  const announced: Transition = {
+  const announced: Step = {
     state,
     events: [
       {

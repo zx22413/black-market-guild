@@ -84,7 +84,16 @@ export interface Ship {
   readonly owners: readonly PlayerId[];
   /** Hidden raw 1d6, rolled once ships are launched (game-design.md §5 step 3). */
   readonly rawRoll: number | null;
+  /** Set when an intel merchant rerolled; replaces rawRoll for resolution (game-design.md §7). */
+  readonly rerolledRoll: number | null;
   readonly outcome: VoyageOutcome | null;
+}
+
+/** A locked role deployment (game-design.md §7). */
+export interface Deployment {
+  readonly playerId: PlayerId;
+  readonly role: RoleId;
+  readonly targetShipId: ShipId;
 }
 
 /** Ship information every player may see (game-design.md §4). */
@@ -95,7 +104,7 @@ export interface PublicShip {
   readonly outcome: VoyageOutcome | null;
 }
 
-export type CashReason = 'ship-cost' | 'shipping-income';
+export type CashReason = 'ship-cost' | 'shipping-income' | 'role-fee' | 'smuggling' | 'pirate-loot';
 
 /** A player applying to another player's recruitment (game-design.md §6 step 2). */
 export interface Application {
@@ -133,6 +142,9 @@ export interface RoundState {
   readonly ships: readonly Ship[];
   /** Resolved recruitment results; each list fills in once its phase closes. */
   readonly recruitment: RecruitmentInfo;
+  /** Locked role deployments; secret until rolesRevealed (game-design.md §5 step 5). */
+  readonly deployments: readonly Deployment[];
+  readonly rolesRevealed: boolean;
 }
 
 export interface Standing {
@@ -190,9 +202,35 @@ export type MatchEvent =
       readonly shipId: ShipId | null;
     }
   | { readonly type: 'voyage-event-revealed'; readonly round: number; readonly event: VoyageEventId }
+  | {
+      readonly type: 'roles-revealed';
+      readonly round: number;
+      /** One event per role in action order: intel → guard → pirate → smuggler. */
+      readonly role: RoleId;
+      readonly deployments: readonly Deployment[];
+      /** Ships rerolled by intel merchants; only non-empty on the intel event. */
+      readonly rerolledShipIds: readonly ShipId[];
+    }
   | { readonly type: 'ship-resolved'; readonly round: number; readonly shipId: ShipId; readonly outcome: VoyageOutcome }
   | { readonly type: 'round-ended'; readonly round: number }
   | { readonly type: 'match-ended'; readonly result: MatchResult };
+
+/** Information for one player only; route it to that player, never broadcast it. */
+export type PrivateEvent =
+  | {
+      readonly playerId: PlayerId;
+      readonly type: 'intel-report';
+      readonly round: number;
+      readonly shipId: ShipId;
+      readonly rawRoll: number;
+    }
+  | {
+      readonly playerId: PlayerId;
+      readonly type: 'intel-reroll-result';
+      readonly round: number;
+      readonly shipId: ShipId;
+      readonly rerolledRoll: number;
+    };
 
 export interface PendingDecision {
   readonly playerId: PlayerId;
@@ -220,4 +258,12 @@ export type Result<T> =
 export interface Transition {
   readonly state: MatchState;
   readonly events: readonly MatchEvent[];
+  readonly privateEvents: readonly PrivateEvent[];
+}
+
+/** Internal engine step; privateEvents is optional for steps that reveal nothing privately. */
+export interface Step {
+  readonly state: MatchState;
+  readonly events: readonly MatchEvent[];
+  readonly privateEvents?: readonly PrivateEvent[];
 }

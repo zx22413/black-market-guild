@@ -9,6 +9,7 @@ import {
   type MatchConfig,
   type MatchEvent,
   type MatchState,
+  type RoleId,
   type Transition,
 } from '../../src/game';
 
@@ -129,6 +130,10 @@ export interface Script {
   /** recruiter -> chosen applicant */
   readonly pick?: Readonly<Record<string, string>>;
   readonly solo?: readonly string[];
+  /** player -> role and target ship id (smugglers target their own ship) */
+  readonly deploy?: Readonly<Record<string, { readonly role: RoleId; readonly target: string }>>;
+  /** intel merchants who choose to reroll */
+  readonly reroll?: readonly string[];
 }
 
 /** Follows the script; unscripted decisions do nothing. Throws if a scripted action is illegal. */
@@ -164,6 +169,21 @@ export function scripted(script: Script): Chooser {
       case 'sailing-choice':
         if (script.solo?.includes(playerId)) {
           return find((a) => a.type === 'choose-sailing' && a.choice === 'solo', 'solo');
+        }
+        break;
+      case 'role-deployment': {
+        const plan = script.deploy?.[playerId];
+        if (plan !== undefined) {
+          return find(
+            (a) => a.type === 'deploy-role' && a.role === plan.role && a.targetShipId === plan.target,
+            `deploy ${plan.role} on ${plan.target}`,
+          );
+        }
+        break;
+      }
+      case 'intel-reroll':
+        if (script.reroll?.includes(playerId)) {
+          return find((a) => a.type === 'intel-reroll' && a.reroll, 'reroll');
         }
         break;
       default:

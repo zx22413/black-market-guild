@@ -3,7 +3,7 @@ export { createMatch, applyAction } from './engine';
 export type { MatchConfig } from './engine';
 export { getPendingDecisions, getLegalActions } from './decisions';
 export { getPlayerView } from './view';
-export type { PlayerView, PublicPlayer } from './view';
+export type { IntelKnowledge, PlayerView, PublicPlayer } from './view';
 export { RULES_V06 } from './rules';
 export type { Rules } from './rules';
 export { createRng, createRngFromState } from './rng';

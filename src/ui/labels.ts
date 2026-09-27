@@ -38,4 +38,7 @@ export const ASSET_LABELS: Readonly<Record<AssetId, string>> = {
 export const CASH_REASON_LABELS: Readonly<Record<CashReason, string>> = {
   'ship-cost': '航運成本',
   'shipping-income': '航運收入',
+  'role-fee': '角色部署費',
+  smuggling: '走私收益',
+  'pirate-loot': '海盜戰利品',
 };
