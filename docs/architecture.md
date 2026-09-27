@@ -6,9 +6,10 @@
 
 同一套規則引擎需支援下列對局形式，且新增形式時不需修改引擎：
 
-- 單機對電腦：1v1、1v2、1v3。
-- 自訂座位：玩家數 2–4 人，每個座位可自由指定為真人或 Bot，Bot 可選不同策略。
-- 全 Bot 模擬：不含 UI，大量執行以驗證平衡（對應 `game-design.md` 第 10 節）。
+- 單機對電腦：1v2、1v3。
+- 自訂座位：玩家數 3～4 人（核心規則），每個座位可自由指定為真人或 Bot，Bot 可選不同策略。
+- 2 人模式（1v1）：規則需要中立船，尚未定案（見 `open-questions.md` Q-05）；座位設定需保留擴充空間，但在規則定案前不實作。
+- 全 Bot 模擬：不含 UI，大量執行以驗證平衡（對應 `game-design.md` 第 11 節）。
 - 多人連線：MVP 驗證後才實作，但架構現在就要預留。
 
 ## 2. 核心原則：引擎只認識座位
@@ -82,7 +83,7 @@ type SeatConfig =
 
 interface MatchConfig {
   seed: number;
-  seats: SeatConfig[]; // 長度 2–4，由引擎驗證
+  seats: SeatConfig[]; // 目前長度 3～4，由引擎驗證；2 人模式待 Q-05 定案
 }
 ```
 
@@ -116,14 +117,14 @@ interface Controller {
 
 1. 規則引擎（依 `game-design.md` 已定案的部分）＋ Match Runner ＋ `BotController`。
 2. 全 Bot 模擬腳本，用於平衡驗證。
-3. 瀏覽器 UI ＋ `LocalHumanController`，完成單機 1v1～1v3、自訂座位與 hot-seat。
+3. 瀏覽器 UI ＋ `LocalHumanController`，完成單機 1v2～1v3、自訂座位與 hot-seat。
 4. MVP 驗證通過後，才建立 `server/` 與 `RemoteController`。
 
 ## 7. 已決定與待確認事項
 
 ### 7.1 合資邀請流程（已定案）
 
-規則見 `game-design.md` 第 5 節「合資邀請流程」：提案 → 互邀成立 → 回應 → 未配對者選擇獨資或不出航。對架構的影響：
+規則見 `game-design.md` 第 6 節「合資邀請流程」：提案 → 互邀成立 → 回應 → 未配對者選擇獨資或不出航。對架構的影響：
 
 - 投資階段拆為三個「所有座位同時決定」的子步驟（提案、回應、未配對者選擇），每個子步驟都由 `getPendingDecisions` 列出需決定的座位，收齊後才前進。
 - 不需要決定的座位（例如已互邀成立者不參與回應）不會出現在待決定事項中。

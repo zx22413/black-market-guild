@@ -1,6 +1,6 @@
 # 黑市商會（Black Market Guild）
 
-《黑市商會》是一款供 2–4 人遊玩的商業、航運與心理博弈策略遊戲。玩家在每回合面對公開的市場條件，決定獨資或合資出航，並以秘密角色部署影響商船的命運與彼此的收益。
+《黑市商會》是一款供 3～4 人遊玩（2 人模式規劃中）的商業、航運與心理博弈策略遊戲。玩家在每回合面對公開的市場條件，決定獨資或合資出航，並以秘密角色部署影響商船的命運與彼此的收益。
 
 目前專案以 [V0.6 遊戲設計文件](docs/game-design.md) 為唯一的 gameplay 規則基準。
 
@@ -29,7 +29,9 @@ npm run build      # 型別檢查並建置
 
 ## 文件
 
-- [`docs/game-design.md`](docs/game-design.md)：V0.6 規則、已定案決策與待驗證事項。
+- [`docs/game-design.md`](docs/game-design.md)：V0.6 當前完整規則，唯一 gameplay source of truth。
+- [`docs/open-questions.md`](docs/open-questions.md)：待驗證／待確認清單；不是可供實作的規則來源。
+- [`docs/changelog.md`](docs/changelog.md)：V0.1～V0.6 的設計沿革與已否決／暫緩項目。
 - [`docs/architecture.md`](docs/architecture.md)：程式分層、座位與 Controller 設計、多種對局模式的驅動方式。
 - [`AGENTS.md`](AGENTS.md)：供 AI Agent／Codex 遵循的開發規則。
 

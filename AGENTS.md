@@ -5,8 +5,10 @@
 [`docs/game-design.md`](docs/game-design.md) 是本專案 gameplay 的唯一 source of truth。
 
 - 不得自行發明、推定或補完未定案的遊戲規則、數值、卡牌、角色能力或結算順序。
+- [`docs/open-questions.md`](docs/open-questions.md) 只記錄待驗證與待確認事項，不是規則來源。不得把其中的提案、範例數值或問題自行定案、寫入實作或測試；只有使用者明確確認並更新 `docs/game-design.md` 後才可採用。
+- [`docs/changelog.md`](docs/changelog.md) 只記錄沿革，不得用來覆寫或補完現行規則。
 - 當實作需求與設計文件矛盾時，以設計文件為準，並在程式碼或相關文件中標記 `TODO` 說明差異。
-- 當設計文件存在矛盾、模糊處或缺漏時，停止該規則的具體化；以 `TODO` 記錄問題、影響範圍與需要確認的決策。
+- 當設計文件存在矛盾、模糊處或缺漏時，停止該規則的具體化；在 `docs/open-questions.md` 記錄問題、影響範圍與需要確認的決策，不得自行選擇其中一種提案。
 - 任何確認後的規則變更，都必須先更新 `docs/game-design.md`，再更新實作與測試。
 
 ## MVP 實作方向

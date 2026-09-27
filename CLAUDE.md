@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 專案現況
 
-《黑市商會》（Black Market Guild）是 2–4 人的商業、航運與心理博弈策略遊戲。技術棧為 **TypeScript + Vite（web）**，測試用 **Vitest**；目前只有專案骨架與 seeded RNG，尚未實作任何遊戲規則。日後桌面／Steam 以 Electron 或 Tauri 打包、手機以 Capacitor 打包（尚未設定）。
+《黑市商會》（Black Market Guild）是 3～4 人（2 人模式規劃中）的商業、航運與心理博弈策略遊戲。技術棧為 **TypeScript + Vite（web）**，測試用 **Vitest**；目前只有專案骨架與 seeded RNG，尚未實作任何遊戲規則。日後桌面／Steam 以 Electron 或 Tauri 打包、手機以 Capacitor 打包（尚未設定）。
 
 ## 指令
 
@@ -25,10 +25,10 @@ npm run build                            # typecheck + vite build
 
 [`docs/game-design.md`](docs/game-design.md)（V0.6「市場風向」）是 gameplay 的**唯一 source of truth**，詳細協作規則見 [`AGENTS.md`](AGENTS.md)。重點：
 
-- 不得自行發明、推定或補完未定案的規則、數值、卡牌、角色能力或結算順序。設計文件中標示 `TODO` 的項目（起始資金、合資分紅公式、角色完整能力、航行骰門檻、沉船條件、資產數值、事件卡池等）目前**都未定案**。
+- 不得自行發明、推定或補完未定案的規則、數值、卡牌、角色能力或結算順序。[`docs/open-questions.md`](docs/open-questions.md) 是待確認清單，不是規則來源；其中的提案與範例數字絕對不可自行採用。
 - 實作遇到未定案規則時：停止具體化該規則，在程式碼中以 `TODO` 記錄問題、影響範圍與待確認決策；必要時設計成可注入的參數／設定，而不是寫死猜測值。
 - 規則變更流程：先更新 `docs/game-design.md` → 再改實作 → 再改測試。
-- 目前已定案、可直接依據的內容：6 回合、財富最高者勝；五階段回合流程（市場事件 → 投資／合資 → 秘密部署角色 → 航海事件 → 角色揭露與結算）；四種角色與四種資產的「定位」；六張市場事件的具體數值；情報商人在角色揭露時才看骰值並可重擲，且不能回頭改變部署；不採用下一回合市場事件預告。
+- 目前已定案、可直接依據的內容與數值，以 `docs/game-design.md` 的 V0.6 快照為準；不要以本段摘要、舊 commit 或沿革文件補完規則。
 - 設計文件第 10 節列出的擴充方向（秘密交易、市場操縱、不同比例合資等）**不屬於 V0.6 / MVP 範圍**，不要實作。
 
 ## 架構
