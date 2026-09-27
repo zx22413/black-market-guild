@@ -30,6 +30,7 @@ npm run build      # 型別檢查並建置
 ## 文件
 
 - [`docs/game-design.md`](docs/game-design.md)：V0.6 規則、已定案決策與待驗證事項。
+- [`docs/architecture.md`](docs/architecture.md)：程式分層、座位與 Controller 設計、多種對局模式的驅動方式。
 - [`AGENTS.md`](AGENTS.md)：供 AI Agent／Codex 遵循的開發規則。
 
 ## 開發原則

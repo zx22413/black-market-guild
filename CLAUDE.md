@@ -33,10 +33,11 @@ npm run build                            # typecheck + vite build
 
 ## 架構
 
-規則引擎與呈現層分離，讓整局對局可由測試與 Bot 直接驅動：
+完整設計（座位／Controller、Match Runner、`PlayerView` 過濾、連線模式與待確認事項）見 [`docs/architecture.md`](docs/architecture.md)；實作 `src/match` 或引擎的公開介面前先讀它。規則引擎與呈現層分離，讓整局對局可由測試與 Bot 直接驅動：
 
 - `src/game/`：純規則引擎，公開介面集中在 `src/game/index.ts`。所有隨機性（航行骰、事件抽取）必須透過注入的 `Rng`（`src/game/rng.ts`，mulberry32）以確保可重現，不得直接呼叫 `Math.random()`。
 - `src/bots/`：Bot 策略，用於 MVP（1 名真人 + 2–3 名 Bot）與大量模擬以驗證平衡（見設計文件第 10 節的四個驗證問題）。
+- `src/match/`（尚未建立）：Match Runner 與 Controller 介面，座位上是真人、Bot 或遠端玩家由此層決定，引擎只認識 `PlayerId`。
 - `src/ui/`：呈現層（`index.html` → `src/ui/main.ts`），只透過 `src/game/index.ts` 使用規則引擎。
 - `tests/`：鏡像 `src/` 的結構（如 `tests/game/*.test.ts`），測試需以固定 seed 保持可重現。
 
