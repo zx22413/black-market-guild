@@ -16,6 +16,7 @@ npx vitest run -t "same seed"            # 依測試名稱篩選
 npm run test:coverage                    # 測試＋覆蓋率（src/game、src/bots、src/match，門檻 80%）
 npm run typecheck                        # 兩套 tsconfig 的型別檢查
 npm run build                            # typecheck + vite build
+npm run match:log -- 42 4                # 隨機選擇跑一局並印出中文對局紀錄（scripts/print-match.ts）
 ```
 
 - 需要 Node.js 20.19 以上。TypeScript 為 7.x（原生編譯器）。

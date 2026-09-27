@@ -8,6 +8,7 @@ import type {
   MatchState,
   Phase,
   PlayerId,
+  PublicShip,
   VoyageEventId,
 } from './types';
 
@@ -30,6 +31,8 @@ export interface PlayerView {
   readonly players: readonly PublicPlayer[];
   readonly marketEvent: MarketEventId;
   readonly voyageEvent: VoyageEventId | null;
+  /** This round's ships with owners and resolved outcomes; dice values stay hidden. */
+  readonly ships: readonly PublicShip[];
   readonly marketDeckRemaining: number;
   readonly voyageDeckRemaining: number;
   /** Players who already submitted in the current phase; their choices stay hidden. */
@@ -52,6 +55,7 @@ export function getPlayerView(state: MatchState, playerId: PlayerId): PlayerView
     players: state.players.map(({ id, name, cash, assets }) => ({ id, name, cash, assets })),
     marketEvent: state.roundState.marketEvent,
     voyageEvent: state.roundState.voyageEvent,
+    ships: state.roundState.ships.map(({ id, kind, owners, outcome }) => ({ id, kind, owners, outcome })),
     marketDeckRemaining: state.marketDeck.length,
     voyageDeckRemaining: state.voyageDeck.length,
     submittedPlayerIds: state.players.map((p) => p.id).filter((id) => submissions[id] !== undefined),

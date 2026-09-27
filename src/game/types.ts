@@ -74,6 +74,29 @@ export const PHASE_ACTION_TYPE: Readonly<Record<DecisionPhase, ActionType>> = {
   'intel-reroll': 'intel-reroll',
 };
 
+export type ShipKind = 'solo' | 'joint';
+export type VoyageOutcome = 'arrived' | 'sank';
+
+export interface Ship {
+  readonly id: ShipId;
+  readonly kind: ShipKind;
+  /** Solo: [owner]. Joint: [recruiter, applicant]. */
+  readonly owners: readonly PlayerId[];
+  /** Hidden raw 1d6, rolled once ships are launched (game-design.md §5 step 3). */
+  readonly rawRoll: number | null;
+  readonly outcome: VoyageOutcome | null;
+}
+
+/** Ship information every player may see (game-design.md §4). */
+export interface PublicShip {
+  readonly id: ShipId;
+  readonly kind: ShipKind;
+  readonly owners: readonly PlayerId[];
+  readonly outcome: VoyageOutcome | null;
+}
+
+export type CashReason = 'ship-cost' | 'shipping-income';
+
 export interface PlayerState {
   readonly id: PlayerId;
   readonly name: string;
@@ -87,6 +110,8 @@ export interface RoundState {
   readonly voyageEvent: VoyageEventId | null;
   /** Secret submissions for the current decision phase, keyed by player. */
   readonly submissions: Readonly<Record<PlayerId, Action>>;
+  /** Ships sailing this round, in launch order. */
+  readonly ships: readonly Ship[];
 }
 
 export interface Standing {
@@ -122,7 +147,22 @@ export type MatchEvent =
   | { readonly type: 'round-started'; readonly round: number }
   | { readonly type: 'market-event-revealed'; readonly round: number; readonly event: MarketEventId }
   | { readonly type: 'phase-started'; readonly round: number; readonly phase: DecisionPhase }
+  | {
+      readonly type: 'ships-launched';
+      readonly round: number;
+      readonly ships: readonly Omit<PublicShip, 'outcome'>[];
+      readonly stayedInPort: readonly PlayerId[];
+    }
+  | {
+      readonly type: 'cash-changed';
+      readonly round: number;
+      readonly playerId: PlayerId;
+      readonly amount: number;
+      readonly reason: CashReason;
+      readonly shipId: ShipId | null;
+    }
   | { readonly type: 'voyage-event-revealed'; readonly round: number; readonly event: VoyageEventId }
+  | { readonly type: 'ship-resolved'; readonly round: number; readonly shipId: ShipId; readonly outcome: VoyageOutcome }
   | { readonly type: 'round-ended'; readonly round: number }
   | { readonly type: 'match-ended'; readonly result: MatchResult };
 

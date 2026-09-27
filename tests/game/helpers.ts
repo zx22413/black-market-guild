@@ -1,5 +1,6 @@
 import { expect } from 'vitest';
 import {
+  type Action,
   applyAction,
   createMatch,
   getLegalActions,
@@ -56,4 +57,66 @@ export function deepFreeze<T>(value: T): T {
     Object.freeze(value);
   }
   return value;
+}
+
+export type Chooser = (state: MatchState, playerId: string, legal: readonly Action[]) => Action;
+
+/** Default policy: the first legal option, which is always "do nothing" in this engine. */
+export const doNothing: Chooser = (_state, _playerId, legal) => legal[0]!;
+
+/** Picks the solo voyage for the given players; everything else does nothing. */
+export function sailSolo(...playerIds: string[]): Chooser {
+  return (state, playerId, legal) => {
+    if (state.phase === 'sailing-choice' && playerIds.includes(playerId)) {
+      const solo = legal.find((a) => a.type === 'choose-sailing' && a.choice === 'solo');
+      if (solo) {
+        return solo;
+      }
+    }
+    return legal[0]!;
+  };
+}
+
+/** Submits decisions with `chooser` until `stop` returns true or the match ends. */
+export function playUntil(
+  initial: MatchState,
+  stop: (state: MatchState) => boolean,
+  chooser: Chooser = doNothing,
+): { state: MatchState; events: MatchEvent[] } {
+  let state = initial;
+  const events: MatchEvent[] = [];
+  for (let guard = 0; guard < 10_000 && !stop(state) && state.phase !== 'game-over'; guard += 1) {
+    const decision = getPendingDecisions(state)[0]!;
+    const action = chooser(state, decision.playerId, getLegalActions(state, decision.playerId));
+    const transition = unwrap(applyAction(state, action));
+    state = transition.state;
+    events.push(...transition.events);
+  }
+  return { state, events };
+}
+
+export const atPhase =
+  (phase: MatchState['phase'], round?: number) =>
+  (state: MatchState): boolean =>
+    state.phase === phase && (round === undefined || state.round === round);
+
+/** Returns a copy of the state with the given raw rolls written onto this round's ships. */
+export function withRawRolls(state: MatchState, rolls: Readonly<Record<string, number>>): MatchState {
+  return {
+    ...state,
+    roundState: {
+      ...state.roundState,
+      ships: state.roundState.ships.map((ship) =>
+        rolls[ship.id] === undefined ? ship : { ...ship, rawRoll: rolls[ship.id]! },
+      ),
+    },
+  };
+}
+
+/** Returns a copy of the state with one player's cash replaced. */
+export function withCash(state: MatchState, playerId: string, cash: number): MatchState {
+  return {
+    ...state,
+    players: state.players.map((p) => (p.id === playerId ? { ...p, cash } : p)),
+  };
 }

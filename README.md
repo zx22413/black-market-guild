@@ -19,6 +19,7 @@ npm test           # 執行測試
 npm run test:coverage  # 執行測試並檢查覆蓋率（門檻 80%）
 npm run typecheck  # 型別檢查（含規則引擎的純度檢查）
 npm run build      # 型別檢查並建置
+npm run match:log -- 42 4  # 以 seed 42、4 人隨機跑一局並印出對局紀錄
 ```
 
 預計 MVP 會先驗證：

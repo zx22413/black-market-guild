@@ -41,8 +41,8 @@ export function getLegalActions(state: MatchState, playerId: PlayerId): Action[]
       return [{ type: 'buy-asset', playerId, asset: null }];
     case 'recruit': // TODO(M3): recruiting partners
       return [{ type: 'recruit', playerId, recruit: false }];
-    case 'sailing-choice': // TODO(M2): solo voyages
-      return [{ type: 'choose-sailing', playerId, choice: 'stay' }];
+    case 'sailing-choice':
+      return sailingOptions(state, playerId);
     case 'role-deployment': // TODO(M4): deploying roles
       return [{ type: 'deploy-role', playerId, role: null, targetShipId: null }];
     case 'apply':
@@ -50,6 +50,14 @@ export function getLegalActions(state: MatchState, playerId: PlayerId): Action[]
     case 'intel-reroll':
       return [];
   }
+}
+
+/** Staying in port is always legal; a solo voyage needs the full cost in cash (game-design.md §6). */
+function sailingOptions(state: MatchState, playerId: PlayerId): Action[] {
+  const stay: Action = { type: 'choose-sailing', playerId, choice: 'stay' };
+  const cash = state.players.find((p) => p.id === playerId)?.cash ?? 0;
+  // TODO(M5): shipyard lowers the solo cost.
+  return cash >= state.rules.soloShip.cost ? [stay, { type: 'choose-sailing', playerId, choice: 'solo' }] : [stay];
 }
 
 /** Canonical identity of an action, used to compare against legal options. */

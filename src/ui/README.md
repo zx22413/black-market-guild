@@ -2,6 +2,13 @@
 
 Vite 網頁前端，入口為根目錄的 `index.html` → `main.ts`。UI 只透過 `src/game` 的公開 API 與 `PlayerView` 呈現畫面，不直接讀取 `MatchState`。
 
+## 檔案
+
+| 檔案 | 職責 |
+| --- | --- |
+| `main.ts` | 佔位頁面入口。 |
+| `labels.ts` | 事件、角色、資產與現金異動原因的繁體中文名稱；對局紀錄腳本與日後的 UI 共用。 |
+
 ## 預定內容
 
 - `LocalHumanController`：把引擎的待決定事項交給玩家操作。

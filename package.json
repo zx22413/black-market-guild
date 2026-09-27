@@ -13,7 +13,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.engine.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "match:log": "tsx scripts/print-match.ts"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.11",
