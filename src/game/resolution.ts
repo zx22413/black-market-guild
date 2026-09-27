@@ -1,4 +1,5 @@
 import { holds } from './economics';
+import { eventRollModifier } from './events';
 import type { MatchState, Ship, Step, VoyageOutcome } from './types';
 
 /**
@@ -10,8 +11,8 @@ export function finalRoll(state: MatchState, ship: Ship): number {
     throw new Error(`ship ${ship.id} has not been rolled`);
   }
   const base = ship.rerolledRoll ?? ship.rawRoll;
-  // TODO(M6): market and voyage event modifiers.
-  const modified = base + activePirates(state, ship) * state.rules.roles.pirate.modifier;
+  const modified =
+    base + activePirates(state, ship) * state.rules.roles.pirate.modifier + eventRollModifier(state, ship);
   const { dieMin, dieMax } = state.rules.sailing;
   return Math.min(dieMax, Math.max(dieMin, modified));
 }

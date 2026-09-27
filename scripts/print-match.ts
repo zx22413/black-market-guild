@@ -152,7 +152,7 @@ function main(): void {
   const names = new Map(players.map((p) => [p.id, p.name]));
   const header = [
     `黑市商會 對局紀錄（seed ${seed}，${playerCount} 人，所有決定隨機選擇）`,
-    '目前進度：獨資、合資、角色與資產已生效；市場與航海事件的效果尚未實作。',
+    '規則：V0.6 完整規則（獨資、合資、角色、資產、市場與航海事件皆已生效）。',
   ];
   const lines = formatLog(events, names, created.value.state.rules.startingCash);
   console.log([...header, ...lines].join('\n'));

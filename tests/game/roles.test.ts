@@ -8,10 +8,10 @@ import {
   type MatchEvent,
   type MatchState,
   type PrivateEvent,
-  RULES_V06,
 } from '../../src/game';
 import {
   atPhase,
+  NEUTRAL_EVENT_RULES,
   playUntil,
   scripted,
   startMatch,
@@ -421,7 +421,7 @@ describe('smuggling (game-design.md §7 走私結算)', () => {
   });
 
   it('splits the base income among smugglers when their goods exceed it', () => {
-    const rules = { ...RULES_V06, roles: { ...RULES_V06.roles, smuggler: { fee: 0, goodsValue: 400 } } };
+    const rules = { ...NEUTRAL_EVENT_RULES, roles: { ...NEUTRAL_EVENT_RULES.roles, smuggler: { fee: 0, goodsValue: 400 } } };
     const script = joint({ p1: { role: 'smuggler', target: 'r1-s1' }, p2: { role: 'smuggler', target: 'r1-s1' } });
     const start = startMatch({ rules });
     const toDeploy = playUntil(start.state, atPhase('role-deployment', 1), scripted(script));

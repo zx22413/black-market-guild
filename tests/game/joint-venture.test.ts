@@ -6,6 +6,7 @@ import {
   getPlayerView,
   type MatchEvent,
   type MatchState,
+  RULES_V06,
 } from '../../src/game';
 import {
   atPhase,
@@ -219,7 +220,7 @@ describe('recruitment secrecy', () => {
 
 describe('random matches (fuzz)', () => {
   it.each(Array.from({ length: 40 }, (_, i) => i + 1))('seed %i: stays legal and fully accounted', (seed) => {
-    const start = startMatch({ seed });
+    const start = startMatch({ seed, rules: RULES_V06 });
     const { state, events } = playUntil(start.state, () => false, randomChooser(seed * 7));
     expect(state.phase).toBe('game-over');
     for (const player of state.players) {

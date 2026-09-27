@@ -1,3 +1,4 @@
+import { eventIncomeBonus } from './events';
 import type { AssetId, MatchState, PlayerId, Ship } from './types';
 
 /**
@@ -63,8 +64,7 @@ export function baseIncome(state: MatchState, ship: Ship): number {
 
 /** Income bonuses added after smuggling takes; split evenly among owners (§5 step 6, §8). */
 export function incomeBonus(state: MatchState, ship: Ship): number {
-  // TODO(M6): market event income bonuses.
   const exchange =
     ship.kind === 'joint' && holds(state, ship.owners[0]!, 'exchange') ? state.rules.assets.exchange.jointIncomeBonus : 0;
-  return exchange;
+  return exchange + eventIncomeBonus(state, ship);
 }

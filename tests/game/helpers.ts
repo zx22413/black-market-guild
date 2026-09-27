@@ -9,9 +9,13 @@ import {
   type MatchConfig,
   type MatchEvent,
   type AssetId,
+  type MarketEventId,
+  type VoyageEventId,
   type MatchState,
   type RoleId,
+  type Rules,
   type Transition,
+  RULES_V06,
 } from '../../src/game';
 
 export const FOUR_PLAYERS = [
@@ -21,8 +25,35 @@ export const FOUR_PLAYERS = [
   { id: 'p4', name: 'Dave' },
 ] as const;
 
+/**
+ * V0.6 rules with every market and voyage event effect neutralised, so tests of other rules
+ * are not affected by whichever events the seed happens to draw. Event tests and fuzz tests
+ * pass RULES_V06 explicitly.
+ */
+export const NEUTRAL_EVENT_RULES: Rules = {
+  ...RULES_V06,
+  marketEvents: {
+    ...RULES_V06.marketEvents,
+    royalJointOrderBonus: 0,
+    privateTradeCharterBonus: 0,
+    blackMarketBountyBonus: 0,
+    seaDangerWarningModifier: 0,
+    luxuryBoomBonus: 0,
+    salvageBoomPayout: RULES_V06.assets.salvage.payout,
+  },
+  voyageEvents: {
+    ...RULES_V06.voyageEvents,
+    tailwindModifier: 0,
+    stormModifier: 0,
+    seaFogModifier: 0,
+    moonlessNightModifier: 0,
+    highWavesModifier: 0,
+    blackMarketRushGoodsValue: RULES_V06.roles.smuggler.goodsValue,
+  },
+};
+
 export function config(overrides: Partial<MatchConfig> = {}): MatchConfig {
-  return { seed: 42, players: FOUR_PLAYERS, ...overrides };
+  return { seed: 42, players: FOUR_PLAYERS, rules: NEUTRAL_EVENT_RULES, ...overrides };
 }
 
 export function unwrap<T>(result: { ok: true; value: T } | { ok: false; error: unknown }): T {
@@ -216,4 +247,14 @@ export function withAssets(state: MatchState, playerId: string, assets: readonly
     ...state,
     players: state.players.map((p) => (p.id === playerId ? { ...p, assets } : p)),
   };
+}
+
+/** Returns a copy of the state with this round's market event replaced. */
+export function withMarketEvent(state: MatchState, event: MarketEventId): MatchState {
+  return { ...state, roundState: { ...state.roundState, marketEvent: event } };
+}
+
+/** Returns a copy of the state whose next voyage card is the given event. */
+export function withNextVoyageEvent(state: MatchState, event: VoyageEventId): MatchState {
+  return { ...state, voyageDeck: [event, ...state.voyageDeck.slice(1)] };
 }

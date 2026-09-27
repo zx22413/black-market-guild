@@ -1,5 +1,6 @@
 import { chain, changeCash } from './cash';
 import { holds, incomeBonus, splitEvenly } from './economics';
+import { lootPool, salvagePayout } from './events';
 import { settleSmuggling, type Payment } from './smuggling';
 import type { AssetId, CashReason, MatchState, Ship, Step, VoyageOutcome } from './types';
 
@@ -54,8 +55,7 @@ function payPirateLoot(state: MatchState): Step {
       .filter((ship) => ship.outcome === 'sank')
       .flatMap((ship) => {
         const pirates = deployments.filter((d) => d.role === 'pirate' && d.targetShipId === ship.id);
-        // TODO(M6): the black-market bounty adds to the loot pool.
-        const each = pirates.length > 0 ? Math.floor(state.rules.roles.pirate.loot / pirates.length) : 0;
+        const each = pirates.length > 0 ? Math.floor(lootPool(state) / pirates.length) : 0;
         return [
           ...pay(
             pirates.map((d) => ({ playerId: d.playerId, amount: each })),
@@ -86,9 +86,7 @@ function payInsurance(state: MatchState): Step {
 
 /** Salvage pays per sunk ship of other players, capped per round (§8 打撈公司). */
 function paySalvage(state: MatchState): Step {
-  // TODO(M6): the salvage boom market event raises the payout.
-  const { payout, maxPayoutsPerRound } = state.rules.assets.salvage;
-  return payPerOtherShip(state, 'salvage', 'sank', payout, maxPayoutsPerRound);
+  return payPerOtherShip(state, 'salvage', 'sank', salvagePayout(state), state.rules.assets.salvage.maxPayoutsPerRound);
 }
 
 /** The exchange pays per arrived ship of other players, capped per round (§8 貿易交易所). */

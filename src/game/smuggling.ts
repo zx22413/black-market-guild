@@ -1,4 +1,5 @@
 import { baseIncome, splitEvenly } from './economics';
+import { smuggledGoodsValue } from './events';
 import type { MatchState, PlayerId, Ship } from './types';
 
 export interface Payment {
@@ -18,11 +19,6 @@ export interface SmugglingSettlement {
   readonly remainingBaseIncome: number;
 }
 
-function goodsValue(state: MatchState): number {
-  // TODO(M6): the black-market rush voyage event raises the goods value.
-  return state.rules.roles.smuggler.goodsValue;
-}
-
 /** Splits every stash evenly among the receivers, rounding each share down. */
 function shareStashes(receivers: readonly PlayerId[], stashes: number, value: number): Payment[] {
   const each = Math.floor(value / receivers.length) * stashes;
@@ -38,7 +34,7 @@ export function settleSmuggling(state: MatchState, ship: Ship): SmugglingSettlem
   if (smugglers.length === 0) {
     return none;
   }
-  const value = goodsValue(state);
+  const value = smuggledGoodsValue(state);
   if (ship.outcome === 'sank') {
     const pirates = onShip('pirate');
     return pirates.length > 0 ? { ...none, seizures: shareStashes(pirates, smugglers.length, value) } : none;
