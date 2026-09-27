@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 專案現況
 
-《黑市商會》（Black Market Guild）是 3～4 人（2 人模式規劃中）的商業、航運與心理博弈策略遊戲。技術棧為 **TypeScript + Vite（web）**，測試用 **Vitest**；目前只有專案骨架與 seeded RNG，尚未實作任何遊戲規則。日後桌面／Steam 以 Electron 或 Tauri 打包、手機以 Capacitor 打包（尚未設定）。
+《黑市商會》（Black Market Guild）是 3～4 人（2 人模式規劃中）的商業、航運與心理博弈策略遊戲。技術棧為 **TypeScript + Vite（web）**，測試用 **Vitest**；規則引擎依 [`docs/implementation-plan.md`](docs/implementation-plan.md) 的里程碑開發中，進度記錄在該文件。日後桌面／Steam 以 Electron 或 Tauri 打包、手機以 Capacitor 打包（尚未設定）。
 
 ## 指令
 
@@ -13,6 +13,7 @@ npm run dev                              # Vite 開發伺服器
 npm test                                 # 執行全部測試（vitest run）
 npx vitest run tests/game/rng.test.ts    # 執行單一測試檔
 npx vitest run -t "same seed"            # 依測試名稱篩選
+npm run test:coverage                    # 測試＋覆蓋率（src/game、src/bots、src/match，門檻 80%）
 npm run typecheck                        # 兩套 tsconfig 的型別檢查
 npm run build                            # typecheck + vite build
 ```
@@ -33,15 +34,15 @@ npm run build                            # typecheck + vite build
 
 ## 架構
 
-完整設計（座位／Controller、Match Runner、`PlayerView` 過濾、連線模式與待確認事項）見 [`docs/architecture.md`](docs/architecture.md)；實作 `src/match` 或引擎的公開介面前先讀它。規則引擎與呈現層分離，讓整局對局可由測試與 Bot 直接驅動：
+完整設計（座位／Controller、Match Runner、`PlayerView` 過濾、連線模式與待確認事項）見 [`docs/architecture.md`](docs/architecture.md)；實作 `src/match` 或引擎的公開介面前先讀它。規則引擎與呈現層分離，讓整局對局可由測試與 Bot 直接驅動。每個 `src/` 子目錄都有 `README.md` 說明職責、檔案與進度；新增或變更模組時一併更新：
 
-- `src/game/`：純規則引擎，公開介面集中在 `src/game/index.ts`。所有隨機性（航行骰、事件抽取）必須透過注入的 `Rng`（`src/game/rng.ts`，mulberry32）以確保可重現，不得直接呼叫 `Math.random()`。
-- `src/bots/`：Bot 策略，用於 MVP（1 名真人 + 2–3 名 Bot）與大量模擬以驗證平衡（見設計文件第 10 節的四個驗證問題）。
-- `src/match/`（尚未建立）：Match Runner 與 Controller 介面，座位上是真人、Bot 或遠端玩家由此層決定，引擎只認識 `PlayerId`。
+- `src/game/`：純規則引擎，公開介面集中在 `src/game/index.ts`（`createMatch`、`applyAction`、`getPendingDecisions`、`getLegalActions`、`getPlayerView`）。`flow.ts` 是回合狀態機：各決定階段收齊所有決定者的秘密提交才推進，無人需決定的階段自動跳過。行動合法性一律以 `getLegalActions` 列舉判定，補規則時擴充該列舉而非另寫驗證。所有規則數值集中在 `rules.ts`。所有隨機性必須透過 `MatchState.rng`（`rng.ts`，mulberry32，uint32 狀態）以確保可重現，不得直接呼叫 `Math.random()`；狀態必須可 JSON 往返，且不得修改傳入物件。
+- `src/bots/`：Bot 策略，用於 MVP（1 名真人 + 2–3 名 Bot）與大量模擬以驗證平衡（見設計文件第 11 節的四個驗證問題）。
+- `src/match/`（M7 實作）：Match Runner 與 Controller 介面，座位上是真人、Bot 或遠端玩家由此層決定，引擎只認識 `PlayerId`。
 - `src/ui/`：呈現層（`index.html` → `src/ui/main.ts`），只透過 `src/game/index.ts` 使用規則引擎。
 - `tests/`：鏡像 `src/` 的結構（如 `tests/game/*.test.ts`），測試需以固定 seed 保持可重現。
 
-**純度限制**：`tsconfig.engine.json` 只以 `lib: ES2022`、`types: []` 編譯 `src/game` 與 `src/bots`，因此這兩層使用 DOM 或 Node API 會在 `npm run typecheck` 時失敗；`tsconfig.json` 則涵蓋全部程式碼（含 DOM）。兩者共用 `tsconfig.base.json`（strict、`noUncheckedIndexedAccess`、`exactOptionalPropertyTypes`、`verbatimModuleSyntax`）。
+**純度限制**：`tsconfig.engine.json` 只以 `lib: ES2022`、`types: []` 編譯 `src/game`、`src/bots` 與 `src/match`，因此這三層使用 DOM 或 Node API 會在 `npm run typecheck` 時失敗；`tsconfig.json` 則涵蓋全部程式碼（含 DOM）。兩者共用 `tsconfig.base.json`（strict、`noUncheckedIndexedAccess`、`exactOptionalPropertyTypes`、`verbatimModuleSyntax`）。
 
 尚待驗證的平衡數值不要當成定案規則寫死。
 

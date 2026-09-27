@@ -70,7 +70,7 @@
 
 - 所有隨機性皆透過注入的 `Rng`（`src/game/rng.ts`），不得直接呼叫 `Math.random()`。
 - 以「初始 seed + 行動紀錄」即可完整重現一局，用於斷線重連、重播、bug 回報與平衡模擬。
-- `TODO`：決定 RNG 狀態如何保存於 `MatchState`，使狀態序列化後仍能從中斷處延續相同的亂數序列。
+- RNG 狀態為單一 uint32，保存於 `MatchState.rng`；狀態序列化後可從中斷處延續相同的亂數序列（見 `src/game/rng.ts`）。
 
 ## 5. 對局驅動
 

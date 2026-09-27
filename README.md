@@ -16,6 +16,7 @@
 npm install
 npm run dev        # 啟動開發伺服器
 npm test           # 執行測試
+npm run test:coverage  # 執行測試並檢查覆蓋率（門檻 80%）
 npm run typecheck  # 型別檢查（含規則引擎的純度檢查）
 npm run build      # 型別檢查並建置
 ```
@@ -33,6 +34,8 @@ npm run build      # 型別檢查並建置
 - [`docs/open-questions.md`](docs/open-questions.md)：待驗證／待確認清單；不是可供實作的規則來源。
 - [`docs/changelog.md`](docs/changelog.md)：V0.1～V0.6 的設計沿革與已否決／暫緩項目。
 - [`docs/architecture.md`](docs/architecture.md)：程式分層、座位與 Controller 設計、多種對局模式的驅動方式。
+- [`docs/implementation-plan.md`](docs/implementation-plan.md)：規則引擎的實作計畫、里程碑與進度。
+- 各模組說明：[`src/game`](src/game/README.md)（規則引擎）、[`src/match`](src/match/README.md)（Match Runner）、[`src/bots`](src/bots/README.md)（Bot）、[`src/ui`](src/ui/README.md)（瀏覽器 UI）。
 - [`AGENTS.md`](AGENTS.md)：供 AI Agent／Codex 遵循的開發規則。
 
 ## 開發原則
