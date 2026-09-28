@@ -19,8 +19,12 @@
 .hud-top-left {
   top: 16px;
   left: 16px;
-  flex-direction: column;
-  max-width: 260px;
+  align-items: flex-start;
+  max-width: calc(100% - 260px);
+}
+
+.hud-top-left .hud-event {
+  max-width: 280px;
 }
 
 .hud-top-right {
@@ -59,7 +63,6 @@
 }
 
 .hud-round {
-  align-self: flex-start;
   padding: 6px 14px;
   font-size: 1.1rem;
 }

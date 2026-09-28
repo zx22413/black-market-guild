@@ -1,10 +1,14 @@
+import { QuadraticBezierCurve3, Vector3 } from 'three';
 import type { AssetId } from '../../game';
 import type { ModelName } from './Model';
 
 export type Vec3 = readonly [number, number, number];
 
-/** Distance from the table center to each player's island. */
-export const SEAT_DISTANCE = 27;
+/**
+ * Island centers sit on an ellipse around the target island: wider than deep, so a
+ * landscape screen is used fully and the far island does not hide behind the target.
+ */
+export const SEAT_RADIUS = { x: 46, z: 34 } as const;
 export const TARGET_ISLAND_RADIUS = 8;
 export const PLAYER_ISLAND_RADIUS = 7;
 
@@ -17,13 +21,24 @@ export function seatAngles(count: number): number[] {
   return Array.from({ length: count }, (_, i) => front + (i * 2 * Math.PI) / count);
 }
 
-export function seatPosition(angle: number, distance = SEAT_DISTANCE): Vec3 {
-  return [Math.cos(angle) * distance, 0, Math.sin(angle) * distance];
+export function seatPosition(angle: number): Vec3 {
+  return [Math.cos(angle) * SEAT_RADIUS.x, 0, Math.sin(angle) * SEAT_RADIUS.z];
 }
 
-/** Y rotation that turns a model's +z axis toward the table center. */
-export function faceCenter(angle: number): number {
-  return -angle - Math.PI / 2;
+/** Curved lane at sea level from a guild's dock (t = 0) to the target island (t = 1). */
+export function laneCurve(angle: number, height = 0): QuadraticBezierCurve3 {
+  const home = new Vector3(...seatPosition(angle));
+  const outward = home.clone().normalize();
+  const start = home.clone().addScaledVector(outward, -(PLAYER_ISLAND_RADIUS + 3.5));
+  const end = outward.clone().multiplyScalar(TARGET_ISLAND_RADIUS + 3.5);
+  const bend = new Vector3(-outward.z, 0, outward.x).multiplyScalar(4);
+  const mid = start.clone().lerp(end, 0.5).add(bend);
+  return new QuadraticBezierCurve3(start.setY(height), mid.setY(height), end.setY(height));
+}
+
+/** Y rotation that points a model's +z axis along a direction on the sea. */
+export function headingOf(direction: Vector3): number {
+  return Math.atan2(direction.x, direction.z);
 }
 
 /** Placeholder building for each asset (Kenney Pirate Kit), in fixed lots on every island. */

@@ -6,7 +6,9 @@ import { Icon } from '../components/Icon';
 import { ASSET_LABELS, MARKET_EVENT_LABELS, ROLE_LABELS, VOYAGE_EVENT_LABELS } from '../labels';
 import { marketEventText, voyageEventText } from '../rulesText';
 import { PlayerIsland, TargetIsland, type SeatInfo } from './Islands';
-import { PLAYER_COLORS, seatAngles, seatPosition } from './layout';
+import { CameraRig, type FitPoint, type SafeArea } from './CameraRig';
+import { PLAYER_COLORS, PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatAngles, seatPosition } from './layout';
+import { Routes } from './Routes';
 import { LabelTracker, type LabelAnchor } from './ScreenLabels';
 import { Sea } from './Sea';
 import { PirateRaider, VoyageShip, type ShipState } from './Ships';
@@ -28,11 +30,35 @@ const SHIPS: readonly { readonly state: ShipState; readonly progress: number; re
 ];
 const MARKET_EVENT = 'black-market-bounty' as const;
 const ANGLES = seatAngles(SEATS.length);
+/** Keep the islands clear of the top event band and the bottom hand/action band. */
+const SAFE_AREA: SafeArea = { top: 92, bottom: 128, left: 24, right: 24 };
+const LABEL_HEIGHT = 9;
+/** The auto-framed camera sits farther than the weather presets assumed. */
+const FOG_SCALE = 1.8;
+const TARGET_LABEL_HEIGHT = 15;
+
+/** Island rims plus the name tags above them, used to frame the camera. */
+const FIT_POINTS: readonly FitPoint[] = [
+  ...[0, 1, 2, 3].map((i): FitPoint => {
+    const a = (i * Math.PI) / 2;
+    return { position: [Math.cos(a) * TARGET_ISLAND_RADIUS, 0, Math.sin(a) * TARGET_ISLAND_RADIUS] };
+  }),
+  { position: [0, TARGET_LABEL_HEIGHT, 0], clearance: 56 },
+  ...ANGLES.flatMap((angle, i): FitPoint[] => {
+    const [x, , z] = seatPosition(angle);
+    const rim = [0, 1, 2, 3].map((k): FitPoint => {
+      const a = (k * Math.PI) / 2;
+      return { position: [x + Math.cos(a) * (PLAYER_ISLAND_RADIUS + 1.5), 0, z + Math.sin(a) * (PLAYER_ISLAND_RADIUS + 1.5)] };
+    });
+    return SEATS[i]!.isViewer ? rim : [...rim, { position: [x, LABEL_HEIGHT, z], clearance: 80 }];
+  }),
+];
+
 const ANCHORS: readonly LabelAnchor[] = [
-  { id: 'target', position: [0, 15, 0] },
+  { id: 'target', position: [0, TARGET_LABEL_HEIGHT, 0] },
   ...SEATS.map((_, i): LabelAnchor => {
     const [x, , z] = seatPosition(ANGLES[i]!);
-    return { id: `seat-${i}`, position: [x, 9, z] };
+    return { id: `seat-${i}`, position: [x, LABEL_HEIGHT, z] };
   }),
 ];
 
@@ -49,7 +75,7 @@ function Table({ weather, onReady }: TableProps) {
   return (
     <>
       <color attach="background" args={[look.sky]} />
-      <fog attach="fog" args={[look.sky, look.fogNear, look.fogFar]} />
+      <fog attach="fog" args={[look.sky, look.fogNear * FOG_SCALE, look.fogFar * FOG_SCALE]} />
       <ambientLight intensity={look.ambient} />
       <hemisphereLight args={[look.sky, '#3a6b4a', 0.6]} />
       <directionalLight
@@ -58,12 +84,13 @@ function Table({ weather, onReady }: TableProps) {
         color={look.sunColor}
         castShadow
         shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-60}
-        shadow-camera-right={60}
-        shadow-camera-top={60}
-        shadow-camera-bottom={-60}
+        shadow-camera-left={-80}
+        shadow-camera-right={80}
+        shadow-camera-top={80}
+        shadow-camera-bottom={-80}
       />
       <Sea color={look.sea} />
+      <Routes angles={angles} colors={SEATS.map((seat) => seat.color)} />
       <TargetIsland />
       {SEATS.map((seat, i) => (
         <PlayerIsland key={seat.name} seat={seat} angle={angles[i]!} seed={i + 1} />
@@ -90,7 +117,8 @@ export function ScenePrototype() {
   };
   return (
     <div className="scene-root">
-      <Canvas shadows camera={{ position: [0, 64, 78], fov: 38 }} onCreated={({ camera }) => camera.lookAt(0, 0, 8)}>
+      <Canvas shadows camera={{ position: [0, 64, 78], fov: 38 }}>
+        <CameraRig points={FIT_POINTS} safe={SAFE_AREA} />
         <Suspense fallback={null}>
           <Table weather={weather} onReady={markReady} />
         </Suspense>

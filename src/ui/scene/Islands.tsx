@@ -1,6 +1,7 @@
 import type { AssetId } from '../../game';
 import { IslandBase } from './IslandBase';
-import { ASSET_BUILDINGS, PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, faceCenter, seatPosition } from './layout';
+import { ASSET_BUILDINGS, PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, headingOf, seatPosition } from './layout';
+import { Vector3 } from 'three';
 import { Model } from './Model';
 
 const PLATEAU = 2.6;
@@ -37,8 +38,9 @@ interface PlayerIslandProps {
 
 /** One guild's home island: dock toward the center, owned assets in fixed lots. */
 export function PlayerIsland({ seat, angle, seed }: PlayerIslandProps) {
+  const home = seatPosition(angle);
   return (
-    <group position={seatPosition(angle)} rotation={[0, faceCenter(angle), 0]}>
+    <group position={home} rotation={[0, headingOf(new Vector3(-home[0], 0, -home[2])), 0]}>
       <IslandBase radius={PLAYER_ISLAND_RADIUS} seed={seed} />
       <group position={[0, PLATEAU, 0]}>
         {seat.assets.map((asset) => {
