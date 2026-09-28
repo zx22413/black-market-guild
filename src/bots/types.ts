@@ -1,4 +1,4 @@
-import type { Action, PendingDecision, PlayerView } from '../game';
+import type { Action, MatchEvent, PendingDecision, PlayerView, PrivateEvent } from '../game';
 
 /**
  * Everything a bot may use to decide: the player's own view and the legal actions the
@@ -12,4 +12,8 @@ export interface DecisionContext {
 
 export interface Bot {
   decide(context: DecisionContext): Action;
+  /** Optional: public events, e.g. to remember who betrayed whom. */
+  onEvents?(events: readonly MatchEvent[]): void;
+  /** Optional: private events addressed to this bot's seat. */
+  onPrivateEvent?(event: PrivateEvent): void;
 }

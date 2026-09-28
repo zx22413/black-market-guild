@@ -1,4 +1,5 @@
 import { getPendingDecisions } from './decisions';
+import type { Rules } from './rules';
 import { ROLE_IDS } from './types';
 import type {
   Action,
@@ -36,6 +37,8 @@ export interface PublicPlayer {
  */
 export interface PlayerView {
   readonly playerId: PlayerId;
+  /** Rule numbers are public knowledge (costs, prices, modifiers). */
+  readonly rules: Rules;
   readonly round: number;
   readonly totalRounds: number;
   readonly phase: Phase;
@@ -68,6 +71,7 @@ export function getPlayerView(state: MatchState, playerId: PlayerId): PlayerView
   const { submissions } = state.roundState;
   return {
     playerId,
+    rules: state.rules,
     round: state.round,
     totalRounds: state.rules.rounds,
     phase: state.phase,

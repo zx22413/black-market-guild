@@ -115,7 +115,7 @@ describe('secret deployment and single reveal (game-design.md §4, §5 step 5)',
     expect(afterLock.phase).toBe('intel-reroll');
     const view = getPlayerView(afterLock, 'p4');
     expect(view.revealedRoles).toEqual([]);
-    expect(JSON.stringify(view)).not.toContain('pirate');
+    expect(JSON.stringify({ ...view, rules: null })).not.toContain('pirate');
     expect(getPlayerView(afterLock, 'p1').myDeployment).toEqual({ playerId: 'p1', role: 'pirate', targetShipId: 'r1-s2' });
   });
 
@@ -126,7 +126,7 @@ describe('secret deployment and single reveal (game-design.md §4, §5 step 5)',
     const p2View = getPlayerView(afterLock, 'p2');
     expect(p2View.myDeployment).toEqual({ playerId: 'p2', role: 'guard', targetShipId: 'r1-s2' });
     expect(p2View.revealedRoles).toEqual([]);
-    expect(JSON.stringify(p2View)).not.toContain('pirate');
+    expect(JSON.stringify({ ...p2View, rules: null })).not.toContain('pirate');
   });
 
   it('reveals roles in action order after the voyage event, each group followed by its fees', () => {

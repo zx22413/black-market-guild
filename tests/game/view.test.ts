@@ -27,6 +27,11 @@ describe('getPlayerView (architecture.md §4.3)', () => {
     ]);
   });
 
+  it('includes the public rule numbers so bots and UI can reason about costs', () => {
+    const { state } = startMatch();
+    expect(getPlayerView(state, 'p1').rules).toEqual(state.rules);
+  });
+
   it('hides rng state and deck order', () => {
     const view = getPlayerView(startMatch().state, 'p1') as unknown as Record<string, unknown>;
     expect(view).not.toHaveProperty('rng');

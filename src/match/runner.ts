@@ -158,7 +158,11 @@ export function replayMatch(setup: MatchSetup, actions: readonly Action[]): Omit
   return { events: recorder.events, privateEvents: recorder.privateEvents, finalState: recorder.state };
 }
 
-/** Wraps a synchronous bot as an async controller. */
+/** Wraps a synchronous bot as an async controller, forwarding its event listeners. */
 export function botController(bot: Bot): Controller {
-  return { decide: async (context) => bot.decide(context) };
+  return {
+    decide: async (context) => bot.decide(context),
+    ...(bot.onEvents ? { onEvents: (events: readonly MatchEvent[]) => bot.onEvents?.(events) } : {}),
+    ...(bot.onPrivateEvent ? { onPrivateEvent: (event: PrivateEvent) => bot.onPrivateEvent?.(event) } : {}),
+  };
 }
