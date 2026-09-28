@@ -151,19 +151,12 @@ describe('shipping insurance (game-design.md §8 航運保險)', () => {
   });
 
   it.each([
-    ['an insured guard cancels two pirates', ['insurance'], 4, 'arrived'],
-    ['an uninsured guard cancels only one of two pirates', [], 5, 'sank'],
+    ['an insured guard gives +2', ['insurance'], 2, 'arrived'],
+    ['an uninsured guard gives +1', [], 2, 'sank'],
   ] as const)('%s', (_label, guardAssets, roll, outcome) => {
     const { events } = playRound(
       startWith({ p2: guardAssets }),
-      {
-        solo: ['p1'],
-        deploy: {
-          p2: { role: 'guard', target: 'r1-s1' },
-          p3: { role: 'pirate', target: 'r1-s1' },
-          p4: { role: 'pirate', target: 'r1-s1' },
-        },
-      },
+      { solo: ['p1'], deploy: { p2: { role: 'guard', target: 'r1-s1' } } },
       { 'r1-s1': roll },
     );
     expect(events.find((e) => e.type === 'ship-resolved')).toMatchObject({ outcome });

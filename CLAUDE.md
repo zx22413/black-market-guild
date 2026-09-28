@@ -18,6 +18,7 @@ npm run typecheck                        # 兩套 tsconfig 的型別檢查
 npm run build                            # typecheck + vite build
 npm run match:log -- 42 4                # 隨機選擇跑一局並印出中文對局紀錄（scripts/print-match.ts）
 npm run simulate -- --matches 2000 --players 4 [--lineup a,b,c,d] [--seed 1]  # 策略 Bot 批量模擬，輸出 Markdown 平衡報表
+npm run simulate -- --summary --set roles.pirate.modifier=-1 --set roles.guard.fee=60  # 覆寫任意規則數值試算，只輸出一行關鍵指標（比較方案用）
 ```
 
 - 需要 Node.js 20.19 以上。TypeScript 為 7.x（原生編譯器）。

@@ -12,7 +12,10 @@ export function finalRoll(state: MatchState, ship: Ship): number {
   }
   const base = ship.rerolledRoll ?? ship.rawRoll;
   const modified =
-    base + activePirates(state, ship) * state.rules.roles.pirate.modifier + eventRollModifier(state, ship);
+    base +
+    guardRollModifier(state, ship) +
+    activePirates(state, ship) * state.rules.roles.pirate.modifier +
+    eventRollModifier(state, ship);
   const { dieMin, dieMax } = state.rules.sailing;
   return Math.min(dieMax, Math.max(dieMin, modified));
 }
@@ -35,6 +38,15 @@ export function activePirates(state: MatchState, ship: Ship): number {
       0,
     );
   return Math.max(0, pirates - cancelled);
+}
+
+/** Roll bonus from guards on the ship; 0 under V0.6, where guards only cancel pirates. */
+export function guardRollModifier(state: MatchState, ship: Ship): number {
+  const { guard } = state.rules.roles;
+  const { guardRollBonus } = state.rules.assets.insurance;
+  return state.roundState.deployments
+    .filter((d) => d.role === 'guard' && d.targetShipId === ship.id)
+    .reduce((sum, d) => sum + guard.rollModifier + (holds(state, d.playerId, 'insurance') ? guardRollBonus : 0), 0);
 }
 
 export function outcomeOf(state: MatchState, value: number): VoyageOutcome {

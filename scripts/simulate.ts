@@ -2,10 +2,13 @@
  * Runs many bot-only matches and prints a Markdown balance report.
  * Usage: npm run simulate -- [--matches 1000] [--players 4] [--seed 1]
  *        [--lineup balanced,cautious,aggressive,opportunist]
+ *        [--set roles.pirate.modifier=-1 ...] [--summary]
+ * `--set` overrides any numeric rule (repeatable) to test balance ideas without editing
+ * the rules; `--summary` prints one Markdown table row of key metrics instead of a report.
  * Seats rotate every match so each strategy plays every seat position.
  */
 import { BOT_STRATEGIES, type BotStrategy } from '../src/bots';
-import { RULES_V06, type MarketEventId } from '../src/game';
+import { RULES_V06, type MarketEventId, type Rules } from '../src/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../src/match';
 import { MARKET_EVENT_LABELS } from '../src/ui/labels';
 import { addMatch, emptyStats, type SeatRecord, type SimStats } from './sim-stats';
@@ -15,6 +18,29 @@ interface Options {
   readonly players: number;
   readonly seed: number;
   readonly lineup: readonly BotStrategy[];
+  readonly overrides: readonly string[];
+  readonly rules: Rules;
+  readonly summary: boolean;
+}
+
+/** Returns a copy of the rules with `path=value` numeric overrides applied. */
+function applyOverrides(base: Rules, overrides: readonly string[]): Rules {
+  const rules = JSON.parse(JSON.stringify(base)) as Record<string, unknown>;
+  for (const entry of overrides) {
+    const [path, raw] = entry.split('=');
+    const value = Number(raw);
+    const keys = (path ?? '').split('.');
+    const parent = keys.slice(0, -1).reduce<Record<string, unknown> | undefined>(
+      (node, key) => node?.[key] as Record<string, unknown> | undefined,
+      rules,
+    );
+    const leaf = keys.at(-1)!;
+    if (parent === undefined || typeof parent[leaf] !== 'number' || Number.isNaN(value)) {
+      throw new Error(`invalid override "${entry}": expected an existing numeric rule path=number`);
+    }
+    parent[leaf] = value;
+  }
+  return rules as unknown as Rules;
 }
 
 function parseOptions(): Options {
@@ -23,6 +49,7 @@ function parseOptions(): Options {
     const i = argv.indexOf(`--${name}`);
     return i >= 0 ? argv[i + 1] : undefined;
   };
+  const overrides = argv.flatMap((arg, i) => (arg === '--set' && argv[i + 1] ? [argv[i + 1]!] : []));
   const lineup = (get('lineup') ?? 'balanced,cautious,aggressive,opportunist').split(',') as BotStrategy[];
   const unknown = lineup.filter((s) => !(BOT_STRATEGIES as readonly string[]).includes(s));
   if (unknown.length > 0) {
@@ -33,6 +60,9 @@ function parseOptions(): Options {
     players: Number.parseInt(get('players') ?? '4', 10),
     seed: Number.parseInt(get('seed') ?? '1', 10),
     lineup,
+    overrides,
+    rules: applyOverrides(RULES_V06, overrides),
+    summary: argv.includes('--summary'),
   };
   if (![options.matches, options.players, options.seed].every(Number.isInteger)) {
     throw new Error('--matches, --players and --seed must be integers');
@@ -51,7 +81,7 @@ function run(options: Options): SimStats {
   const stats = emptyStats();
   for (let i = 0; i < options.matches; i += 1) {
     const seats = seatsFor(options, i);
-    const setup = setupFromSeats({ seed: options.seed + i, seats, rules: RULES_V06 });
+    const setup = setupFromSeats({ seed: options.seed + i, seats, rules: options.rules });
     const log = runMatchSync(setup, setup.bots);
     const records: SeatRecord[] = setup.players.map((p, k) => ({
       playerId: p.id,
@@ -77,7 +107,7 @@ function report(options: Options, s: SimStats): string {
   const lines: string[] = [
     `# 黑市商會 模擬報表`,
     '',
-    `- 規則：${RULES_V06.version}（完整規則）`,
+    `- 規則：${RULES_V06.version}（完整規則）${options.overrides.length > 0 ? `，覆寫：${options.overrides.join('、')}` : ''}`,
     `- 對局數：${s.matches}；人數：${options.players}；起始 seed：${options.seed}；玩家回合數：${s.playerRounds}`,
     `- 陣容（每局輪換座位）：${options.lineup.join('、')}`,
     '',
@@ -153,5 +183,28 @@ function report(options: Options, s: SimStats): string {
   return lines.join('\n');
 }
 
+/** One table row: label, arrival, voyages, role shares, pirate net, win-rate spread, assets. */
+function summaryRow(options: Options, s: SimStats): string {
+  const allShips = [...s.ships.values()].reduce((acc, m) => acc + sum(m), 0);
+  const arrived = [...s.ships.values()].reduce((acc, m) => acc + (m.get('arrived') ?? 0), 0);
+  const roles = new Map<string, number>();
+  s.roles.forEach((m) => m.forEach((v, k) => roles.set(k, (roles.get(k) ?? 0) + v)));
+  const roleTotal = sum(roles);
+  const winRates = [...new Set(options.lineup)].map((st) => (s.wins.get(st) ?? 0) / Math.max(1, s.seatsPlayed.get(st) ?? 0));
+  const pirateNet = (s.pirateNet - s.pirateDeployments * options.rules.roles.pirate.fee) / Math.max(1, s.pirateDeployments);
+  return `| ${options.overrides.join(' ') || '現行規則'} | ${pct(arrived, allShips)} | ${pct(s.voyages.get('joint') ?? 0, sum(s.voyages))} | ${[
+    'none',
+    'intel',
+    'guard',
+    'pirate',
+    'smuggler',
+  ]
+    .map((r) => pct(roles.get(r) ?? 0, roleTotal))
+    .join(' | ')} | ${pirateNet.toFixed(0)} | ${(100 * Math.min(...winRates)).toFixed(1)}–${(100 * Math.max(...winRates)).toFixed(1)}% | ${mean(
+    [...s.assetsHeld.values()].flat(),
+  ).toFixed(2)} |`;
+}
+
 const options = parseOptions();
-console.log(report(options, run(options)));
+const stats = run(options);
+console.log(options.summary ? summaryRow(options, stats) : report(options, stats));

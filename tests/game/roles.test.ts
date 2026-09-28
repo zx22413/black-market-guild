@@ -246,15 +246,15 @@ describe('intel merchant (game-design.md §7 情報商人)', () => {
 
 describe('guards and pirates (game-design.md §7 修正順序)', () => {
   it.each([
-    ['a guard alone does not raise the roll', { p2: { role: 'guard', target: 'r1-s1' } }, 3, 'sank'],
-    ['two guards alone still do not raise the roll', { p2: { role: 'guard', target: 'r1-s1' }, p3: { role: 'guard', target: 'r1-s1' } }, 3, 'sank'],
-    ['pirate −2 sinks a 5', { p2: { role: 'pirate', target: 'r1-s1' } }, 5, 'sank'],
-    ['pirate −2 spares a 6', { p2: { role: 'pirate', target: 'r1-s1' } }, 6, 'arrived'],
-    ['two pirates sink a 6', { p2: { role: 'pirate', target: 'r1-s1' }, p3: { role: 'pirate', target: 'r1-s1' } }, 6, 'sank'],
-    ['a guard cancels a pirate (4 arrives)', { p2: { role: 'guard', target: 'r1-s1' }, p3: { role: 'pirate', target: 'r1-s1' } }, 4, 'arrived'],
-    ['a guard cancels a pirate (3 still sinks)', { p2: { role: 'guard', target: 'r1-s1' }, p3: { role: 'pirate', target: 'r1-s1' } }, 3, 'sank'],
-    ['one guard cancels only one of two pirates', { p2: { role: 'guard', target: 'r1-s1' }, p3: { role: 'pirate', target: 'r1-s1' }, p4: { role: 'pirate', target: 'r1-s1' } }, 5, 'sank'],
-    ['a guard on another ship does not help', { p2: { role: 'guard', target: 'r1-s2' }, p3: { role: 'pirate', target: 'r1-s1' } }, 5, 'sank'],
+    ['guard +1 lifts a 3', { p2: { role: 'guard', target: 'r1-s1' } }, 3, 'arrived'],
+    ['two guards stack to +2 and lift a 2', { p2: { role: 'guard', target: 'r1-s1' }, p3: { role: 'guard', target: 'r1-s1' } }, 2, 'arrived'],
+    ['pirate −1 sinks a 4', { p2: { role: 'pirate', target: 'r1-s1' } }, 4, 'sank'],
+    ['pirate −1 spares a 5', { p2: { role: 'pirate', target: 'r1-s1' } }, 5, 'arrived'],
+    ['two pirates stack to −2 and sink a 5', { p2: { role: 'pirate', target: 'r1-s1' }, p3: { role: 'pirate', target: 'r1-s1' } }, 5, 'sank'],
+    ['guard and pirate cancel out (4 arrives)', { p2: { role: 'guard', target: 'r1-s1' }, p3: { role: 'pirate', target: 'r1-s1' } }, 4, 'arrived'],
+    ['guard and pirate cancel out (3 sinks)', { p2: { role: 'guard', target: 'r1-s1' }, p3: { role: 'pirate', target: 'r1-s1' } }, 3, 'sank'],
+    ['one guard against two pirates nets −1', { p2: { role: 'guard', target: 'r1-s1' }, p3: { role: 'pirate', target: 'r1-s1' }, p4: { role: 'pirate', target: 'r1-s1' } }, 4, 'sank'],
+    ['a guard on another ship does not help', { p2: { role: 'guard', target: 'r1-s2' }, p3: { role: 'pirate', target: 'r1-s1' } }, 4, 'sank'],
   ] as const)('%s', (_label, deploy, roll, outcome) => {
     const { events } = playRound({ ...ALL_SOLO, deploy }, { 'r1-s1': roll });
     expect(outcomeOf(events, 'r1-s1')).toMatchObject({ outcome });
@@ -279,7 +279,7 @@ describe('pirate loot (game-design.md §7 海盜)', () => {
   ])('splits the loot among %i pirates, rounding down to %i G each', (count, each) => {
     const pirates = ['p1', 'p2', 'p3', 'p4'].slice(0, count);
     const deploy = Object.fromEntries(pirates.map((p) => [p, { role: 'pirate' as const, target: 'r1-s1' }]));
-    const { events } = playRound({ ...ALL_SOLO, deploy }, { 'r1-s1': 6 });
+    const { events } = playRound({ ...ALL_SOLO, deploy }, { 'r1-s1': 4 });
     expect(lootEvents(events).map((e) => e.type === 'cash-changed' && [e.playerId, e.amount])).toEqual(
       pirates.map((p) => [p, each]),
     );
@@ -301,7 +301,7 @@ describe('pirate loot (game-design.md §7 海盜)', () => {
       pick: { p1: 'p2' },
       deploy: { p2: { role: 'pirate', target: 'r1-s1' } },
     };
-    const { state, events } = playRound(script, { 'r1-s1': 5 });
+    const { state, events } = playRound(script, { 'r1-s1': 4 });
     expect(outcomeOf(events, 'r1-s1')).toMatchObject({ outcome: 'sank' });
     // p2: 1000 - 100 share - 100 pirate fee + 150 loot; p1: 1000 - 100 share
     expect([cashOf(state, 'p1'), cashOf(state, 'p2')]).toEqual([900, 950]);
@@ -370,9 +370,9 @@ describe('smuggling (game-design.md §7 走私結算)', () => {
         p1: { role: 'pirate', target: 'r1-s1' },
         p4: { role: 'pirate', target: 'r1-s1' },
       }),
-      { 'r1-s1': 5 },
+      { 'r1-s1': 4 },
     );
-    // one guard cancels one of two pirates: 5 - 2 = 3 sinks
+    // one guard (+1) against two pirates (−2): 4 - 1 = 3 sinks
     expect(outcomeOf(events, 'r1-s1')).toMatchObject({ outcome: 'sank' });
     expect(gains(events, 'smuggling-confiscated')).toEqual([]);
     expect(gains(events, 'pirate-loot')).toEqual([
@@ -446,5 +446,59 @@ describe('payout order (game-design.md §5 step 6)', () => {
     const { events } = playRound(script, { 'r1-s1': 6, 'r1-s3': 1 });
     const reasons = events.flatMap((e) => (e.type === 'cash-changed' && e.amount > 0 ? [e.reason] : []));
     expect(reasons).toEqual(['smuggling', 'shipping-income', 'shipping-income', 'pirate-loot']);
+  });
+});
+
+describe('guard and pirate parameters for balance experiments', () => {
+  const additive = {
+    ...NEUTRAL_EVENT_RULES,
+    roles: {
+      ...NEUTRAL_EVENT_RULES.roles,
+      guard: { fee: 50, piratesCancelled: 0, rollModifier: 1 },
+      pirate: { ...NEUTRAL_EVENT_RULES.roles.pirate, modifier: -1 },
+    },
+  };
+
+  function playWith(rules: typeof additive, deploy: NonNullable<Script['deploy']>, roll: number) {
+    const start = startMatch({ rules });
+    const script: Script = { ...ALL_SOLO, deploy };
+    const toDeploy = playUntil(start.state, atPhase('role-deployment', 1), scripted(script));
+    const { events } = playUntil(withRawRolls(toDeploy.state, { 'r1-s1': roll }), (s) => s.round !== 1, scripted(script));
+    return outcomeOf(events, 'r1-s1');
+  }
+
+  it.each([
+    ['a +1 guard lifts a 3', { p2: { role: 'guard', target: 'r1-s1' } }, 3, 'arrived'],
+    ['a −1 pirate sinks a 4', { p2: { role: 'pirate', target: 'r1-s1' } }, 4, 'sank'],
+    ['guard +1 and pirate −1 cancel out', { p2: { role: 'guard', target: 'r1-s1' }, p3: { role: 'pirate', target: 'r1-s1' } }, 3, 'sank'],
+  ] as const)('%s', (_label, deploy, roll, expected) => {
+    expect(playWith(additive, deploy, roll)).toMatchObject({ outcome: expected });
+  });
+
+  it('still supports guards that only cancel pirates, for experiments', () => {
+    const cancelling = {
+      ...NEUTRAL_EVENT_RULES,
+      roles: {
+        ...NEUTRAL_EVENT_RULES.roles,
+        guard: { fee: 50, piratesCancelled: 1, rollModifier: 0 },
+        pirate: { ...NEUTRAL_EVENT_RULES.roles.pirate, modifier: -2 },
+      },
+    };
+    expect(playWith(cancelling, { p2: { role: 'guard', target: 'r1-s1' } }, 3)).toMatchObject({ outcome: 'sank' });
+    expect(
+      playWith(cancelling, { p2: { role: 'guard', target: 'r1-s1' }, p3: { role: 'pirate', target: 'r1-s1' } }, 4),
+    ).toMatchObject({ outcome: 'arrived' });
+  });
+
+  it('adds the insurance guard roll bonus to the holder\'s guard', () => {
+    const insured = {
+      ...additive,
+      assets: { ...additive.assets, insurance: { ...additive.assets.insurance, guardRollBonus: 1 } },
+    };
+    const start = withAssets(startMatch({ rules: insured }).state, 'p2', ['insurance']);
+    const script: Script = { ...ALL_SOLO, deploy: { p2: { role: 'guard', target: 'r1-s1' } } };
+    const toDeploy = playUntil(start, atPhase('role-deployment', 1), scripted(script));
+    const { events } = playUntil(withRawRolls(toDeploy.state, { 'r1-s1': 2 }), (s) => s.round !== 1, scripted(script));
+    expect(outcomeOf(events, 'r1-s1')).toMatchObject({ outcome: 'arrived' });
   });
 });

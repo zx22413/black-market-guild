@@ -14,6 +14,16 @@ export function arriveChance(rules: Rules, modifier: number): number {
   return hits / (dieMax - dieMin + 1);
 }
 
+/**
+ * Arrival chance with the given number of guards and pirates on a ship, applying the rule
+ * numbers generically (guards cancel pirates and/or add to the roll).
+ */
+export function arriveWith(view: PlayerView, guards: number, pirates: number): number {
+  const { guard, pirate } = view.rules.roles;
+  const active = Math.max(0, pirates - guards * guard.piratesCancelled);
+  return arriveChance(view.rules, marketModifier(view) + guards * guard.rollModifier + active * pirate.modifier);
+}
+
 /** Known roll modifier from this round's market event; voyage events are still hidden. */
 export function marketModifier(view: PlayerView): number {
   return view.marketEvent === 'sea-danger-warning' ? view.rules.marketEvents.seaDangerWarningModifier : 0;

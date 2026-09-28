@@ -21,8 +21,11 @@ export interface Rules {
   readonly jointShip: { readonly cost: number; readonly income: number };
   readonly roles: {
     readonly intel: { readonly fee: number };
-    /** Each guard cancels this many pirates on its target; it never raises the roll. */
-    readonly guard: { readonly fee: number; readonly piratesCancelled: number };
+    /**
+     * Each guard cancels `piratesCancelled` pirates on its target and adds `rollModifier` to the
+     * roll. V0.6 uses 0 and +1 (guards add to the roll); cancelling is kept for balance experiments.
+     */
+    readonly guard: { readonly fee: number; readonly piratesCancelled: number; readonly rollModifier: number };
     readonly pirate: { readonly fee: number; readonly modifier: number; readonly loot: number };
     /** Smuggled goods value; taken from a joint ship's base income on arrival. */
     readonly smuggler: { readonly fee: number; readonly goodsValue: number };
@@ -35,6 +38,8 @@ export interface Rules {
       readonly maxPayoutsPerRound: number;
       /** Pirates cancelled by the holder's guard (instead of the normal guard value). */
       readonly guardPiratesCancelled: number;
+      /** Extra roll modifier for the holder's guard (+1 in V0.6). */
+      readonly guardRollBonus: number;
     };
     readonly salvage: { readonly price: number; readonly payout: number; readonly maxPayoutsPerRound: number };
     readonly exchange: {
@@ -77,14 +82,14 @@ export const RULES_V06: Rules = {
   roles: {
     // §7
     intel: { fee: 50 },
-    guard: { fee: 50, piratesCancelled: 1 },
-    pirate: { fee: 100, modifier: -2, loot: 150 },
+    guard: { fee: 50, piratesCancelled: 0, rollModifier: 1 },
+    pirate: { fee: 100, modifier: -1, loot: 150 },
     smuggler: { fee: 0, goodsValue: 300 },
   },
   assets: {
     // §8
     shipyard: { price: 300, costReduction: 50 },
-    insurance: { price: 300, payout: 150, maxPayoutsPerRound: 1, guardPiratesCancelled: 2 },
+    insurance: { price: 300, payout: 150, maxPayoutsPerRound: 1, guardPiratesCancelled: 0, guardRollBonus: 1 },
     salvage: { price: 400, payout: 60, maxPayoutsPerRound: 2 },
     exchange: { price: 400, payout: 40, maxPayoutsPerRound: 2, jointIncomeBonus: 100 },
   },

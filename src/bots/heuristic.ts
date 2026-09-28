@@ -1,7 +1,7 @@
 import { createRng, type Action, type MatchEvent, type PlayerId, type PlayerView, type PublicShip } from '../game';
 import { choose, type Scored } from './choose';
 import {
-  arriveChance,
+  arriveWith,
   cashOf,
   holds,
   jointValue,
@@ -139,9 +139,9 @@ function roleScore(scope: Scope, action: Extract<Action, { type: 'deploy-role' }
   }
   const o = outlook(scope, ship);
   const { rules } = view;
-  const mod = marketModifier(view);
-  const base = arriveChance(rules, mod);
-  const underAttack = arriveChance(rules, mod + rules.roles.pirate.modifier);
+  const base = arriveWith(view, 0, 0);
+  const underAttack = arriveWith(view, 0, 1);
+  const attackChance = Math.min(1, o.attackers);
   const fee = rules.roles[action.role].fee;
   const goods = rules.roles.smuggler.goodsValue;
   switch (action.role) {
@@ -150,11 +150,13 @@ function roleScore(scope: Scope, action: Extract<Action, { type: 'deploy-role' }
       return (o.mine ? 0.25 * o.myShare : salvage) - fee;
     }
     case 'guard': {
-      const protection = o.mine ? Math.min(1, o.attackers) * (base - underAttack) * o.myShare : 0;
+      const lift =
+        attackChance * (arriveWith(view, 1, 1) - underAttack) + (1 - attackChance) * (arriveWith(view, 1, 0) - base);
+      const protection = o.mine ? lift * o.myShare : 0;
       return protection + o.smuggleChance * goods * base - fee;
     }
     case 'pirate': {
-      const sinkChance = o.guardChance * (1 - base) + (1 - o.guardChance) * (1 - underAttack);
+      const sinkChance = o.guardChance * (1 - arriveWith(view, 1, 1)) + (1 - o.guardChance) * (1 - underAttack);
       const gain = sinkChance * (lootPool(view) + o.smuggleChance * goods) - fee;
       if (!o.mine) {
         return gain + (p.aggression - 1) * 50;
@@ -165,7 +167,7 @@ function roleScore(scope: Scope, action: Extract<Action, { type: 'deploy-role' }
     case 'smuggler': {
       const partner = ship.owners.find((id) => id !== self) ?? self;
       const caught = scope.memory.guardOwnShipRate(partner, 0.3);
-      const arrive = arriveChance(rules, mod + rules.roles.pirate.modifier * Math.min(1, o.attackers));
+      const arrive = attackChance * underAttack + (1 - attackChance) * base;
       return (1 - caught) * arrive * (goods / 2) * p.smuggling - fee - 20;
     }
   }

@@ -80,7 +80,7 @@ describe('market events (game-design.md §9)', () => {
       count === 1
         ? { p4: { role: 'pirate' as const, target: 'r1-s2' } }
         : { p1: { role: 'pirate' as const, target: 'r1-s2' }, p4: { role: 'pirate' as const, target: 'r1-s2' } };
-    const { events } = playRound({ ...JOINT_AND_SOLO, deploy }, { market: 'black-market-bounty', rolls: { 'r1-s2': 5 } });
+    const { events } = playRound({ ...JOINT_AND_SOLO, deploy }, { market: 'black-market-bounty', rolls: { 'r1-s2': 4 } });
     expect(outcome(events, 'r1-s2')).toMatchObject({ outcome: 'sank' });
     expect(gains(events, 'pirate-loot')).toEqual(expected);
   });
@@ -117,31 +117,33 @@ describe('voyage events (game-design.md §10)', () => {
   it('sea fog gives +1 once to ships targeted by pirates, even when several pirates target it', () => {
     const one = playRound(
       { solo: ['p1', 'p2'], deploy: { p3: { role: 'pirate', target: 'r1-s1' } } },
-      { voyage: 'sea-fog', rolls: { 'r1-s1': 5, 'r1-s2': 3 } },
+      { voyage: 'sea-fog', rolls: { 'r1-s1': 4, 'r1-s2': 3 } },
     );
-    // 5 - 2 + 1 = 4 arrives; the untargeted ship gets no bonus
+    // 4 - 1 + 1 = 4 arrives; the untargeted ship gets no bonus
     expect(outcome(one.events, 'r1-s1')).toMatchObject({ outcome: 'arrived' });
     expect(outcome(one.events, 'r1-s2')).toMatchObject({ outcome: 'sank' });
     const two = playRound(
       { solo: ['p1'], deploy: { p3: { role: 'pirate', target: 'r1-s1' }, p4: { role: 'pirate', target: 'r1-s1' } } },
-      { voyage: 'sea-fog', rolls: { 'r1-s1': 6 } },
+      { voyage: 'sea-fog', rolls: { 'r1-s1': 4 } },
     );
-    // 6 - 4 + 1 = 3 sinks
+    // 4 - 2 + 1 = 3 sinks: the fog counts once
     expect(outcome(two.events, 'r1-s1')).toMatchObject({ outcome: 'sank' });
   });
 
   it('moonless night gives −1 once to ships targeted by guards', () => {
-    const { events } = playRound(
+    const two = playRound(
       { solo: ['p1', 'p2'], deploy: { p3: { role: 'guard', target: 'r1-s1' }, p4: { role: 'guard', target: 'r1-s1' } } },
-      { voyage: 'moonless-night', rolls: { 'r1-s1': 5, 'r1-s2': 4 } },
+      { voyage: 'moonless-night', rolls: { 'r1-s1': 3, 'r1-s2': 4 } },
     );
-    expect(outcome(events, 'r1-s1')).toMatchObject({ outcome: 'arrived' });
+    // 3 + 2 - 1 = 4 arrives: the penalty counts once; the unguarded ship is unaffected
+    expect(outcome(two.events, 'r1-s1')).toMatchObject({ outcome: 'arrived' });
+    expect(outcome(two.events, 'r1-s2')).toMatchObject({ outcome: 'arrived' });
     const single = playRound(
       { solo: ['p1'], deploy: { p3: { role: 'guard', target: 'r1-s1' } } },
-      { voyage: 'moonless-night', rolls: { 'r1-s1': 4 } },
+      { voyage: 'moonless-night', rolls: { 'r1-s1': 3 } },
     );
+    // 3 + 1 - 1 = 3 sinks
     expect(outcome(single.events, 'r1-s1')).toMatchObject({ outcome: 'sank' });
-    expect(outcome(events, 'r1-s2')).toMatchObject({ outcome: 'arrived' });
   });
 
   it('high waves give −1 to solo ships only', () => {
@@ -177,7 +179,7 @@ describe('event stacking (game-design.md §10 事件修正的疊加)', () => {
       { solo: ['p1'], deploy: { p2: { role: 'pirate', target: 'r1-s1' } } },
       { voyage: 'tailwind', rolls: { 'r1-s1': 5 } },
     );
-    // 5 - 2 + 1 = 4 arrives
+    // 5 - 1 + 1 = 5 arrives
     expect(outcome(events, 'r1-s1')).toMatchObject({ outcome: 'arrived' });
   });
 
