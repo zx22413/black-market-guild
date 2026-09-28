@@ -161,7 +161,7 @@ function report(options: Options, s: SimStats): string {
     `- 海盜：共 ${s.pirateDeployments} 次，目標沉沒率 ${pct(s.pirateSinks, s.pirateDeployments)}；攻擊自己的合資船（背叛）${s.betrayals} 次；每次平均淨收益 ${(
       (s.pirateNet - s.pirateDeployments * RULES_V06.roles.pirate.fee) / Math.max(1, s.pirateDeployments)
     ).toFixed(0)} G。`,
-    `- 走私：合資船東選擇走私的比例 ${pct(sum(s.smuggling), s.jointOwnerRounds)}；結局：取走 ${s.smuggling.get('taken') ?? 0}、被查獲 ${
+    `- 走私：佔所有玩家回合 ${pct(sum(s.smuggling), s.playerRounds)}；結局：取走 ${s.smuggling.get('taken') ?? 0}、被查獲 ${
       s.smuggling.get('confiscated') ?? 0
     }、被搶 ${s.smuggling.get('seized') ?? 0}、沉沒 ${s.smuggling.get('lost') ?? 0}。`,
     '',

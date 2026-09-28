@@ -1,4 +1,4 @@
-import { baseIncome, splitEvenly } from './economics';
+import { baseIncome } from './economics';
 import { smuggledGoodsValue } from './events';
 import type { MatchState, PlayerId, Ship } from './types';
 
@@ -44,7 +44,8 @@ export function settleSmuggling(state: MatchState, ship: Ship): SmugglingSettlem
     return { ...none, confiscations: shareStashes(inspectors, smugglers.length, value) };
   }
   const total = value * smugglers.length;
-  const take = total <= base ? value : splitEvenly(base, smugglers.length);
+  // Overflow is split evenly, rounded down like pirate loot (three stashes can exceed a joint ship's income).
+  const take = total <= base ? value : Math.floor(base / smugglers.length);
   return {
     ...none,
     takes: smugglers.map((playerId) => ({ playerId, amount: take })),

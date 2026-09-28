@@ -1,3 +1,4 @@
+import { chain, changeCash } from './cash';
 import { drawCard } from './decks';
 import { getDeciders } from './decisions';
 import { settlePayouts } from './payouts';
@@ -63,12 +64,32 @@ function finishRound(
     const next = openRound(state, state.round + 1);
     return { state: next.state, events: [...ended, ...next.events], privateEvents };
   }
-  const result = computeResult(state.players, state.rules);
+  const revealed = revealBlackMoney(state);
+  const result = computeResult(revealed.state.players, state.rules);
   return {
-    state: { ...state, phase: 'game-over', result },
-    events: [...ended, { type: 'match-ended', result }],
+    state: { ...revealed.state, phase: 'game-over', result },
+    events: [...ended, ...revealed.events, { type: 'match-ended', result }],
     privateEvents,
   };
+}
+
+/** Adds every player's secret black money to cash when the match ends (anonymous smuggling). */
+function revealBlackMoney(state: MatchState): Step {
+  return chain(
+    state,
+    state.players
+      .filter((p) => p.blackMoney > 0)
+      .map((p) => (current: MatchState) => {
+        const revealed = changeCash(current, p.id, p.blackMoney, 'black-money', null);
+        return {
+          ...revealed,
+          state: {
+            ...revealed.state,
+            players: revealed.state.players.map((x) => (x.id === p.id ? { ...x, blackMoney: 0 } : x)),
+          },
+        };
+      }),
+  );
 }
 
 /** Runs the round sequence from `index`, stopping at the first phase that needs decisions. */
@@ -111,7 +132,7 @@ export function openRound(base: Omit<MatchState, 'roundState'>, round: number): 
       voyageEvent: null,
       submissions: {},
       ships: [],
-      recruitment: { recruiters: [], applications: [], ventures: [] },
+      recruitment: { recruiters: [], withdrawn: [], applications: [], ventures: [] },
       deployments: [],
       rolesRevealed: false,
     },

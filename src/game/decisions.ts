@@ -4,16 +4,19 @@ import { ASSET_IDS, ROLE_IDS, type Action, type DecisionPhase, type MatchState, 
 /** Players who must make a decision in the given phase this round. */
 export function getDeciders(state: MatchState, phase: DecisionPhase): PlayerId[] {
   const everyone = state.players.map((p) => p.id);
-  const { recruiters, applications } = state.roundState.recruitment;
+  const { recruiters } = state.roundState.recruitment;
+  const recruitersMayApply = state.rules.recruitment.recruitersMayApply === 1;
   switch (phase) {
     case 'asset-purchase':
     case 'recruit':
     case 'role-deployment':
       return everyone;
     case 'apply':
-      return recruiters.length > 0 ? everyone.filter((id) => !recruiters.includes(id)) : [];
+      return recruiters.length === 0
+        ? []
+        : everyone.filter((id) => !recruiters.includes(id) || (recruitersMayApply && recruiters.length > 1));
     case 'pick':
-      return recruiters.filter((id) => applications.some((a) => a.recruiterId === id));
+      return openRecruiters(state).filter((id) => validApplicants(state, id).length > 0);
     case 'sailing-choice': {
       const aboard = new Set(state.roundState.ships.flatMap((ship) => ship.owners));
       return everyone.filter((id) => !aboard.has(id));
@@ -72,12 +75,18 @@ function deployOptions(state: MatchState, playerId: PlayerId): Action[] {
   const cash = cashOf(state, playerId);
   const { ships } = state.roundState;
   const ownJointShip = ships.find((ship) => ship.kind === 'joint' && ship.owners.includes(playerId));
+  const smugglerTargets =
+    state.rules.roles.smuggler.anonymous === 1
+      ? ships.filter((ship) => !(ship.kind === 'solo' && ship.owners.includes(playerId)))
+      : ownJointShip
+        ? [ownJointShip]
+        : [];
   const options: Action[] = [{ type: 'deploy-role', playerId, role: null, targetShipId: null }];
   for (const role of ROLE_IDS) {
     if (cash < state.rules.roles[role].fee) {
       continue;
     }
-    const targets = role === 'smuggler' ? (ownJointShip ? [ownJointShip] : []) : ships;
+    const targets = role === 'smuggler' ? smugglerTargets : ships;
     targets.forEach((ship) => options.push({ type: 'deploy-role', playerId, role, targetShipId: ship.id }));
   }
   return options;
@@ -110,7 +119,7 @@ function recruitOptions(state: MatchState, playerId: PlayerId): Action[] {
 function applyOptions(state: MatchState, playerId: PlayerId): Action[] {
   const cash = cashOf(state, playerId);
   const affordable = state.roundState.recruitment.recruiters.filter(
-    (recruiterId) => cash >= applicantShare(state, playerId, recruiterId),
+    (recruiterId) => recruiterId !== playerId && cash >= applicantShare(state, playerId, recruiterId),
   );
   return [
     { type: 'apply', playerId, recruiterId: null },
@@ -120,9 +129,7 @@ function applyOptions(state: MatchState, playerId: PlayerId): Action[] {
 
 /** A recruiter picks at most one of their own applicants. */
 function pickOptions(state: MatchState, playerId: PlayerId): Action[] {
-  const applicants = state.roundState.recruitment.applications
-    .filter((a) => a.recruiterId === playerId)
-    .map((a) => a.applicantId);
+  const applicants = validApplicants(state, playerId);
   return [
     { type: 'pick', playerId, applicantId: null },
     ...applicants.map((applicantId): Action => ({ type: 'pick', playerId, applicantId })),
@@ -135,6 +142,25 @@ function sailingOptions(state: MatchState, playerId: PlayerId): Action[] {
   return cashOf(state, playerId) >= soloCost(state, playerId)
     ? [stay, { type: 'choose-sailing', playerId, choice: 'solo' }]
     : [stay];
+}
+
+function aboard(state: MatchState): Set<PlayerId> {
+  return new Set(state.roundState.ships.flatMap((ship) => ship.owners));
+}
+
+/** Recruiters whose recruitment is still open: not withdrawn and not already in a venture. */
+function openRecruiters(state: MatchState): PlayerId[] {
+  const { recruiters, withdrawn } = state.roundState.recruitment;
+  const taken = aboard(state);
+  return recruiters.filter((id) => !withdrawn.includes(id) && !taken.has(id));
+}
+
+/** Applicants to this recruiter who are still free (not already in a mutual venture). */
+function validApplicants(state: MatchState, recruiterId: PlayerId): PlayerId[] {
+  const taken = aboard(state);
+  return state.roundState.recruitment.applications
+    .filter((a) => a.recruiterId === recruiterId && !taken.has(a.applicantId))
+    .map((a) => a.applicantId);
 }
 
 /** Canonical identity of an action, used to compare against legal options. */

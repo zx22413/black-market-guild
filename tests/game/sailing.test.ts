@@ -60,8 +60,8 @@ describe('launching ships (game-design.md §5 step 3, §6 成本支付)', () => 
       type: 'ships-launched',
       round: 1,
       ships: [
-        { id: 'r1-s1', kind: 'solo', owners: ['p1'] },
-        { id: 'r1-s2', kind: 'solo', owners: ['p3'] },
+        { id: 'r1-s1', kind: 'solo', owners: ['p1'], recruiters: [] },
+        { id: 'r1-s2', kind: 'solo', owners: ['p3'], recruiters: [] },
       ],
       stayedInPort: ['p2', 'p4'],
     });

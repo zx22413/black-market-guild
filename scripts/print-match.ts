@@ -51,6 +51,9 @@ function formatLog(
       case 'recruitments-announced':
         lines.push(`  發起合資招募：${event.recruiters.length > 0 ? event.recruiters.map(name).join('、') : '無'}`);
         break;
+      case 'recruitments-withdrawn':
+        lines.push(`  撤回招募（改去應徵）：${event.recruiters.map(name).join('、')}`);
+        break;
       case 'applications-announced': {
         const list = event.applications.map((a) => `${name(a.applicantId)} → ${name(a.recruiterId)}`);
         lines.push(`  應徵：${list.length > 0 ? list.join('、') : '無'}`);
@@ -87,6 +90,12 @@ function formatLog(
         }
         break;
       }
+      case 'ship-smuggled':
+        lines.push(`  ${event.shipId}（${shipOwners.get(event.shipId)}）被人走私 ${event.amount} G（走私者身分不明）`);
+        break;
+      case 'smugglers-caught':
+        lines.push(`  ${event.shipId} 查獲走私：${event.smugglers.map(name).join('、')}`);
+        break;
       case 'ship-resolved':
         lines.push(`  ${event.shipId}（${shipOwners.get(event.shipId)}）${event.outcome === 'arrived' ? '成功抵達' : '沉沒'}`);
         break;

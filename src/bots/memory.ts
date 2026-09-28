@@ -22,6 +22,9 @@ export class BotMemory {
         event.ships.forEach((ship) => this.owners.set(ship.id, ship.owners));
       } else if (event.type === 'roles-revealed') {
         event.deployments.forEach((d) => this.record(d.playerId, d.role, this.owners.get(d.targetShipId) ?? [], self));
+      } else if (event.type === 'smugglers-caught') {
+        // Anonymous smugglers are only identified when caught.
+        event.smugglers.forEach((id) => this.record(id, 'smuggler', this.owners.get(event.shipId) ?? [], self));
       }
     }
   }

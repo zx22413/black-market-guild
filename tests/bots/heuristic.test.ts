@@ -88,7 +88,7 @@ describe('heuristic decisions', () => {
     const bot: Bot = createHeuristicBot(greedy('balanced'), 1);
     bot.onEvents?.([
       { type: 'round-started', round: 0 },
-      { type: 'ships-launched', round: 0, ships: [{ id: 'r0-s1', kind: 'joint', owners: ['p3', 'p2'] }], stayedInPort: [] },
+      { type: 'ships-launched', round: 0, ships: [{ id: 'r0-s1', kind: 'joint', owners: ['p3', 'p2'], recruiters: ['p3'] }], stayedInPort: [] },
       {
         type: 'roles-revealed',
         round: 0,
@@ -106,7 +106,7 @@ describe('heuristic decisions', () => {
     const bot: Bot = createHeuristicBot(greedy('balanced'), 1);
     bot.onEvents?.([
       { type: 'round-started', round: 0 },
-      { type: 'ships-launched', round: 0, ships: [{ id: 'r0-s1', kind: 'joint', owners: ['p4', 'p2'] }], stayedInPort: [] },
+      { type: 'ships-launched', round: 0, ships: [{ id: 'r0-s1', kind: 'joint', owners: ['p4', 'p2'], recruiters: ['p4'] }], stayedInPort: [] },
       {
         type: 'roles-revealed',
         round: 0,

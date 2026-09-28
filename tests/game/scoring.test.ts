@@ -8,6 +8,7 @@ const player = (id: string, cash: number, assets: PlayerState['assets'] = []): P
   name: id,
   cash,
   assets,
+  blackMoney: 0,
 });
 
 describe('final wealth (game-design.md §8)', () => {

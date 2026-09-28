@@ -17,13 +17,13 @@ describe('engine invariants', () => {
 
   it('refuses to resolve a ship that was never rolled', () => {
     const { state } = startMatch();
-    const ship = { id: 'x', kind: 'solo' as const, owners: ['p1'], rawRoll: null, rerolledRoll: null, outcome: null };
+    const ship = { id: 'x', kind: 'solo' as const, owners: ['p1'], recruiters: [], rawRoll: null, rerolledRoll: null, outcome: null };
     expect(() => finalRoll(state, ship)).toThrow(/has not been rolled/);
   });
 
   it('clamps out-of-range values into 1-6 (game-design.md §7 step 6)', () => {
     const { state } = startMatch();
-    const ship = (rawRoll: number) => ({ id: 'x', kind: 'solo' as const, owners: ['p1'], rawRoll, rerolledRoll: null, outcome: null });
+    const ship = (rawRoll: number) => ({ id: 'x', kind: 'solo' as const, owners: ['p1'], recruiters: [], rawRoll, rerolledRoll: null, outcome: null });
     expect(finalRoll(state, ship(9))).toBe(6);
     expect(finalRoll(state, ship(-3))).toBe(1);
   });

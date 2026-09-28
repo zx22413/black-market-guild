@@ -16,6 +16,11 @@ export interface Rules {
     /** Final value >= successMin arrives; below sinks. */
     readonly successMin: number;
   };
+  /** Switchable recruitment rules; 1 = on. */
+  readonly recruitment: {
+    /** Recruiters may apply to another recruitment, withdrawing their own (mutual = venture). */
+    readonly recruitersMayApply: number;
+  };
   readonly soloShip: { readonly cost: number; readonly income: number };
   /** Cost and income are totals, split evenly between the two partners. */
   readonly jointShip: { readonly cost: number; readonly income: number };
@@ -27,8 +32,12 @@ export interface Rules {
      */
     readonly guard: { readonly fee: number; readonly piratesCancelled: number; readonly rollModifier: number };
     readonly pirate: { readonly fee: number; readonly modifier: number; readonly loot: number };
-    /** Smuggled goods value; taken from a joint ship's base income on arrival. */
-    readonly smuggler: { readonly fee: number; readonly goodsValue: number };
+    /**
+     * Smuggled goods value, taken from the ship's base income on arrival. `anonymous` (1 = on, V0.6):
+     * any ship except one's own solo ship, hidden at the reveal, proceeds kept as secret black money
+     * until the match ends; identity exposed only when caught. 0 = the named, joint-ship-only variant.
+     */
+    readonly smuggler: { readonly fee: number; readonly goodsValue: number; readonly anonymous: number };
   };
   readonly assets: {
     readonly shipyard: { readonly price: number; readonly costReduction: number };
@@ -77,6 +86,7 @@ export const RULES_V06: Rules = {
   rounds: 6, // §3
   startingCash: 1000, // §3
   sailing: { dieMin: 1, dieMax: 6, successMin: 4 }, // §6, §7
+  recruitment: { recruitersMayApply: 1 }, // §6 合資邀請流程
   soloShip: { cost: 100, income: 300 }, // §6
   jointShip: { cost: 200, income: 700 }, // §6
   roles: {
@@ -84,7 +94,7 @@ export const RULES_V06: Rules = {
     intel: { fee: 50 },
     guard: { fee: 50, piratesCancelled: 0, rollModifier: 1 },
     pirate: { fee: 100, modifier: -1, loot: 150 },
-    smuggler: { fee: 0, goodsValue: 300 },
+    smuggler: { fee: 0, goodsValue: 50, anonymous: 1 },
   },
   assets: {
     // §8
@@ -127,6 +137,6 @@ export const RULES_V06: Rules = {
     seaFogModifier: 1,
     moonlessNightModifier: -1,
     highWavesModifier: -1,
-    blackMarketRushGoodsValue: 400,
+    blackMarketRushGoodsValue: 150,
   },
 };

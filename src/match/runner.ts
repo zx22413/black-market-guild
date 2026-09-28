@@ -81,6 +81,7 @@ function requireController<T>(controllers: Readonly<Record<PlayerId, T>>, seat: 
 
 class Recorder {
   readonly actions: Action[] = [];
+  readonly actionRounds: number[] = [];
   readonly events: MatchEvent[] = [];
   readonly privateEvents: PrivateEvent[] = [];
   state: MatchState;
@@ -93,6 +94,7 @@ class Recorder {
   record(transition: Transition, action?: Action): void {
     if (action) {
       this.actions.push(action);
+      this.actionRounds.push(this.state.round);
     }
     this.state = transition.state;
     this.events.push(...transition.events);
@@ -105,6 +107,7 @@ class Recorder {
     }
     return {
       actions: this.actions,
+      actionRounds: this.actionRounds,
       events: this.events,
       privateEvents: this.privateEvents,
       finalState: this.state,
@@ -152,7 +155,10 @@ export async function runMatch(setup: MatchSetup, controllers: Readonly<Record<P
 }
 
 /** Rebuilds a match from its setup and action log (docs/architecture.md §4.4). */
-export function replayMatch(setup: MatchSetup, actions: readonly Action[]): Omit<MatchLog, 'result' | 'actions'> {
+export function replayMatch(
+  setup: MatchSetup,
+  actions: readonly Action[],
+): Omit<MatchLog, 'result' | 'actions' | 'actionRounds'> {
   const recorder = new Recorder(start(setup));
   actions.forEach((action) => recorder.record(apply(recorder.state, action.playerId, action), action));
   return { events: recorder.events, privateEvents: recorder.privateEvents, finalState: recorder.state };

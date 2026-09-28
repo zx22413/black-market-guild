@@ -31,6 +31,9 @@ function validateConfig(config: MatchConfig, rules: Rules): string | null {
   if (!Number.isInteger(rules.rounds) || rules.rounds < 1) {
     return `rules.rounds must be a positive integer, got ${rules.rounds}`;
   }
+  if (rules.roles.smuggler.anonymous === 1 && rules.roles.smuggler.fee > 0) {
+    return 'anonymous smuggling requires a zero smuggler fee; a public fee would reveal the smuggler';
+  }
   if (rules.players.min > rules.players.max) {
     return `rules.players.min (${rules.players.min}) exceeds max (${rules.players.max})`;
   }
@@ -63,7 +66,7 @@ export function createMatch(config: MatchConfig): Result<Transition> {
       seed: config.seed,
       round: 0,
       phase: 'asset-purchase',
-      players: config.players.map(({ id, name }) => ({ id, name, cash: rules.startingCash, assets: [] })),
+      players: config.players.map(({ id, name }) => ({ id, name, cash: rules.startingCash, assets: [], blackMoney: 0 })),
       rng: voyage.state,
       marketDeck: market.items,
       voyageDeck: voyage.items,

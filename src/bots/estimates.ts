@@ -38,7 +38,7 @@ export function cashOf(view: PlayerView, playerId: PlayerId): number {
 }
 
 /** Total income an arrived ship pays out before smuggling, including known bonuses. */
-export function shipTotalIncome(view: PlayerView, kind: PublicShip['kind'], recruiter: PlayerId | null): number {
+export function shipTotalIncome(view: PlayerView, kind: PublicShip['kind'], recruiters: readonly PlayerId[]): number {
   const { rules, marketEvent } = view;
   const m = rules.marketEvents;
   const luxury = marketEvent === 'luxury-boom' ? m.luxuryBoomBonus : 0;
@@ -46,7 +46,7 @@ export function shipTotalIncome(view: PlayerView, kind: PublicShip['kind'], recr
     return rules.soloShip.income + luxury + (marketEvent === 'private-trade-charter' ? m.privateTradeCharterBonus : 0);
   }
   const royal = marketEvent === 'royal-joint-order' ? m.royalJointOrderBonus : 0;
-  const exchange = recruiter !== null && holds(view, recruiter, 'exchange') ? rules.assets.exchange.jointIncomeBonus : 0;
+  const exchange = recruiters.some((id) => holds(view, id, 'exchange')) ? rules.assets.exchange.jointIncomeBonus : 0;
   return rules.jointShip.income + luxury + royal + exchange;
 }
 
@@ -64,11 +64,11 @@ export function jointShareFor(view: PlayerView, playerId: PlayerId, recruiter: P
 
 /** Expected value of sailing solo this round, ignoring roles. */
 export function soloValue(view: PlayerView, self: PlayerId): number {
-  return arriveChance(view.rules, marketModifier(view)) * shipTotalIncome(view, 'solo', null) - soloCostFor(view, self);
+  return arriveChance(view.rules, marketModifier(view)) * shipTotalIncome(view, 'solo', []) - soloCostFor(view, self);
 }
 
 /** Expected value of a joint voyage for `self` with the given recruiter, ignoring roles. */
 export function jointValue(view: PlayerView, self: PlayerId, recruiter: PlayerId): number {
-  const share = shipTotalIncome(view, 'joint', recruiter) / 2;
+  const share = shipTotalIncome(view, 'joint', [recruiter]) / 2;
   return arriveChance(view.rules, marketModifier(view)) * share - jointShareFor(view, self, recruiter);
 }

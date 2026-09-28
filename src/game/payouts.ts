@@ -20,13 +20,54 @@ function pay(payments: readonly Payment[], reason: CashReason, shipId: string) {
 
 /** Uncaught smugglers take their goods first; caught goods go to the guards (§7 走私結算). */
 function paySmuggling(state: MatchState): Step {
+  const anonymous = state.rules.roles.smuggler.anonymous === 1;
   return chain(
     state,
     state.roundState.ships.flatMap((ship) => {
       const settlement = settleSmuggling(state, ship);
-      return [...pay(settlement.takes, 'smuggling', ship.id), ...pay(settlement.confiscations, 'smuggling-confiscated', ship.id)];
+      const takes = anonymous ? hideTakes(settlement.takes, ship.id) : pay(settlement.takes, 'smuggling', ship.id);
+      const caught = anonymous && settlement.confiscations.length > 0 ? [revealCaught(ship.id)] : [];
+      return [...takes, ...caught, ...pay(settlement.confiscations, 'smuggling-confiscated', ship.id)];
     }),
   );
+}
+
+/** Anonymous smuggling: the ship's loss is public, the proceeds become secret black money. */
+function hideTakes(takes: readonly Payment[], shipId: string) {
+  const total = takes.reduce((sum, t) => sum + t.amount, 0);
+  if (total === 0) {
+    return [];
+  }
+  return [
+    (current: MatchState): Step => ({
+      state: {
+        ...current,
+        players: current.players.map((p) => {
+          const take = takes.find((t) => t.playerId === p.id);
+          return take ? { ...p, blackMoney: p.blackMoney + take.amount } : p;
+        }),
+      },
+      events: [{ type: 'ship-smuggled', round: current.round, shipId, amount: total }],
+      privateEvents: takes.map((t) => ({ playerId: t.playerId, type: 'black-money', round: current.round, shipId, amount: t.amount })),
+    }),
+  ];
+}
+
+/** Anonymous smugglers caught by guards lose their anonymity. */
+function revealCaught(shipId: string) {
+  return (current: MatchState): Step => ({
+    state: current,
+    events: [
+      {
+        type: 'smugglers-caught',
+        round: current.round,
+        shipId,
+        smugglers: current.roundState.deployments
+          .filter((d) => d.role === 'smuggler' && d.targetShipId === shipId)
+          .map((d) => d.playerId),
+      },
+    ],
+  });
 }
 
 /** Base income left after smuggling, plus bonuses, split evenly among owners (§5 step 6, §6). */

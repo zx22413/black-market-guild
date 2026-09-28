@@ -19,6 +19,7 @@ export function resolveSailingChoices(state: MatchState): MatchState {
     id: `r${state.round}-s${ships.length + index + 1}`,
     kind: 'solo',
     owners: [owner],
+    recruiters: [],
     rawRoll: null,
     rerolledRoll: null,
     outcome: null,
@@ -39,7 +40,7 @@ export function launchShips(state: MatchState): Step {
       {
         type: 'ships-launched',
         round: state.round,
-        ships: ships.map(({ id, kind, owners }) => ({ id, kind, owners })),
+        ships: ships.map(({ id, kind, owners, recruiters }) => ({ id, kind, owners, recruiters })),
         stayedInPort: state.players.map((p) => p.id).filter((id) => !sailors.has(id)),
       },
     ],

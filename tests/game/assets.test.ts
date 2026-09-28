@@ -9,6 +9,7 @@ import {
 } from '../../src/game';
 import {
   atPhase,
+  NAMED_SMUGGLING_RULES,
   playUntil,
   scripted,
   startMatch,
@@ -235,7 +236,11 @@ describe('trade exchange (game-design.md §8 貿易交易所, 合資加成)', ()
 
 describe('payout order (game-design.md §5 step 6)', () => {
   it('pays smuggling, income, loot, insurance, salvage, then exchange', () => {
-    const initial = startWith({ p3: ['insurance'], p4: ['salvage', 'exchange'] });
+    // Named smuggling makes the smuggler's take a public cash event, so the whole order is visible.
+    const initial = [['p3', ['insurance']], ['p4', ['salvage', 'exchange']]].reduce(
+      (s, [id, assets]) => withAssets(s, id as string, assets as AssetId[]),
+      startMatch({ rules: NAMED_SMUGGLING_RULES }).state,
+    );
     const script: Script = {
       recruit: ['p1'],
       apply: { p2: 'p1' },

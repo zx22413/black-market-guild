@@ -80,8 +80,10 @@ export type VoyageOutcome = 'arrived' | 'sank';
 export interface Ship {
   readonly id: ShipId;
   readonly kind: ShipKind;
-  /** Solo: [owner]. Joint: [recruiter, applicant]. */
+  /** Solo: [owner]. Joint: [recruiter, applicant], or both recruiters in player order. */
   readonly owners: readonly PlayerId[];
+  /** Owners whose assets give joint bonuses: none for solo, the recruiter, or both if mutual. */
+  readonly recruiters: readonly PlayerId[];
   /** Hidden raw 1d6, rolled once ships are launched (game-design.md §5 step 3). */
   readonly rawRoll: number | null;
   /** Set when an intel merchant rerolled; replaces rawRoll for resolution (game-design.md §7). */
@@ -101,6 +103,7 @@ export interface PublicShip {
   readonly id: ShipId;
   readonly kind: ShipKind;
   readonly owners: readonly PlayerId[];
+  readonly recruiters: readonly PlayerId[];
   readonly outcome: VoyageOutcome | null;
 }
 
@@ -115,7 +118,8 @@ export type CashReason =
   | 'pirate-loot'
   | 'insurance'
   | 'salvage'
-  | 'exchange';
+  | 'exchange'
+  | 'black-money';
 
 /** One asset bought this round (game-design.md §8). */
 export interface Purchase {
@@ -138,6 +142,8 @@ export interface Venture {
 /** Public recruitment information for the current round (game-design.md §4). */
 export interface RecruitmentInfo {
   readonly recruiters: readonly PlayerId[];
+  /** Recruiters who applied elsewhere and so withdrew their own recruitment. */
+  readonly withdrawn: readonly PlayerId[];
   readonly applications: readonly Application[];
   readonly ventures: readonly Venture[];
 }
@@ -147,6 +153,8 @@ export interface PlayerState {
   readonly name: string;
   readonly cash: number;
   readonly assets: readonly AssetId[];
+  /** Secret smuggling proceeds (anonymous smuggling); added to cash when the match ends. */
+  readonly blackMoney: number;
 }
 
 export interface RoundState {
@@ -199,6 +207,7 @@ export type MatchEvent =
   | { readonly type: 'phase-started'; readonly round: number; readonly phase: DecisionPhase }
   | { readonly type: 'assets-purchased'; readonly round: number; readonly purchases: readonly Purchase[] }
   | { readonly type: 'recruitments-announced'; readonly round: number; readonly recruiters: readonly PlayerId[] }
+  | { readonly type: 'recruitments-withdrawn'; readonly round: number; readonly recruiters: readonly PlayerId[] }
   | {
       readonly type: 'applications-announced';
       readonly round: number;
@@ -229,6 +238,13 @@ export type MatchEvent =
       /** Ships rerolled by intel merchants; only non-empty on the intel event. */
       readonly rerolledShipIds: readonly ShipId[];
     }
+  | { readonly type: 'ship-smuggled'; readonly round: number; readonly shipId: ShipId; readonly amount: number }
+  | {
+      readonly type: 'smugglers-caught';
+      readonly round: number;
+      readonly shipId: ShipId;
+      readonly smugglers: readonly PlayerId[];
+    }
   | { readonly type: 'ship-resolved'; readonly round: number; readonly shipId: ShipId; readonly outcome: VoyageOutcome }
   | { readonly type: 'round-ended'; readonly round: number }
   | { readonly type: 'match-ended'; readonly result: MatchResult };
@@ -248,6 +264,13 @@ export type PrivateEvent =
       readonly round: number;
       readonly shipId: ShipId;
       readonly rerolledRoll: number;
+    }
+  | {
+      readonly playerId: PlayerId;
+      readonly type: 'black-money';
+      readonly round: number;
+      readonly shipId: ShipId;
+      readonly amount: number;
     };
 
 export interface PendingDecision {

@@ -55,10 +55,23 @@ function recruitScore(scope: Scope, recruit: boolean): number {
   return recruit ? joint + p.recruitBias : solo + Math.max(0, joint - solo) * 0.5;
 }
 
+/**
+ * Value of keeping one's own recruitment open: the chance at least one non-recruiter applies,
+ * times the joint value, otherwise the solo fallback.
+ */
+function keepRecruitingScore(scope: Scope): number {
+  const { view, self } = scope;
+  const recruiters = view.recruitment.recruiters.length;
+  const others = view.players.length - recruiters;
+  const someoneApplies = 1 - (1 - 0.5 / Math.max(1, recruiters)) ** others;
+  const solo = soloValue(view, self);
+  return someoneApplies * jointValue(view, self, self) * averageTrust(scope) + (1 - someoneApplies) * solo;
+}
+
 function applyScore(scope: Scope, recruiter: PlayerId | null): number {
   const { view, self, p, memory } = scope;
   if (recruiter === null) {
-    return soloValue(view, self);
+    return view.recruitment.recruiters.includes(self) ? keepRecruitingScore(scope) : soloValue(view, self);
   }
   return jointValue(view, self, recruiter) * memory.trust(recruiter, p.grudge) - cheatRisk(scope, recruiter);
 }
@@ -105,7 +118,7 @@ function outlook(scope: Scope, ship: PublicShip): ShipOutlook {
       return sum + memory.pirateRate(id, p.expectedPirateRate) / Math.max(1, targets);
     }, 0);
   const others = ship.owners.filter((id) => id !== self);
-  const income = shipTotalIncome(view, ship.kind, ship.owners[0] ?? null);
+  const income = shipTotalIncome(view, ship.kind, ship.recruiters);
   return {
     ship,
     mine: ship.owners.includes(self),
@@ -165,10 +178,18 @@ function roleScore(scope: Scope, action: Extract<Action, { type: 'deploy-role' }
       return gain - ownLoss + (p.betrayal - 1) * 100;
     }
     case 'smuggler': {
-      const partner = ship.owners.find((id) => id !== self) ?? self;
-      const caught = scope.memory.guardOwnShipRate(partner, 0.3);
+      const caught = Math.min(
+        1,
+        ship.owners.filter((id) => id !== self).reduce((s, id) => s + scope.memory.guardOwnShipRate(id, 0.3), 0) +
+          opponents(scope)
+            .filter((id) => !ship.owners.includes(id))
+            .reduce((s, id) => s + scope.memory.guardOtherShipRate(id, 0.05) / Math.max(1, view.ships.length - 1), 0),
+      );
       const arrive = attackChance * underAttack + (1 - attackChance) * base;
-      return (1 - caught) * arrive * (goods / 2) * p.smuggling - fee - 20;
+      // Stealing from one's own joint ship costs one's own share of the goods.
+      const gain = o.mine ? goods - goods / ship.owners.length : goods;
+      const reputation = rules.roles.smuggler.anonymous === 1 ? caught * 40 : 20;
+      return (1 - caught) * arrive * gain * p.smuggling - fee - reputation;
     }
   }
 }

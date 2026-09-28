@@ -152,15 +152,16 @@ describe('voyage events (game-design.md §10)', () => {
     expect(outcome(events, 'r1-s2')).toMatchObject({ outcome: 'sank' });
   });
 
-  it('black market rush raises the smuggled goods to 400 G', () => {
+  it('black market rush raises the smuggled goods to 150 G', () => {
     const { events } = playRound(
-      { ...JOINT_AND_SOLO, deploy: { p2: { role: 'smuggler', target: 'r1-s1' } } },
+      { ...JOINT_AND_SOLO, deploy: { p4: { role: 'smuggler', target: 'r1-s1' } } },
       { voyage: 'black-market-rush', rolls: { 'r1-s1': 5 } },
     );
-    expect(gains(events, 'smuggling')).toEqual([['p2', 400]]);
+    expect(events).toContainEqual({ type: 'ship-smuggled', round: 1, shipId: 'r1-s1', amount: 150 });
+    // 700 - 150 = 550, split 275 each
     expect(gains(events, 'shipping-income').slice(0, 2)).toEqual([
-      ['p1', 150],
-      ['p2', 150],
+      ['p1', 275],
+      ['p2', 275],
     ]);
   });
 });
@@ -185,13 +186,13 @@ describe('event stacking (game-design.md §10 事件修正的疊加)', () => {
 
   it('adds royal order and luxury boom bonuses after the smuggling take', () => {
     const { events } = playRound(
-      { ...JOINT_AND_SOLO, deploy: { p2: { role: 'smuggler', target: 'r1-s1' } } },
+      { ...JOINT_AND_SOLO, deploy: { p4: { role: 'smuggler', target: 'r1-s1' } } },
       { market: 'luxury-boom', rolls: { 'r1-s1': 6 } },
     );
-    // 700 - 300 = 400, + 100 luxury = 500, split 250 each
+    // 700 - 50 = 650, + 100 luxury = 750, split 375 each
     expect(gains(events, 'shipping-income').slice(0, 2)).toEqual([
-      ['p1', 250],
-      ['p2', 250],
+      ['p1', 375],
+      ['p2', 375],
     ]);
   });
 });

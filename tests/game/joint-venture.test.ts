@@ -10,6 +10,9 @@ import {
 } from '../../src/game';
 import {
   atPhase,
+  CLOSED_RECRUITMENT_RULES,
+  NEUTRAL_EVENT_RULES,
+  withAssets,
   playUntil,
   randomChooser,
   scripted,
@@ -24,8 +27,8 @@ const cashOf = (state: MatchState, id: string) => state.players.find((p) => p.id
 /** p1 recruits, p2 applies, p1 picks p2. */
 const jointScript: Script = { recruit: ['p1'], apply: { p2: 'p1' }, pick: { p1: 'p2' } };
 
-function playRound1(script: Script, stop: (s: MatchState) => boolean) {
-  const start = startMatch();
+function playRound1(script: Script, stop: (s: MatchState) => boolean, rules = NEUTRAL_EVENT_RULES) {
+  const start = startMatch({ rules });
   const played = playUntil(start.state, stop, scripted(script));
   return { state: played.state, events: [...start.events, ...played.events] };
 }
@@ -57,8 +60,8 @@ describe('step 1: recruiting (game-design.md §6 合資邀請流程)', () => {
 });
 
 describe('step 2: applying', () => {
-  it('asks only non-recruiters, who may apply to any recruitment or none', () => {
-    const { state } = playRound1({ recruit: ['p1', 'p3'] }, atPhase('apply'));
+  it('in the closed variant, asks only non-recruiters, who may apply to any recruitment or none', () => {
+    const { state } = playRound1({ recruit: ['p1', 'p3'] }, atPhase('apply'), CLOSED_RECRUITMENT_RULES);
     expect(getPendingDecisions(state).map((d) => d.playerId)).toEqual(['p2', 'p4']);
     expect(getLegalActions(state, 'p2').map((a) => a.type === 'apply' && a.recruiterId)).toEqual([
       null,
@@ -67,8 +70,8 @@ describe('step 2: applying', () => {
     ]);
   });
 
-  it('rejects a recruiter trying to apply to another recruitment', () => {
-    const { state } = playRound1({ recruit: ['p1', 'p3'] }, atPhase('apply'));
+  it('in the closed variant, rejects a recruiter trying to apply to another recruitment', () => {
+    const { state } = playRound1({ recruit: ['p1', 'p3'] }, atPhase('apply'), CLOSED_RECRUITMENT_RULES);
     const result = applyAction(state, { type: 'apply', playerId: 'p1', recruiterId: 'p3' });
     expect(!result.ok && result.error.code).toBe('not-a-decider');
   });
@@ -196,7 +199,7 @@ describe('joint ship economics (game-design.md §6 合資)', () => {
   it('shows the joint ship with both owners in every view', () => {
     const { state } = playRound1(jointScript, atPhase('role-deployment'));
     expect(getPlayerView(state, 'p4').ships).toEqual([
-      { id: 'r1-s1', kind: 'joint', owners: ['p1', 'p2'], outcome: null },
+      { id: 'r1-s1', kind: 'joint', owners: ['p1', 'p2'], recruiters: ['p1'], outcome: null },
     ]);
   });
 });
@@ -214,7 +217,7 @@ describe('recruitment secrecy', () => {
   it('resets recruitment information each round', () => {
     const { state } = playRound1(jointScript, atPhase('role-deployment'));
     const next = finishRound(state).state;
-    expect(getPlayerView(next, 'p1').recruitment).toEqual({ recruiters: [], applications: [], ventures: [] });
+    expect(getPlayerView(next, 'p1').recruitment).toEqual({ recruiters: [], withdrawn: [], applications: [], ventures: [] });
   });
 });
 
@@ -240,5 +243,80 @@ describe('random matches (fuzz)', () => {
     for (const owners of perRound.values()) {
       expect(new Set(owners).size).toBe(owners.length);
     }
+  });
+});
+
+describe('recruiters may apply (switchable rule: recruitment.recruitersMayApply)', () => {
+  const rules = { ...NEUTRAL_EVENT_RULES, recruitment: { recruitersMayApply: 1 } };
+  const play = (script: Script, stop: (s: MatchState) => boolean, initial?: MatchState) => {
+    const start = initial ?? startMatch({ rules }).state;
+    return playUntil(start, stop, scripted(script));
+  };
+
+  it('asks recruiters too when there is another recruitment to apply to, never offering their own', () => {
+    const { state } = play({ recruit: ['p1', 'p3'] }, atPhase('apply'));
+    expect(getPendingDecisions(state).map((d) => d.playerId)).toEqual(['p1', 'p2', 'p3', 'p4']);
+    expect(getLegalActions(state, 'p1').map((a) => a.type === 'apply' && a.recruiterId)).toEqual([null, 'p3']);
+  });
+
+  it('does not ask a lone recruiter, who has nobody else to apply to', () => {
+    const { state } = play({ recruit: ['p1'] }, atPhase('apply'));
+    expect(getPendingDecisions(state).map((d) => d.playerId)).toEqual(['p2', 'p3', 'p4']);
+  });
+
+  it('withdraws the recruitment of a recruiter who applies elsewhere, rejecting its applicants', () => {
+    const { state, events } = play(
+      { recruit: ['p1', 'p2'], apply: { p3: 'p1', p1: 'p2' }, pick: { p2: 'p1' } },
+      atPhase('sailing-choice'),
+    );
+    expect(events).toContainEqual({ type: 'recruitments-withdrawn', round: 1, recruiters: ['p1'] });
+    expect(state.roundState.ships.map((s) => [s.owners, s.recruiters])).toEqual([[['p2', 'p1'], ['p2']]]);
+    expect(getPendingDecisions(state).map((d) => d.playerId)).toEqual(['p3', 'p4']);
+  });
+
+  it('forms a venture directly when two recruiters apply to each other; both count as recruiters', () => {
+    const { state, events } = play({ recruit: ['p1', 'p2'], apply: { p1: 'p2', p2: 'p1' } }, atPhase('sailing-choice'));
+    expect(events).toContainEqual({
+      type: 'joint-ventures-formed',
+      round: 1,
+      ventures: [{ recruiterId: 'p1', applicantId: 'p2' }],
+    });
+    expect(state.roundState.ships.map((s) => [s.owners, s.recruiters])).toEqual([[['p1', 'p2'], ['p1', 'p2']]]);
+  });
+
+  it('breaks a chain: an application to a recruiter who applied elsewhere fails', () => {
+    const { state } = play(
+      { recruit: ['p1', 'p2', 'p3'], apply: { p1: 'p2', p2: 'p3' }, pick: { p3: 'p2' } },
+      atPhase('sailing-choice'),
+    );
+    expect(state.roundState.ships.map((s) => s.owners)).toEqual([['p3', 'p2']]);
+    expect(getPendingDecisions(state).map((d) => d.playerId)).toEqual(['p1', 'p4']);
+  });
+
+  it('forms nothing from a three-recruiter cycle: everyone withdrew', () => {
+    const { state, events } = play({ recruit: ['p1', 'p2', 'p3'], apply: { p1: 'p2', p2: 'p3', p3: 'p1' } }, atPhase('sailing-choice'));
+    expect(events).toContainEqual({ type: 'recruitments-withdrawn', round: 1, recruiters: ['p1', 'p2', 'p3'] });
+    expect(state.roundState.ships).toEqual([]);
+    expect(getPendingDecisions(state).map((d) => d.playerId)).toEqual(['p1', 'p2', 'p3', 'p4']);
+  });
+
+  it('does not stack when both mutual recruiters hold a shipyard', () => {
+    const initial = withAssets(withAssets(startMatch({ rules }).state, 'p1', ['shipyard']), 'p2', ['shipyard']);
+    const { events } = play({ recruit: ['p1', 'p2'], apply: { p1: 'p2', p2: 'p1' } }, atPhase('role-deployment'), initial);
+    const costs = events.flatMap((e) => (e.type === 'cash-changed' && e.reason === 'ship-cost' ? [[e.playerId, e.amount]] : []));
+    expect(costs).toEqual([
+      ['p1', -50],
+      ['p2', -50],
+    ]);
+  });
+
+  it('applies both recruiters\' shipyards to a mutual venture without stacking', () => {
+    const initial = withAssets(startMatch({ rules }).state, 'p1', ['shipyard']);
+    const { events } = play({ recruit: ['p1', 'p2'], apply: { p1: 'p2', p2: 'p1' } }, atPhase('role-deployment'), initial);
+    const costs = events.flatMap((e) => (e.type === 'cash-changed' && e.reason === 'ship-cost' ? [[e.playerId, e.amount]] : []));
+    expect(costs).toEqual([
+      ['p1', -50],
+      ['p2', -50],
+    ]);
   });
 });

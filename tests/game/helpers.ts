@@ -258,3 +258,15 @@ export function withMarketEvent(state: MatchState, event: MarketEventId): MatchS
 export function withNextVoyageEvent(state: MatchState, event: VoyageEventId): MatchState {
   return { ...state, voyageDeck: [event, ...state.voyageDeck.slice(1)] };
 }
+
+/** The named, joint-ship-only smuggling variant (roles.smuggler.anonymous = 0), still switchable. */
+export const NAMED_SMUGGLING_RULES: Rules = {
+  ...NEUTRAL_EVENT_RULES,
+  roles: { ...NEUTRAL_EVENT_RULES.roles, smuggler: { fee: 0, goodsValue: 300, anonymous: 0 } },
+};
+
+/** The variant where recruiters may not apply elsewhere (recruitment.recruitersMayApply = 0). */
+export const CLOSED_RECRUITMENT_RULES: Rules = {
+  ...NEUTRAL_EVENT_RULES,
+  recruitment: { recruitersMayApply: 0 },
+};

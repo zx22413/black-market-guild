@@ -53,6 +53,8 @@ export interface SyncController extends EventListener {
 export interface MatchLog {
   /** Every accepted action in order; with the setup, enough to replay the match. */
   readonly actions: readonly Action[];
+  /** Round in which each action of `actions` was taken (same index). */
+  readonly actionRounds: readonly number[];
   readonly events: readonly MatchEvent[];
   readonly privateEvents: readonly PrivateEvent[];
   readonly finalState: MatchState;

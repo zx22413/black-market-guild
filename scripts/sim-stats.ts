@@ -87,7 +87,24 @@ export function addMatch(stats: SimStats, log: MatchLog, seats: readonly SeatRec
   for (const player of log.finalState.players) {
     push(stats.assetsHeld, strategyOf.get(player.id)!, player.assets.length);
   }
-  foldEvents(stats, log.events, strategyOf);
+  foldEvents(stats, log.events, strategyOf, deploymentsByRound(log));
+}
+
+type RoundDeployment = RoundTracker['deployments'][number];
+
+/**
+ * Deployments per round, read from the action log rather than public events, because
+ * anonymous smugglers never appear in public reveals.
+ */
+function deploymentsByRound(log: MatchLog): Map<number, RoundDeployment[]> {
+  const byRound = new Map<number, RoundDeployment[]>();
+  log.actions.forEach((action, i) => {
+    if (action.type === 'deploy-role' && action.role !== null && action.targetShipId !== null) {
+      const round = log.actionRounds[i]!;
+      byRound.set(round, [...(byRound.get(round) ?? []), { playerId: action.playerId, role: action.role, shipId: action.targetShipId }]);
+    }
+  });
+  return byRound;
 }
 
 interface RoundTracker {
@@ -97,8 +114,8 @@ interface RoundTracker {
   deployments: { playerId: string; role: RoleId; shipId: string }[];
 }
 
-function newRound(market: MarketEventId | null): RoundTracker {
-  return { market, owners: new Map(), kinds: new Map(), deployments: [] };
+function newRound(market: MarketEventId | null, deployments: RoundTracker['deployments'] = []): RoundTracker {
+  return { market, owners: new Map(), kinds: new Map(), deployments };
 }
 
 /** Classifies each smuggled stash on a resolved ship (game-design.md §7 走私結算). */
@@ -131,12 +148,17 @@ function foldRoles(stats: SimStats, round: RoundTracker, strategyOf: ReadonlyMap
   }
 }
 
-function foldEvents(stats: SimStats, events: readonly MatchEvent[], strategyOf: ReadonlyMap<string, string>): void {
+function foldEvents(
+  stats: SimStats,
+  events: readonly MatchEvent[],
+  strategyOf: ReadonlyMap<string, string>,
+  deployments: ReadonlyMap<number, RoundTracker['deployments']>,
+): void {
   let round = newRound(null);
   for (const event of events) {
     switch (event.type) {
       case 'market-event-revealed':
-        round = newRound(event.event);
+        round = newRound(event.event, [...(deployments.get(event.round) ?? [])]);
         break;
       case 'assets-purchased':
         event.purchases.forEach((p) => {
@@ -162,9 +184,6 @@ function foldEvents(stats: SimStats, events: readonly MatchEvent[], strategyOf: 
         stats.playerRounds += strategyOf.size;
         break;
       }
-      case 'roles-revealed':
-        event.deployments.forEach((d) => round.deployments.push({ playerId: d.playerId, role: d.role, shipId: d.targetShipId }));
-        break;
       case 'ship-resolved': {
         bump(nested(stats.ships, round.kinds.get(event.shipId)!), event.outcome);
         const pirates = round.deployments.filter((d) => d.role === 'pirate' && d.shipId === event.shipId);

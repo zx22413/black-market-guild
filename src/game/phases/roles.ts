@@ -74,6 +74,7 @@ export function revealRoles(state: MatchState): Step {
     revealed,
     ROLE_IDS.map((role) => (current: MatchState): Step => {
       const group = deployments.filter((d) => d.role === role);
+      const hidden = role === 'smuggler' && current.rules.roles.smuggler.anonymous === 1;
       const fee = current.rules.roles[role].fee;
       const fees = chain(
         current,
@@ -88,7 +89,7 @@ export function revealRoles(state: MatchState): Step {
             type: 'roles-revealed',
             round: state.round,
             role,
-            deployments: group,
+            deployments: hidden ? [] : group,
             rerolledShipIds: role === 'intel' ? rerolledShipIds : [],
           },
           ...fees.events,

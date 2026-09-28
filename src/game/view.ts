@@ -53,6 +53,8 @@ export interface PlayerView {
   readonly revealedRoles: readonly Deployment[];
   /** This player's own locked deployment, visible to them from lock time. */
   readonly myDeployment: Deployment | null;
+  /** This player's secret smuggling proceeds, added to cash when the match ends. */
+  readonly myBlackMoney: number;
   /** Raw (and rerolled) value of the ship this player's intel merchant targets. */
   readonly intel: IntelKnowledge | null;
   readonly marketDeckRemaining: number;
@@ -79,10 +81,13 @@ export function getPlayerView(state: MatchState, playerId: PlayerId): PlayerView
     marketEvent: state.roundState.marketEvent,
     voyageEvent: state.roundState.voyageEvent,
     recruitment: state.roundState.recruitment,
-    ships: state.roundState.ships.map(({ id, kind, owners, outcome }) => ({ id, kind, owners, outcome })),
+    ships: state.roundState.ships.map(({ id, kind, owners, recruiters, outcome }) => ({ id, kind, owners, recruiters, outcome })),
     revealedRoles: state.roundState.rolesRevealed
-      ? ROLE_IDS.flatMap((role) => state.roundState.deployments.filter((d) => d.role === role))
+      ? ROLE_IDS.filter((role) => !(role === 'smuggler' && state.rules.roles.smuggler.anonymous === 1)).flatMap(
+          (role) => state.roundState.deployments.filter((d) => d.role === role),
+        )
       : [],
+    myBlackMoney: state.players.find((p) => p.id === playerId)?.blackMoney ?? 0,
     myDeployment: state.roundState.deployments.find((d) => d.playerId === playerId) ?? null,
     intel: intelKnowledge(state, playerId),
     marketDeckRemaining: state.marketDeck.length,

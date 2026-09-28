@@ -47,4 +47,5 @@ export const CASH_REASON_LABELS: Readonly<Record<CashReason, string>> = {
   insurance: '航運保險補償',
   salvage: '打撈收益',
   exchange: '交易所收益',
+  'black-money': '黑錢入帳（走私收益公開）',
 };

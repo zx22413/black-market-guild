@@ -43,7 +43,7 @@ describe('BotMemory', () => {
     memory.observe(
       [
         { type: 'round-started', round: 1 },
-        { type: 'ships-launched', round: 1, ships: [{ id: 's1', kind: 'solo', owners: ['p2'] }], stayedInPort: ['p3'] },
+        { type: 'ships-launched', round: 1, ships: [{ id: 's1', kind: 'solo', owners: ['p2'], recruiters: [] }], stayedInPort: ['p3'] },
         { type: 'roles-revealed', round: 1, role: 'guard', deployments: [{ playerId: 'p3', role: 'guard', targetShipId: 's1' }], rerolledShipIds: [] },
       ],
       'p1',

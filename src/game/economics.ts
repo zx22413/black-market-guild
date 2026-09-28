@@ -46,15 +46,19 @@ export function applicantShare(state: MatchState, applicantId: PlayerId, recruit
   return base - shipyardDiscount(state, discounted);
 }
 
-/** What one owner pays when the ship launches. Joint owners are [recruiter, applicant]. */
+/**
+ * What one owner pays when the ship launches: their own shipyard, or as the joint bonus any
+ * other recruiter's shipyard, cuts it once (game-design.md §8 造船廠, 合資加成).
+ */
 export function shipCostFor(state: MatchState, ship: Ship, playerId: PlayerId): number {
   if (ship.kind === 'solo') {
     return soloCost(state, playerId);
   }
-  const recruiterId = ship.owners[0]!;
-  return playerId === recruiterId
-    ? recruiterShare(state, recruiterId)
-    : applicantShare(state, playerId, recruiterId);
+  const base = splitEvenly(state.rules.jointShip.cost, 2);
+  const discounted =
+    holds(state, playerId, 'shipyard') ||
+    ship.recruiters.some((id) => id !== playerId && holds(state, id, 'shipyard'));
+  return base - shipyardDiscount(state, discounted);
 }
 
 /** Base income of an arrived ship, before smuggling takes and bonuses (game-design.md §6). */
@@ -65,6 +69,8 @@ export function baseIncome(state: MatchState, ship: Ship): number {
 /** Income bonuses added after smuggling takes; split evenly among owners (§5 step 6, §8). */
 export function incomeBonus(state: MatchState, ship: Ship): number {
   const exchange =
-    ship.kind === 'joint' && holds(state, ship.owners[0]!, 'exchange') ? state.rules.assets.exchange.jointIncomeBonus : 0;
+    ship.kind === 'joint' && ship.recruiters.some((id) => holds(state, id, 'exchange'))
+      ? state.rules.assets.exchange.jointIncomeBonus
+      : 0;
   return exchange + eventIncomeBonus(state, ship);
 }
