@@ -1,16 +1,9 @@
 /**
- * Plays one match with random legal choices and prints a readable log.
+ * Plays one match with random bots through the match runner and prints a readable log.
  * Usage: npm run match:log -- [seed] [playerCount]
  */
-import {
-  applyAction,
-  createMatch,
-  createRng,
-  getLegalActions,
-  getPendingDecisions,
-  type MatchEvent,
-  type MatchState,
-} from '../src/game';
+import type { MatchEvent } from '../src/game';
+import { runMatchSync, setupFromSeats } from '../src/match';
 import {
   ASSET_LABELS,
   CASH_REASON_LABELS,
@@ -29,30 +22,6 @@ function parseArgs(): { seed: number; playerCount: number } {
     throw new Error('usage: npm run match:log -- [seed] [playerCount]');
   }
   return { seed, playerCount };
-}
-
-function playRandomly(initial: MatchState, seed: number): MatchEvent[] {
-  const policy = createRng(seed + 1);
-  let state = initial;
-  const events: MatchEvent[] = [];
-  while (state.phase !== 'game-over') {
-    const decision = getPendingDecisions(state)[0];
-    if (decision === undefined) {
-      throw new Error(`no pending decision in phase ${state.phase}`);
-    }
-    const legal = getLegalActions(state, decision.playerId);
-    const action = legal[policy.int(0, legal.length - 1)];
-    if (action === undefined) {
-      throw new Error(`no legal action for ${decision.playerId}`);
-    }
-    const result = applyAction(state, action);
-    if (!result.ok) {
-      throw new Error(`${result.error.code}: ${result.error.message}`);
-    }
-    state = result.value.state;
-    events.push(...result.value.events);
-  }
-  return events;
 }
 
 function formatLog(
@@ -143,18 +112,15 @@ function formatLog(
 
 function main(): void {
   const { seed, playerCount } = parseArgs();
-  const players = NAMES.slice(0, playerCount).map((n, i) => ({ id: `p${i + 1}`, name: n }));
-  const created = createMatch({ seed, players });
-  if (!created.ok) {
-    throw new Error(`${created.error.code}: ${created.error.message}`);
-  }
-  const events = [...created.value.events, ...playRandomly(created.value.state, seed)];
-  const names = new Map(players.map((p) => [p.id, p.name]));
+  const seats = NAMES.slice(0, playerCount).map((name) => ({ kind: 'bot' as const, name, strategy: 'random' as const }));
+  const setup = setupFromSeats({ seed, seats });
+  const log = runMatchSync(setup, setup.bots);
+  const names = new Map(setup.players.map((p) => [p.id, p.name]));
   const header = [
-    `黑市商會 對局紀錄（seed ${seed}，${playerCount} 人，所有決定隨機選擇）`,
+    `黑市商會 對局紀錄（seed ${seed}，${playerCount} 人，隨機 Bot）`,
     '規則：V0.6 完整規則（獨資、合資、角色、資產、市場與航海事件皆已生效）。',
   ];
-  const lines = formatLog(events, names, created.value.state.rules.startingCash);
+  const lines = formatLog(log.events, names, log.finalState.rules.startingCash);
   console.log([...header, ...lines].join('\n'));
 }
 

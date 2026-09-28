@@ -93,18 +93,28 @@ interface MatchConfig {
 ### 5.2 Controller 介面
 
 ```ts
+interface DecisionContext {
+  view: PlayerView;            // 該座位可見的資訊
+  decision: PendingDecision;   // 要做哪個階段的決定
+  legalActions: Action[];      // Match Runner 代為計算的合法行動
+}
+
 interface Controller {
-  decide(view: PlayerView, decision: PendingDecision): Promise<Action>;
+  decide(context: DecisionContext): Promise<Action>;
+  onEvents?(events: MatchEvent[]): void;        // 所有公開事件，依演出順序
+  onPrivateEvent?(event: PrivateEvent): void;   // 只給這個座位的私有事件
 }
 ```
 
+合法行動的計算需要完整 `MatchState`，因此由 Match Runner 代為計算後交給 Controller；合法行動只包含該座位自己能做的事，不洩漏他人資訊。Runner 會拒絕替其他座位出手或不合法的行動。
+
 | Controller | 行為 |
 | --- | --- |
-| `LocalHumanController` | 將決定交給 UI，等待玩家操作後 resolve。hot-seat 時會有多個。 |
-| `BotController` | 呼叫 Bot 策略 `(view, decision, rng) → Action`。 |
-| `RemoteController` | 將決定送往客戶端，等待網路回應。 |
+| `LocalHumanController` | 將決定交給 UI，等待玩家操作後 resolve。hot-seat 時會有多個。（UI 階段實作） |
+| `botController(bot)` | 把同步的 Bot（`decide(context) → Action`）包成 Controller。 |
+| `RemoteController` | 將決定送往客戶端，等待網路回應。（連線階段實作） |
 
-介面採用 `Promise`，讓三種 Controller 可以互換。全 Bot 模擬若因非同步而影響效能，可另提供同步執行路徑。
+介面採用 `Promise`，讓三種 Controller 可以互換。全 Bot 模擬使用同步版的 `runMatchSync` 與 `SyncController`，避免非同步開銷。
 
 ### 5.3 三種執行環境
 

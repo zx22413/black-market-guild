@@ -38,8 +38,8 @@ npm run match:log -- 42 4                # 隨機選擇跑一局並印出中文�
 完整設計（座位／Controller、Match Runner、`PlayerView` 過濾、連線模式與待確認事項）見 [`docs/architecture.md`](docs/architecture.md)；實作 `src/match` 或引擎的公開介面前先讀它。規則引擎與呈現層分離，讓整局對局可由測試與 Bot 直接驅動。每個 `src/` 子目錄都有 `README.md` 說明職責、檔案與進度；新增或變更模組時一併更新：
 
 - `src/game/`：純規則引擎，公開介面集中在 `src/game/index.ts`（`createMatch`、`applyAction`、`getPendingDecisions`、`getLegalActions`、`getPlayerView`）。`flow.ts` 是回合狀態機：各決定階段收齊所有決定者的秘密提交才推進，無人需決定的階段自動跳過。行動合法性一律以 `getLegalActions` 列舉判定，補規則時擴充該列舉而非另寫驗證。所有規則數值集中在 `rules.ts`。所有隨機性必須透過 `MatchState.rng`（`rng.ts`，mulberry32，uint32 狀態）以確保可重現，不得直接呼叫 `Math.random()`；狀態必須可 JSON 往返，且不得修改傳入物件。
-- `src/bots/`：Bot 策略，用於 MVP（1 名真人 + 2–3 名 Bot）與大量模擬以驗證平衡（見設計文件第 11 節的四個驗證問題）。
-- `src/match/`（M7 實作）：Match Runner 與 Controller 介面，座位上是真人、Bot 或遠端玩家由此層決定，引擎只認識 `PlayerId`。
+- `src/bots/`：Bot 策略（`decide(DecisionContext) → Action`，只能使用 Runner 給的視角與合法行動），用於 MVP（1 名真人 + 2–3 名 Bot）與大量模擬以驗證平衡（見設計文件第 11 節的四個驗證問題）。
+- `src/match/`：Match Runner 與 Controller 介面，座位上是真人、Bot 或遠端玩家由此層決定，引擎只認識 `PlayerId`。Runner 代 Bot／UI 計算合法行動（`DecisionContext`），公開事件廣播、私有事件只轉交給對應座位；`runMatchSync` 供模擬、`runMatch` 供 UI／連線、`replayMatch` 以 seed＋行動紀錄重建對局。
 - `src/ui/`：呈現層（`index.html` → `src/ui/main.ts`），只透過 `src/game/index.ts` 使用規則引擎。
 - `tests/`：鏡像 `src/` 的結構（如 `tests/game/*.test.ts`），測試需以固定 seed 保持可重現。`tests/game/helpers.ts` 的 `startMatch` 預設使用 `NEUTRAL_EVENT_RULES`（事件效果歸零），避免隨機抽到的事件影響其他規則的測試；測試事件效果或做隨機 fuzz 時要明確傳入 `RULES_V06`。需要特定情境時用 `withRawRolls`、`withCash`、`withAssets`、`withMarketEvent`、`withNextVoyageEvent` 直接改寫狀態，並用 `scripted` 劇本指定玩家行動。
 
