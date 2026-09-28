@@ -1,0 +1,562 @@
+:root {
+  --ink: #ecdcb0;
+  --ink-dim: #b5a27a;
+  --bg: #0d1418;
+  --panel: rgba(16, 24, 28, 0.86);
+  --panel-edge: rgba(236, 220, 176, 0.18);
+  --gold: #d9a441;
+  --sea: #3f7f8c;
+  --danger: #c2553d;
+  --ok: #6da35a;
+  --intel: #6b8fd6;
+  --guard: #6da35a;
+  --pirate: #c2553d;
+  --smuggler: #a07ad0;
+  --radius: 10px;
+  font-family: 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif;
+  color: var(--ink);
+  background: var(--bg);
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+h1,
+h2,
+h3 {
+  margin: 0 0 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+h2 {
+  font-size: 1.05rem;
+  color: var(--gold);
+}
+
+p {
+  margin: 0.3rem 0;
+}
+
+a {
+  color: var(--gold);
+}
+
+button,
+select,
+input {
+  font: inherit;
+  color: var(--ink);
+  background: rgba(236, 220, 176, 0.08);
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--gold);
+}
+
+button.primary {
+  background: var(--gold);
+  color: #1b1408;
+  border-color: var(--gold);
+  font-weight: 700;
+  padding: 0.6rem 1.4rem;
+}
+
+button.ghost {
+  background: transparent;
+}
+
+.muted {
+  color: var(--ink-dim);
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: var(--radius);
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+
+.tag {
+  font-size: 0.7rem;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 99px;
+  border: 1px solid var(--panel-edge);
+  color: var(--ink-dim);
+}
+
+.tag.you {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.tag.ready {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  flex: none;
+}
+
+/* ── Backdrop paintings ── */
+
+.setup,
+.game {
+  min-height: 100vh;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-blend-mode: multiply;
+  background-color: rgba(8, 12, 14, 0.55);
+  transition: background-image 0.6s;
+}
+
+/* ── Setup ── */
+
+.setup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem 1rem;
+  gap: 1rem;
+}
+
+.setup .title {
+  font-size: 3rem;
+  letter-spacing: 0.3em;
+  text-shadow: 0 2px 12px #000;
+}
+
+.setup .subtitle {
+  margin-top: -1rem;
+  color: var(--ink-dim);
+}
+
+.setup .panel {
+  width: min(560px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.seats {
+  margin: 0;
+  padding-left: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.seats li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.seats input {
+  flex: 1;
+  min-width: 8rem;
+}
+
+.seed-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.seed-row input {
+  width: 9rem;
+}
+
+.credits {
+  font-size: 0.75rem;
+  color: var(--ink-dim);
+  text-align: center;
+  text-shadow: 0 1px 4px #000;
+}
+
+/* ── Game layout ── */
+
+.game {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.game-toolbar {
+  display: flex;
+  justify-content: space-between;
+}
+
+.round-header {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr;
+  gap: 1rem;
+}
+
+.round-counter,
+.event-card {
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: var(--radius);
+  padding: 0.8rem 1rem;
+}
+
+.round-counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.round-label {
+  font-size: 0.75rem;
+  color: var(--ink-dim);
+}
+
+.event-card {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  position: relative;
+  padding-top: 1.4rem;
+}
+
+.event-card p {
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+}
+
+.event-kind {
+  position: absolute;
+  top: 0.4rem;
+  left: 1rem;
+  font-size: 0.7rem;
+  color: var(--gold);
+}
+
+.game-grid {
+  display: grid;
+  grid-template-columns: 240px 1fr 300px;
+  gap: 1rem;
+  align-items: start;
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Players ── */
+
+.player-board ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.player {
+  padding: 0.6rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+}
+
+.player.me {
+  border-color: var(--gold);
+  background: rgba(217, 164, 65, 0.08);
+}
+
+.player-head {
+  display: flex;
+  justify-content: space-between;
+}
+
+.player-cash {
+  font-size: 1.2rem;
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.black-money {
+  font-size: 0.75rem;
+  color: var(--smuggler);
+}
+
+.player-assets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+}
+
+.asset-chip,
+.role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 99px;
+  background: rgba(236, 220, 176, 0.08);
+}
+
+/* ── Harbor ── */
+
+.recruit-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.recruit-list .withdrawn {
+  opacity: 0.5;
+}
+
+.ships {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.8rem;
+}
+
+.ship-card {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--panel-edge);
+  background: rgba(63, 127, 140, 0.12);
+  transition: background 0.4s, border-color 0.4s;
+}
+
+.ship-card.arrived {
+  border-color: var(--ok);
+  background: rgba(109, 163, 90, 0.15);
+}
+
+.ship-card.sank {
+  border-color: var(--danger);
+  background: rgba(194, 85, 61, 0.15);
+}
+
+.ship-card.sank .ship-art > .icon:first-child {
+  opacity: 0.4;
+  transform: rotate(20deg);
+}
+
+.ship-art {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ship-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.ship-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.role-chip.intel {
+  color: var(--intel);
+}
+
+.role-chip.guard {
+  color: var(--guard);
+}
+
+.role-chip.pirate {
+  color: var(--pirate);
+}
+
+.role-chip.smuggler {
+  color: var(--smuggler);
+}
+
+.role-chip.secret {
+  border: 1px dashed currentColor;
+}
+
+/* ── Decisions ── */
+
+.decision {
+  border-color: var(--gold);
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.6rem;
+}
+
+.option {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  text-align: left;
+  padding: 0.7rem;
+}
+
+.option span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.option small {
+  color: var(--ink-dim);
+  font-size: 0.75rem;
+}
+
+.option.selected {
+  border-color: var(--gold);
+  background: rgba(217, 164, 65, 0.15);
+}
+
+.targets {
+  margin-top: 1rem;
+}
+
+.intel-report {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+
+.die {
+  font-size: 1.8rem;
+  color: var(--gold);
+  padding: 0 0.4rem;
+}
+
+.continue {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.error {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* ── Log ── */
+
+.event-log ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 70vh;
+  overflow-y: auto;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.log-heading {
+  color: var(--gold);
+  margin-top: 0.6rem;
+}
+
+/* ── Result ── */
+
+.result table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.8rem 0;
+}
+
+.result th,
+.result td {
+  padding: 0.4rem;
+  text-align: left;
+  border-bottom: 1px solid var(--panel-edge);
+}
+
+.result .winner {
+  color: var(--gold);
+}
+
+/* ── Hot-seat handoff ── */
+
+.handoff {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #06090b;
+}
+
+.handoff-card {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.handoff-card h1 {
+  font-size: 2.4rem;
+  color: var(--gold);
+}
+
+/* ── Narrow screens ── */
+
+@media (max-width: 960px) {
+  .game-grid,
+  .round-header {
+    grid-template-columns: 1fr;
+  }
+
+  .event-log ol {
+    max-height: 30vh;
+  }
+}
+
+.private-notes {
+  border-color: var(--intel);
+}
+
+.private-notes ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
