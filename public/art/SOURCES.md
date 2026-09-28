@@ -55,3 +55,16 @@
 | paintings/calm-sea.jpg | Calm sea (A Calm) | https://commons.wikimedia.org/wiki/File:Van_de_Velde,_Willem_the_younger_-_A_Calm_-_Google_Art_Project.jpg | https://thumb.wikimedia.org/wikipedia/commons/thumb/5/51/Van_de_Velde%2C_Willem_the_younger_-_A_Calm_-_Google_Art_Project.jpg/1920px-Van_de_Velde%2C_Willem_the_younger_-_A_Calm_-_Google_Art_Project.jpg | Willem van de Velde the Younger (1663) | Public Domain — `{{PD-Art|PD-old-100-1923|deathyear=1707}}` | 2026-09-28 |
 | paintings/night-sea.jpg | Night sea (A Moonlit Night at Sea) | https://commons.wikimedia.org/wiki/File:Ivan_Konstantinovich_Aivazovsky_-_A_Moonlit_Night_at_Sea,_1885.jpg | https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7b/Ivan_Konstantinovich_Aivazovsky_-_A_Moonlit_Night_at_Sea%2C_1885.jpg/1920px-Ivan_Konstantinovich_Aivazovsky_-_A_Moonlit_Night_at_Sea%2C_1885.jpg | Ivan Aivazovsky (1885) | Public Domain — `{{PD-Art|PD-old-auto-expired|deathyear=1900}}` | 2026-09-28 |
 | paintings/high-waves.jpg | High waves / shipwreck survivors (The Ninth Wave) | https://commons.wikimedia.org/wiki/File:Aivazovsky,_Ivan_-_The_Ninth_Wave.jpg | https://thumb.wikimedia.org/wikipedia/commons/thumb/5/54/Aivazovsky%2C_Ivan_-_The_Ninth_Wave.jpg/1920px-Aivazovsky%2C_Ivan_-_The_Ninth_Wave.jpg | Ivan Aivazovsky (1850) | Public Domain — `{{PD-Art|PD-old-auto-expired|deathyear=1900}}` | 2026-09-28 |
+
+## 3D 模型（Kenney Pirate Kit 2.1，CC0）
+
+放在 [`public/models/pirate-kit/`](../models/pirate-kit/)，只收錄目前用到的 GLB 模型與共用貼圖 `Textures/colormap.png`，授權原文見同目錄的 `License.txt`。
+
+| 項目 | 內容 |
+|---|---|
+| 來源頁 | https://kenney.nl/assets/pirate-kit |
+| 下載網址 | https://kenney.nl/media/pages/assets/pirate-kit/e6d4bb1525-1771333093/kenney_pirate-kit.zip |
+| 作者 | Kenney（www.kenney.nl） |
+| 授權 | Creative Commons Zero（CC0），可商用，不需標示 |
+| 取得日期 | 2026-09-29 |
+| 修改 | 未修改模型；只挑選部分檔案 |

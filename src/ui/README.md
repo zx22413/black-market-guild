@@ -41,6 +41,19 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 
 佔位素材放在 `public/art/`（圖示 `icons/<key>.svg`、畫作 `paintings/<key>.jpg`），來源與授權見 [`public/art/SOURCES.md`](../../public/art/SOURCES.md)。圖示為 CC BY 3.0，**必須保留作者標示**（設定畫面底部）。
 
+## 3D 場景原型（`scene/`）
+
+`/#scene` 開啟靜態 3D 桌面（React Three Fiber），用來確認主場景構圖，尚未接上引擎：四座玩家小島以菱形（3 人為三角形）圍繞中央目標島「黑市港」，你的島在最靠近鏡頭的位置；對手只顯示船塢、資產建築與上方的名牌（資金、資產圖示）；航海事件以天氣改變海面與天空（右上角可預覽）。介面縮在四角：左上回合與事件、左下資金、底部中央行動膠囊、右下角色牌、右上日誌。
+
+| 檔案 | 職責 |
+| --- | --- |
+| `ScenePrototype.tsx` | 範例資料、鏡頭、燈光與角落介面。 |
+| `Islands.tsx`、`IslandBase.tsx` | 玩家小島（固定地基蓋資產建築）與目標島；島體為程序產生的低面數岩壁。 |
+| `Ships.tsx` | 航道上的船、沉船與海盜船。 |
+| `Sea.tsx`、`weather.ts` | 起伏的低面數海面，以及各航海事件的天空、海色、霧與光線。 |
+| `ScreenLabels.tsx` | 把 3D 位置投影成畫面座標，讓名牌用一般 DOM 顯示（drei `<Html>` 在實測中會遺失內容）。 |
+| `Model.tsx`、`layout.ts` | Kenney 模型載入與座位、地基位置。 |
+
 ## 待辦
 
 - 場景層：保留日後以 PixiJS 或 three.js（`@react-three/fiber`）繪製海面與船隻動畫的 `<canvas>`。
