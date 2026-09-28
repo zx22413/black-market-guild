@@ -165,6 +165,8 @@ function report(options: Options, s: SimStats): string {
       s.smuggling.get('confiscated') ?? 0
     }、被搶 ${s.smuggling.get('seized') ?? 0}、沉沒 ${s.smuggling.get('lost') ?? 0}。`,
     '',
+    `- 匿名程度：揭露時顯示未部署的玩家中，實際是走私商人的比例 ${pct(s.disguisedSmugglers, s.shownUndeployed)}（越低越難看穿）。`,
+    '',
     '## 5. 資產',
     '',
     ...table(
@@ -192,7 +194,7 @@ function summaryRow(options: Options, s: SimStats): string {
   const roleTotal = sum(roles);
   const winRates = [...new Set(options.lineup)].map((st) => (s.wins.get(st) ?? 0) / Math.max(1, s.seatsPlayed.get(st) ?? 0));
   const pirateNet = (s.pirateNet - s.pirateDeployments * options.rules.roles.pirate.fee) / Math.max(1, s.pirateDeployments);
-  return `| ${options.overrides.join(' ') || '現行規則'} | ${pct(arrived, allShips)} | ${pct(s.voyages.get('joint') ?? 0, sum(s.voyages))} | ${[
+  return `| ${options.overrides.join(' ') || '現行規則'} | ${pct(s.disguisedSmugglers, s.shownUndeployed)} | ${pct(arrived, allShips)} | ${pct(s.voyages.get('joint') ?? 0, sum(s.voyages))} | ${[
     'none',
     'intel',
     'guard',

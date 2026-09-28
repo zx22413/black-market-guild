@@ -70,33 +70,31 @@ export function revealRoles(state: MatchState): Step {
   const { deployments, ships } = state.roundState;
   const revealed: MatchState = { ...state, roundState: { ...state.roundState, rolesRevealed: true } };
   const rerolledShipIds = ships.filter((s) => s.rerolledRoll !== null).map((s) => s.id);
-  return chain(
-    revealed,
-    ROLE_IDS.map((role) => (current: MatchState): Step => {
-      const group = deployments.filter((d) => d.role === role);
-      const hidden = role === 'smuggler' && current.rules.roles.smuggler.anonymous === 1;
-      const fee = current.rules.roles[role].fee;
-      const fees = chain(
-        current,
-        (fee > 0 ? group : []).map((d) => (inner: MatchState) =>
-          changeCash(inner, d.playerId, -fee, 'role-fee', null),
-        ),
-      );
-      return {
-        state: fees.state,
-        events: [
-          {
-            type: 'roles-revealed',
-            round: state.round,
-            role,
-            deployments: hidden ? [] : group,
-            rerolledShipIds: role === 'intel' ? rerolledShipIds : [],
-          },
-          ...fees.events,
-        ],
-      };
-    }),
-  );
+  const groups = ROLE_IDS.map((role) => (current: MatchState): Step => {
+    const group = deployments.filter((d) => d.role === role);
+    const hidden = role === 'smuggler' && current.rules.roles.smuggler.anonymous === 1;
+    const fee = current.rules.roles[role].fee;
+    const fees = chain(
+      current,
+      (fee > 0 ? group : []).map((d) => (inner: MatchState) =>
+        changeCash(inner, d.playerId, -fee, 'role-fee', null),
+      ),
+    );
+    return {
+      state: fees.state,
+      events: [
+        {
+          type: 'roles-revealed',
+          round: state.round,
+          role,
+          deployments: hidden ? [] : group,
+          rerolledShipIds: role === 'intel' ? rerolledShipIds : [],
+        },
+        ...fees.events,
+      ],
+    };
+  });
+  return chain(revealed, groups);
 }
 
 function findShip(ships: readonly Ship[], shipId: string): Ship {

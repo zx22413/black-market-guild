@@ -18,6 +18,7 @@ import {
   scripted,
   startMatch,
   unwrap,
+  withCash,
   withRawRolls,
   type Script,
 } from './helpers';
@@ -25,7 +26,7 @@ import {
 // Switchable rule: roles.smuggler.anonymous = 1 (under evaluation, docs/open-questions.md Q-06).
 const RULES = {
   ...NEUTRAL_EVENT_RULES,
-  roles: { ...NEUTRAL_EVENT_RULES.roles, smuggler: { fee: 0, goodsValue: 300, anonymous: 1 } },
+  roles: { ...NEUTRAL_EVENT_RULES.roles, smuggler: { fee: 0, goodsValue: 300, anonymous: 1, caughtFine: 0 } },
 };
 
 /** p1 recruits p2 (joint r1-s1); p3 sails solo (r1-s2); p4 stays in port. */
@@ -57,7 +58,7 @@ const keys = (legal: readonly Action[]) =>
 
 describe('anonymous smuggling configuration', () => {
   it('rejects a smuggler fee, because a public fee would reveal the anonymous smuggler', () => {
-    const rules = { ...RULES, roles: { ...RULES.roles, smuggler: { fee: 50, goodsValue: 300, anonymous: 1 } } };
+    const rules = { ...RULES, roles: { ...RULES.roles, smuggler: { fee: 50, goodsValue: 300, anonymous: 1, caughtFine: 0 } } };
     const result = createMatch({ seed: 1, players: FOUR_PLAYERS, rules });
     expect(!result.ok && result.error.code).toBe('invalid-config');
   });
@@ -124,7 +125,7 @@ describe('anonymous smuggling reveal and payout', () => {
   });
 
   it('splits the base income, rounded down, when three stashes exceed it', () => {
-    const big = { ...RULES, roles: { ...RULES.roles, smuggler: { fee: 0, goodsValue: 300, anonymous: 1 } } };
+    const big = { ...RULES, roles: { ...RULES.roles, smuggler: { fee: 0, goodsValue: 300, anonymous: 1, caughtFine: 0 } } };
     const script3: Script = {
       ...BASE,
       deploy: {
@@ -169,5 +170,34 @@ describe('anonymous smuggling reveal and payout', () => {
     const p4 = state.players.find((p) => p.id === 'p4')!;
     expect(p4.blackMoney).toBe(0);
     expect(state.result?.standings.find((s) => s.playerId === 'p4')?.cash).toBe(p4.cash);
+  });
+});
+
+describe('fine for caught smugglers (game-design.md §7 走私結算)', () => {
+  const fined = { ...RULES, roles: { ...RULES.roles, smuggler: { ...RULES.roles.smuggler, caughtFine: 100 } } };
+  const script: Script = { ...BASE, deploy: { p4: { role: 'smuggler', target: 'r1-s2' }, p1: { role: 'guard', target: 'r1-s2' } } };
+
+  function fines(initial: MatchState) {
+    let state = withRawRolls(playUntil(initial, atPhase('role-deployment', 1), scripted(script)).state, { 'r1-s2': 5 });
+    const events: MatchEvent[] = [];
+    while (state.round === 1) {
+      const d = getPendingDecisions(state)[0]!;
+      const next = unwrap(applyAction(state, scripted(script)(state, d.playerId, getLegalActions(state, d.playerId))));
+      state = next.state;
+      events.push(...next.events);
+    }
+    return events.flatMap((e) => (e.type === 'cash-changed' && e.reason === 'smuggling-fine' ? [[e.playerId, e.amount]] : []));
+  }
+
+  it('charges a caught smuggler the fine publicly', () => {
+    expect(fines(startMatch({ rules: fined }).state)).toEqual([['p4', -100]]);
+  });
+
+  it('takes whatever cash a poor smuggler has left', () => {
+    expect(fines(withCash(startMatch({ rules: fined }).state, 'p4', 30))).toEqual([['p4', -30]]);
+  });
+
+  it('charges nothing when the fine is 0', () => {
+    expect(fines(startMatch({ rules: RULES }).state)).toEqual([]);
   });
 });

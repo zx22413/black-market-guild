@@ -188,8 +188,10 @@ function roleScore(scope: Scope, action: Extract<Action, { type: 'deploy-role' }
       const arrive = attackChance * underAttack + (1 - attackChance) * base;
       // Stealing from one's own joint ship costs one's own share of the goods.
       const gain = o.mine ? goods - goods / ship.owners.length : goods;
-      const reputation = rules.roles.smuggler.anonymous === 1 ? caught * 40 : 20;
-      return (1 - caught) * arrive * gain * p.smuggling - fee - reputation;
+      const anonymous = rules.roles.smuggler.anonymous === 1;
+      const reputation = anonymous ? caught * 40 : 20;
+      const fine = caught * arrive * rules.roles.smuggler.caughtFine;
+      return (1 - caught) * arrive * gain * p.smuggling - fine - fee - reputation;
     }
   }
 }

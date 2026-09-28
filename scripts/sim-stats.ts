@@ -27,6 +27,9 @@ export interface SimStats {
   pirateNet: number;
   smuggling: Map<'taken' | 'confiscated' | 'seized' | 'lost', number>;
   jointOwnerRounds: number;
+  /** Player-rounds shown as undeployed at the reveal, and how many of those were disguised smugglers. */
+  shownUndeployed: number;
+  disguisedSmugglers: number;
   assetsHeld: Map<string, number[]>;
   purchases: Map<string, number>;
   purchaseRounds: Map<string, number[]>;
@@ -51,6 +54,8 @@ export function emptyStats(): SimStats {
     pirateNet: 0,
     smuggling: new Map(),
     jointOwnerRounds: 0,
+    shownUndeployed: 0,
+    disguisedSmugglers: 0,
     assetsHeld: new Map(),
     purchases: new Map(),
     purchaseRounds: new Map(),
@@ -87,7 +92,7 @@ export function addMatch(stats: SimStats, log: MatchLog, seats: readonly SeatRec
   for (const player of log.finalState.players) {
     push(stats.assetsHeld, strategyOf.get(player.id)!, player.assets.length);
   }
-  foldEvents(stats, log.events, strategyOf, deploymentsByRound(log));
+  foldEvents(stats, log.events, strategyOf, deploymentsByRound(log), log.finalState.rules.roles.smuggler.anonymous === 1);
 }
 
 type RoundDeployment = RoundTracker['deployments'][number];
@@ -148,11 +153,23 @@ function foldRoles(stats: SimStats, round: RoundTracker, strategyOf: ReadonlyMap
   }
 }
 
+/** How well anonymous smugglers hide among players who really deployed nothing. */
+function foldDisguise(stats: SimStats, round: RoundTracker, strategyOf: ReadonlyMap<string, string>, anonymous: boolean): void {
+  for (const playerId of strategyOf.keys()) {
+    const role = round.deployments.find((d) => d.playerId === playerId)?.role;
+    if (role === undefined || (anonymous && role === 'smuggler')) {
+      stats.shownUndeployed += 1;
+      stats.disguisedSmugglers += role === 'smuggler' ? 1 : 0;
+    }
+  }
+}
+
 function foldEvents(
   stats: SimStats,
   events: readonly MatchEvent[],
   strategyOf: ReadonlyMap<string, string>,
   deployments: ReadonlyMap<number, RoundTracker['deployments']>,
+  anonymous: boolean,
 ): void {
   let round = newRound(null);
   for (const event of events) {
@@ -198,6 +215,7 @@ function foldEvents(
         break;
       case 'round-ended':
         foldRoles(stats, round, strategyOf);
+        foldDisguise(stats, round, strategyOf, anonymous);
         break;
       default:
         break;

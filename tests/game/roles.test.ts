@@ -428,7 +428,7 @@ describe('named smuggling variant (roles.smuggler.anonymous = 0)', () => {
   });
 
   it('splits the base income among smugglers when their goods exceed it', () => {
-    const rules = { ...NAMED_SMUGGLING_RULES, roles: { ...NAMED_SMUGGLING_RULES.roles, smuggler: { fee: 0, goodsValue: 400, anonymous: 0 } } };
+    const rules = { ...NAMED_SMUGGLING_RULES, roles: { ...NAMED_SMUGGLING_RULES.roles, smuggler: { fee: 0, goodsValue: 400, anonymous: 0, caughtFine: 0 } } };
     const script = joint({ p1: { role: 'smuggler', target: 'r1-s1' }, p2: { role: 'smuggler', target: 'r1-s1' } });
     const start = startMatch({ rules });
     const toDeploy = playUntil(start.state, atPhase('role-deployment', 1), scripted(script));

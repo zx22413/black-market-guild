@@ -26,8 +26,10 @@ function paySmuggling(state: MatchState): Step {
     state.roundState.ships.flatMap((ship) => {
       const settlement = settleSmuggling(state, ship);
       const takes = anonymous ? hideTakes(settlement.takes, ship.id) : pay(settlement.takes, 'smuggling', ship.id);
-      const caught = anonymous && settlement.confiscations.length > 0 ? [revealCaught(ship.id)] : [];
-      return [...takes, ...caught, ...pay(settlement.confiscations, 'smuggling-confiscated', ship.id)];
+      const isCaught = settlement.confiscations.length > 0;
+      const caught = anonymous && isCaught ? [revealCaught(ship.id)] : [];
+      const fines = isCaught ? fineCaughtSmugglers(state, ship.id) : [];
+      return [...takes, ...caught, ...pay(settlement.confiscations, 'smuggling-confiscated', ship.id), ...fines];
     }),
   );
 }
@@ -51,6 +53,21 @@ function hideTakes(takes: readonly Payment[], shipId: string) {
       privateEvents: takes.map((t) => ({ playerId: t.playerId, type: 'black-money', round: current.round, shipId, amount: t.amount })),
     }),
   ];
+}
+
+/** Caught smugglers pay a fine to the bank, capped at the cash they have (§7 走私結算). */
+function fineCaughtSmugglers(state: MatchState, shipId: string) {
+  const fine = state.rules.roles.smuggler.caughtFine;
+  if (fine <= 0) {
+    return [];
+  }
+  return state.roundState.deployments
+    .filter((d) => d.role === 'smuggler' && d.targetShipId === shipId)
+    .map((d) => (current: MatchState): Step => {
+      const cash = current.players.find((p) => p.id === d.playerId)?.cash ?? 0;
+      const amount = Math.min(cash, fine);
+      return amount > 0 ? changeCash(current, d.playerId, -amount, 'smuggling-fine', shipId) : { state: current, events: [] };
+    });
 }
 
 /** Anonymous smugglers caught by guards lose their anonymity. */

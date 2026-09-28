@@ -114,6 +114,7 @@ export type CashReason =
   | 'role-fee'
   | 'smuggling'
   | 'smuggling-confiscated'
+  | 'smuggling-fine'
   | 'smuggling-seized'
   | 'pirate-loot'
   | 'insurance'

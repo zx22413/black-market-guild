@@ -37,7 +37,13 @@ export interface Rules {
      * any ship except one's own solo ship, hidden at the reveal, proceeds kept as secret black money
      * until the match ends; identity exposed only when caught. 0 = the named, joint-ship-only variant.
      */
-    readonly smuggler: { readonly fee: number; readonly goodsValue: number; readonly anonymous: number };
+    readonly smuggler: {
+      readonly fee: number;
+      readonly goodsValue: number;
+      readonly anonymous: number;
+      /** Paid to the bank by a smuggler caught by guards; capped at the smuggler's cash. */
+      readonly caughtFine: number;
+    };
   };
   readonly assets: {
     readonly shipyard: { readonly price: number; readonly costReduction: number };
@@ -94,7 +100,7 @@ export const RULES_V06: Rules = {
     intel: { fee: 50 },
     guard: { fee: 50, piratesCancelled: 0, rollModifier: 1 },
     pirate: { fee: 100, modifier: -1, loot: 150 },
-    smuggler: { fee: 0, goodsValue: 50, anonymous: 1 },
+    smuggler: { fee: 0, goodsValue: 50, anonymous: 1, caughtFine: 200 },
   },
   assets: {
     // §8

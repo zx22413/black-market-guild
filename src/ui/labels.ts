@@ -42,6 +42,7 @@ export const CASH_REASON_LABELS: Readonly<Record<CashReason, string>> = {
   'role-fee': '角色部署費',
   smuggling: '走私收益',
   'smuggling-confiscated': '查獲走私貨',
+  'smuggling-fine': '走私罰款',
   'smuggling-seized': '搶走走私貨',
   'pirate-loot': '海盜戰利品',
   insurance: '航運保險補償',
