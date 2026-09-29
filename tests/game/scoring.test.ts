@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RULES_V06 } from '../../src/game/rules';
-import { computeResult } from '../../src/game/scoring';
+import { assetValue, computeResult } from '../../src/game/scoring';
 import type { PlayerState } from '../../src/game/types';
 
 const player = (id: string, cash: number, assets: PlayerState['assets'] = []): PlayerState => ({
@@ -40,5 +40,12 @@ describe('winner and tie-break (game-design.md §3)', () => {
     const result = computeResult([player('p1', 1000), player('p2', 1000), player('p3', 900)], RULES_V06);
     expect(result.winners).toEqual(['p1', 'p2']);
     expect(result.standings.map((s) => s.rank)).toEqual([1, 1, 3]);
+  });
+});
+
+describe('asset value (game-design.md §8 最終財富)', () => {
+  it('counts each held asset at half its price', () => {
+    expect(assetValue([], RULES_V06)).toBe(0);
+    expect(assetValue(['shipyard', 'salvage'], RULES_V06)).toBe(150 + 200);
   });
 });

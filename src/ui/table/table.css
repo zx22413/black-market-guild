@@ -403,10 +403,6 @@
   }
 }
 
-/* Seat tags are already absolutely positioned, which anchors their floats too. */
-.hud-cash {
-  position: relative;
-}
 
 .cash-floats {
   position: absolute;
@@ -443,4 +439,102 @@
 .cash-float.loss {
   color: #fcf4e2;
   background: #9a3b28;
+}
+
+/* ── Own ledger (bottom-left) ── */
+
+.ledger {
+  position: relative;
+  min-width: 190px;
+  max-width: 240px;
+  padding: 10px 14px;
+  background: rgba(252, 244, 226, 0.95);
+  border: 3px solid #7a5a36;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(30, 20, 5, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ledger-name {
+  font-size: 1rem;
+}
+
+.ledger-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.9rem;
+}
+
+.ledger-row b {
+  color: #8a5a10;
+  font-size: 1.05rem;
+}
+
+.ledger-row.secret {
+  border-top: 1px dashed rgba(122, 79, 176, 0.5);
+  padding-top: 4px;
+  color: #7a4fb0;
+}
+
+.ledger-row.secret b {
+  color: #7a4fb0;
+}
+
+.ledger-assets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-size: 0.75rem;
+}
+
+.ledger-assets span {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ledger-assets .icon {
+  filter: brightness(0.35) sepia(1) saturate(2) hue-rotate(-10deg);
+}
+
+.seat-worth {
+  margin-left: 6px;
+  font-size: 0.72rem;
+  color: #5d4527;
+}
+
+/* ── Resolution formula on ship tags ── */
+
+.modifier.base {
+  background: #3a2a17;
+}
+
+.modifier.final {
+  background: #d9a441;
+  color: #3a2a17;
+}
+
+.ship-intel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: #3b5a9a;
+  border: 1px dashed #6b8fd6;
+  border-radius: 6px;
+  padding: 0 6px;
+}
+
+.ship-intel .die {
+  font-weight: 700;
+  font-size: 0.85rem;
+  animation: pop-in 0.4s ease-out both;
+}
+
+.ship-intel .die.struck {
+  text-decoration: line-through;
+  opacity: 0.6;
 }

@@ -1,11 +1,9 @@
 import type { Rules } from './rules';
-import type { MatchResult, PlayerState, Standing } from './types';
+import type { AssetId, MatchResult, PlayerState, Standing } from './types';
 
-function assetValue(player: PlayerState, rules: Rules): number {
-  return player.assets.reduce(
-    (sum, asset) => sum + Math.floor(rules.assets[asset].price * rules.assetValueRatio),
-    0,
-  );
+/** Value of held assets toward final wealth: each at half its price (game-design.md §8 最終財富). */
+export function assetValue(assets: readonly AssetId[], rules: Rules): number {
+  return assets.reduce((sum, asset) => sum + Math.floor(rules.assets[asset].price * rules.assetValueRatio), 0);
 }
 
 /**
@@ -14,7 +12,7 @@ function assetValue(player: PlayerState, rules: Rules): number {
  */
 export function computeResult(players: readonly PlayerState[], rules: Rules): MatchResult {
   const scored = players.map((player) => {
-    const value = assetValue(player, rules);
+    const value = assetValue(player.assets, rules);
     return { playerId: player.id, cash: player.cash, assetValue: value, wealth: player.cash + value };
   });
   const sorted = [...scored].sort((a, b) => b.wealth - a.wealth || b.cash - a.cash);

@@ -1,4 +1,4 @@
-import type { AssetId, Deployment, PlayerId, ShipId, ShipKind, VoyageModifier } from '../../game';
+import { assetValue, type AssetId, type Deployment, type PlayerId, type Rules, type ShipId, type ShipKind, type VoyageModifier } from '../../game';
 import type { Board } from '../session/board';
 
 export const PLAYER_COLORS = ['#e0b43c', '#d0553f', '#4f8fd6', '#6db36a'] as const;
@@ -12,6 +12,8 @@ export interface SceneSeat {
   readonly color: string;
   readonly cash: number;
   readonly assets: readonly AssetId[];
+  /** Held assets as counted toward final wealth. */
+  readonly assetValue: number;
   /** The seat whose private view is on screen; drawn nearest the camera. */
   readonly isViewer: boolean;
   /** Open (or withdrawn) joint-venture recruitment this round. */
@@ -32,7 +34,7 @@ export interface SceneShip {
   readonly rerolled: boolean;
   readonly smuggled: number;
   readonly caughtSmugglers: readonly PlayerId[];
-  /** Public roll modifiers, shown just before the outcome. */
+  /** Public starting roll, modifiers and final value, shown just before the outcome. */
   readonly modifier: VoyageModifier | null;
 }
 
@@ -66,7 +68,12 @@ function shipState(board: Board, outcome: Board['ships'][number]['outcome']): Sh
  * Everything the 3D table draws, built from public board state only. Colors stay tied to
  * the player's seat in the match, so rotating the view never changes a guild's color.
  */
-export function buildSceneTable(board: Board, players: readonly TablePlayer[], viewerId: PlayerId | null): SceneTable {
+export function buildSceneTable(
+  board: Board,
+  players: readonly TablePlayer[],
+  viewerId: PlayerId | null,
+  rules: Rules,
+): SceneTable {
   const colorOf = (id: PlayerId) => PLAYER_COLORS[players.findIndex((p) => p.id === id) % PLAYER_COLORS.length]!;
   const ordered = seatOrder(players, viewerId);
   const seats = ordered.map(
@@ -76,6 +83,7 @@ export function buildSceneTable(board: Board, players: readonly TablePlayer[], v
       color: colorOf(p.id),
       cash: board.cash[p.id] ?? 0,
       assets: board.assets[p.id] ?? [],
+      assetValue: assetValue(board.assets[p.id] ?? [], rules),
       isViewer: p.id === viewerId,
       recruiting: board.withdrawn.includes(p.id) ? 'withdrawn' : board.recruiters.includes(p.id) ? 'open' : null,
       appliedTo: board.applications.filter((a) => a.applicantId === p.id).map((a) => a.recruiterId),

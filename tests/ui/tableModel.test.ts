@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { MatchEvent } from '../../src/game';
+import { RULES_V06, type MatchEvent } from '../../src/game';
 import { buildBoard, initialBoard, type Board } from '../../src/ui/session/board';
 import { PLAYER_COLORS, buildSceneTable, seatOrder } from '../../src/ui/scene/tableModel';
 
@@ -32,7 +32,7 @@ describe('scene table model', () => {
   });
 
   it('keeps each guild color when the view rotates', () => {
-    const table = buildSceneTable(initialBoard(IDS, 1000), PLAYERS, 'p3');
+    const table = buildSceneTable(initialBoard(IDS, 1000), PLAYERS, 'p3', RULES_V06);
     expect(table.seats.map((s) => [s.id, s.color])).toEqual([
       ['p3', PLAYER_COLORS[2]],
       ['p4', PLAYER_COLORS[3]],
@@ -40,6 +40,17 @@ describe('scene table model', () => {
       ['p2', PLAYER_COLORS[1]],
     ]);
     expect(table.seats.filter((s) => s.isViewer).map((s) => s.id)).toEqual(['p3']);
+  });
+
+  it('values held assets at half price for every guild', () => {
+    const board = boardAfter([{ type: 'assets-purchased', round: 1, purchases: [{ playerId: 'p2', asset: 'exchange' }] }]);
+    const table = buildSceneTable(board, PLAYERS, 'p1', RULES_V06);
+    expect(table.seats.map((s) => [s.id, s.assetValue])).toEqual([
+      ['p1', 0],
+      ['p2', 200],
+      ['p3', 0],
+      ['p4', 0],
+    ]);
   });
 
   it('shows recruitment, applications and players staying in port', () => {
@@ -52,6 +63,7 @@ describe('scene table model', () => {
       ]),
       PLAYERS,
       'p1',
+      RULES_V06,
     );
     const seat = (id: string) => table.seats.find((s) => s.id === id)!;
     expect(seat('p2').recruiting).toBe('open');
@@ -61,7 +73,7 @@ describe('scene table model', () => {
   });
 
   it('sails joint ships in the recruiter lane and follows the voyage', () => {
-    const docked = buildSceneTable(boardAfter([launch]), PLAYERS, 'p1');
+    const docked = buildSceneTable(boardAfter([launch]), PLAYERS, 'p1', RULES_V06);
     expect(docked.ships.map((s) => [s.id, s.lane, s.state])).toEqual([
       ['r1-s1', 1, 'docked'],
       ['r1-s2', 3, 'docked'],
@@ -82,6 +94,7 @@ describe('scene table model', () => {
       ]),
       PLAYERS,
       'p1',
+      RULES_V06,
     );
     expect(resolved.ships.map((s) => [s.id, s.state, s.roles.length])).toEqual([
       ['r1-s1', 'sailing', 0],

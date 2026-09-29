@@ -5,13 +5,14 @@ import { Icon } from '../components/Icon';
 import { PrivateNotes } from '../components/PrivateNotes';
 import { MARKET_EVENT_LABELS } from '../labels';
 import { TableScene } from '../scene/TableScene';
+import type { IntelTrace } from '../scene/SceneLabels';
 import { buildSceneTable } from '../scene/tableModel';
 import { HandoffScreen } from '../screens/HandoffScreen';
 import { ResultScreen } from '../screens/ResultScreen';
 import type { GameSession } from '../session/gameSession';
 import { usePlayback } from '../session/usePlayback';
 import { DecisionDock } from './DecisionDock';
-import { CashBadge, EventBand } from './TableHud';
+import { EventBand, LedgerCard } from './TableHud';
 import { useCashFloats } from './useCashFloats';
 import './table.css';
 
@@ -34,7 +35,20 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
   const nameOf = useCallback((id: PlayerId) => names.get(id) ?? id, [names]);
   // Spectators see the table from the first seat, with every guild's public tag.
   const viewerId = view?.playerId ?? null;
-  const table = useMemo(() => buildSceneTable(board, snapshot.players, viewerId), [board, snapshot.players, viewerId]);
+  const rules = view?.rules ?? RULES_V06;
+  const table = useMemo(() => buildSceneTable(board, snapshot.players, viewerId, rules), [board, snapshot.players, viewerId, rules]);
+  // The viewer's own intel reports this round, replayed on the ship tag at resolution.
+  const intel = useMemo(() => {
+    const traces = new Map<ShipId, IntelTrace>();
+    for (const note of playback.privateNotes) {
+      if (note.type === 'intel-report') traces.set(note.shipId, { raw: note.rawRoll, rerolled: null });
+      if (note.type === 'intel-reroll-result') {
+        const seen = traces.get(note.shipId);
+        if (seen) traces.set(note.shipId, { ...seen, rerolled: note.rerolledRoll });
+      }
+    }
+    return traces;
+  }, [playback.privateNotes]);
   const describeShip = useCallback(
     (id: ShipId) => {
       const ship = board.ships.find((s) => s.id === id);
@@ -60,7 +74,6 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
     if (action) submit(action);
   };
 
-  const rules = view?.rules ?? RULES_V06;
   const viewerSeat = table.seats.find((s) => s.isViewer);
   return (
     <div className="scene-root">
@@ -72,6 +85,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
         selectableShips={selectableShips}
         onSelectShip={selectShip}
         secret={activeView?.myDeployment ?? null}
+        intel={intel}
         submitted={activeView?.submittedPlayerIds ?? []}
         floats={floats}
         onReady={markReady}
@@ -95,12 +109,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
       </div>
 
       {viewerSeat && (
-        <CashBadge
-          name={viewerSeat.name}
-          cash={viewerSeat.cash}
-          blackMoney={view?.myBlackMoney ?? 0}
-          floats={floats.filter((f) => f.playerId === viewerSeat.id)}
-        />
+        <LedgerCard seat={viewerSeat} blackMoney={view?.myBlackMoney ?? 0} floats={floats.filter((f) => f.playerId === viewerSeat.id)} />
       )}
 
       <div className="hud hud-private">

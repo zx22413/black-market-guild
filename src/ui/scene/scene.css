@@ -62,8 +62,7 @@
   align-items: flex-start;
 }
 
-.hud-event small,
-.hud-cash small {
+.hud-event small {
   display: block;
   font-size: 0.7rem;
   color: #8a6a44;
@@ -89,23 +88,7 @@
   cursor: pointer;
 }
 
-.hud-cash {
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  background: rgba(252, 244, 226, 0.94);
-  border: 4px solid #d9a441;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 3px 10px rgba(30, 20, 5, 0.3);
-}
 
-.hud-cash strong {
-  font-size: 1.5rem;
-  line-height: 1.1;
-}
 
 .action-pill {
   display: flex;

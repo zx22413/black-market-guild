@@ -7,7 +7,7 @@ import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatAngles, seatPosition, t
 import { Routes } from './Routes';
 import { LabelTracker, type LabelAnchor } from './ScreenLabels';
 import { Sea } from './Sea';
-import { SeatTag, ShipTag, TargetSign } from './SceneLabels';
+import { SeatTag, ShipTag, TargetSign, type IntelTrace } from './SceneLabels';
 import { Escorts, VoyageShip, shipPose } from './Ships';
 import type { CashFloat } from '../table/useCashFloats';
 import type { SceneTable } from './tableModel';
@@ -35,6 +35,8 @@ export interface TableSceneProps {
   readonly secret: Deployment | null;
   /** Seats that already locked this phase's choice. */
   readonly submitted: readonly PlayerId[];
+  /** What the viewer's intel merchant saw, by ship; shown to the viewer only. */
+  readonly intel: ReadonlyMap<ShipId, IntelTrace>;
   /** Recent cash changes floating above each guild's tag. */
   readonly floats: readonly CashFloat[];
   /** Called once all models have loaded. */
@@ -67,7 +69,7 @@ function Ready({ onReady }: { readonly onReady: () => void }) {
 
 /** The whole 3D table: guild islands around the target island, lanes, ships and tags. */
 export function TableScene(props: TableSceneProps) {
-  const { table, weather, notice, nameOf, selectableShips, onSelectShip, secret, submitted, floats, onReady } = props;
+  const { table, weather, notice, nameOf, selectableShips, onSelectShip, secret, intel, submitted, floats, onReady } = props;
   const look = WEATHER[weather ?? 'clear'];
   const angles = useMemo(() => seatAngles(table.seats.length), [table.seats.length]);
   const viewerSeat = table.seats.findIndex((s) => s.isViewer);
@@ -154,6 +156,7 @@ export function TableScene(props: TableSceneProps) {
             nameOf={nameOf}
             colorOf={(id) => table.seats.find((s) => s.id === id)?.color ?? '#7a5a36'}
             secret={secret?.targetShipId === ship.id ? secret : null}
+            intel={intel.get(ship.id) ?? null}
             selectable={selectableShips.has(ship.id)}
             onSelect={() => onSelectShip(ship.id)}
           />

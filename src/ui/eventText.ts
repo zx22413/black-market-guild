@@ -9,7 +9,7 @@ import {
 
 const signed = (n: number): string => (n > 0 ? `+${n}` : `${n}`);
 
-/** "護衛 +1、海盜 -1、事件 -2", skipping zero steps; "無" when nothing applies. */
+/** "起始 5，護衛 +1、海盜 -1、事件 -2，最終 3", skipping zero steps. */
 export function formatModifier(m: VoyageModifier): string {
   const parts = [
     ['護衛', m.guard],
@@ -17,7 +17,7 @@ export function formatModifier(m: VoyageModifier): string {
     ['事件', m.event],
   ] as const;
   const shown = parts.filter(([, value]) => value !== 0).map(([label, value]) => `${label} ${signed(value)}`);
-  return shown.length > 0 ? shown.join('、') : '無';
+  return `起始 ${m.base}，${shown.length > 0 ? shown.join('、') : '無修正'}，最終 ${m.final}`;
 }
 
 /**

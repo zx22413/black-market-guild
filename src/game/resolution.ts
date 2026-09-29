@@ -7,25 +7,22 @@ import type { MatchState, Ship, Step, VoyageModifier, VoyageOutcome } from './ty
  * raw roll → intel reroll → guards → pirates → events → clamp to 1-6.
  */
 export function finalRoll(state: MatchState, ship: Ship): number {
+  return voyageModifier(state, ship).final;
+}
+
+/** Starting roll, guard, pirate and event steps, and the clamped final value for one ship. */
+export function voyageModifier(state: MatchState, ship: Ship): VoyageModifier {
   if (ship.rawRoll === null) {
     throw new Error(`ship ${ship.id} has not been rolled`);
   }
   const base = ship.rerolledRoll ?? ship.rawRoll;
-  const { guard, pirate, event } = voyageModifier(state, ship);
-  const modified = base + guard + pirate + event;
+  const guard = guardRollModifier(state, ship);
+  // + 0 turns -0 (no pirates times a negative modifier) into 0.
+  const pirate = activePirates(state, ship) * state.rules.roles.pirate.modifier + 0;
+  const event = eventRollModifier(state, ship);
   const { dieMin, dieMax } = state.rules.sailing;
-  return Math.min(dieMax, Math.max(dieMin, modified));
-}
-
-/** Guard, pirate and event steps of the modifier order for one ship, before the clamp. */
-export function voyageModifier(state: MatchState, ship: Ship): VoyageModifier {
-  return {
-    shipId: ship.id,
-    guard: guardRollModifier(state, ship),
-    // + 0 turns -0 (no pirates times a negative modifier) into 0.
-    pirate: activePirates(state, ship) * state.rules.roles.pirate.modifier + 0,
-    event: eventRollModifier(state, ship),
-  };
+  const final = Math.min(dieMax, Math.max(dieMin, base + guard + pirate + event));
+  return { shipId: ship.id, base, guard, pirate, event, final };
 }
 
 /**
@@ -62,16 +59,15 @@ export function outcomeOf(state: MatchState, value: number): VoyageOutcome {
 }
 
 /**
- * Decides every ship's fate. Announces the public modifiers first, then only each outcome;
- * the dice are never announced.
+ * Decides every ship's fate. Announces the public summary first (starting roll, modifiers,
+ * final value; game-design.md §4), then each outcome. A rerolled ship's original roll stays
+ * with the intel merchant.
  */
 export function resolveVoyages(state: MatchState): Step {
   const { ships: sailing } = state.roundState;
-  const ships = sailing.map((ship) => ({
-    ...ship,
-    outcome: outcomeOf(state, finalRoll(state, ship)),
-  }));
-  const modifiers = sailing.length > 0 ? [{ type: 'voyage-modifiers' as const, round: state.round, modifiers: sailing.map((ship) => voyageModifier(state, ship)) }] : [];
+  const summaries = sailing.map((ship) => voyageModifier(state, ship));
+  const ships = sailing.map((ship, i) => ({ ...ship, outcome: outcomeOf(state, summaries[i]!.final) }));
+  const modifiers = sailing.length > 0 ? [{ type: 'voyage-modifiers' as const, round: state.round, modifiers: summaries }] : [];
   return {
     state: { ...state, roundState: { ...state.roundState, ships } },
     events: [

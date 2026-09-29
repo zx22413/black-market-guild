@@ -202,14 +202,17 @@ export interface MatchState {
 }
 
 /**
- * Sum of each modifier step for one ship (game-design.md §7 航行修正順序), before the clamp.
- * Derivable from public information: revealed roles, public assets and events.
+ * Public resolution summary for one ship (game-design.md §4 結算起始骰值與修正, §7 航行修正順序):
+ * the starting roll used (the rerolled value if an intel merchant rerolled; the original roll
+ * of a rerolled ship is never included), the sum of each modifier step and the clamped result.
  */
 export interface VoyageModifier {
   readonly shipId: ShipId;
+  readonly base: number;
   readonly guard: number;
   readonly pirate: number;
   readonly event: number;
+  readonly final: number;
 }
 
 /** Public events emitted by the engine. Never contains hidden information. */
@@ -260,7 +263,7 @@ export type MatchEvent =
   | {
       readonly type: 'voyage-modifiers';
       readonly round: number;
-      /** Public roll modifiers per ship, announced before the outcomes; the dice stay hidden. */
+      /** Starting roll, modifiers and final value per ship, announced before the outcomes. */
       readonly modifiers: readonly VoyageModifier[];
     }
   | { readonly type: 'ship-resolved'; readonly round: number; readonly shipId: ShipId; readonly outcome: VoyageOutcome }

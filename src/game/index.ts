@@ -5,6 +5,7 @@ export { getPendingDecisions, getLegalActions } from './decisions';
 export { getPlayerView } from './view';
 export type { IntelKnowledge, PlayerView, PublicPlayer } from './view';
 export { RULES_V06 } from './rules';
+export { assetValue } from './scoring';
 export type { Rules } from './rules';
 export { createRng, createRngFromState } from './rng';
 export type { Rng, RngState } from './rng';

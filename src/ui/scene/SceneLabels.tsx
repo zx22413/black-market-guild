@@ -36,7 +36,9 @@ export function SeatTag({ ref, seat, nameOf, ready, floats }: SeatTagProps) {
         {seat.name}
         {ready && <span className="tag-ready" title="已決定"> ✓</span>}
       </strong>
-      <span className="seat-cash">{seat.cash} G</span>
+      <span className="seat-cash">
+        {seat.cash} G<small className="seat-worth">資產 {seat.assetValue} G</small>
+      </span>
       {seat.assets.length > 0 && (
         <span className="seat-assets">
           {seat.assets.map((a) => (
@@ -59,12 +61,14 @@ interface ShipTagProps {
   readonly colorOf: (id: PlayerId) => string;
   /** The viewer's own hidden deployment on this ship, if any. */
   readonly secret: Deployment | null;
+  /** What the viewer's intel merchant saw on this ship; private to the viewer. */
+  readonly intel: IntelTrace | null;
   readonly selectable: boolean;
   readonly onSelect: () => void;
 }
 
 /** Floating tag over a ship: owners, revealed roles and what happened to it. */
-export function ShipTag({ ref, ship, nameOf, colorOf, secret, selectable, onSelect }: ShipTagProps) {
+export function ShipTag({ ref, ship, nameOf, colorOf, secret, intel, selectable, onSelect }: ShipTagProps) {
   const outcome = ship.state === 'arrived' ? '抵達' : ship.state === 'sunk' ? '沉沒' : null;
   return (
     <button
@@ -81,7 +85,8 @@ export function ShipTag({ ref, ship, nameOf, colorOf, secret, selectable, onSele
         {ship.owners.map(nameOf).join('＋')}
         {outcome && <b className={`ship-outcome ${ship.state}`}>{outcome}</b>}
       </span>
-      {ship.modifier && <ModifierRow modifier={ship.modifier} />}
+      {intel && ship.modifier && <IntelRow intel={intel} />}
+      {ship.modifier && <ResolutionRow modifier={ship.modifier} rerolled={ship.rerolled} delay={intel?.rerolled != null ? 1.1 : 0} />}
       {(ship.roles.length > 0 || secret || ship.rerolled || ship.smuggled > 0 || ship.caughtSmugglers.length > 0) && (
         <span className="ship-roles">
           {ship.roles.map((d) => (
@@ -103,24 +108,54 @@ export function ShipTag({ ref, ship, nameOf, colorOf, secret, selectable, onSele
   );
 }
 
+/** The raw roll and reroll the viewer's intel merchant saw on a ship. */
+export interface IntelTrace {
+  readonly raw: number;
+  readonly rerolled: number | null;
+}
+
 const STEPS = [
   ['guard', '護衛'],
   ['pirate', '海盜'],
   ['event', '事件'],
 ] as const;
 
-/** The public roll modifiers popping up one by one before the ship's fate is shown. */
-function ModifierRow({ modifier }: { readonly modifier: VoyageModifier }) {
+const signed = (n: number): string => `${n > 0 ? '+' : '−'}${Math.abs(n)}`;
+
+/** Only for the intel merchant: the original roll struck out and replaced by the reroll. */
+function IntelRow({ intel }: { readonly intel: IntelTrace }) {
+  return (
+    <span className="ship-intel" title="只有你知道">
+      你的情報：<span className={intel.rerolled !== null ? 'die struck' : 'die'}>{intel.raw}</span>
+      {intel.rerolled !== null && (
+        <>
+          <span className="arrow">→</span>
+          <span className="die" style={{ animationDelay: '0.6s' }}>
+            {intel.rerolled}
+          </span>
+        </>
+      )}
+    </span>
+  );
+}
+
+/** Public resolution: starting roll, each modifier popping in turn, then the final value. */
+function ResolutionRow({ modifier, rerolled, delay }: { readonly modifier: VoyageModifier; readonly rerolled: boolean; readonly delay: number }) {
   const steps = STEPS.filter(([key]) => modifier[key] !== 0);
+  const at = (i: number) => ({ animationDelay: `${delay + i * 0.35}s` });
   return (
     <span className="ship-modifiers">
-      {steps.length === 0 && <span className="modifier zero">無修正</span>}
+      <span className="modifier base" style={at(0)} title={rerolled ? '重擲後的骰值' : '起始骰值'}>
+        {rerolled ? '重擲後' : '骰'} {modifier.base}
+      </span>
       {steps.map(([key, label], i) => (
-        <span key={key} className={`modifier ${modifier[key] > 0 ? 'up' : 'down'}`} style={{ animationDelay: `${i * 0.35}s` }}>
-          {label} {modifier[key] > 0 ? '+' : '−'}
-          {Math.abs(modifier[key])}
+        <span key={key} className={`modifier ${modifier[key] > 0 ? 'up' : 'down'}`} style={at(i + 1)}>
+          {label} {signed(modifier[key])}
         </span>
       ))}
+      <span className="modifier final" style={at(steps.length + 1)}>
+        = {modifier.final}
+      </span>
     </span>
   );
 }
