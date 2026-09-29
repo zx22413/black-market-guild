@@ -38,20 +38,8 @@
   left: 18px;
 }
 
-.hud-bottom-center {
-  bottom: 22px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.hud-bottom-right {
-  bottom: 16px;
-  right: 30px;
-}
-
 .hud-round,
 .hud-event,
-.hud-weather,
 .seat-tag,
 .island-sign,
 .action-pill,
@@ -88,8 +76,7 @@
 }
 
 .hud-event .icon,
-.hud-icon-button .icon,
-.role-card .icon {
+.hud-icon-button .icon {
   filter: brightness(0.35) sepia(1) saturate(2) hue-rotate(-10deg);
 }
 
@@ -100,18 +87,6 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-}
-
-.hud-weather {
-  padding: 6px 10px;
-  font-size: 0.8rem;
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
-.hud-weather select {
-  font: inherit;
 }
 
 .hud-cash {
@@ -153,29 +128,6 @@
 .action-pill button.primary {
   background: #7a5a36;
   color: #fcf4e2;
-}
-
-.role-card {
-  width: 74px;
-  height: 104px;
-  margin-left: -18px;
-  background: #fcf4e2;
-  border: 2px solid #7a5a36;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 0.78rem;
-  box-shadow: 0 4px 12px rgba(30, 20, 5, 0.3);
-  transform-origin: bottom center;
-  transition: transform 0.15s;
-  cursor: pointer;
-}
-
-.role-card:hover {
-  transform: translateY(-14px) !important;
 }
 
 .seat-tag {
@@ -243,11 +195,4 @@
   top: 0;
   left: 0;
   visibility: hidden;
-}
-
-.hud-weather select {
-  color: #3a2a17;
-  background: #fcf4e2;
-  border: 1px solid #7a5a36;
-  border-radius: 6px;
 }

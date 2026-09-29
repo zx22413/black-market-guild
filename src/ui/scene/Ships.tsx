@@ -1,53 +1,107 @@
-import { Float } from '@react-three/drei';
-import { useMemo } from 'react';
-import { Vector3 } from 'three';
+import { useFrame, type ThreeEvent } from '@react-three/fiber';
+import { useMemo, useRef } from 'react';
+import { Vector3, type Group } from 'three';
+import type { Deployment } from '../../game';
 import { headingOf, laneCurve } from './layout';
 import { Model, type ModelName } from './Model';
+import type { SceneShip, ShipState } from './tableModel';
 
-export type ShipState = 'docked' | 'sailing' | 'sunk' | 'arrived';
+/** Where along its lane a ship rests in each state: dock, danger zone, target dock. */
+const LANE_T: Readonly<Record<ShipState, number>> = { docked: 0, sailing: 0.5, sunk: 0.5, arrived: 0.86 };
 
-interface VoyageShipProps {
-  readonly angle: number;
-  readonly state: ShipState;
-  readonly joint?: boolean;
-  /** Where along the lane the ship sits while sailing, 0 = home dock, 1 = target dock. */
-  readonly progress?: number;
+export interface LanePose {
+  readonly position: Vector3;
+  readonly heading: number;
 }
 
-function laneT(state: ShipState, progress: number): number {
-  if (state === 'docked') return 0;
-  if (state === 'arrived') return 1;
-  return progress;
-}
-
-/** Position and heading at a point of a guild's lane, optionally pushed sideways off the lane. */
-function lanePose(angle: number, t: number, sideways = 0): { position: Vector3; heading: number } {
+/** Position and heading at a point of a lane, optionally pushed sideways off it. */
+export function lanePose(angle: number, t: number, sideways = 0): LanePose {
   const curve = laneCurve(angle);
   const tangent = curve.getTangent(t);
   const side = new Vector3(tangent.z, 0, -tangent.x).multiplyScalar(sideways);
   return { position: curve.getPoint(t).add(side), heading: headingOf(tangent) };
 }
 
-/** A guild ship on its lane between its home island and the target island. */
-export function VoyageShip({ angle, state, joint = false, progress = 0.55 }: VoyageShipProps) {
-  const model: ModelName = state === 'sunk' ? 'ship-wreck' : joint ? 'ship-large' : 'ship-medium';
-  const { position, heading } = useMemo(() => lanePose(angle, laneT(state, progress)), [angle, state, progress]);
-  const ship = <Model name={model} scale={0.42} />;
+export function shipPose(angle: number, state: ShipState): LanePose {
+  return lanePose(angle, LANE_T[state]);
+}
+
+/** Eases a group toward a target pose every frame, so state changes read as sailing. */
+function useGlide(target: LanePose, sinkTo: number) {
+  const group = useRef<Group>(null);
+  useFrame(({ clock }, delta) => {
+    const g = group.current;
+    if (!g) return;
+    const ease = 1 - Math.exp(-delta * 2.2);
+    g.position.x += (target.position.x - g.position.x) * ease;
+    g.position.z += (target.position.z - g.position.z) * ease;
+    g.position.y += (sinkTo - g.position.y) * ease;
+    const turn = Math.atan2(Math.sin(target.heading - g.rotation.y), Math.cos(target.heading - g.rotation.y));
+    g.rotation.y += turn * ease;
+    // Gentle bob and roll while afloat.
+    if (sinkTo === 0) {
+      g.position.y += Math.sin(clock.elapsedTime * 1.6 + target.position.x) * 0.04;
+      g.rotation.z = Math.sin(clock.elapsedTime * 1.2 + target.position.z) * 0.03;
+    }
+  });
+  return group;
+}
+
+interface VoyageShipProps {
+  readonly ship: SceneShip;
+  readonly angle: number;
+  readonly selectable: boolean;
+  readonly onSelect: () => void;
+}
+
+/** A guild ship on its lane; glides from dock to the danger zone and on to the target. */
+export function VoyageShip({ ship, angle, selectable, onSelect }: VoyageShipProps) {
+  const target = useMemo(() => shipPose(angle, ship.state), [angle, ship.state]);
+  const start = useMemo(() => shipPose(angle, 'docked'), [angle]);
+  const group = useGlide(target, ship.state === 'sunk' ? -0.6 : 0);
+  const model: ModelName = ship.state === 'sunk' ? 'ship-wreck' : ship.kind === 'joint' ? 'ship-large' : 'ship-medium';
+  const click = (e: ThreeEvent<MouseEvent>) => {
+    if (!selectable) return;
+    e.stopPropagation();
+    onSelect();
+  };
   return (
-    <group position={[position.x, state === 'sunk' ? -0.5 : 0, position.z]} rotation={[0, heading, 0]}>
-      {state === 'sunk' ? ship : <Float speed={1.5} rotationIntensity={0.15} floatIntensity={0.4}>{ship}</Float>}
+    <group ref={group} position={start.position} rotation={[0, start.heading, 0]} onClick={click}>
+      <Model name={model} scale={0.42} />
+      {selectable && (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.7, 0]}>
+          <ringGeometry args={[3.6, 4.4, 32]} />
+          <meshBasicMaterial color="#ffe08a" transparent opacity={0.85} />
+        </mesh>
+      )}
     </group>
   );
 }
 
-/** A revealed pirate closing in on a ship, placed just off that ship's lane. */
-export function PirateRaider({ angle, progress }: { readonly angle: number; readonly progress: number }) {
-  const { position, heading } = useMemo(() => lanePose(angle, progress, 5), [angle, progress]);
+const ESCORT_MODEL: Partial<Record<Deployment['role'], { readonly model: ModelName; readonly scale: number; readonly side: number }>> = {
+  pirate: { model: 'ship-pirate-medium', scale: 0.32, side: 6 },
+  guard: { model: 'boat-row-small', scale: 0.9, side: -4.5 },
+};
+
+/** Revealed pirates and guards gathered beside the ship they targeted. */
+export function Escorts({ ship, angle }: { readonly ship: SceneShip; readonly angle: number }) {
   return (
-    <group position={[position.x, 0, position.z]} rotation={[0, heading - 0.7, 0]}>
-      <Float speed={1.8} rotationIntensity={0.2} floatIntensity={0.5}>
-        <Model name="ship-pirate-medium" scale={0.36} />
-      </Float>
+    <>
+      {ship.roles.map((deployment, i) => {
+        const look = ESCORT_MODEL[deployment.role];
+        if (!look) return null;
+        const t = LANE_T[ship.state === 'arrived' ? 'sailing' : ship.state] - 0.06 * i;
+        return <Escort key={`${deployment.playerId}-${deployment.role}`} pose={lanePose(angle, t, look.side)} model={look.model} scale={look.scale} />;
+      })}
+    </>
+  );
+}
+
+function Escort({ pose, model, scale }: { readonly pose: LanePose; readonly model: ModelName; readonly scale: number }) {
+  const group = useGlide(pose, 0);
+  return (
+    <group ref={group} position={pose.position.clone().multiplyScalar(1.15)} rotation={[0, pose.heading - 0.6, 0]}>
+      <Model name={model} scale={scale} />
     </group>
   );
 }

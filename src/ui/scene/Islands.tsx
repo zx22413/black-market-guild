@@ -1,8 +1,8 @@
-import type { AssetId } from '../../game';
 import { IslandBase } from './IslandBase';
 import { ASSET_BUILDINGS, PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, headingOf, seatPosition } from './layout';
 import { Vector3 } from 'three';
 import { Model } from './Model';
+import type { SceneSeat } from './tableModel';
 
 const PLATEAU = 2.6;
 
@@ -22,16 +22,8 @@ function Banner({ color, position }: { readonly color: string; readonly position
   );
 }
 
-export interface SeatInfo {
-  readonly name: string;
-  readonly cash: number;
-  readonly assets: readonly AssetId[];
-  readonly color: string;
-  readonly isViewer: boolean;
-}
-
 interface PlayerIslandProps {
-  readonly seat: SeatInfo;
+  readonly seat: Pick<SceneSeat, 'assets' | 'color'>;
   readonly angle: number;
   readonly seed: number;
 }

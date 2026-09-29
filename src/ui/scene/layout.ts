@@ -49,4 +49,3 @@ export const ASSET_BUILDINGS: Readonly<Record<AssetId, { readonly model: ModelNa
   exchange: { model: 'tower-complete-small', lot: [1.8, 0, -3.2], scale: 0.55 },
 };
 
-export const PLAYER_COLORS = ['#e0b43c', '#d0553f', '#4f8fd6', '#6db36a'] as const;

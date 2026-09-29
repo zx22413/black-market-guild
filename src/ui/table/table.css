@@ -1,0 +1,338 @@
+/* Controls laid over the 3D table; parchment look shared with scene.css. */
+
+/* Centered without transform: a transformed ancestor would capture the fixed card hand. */
+.hud-dock {
+  bottom: 18px;
+  left: 300px;
+  right: 300px;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.action-pill {
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.action-pill small {
+  margin-left: 4px;
+  color: #8a6a44;
+  font-size: 0.75rem;
+}
+
+.action-pill .intel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.action-pill .intel b {
+  font-size: 1.6rem;
+  color: #8a3a20;
+}
+
+.hud-button {
+  font: inherit;
+  color: #3a2a17;
+  background: rgba(252, 244, 226, 0.92);
+  border: 2px solid #7a5a36;
+  border-radius: 10px;
+  padding: 8px 14px;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(30, 20, 5, 0.25);
+}
+
+.hud-private {
+  top: 80px;
+  right: 16px;
+  max-width: 300px;
+}
+
+.hud-private .panel {
+  background: rgba(252, 244, 226, 0.94);
+  color: #3a2a17;
+  border: 2px solid #6b8fd6;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+}
+
+.hud-private .panel h2 {
+  font-size: 0.9rem;
+  color: #3b5a9a;
+  margin: 0 0 4px;
+}
+
+/* ── Cards ── */
+
+
+.table-card {
+  font: inherit;
+  color: #3a2a17;
+  background: #fcf4e2;
+  border: 2px solid #7a5a36;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(30, 20, 5, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.table-card .icon {
+  filter: brightness(0.35) sepia(1) saturate(2) hue-rotate(-10deg);
+}
+
+.table-card .price {
+  color: #8a5a10;
+  font-weight: 700;
+}
+
+
+.table-card:hover:not(:disabled) {
+  transform: translateY(-8px);
+  box-shadow: 0 8px 20px rgba(30, 20, 5, 0.35);
+}
+
+.card-hand {
+  position: fixed;
+  right: 34px;
+  bottom: 18px;
+  display: flex;
+}
+
+.table-card.hand {
+  position: relative;
+  width: 84px;
+  height: 118px;
+  margin-left: -16px;
+  justify-content: center;
+  font-size: 0.8rem;
+  transform-origin: bottom center;
+}
+
+/* Full effect text floats above the hovered card instead of widening the hand. */
+.card-tip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  padding: 8px 10px;
+  background: #fcf4e2;
+  border: 2px solid #7a5a36;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #3a2a17;
+  box-shadow: 0 4px 12px rgba(30, 20, 5, 0.3);
+  pointer-events: none;
+}
+
+.table-card.hand:hover .card-tip,
+.table-card.hand.selected .card-tip {
+  display: block;
+}
+
+.table-card.hand.selected {
+  border-color: #d9a441;
+  box-shadow: 0 0 0 3px #d9a441, 0 8px 20px rgba(30, 20, 5, 0.35);
+}
+
+.table-card:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Labels over the scene ── */
+
+.tag-ready {
+  color: #3f8a3a;
+}
+
+.seat-status {
+  font-size: 0.72rem;
+  color: #8a3a20;
+}
+
+.seat-status.muted {
+  color: #8a6a44;
+}
+
+.ship-tag {
+  font: inherit;
+  font-family: 'Noto Serif TC', 'Songti TC', serif;
+  color: #3a2a17;
+  background: rgba(252, 244, 226, 0.9);
+  border: 1.5px solid #7a5a36;
+  border-radius: 8px;
+  padding: 2px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  pointer-events: none;
+}
+
+.ship-tag.selectable {
+  pointer-events: auto;
+  cursor: pointer;
+  border: 2px solid #d9a441;
+  box-shadow: 0 0 0 3px rgba(255, 224, 138, 0.7);
+}
+
+.ship-tag.sunk {
+  border-color: #c2553d;
+}
+
+.ship-tag.arrived {
+  border-color: #3f8a3a;
+}
+
+.ship-owners {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.ship-owners i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.ship-outcome {
+  margin-left: 4px;
+  padding: 0 5px;
+  border-radius: 4px;
+  color: #fcf4e2;
+}
+
+.ship-outcome.arrived {
+  background: #3f8a3a;
+}
+
+.ship-outcome.sunk {
+  background: #c2553d;
+}
+
+.ship-roles {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.role-token {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #7a5a36;
+  background: #fcf4e2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.role-token img {
+  width: 14px;
+  height: 14px;
+  filter: brightness(0.35) sepia(1) saturate(2) hue-rotate(-10deg);
+}
+
+.role-token.secret {
+  border-style: dashed;
+  opacity: 0.8;
+}
+
+.ship-note {
+  font-size: 0.68rem;
+  color: #8a3a20;
+}
+
+.black-money {
+  color: #7a4fb0 !important;
+}
+
+/* ── Drawers and overlays ── */
+
+.log-drawer {
+  position: absolute;
+  top: 70px;
+  right: 16px;
+  bottom: 150px;
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.log-drawer .close {
+  align-self: flex-end;
+}
+
+.log-drawer .event-log {
+  flex: 1;
+  overflow: hidden;
+}
+
+.log-drawer .event-log ol {
+  max-height: calc(100vh - 300px);
+}
+
+.result-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 16, 20, 0.55);
+}
+
+.result-overlay .result {
+  width: min(560px, 90%);
+}
+
+.result-overlay.error {
+  color: #ffd2c8;
+  font-size: 1.1rem;
+}
+
+/* Panels shared with the setup screen use the dark theme; over the table they read as parchment. */
+.result-overlay .panel,
+.log-drawer .panel {
+  background: rgba(252, 244, 226, 0.97);
+  color: #3a2a17;
+  border: 2px solid #7a5a36;
+  backdrop-filter: none;
+}
+
+.result-overlay .panel h2,
+.log-drawer .panel h2,
+.log-drawer .log-heading {
+  color: #8a5a10;
+}
+
+.result-overlay .result th,
+.result-overlay .result td {
+  border-bottom-color: rgba(122, 90, 54, 0.3);
+}
+
+.result-overlay .result .winner {
+  color: #8a5a10;
+  font-weight: 700;
+}
+
+.handoff-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  color: #e8e2d0;
+}

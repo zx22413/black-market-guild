@@ -93,24 +93,8 @@ button.ghost {
   backdrop-filter: blur(4px);
 }
 
-.tag {
-  font-size: 0.7rem;
-  margin-left: 0.4rem;
-  padding: 0.05rem 0.4rem;
-  border-radius: 99px;
-  border: 1px solid var(--panel-edge);
-  color: var(--ink-dim);
-}
 
-.tag.you {
-  color: var(--gold);
-  border-color: var(--gold);
-}
 
-.tag.ready {
-  color: var(--ok);
-  border-color: var(--ok);
-}
 
 .icon {
   display: inline-flex;
@@ -120,22 +104,15 @@ button.ghost {
   flex: none;
 }
 
-/* ── Backdrop paintings ── */
+/* ── Setup ── */
 
-.setup,
-.game {
+.setup {
   min-height: 100vh;
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
   background-blend-mode: multiply;
   background-color: rgba(8, 12, 14, 0.55);
-  transition: background-image 0.6s;
-}
-
-/* ── Setup ── */
-
-.setup {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -203,284 +180,6 @@ button.ghost {
   text-shadow: 0 1px 4px #000;
 }
 
-/* ── Game layout ── */
-
-.game {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.game-toolbar {
-  display: flex;
-  justify-content: space-between;
-}
-
-.round-header {
-  display: grid;
-  grid-template-columns: auto 1fr 1fr;
-  gap: 1rem;
-}
-
-.round-counter,
-.event-card {
-  background: var(--panel);
-  border: 1px solid var(--panel-edge);
-  border-radius: var(--radius);
-  padding: 0.8rem 1rem;
-}
-
-.round-counter {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.4rem;
-}
-
-.round-label {
-  font-size: 0.75rem;
-  color: var(--ink-dim);
-}
-
-.event-card {
-  display: flex;
-  gap: 0.8rem;
-  align-items: center;
-  position: relative;
-  padding-top: 1.4rem;
-}
-
-.event-card p {
-  font-size: 0.85rem;
-  color: var(--ink-dim);
-}
-
-.event-kind {
-  position: absolute;
-  top: 0.4rem;
-  left: 1rem;
-  font-size: 0.7rem;
-  color: var(--gold);
-}
-
-.game-grid {
-  display: grid;
-  grid-template-columns: 240px 1fr 300px;
-  gap: 1rem;
-  align-items: start;
-}
-
-.center {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-/* ── Players ── */
-
-.player-board ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.player {
-  padding: 0.6rem;
-  border-radius: 8px;
-  border: 1px solid transparent;
-}
-
-.player.me {
-  border-color: var(--gold);
-  background: rgba(217, 164, 65, 0.08);
-}
-
-.player-head {
-  display: flex;
-  justify-content: space-between;
-}
-
-.player-cash {
-  font-size: 1.2rem;
-  color: var(--gold);
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-
-.black-money {
-  font-size: 0.75rem;
-  color: var(--smuggler);
-}
-
-.player-assets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-  margin-top: 0.3rem;
-}
-
-.asset-chip,
-.role-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.75rem;
-  padding: 0.1rem 0.45rem;
-  border-radius: 99px;
-  background: rgba(236, 220, 176, 0.08);
-}
-
-/* ── Harbor ── */
-
-.recruit-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.recruit-list .withdrawn {
-  opacity: 0.5;
-}
-
-.ships {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 0.8rem;
-}
-
-.ship-card {
-  display: flex;
-  gap: 0.6rem;
-  padding: 0.7rem;
-  border-radius: 8px;
-  border: 1px solid var(--panel-edge);
-  background: rgba(63, 127, 140, 0.12);
-  transition: background 0.4s, border-color 0.4s;
-}
-
-.ship-card.arrived {
-  border-color: var(--ok);
-  background: rgba(109, 163, 90, 0.15);
-}
-
-.ship-card.sank {
-  border-color: var(--danger);
-  background: rgba(194, 85, 61, 0.15);
-}
-
-.ship-card.sank .ship-art > .icon:first-child {
-  opacity: 0.4;
-  transform: rotate(20deg);
-}
-
-.ship-art {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.ship-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.ship-roles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-}
-
-.role-chip.intel {
-  color: var(--intel);
-}
-
-.role-chip.guard {
-  color: var(--guard);
-}
-
-.role-chip.pirate {
-  color: var(--pirate);
-}
-
-.role-chip.smuggler {
-  color: var(--smuggler);
-}
-
-.role-chip.secret {
-  border: 1px dashed currentColor;
-}
-
-/* ── Decisions ── */
-
-.decision {
-  border-color: var(--gold);
-}
-
-.options {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 0.6rem;
-}
-
-.option {
-  display: flex;
-  gap: 0.6rem;
-  align-items: center;
-  text-align: left;
-  padding: 0.7rem;
-}
-
-.option span {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.option small {
-  color: var(--ink-dim);
-  font-size: 0.75rem;
-}
-
-.option.selected {
-  border-color: var(--gold);
-  background: rgba(217, 164, 65, 0.15);
-}
-
-.targets {
-  margin-top: 1rem;
-}
-
-.intel-report {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 0.8rem;
-}
-
-.die {
-  font-size: 1.8rem;
-  color: var(--gold);
-  padding: 0 0.4rem;
-}
-
-.continue {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.error {
-  border-color: var(--danger);
-  color: var(--danger);
-}
-
 /* ── Log ── */
 
 .event-log ol {
@@ -539,19 +238,6 @@ button.ghost {
   color: var(--gold);
 }
 
-/* ── Narrow screens ── */
-
-@media (max-width: 960px) {
-  .game-grid,
-  .round-header {
-    grid-template-columns: 1fr;
-  }
-
-  .event-log ol {
-    max-height: 30vh;
-  }
-}
-
 .private-notes {
   border-color: var(--intel);
 }
@@ -559,4 +245,13 @@ button.ghost {
 .private-notes ul {
   margin: 0;
   padding-left: 1.2rem;
+}
+
+.scene-boot {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #9fd4e0;
+  color: #3a2a17;
 }

@@ -1,22 +1,18 @@
 import { lazy, Suspense, useState } from 'react';
-import { GameScreen } from './screens/GameScreen';
 import { SetupScreen } from './screens/SetupScreen';
 import { startGameSession, type GameSession } from './session/gameSession';
 
-const ScenePrototype = lazy(() => import('./scene/ScenePrototype').then((m) => ({ default: m.ScenePrototype })));
+// The 3D table pulls in three.js; load it only once a match starts.
+const TableScreen = lazy(() => import('./table/TableScreen').then((m) => ({ default: m.TableScreen })));
 
 export function App() {
   const [session, setSession] = useState<GameSession | null>(null);
-  // Static 3D table mock-up for composition review: open /#scene.
-  if (window.location.hash === '#scene') {
-    return (
-      <Suspense fallback={null}>
-        <ScenePrototype />
-      </Suspense>
-    );
-  }
   if (!session) {
     return <SetupScreen onStart={(options) => setSession(startGameSession(options))} />;
   }
-  return <GameScreen session={session} onExit={() => setSession(null)} />;
+  return (
+    <Suspense fallback={<div className="scene-boot">整理港口中…</div>}>
+      <TableScreen session={session} onExit={() => setSession(null)} />
+    </Suspense>
+  );
 }
