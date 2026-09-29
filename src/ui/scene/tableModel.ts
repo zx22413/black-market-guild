@@ -1,4 +1,4 @@
-import type { AssetId, Deployment, PlayerId, ShipId, ShipKind } from '../../game';
+import type { AssetId, Deployment, PlayerId, ShipId, ShipKind, VoyageModifier } from '../../game';
 import type { Board } from '../session/board';
 
 export const PLAYER_COLORS = ['#e0b43c', '#d0553f', '#4f8fd6', '#6db36a'] as const;
@@ -32,6 +32,8 @@ export interface SceneShip {
   readonly rerolled: boolean;
   readonly smuggled: number;
   readonly caughtSmugglers: readonly PlayerId[];
+  /** Public roll modifiers, shown just before the outcome. */
+  readonly modifier: VoyageModifier | null;
 }
 
 export interface SceneTable {
@@ -95,6 +97,7 @@ export function buildSceneTable(board: Board, players: readonly TablePlayer[], v
       rerolled: ship.rerolled,
       smuggled: ship.smuggled,
       caughtSmugglers: ship.caughtSmugglers,
+      modifier: ship.modifier,
     };
   });
   return { seats, ships };

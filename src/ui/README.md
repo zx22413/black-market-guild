@@ -28,6 +28,7 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 | `table/TableScreen.tsx` | 對局畫面：3D 桌面加上角落介面、決定列、日誌抽屜、結算與換人遮蔽（疊在場景上，不重建場景）。 |
 | `table/DecisionDock.tsx` | 七種決定的操作：資產與角色牌以右下角手牌呈現，部署角色時可直接點海上的船當目標，其餘決定在底部選項列。 |
 | `table/TableHud.tsx` | 左上回合與事件、左下自己的資金（含只給本人看的黑錢）。 |
+| `table/useCashFloats.ts`、`table/CashFloats.tsx` | 把新播放的現金異動變成短暫浮起的「+350 G 航運收入」。 |
 | `screens/` | `SetupScreen`（模式與座位）、`HandoffScreen`（hot-seat 遮蔽）、`ResultScreen`。 |
 | `components/` | `PrivateNotes`（只給本人的情報與黑錢）、`EventLog`、`Icon`。 |
 | `labels.ts` | 事件、角色、資產與現金異動原因的繁體中文名稱。 |
@@ -40,7 +41,7 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 
 玩家小島排在橫向較寬的橢圓上（3 人為三角形），圍繞中央目標島「黑市港」（暫名），每座島到中央有一條玩家顏色的虛線航道。可見私有資訊的座位（你）排在最靠近鏡頭的位置；觀戰時從第一個座位看，所有商會都掛名牌。對手只顯示船塢、資產建築與上方名牌（資金、資產圖示、招募與應徵狀態、本階段是否已決定）。
 
-船在出航後停在自家碼頭；航海事件揭曉後開往航道中段的危險海域，揭露的海盜與護衛會出現在船邊，最後沉在原地或開往黑市港。航海事件以天氣改變海面與天空。
+船在出航後停在自家碼頭；航海事件揭曉後開往航道中段的危險海域，揭露的海盜與護衛會出現在船邊。引擎公布修正值（`voyage-modifiers`）時，船名牌逐項跳出「護衛 +1、海盜 −1、事件 −2」，接著沉船（濺起水花、留下殘骸）或開往黑市港；每筆現金異動以浮字飄在該商會名牌上（自己的在左下資金圈）。航海事件以天氣改變海面與天空。
 
 | 檔案 | 職責 |
 | --- | --- |
@@ -48,6 +49,7 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 | `tableModel.ts` | `buildSceneTable`：把 `Board` 轉成座位順序（你在最前）、玩家顏色（跟座位走，不隨視角改變）與船的航道和狀態。 |
 | `Islands.tsx`、`IslandBase.tsx` | 玩家小島（固定地基蓋資產建築）與目標島；島體為程序產生的低面數岩壁。 |
 | `Ships.tsx`、`Routes.tsx` | 航道（曲線虛線）；船、護衛小艇與海盜船沿航道滑行，可當部署目標點選。 |
+| `Effects.tsx` | 沉船水花（擴散泡沫環與水滴，只在畫面上發生沉沒時播放一次）。 |
 | `SceneLabels.tsx`、`ScreenLabels.tsx` | 島與船上方的 DOM 名牌；把 3D 位置投影成畫面座標（drei `<Html>` 在實測中會遺失內容）。 |
 | `CameraRig.tsx` | 固定俯角、依畫面大小自動取景：島嶼與名牌必須落在上方事件列與下方操作列之間的安全區。 |
 | `Sea.tsx`、`weather.ts` | 起伏的低面數海面，以及各航海事件的天空、海色、霧與光線。 |
@@ -65,7 +67,7 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 
 ## 待辦
 
-- 結算演出：揭露角色時疊上 +1／−1 修正標記、沉船水花、金幣飛回島上。
+- 結算演出進階：金幣以 3D 物件從黑市港飛回島上、抵達時的靠港動作。
 - 資產建築換成辨識度更高的造型；中央島正式命名。
 - 手機直式版面。
 - 元件測試（目前只測 `session/` 與 `scene/tableModel.ts` 的邏輯）。

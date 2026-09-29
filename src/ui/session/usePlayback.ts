@@ -12,9 +12,12 @@ function eventDelay(event: MatchEvent): number {
       return 0;
     case 'cash-changed':
       return 150;
-    case 'ship-resolved':
     case 'roles-revealed':
-      return 700;
+      return 900;
+    case 'voyage-modifiers':
+      return 1500;
+    case 'ship-resolved':
+      return 1000;
     default:
       return 450;
   }

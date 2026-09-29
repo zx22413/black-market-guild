@@ -1,5 +1,6 @@
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Splash } from './Effects';
 import { Vector3, type Group } from 'three';
 import type { Deployment } from '../../game';
 import { headingOf, laneCurve } from './layout';
@@ -60,12 +61,21 @@ export function VoyageShip({ ship, angle, selectable, onSelect }: VoyageShipProp
   const start = useMemo(() => shipPose(angle, 'docked'), [angle]);
   const group = useGlide(target, ship.state === 'sunk' ? -0.6 : 0);
   const model: ModelName = ship.state === 'sunk' ? 'ship-wreck' : ship.kind === 'joint' ? 'ship-large' : 'ship-medium';
+  // Splash only when the ship sinks on screen, not when an already sunk ship is redrawn.
+  const [splash, setSplash] = useState(false);
+  const previous = useRef(ship.state);
+  useEffect(() => {
+    if (ship.state === 'sunk' && previous.current !== 'sunk') setSplash(true);
+    previous.current = ship.state;
+  }, [ship.state]);
   const click = (e: ThreeEvent<MouseEvent>) => {
     if (!selectable) return;
     e.stopPropagation();
     onSelect();
   };
   return (
+    <>
+    {splash && <Splash position={[target.position.x, 0, target.position.z]} />}
     <group ref={group} position={start.position} rotation={[0, start.heading, 0]} onClick={click}>
       <Model name={model} scale={0.42} />
       {selectable && (
@@ -75,6 +85,7 @@ export function VoyageShip({ ship, angle, selectable, onSelect }: VoyageShipProp
         </mesh>
       )}
     </group>
+    </>
   );
 }
 

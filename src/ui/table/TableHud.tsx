@@ -3,6 +3,8 @@ import { marketIcon, voyageIcon } from '../art';
 import { Icon } from '../components/Icon';
 import { MARKET_EVENT_LABELS, VOYAGE_EVENT_LABELS } from '../labels';
 import { marketEventText, voyageEventText } from '../rulesText';
+import { CashFloats } from './CashFloats';
+import type { CashFloat } from './useCashFloats';
 
 interface EventBandProps {
   readonly round: number;
@@ -43,13 +45,15 @@ interface CashBadgeProps {
   readonly cash: number;
   /** Secret smuggling proceeds, only ever shown to their owner. */
   readonly blackMoney: number;
+  readonly floats: readonly CashFloat[];
 }
 
 /** Bottom-left: the viewer's own treasury. */
-export function CashBadge({ name, cash, blackMoney }: CashBadgeProps) {
+export function CashBadge({ name, cash, blackMoney, floats }: CashBadgeProps) {
   return (
     <div className="hud hud-bottom-left">
       <div className="hud-cash">
+        <CashFloats floats={floats} />
         <small>{name}</small>
         <strong>{cash}</strong>
         <small>G</small>

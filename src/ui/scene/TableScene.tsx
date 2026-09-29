@@ -9,6 +9,7 @@ import { LabelTracker, type LabelAnchor } from './ScreenLabels';
 import { Sea } from './Sea';
 import { SeatTag, ShipTag, TargetSign } from './SceneLabels';
 import { Escorts, VoyageShip, shipPose } from './Ships';
+import type { CashFloat } from '../table/useCashFloats';
 import type { SceneTable } from './tableModel';
 import { WEATHER } from './weather';
 import './scene.css';
@@ -17,7 +18,7 @@ import './scene.css';
 const SAFE_AREA: SafeArea = { top: 92, bottom: 136, left: 24, right: 24 };
 const SEAT_LABEL_HEIGHT = 9;
 const SHIP_LABEL_HEIGHT = 7;
-const TARGET_LABEL_HEIGHT = 15;
+const TARGET_LABEL_HEIGHT = 21;
 /** The auto-framed camera sits farther than the weather presets assumed. */
 const FOG_SCALE = 1.8;
 
@@ -34,6 +35,8 @@ export interface TableSceneProps {
   readonly secret: Deployment | null;
   /** Seats that already locked this phase's choice. */
   readonly submitted: readonly PlayerId[];
+  /** Recent cash changes floating above each guild's tag. */
+  readonly floats: readonly CashFloat[];
   /** Called once all models have loaded. */
   readonly onReady: () => void;
 }
@@ -64,7 +67,7 @@ function Ready({ onReady }: { readonly onReady: () => void }) {
 
 /** The whole 3D table: guild islands around the target island, lanes, ships and tags. */
 export function TableScene(props: TableSceneProps) {
-  const { table, weather, notice, nameOf, selectableShips, onSelectShip, secret, submitted, onReady } = props;
+  const { table, weather, notice, nameOf, selectableShips, onSelectShip, secret, submitted, floats, onReady } = props;
   const look = WEATHER[weather ?? 'clear'];
   const angles = useMemo(() => seatAngles(table.seats.length), [table.seats.length]);
   const viewerSeat = table.seats.findIndex((s) => s.isViewer);
@@ -133,7 +136,14 @@ export function TableScene(props: TableSceneProps) {
         <TargetSign ref={pin('target')} notice={notice} />
         {table.seats.map((seat, i) =>
           seat.isViewer ? null : (
-            <SeatTag key={seat.id} ref={pin(`seat-${i}`)} seat={seat} nameOf={nameOf} ready={submitted.includes(seat.id)} />
+            <SeatTag
+              key={seat.id}
+              ref={pin(`seat-${i}`)}
+              seat={seat}
+              nameOf={nameOf}
+              ready={submitted.includes(seat.id)}
+              floats={floats.filter((f) => f.playerId === seat.id)}
+            />
           ),
         )}
         {table.ships.map((ship) => (

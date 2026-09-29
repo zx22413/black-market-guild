@@ -148,8 +148,10 @@ describe('secret deployment and single reveal (game-design.md §4, §5 step 5)',
     const cashAtLock = ['p1', 'p2', 'p3'].map((id) => cashOf(state, id));
     const { events } = playUntilPrivate(state, (s) => s.round !== 1, mixed);
     const voyageAt = events.findIndex((e) => e.type === 'voyage-event-revealed');
-    const resolvedAt = events.findIndex((e) => e.type === 'ship-resolved');
-    expect(events.slice(voyageAt + 1, resolvedAt)).toEqual([
+    // The public modifier summary follows the reveal and precedes the outcomes.
+    const modifiersAt = events.findIndex((e) => e.type === 'voyage-modifiers');
+    expect(events[modifiersAt + 1]?.type).toBe('ship-resolved');
+    expect(events.slice(voyageAt + 1, modifiersAt)).toEqual([
       { type: 'roles-revealed', round: 1, role: 'intel', deployments: [], rerolledShipIds: [] },
       {
         type: 'roles-revealed',

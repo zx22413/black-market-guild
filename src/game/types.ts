@@ -201,6 +201,17 @@ export interface MatchState {
   readonly result: MatchResult | null;
 }
 
+/**
+ * Sum of each modifier step for one ship (game-design.md §7 航行修正順序), before the clamp.
+ * Derivable from public information: revealed roles, public assets and events.
+ */
+export interface VoyageModifier {
+  readonly shipId: ShipId;
+  readonly guard: number;
+  readonly pirate: number;
+  readonly event: number;
+}
+
 /** Public events emitted by the engine. Never contains hidden information. */
 export type MatchEvent =
   | { readonly type: 'round-started'; readonly round: number }
@@ -245,6 +256,12 @@ export type MatchEvent =
       readonly round: number;
       readonly shipId: ShipId;
       readonly smugglers: readonly PlayerId[];
+    }
+  | {
+      readonly type: 'voyage-modifiers';
+      readonly round: number;
+      /** Public roll modifiers per ship, announced before the outcomes; the dice stay hidden. */
+      readonly modifiers: readonly VoyageModifier[];
     }
   | { readonly type: 'ship-resolved'; readonly round: number; readonly shipId: ShipId; readonly outcome: VoyageOutcome }
   | { readonly type: 'round-ended'; readonly round: number }

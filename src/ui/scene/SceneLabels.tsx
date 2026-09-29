@@ -1,7 +1,9 @@
 import type { Ref } from 'react';
-import type { Deployment, PlayerId } from '../../game';
+import type { Deployment, PlayerId, VoyageModifier } from '../../game';
 import { assetIcon, iconUrl, roleIcon } from '../art';
 import { ASSET_LABELS, ROLE_LABELS } from '../labels';
+import { CashFloats } from '../table/CashFloats';
+import type { CashFloat } from '../table/useCashFloats';
 import type { SceneSeat, SceneShip } from './tableModel';
 
 type NameOf = (id: PlayerId) => string;
@@ -22,12 +24,14 @@ interface SeatTagProps {
   readonly nameOf: NameOf;
   /** Already locked this phase's choice. */
   readonly ready: boolean;
+  readonly floats: readonly CashFloat[];
 }
 
 /** Opponent guild board: name, cash, assets and this round's public status. */
-export function SeatTag({ ref, seat, nameOf, ready }: SeatTagProps) {
+export function SeatTag({ ref, seat, nameOf, ready, floats }: SeatTagProps) {
   return (
     <div ref={ref} className="seat-tag" style={{ borderColor: seat.color }}>
+      <CashFloats floats={floats} />
       <strong>
         {seat.name}
         {ready && <span className="tag-ready" title="已決定"> ✓</span>}
@@ -77,6 +81,7 @@ export function ShipTag({ ref, ship, nameOf, colorOf, secret, selectable, onSele
         {ship.owners.map(nameOf).join('＋')}
         {outcome && <b className={`ship-outcome ${ship.state}`}>{outcome}</b>}
       </span>
+      {ship.modifier && <ModifierRow modifier={ship.modifier} />}
       {(ship.roles.length > 0 || secret || ship.rerolled || ship.smuggled > 0 || ship.caughtSmugglers.length > 0) && (
         <span className="ship-roles">
           {ship.roles.map((d) => (
@@ -95,5 +100,27 @@ export function ShipTag({ ref, ship, nameOf, colorOf, secret, selectable, onSele
         </span>
       )}
     </button>
+  );
+}
+
+const STEPS = [
+  ['guard', '護衛'],
+  ['pirate', '海盜'],
+  ['event', '事件'],
+] as const;
+
+/** The public roll modifiers popping up one by one before the ship's fate is shown. */
+function ModifierRow({ modifier }: { readonly modifier: VoyageModifier }) {
+  const steps = STEPS.filter(([key]) => modifier[key] !== 0);
+  return (
+    <span className="ship-modifiers">
+      {steps.length === 0 && <span className="modifier zero">無修正</span>}
+      {steps.map(([key, label], i) => (
+        <span key={key} className={`modifier ${modifier[key] > 0 ? 'up' : 'down'}`} style={{ animationDelay: `${i * 0.35}s` }}>
+          {label} {modifier[key] > 0 ? '+' : '−'}
+          {Math.abs(modifier[key])}
+        </span>
+      ))}
+    </span>
   );
 }

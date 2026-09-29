@@ -1,4 +1,4 @@
-import type { MatchEvent } from '../game';
+import type { MatchEvent, VoyageModifier } from '../game';
 import {
   ASSET_LABELS,
   CASH_REASON_LABELS,
@@ -6,6 +6,19 @@ import {
   ROLE_LABELS,
   VOYAGE_EVENT_LABELS,
 } from './labels';
+
+const signed = (n: number): string => (n > 0 ? `+${n}` : `${n}`);
+
+/** "護衛 +1、海盜 -1、事件 -2", skipping zero steps; "無" when nothing applies. */
+export function formatModifier(m: VoyageModifier): string {
+  const parts = [
+    ['護衛', m.guard],
+    ['海盜', m.pirate],
+    ['事件', m.event],
+  ] as const;
+  const shown = parts.filter(([, value]) => value !== 0).map(([label, value]) => `${label} ${signed(value)}`);
+  return shown.length > 0 ? shown.join('、') : '無';
+}
 
 /**
  * Turns public events into readable Traditional Chinese log lines. Shared by the
@@ -82,6 +95,11 @@ export function formatLog(
         break;
       case 'smugglers-caught':
         lines.push(`  ${event.shipId} 查獲走私：${event.smugglers.map(name).join('、')}`);
+        break;
+      case 'voyage-modifiers':
+        for (const m of event.modifiers) {
+          lines.push(`  航行修正 ${m.shipId}（${shipOwners.get(m.shipId)}）：${formatModifier(m)}`);
+        }
         break;
       case 'ship-resolved':
         lines.push(`  ${event.shipId}（${shipOwners.get(event.shipId)}）${event.outcome === 'arrived' ? '成功抵達' : '沉沒'}`);

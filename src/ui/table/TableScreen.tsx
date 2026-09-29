@@ -12,6 +12,7 @@ import type { GameSession } from '../session/gameSession';
 import { usePlayback } from '../session/usePlayback';
 import { DecisionDock } from './DecisionDock';
 import { CashBadge, EventBand } from './TableHud';
+import { useCashFloats } from './useCashFloats';
 import './table.css';
 
 interface TableScreenProps {
@@ -26,6 +27,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
   const [role, setRole] = useState<RoleId | null>(null);
   const [logOpen, setLogOpen] = useState(false);
   const [ready, setReady] = useState(false);
+  const floats = useCashFloats(played);
   const markReady = useCallback(() => setReady(true), []);
 
   const names = useMemo(() => new Map(snapshot.players.map((p) => [p.id, p.name])), [snapshot.players]);
@@ -71,6 +73,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
         onSelectShip={selectShip}
         secret={activeView?.myDeployment ?? null}
         submitted={activeView?.submittedPlayerIds ?? []}
+        floats={floats}
         onReady={markReady}
       />
       {!ready && <div className="scene-loading">整理港口中…</div>}
@@ -91,7 +94,14 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
         </button>
       </div>
 
-      {viewerSeat && <CashBadge name={viewerSeat.name} cash={viewerSeat.cash} blackMoney={view?.myBlackMoney ?? 0} />}
+      {viewerSeat && (
+        <CashBadge
+          name={viewerSeat.name}
+          cash={viewerSeat.cash}
+          blackMoney={view?.myBlackMoney ?? 0}
+          floats={floats.filter((f) => f.playerId === viewerSeat.id)}
+        />
+      )}
 
       <div className="hud hud-private">
         <PrivateNotes events={playback.privateNotes} describeShip={describeShip} />

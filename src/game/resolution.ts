@@ -1,6 +1,6 @@
 import { holds } from './economics';
 import { eventRollModifier } from './events';
-import type { MatchState, Ship, Step, VoyageOutcome } from './types';
+import type { MatchState, Ship, Step, VoyageModifier, VoyageOutcome } from './types';
 
 /**
  * Final sailing value after the modifier order in game-design.md §7:
@@ -11,13 +11,21 @@ export function finalRoll(state: MatchState, ship: Ship): number {
     throw new Error(`ship ${ship.id} has not been rolled`);
   }
   const base = ship.rerolledRoll ?? ship.rawRoll;
-  const modified =
-    base +
-    guardRollModifier(state, ship) +
-    activePirates(state, ship) * state.rules.roles.pirate.modifier +
-    eventRollModifier(state, ship);
+  const { guard, pirate, event } = voyageModifier(state, ship);
+  const modified = base + guard + pirate + event;
   const { dieMin, dieMax } = state.rules.sailing;
   return Math.min(dieMax, Math.max(dieMin, modified));
+}
+
+/** Guard, pirate and event steps of the modifier order for one ship, before the clamp. */
+export function voyageModifier(state: MatchState, ship: Ship): VoyageModifier {
+  return {
+    shipId: ship.id,
+    guard: guardRollModifier(state, ship),
+    // + 0 turns -0 (no pirates times a negative modifier) into 0.
+    pirate: activePirates(state, ship) * state.rules.roles.pirate.modifier + 0,
+    event: eventRollModifier(state, ship),
+  };
 }
 
 /**
@@ -53,19 +61,27 @@ export function outcomeOf(state: MatchState, value: number): VoyageOutcome {
   return value >= state.rules.sailing.successMin ? 'arrived' : 'sank';
 }
 
-/** Decides every ship's fate and announces only the outcome, never the dice. */
+/**
+ * Decides every ship's fate. Announces the public modifiers first, then only each outcome;
+ * the dice are never announced.
+ */
 export function resolveVoyages(state: MatchState): Step {
-  const ships = state.roundState.ships.map((ship) => ({
+  const { ships: sailing } = state.roundState;
+  const ships = sailing.map((ship) => ({
     ...ship,
     outcome: outcomeOf(state, finalRoll(state, ship)),
   }));
+  const modifiers = sailing.length > 0 ? [{ type: 'voyage-modifiers' as const, round: state.round, modifiers: sailing.map((ship) => voyageModifier(state, ship)) }] : [];
   return {
     state: { ...state, roundState: { ...state.roundState, ships } },
-    events: ships.map((ship) => ({
-      type: 'ship-resolved' as const,
-      round: state.round,
-      shipId: ship.id,
-      outcome: ship.outcome,
-    })),
+    events: [
+      ...modifiers,
+      ...ships.map((ship) => ({
+        type: 'ship-resolved' as const,
+        round: state.round,
+        shipId: ship.id,
+        outcome: ship.outcome,
+      })),
+    ],
   };
 }

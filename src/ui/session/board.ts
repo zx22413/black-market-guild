@@ -10,6 +10,7 @@ import type {
   ShipKind,
   Venture,
   VoyageEventId,
+  VoyageModifier,
   VoyageOutcome,
 } from '../../game';
 
@@ -23,6 +24,8 @@ export interface BoardShip {
   /** Total smuggled off this ship; the smugglers stay anonymous unless caught. */
   readonly smuggled: number;
   readonly caughtSmugglers: readonly PlayerId[];
+  /** Public roll modifiers, known once they are announced just before the outcome. */
+  readonly modifier: VoyageModifier | null;
 }
 
 /**
@@ -99,7 +102,7 @@ export function applyBoardEvent(board: Board, event: MatchEvent): Board {
         ...board,
         launched: true,
         stayedInPort: event.stayedInPort,
-        ships: event.ships.map((s) => ({ ...s, outcome: null, rerolled: false, smuggled: 0, caughtSmugglers: [] })),
+        ships: event.ships.map((s) => ({ ...s, outcome: null, rerolled: false, smuggled: 0, caughtSmugglers: [], modifier: null })),
       };
     case 'cash-changed':
       return { ...board, cash: { ...board.cash, [event.playerId]: (board.cash[event.playerId] ?? 0) + event.amount } };
@@ -114,6 +117,11 @@ export function applyBoardEvent(board: Board, event: MatchEvent): Board {
       return updateShip(board, event.shipId, (s) => ({ smuggled: s.smuggled + event.amount }));
     case 'smugglers-caught':
       return updateShip(board, event.shipId, (s) => ({ caughtSmugglers: [...s.caughtSmugglers, ...event.smugglers] }));
+    case 'voyage-modifiers':
+      return {
+        ...board,
+        ships: board.ships.map((s) => ({ ...s, modifier: event.modifiers.find((m) => m.shipId === s.id) ?? s.modifier })),
+      };
     case 'ship-resolved':
       return updateShip(board, event.shipId, () => ({ outcome: event.outcome }));
     case 'match-ended':
