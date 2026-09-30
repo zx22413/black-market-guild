@@ -1,5 +1,6 @@
 import { IslandBase } from './IslandBase';
-import { ASSET_BUILDINGS, PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, headingOf, seatPosition } from './layout';
+import { Building } from './buildings/Building';
+import { ASSET_BUILDING_SCALE, ASSET_LOTS, PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, headingOf, seatPosition } from './layout';
 import { Vector3 } from 'three';
 import { Model } from './Model';
 import type { SceneSeat } from './tableModel';
@@ -35,10 +36,9 @@ export function PlayerIsland({ seat, angle, seed }: PlayerIslandProps) {
     <group position={home} rotation={[0, headingOf(new Vector3(-home[0], 0, -home[2])), 0]}>
       <IslandBase radius={PLAYER_ISLAND_RADIUS} seed={seed} />
       <group position={[0, PLATEAU, 0]}>
-        {seat.assets.map((asset) => {
-          const { model, lot, scale } = ASSET_BUILDINGS[asset];
-          return <Model key={asset} name={model} position={lot} scale={scale} />;
-        })}
+        {seat.assets.map((asset) => (
+          <Building key={asset} asset={asset} color={seat.color} position={ASSET_LOTS[asset]} scale={ASSET_BUILDING_SCALE} />
+        ))}
         <Model name="palm-bend" position={[-4.2, 0, 2.2]} scale={0.8} rotation={[0, 1.2, 0]} />
         <Model name="palm-straight" position={[4.4, 0, 1.6]} scale={0.7} />
         <Model name="barrel" position={[1.2, 0, 3.4]} scale={0.5} />

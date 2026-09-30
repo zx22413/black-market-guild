@@ -1,6 +1,5 @@
 import { QuadraticBezierCurve3, Vector3 } from 'three';
 import type { AssetId } from '../../game';
-import type { ModelName } from './Model';
 
 export type Vec3 = readonly [number, number, number];
 
@@ -41,11 +40,13 @@ export function headingOf(direction: Vector3): number {
   return Math.atan2(direction.x, direction.z);
 }
 
-/** Placeholder building for each asset (Kenney Pirate Kit), in fixed lots on every island. */
-export const ASSET_BUILDINGS: Readonly<Record<AssetId, { readonly model: ModelName; readonly lot: Vec3; readonly scale: number }>> = {
-  shipyard: { model: 'structure-roof', lot: [-3.2, 0, -0.6], scale: 0.9 },
-  insurance: { model: 'tower-watch', lot: [3.2, 0, -0.6], scale: 0.8 },
-  salvage: { model: 'structure', lot: [-1.6, 0, -3.4], scale: 0.8 },
-  exchange: { model: 'tower-complete-small', lot: [1.8, 0, -3.2], scale: 0.55 },
+/** Fixed lot of each asset building on every guild island, in island space (+z faces the dock). */
+export const ASSET_LOTS: Readonly<Record<AssetId, Vec3>> = {
+  shipyard: [-3, 0, -0.2],
+  insurance: [3, 0, -0.3],
+  salvage: [-1.2, 0, -2.9],
+  exchange: [1.5, 0, -2.8],
 };
+/** Buildings are authored about 2.2 units wide; this fits four of them on the plateau. */
+export const ASSET_BUILDING_SCALE = 0.9;
 

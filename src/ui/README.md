@@ -54,7 +54,8 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 | `SceneLabels.tsx`、`ScreenLabels.tsx` | 島與船上方的 DOM 名牌；把 3D 位置投影成畫面座標（drei `<Html>` 在實測中會遺失內容）。 |
 | `CameraRig.tsx` | 固定俯角、依畫面大小自動取景：島嶼與名牌必須落在上方事件列與下方操作列之間的安全區。 |
 | `Sea.tsx`、`weather.ts` | 起伏的低面數海面，以及各航海事件的天空、海色、霧與光線。 |
-| `Model.tsx`、`layout.ts` | Kenney 模型載入與座位、航道、地基位置。 |
+| `Model.tsx`、`layout.ts` | Kenney 模型載入與座位、航道、資產建築地基位置。 |
+| `buildings/` | 四種資產建築（造船廠、航運保險、打撈公司、貿易交易所）的原創低面數模型：`designs.ts` 以零件資料描述造型（倒角方塊、有厚度與出簷的屋頂、多邊形柱與樑）與材質；材質取自 Kenney Pirate Kit 色表的上下漸層色，各資產有專屬屋頂色，旗幟為持有者顏色。`polyhedra.ts` 把零件轉成多邊形，`Building.tsx` 以頂點色把整棟合併成一個網格。設計圖 [`docs/art/buildings-blueprint.svg`](../../docs/art/buildings-blueprint.svg) 由同一份資料以 `npm run art:buildings` 產生（`scripts/iso-painter.ts` 逐面判斷前後順序），改造型後重新執行。 |
 
 ## 呈現規則
 
@@ -69,6 +70,6 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 ## 待辦
 
 - 結算演出進階：金幣以 3D 物件從黑市港飛回島上、抵達時的靠港動作。
-- 資產建築換成辨識度更高的造型；中央島正式命名。
+- 中央島正式命名。
 - 手機直式版面。
-- 元件測試（目前只測 `session/` 與 `scene/tableModel.ts` 的邏輯）。
+- 元件測試（目前只測 `session/`、`scene/tableModel.ts` 與 `scene/buildings/` 的邏輯）。
