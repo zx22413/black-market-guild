@@ -1,6 +1,7 @@
 import type { MarketEventId, Rules, VoyageEventId } from '../../game';
 import { assetIcon, marketIcon, voyageIcon } from '../art';
 import { Icon } from '../components/Icon';
+import { Pins } from '../components/Pins';
 import { ASSET_LABELS, MARKET_EVENT_LABELS, VOYAGE_EVENT_LABELS } from '../labels';
 import type { SceneSeat } from '../scene/tableModel';
 import { marketEventText, voyageEventText } from '../rulesText';
@@ -54,8 +55,7 @@ export function LedgerCard({ seat, blackMoney, floats }: LedgerCardProps) {
     <div className="hud hud-bottom-left">
       <div className="ledger" style={{ borderColor: seat.color }}>
         <CashFloats floats={floats} />
-        <i className="ledger-pin left" aria-hidden />
-        <i className="ledger-pin right" aria-hidden />
+        <Pins />
         <strong className="ledger-name">{seat.name}</strong>
         <div className="ledger-row">
           <span>資金</span>

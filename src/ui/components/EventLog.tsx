@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import type { MatchEvent } from '../../game';
 import { formatLog } from '../eventText';
+import { Pins } from './Pins';
 
 interface EventLogProps {
   readonly events: readonly MatchEvent[];
@@ -21,6 +22,7 @@ export function EventLog({ events, names, startingCash }: EventLogProps) {
   }, [lines.length]);
   return (
     <section className="panel event-log">
+      <Pins />
       <h2>航海日誌</h2>
       <ol ref={list}>
         {lines.map((line, i) => (

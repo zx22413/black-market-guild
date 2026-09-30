@@ -290,28 +290,6 @@ function paperSmall(): string {
   );
 }
 
-/** Thin wooden frame for HUD panels (9-slice at 26px). */
-function frameThin(): string {
-  const W = 240;
-  const H = 180;
-  const t = 18;
-  const m = 3;
-  return svg(
-    W,
-    H,
-    [
-      plank(m + 2, m + 8, t, H - 2 * m - 16, 81, { vertical: true, grain: 2, outline: 2.5 }),
-      plank(W - m - 2 - t, m + 8, t, H - 2 * m - 16, 82, { vertical: true, grain: 2, outline: 2.5 }),
-      plank(m, m, W - 2 * m, t, 83, { grain: 2, outline: 2.5 }),
-      plank(m, H - m - t, W - 2 * m, t, 84, { grain: 2, outline: 2.5 }),
-      nail(m + 11, m + 10, 3),
-      nail(W - m - 11, m + 10, 3),
-      nail(m + 11, H - m - 10, 3),
-      nail(W - m - 11, H - m - 10, 3),
-    ].join(''),
-  );
-}
-
 /** A small board of three nailed planks, for paper pinned onto wood (drawn to size, not sliced). */
 function boardWood(): string {
   const W = 260;
@@ -348,7 +326,6 @@ const FILES: Record<string, () => string> = {
   'rope-mask-inner.svg': ropeMask(6),
   'board-wood.svg': boardWood,
   'paper-small.svg': paperSmall,
-  'frame-thin.svg': frameThin,
   'frame-wood.svg': frame,
   'paper.svg': parchment,
   'plaque.svg': plaque,

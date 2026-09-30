@@ -4,8 +4,7 @@
  * Parts are the `--ui-*` SVGs from `npm run art:ui`, set on .scene-root (see art.ts).
  *   paper-small  — things to read: event notes, seat and ship tags, prompts, cards, tips
  *   button-tag   — wooden plaques and buttons
- *   board-wood   — the own ledger: a sheet pinned onto a small wooden board
- *   frame-thin   — thin wooden frame around bigger panels (notes, log, result)
+ *   board-wood   — panels (ledger, private notes, log, result): a sheet pinned onto planks
  */
 
 .scene-root {
@@ -31,7 +30,7 @@
   box-shadow: none;
   backdrop-filter: none;
 }
-.scene-root :is(.hud-event, .seat-tag, .ship-tag, .action-pill, .table-card, .card-tip, .panel)::before {
+.scene-root :is(.hud-event, .seat-tag, .ship-tag, .action-pill, .table-card, .card-tip)::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -224,61 +223,56 @@
   color: var(--hud-ink);
 }
 
-/* ---------- own ledger: a sheet pinned onto a small wooden board ---------- */
+/* ---------- panels: a sheet pinned onto a wooden board ---------- */
+/* Own ledger, private notes, log and result. The board repeats whole planks down tall panels. */
 
-.scene-root .ledger {
+.scene-root :is(.ledger, .panel) {
   padding: 18px 22px 16px;
-  margin: 0 0 6px 8px;
   /* The ledger's inline seat-colored border belongs to the old look. */
   border-width: 0;
 }
-.scene-root .ledger::before {
+.scene-root .ledger {
+  margin: 0 0 6px 8px;
+}
+.scene-root :is(.ledger, .panel)::before {
   content: '';
   position: absolute;
   inset: -12px -16px -14px -16px;
   z-index: -2;
-  background: var(--ui-board-wood) center / 100% 100% no-repeat;
+  background: var(--ui-board-wood) top center / 100% auto;
+  background-repeat: no-repeat round;
   filter: var(--hud-shadow);
 }
-.scene-root .ledger::after {
+.scene-root :is(.ledger, .panel)::after {
   content: '';
   position: absolute;
   inset: 0;
   z-index: -1;
   border: 16px solid transparent;
   border-image: var(--ui-paper-small) 16 fill stretch;
-  rotate: -1.2deg;
+  rotate: -1deg;
   filter: drop-shadow(0 2px 2px rgba(30, 18, 5, 0.35));
 }
-.scene-root .ledger-pin {
+/* Pushpins (components/Pins.tsx); hidden wherever this skin is not applied. */
+.pin {
+  display: none;
+}
+.scene-root .pin {
+  display: block;
   position: absolute;
   top: 7px;
+  z-index: 1;
   width: 11px;
   height: 11px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #f0a08a, #b8402e 55%, #6a1c12);
   box-shadow: 0 0 0 1.5px #3d2211, 1px 2px 2px rgba(0, 0, 0, 0.35);
 }
-.scene-root .ledger-pin.left {
+.scene-root .pin.left {
   left: 10px;
 }
-.scene-root .ledger-pin.right {
+.scene-root .pin.right {
   right: 12px;
-}
-
-/* ---------- framed panels: private notes, log, result ---------- */
-
-.scene-root .panel {
-  padding: 22px 24px 20px;
-}
-.scene-root .panel::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border: 26px solid transparent;
-  border-image: var(--ui-frame-thin) 26 stretch;
-  pointer-events: none;
-  z-index: 1;
 }
 .scene-root .ledger-row b {
   color: #8a4a12;
@@ -317,4 +311,14 @@
 /* Labels over the scene stay absolutely placed (scene.css); the skin must not re-position them. */
 .scene-root .scene-labels > :is(*, .island-sign) {
   position: absolute;
+}
+
+/* The log panel clips its list itself (the <ol> scrolls); the panel must not clip its board. */
+.scene-root .log-drawer .event-log {
+  overflow: visible;
+}
+
+/* Bigger sheets hide more of their board; widen it so the planks still show around the paper. */
+.scene-root .panel::before {
+  inset: -18px -24px -20px -24px;
 }

@@ -1,4 +1,5 @@
 import type { MatchResult, PlayerId } from '../../game';
+import { Pins } from '../components/Pins';
 
 interface ResultScreenProps {
   readonly result: MatchResult;
@@ -9,6 +10,7 @@ interface ResultScreenProps {
 export function ResultScreen({ result, nameOf, onRestart }: ResultScreenProps) {
   return (
     <section className="panel result">
+      <Pins />
       <h2>最終結算</h2>
       <p>
         勝利者：<strong>{result.winners.map(nameOf).join('、')}</strong>

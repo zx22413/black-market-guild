@@ -1,5 +1,6 @@
 import type { PrivateEvent } from '../../game';
 import { Icon } from './Icon';
+import { Pins } from './Pins';
 
 interface PrivateNotesProps {
   readonly events: readonly PrivateEvent[];
@@ -24,6 +25,7 @@ export function PrivateNotes({ events, describeShip }: PrivateNotesProps) {
   }
   return (
     <section className="panel private-notes">
+      <Pins />
       <h2>
         <Icon name="role-intel" size={18} /> 只有你知道
       </h2>

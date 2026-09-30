@@ -77,7 +77,7 @@
 |---|---|
 | `ui/frame-wood.svg` | 大木框（9-slice，切 72px） |
 | `ui/paper.svg` | 羊皮紙內頁（9-slice，切 44px） |
-| `ui/paper-small.svg`、`ui/frame-thin.svg`、`ui/board-wood.svg` | HUD 用小紙片（切 16px）、細木框（切 26px）、三片木板拼成的小板子（依元件大小縮放，不切片） |
+| `ui/paper-small.svg`、`ui/board-wood.svg` | HUD 用小紙片（切 16px）、三片木板拼成的小板子（面板背板；寬度縮放、長面板往下整片重複） |
 | `ui/plaque.svg` | 標題木牌＋撕邊紙 |
 | `ui/button-arrow.svg`、`ui/button-tag.svg`、`ui/button-round.svg` | 箭頭木板按鈕、小木牌按鈕（9-slice，切 20px）、圓木片按鈕 |
 | `ui/rope.svg` | 裝飾繩 |
