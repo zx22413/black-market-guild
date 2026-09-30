@@ -1,7 +1,8 @@
 import type { ThreeElements } from '@react-three/fiber';
 import { BufferGeometry, Color, Float32BufferAttribute } from 'three';
 import type { AssetId } from '../../../game';
-import { BUILDING_DESIGNS, SWATCHES, type Mat } from './designs';
+import { BUILDING_DESIGNS } from './designs';
+import { SWATCHES, type Mat } from './materials';
 import { partFaces, type Face } from './polyhedra';
 
 /**

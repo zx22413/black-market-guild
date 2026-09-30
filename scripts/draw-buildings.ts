@@ -5,7 +5,8 @@
  *   npm run art:buildings   (writes docs/art/buildings-blueprint.svg)
  */
 import type { AssetId } from '../src/game';
-import { BUILDING_DESIGNS, ROOF_MATS, SWATCHES, type BuildingDesign, type Mat, type Swatch } from '../src/ui/scene/buildings/designs';
+import { BUILDING_DESIGNS, ROOF_MATS, type BuildingDesign } from '../src/ui/scene/buildings/designs';
+import { SWATCHES, type Mat, type Swatch } from '../src/ui/scene/buildings/materials';
 import { bounds, partFaces, type Face, type Vec3 } from '../src/ui/scene/buildings/polyhedra';
 import { facesViewer, paintersOrder, project } from './iso-painter';
 

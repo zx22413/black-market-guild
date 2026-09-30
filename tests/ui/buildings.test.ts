@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ASSET_IDS } from '../../src/game';
-import { BUILDING_DESIGNS, ROOF_MATS, SWATCHES } from '../../src/ui/scene/buildings/designs';
+import { BUILDING_DESIGNS, ROOF_MATS } from '../../src/ui/scene/buildings/designs';
+import { SWATCHES } from '../../src/ui/scene/buildings/materials';
 import { bounds, partFaces, type Part } from '../../src/ui/scene/buildings/polyhedra';
 import { ASSET_BUILDING_SCALE, ASSET_LOTS, PLATEAU_SAFE_RATIO, PLAYER_ISLAND_RADIUS } from '../../src/ui/scene/layout';
 

@@ -1,34 +1,7 @@
 import type { AssetId } from '../../../game';
-import type { Part, Vec2, Vec3 } from './polyhedra';
-
-/** A material: shaded from `top` to `bottom` across each solid's height. */
-export interface Swatch {
-  readonly top: string;
-  readonly bottom: string;
-}
-
-/**
- * Gradient swatches sampled from the Kenney Pirate Kit colormap (public/models/pirate-kit,
- * CC0), so the buildings share the rest of the table's palette and its hue-shifting shade.
- */
-export const SWATCHES = {
-  plaster: { top: '#fce2c4', bottom: '#f3ca98' },
-  marble: { top: '#fbfbfd', bottom: '#bebed6' },
-  stone: { top: '#c1caf2', bottom: '#797e97' },
-  slate: { top: '#84899f', bottom: '#636378' },
-  wood: { top: '#ed946a', bottom: '#b36343' },
-  woodDark: { top: '#ad5f41', bottom: '#845442' },
-  dark: { top: '#464650', bottom: '#353539' },
-  metal: { top: '#535666', bottom: '#3b3e4a' },
-  rope: { top: '#f0bc96', bottom: '#ca845c' },
-  brass: { top: '#ff9b44', bottom: '#ff7344' },
-  gold: { top: '#ffd263', bottom: '#ffc044' },
-  roofRed: { top: '#fc6c41', bottom: '#d1544e' },
-  roofBlue: { top: '#6691d7', bottom: '#5857bd' },
-  roofGreen: { top: '#5dc789', bottom: '#1c856a' },
-  roofGold: { top: '#ffd263', bottom: '#ff952f' },
-} as const satisfies Record<string, Swatch>;
-export type Mat = keyof typeof SWATCHES;
+import { SQUARE, barrel, framedWindow, gabledRoof, perimeterBeams, post, type KitPart } from './kit';
+import type { Mat } from './materials';
+import type { Vec2, Vec3 } from './polyhedra';
 
 /** Each asset owns one roof color so the four buildings can be told apart at table distance. */
 export const ROOF_MATS: Readonly<Record<AssetId, Mat>> = {
@@ -41,41 +14,12 @@ export const ROOF_MATS: Readonly<Record<AssetId, Mat>> = {
 export interface BuildingDesign {
   /** Short name of the silhouette idea, for the blueprint. */
   readonly motif: string;
-  readonly parts: readonly (Part & { readonly mat: Mat })[];
+  readonly parts: readonly KitPart[];
   /** Top of the guild pennant's pole; the pennant takes the owner's color. */
   readonly flag: Vec3;
 }
 
-type P = Part & { readonly mat: Mat };
-
-const post = (x: number, z: number, y0: number, y1: number, width = 0.13, mat: Mat = 'woodDark'): P => ({
-  kind: 'beam',
-  from: [x, y0, z],
-  to: [x, y1, z],
-  width,
-  mat,
-});
-
-/** Framed window set into a wall facing +z (`face` z) or +x (`face` x), `out` = ±1 for the side. */
-function window(face: 'x' | 'z', out: number, plane: number, along: number, y: number, w = 0.3, h = 0.42): P[] {
-  const at = (depth: number): Vec3 => (face === 'z' ? [along, y, plane + out * depth] : [plane + out * depth, y, along]);
-  const size = (width: number, height: number, depth: number): Vec3 => (face === 'z' ? [width, height, depth] : [depth, height, width]);
-  return [
-    { kind: 'box', center: at(0.02), size: size(w + 0.1, h + 0.1, 0.05), bevel: 0.015, mat: 'wood' },
-    { kind: 'box', center: at(0.035), size: size(w, h, 0.05), mat: 'dark' },
-    { kind: 'box', center: [at(0.05)[0], y - h / 2 - 0.06, at(0.05)[2]], size: size(w + 0.16, 0.06, 0.1), bevel: 0.015, mat: 'slate' },
-  ];
-}
-
-/** Rope-banded barrel standing on `base`. */
-function barrel([x, y, z]: Vec3): P[] {
-  return [
-    { kind: 'prism', base: [x, y, z], radius: 0.17, top: 0.2, height: 0.22, sides: 10, mat: 'wood' },
-    { kind: 'prism', base: [x, y + 0.22, z], radius: 0.2, top: 0.17, height: 0.22, sides: 10, mat: 'wood' },
-    { kind: 'prism', base: [x, y + 0.08, z], radius: 0.195, height: 0.05, sides: 10, mat: 'metal' },
-    { kind: 'prism', base: [x, y + 0.32, z], radius: 0.195, height: 0.05, sides: 10, mat: 'metal' },
-  ];
-}
+type P = KitPart;
 
 const HULL: readonly Vec2[] = [
   [-0.5, -1.25],
@@ -144,12 +88,7 @@ const insurance: BuildingDesign = {
     { kind: 'box', center: [0, 0.12, 0], size: [1.9, 0.24, 1.9], bevel: 0.05, mat: 'slate' },
     { kind: 'box', center: [0, 1.19, 0], size: [1.6, 1.9, 1.6], bevel: 0.03, mat: 'plaster' },
     ...[-0.8, 0.8].flatMap((x) => [-0.8, 0.8].map((z) => post(x, z, 0.24, 2.14, 0.14))),
-    ...([
-      [[-0.84, 1.22, 0.84], [0.84, 1.22, 0.84]],
-      [[-0.84, 1.22, -0.84], [0.84, 1.22, -0.84]],
-      [[0.84, 1.22, -0.84], [0.84, 1.22, 0.84]],
-      [[-0.84, 1.22, -0.84], [-0.84, 1.22, 0.84]],
-    ] as const).map(([from, to]): P => ({ kind: 'beam', from, to, width: 0.1, mat: 'woodDark' })),
+    ...perimeterBeams(0.84, 0.84, 1.22),
     { kind: 'gable', base: [0, 2.14, 0], size: [1.6, 1.1, 1.6], ridge: 'z', mat: 'plaster' },
     { kind: 'roof', base: [0, 2.14, 0], size: [1.6, 1.1, 1.5], ridge: 'z', overhang: 0.1, thickness: 0.09, mat: 'roofBlue' },
     // Stepped gables front and back, each step capped in slate.
@@ -164,9 +103,9 @@ const insurance: BuildingDesign = {
     // Door and windows.
     { kind: 'box', center: [0, 0.68, 0.81], size: [0.5, 0.88, 0.06], bevel: 0.02, mat: 'woodDark' },
     { kind: 'box', center: [0, 0.64, 0.83], size: [0.36, 0.76, 0.04], mat: 'wood' },
-    ...[-0.45, 0.45].flatMap((x) => [...window('z', 1, 0.8, x, 1.68), ...window('z', 1, 0.8, x, 0.82, 0.24)]),
-    ...[-0.45, 0.45].flatMap((x) => window('z', -1, -0.8, x, 1.68)),
-    ...[1, -1].flatMap((out) => [-0.4, 0.4].flatMap((z) => [...window('x', out, out * 0.8, z, 1.68), ...window('x', out, out * 0.8, z, 0.82)])),
+    ...[-0.45, 0.45].flatMap((x) => [...framedWindow('z', 1, 0.8, x, 1.68), ...framedWindow('z', 1, 0.8, x, 0.82, 0.24)]),
+    ...[-0.45, 0.45].flatMap((x) => framedWindow('z', -1, -0.8, x, 1.68)),
+    ...[1, -1].flatMap((out) => [-0.4, 0.4].flatMap((z) => [...framedWindow('x', out, out * 0.8, z, 1.68), ...framedWindow('x', out, out * 0.8, z, 0.82)])),
     // Chimney and a hanging sign.
     { kind: 'box', center: [0.5, 2.78, 0.3], size: [0.22, 0.62, 0.22], bevel: 0.02, mat: 'slate' },
     { kind: 'box', center: [0.5, 3.1, 0.3], size: [0.3, 0.06, 0.3], bevel: 0.015, mat: 'stone' },
@@ -188,8 +127,7 @@ const salvage: BuildingDesign = {
     ...[-0.84, -0.42, 0, 0.42, 0.84].map((z): P => ({ kind: 'box', center: [0, 0.07, z], size: [2.1, 0.14, 0.4], bevel: 0.03, mat: 'wood' })),
     { kind: 'box', center: [-0.35, 0.7, -0.35], size: [1.2, 1.04, 1.1], bevel: 0.03, mat: 'woodDark' },
     ...[-0.95, 0.25].flatMap((x) => [-0.9, 0.2].map((z) => post(x, z, 0.14, 1.2, 0.12, 'wood'))),
-    { kind: 'gable', base: [-0.35, 1.22, -0.35], size: [1.2, 0.6, 1.1], ridge: 'x', mat: 'woodDark' },
-    { kind: 'roof', base: [-0.35, 1.22, -0.35], size: [1.2, 0.6, 1.1], ridge: 'x', overhang: 0.15, thickness: 0.08, mat: 'roofGreen' },
+    ...gabledRoof({ base: [-0.35, 1.22, -0.35], size: [1.2, 0.6, 1.1], ridge: 'x', roof: 'roofGreen', fill: 'woodDark' }),
     { kind: 'box', center: [-0.45, 0.56, 0.21], size: [0.44, 0.8, 0.05], bevel: 0.015, mat: 'wood' },
     { kind: 'box', center: [-0.45, 0.53, 0.23], size: [0.32, 0.7, 0.04], mat: 'dark' },
     { kind: 'beam', from: [0.24, 0.86, -0.4], to: [0.29, 0.86, -0.4], width: 0.32, sides: 10, mat: 'brass' },
@@ -221,13 +159,6 @@ const salvage: BuildingDesign = {
     ...barrel([0.5, 0.14, -0.85]),
   ],
 };
-
-const SQUARE: readonly Vec2[] = [
-  [-1, -1],
-  [1, -1],
-  [1, 1],
-  [-1, 1],
-];
 
 /** Colonnaded hall under a gold hip roof with a clock tower and spire: the tallest on the island. */
 const exchange: BuildingDesign = {
