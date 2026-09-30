@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>對局畫面樣張</title>
+<!--
+  Style mock-up for docs/ui/layout-spec.md: direction C (physical tabletop props) with a
+  minimal HUD and a For The King palette. Static HTML over a real scene capture; not wired to
+  the engine. Open through the Vite dev server: /docs/ui/mockups/table.html
+    ?tone=now   keep the current turquoise scene instead of the navy grade
+    ?tip=none   hide the hovered-card tooltip
+-->
+<style>
+:root {
+  /* palette: For The King-like navy + warm parchment + gold hardware */
+  --navy-900: #0f1630;
+  --navy-800: #182243;
+  --navy-700: #22305a;
+  --navy-500: #3a4c86;
+  --gold-300: #f4dc9a;
+  --gold-500: #d7ae5b;
+  --gold-700: #8c6a2c;
+  --paper-100: #fbf1d9;
+  --paper-200: #f1e0b8;
+  --paper-400: #d9bf8a;
+  --ink-900: #2b1d10;
+  --ink-600: #6b5436;
+  --black-money: #9a6ad6;
+  --coral: #d0553f;
+  --sky: #4f8fd6;
+  --leaf: #6db36a;
+  --sun: #e0b43c;
+
+  --fs-caption: 12px;
+  --fs-small: 13px;
+  --fs-body: 14px;
+  --fs-ui: 16px;
+  --fs-title: 20px;
+  --fs-display: 28px;
+
+  --serif: 'Songti TC', 'Noto Serif TC', 'PMingLiU', serif;
+  --num: 'Palatino', 'Book Antiqua', 'Times New Roman', serif;
+
+  /* paper grain, tinted by the layer below */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .12 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --fibers: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012 .3' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 .4 0 0 0 0 .3 0 0 0 0 .15 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+  --dark-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  /* shapes: no plain rounded boxes */
+  --shape-plaque: polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0 50%);
+  --shape-ribbon: polygon(0 0, 100% 0, calc(100% - 16px) 50%, 100% 100%, 0 100%, 16px 50%);
+  --shape-chamfer: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+  --shape-shield: polygon(0 0, 100% 0, 100% calc(100% - 18px), 50% 100%, 0 calc(100% - 18px));
+  --shape-hex: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%);
+  --shape-pennant: polygon(0 0, 100% 0, calc(100% - 10px) 50%, 100% 100%, 0 100%);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #070b18; overflow: hidden; }
+body { font-family: var(--serif); color: var(--ink-900); }
+
+/* fixed 1600×900 stage scaled to the window */
+.stage {
+  position: absolute; left: 50%; top: 50%;
+  width: 1600px; height: 900px;
+  transform-origin: 0 0;
+  background: url('scene-ftk.jpg') center / cover;
+}
+body.tone-now .stage { background-image: url('scene.jpg'); }
+
+/* ---------- shared materials ---------- */
+
+/* gold-rimmed dark plate: rim = element, face = ::before */
+.plate {
+  position: relative;
+  background: linear-gradient(180deg, var(--gold-300), var(--gold-500) 45%, var(--gold-700));
+  clip-path: var(--shape);
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .55));
+  isolation: isolate;
+}
+.plate::before {
+  content: ''; position: absolute; inset: 2px; z-index: -1;
+  clip-path: var(--shape);
+  background:
+    var(--dark-grain),
+    radial-gradient(120% 90% at 50% 0%, rgba(255, 255, 255, .10), transparent 60%),
+    linear-gradient(180deg, var(--navy-700), var(--navy-900));
+}
+.plate > * { position: relative; }
+.shadowed { filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .5)) drop-shadow(0 1px 1px rgba(0, 0, 0, .4)); }
+
+/* parchment face, used by cards, event tiles, notes */
+.paper {
+  background:
+    var(--grain),
+    var(--fibers),
+    radial-gradient(130% 100% at 30% 20%, var(--paper-100), var(--paper-200) 60%, var(--paper-400));
+  background-blend-mode: multiply, multiply, normal;
+}
+
+/* recolourable game-icons.net glyphs */
+.glyph {
+  display: inline-block; width: var(--size, 20px); height: var(--size, 20px);
+  background: var(--tint, currentColor);
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
+  flex: none;
+}
+
+.hexbadge {
+  --shape: var(--shape-hex);
+  display: grid; place-items: center;
+  width: 30px; height: 27px;
+}
+.hexbadge::before { background: var(--dark-grain), linear-gradient(180deg, var(--face-top, var(--navy-500)), var(--face-bottom, var(--navy-900))); }
+
+.num { font-family: var(--num); font-variant-numeric: tabular-nums lining-nums; font-weight: 700; }
+.coin {
+  display: inline-block; width: 1em; height: 1em; border-radius: 50%; flex: none;
+  background: radial-gradient(circle at 35% 30%, #fff3c4, var(--gold-500) 45%, var(--gold-700) 90%);
+  box-shadow: inset 0 0 0 1.5px rgba(90, 60, 20, .6), 0 1px 1px rgba(0, 0, 0, .4);
+}
+.dot { display: inline-block; width: 9px; height: 9px; transform: rotate(45deg); background: var(--c); box-shadow: 0 0 0 1.5px var(--paper-100), 0 0 0 2.5px rgba(0,0,0,.35); flex: none; }
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+/* ---------- A: top ---------- */
+
+.round-banner {
+  display: flex; flex-direction: column; align-items: center; gap: 5px; margin-right: 6px;
+}
+.ribbon {
+  --shape: var(--shape-ribbon);
+  padding: 6px 30px 7px;
+  color: var(--gold-300);
+  font-size: var(--fs-title); letter-spacing: .12em; white-space: nowrap;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, .5);
+}
+.ribbon::before { background: var(--dark-grain), linear-gradient(180deg, #7a2733, #4a1420); }
+.ribbon small { font-size: var(--fs-small); letter-spacing: .06em; color: var(--paper-200); margin-left: 10px; }
+.pips { display: flex; gap: 5px; }
+.pip { --shape: var(--shape-hex); width: 18px; height: 16px; }
+.pip::before { inset: 1.5px; }
+.pip.done::before { background: linear-gradient(180deg, var(--gold-300), var(--gold-700)); }
+.pip.now::before { background: radial-gradient(circle, #fff6d0, var(--gold-500)); }
+
+.events { position: absolute; top: 16px; left: 16px; display: flex; gap: 10px; }
+.event {
+  display: flex; align-items: center; gap: 10px;
+  width: 196px; height: 62px; padding: 6px 12px 6px 8px;
+  clip-path: var(--shape-chamfer);
+  position: relative;
+}
+.event::after { /* printed inner rule */
+  content: ''; position: absolute; inset: 4px; clip-path: var(--shape-chamfer);
+  box-shadow: inset 0 0 0 1px rgba(107, 84, 54, .45);
+  pointer-events: none;
+}
+.event .medal { --shape: var(--shape-hex); width: 44px; height: 40px; display: grid; place-items: center; flex: none; }
+.event .medal::before { background: var(--dark-grain), linear-gradient(180deg, #7a2733, #3d0f19); }
+.event.voyage .medal::before { background: var(--dark-grain), linear-gradient(180deg, var(--navy-500), var(--navy-900)); }
+.event .text { display: flex; flex-direction: column; min-width: 0; }
+.event .cap { font-size: var(--fs-caption); color: var(--ink-600); letter-spacing: .1em; }
+.event .name { font-size: var(--fs-ui); font-weight: 700; }
+.event.pending .name { color: var(--ink-600); font-weight: 400; font-size: var(--fs-body); }
+.event .info { margin-left: auto; align-self: flex-start; font-size: var(--fs-caption); color: var(--ink-600); }
+
+.sys { position: absolute; top: 16px; right: 16px; display: flex; gap: 8px; }
+.sys .plate { --shape: var(--shape-hex); width: 50px; height: 44px; display: grid; place-items: center; color: var(--gold-300); font-size: var(--fs-ui); }
+
+/* ---------- C: side tab (collapsed "只有你知道") ---------- */
+
+.secret-tab {
+  position: absolute; top: 96px; right: 0;
+  width: 58px; height: 124px; padding: 12px 0 0 14px;
+  clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 calc(100% - 14px), 0 14px);
+  writing-mode: vertical-rl; letter-spacing: .25em;
+  font-size: var(--fs-body); color: var(--ink-900);
+}
+.seal {
+  position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%);
+  width: 28px; height: 28px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #c98de8, var(--black-money) 50%, #4f2a78);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, .45), inset 0 0 0 3px rgba(255, 255, 255, .12);
+  display: grid; place-items: center;
+  writing-mode: horizontal-tb; letter-spacing: 0;
+  color: #f6ecff; font-size: var(--fs-caption); font-weight: 700;
+}
+
+/* ---------- seat tags (in the scene) ---------- */
+
+.anchor { position: absolute; transform: translate(-50%, -100%); }
+.seat {
+  --shape: var(--shape-shield);
+  width: 170px; padding-bottom: 20px;
+  display: flex; flex-direction: column; align-items: center;
+}
+.seat::before {
+  background:
+    var(--dark-grain),
+    linear-gradient(180deg, var(--c) 0 30px, transparent 30px),
+    linear-gradient(180deg, var(--navy-700), var(--navy-900));
+}
+.seat .who {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; height: 30px; padding: 0 10px;
+  color: #fff; font-size: var(--fs-ui); font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .6);
+}
+.seat .who .ellipsis { max-width: 8.2em; }
+.ready { color: var(--gold-300); font-size: var(--fs-body); }
+.seat .cash { display: flex; align-items: center; gap: 6px; margin-top: 5px; color: var(--paper-100); font-size: 24px; line-height: 1; }
+.seat .cash .coin { font-size: 18px; }
+.seat .meta { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.seat .worth { font-size: var(--fs-caption); color: var(--paper-400); letter-spacing: .05em; }
+.seat .assets { display: flex; gap: 2px; }
+.seat .hexbadge { width: 24px; height: 22px; }
+.status {
+  --shape: var(--shape-plaque);
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 6px; padding: 3px 16px;
+  font-size: var(--fs-caption); letter-spacing: .08em; color: var(--ink-900);
+}
+.status::before { inset: 1.5px; background: var(--grain), linear-gradient(180deg, var(--paper-100), var(--paper-400)); background-blend-mode: multiply, normal; }
+
+/* ship pennants */
+.pennant {
+  --shape: var(--shape-pennant);
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 18px 3px 7px;
+  font-size: var(--fs-caption); color: var(--paper-100);
+}
+.pennant::before { inset: 1.5px; background: var(--dark-grain), linear-gradient(180deg, var(--navy-500), var(--navy-900)); }
+.pennant .mast { position: absolute; left: 0; top: 100%; width: 2px; height: 16px; background: var(--gold-700); }
+
+/* ---------- bottom row: D | E | F ---------- */
+
+.bottom {
+  position: absolute; left: 18px; right: 18px; bottom: 16px;
+  display: grid; grid-template-columns: 240px 1fr 330px; align-items: end; gap: 16px;
+}
+
+/* D: own ledger — the player's shield card, larger */
+.ledger {
+  --shape: var(--shape-shield);
+  --c: var(--sun);
+  padding: 0 18px 30px;
+  color: var(--paper-100);
+}
+.ledger::before {
+  background:
+    var(--dark-grain),
+    linear-gradient(180deg, var(--c) 0 40px, transparent 40px),
+    linear-gradient(180deg, var(--navy-700), var(--navy-900));
+}
+.ledger .who { height: 40px; display: flex; align-items: center; justify-content: space-between; color: var(--ink-900); font-size: var(--fs-ui); font-weight: 700; }
+.ledger .who small { font-size: var(--fs-caption); font-weight: 400; letter-spacing: .1em; }
+.ledger .big { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 34px; line-height: 1; color: #fff4d6; }
+.ledger .big .coin { font-size: 24px; }
+.ledger .big small { font-family: var(--serif); font-size: var(--fs-body); color: var(--paper-400); font-weight: 400; margin-left: 2px; }
+.ledger .rows { margin-top: 10px; border-top: 1px solid rgba(215, 174, 91, .35); padding-top: 8px; display: grid; gap: 5px; }
+.ledger .row { display: flex; justify-content: space-between; align-items: center; font-size: var(--fs-body); color: var(--paper-200); }
+.ledger .row b { font-family: var(--num); font-size: var(--fs-ui); color: #fff4d6; }
+.ledger .row.secret { color: #d8c2f3; }
+.ledger .row.secret b { color: #e6d4ff; }
+.ledger .chips { display: flex; gap: 4px; margin-top: 8px; }
+
+/* E: decision ribbon + plaque buttons */
+.dock { display: flex; flex-direction: column; align-items: center; gap: 10px; padding-bottom: 6px; }
+.prompt { --shape: var(--shape-ribbon); padding: 9px 46px 10px; display: flex; align-items: center; gap: 10px; }
+.prompt::before { background: var(--grain), var(--fibers), linear-gradient(180deg, var(--paper-100), var(--paper-400)); background-blend-mode: multiply, multiply, normal; }
+.prompt .main { font-size: var(--fs-ui); font-weight: 700; letter-spacing: .06em; text-wrap: balance; }
+.prompt .hint { font-size: var(--fs-body); color: var(--ink-600); }
+.info-btn {
+  width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+  font: italic 700 13px/1 var(--num); color: var(--paper-100);
+  background: radial-gradient(circle at 40% 35%, var(--navy-500), var(--navy-900));
+  box-shadow: 0 0 0 1.5px var(--gold-500);
+}
+.actions { display: flex; gap: 10px; }
+.btn {
+  --shape: var(--shape-plaque);
+  min-width: 132px; padding: 10px 30px;
+  color: var(--gold-300); font-size: var(--fs-ui); letter-spacing: .12em; text-align: center; white-space: nowrap;
+}
+.btn.primary::before { background: var(--dark-grain), radial-gradient(120% 90% at 50% 0%, rgba(255,255,255,.18), transparent 60%), linear-gradient(180deg, #8a3140, #4a1420); }
+
+/* F: hand of physical cards */
+.hand { position: relative; height: 176px; }
+.card {
+  position: absolute; bottom: 0;
+  width: 100px; height: 140px;
+  transform-origin: 50% 120%;
+  border-radius: 7px;
+  padding: 6px;
+  box-shadow: 0 6px 10px rgba(0, 0, 0, .45), 0 1px 0 rgba(255, 255, 255, .4) inset;
+}
+.card .frame { /* printed inner frame */
+  position: absolute; inset: 5px; border-radius: 4px;
+  box-shadow: inset 0 0 0 1px var(--gold-700), inset 0 0 0 3px rgba(251, 241, 217, .6), inset 0 0 0 4px rgba(140, 106, 44, .45);
+  pointer-events: none;
+}
+.card .art {
+  height: 72px; margin: 4px 4px 0; border-radius: 3px 3px 40% 40% / 3px 3px 14px 14px;
+  display: grid; place-items: center;
+  background: radial-gradient(90% 90% at 50% 30%, var(--navy-500), var(--navy-900));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .4), inset 0 -8px 14px rgba(0, 0, 0, .35);
+}
+.card .title { margin-top: 7px; text-align: center; font-size: var(--fs-body); font-weight: 700; white-space: nowrap; }
+.card .cost {
+  --shape: var(--shape-hex);
+  position: absolute; top: -8px; left: -8px; width: 36px; height: 32px;
+  display: grid; place-items: center; color: #fff4d6; font-size: var(--fs-body);
+}
+.card .cost::before { background: linear-gradient(180deg, #7a2733, #3d0f19); }
+.card.lift { transform: translateY(-26px) rotate(0deg) !important; z-index: 5; box-shadow: 0 0 0 2px var(--gold-300), 0 14px 22px rgba(0, 0, 0, .55); }
+
+/* L2 tooltip */
+.tip {
+  --shape: var(--shape-chamfer);
+  position: absolute; width: 260px; padding: 14px 16px 14px;
+  color: var(--paper-100); font-size: var(--fs-body); line-height: 1.6;
+}
+.tip h4 { margin: 0 0 6px; display: flex; justify-content: space-between; align-items: baseline; font-size: var(--fs-ui); color: var(--gold-300); }
+.tip h4 span { font-family: var(--num); font-size: var(--fs-body); color: var(--paper-200); }
+.tip p { margin: 0; text-wrap: pretty; }
+.tip .kw { color: var(--gold-300); border-bottom: 1px dotted var(--gold-500); }
+.tip .foot { margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(215, 174, 91, .3); font-size: var(--fs-caption); color: var(--paper-400); }
+body.tip-none .tip, body.tip-none .card.lift { all: revert; }
+body.tip-none .tip { display: none; }
+
+.stamp {
+  position: absolute; left: 12px; bottom: 8px;
+  font: 12px var(--serif); color: rgba(255, 255, 255, .45); letter-spacing: .1em;
+}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+
+  <!-- A: event tiles (top left) — effect text lives in the tooltip -->
+  <div class="events">
+  <div class="round-banner">
+        <div class="plate ribbon">第 1 回合<small>部署角色</small></div>
+        <div class="pips">
+          <i class="plate pip now"></i><i class="plate pip"></i><i class="plate pip"></i>
+          <i class="plate pip"></i><i class="plate pip"></i><i class="plate pip"></i>
+        </div>
+      </div>
+
+
+    <div class="event paper shadowed">
+      <div class="plate medal"><i class="glyph" style="--icon:url(/art/icons/market-black-market-bounty.svg);--size:26px;--tint:var(--gold-300)"></i></div>
+      <div class="text"><span class="cap">市場事件</span><span class="name">黑市懸賞令</span></div>
+      <span class="info">ⓘ</span>
+    </div>
+    <div class="event voyage pending paper shadowed">
+      <div class="plate medal"><i class="glyph" style="--icon:url(/art/icons/dice.svg);--size:24px;--tint:var(--paper-200)"></i></div>
+      <div class="text"><span class="cap">航海事件</span><span class="name">部署鎖定後揭曉</span></div>
+    </div>
+  </div>
+
+  <!-- B: system buttons -->
+  <div class="sys">
+    <div class="plate" title="航海日誌">誌</div>
+    <div class="plate" title="離開">✕</div>
+  </div>
+
+  <!-- C: collapsed private tab -->
+  <div class="secret-tab paper shadowed">只有你知道<span class="seal">1</span></div>
+
+  <!-- seat tags: left 黑潮會, top 金錨公會, right: 12-char name truncated -->
+  <div class="anchor" style="left:480px; top:352px">
+    <div class="plate seat" style="--c:var(--coral)">
+      <div class="who"><span class="ellipsis">黑潮會</span><span class="ready">✓</span></div>
+      <div class="cash num"><i class="coin"></i>500</div>
+      <div class="meta"><span class="worth">資產 200</span><span class="assets"><span class="plate hexbadge"><i class="glyph" style="--icon:url(/art/icons/asset-salvage.svg);--size:17px;--tint:var(--paper-100)"></i></span></span></div>
+      <div class="plate status">應徵<span class="dot" style="--c:var(--leaf)"></span></div>
+    </div>
+  </div>
+
+  <div class="anchor" style="left:795px; top:172px">
+    <div class="plate seat" style="--c:var(--sky)">
+      <div class="who"><span class="ellipsis">金錨公會</span></div>
+      <div class="cash num"><i class="coin"></i>700</div>
+      <div class="meta"><span class="worth">資產 150</span><span class="assets"><span class="plate hexbadge"><i class="glyph" style="--icon:url(/art/icons/asset-shipyard.svg);--size:17px;--tint:var(--paper-100)"></i></span></span></div>
+      <div class="plate status">留港</div>
+    </div>
+  </div>
+
+  <div class="anchor" style="left:1115px; top:350px">
+    <div class="plate seat" style="--c:var(--leaf)" title="北境聯合貿易船運商會">
+      <div class="who"><span class="ellipsis">北境聯合貿易船運商會</span><span class="ready">✓</span></div>
+      <div class="cash num"><i class="coin"></i>600</div>
+      <div class="meta"><span class="worth">資產 200</span><span class="assets"><span class="plate hexbadge"><i class="glyph" style="--icon:url(/art/icons/asset-salvage.svg);--size:17px;--tint:var(--paper-100)"></i></span></span></div>
+      <div class="plate status">應徵<span class="dot" style="--c:var(--sun)"></span></div>
+    </div>
+  </div>
+
+  <!-- ship pennants at the docks -->
+  <div class="anchor" style="left:590px; top:408px">
+    <div class="plate pennant"><span class="dot" style="--c:var(--coral)"></span><i class="glyph" style="--icon:url(/art/icons/ship-solo.svg);--size:14px;--tint:var(--paper-100)"></i><span class="mast"></span></div>
+  </div>
+  <div class="anchor" style="left:806px; top:552px">
+    <div class="plate pennant"><span class="dot" style="--c:var(--sun)"></span><i class="glyph" style="--icon:url(/art/icons/ship-solo.svg);--size:14px;--tint:var(--paper-100)"></i><span class="mast"></span></div>
+  </div>
+
+  <!-- bottom row -->
+  <div class="bottom">
+    <!-- D -->
+    <div class="plate ledger">
+      <div class="who">你</div>
+      <div class="big num"><i class="coin"></i>500<small>資金</small></div>
+      <div class="rows">
+        <div class="row"><span>資產估值</span><b>200</b></div>
+        <div class="row secret"><span>黑錢（只有你知道）</span><b>0</b></div>
+      </div>
+      <div class="chips">
+        <span class="plate hexbadge"><i class="glyph" style="--icon:url(/art/icons/asset-salvage.svg);--size:17px;--tint:var(--paper-100)"></i></span>
+      </div>
+    </div>
+
+    <!-- E -->
+    <div class="dock">
+      <div class="plate prompt">
+        <span class="main">秘密部署角色</span>
+        <span class="hint">選一張角色牌</span>
+        <span class="info-btn">i</span>
+      </div>
+      <div class="actions">
+        <div class="plate btn">不部署</div>
+      </div>
+    </div>
+
+    <!-- F -->
+    <div class="hand">
+      <div class="card paper" style="left:0; transform:rotate(-9deg)">
+        <span class="frame"></span>
+        <div class="art"><i class="glyph" style="--icon:url(/art/icons/role-intel.svg);--size:44px;--tint:var(--gold-300)"></i></div>
+        <div class="title">情報商人</div>
+        <span class="plate cost num">50</span>
+      </div>
+      <div class="card paper" style="left:76px; transform:rotate(-3deg)">
+        <span class="frame"></span>
+        <div class="art"><i class="glyph" style="--icon:url(/art/icons/role-guard.svg);--size:44px;--tint:var(--gold-300)"></i></div>
+        <div class="title">護衛</div>
+        <span class="plate cost num">50</span>
+      </div>
+      <div class="card paper lift" style="left:152px; transform:rotate(3deg)">
+        <span class="frame"></span>
+        <div class="art"><i class="glyph" style="--icon:url(/art/icons/role-pirate.svg);--size:44px;--tint:var(--gold-300)"></i></div>
+        <div class="title">海盜</div>
+        <span class="plate cost num">100</span>
+      </div>
+      <div class="card paper" style="left:228px; transform:rotate(9deg)">
+        <span class="frame"></span>
+        <div class="art"><i class="glyph" style="--icon:url(/art/icons/role-smuggler.svg);--size:44px;--tint:var(--gold-300)"></i></div>
+        <div class="title">走私商人</div>
+        <span class="plate cost num">0</span>
+      </div>
+
+      <!-- L2: hovering 海盜 -->
+      <div class="plate tip" style="left:40px; bottom:180px">
+        <h4>海盜<span>部署費 100 G</span></h4>
+        <p>目標船<span class="kw">骰值</span> −1；船沉沒時與其他海盜均分 150 G <span class="kw">戰利品</span>。</p>
+        <div class="foot">鎖定後不能更改・滑過底線字可看說明</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stamp">樣張 v0.1 ・ 方向 C＋極簡 ・ For The King 色調</div>
+</div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  if (params.get('tone') === 'now') document.body.classList.add('tone-now');
+  if (params.get('tip') === 'none') document.body.classList.add('tip-none');
+  const stage = document.getElementById('stage');
+  const fit = () => {
+    const s = Math.min(innerWidth / 1600, innerHeight / 900);
+    stage.style.transform = `scale(${s}) translate(-50%, -50%)`;
+  };
+  addEventListener('resize', fit);
+  fit();
+</script>
+</body>
+</html>

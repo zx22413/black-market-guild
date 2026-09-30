@@ -1,0 +1,196 @@
+/* UI style mock-up (dev only). No plates: text sits on the scene, only real objects get a body. */
+
+.mk-root {
+  --paper: url('/docs/ui/mockups/tex/parchment.jpg');
+  --wood: url('/docs/ui/mockups/tex/wood.jpg');
+  --ink: #2b1d10;
+  --ink-soft: #6b5436;
+  --cream: #fff4dc;
+  --gold: #f0cf7a;
+  --black-money: #b48ae6;
+  --wax: #8e2a2a;
+  /* legible on bright and dark sea alike, without a box */
+  --lift: 0 1px 0 rgba(20, 12, 4, 0.9), 0 0 3px rgba(10, 14, 30, 0.95), 0 2px 10px rgba(5, 8, 20, 0.7);
+  position: fixed;
+  inset: 0;
+  font-family: var(--mk-font), serif;
+  color: var(--cream);
+  background: #10204a;
+}
+.mk-root.tone-now { background: #9fd4e0; }
+.mk-root canvas { position: absolute; inset: 0; }
+
+.mk-hud { position: absolute; inset: 0; pointer-events: none; }
+.mk-hud button { pointer-events: auto; font: inherit; border: 0; cursor: pointer; }
+
+.mk-glyph {
+  display: inline-block; flex: none;
+  width: var(--size); height: var(--size);
+  background: currentColor;
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
+}
+.mk-glyph.ink { color: var(--ink); }
+.mk-coin {
+  /* flat, two-tone coin in the table's Kenney gold: rim, face, one highlight — no metal sheen */
+  position: relative; display: inline-block; width: 0.82em; height: 0.82em; border-radius: 50%; flex: none;
+  background: #f0a43a;
+  box-shadow: inset 0 -0.08em 0 #d9822c, 0 1px 1px rgba(60, 35, 10, 0.35);
+}
+.mk-coin::after {
+  content: ''; position: absolute; inset: 16%; border-radius: 50%;
+  background: linear-gradient(160deg, #ffe08a, #ffc94e 55%, #ffb640);
+  box-shadow: inset 0.06em 0.06em 0 rgba(255, 250, 220, 0.8);
+}
+.mk-diamond { display: inline-block; width: 0.55em; height: 0.55em; rotate: 45deg; box-shadow: 0 0 0 1.5px var(--cream), 0 1px 3px rgba(0, 0, 0, 0.6); }
+.mk-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.mk-brush { display: block; height: 7px; }
+
+/* ---------- top ---------- */
+
+.mk-top { position: absolute; top: 18px; left: 22px; display: flex; align-items: flex-start; gap: 34px; text-shadow: var(--lift); }
+.mk-round { display: grid; grid-template-columns: auto auto; column-gap: 12px; align-items: baseline; }
+.mk-round-text { font-size: 26px; font-weight: 700; letter-spacing: 0.08em; }
+.mk-round-text b { font-family: Palatino, serif; font-size: 34px; color: var(--gold); }
+.mk-round-phase { font-size: 16px; color: #f1dcae; }
+.mk-pips { grid-column: 1 / -1; display: flex; gap: 7px; margin-top: 4px; }
+.mk-pips i { width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid rgba(255, 244, 220, 0.7); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); }
+.mk-pips i.on { background: radial-gradient(circle at 35% 30%, #fff3c4, #d7ae5b 50%, #7a5620); border-color: transparent; }
+
+.mk-event { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; pointer-events: auto; }
+.mk-event small { display: block; font-size: 12px; font-weight: 400; letter-spacing: 0.15em; color: #e8d6ae; }
+.mk-event.muted { font-weight: 400; color: #e8d6ae; }
+.mk-medal {
+  width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  color: #fff1cf;
+  background: radial-gradient(circle at 35% 28%, #b5413f, #7a1f25 55%, #3f0c12);
+  box-shadow: inset 0 0 0 3px rgba(240, 207, 122, 0.85), inset 0 0 0 5px rgba(60, 20, 10, 0.5), 0 3px 6px rgba(0, 0, 0, 0.55);
+}
+.mk-event.muted .mk-medal { background: radial-gradient(circle at 35% 28%, #4a64a8, #22305a 55%, #0f1630); }
+
+/* props variant: event cards are slips of real paper */
+.mk-event-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 22px 12px 14px;
+  color: var(--ink); font-size: 18px; font-weight: 700; text-shadow: none;
+  background: var(--paper) center / 420px;
+  filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.45));
+  pointer-events: auto;
+}
+.mk-event-card small { display: block; font-size: 12px; font-weight: 400; letter-spacing: 0.15em; color: var(--ink-soft); }
+
+.mk-sys { position: absolute; top: 18px; right: 20px; display: flex; gap: 14px; }
+.mk-sys button { background: none; color: var(--cream); font-size: 22px; text-shadow: var(--lift); padding: 4px; }
+
+/* ---------- flat variant: seat labels on the scene ---------- */
+
+.mk-labels { position: absolute; inset: 0; }
+.mk-seat {
+  position: absolute; top: 0; left: 0;
+  display: flex; flex-direction: column; align-items: center;
+  text-shadow: var(--lift);
+  pointer-events: auto;
+}
+.mk-seat-name { display: flex; align-items: baseline; gap: 6px; font-size: 20px; font-weight: 700; max-width: 11em; }
+.mk-seat-name .mk-ellipsis { max-width: 8.2em; }
+.mk-ready { color: var(--gold); font-size: 16px; }
+.mk-seat .mk-brush { width: 100%; min-width: 64px; margin: 2px 0 4px; opacity: 0.95; }
+.mk-seat-cash { display: flex; align-items: center; gap: 6px; font: 700 28px/1 Palatino, 'Book Antiqua', serif; }
+.mk-seat-status { display: flex; align-items: center; gap: 6px; margin-top: 5px; font-size: 14px; letter-spacing: 0.12em; color: #f1dcae; }
+
+/* ---------- bottom row: D | E | F ---------- */
+
+.mk-bottom {
+  position: absolute; left: 22px; right: 22px; bottom: 16px;
+  display: grid; grid-template-columns: 250px 1fr 360px; align-items: end; gap: 16px;
+}
+
+.mk-ledger { text-shadow: var(--lift); padding-bottom: 6px; }
+.mk-ledger-name { display: inline-flex; flex-direction: column; font-size: 20px; font-weight: 700; }
+.mk-ledger-name .mk-brush { width: 60px; margin-top: 2px; }
+.mk-ledger-cash { display: flex; align-items: center; gap: 8px; margin: 6px 0 4px; font: 700 44px/1 Palatino, 'Book Antiqua', serif; }
+.mk-ledger-cash small { font: 400 15px var(--mk-font), serif; color: #f1dcae; }
+.mk-ledger-row { font-size: 15px; color: #f1dcae; }
+.mk-ledger-row.secret { color: var(--black-money); }
+
+.mk-note {
+  position: relative; justify-self: start;
+  padding: 14px 22px 14px 58px;
+  color: var(--ink); font-size: 18px; font-weight: 700;
+  background: var(--paper) center / 400px;
+  rotate: -2deg;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+  pointer-events: auto;
+}
+.mk-note small { display: block; font-size: 12px; font-weight: 400; letter-spacing: 0.15em; color: var(--ink-soft); }
+.mk-seal {
+  position: absolute; left: 12px; top: 50%; translate: 0 -50%;
+  width: 34px; height: 34px; border-radius: 47% 53% 50% 48%;
+  display: grid; place-items: center;
+  color: #f4e8ff; font: 700 15px Palatino, serif;
+  background: radial-gradient(circle at 38% 32%, #c79be8, #7a45b0 55%, #3f1f66);
+  box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.1), 0 2px 3px rgba(0, 0, 0, 0.45);
+}
+
+.mk-dock { display: flex; flex-direction: column; align-items: center; gap: 12px; padding-bottom: 4px; }
+.mk-prompt { display: flex; align-items: baseline; gap: 12px; text-shadow: var(--lift); }
+.mk-prompt-main { font-size: 24px; font-weight: 700; letter-spacing: 0.1em; }
+.mk-prompt-hint { font-size: 16px; color: #f1dcae; }
+.mk-info {
+  width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center; align-self: center;
+  font: italic 700 13px/1 Palatino, serif; color: var(--ink); text-shadow: none;
+  background: radial-gradient(circle at 35% 30%, #fff3c4, #d7ae5b 60%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  pointer-events: auto;
+}
+.mk-actions { display: flex; gap: 14px; }
+.mk-btn {
+  min-width: 150px; padding: 11px 34px 13px;
+  color: var(--ink); font-size: 18px; font-weight: 700; letter-spacing: 0.2em;
+  background: var(--paper) center / 380px;
+  filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.5));
+}
+
+/* hand: printed cards on real paper */
+.mk-hand { position: relative; height: 190px; }
+.mk-card {
+  position: absolute; bottom: 0; left: calc(var(--i) * 74px + 6px);
+  width: 108px; height: 150px; padding: 8px;
+  border-radius: 6px;
+  color: var(--ink);
+  background: var(--paper) calc(var(--i) * 97px) 0 / 360px;
+  box-shadow: inset 0 0 0 1px rgba(90, 60, 25, 0.55), inset 0 0 0 5px rgba(255, 246, 225, 0.35), inset 0 0 0 6px rgba(120, 85, 40, 0.45), 0 7px 12px rgba(0, 0, 0, 0.5);
+  rotate: calc((var(--i) - 1.5) * 6deg);
+  transform-origin: 50% 130%;
+  pointer-events: auto;
+}
+.mk-card.lift { translate: 0 -30px; rotate: 1deg; z-index: 2; box-shadow: inset 0 0 0 1px rgba(90, 60, 25, 0.55), inset 0 0 0 5px rgba(255, 246, 225, 0.35), inset 0 0 0 6px rgba(120, 85, 40, 0.45), 0 16px 24px rgba(0, 0, 0, 0.55); }
+.mk-card-art {
+  height: 80px; margin: 6px 4px 0;
+  display: grid; place-items: center;
+  color: var(--ink);
+  border-bottom: 1.5px solid rgba(90, 60, 25, 0.5);
+}
+.mk-card-name { margin-top: 10px; text-align: center; font-size: 16px; font-weight: 700; white-space: nowrap; }
+.mk-stamp {
+  position: absolute; top: 6px; left: 6px;
+  min-width: 30px; height: 30px; padding: 0 4px; border-radius: 50%;
+  display: grid; place-items: center;
+  color: var(--wax); font: 700 14px Palatino, serif;
+  border: 2px solid var(--wax);
+  opacity: 0.85; rotate: -12deg;
+}
+
+.mk-tip {
+  position: absolute; right: 36px; bottom: 206px; width: 270px;
+  padding: 14px 18px 14px;
+  color: var(--ink); font-size: 15px; line-height: 1.65;
+  background: var(--paper) 20% 30% / 420px;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.5));
+}
+.mk-tip-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.mk-tip-head b { font-size: 18px; }
+.mk-tip-head span { font-size: 13px; color: var(--ink-soft); }
+.mk-tip p { margin: 0; text-wrap: pretty; }
+.mk-tip u { text-decoration: none; border-bottom: 1.5px dotted var(--wax); color: var(--wax); }
+.mk-tip small { display: block; margin-top: 6px; font-size: 12px; color: var(--ink-soft); }

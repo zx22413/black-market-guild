@@ -1,0 +1,111 @@
+/* Third mock-up: pale wood + soft parchment + small saturated accents. */
+
+.mk-mix {
+  --wood-light: url('/docs/ui/mockups/tex/wood-light.jpg');
+  --fabric: url('/docs/ui/mockups/tex/fabric.jpg');
+  --wood-ink: #3a2612;
+  --wood-ink-soft: #6e4f2e;
+  --stamp: #a3302a;
+  color: var(--wood-ink);
+}
+
+/* pale wooden board: grain texture, sawn edge, top light and bottom thickness */
+.mx-board-wrap { position: relative; display: inline-block; filter: drop-shadow(0 3px 3px rgba(40, 25, 10, 0.35)) drop-shadow(0 1px 0 rgba(90, 60, 25, 0.5)); }
+.mx-board {
+  position: relative;
+  padding: 7px 16px 8px 22px;
+  background:
+    linear-gradient(180deg, rgba(255, 250, 235, 0.45), transparent 22%, transparent 78%, rgba(110, 75, 35, 0.28)),
+    var(--wood-light) 30% 40% / 900px;
+  box-shadow: inset 0 0 0 1px rgba(110, 75, 35, 0.35);
+}
+/* seat-colored cloth tied round the board's left end */
+.mx-ribbon {
+  position: absolute; left: 7px; top: -4px; bottom: -4px; width: 11px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.18), transparent 35%, rgba(255, 255, 255, 0.2) 60%, rgba(0, 0, 0, 0.22)), var(--fabric) center / 180px, var(--c);
+  background-blend-mode: normal, multiply, normal;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 4px), 0 100%);
+}
+
+.mx-stamp {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 1px 8px 2px;
+  color: var(--stamp); font-size: 14px; font-weight: 700; letter-spacing: 0.1em;
+  border: 2px solid var(--stamp); border-radius: 3px;
+  background: rgba(255, 246, 228, 0.82);
+  rotate: -6deg; opacity: 0.92;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+/* ---------- seat boards (pinned above islands) ---------- */
+
+.mx-seat { position: absolute; top: 0; left: 0; display: flex; flex-direction: column; align-items: center; pointer-events: auto; }
+.mx-seat-name { display: flex; align-items: baseline; gap: 6px; font-size: 18px; font-weight: 700; max-width: 9.5em; }
+.mx-seat-name .mk-ellipsis { max-width: 8.2em; }
+.mx-check { color: #2f6b34; font-size: 15px; }
+.mx-seat-cash { display: flex; align-items: center; justify-content: center; gap: 6px; font: 700 21px/1.2 Palatino, 'Book Antiqua', serif; }
+.mx-seat .mx-stamp { margin-top: -6px; z-index: 1; }
+
+/* ---------- top ---------- */
+
+.mx-top { position: absolute; top: 16px; left: 18px; display: flex; align-items: flex-start; gap: 18px; }
+.mx-round .mx-board { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 18px 9px; }
+.mx-round-text { font-size: 19px; font-weight: 700; letter-spacing: 0.06em; }
+.mx-round-text b { font: 700 24px Palatino, serif; color: #8a4a12; }
+.mx-pips { display: flex; gap: 5px; }
+.mx-pips i { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 1px 2px rgba(60, 35, 10, 0.55); background: rgba(110, 75, 35, 0.25); }
+.mx-pips i.on { background: radial-gradient(circle at 40% 35%, #ffe08a, #ffc94e 55%, #f0a43a 60%); box-shadow: 0 1px 1px rgba(60, 35, 10, 0.35); }
+
+.mx-notice { position: relative; margin-top: 4px; filter: drop-shadow(0 3px 3px rgba(40, 25, 10, 0.3)); pointer-events: auto; }
+.mx-notice-paper {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 16px 9px 11px;
+  font-size: 16px; font-weight: 700; color: var(--ink);
+  background: var(--paper) center / 900px;
+}
+.mx-notice-paper small { display: block; font-size: 12px; font-weight: 400; letter-spacing: 0.12em; color: var(--ink-soft); }
+.mx-pin {
+  position: absolute; top: -3px; left: 50%; translate: -50% 0;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f2e6c8, #9c7a3c 55%, #4a3414);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.mx-sys { position: absolute; top: 16px; right: 18px; display: flex; gap: 10px; }
+.mx-sys button {
+  width: 42px; height: 42px; border-radius: 50%;
+  color: var(--wood-ink); font-size: 17px; font-weight: 700;
+  background: radial-gradient(circle at 40% 30%, rgba(255, 250, 235, 0.5), transparent 60%), var(--wood-light) center / 300px;
+  box-shadow: inset 0 0 0 1px rgba(110, 75, 35, 0.4), inset 0 -3px 0 rgba(110, 75, 35, 0.25), 0 3px 5px rgba(40, 25, 10, 0.35);
+}
+
+/* ---------- bottom ---------- */
+
+.mx-ledger { position: relative; justify-self: start; display: flex; align-items: flex-end; gap: 10px; padding-bottom: 4px; }
+.mx-ledger .mx-board { padding: 9px 22px 10px 26px; }
+.mx-ledger-name { font-size: 18px; font-weight: 700; }
+.mx-ledger-cash { display: flex; align-items: center; gap: 8px; font: 700 36px/1.05 Palatino, 'Book Antiqua', serif; }
+.mx-seal {
+  width: 38px; height: 38px; margin-bottom: 6px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  color: var(--wood-ink); font-size: 16px; font-weight: 700;
+  background: radial-gradient(circle at 40% 30%, rgba(255, 250, 235, 0.5), transparent 60%), var(--wood-light) center / 300px;
+  box-shadow: inset 0 0 0 1px rgba(110, 75, 35, 0.4), inset 0 -3px 0 rgba(110, 75, 35, 0.25), 0 3px 5px rgba(40, 25, 10, 0.35);
+  pointer-events: auto;
+}
+
+.mx-prompt {
+  display: flex; align-items: baseline; gap: 12px;
+  padding: 10px 28px 11px;
+  color: var(--ink);
+  background: var(--paper) center / 900px;
+  filter: drop-shadow(0 3px 4px rgba(40, 25, 10, 0.3));
+}
+.mx-prompt b { font-size: 20px; letter-spacing: 0.08em; }
+.mx-prompt span { font-size: 15px; color: var(--ink-soft); }
+.mx-button .mx-board { min-width: 140px; padding: 9px 30px 10px; text-align: center; font-size: 17px; font-weight: 700; letter-spacing: 0.2em; }
+
+/* softer parchment everywhere in this variant */
+.mk-mix .mk-card { background-size: 700px; }
+.mk-mix .mk-tip { background-size: 900px; }
