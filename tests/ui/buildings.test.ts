@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ASSET_IDS } from '../../src/game';
 import { BUILDING_DESIGNS, ROOF_MATS, SWATCHES } from '../../src/ui/scene/buildings/designs';
 import { bounds, partFaces, type Part } from '../../src/ui/scene/buildings/polyhedra';
-import { ASSET_BUILDING_SCALE, ASSET_LOTS } from '../../src/ui/scene/layout';
+import { ASSET_BUILDING_SCALE, ASSET_LOTS, PLATEAU_SAFE_RATIO, PLAYER_ISLAND_RADIUS } from '../../src/ui/scene/layout';
 
 const sub = (a: readonly number[], b: readonly number[]): number[] => a.map((n, i) => n - b[i]!);
 const dot = (a: readonly number[], b: readonly number[]): number => a.reduce((s, n, i) => s + n * b[i]!, 0);
@@ -70,6 +70,11 @@ describe('asset buildings', () => {
     }
   });
 
+  it('stands the tallest building above a ship (ship-medium is about 4.2 units tall at its table scale)', () => {
+    const tallest = Math.max(...ASSET_IDS.map((asset) => bounds(BUILDING_DESIGNS[asset].parts).max[1] * ASSET_BUILDING_SCALE));
+    expect(tallest).toBeGreaterThan(4.2 * 2);
+  });
+
   it('keeps all four buildings on the plateau without overlapping', () => {
     const footprints = ASSET_IDS.map((asset) => {
       const { min, max } = bounds(BUILDING_DESIGNS[asset].parts);
@@ -79,7 +84,7 @@ describe('asset buildings', () => {
     });
     for (const f of footprints) {
       for (const [x, z] of [[f.x0, f.z0], [f.x1, f.z0], [f.x0, f.z1], [f.x1, f.z1]] as const) {
-        expect(Math.hypot(x, z)).toBeLessThan(4.7);
+        expect(Math.hypot(x, z)).toBeLessThan(PLAYER_ISLAND_RADIUS * PLATEAU_SAFE_RATIO);
       }
     }
     footprints.forEach((a, i) =>

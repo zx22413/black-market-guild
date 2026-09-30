@@ -13,19 +13,19 @@ import { Escorts, VoyageShip, shipPose } from './Ships';
 import type { CashFloat } from '../table/useCashFloats';
 import type { SceneTable } from './tableModel';
 import { WEATHER } from './weather';
+import { WeatherFog } from './WeatherFog';
 import './scene.css';
 
 /** Keep the islands clear of the top event band and the bottom hand/action band. */
 const SAFE_AREA: SafeArea = { top: 92, bottom: 136, left: 24, right: 24 };
-const SEAT_LABEL_HEIGHT = 9;
+/** Above the tallest asset building (the exchange spire). */
+const SEAT_LABEL_HEIGHT = 15;
 const SHIP_LABEL_HEIGHT = 7;
 /**
  * The target's name plate sits on the sea at its front-left diagonal: no lane runs there, so it
  * never covers the far island, its tag or an arriving ship.
  */
 const TARGET_PLATE: Vec3 = [-(TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2, 1, (TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2];
-/** The auto-framed camera sits farther than the weather presets assumed. */
-const FOG_SCALE = 1.8;
 
 export interface TableSceneProps {
   readonly table: SceneTable;
@@ -100,7 +100,7 @@ export function TableScene(props: TableSceneProps) {
       <Canvas shadows camera={{ position: [0, 82, 60], fov: 38 }}>
         <CameraRig points={points} safe={SAFE_AREA} />
         <color attach="background" args={[look.sky]} />
-        <fog attach="fog" args={[look.sky, look.fogNear * FOG_SCALE, look.fogFar * FOG_SCALE]} />
+        <WeatherFog color={look.sky} near={look.fogNear} far={look.fogFar} />
         <ambientLight intensity={look.ambient} />
         <hemisphereLight args={[look.sky, '#3a6b4a', 0.6]} />
         <directionalLight

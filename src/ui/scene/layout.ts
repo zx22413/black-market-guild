@@ -7,9 +7,13 @@ export type Vec3 = readonly [number, number, number];
  * Island centers sit on an ellipse around the target island: wider than deep, so a
  * landscape screen is used fully and the far island does not hide behind the target.
  */
-export const SEAT_RADIUS = { x: 46, z: 34 } as const;
-export const TARGET_ISLAND_RADIUS = 8;
-export const PLAYER_ISLAND_RADIUS = 7;
+export const SEAT_RADIUS = { x: 52, z: 44 } as const;
+/** The hub: a little larger than the guild islands around it. */
+export const TARGET_ISLAND_RADIUS = 12;
+/** Large enough that asset buildings stand taller than the ships and docks around them. */
+export const PLAYER_ISLAND_RADIUS = 13;
+/** The grass plateau is at least this share of the island radius wide (see `IslandBase`). */
+export const PLATEAU_SAFE_RATIO = 0.62;
 
 /**
  * Seat angles in radians around the target island; seat 0 is the viewer, nearest the camera.
@@ -42,11 +46,14 @@ export function headingOf(direction: Vector3): number {
 
 /** Fixed lot of each asset building on every guild island, in island space (+z faces the dock). */
 export const ASSET_LOTS: Readonly<Record<AssetId, Vec3>> = {
-  shipyard: [-3, 0, -0.2],
-  insurance: [3, 0, -0.3],
-  salvage: [-1.2, 0, -2.9],
-  exchange: [1.5, 0, -2.8],
+  shipyard: [-4.6, 0, 0.8],
+  insurance: [4.8, 0, 0.4],
+  salvage: [-2.1, 0, -4.6],
+  exchange: [2.4, 0, -4],
 };
-/** Buildings are authored about 2.2 units wide; this fits four of them on the plateau. */
-export const ASSET_BUILDING_SCALE = 0.9;
+/**
+ * Buildings are authored about 2.2 units wide; at this scale a footprint is as long as a ship
+ * seen from the table camera, and the tallest building outgrows a ship's masts.
+ */
+export const ASSET_BUILDING_SCALE = 2;
 

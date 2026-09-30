@@ -53,7 +53,7 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 | `dieSteps.ts` | 骰子動畫的每一步數值與說明；播放節奏依最長的骰子決定。 |
 | `SceneLabels.tsx`、`ScreenLabels.tsx` | 島與船上方的 DOM 名牌；把 3D 位置投影成畫面座標（drei `<Html>` 在實測中會遺失內容）。 |
 | `CameraRig.tsx` | 固定俯角、依畫面大小自動取景：島嶼與名牌必須落在上方事件列與下方操作列之間的安全區。 |
-| `Sea.tsx`、`weather.ts` | 起伏的低面數海面，以及各航海事件的天空、海色、霧與光線。 |
+| `Sea.tsx`、`weather.ts`、`WeatherFog.tsx` | 起伏的低面數海面，以及各航海事件的天空、海色、霧與光線；霧距依鏡頭實際距離縮放，桌面放大或換畫面尺寸時不會把島吞掉。 |
 | `Model.tsx`、`layout.ts` | Kenney 模型載入與座位、航道、資產建築地基位置。 |
 | `buildings/` | 四種資產建築（造船廠、航運保險、打撈公司、貿易交易所）的原創低面數模型：`designs.ts` 以零件資料描述造型（倒角方塊、有厚度與出簷的屋頂、多邊形柱與樑）與材質；材質取自 Kenney Pirate Kit 色表的上下漸層色，各資產有專屬屋頂色，旗幟為持有者顏色。`polyhedra.ts` 把零件轉成多邊形，`Building.tsx` 以頂點色把整棟合併成一個網格。設計圖 [`docs/art/buildings-blueprint.svg`](../../docs/art/buildings-blueprint.svg) 由同一份資料以 `npm run art:buildings` 產生（`scripts/iso-painter.ts` 逐面判斷前後順序），改造型後重新執行。 |
 
