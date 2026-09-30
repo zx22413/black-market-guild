@@ -17,6 +17,7 @@
     "match:log": "tsx scripts/print-match.ts",
     "simulate": "tsx scripts/simulate.ts",
     "art:buildings": "tsx scripts/draw-buildings.ts > docs/art/buildings-blueprint.svg",
+    "art:ui": "tsx scripts/draw-ui-art.ts",
     "capture": "python3 scripts/capture-receiver.py"
   },
   "devDependencies": {

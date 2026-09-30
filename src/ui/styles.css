@@ -13,7 +13,7 @@
   --pirate: #c2553d;
   --smuggler: #a07ad0;
   --radius: 10px;
-  font-family: 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif;
+  font-family: 'LXGW WenKai TC', 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif;
   color: var(--ink);
   background: var(--bg);
   color-scheme: dark;
@@ -102,82 +102,6 @@ button.ghost {
   justify-content: center;
   vertical-align: middle;
   flex: none;
-}
-
-/* ── Setup ── */
-
-.setup {
-  min-height: 100vh;
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  background-blend-mode: multiply;
-  background-color: rgba(8, 12, 14, 0.55);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 3rem 1rem;
-  gap: 1rem;
-}
-
-.setup .title {
-  font-size: 3rem;
-  letter-spacing: 0.3em;
-  text-shadow: 0 2px 12px #000;
-}
-
-.setup .subtitle {
-  margin-top: -1rem;
-  color: var(--ink-dim);
-}
-
-.setup .panel {
-  width: min(560px, 100%);
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-
-.presets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.seats {
-  margin: 0;
-  padding-left: 1.4rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.seats li {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-
-.seats input {
-  flex: 1;
-  min-width: 8rem;
-}
-
-.seed-row {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.seed-row input {
-  width: 9rem;
-}
-
-.credits {
-  font-size: 0.75rem;
-  color: var(--ink-dim);
-  text-align: center;
-  text-shadow: 0 1px 4px #000;
 }
 
 /* ── Log ── */

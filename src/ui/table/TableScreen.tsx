@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { RULES_V06, type Action, type PlayerId, type RoleId, type ShipId } from '../../game';
 import { EventLog } from '../components/EventLog';
+import { uiArtVars } from '../art';
 import { Icon } from '../components/Icon';
 import { PrivateNotes } from '../components/PrivateNotes';
 import { TableScene } from '../scene/TableScene';
@@ -14,6 +15,7 @@ import { DecisionDock } from './DecisionDock';
 import { EventBand, LedgerCard } from './TableHud';
 import { useCashFloats } from './useCashFloats';
 import './table.css';
+import './hudSkin.css';
 
 interface TableScreenProps {
   readonly session: GameSession;
@@ -84,7 +86,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
 
   const viewerSeat = table.seats.find((s) => s.isViewer);
   return (
-    <div className="scene-root">
+    <div className="scene-root" style={uiArtVars() as CSSProperties}>
       <TableScene
         table={table}
         weather={board.voyageEvent}

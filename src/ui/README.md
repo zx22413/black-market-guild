@@ -29,7 +29,7 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 | `table/DecisionDock.tsx` | 七種決定的操作：資產與角色牌以右下角手牌呈現，部署角色時可直接點海上的船當目標，其餘決定在底部選項列。 |
 | `table/TableHud.tsx` | 左上回合與事件；左下自己的帳本：資金、資產價值與已蓋的建築、只給本人看的黑錢。 |
 | `table/useCashFloats.ts`、`table/CashFloats.tsx` | 把新播放的現金異動變成短暫浮起的「+350 G 航運收入」。 |
-| `screens/` | `SetupScreen`（模式與座位）、`HandoffScreen`（hot-seat 遮蔽）、`ResultScreen`。 |
+| `screens/` | `SetupScreen`（模式與座位；手繪木框風格，樣式在 `setup.css`）、`HandoffScreen`（hot-seat 遮蔽）、`ResultScreen`。 |
 | `components/` | `PrivateNotes`（只給本人的情報與黑錢）、`EventLog`、`Icon`。 |
 | `labels.ts` | 事件、角色、資產與現金異動原因的繁體中文名稱。 |
 | `rulesText.ts` | 資產、角色、事件的簡短說明；數值一律取自 `Rules`，不寫死。 |
@@ -63,6 +63,7 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 |---|---|
 | `ModelPreview.tsx` | 模型預覽頁 `/?dev=models`：參數 `assets`（逗號分隔）、`mode=solo`（單棟）、`view=dock\|back\|far\|top`、`color`（旗幟色）。 |
 | `capture.ts` | `window.bmgCapture()`：以原始解析度讀取 3D 畫面，送給 `npm run capture -- <輸出檔>`（`scripts/capture-receiver.py`）存檔。 |
+| `uiMock/` | UI 風格樣張 `/?dev=ui-mock`：固定的第 1 回合部署畫面，參數 `v=flat\|props\|mix`（無底板／3D 道具／淺木＋羊皮紙混合）、`font=wenkai\|iansui\|song`、`tone=now\|ftk`。字體以 Google Fonts 載入（僅樣張），紙與木紋貼圖在 `docs/ui/mockups/tex/`。說明見 [`docs/ui/style-guide.md`](../../docs/ui/style-guide.md)。 |
 
 ## 呈現規則
 
@@ -72,7 +73,7 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 
 ## 美術素材
 
-佔位素材放在 `public/art/`（圖示 `icons/<key>.svg`、畫作 `paintings/<key>.jpg`）與 `public/models/pirate-kit/`（Kenney Pirate Kit，CC0），來源與授權見 [`public/art/SOURCES.md`](../../public/art/SOURCES.md)。圖示為 CC BY 3.0，**必須保留作者標示**（設定畫面底部）。
+佔位素材放在 `public/art/`（圖示 `icons/<key>.svg`、畫作 `paintings/<key>.jpg`、自製 UI 零件 `ui/*.svg`，由 `npm run art:ui` 產生；對局 HUD 的手繪外觀在 `table/hudSkin.css`（試用中），取用方式見 `art.ts` 的 `uiArtUrl`／`uiArtVars`）與 `public/models/pirate-kit/`（Kenney Pirate Kit，CC0），來源與授權見 [`public/art/SOURCES.md`](../../public/art/SOURCES.md)。圖示為 CC BY 3.0，**必須保留作者標示**（設定畫面底部）。
 
 ## 待辦
 

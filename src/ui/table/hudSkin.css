@@ -1,0 +1,320 @@
+/*
+ * Trial skin: the table HUD in the hand-drawn wood style (docs/ui/style-guide.md). Layout and
+ * behavior stay as in scene.css / table.css; this file only swaps the look. Loaded after them.
+ * Parts are the `--ui-*` SVGs from `npm run art:ui`, set on .scene-root (see art.ts).
+ *   paper-small  — things to read: event notes, seat and ship tags, prompts, cards, tips
+ *   button-tag   — wooden plaques and buttons
+ *   board-wood   — the own ledger: a sheet pinned onto a small wooden board
+ *   frame-thin   — thin wooden frame around bigger panels (notes, log, result)
+ */
+
+.scene-root {
+  --hud-ink: #4a2c14;
+  --hud-ink-soft: #7a5a3a;
+  --hud-cream: #fff3dc;
+  --hud-shadow: drop-shadow(0 3px 3px rgba(30, 18, 5, 0.35));
+  font-family: 'LXGW WenKai TC', 'Noto Serif TC', 'Songti TC', serif;
+  color: var(--hud-ink);
+}
+.scene-root :is(.seat-tag, .ship-tag, .island-sign) {
+  font-family: inherit;
+}
+
+/* ---------- shared: parchment pieces ---------- */
+
+.scene-root :is(.hud-event, .seat-tag, .ship-tag, .action-pill, .table-card, .card-tip, .ledger, .panel) {
+  position: relative;
+  isolation: isolate;
+  background: none;
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.scene-root :is(.hud-event, .seat-tag, .ship-tag, .action-pill, .table-card, .card-tip, .panel)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 16px solid transparent;
+  border-image: var(--ui-paper-small) 16 fill stretch;
+  filter: var(--hud-shadow);
+}
+
+/* ---------- shared: wooden plaques and buttons ---------- */
+
+.scene-root :is(.hud-round, .island-sign, .hud-button, .action-pill button) {
+  position: relative;
+  isolation: isolate;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--hud-cream);
+  font-weight: 700;
+  text-shadow: 0 1px 0 #3d2211, 0 0 2px #3d2211;
+}
+.scene-root :is(.hud-round, .island-sign, .hud-button, .action-pill button)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 20px solid transparent;
+  border-image: var(--ui-button-tag) 20 fill stretch;
+  filter: var(--hud-shadow);
+}
+.scene-root :is(.hud-button, .action-pill button) {
+  padding: 8px 18px 10px;
+  cursor: pointer;
+  transition: translate 0.12s;
+}
+.scene-root :is(.hud-button, .action-pill button):hover {
+  translate: 0 -2px;
+}
+.scene-root .action-pill button.primary {
+  color: #fff0b8;
+}
+.scene-root .action-pill button.primary::before {
+  filter: var(--hud-shadow) brightness(1.12) saturate(1.1);
+}
+
+.scene-root .hud-round {
+  padding: 8px 18px 10px;
+  letter-spacing: 0.08em;
+}
+.scene-root .hud-round strong {
+  font-size: 1.3rem;
+  color: #ffd98a;
+}
+.scene-root .island-sign {
+  padding: 4px 16px 6px;
+  opacity: 1;
+}
+
+/* Round wooden token for the icon button; the cream icon reads on wood as it is. */
+.scene-root .hud-icon-button {
+  width: 48px;
+  height: 48px;
+  background: var(--ui-button-round) center / contain no-repeat;
+  border: 0;
+  border-radius: 50%;
+  box-shadow: none;
+  filter: var(--hud-shadow);
+}
+.scene-root .hud-icon-button .icon {
+  filter: drop-shadow(0 1px 0 #3d2211);
+}
+
+/* ---------- event notes (top left) ---------- */
+
+.scene-root .hud-event {
+  padding: 10px 14px 10px 12px;
+}
+.scene-root .hud-event small,
+.scene-root .hud-event p {
+  color: var(--hud-ink-soft);
+}
+/* A nail holds each note. */
+.scene-root .hud-event::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #c9b79c, #4a3322 60%);
+  box-shadow: 0 0 0 1.5px #3d2211;
+}
+
+/* ---------- seat and ship tags ---------- */
+
+.scene-root .seat-tag {
+  padding: 8px 14px 8px 20px;
+  border-width: 0;
+}
+/* Seat-colored rope tied round the tag's left end: a dark outline under a twisted colored body. */
+.scene-root .seat-rope {
+  position: absolute;
+  left: 2px;
+  top: -9px;
+  bottom: -14px;
+  width: 16px;
+  background: #3d2211;
+  -webkit-mask: var(--ui-rope-mask-outer) center / 100% 100% no-repeat;
+  mask: var(--ui-rope-mask-outer) center / 100% 100% no-repeat;
+  filter: drop-shadow(1px 2px 1px rgba(30, 18, 5, 0.35));
+}
+.scene-root .seat-rope::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(-58deg, rgba(40, 20, 5, 0.35) 0 2px, transparent 2px 5px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.25), transparent 35%, rgba(255, 255, 255, 0.35) 55%, rgba(0, 0, 0, 0.2)),
+    var(--seat, #b98a55);
+  -webkit-mask: var(--ui-rope-mask-inner) center / 100% 100% no-repeat;
+  mask: var(--ui-rope-mask-inner) center / 100% 100% no-repeat;
+}
+.scene-root .seat-cash {
+  color: #8a4a12;
+  font-weight: 700;
+}
+.scene-root .seat-worth {
+  color: var(--hud-ink-soft);
+}
+.scene-root .seat-status {
+  color: #a3302a;
+  font-weight: 700;
+}
+.scene-root .seat-status.muted {
+  color: var(--hud-ink-soft);
+}
+.scene-root .tag-ready {
+  color: #2f6b34;
+}
+
+.scene-root .ship-tag {
+  padding: 5px 12px;
+}
+.scene-root .ship-tag.selectable::before {
+  filter: var(--hud-shadow) drop-shadow(0 0 4px #ffd96a) drop-shadow(0 0 2px #ffd96a);
+}
+.scene-root .ship-tag.sunk {
+  color: #8a2f1d;
+}
+.scene-root .ship-tag.arrived {
+  color: #2f6a2b;
+}
+.scene-root .role-token {
+  background: #f3e2bd;
+  border-color: #6b4524;
+}
+
+/* ---------- decision strip ---------- */
+
+.scene-root .action-pill {
+  padding: 10px 12px 10px 22px;
+  gap: 12px;
+}
+.scene-root .action-pill small {
+  color: var(--hud-ink-soft);
+}
+
+/* ---------- cards ---------- */
+
+.scene-root .table-card {
+  color: var(--hud-ink);
+}
+.scene-root .table-card .price {
+  color: #a3302a;
+}
+.scene-root .table-card.hand:hover:not(:disabled) {
+  box-shadow: none;
+}
+.scene-root .table-card.hand.selected {
+  box-shadow: none;
+}
+.scene-root .table-card.hand.selected::before {
+  filter: var(--hud-shadow) drop-shadow(0 0 3px #ffd96a) drop-shadow(0 0 3px #ffd96a);
+}
+.scene-root .card-tip {
+  padding: 12px 14px;
+  color: var(--hud-ink);
+}
+
+/* ---------- own ledger: a sheet pinned onto a small wooden board ---------- */
+
+.scene-root .ledger {
+  padding: 18px 22px 16px;
+  margin: 0 0 6px 8px;
+  /* The ledger's inline seat-colored border belongs to the old look. */
+  border-width: 0;
+}
+.scene-root .ledger::before {
+  content: '';
+  position: absolute;
+  inset: -12px -16px -14px -16px;
+  z-index: -2;
+  background: var(--ui-board-wood) center / 100% 100% no-repeat;
+  filter: var(--hud-shadow);
+}
+.scene-root .ledger::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 16px solid transparent;
+  border-image: var(--ui-paper-small) 16 fill stretch;
+  rotate: -1.2deg;
+  filter: drop-shadow(0 2px 2px rgba(30, 18, 5, 0.35));
+}
+.scene-root .ledger-pin {
+  position: absolute;
+  top: 7px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f0a08a, #b8402e 55%, #6a1c12);
+  box-shadow: 0 0 0 1.5px #3d2211, 1px 2px 2px rgba(0, 0, 0, 0.35);
+}
+.scene-root .ledger-pin.left {
+  left: 10px;
+}
+.scene-root .ledger-pin.right {
+  right: 12px;
+}
+
+/* ---------- framed panels: private notes, log, result ---------- */
+
+.scene-root .panel {
+  padding: 22px 24px 20px;
+}
+.scene-root .panel::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 26px solid transparent;
+  border-image: var(--ui-frame-thin) 26 stretch;
+  pointer-events: none;
+  z-index: 1;
+}
+.scene-root .ledger-row b {
+  color: #8a4a12;
+}
+.scene-root .ledger-row.secret,
+.scene-root .ledger-row.secret b {
+  color: #6f3fa8;
+}
+.scene-root .hud-private .panel h2,
+.scene-root .log-drawer .panel h2,
+.scene-root .log-drawer .log-heading,
+.scene-root .result-overlay .panel h2 {
+  color: #8a4a12;
+}
+.scene-root .result-overlay .panel {
+  color: var(--hud-ink);
+}
+.scene-root .result-overlay .panel button.primary {
+  position: relative;
+  isolation: isolate;
+  background: none;
+  border: 0;
+  color: var(--hud-cream);
+  text-shadow: 0 1px 0 #3d2211, 0 0 2px #3d2211;
+  padding: 10px 24px 12px;
+}
+.scene-root .result-overlay .panel button.primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 20px solid transparent;
+  border-image: var(--ui-button-tag) 20 fill stretch;
+}
+
+/* Labels over the scene stay absolutely placed (scene.css); the skin must not re-position them. */
+.scene-root .scene-labels > :is(*, .island-sign) {
+  position: absolute;
+}

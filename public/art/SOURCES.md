@@ -68,3 +68,19 @@
 | 授權 | Creative Commons Zero（CC0），可商用，不需標示 |
 | 取得日期 | 2026-09-29 |
 | 修改 | 未修改模型；只挑選部分檔案 |
+
+## UI 零件（本專案自製）
+
+`ui/*.svg` 由 [`scripts/draw-ui-art.ts`](../../scripts/draw-ui-art.ts) 產生（`npm run art:ui`），是本專案原創的向量圖，沒有使用外部素材。紙的填色疊有淡淡的顆粒雜訊（SVG `feTurbulence`，不影響輪廓線；強度見腳本的 `GRAIN_STRENGTH`）；木頭不加雜訊，以單一平滑漸層上色。風格參考使用者提供的手繪木框設計稿，以及 Kenney UI Pack: Adventure 的配色比例，但沒有使用這兩者的圖檔。
+
+| 檔案 | 內容 |
+|---|---|
+| `ui/frame-wood.svg` | 大木框（9-slice，切 72px） |
+| `ui/paper.svg` | 羊皮紙內頁（9-slice，切 44px） |
+| `ui/paper-small.svg`、`ui/frame-thin.svg`、`ui/board-wood.svg` | HUD 用小紙片（切 16px）、細木框（切 26px）、三片木板拼成的小板子（依元件大小縮放，不切片） |
+| `ui/plaque.svg` | 標題木牌＋撕邊紙 |
+| `ui/button-arrow.svg`、`ui/button-tag.svg`、`ui/button-round.svg` | 箭頭木板按鈕、小木牌按鈕（9-slice，切 20px）、圓木片按鈕 |
+| `ui/rope.svg` | 裝飾繩 |
+| `ui/rope-mask-outer.svg`、`ui/rope-mask-inner.svg` | 名牌座位色繩子的遮罩（外框、繩身） |
+| `ui/icon-pencil.svg`、`ui/icon-plus.svg` | 編輯筆、虛線加號 |
+| `ui/table-backdrop.jpg` | 本專案 3D 桌面的擷取畫面（`window.bmgCapture`），選單背景用 |

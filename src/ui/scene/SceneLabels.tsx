@@ -1,4 +1,4 @@
-import { useEffect, useState, type Ref } from 'react';
+import { useEffect, useState, type CSSProperties, type Ref } from 'react';
 import type { Deployment, PlayerId } from '../../game';
 import { assetIcon, iconUrl, roleIcon } from '../art';
 import { ASSET_LABELS, ROLE_LABELS } from '../labels';
@@ -30,7 +30,8 @@ interface SeatTagProps {
 /** Opponent guild board: name, cash, assets and this round's public status. */
 export function SeatTag({ ref, seat, nameOf, ready, floats }: SeatTagProps) {
   return (
-    <div ref={ref} className="seat-tag" style={{ borderColor: seat.color }}>
+    <div ref={ref} className="seat-tag" style={{ borderColor: seat.color, '--seat': seat.color } as CSSProperties}>
+      <i className="seat-rope" aria-hidden />
       <CashFloats floats={floats} />
       <strong>
         {seat.name}

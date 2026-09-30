@@ -54,6 +54,8 @@ export function LedgerCard({ seat, blackMoney, floats }: LedgerCardProps) {
     <div className="hud hud-bottom-left">
       <div className="ledger" style={{ borderColor: seat.color }}>
         <CashFloats floats={floats} />
+        <i className="ledger-pin left" aria-hidden />
+        <i className="ledger-pin right" aria-hidden />
         <strong className="ledger-name">{seat.name}</strong>
         <div className="ledger-row">
           <span>資金</span>
