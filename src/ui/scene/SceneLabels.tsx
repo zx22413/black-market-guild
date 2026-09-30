@@ -9,12 +9,11 @@ import type { SceneSeat, SceneShip } from './tableModel';
 
 type NameOf = (id: PlayerId) => string;
 
-/** Name board over the target island, carrying this round's market notice. */
-export function TargetSign({ ref, notice }: { readonly ref: Ref<HTMLDivElement>; readonly notice: string | null }) {
+/** Small name plate at the foot of the target island; the market event lives in the HUD. */
+export function TargetSign({ ref }: { readonly ref: Ref<HTMLDivElement> }) {
   return (
     <div ref={ref} className="island-sign">
-      <strong>黑市港</strong>
-      {notice && <span>公告：{notice}</span>}
+      黑市港
     </div>
   );
 }

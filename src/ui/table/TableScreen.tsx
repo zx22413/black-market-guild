@@ -3,7 +3,6 @@ import { RULES_V06, type Action, type PlayerId, type RoleId, type ShipId } from 
 import { EventLog } from '../components/EventLog';
 import { Icon } from '../components/Icon';
 import { PrivateNotes } from '../components/PrivateNotes';
-import { MARKET_EVENT_LABELS } from '../labels';
 import { TableScene } from '../scene/TableScene';
 import type { IntelTrace } from '../scene/dieSteps';
 import { buildSceneTable } from '../scene/tableModel';
@@ -89,7 +88,6 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
       <TableScene
         table={table}
         weather={board.voyageEvent}
-        notice={board.marketEvent ? MARKET_EVENT_LABELS[board.marketEvent] : null}
         nameOf={nameOf}
         selectableShips={selectableShips}
         onSelectShip={selectShip}

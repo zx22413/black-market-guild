@@ -19,15 +19,17 @@ import './scene.css';
 const SAFE_AREA: SafeArea = { top: 92, bottom: 136, left: 24, right: 24 };
 const SEAT_LABEL_HEIGHT = 9;
 const SHIP_LABEL_HEIGHT = 7;
-const TARGET_LABEL_HEIGHT = 21;
+/**
+ * The target's name plate sits on the sea at its front-left diagonal: no lane runs there, so it
+ * never covers the far island, its tag or an arriving ship.
+ */
+const TARGET_PLATE: Vec3 = [-(TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2, 1, (TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2];
 /** The auto-framed camera sits farther than the weather presets assumed. */
 const FOG_SCALE = 1.8;
 
 export interface TableSceneProps {
   readonly table: SceneTable;
   readonly weather: VoyageEventId | null;
-  /** Posted on the target island's notice board. */
-  readonly notice: string | null;
   readonly nameOf: (id: PlayerId) => string;
   /** Ships the viewer may click as a role target right now. */
   readonly selectableShips: ReadonlySet<ShipId>;
@@ -55,7 +57,6 @@ function rim(center: Vec3, radius: number): FitPoint[] {
 function fitPoints(angles: readonly number[]): FitPoint[] {
   return [
     ...rim([0, 0, 0], TARGET_ISLAND_RADIUS),
-    { position: [0, TARGET_LABEL_HEIGHT, 0], clearance: 56 },
     ...angles.flatMap((angle): FitPoint[] => {
       const center = seatPosition(angle);
       const edge = rim(center, PLAYER_ISLAND_RADIUS + 1.5);
@@ -71,7 +72,7 @@ function Ready({ onReady }: { readonly onReady: () => void }) {
 
 /** The whole 3D table: guild islands around the target island, lanes, ships and tags. */
 export function TableScene(props: TableSceneProps) {
-  const { table, weather, notice, nameOf, selectableShips, onSelectShip, secret, intel, submitted, floats, onReady } = props;
+  const { table, weather, nameOf, selectableShips, onSelectShip, secret, intel, submitted, floats, onReady } = props;
   const look = WEATHER[weather ?? 'clear'];
   const angles = useMemo(() => seatAngles(table.seats.length), [table.seats.length]);
   const points = useMemo(() => fitPoints(angles), [angles]);
@@ -85,7 +86,7 @@ export function TableScene(props: TableSceneProps) {
       const { position } = shipPose(angles[ship.lane]!, ship.state);
       return { id: `ship-${ship.id}`, position: [position.x, SHIP_LABEL_HEIGHT, position.z] };
     });
-    return [{ id: 'target', position: [0, TARGET_LABEL_HEIGHT, 0] }, ...seatAnchors, ...shipAnchors];
+    return [{ id: 'target', position: TARGET_PLATE }, ...seatAnchors, ...shipAnchors];
   }, [angles, table]);
 
   const labels = useRef(new Map<string, HTMLElement>());
@@ -136,7 +137,7 @@ export function TableScene(props: TableSceneProps) {
         <LabelTracker anchors={anchors} elements={labels} />
       </Canvas>
       <div className="scene-labels">
-        <TargetSign ref={pin('target')} notice={notice} />
+        <TargetSign ref={pin('target')} />
         {table.seats.map((seat, i) =>
           seat.isViewer ? null : (
             <SeatTag
