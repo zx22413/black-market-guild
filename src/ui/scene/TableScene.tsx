@@ -7,7 +7,8 @@ import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatAngles, seatPosition, t
 import { Routes } from './Routes';
 import { LabelTracker, type LabelAnchor } from './ScreenLabels';
 import { Sea } from './Sea';
-import { SeatTag, ShipTag, TargetSign, type IntelTrace } from './SceneLabels';
+import type { IntelTrace } from './dieSteps';
+import { SeatTag, ShipTag, TargetSign } from './SceneLabels';
 import { Escorts, VoyageShip, shipPose } from './Ships';
 import type { CashFloat } from '../table/useCashFloats';
 import type { SceneTable } from './tableModel';
@@ -50,14 +51,15 @@ function rim(center: Vec3, radius: number): FitPoint[] {
   });
 }
 
-function fitPoints(angles: readonly number[], viewerSeat: number): FitPoint[] {
+/** Every island rim and name tag; independent of who is viewing, so the frame never shifts. */
+function fitPoints(angles: readonly number[]): FitPoint[] {
   return [
     ...rim([0, 0, 0], TARGET_ISLAND_RADIUS),
     { position: [0, TARGET_LABEL_HEIGHT, 0], clearance: 56 },
-    ...angles.flatMap((angle, i): FitPoint[] => {
+    ...angles.flatMap((angle): FitPoint[] => {
       const center = seatPosition(angle);
       const edge = rim(center, PLAYER_ISLAND_RADIUS + 1.5);
-      return i === viewerSeat ? edge : [...edge, { position: [center[0], SEAT_LABEL_HEIGHT, center[2]], clearance: 90 }];
+      return [...edge, { position: [center[0], SEAT_LABEL_HEIGHT, center[2]], clearance: 90 }];
     }),
   ];
 }
@@ -72,8 +74,7 @@ export function TableScene(props: TableSceneProps) {
   const { table, weather, notice, nameOf, selectableShips, onSelectShip, secret, intel, submitted, floats, onReady } = props;
   const look = WEATHER[weather ?? 'clear'];
   const angles = useMemo(() => seatAngles(table.seats.length), [table.seats.length]);
-  const viewerSeat = table.seats.findIndex((s) => s.isViewer);
-  const points = useMemo(() => fitPoints(angles, viewerSeat), [angles, viewerSeat]);
+  const points = useMemo(() => fitPoints(angles), [angles]);
 
   const anchors = useMemo((): LabelAnchor[] => {
     const seatAnchors = table.seats.map((_, i): LabelAnchor => {

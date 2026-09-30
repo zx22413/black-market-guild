@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Action, MatchEvent, PlayerId, PlayerView, PrivateEvent } from '../../game';
+import { DIE_BEAT_MS, dieSteps } from '../scene/dieSteps';
 import { buildBoard, type Board } from './board';
 import type { GameSession, HumanRequest, SessionSnapshot } from './gameSession';
 import { useSession } from './useSession';
@@ -14,8 +15,11 @@ function eventDelay(event: MatchEvent): number {
       return 150;
     case 'roles-revealed':
       return 900;
-    case 'voyage-modifiers':
-      return 1500;
+    case 'voyage-modifiers': {
+      // Let every die count through its modifiers (plus a possible private intel beat).
+      const beats = Math.max(1, ...event.modifiers.map((m) => dieSteps(m, false, null).length + 1));
+      return 600 + beats * DIE_BEAT_MS;
+    }
     case 'ship-resolved':
       return 1000;
     default:

@@ -42,6 +42,12 @@ describe('scene table model', () => {
     expect(table.seats.filter((s) => s.isViewer).map((s) => s.id)).toEqual(['p3']);
   });
 
+  it('can face a seat without showing anyone as the viewer (between hot-seat turns)', () => {
+    const table = buildSceneTable(initialBoard(IDS, 1000), PLAYERS, null, RULES_V06, 'p2');
+    expect(table.seats.map((s) => s.id)).toEqual(['p2', 'p3', 'p4', 'p1']);
+    expect(table.seats.some((s) => s.isViewer)).toBe(false);
+  });
+
   it('values held assets at half price for every guild', () => {
     const board = boardAfter([{ type: 'assets-purchased', round: 1, purchases: [{ playerId: 'p2', asset: 'exchange' }] }]);
     const table = buildSceneTable(board, PLAYERS, 'p1', RULES_V06);

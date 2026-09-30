@@ -1,11 +1,11 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RULES_V06, type Action, type PlayerId, type RoleId, type ShipId } from '../../game';
 import { EventLog } from '../components/EventLog';
 import { Icon } from '../components/Icon';
 import { PrivateNotes } from '../components/PrivateNotes';
 import { MARKET_EVENT_LABELS } from '../labels';
 import { TableScene } from '../scene/TableScene';
-import type { IntelTrace } from '../scene/SceneLabels';
+import type { IntelTrace } from '../scene/dieSteps';
 import { buildSceneTable } from '../scene/tableModel';
 import { HandoffScreen } from '../screens/HandoffScreen';
 import { ResultScreen } from '../screens/ResultScreen';
@@ -35,8 +35,17 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
   const nameOf = useCallback((id: PlayerId) => names.get(id) ?? id, [names]);
   // Spectators see the table from the first seat, with every guild's public tag.
   const viewerId = view?.playerId ?? null;
+  // Hot-seat: keep facing the last player between turns; the table turns only once the next
+  // player has confirmed, instead of swinging back to the first seat in between.
+  const [facingId, setFacingId] = useState<PlayerId | null>(null);
+  useEffect(() => {
+    if (viewerId !== null) setFacingId(viewerId);
+  }, [viewerId]);
   const rules = view?.rules ?? RULES_V06;
-  const table = useMemo(() => buildSceneTable(board, snapshot.players, viewerId, rules), [board, snapshot.players, viewerId, rules]);
+  const table = useMemo(
+    () => buildSceneTable(board, snapshot.players, viewerId, rules, viewerId ?? facingId),
+    [board, snapshot.players, viewerId, rules, facingId],
+  );
   // The viewer's own intel reports this round, replayed on the ship tag at resolution.
   const intel = useMemo(() => {
     const traces = new Map<ShipId, IntelTrace>();

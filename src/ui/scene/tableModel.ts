@@ -73,9 +73,11 @@ export function buildSceneTable(
   players: readonly TablePlayer[],
   viewerId: PlayerId | null,
   rules: Rules,
+  /** Seat drawn nearest the camera; defaults to the viewer. Kept between hot-seat turns. */
+  facingId: PlayerId | null = viewerId,
 ): SceneTable {
   const colorOf = (id: PlayerId) => PLAYER_COLORS[players.findIndex((p) => p.id === id) % PLAYER_COLORS.length]!;
-  const ordered = seatOrder(players, viewerId);
+  const ordered = seatOrder(players, facingId);
   const seats = ordered.map(
     (p): SceneSeat => ({
       id: p.id,

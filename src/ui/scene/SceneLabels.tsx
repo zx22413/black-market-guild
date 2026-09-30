@@ -1,9 +1,10 @@
-import type { Ref } from 'react';
-import type { Deployment, PlayerId, VoyageModifier } from '../../game';
+import { useEffect, useState, type Ref } from 'react';
+import type { Deployment, PlayerId } from '../../game';
 import { assetIcon, iconUrl, roleIcon } from '../art';
 import { ASSET_LABELS, ROLE_LABELS } from '../labels';
 import { CashFloats } from '../table/CashFloats';
 import type { CashFloat } from '../table/useCashFloats';
+import { DIE_BEAT_MS, dieSteps, type DieStep, type IntelTrace } from './dieSteps';
 import type { SceneSeat, SceneShip } from './tableModel';
 
 type NameOf = (id: PlayerId) => string;
@@ -67,9 +68,9 @@ interface ShipTagProps {
   readonly onSelect: () => void;
 }
 
-/** Floating tag over a ship: owners, revealed roles and what happened to it. */
+/** Floating tag over a ship: owners, who targeted it, and its die once the voyage resolves. */
 export function ShipTag({ ref, ship, nameOf, colorOf, secret, intel, selectable, onSelect }: ShipTagProps) {
-  const outcome = ship.state === 'arrived' ? '抵達' : ship.state === 'sunk' ? '沉沒' : null;
+  const tokens = ship.roles.length > 0 || secret || ship.rerolled || ship.smuggled > 0 || ship.caughtSmugglers.length > 0;
   return (
     <button
       ref={ref}
@@ -83,11 +84,15 @@ export function ShipTag({ ref, ship, nameOf, colorOf, secret, intel, selectable,
           <i key={id} style={{ background: colorOf(id) }} />
         ))}
         {ship.owners.map(nameOf).join('＋')}
-        {outcome && <b className={`ship-outcome ${ship.state}`}>{outcome}</b>}
       </span>
-      {intel && ship.modifier && <IntelRow intel={intel} />}
-      {ship.modifier && <ResolutionRow modifier={ship.modifier} rerolled={ship.rerolled} delay={intel?.rerolled != null ? 1.1 : 0} />}
-      {(ship.roles.length > 0 || secret || ship.rerolled || ship.smuggled > 0 || ship.caughtSmugglers.length > 0) && (
+      {ship.modifier && (
+        <DieCounter
+          key={ship.modifier.shipId}
+          steps={dieSteps(ship.modifier, ship.rerolled, intel)}
+          outcome={ship.state === 'arrived' || ship.state === 'sunk' ? ship.state : null}
+        />
+      )}
+      {tokens && (
         <span className="ship-roles">
           {ship.roles.map((d) => (
             <span key={`${d.playerId}-${d.role}`} className="role-token" style={{ borderColor: colorOf(d.playerId) }} title={`${nameOf(d.playerId)}・${ROLE_LABELS[d.role]}`}>
@@ -99,62 +104,40 @@ export function ShipTag({ ref, ship, nameOf, colorOf, secret, intel, selectable,
               <img src={iconUrl(roleIcon(secret.role))} alt={ROLE_LABELS[secret.role]} />
             </span>
           )}
-          {ship.rerolled && <span className="ship-note">已重擲</span>}
-          {ship.smuggled > 0 && <span className="ship-note">被走私 {ship.smuggled} G</span>}
-          {ship.caughtSmugglers.length > 0 && <span className="ship-note">查獲 {ship.caughtSmugglers.map(nameOf).join('、')}</span>}
+          {ship.rerolled && (
+            <span className="role-token" title="被情報商人重擲過">
+              <img src={iconUrl('reroll')} alt="已重擲" />
+            </span>
+          )}
+          {ship.smuggled > 0 && <span className="ship-note" title="被走私的金額（走私者不公開）">走私 {ship.smuggled}</span>}
+          {ship.caughtSmugglers.length > 0 && (
+            <span className="ship-note" title={`查獲走私：${ship.caughtSmugglers.map(nameOf).join('、')}`}>
+              查獲
+            </span>
+          )}
         </span>
       )}
     </button>
   );
 }
 
-/** The raw roll and reroll the viewer's intel merchant saw on a ship. */
-export interface IntelTrace {
-  readonly raw: number;
-  readonly rerolled: number | null;
-}
-
-const STEPS = [
-  ['guard', '護衛'],
-  ['pirate', '海盜'],
-  ['event', '事件'],
-] as const;
-
-const signed = (n: number): string => `${n > 0 ? '+' : '−'}${Math.abs(n)}`;
-
-/** Only for the intel merchant: the original roll struck out and replaced by the reroll. */
-function IntelRow({ intel }: { readonly intel: IntelTrace }) {
+/** Big die that counts through each modifier, then turns green (arrived) or red (sunk). */
+function DieCounter({ steps, outcome }: { readonly steps: readonly DieStep[]; readonly outcome: 'arrived' | 'sunk' | null }) {
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    if (index >= steps.length - 1) return;
+    const timer = setTimeout(() => setIndex(index + 1), DIE_BEAT_MS);
+    return () => clearTimeout(timer);
+  }, [index, steps.length]);
+  const step = steps[Math.min(index, steps.length - 1)]!;
+  const settled = index >= steps.length - 1 && outcome !== null;
   return (
-    <span className="ship-intel" title="只有你知道">
-      你的情報：<span className={intel.rerolled !== null ? 'die struck' : 'die'}>{intel.raw}</span>
-      {intel.rerolled !== null && (
-        <>
-          <span className="arrow">→</span>
-          <span className="die" style={{ animationDelay: '0.6s' }}>
-            {intel.rerolled}
-          </span>
-        </>
-      )}
-    </span>
-  );
-}
-
-/** Public resolution: starting roll, each modifier popping in turn, then the final value. */
-function ResolutionRow({ modifier, rerolled, delay }: { readonly modifier: VoyageModifier; readonly rerolled: boolean; readonly delay: number }) {
-  const steps = STEPS.filter(([key]) => modifier[key] !== 0);
-  const at = (i: number) => ({ animationDelay: `${delay + i * 0.35}s` });
-  return (
-    <span className="ship-modifiers">
-      <span className="modifier base" style={at(0)} title={rerolled ? '重擲後的骰值' : '起始骰值'}>
-        {rerolled ? '重擲後' : '骰'} {modifier.base}
+    <span className={`die-counter ${settled ? outcome : ''}`}>
+      <span key={index} className="die-face">
+        {step.value}
       </span>
-      {steps.map(([key, label], i) => (
-        <span key={key} className={`modifier ${modifier[key] > 0 ? 'up' : 'down'}`} style={at(i + 1)}>
-          {label} {signed(modifier[key])}
-        </span>
-      ))}
-      <span className="modifier final" style={at(steps.length + 1)}>
-        = {modifier.final}
+      <span key={`label-${index}`} className="die-step">
+        {settled ? (outcome === 'arrived' ? '抵達' : '沉沒') : step.label}
       </span>
     </span>
   );
