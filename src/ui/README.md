@@ -55,7 +55,14 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 | `CameraRig.tsx` | 固定俯角、依畫面大小自動取景：島嶼與名牌必須落在上方事件列與下方操作列之間的安全區。 |
 | `Sea.tsx`、`weather.ts`、`WeatherFog.tsx` | 起伏的低面數海面，以及各航海事件的天空、海色、霧與光線；霧距依鏡頭實際距離縮放，桌面放大或換畫面尺寸時不會把島吞掉。 |
 | `Model.tsx`、`layout.ts` | Kenney 模型載入與座位、航道、資產建築地基位置。 |
-| `buildings/` | 四種資產建築（造船廠、航運保險、打撈公司、貿易交易所）的原創低面數模型：`designs.ts` 以零件資料描述造型（倒角方塊、有厚度與出簷的屋頂、多邊形柱與樑）與材質；材質取自 Kenney Pirate Kit 色表的上下漸層色，各資產有專屬屋頂色，旗幟為持有者顏色。`polyhedra.ts` 把零件轉成多邊形，`Building.tsx` 以頂點色把整棟合併成一個網格。設計圖 [`docs/art/buildings-blueprint.svg`](../../docs/art/buildings-blueprint.svg) 由同一份資料以 `npm run art:buildings` 產生（`scripts/iso-painter.ts` 逐面判斷前後順序），改造型後重新執行。 |
+| `buildings/` | 四種資產建築（造船廠、航運保險、打撈公司、貿易交易所）的原創低面數模型：`designs.ts` 以零件資料描述造型，`kit.ts` 是共用零件庫（柱、窗、木桶、屋頂等），`materials.ts` 是取自 Kenney Pirate Kit 色表的漸層材質；`polyhedra.ts` 把零件轉成多邊形，`Building.tsx` 以頂點色把整棟合併成一個網格。設計圖 [`docs/art/buildings-blueprint.svg`](../../docs/art/buildings-blueprint.svg) 由同一份資料以 `npm run art:buildings` 產生（`scripts/iso-painter.ts` 逐面判斷前後順序）。風格規則見 [`docs/art/lowpoly-style.md`](../../docs/art/lowpoly-style.md)，製作流程見 `.claude/skills/lowpoly-model`。 |
+
+## 開發工具（`dev/`，只在 `npm run dev` 啟用）
+
+| 檔案 | 職責 |
+|---|---|
+| `ModelPreview.tsx` | 模型預覽頁 `/?dev=models`：參數 `assets`（逗號分隔）、`mode=solo`（單棟）、`view=dock\|back\|far\|top`、`color`（旗幟色）。 |
+| `capture.ts` | `window.bmgCapture()`：以原始解析度讀取 3D 畫面，送給 `npm run capture -- <輸出檔>`（`scripts/capture-receiver.py`）存檔。 |
 
 ## 呈現規則
 

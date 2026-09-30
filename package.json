@@ -16,7 +16,8 @@
     "test:coverage": "vitest run --coverage",
     "match:log": "tsx scripts/print-match.ts",
     "simulate": "tsx scripts/simulate.ts",
-    "art:buildings": "tsx scripts/draw-buildings.ts > docs/art/buildings-blueprint.svg"
+    "art:buildings": "tsx scripts/draw-buildings.ts > docs/art/buildings-blueprint.svg",
+    "capture": "python3 scripts/capture-receiver.py"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",
