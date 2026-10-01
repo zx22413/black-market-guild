@@ -42,13 +42,14 @@ interface SeatTagProps {
   readonly ready: boolean;
 }
 
-/** Opponent guild board, listed in the right-hand rail: name, cash, assets and this round's public status. */
+/** Guild board (the viewer's own included), listed in the right-hand rail: name, cash, assets and this round's public status. */
 export function SeatTag({ seat, nameOf, ready }: SeatTagProps) {
   return (
     <div className="seat-tag" style={{ borderColor: seat.color, '--seat': seat.color } as CSSProperties}>
       <i className="seat-rope" aria-hidden />
       <strong>
         {seat.name}
+        {seat.isViewer && <small className="seat-self">（你）</small>}
         {ready && <span className="tag-ready" title="已決定"> ✓</span>}
       </strong>
       <span className="seat-cash">

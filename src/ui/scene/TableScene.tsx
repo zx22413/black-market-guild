@@ -8,7 +8,8 @@ import { Routes } from './Routes';
 import { LabelTracker, type LabelAnchor } from './ScreenLabels';
 import { Sea } from './Sea';
 import type { IntelTrace } from './dieSteps';
-import { SeatSign, SeatTag, ShipTag, TargetSign } from './SceneLabels';
+import { SeatRail } from './SeatRail';
+import { SeatSign, ShipTag, TargetSign } from './SceneLabels';
 import { Escorts, VoyageShip, shipPose } from './Ships';
 import type { CashFloat } from '../table/useCashFloats';
 import type { RecruitBeat } from '../table/useRecruitBeats';
@@ -43,6 +44,8 @@ export interface TableSceneProps {
   readonly floats: readonly CashFloat[];
   /** Joint-venture success and failure stamps shown on the islands. */
   readonly beats: readonly RecruitBeat[];
+  /** Rounds finished so far; the right-hand ranking only re-sorts when this changes. */
+  readonly rankStep: number;
   /** Called once all models have loaded. */
   readonly onReady: () => void;
 }
@@ -72,7 +75,7 @@ function Ready({ onReady }: { readonly onReady: () => void }) {
 
 /** The whole 3D table: guild islands around the target island, lanes, ships and tags. */
 export function TableScene(props: TableSceneProps) {
-  const { table, weather, nameOf, selectableShips, onSelectShip, secret, intel, submitted, floats, beats, onReady } = props;
+  const { table, weather, nameOf, selectableShips, onSelectShip, secret, intel, submitted, floats, beats, rankStep, onReady } = props;
   const look = WEATHER[weather ?? 'clear'];
   const angles = useMemo(() => seatAngles(table.seats.length), [table.seats.length]);
   const points = useMemo(() => fitPoints(angles), [angles]);
@@ -158,18 +161,7 @@ export function TableScene(props: TableSceneProps) {
           />
         ))}
       </div>
-      <div className="seat-rail">
-        {table.seats.map((seat) =>
-          seat.isViewer ? null : (
-            <SeatTag
-              key={seat.id}
-              seat={seat}
-              nameOf={nameOf}
-              ready={submitted.includes(seat.id)}
-            />
-          ),
-        )}
-      </div>
+      <SeatRail seats={table.seats} nameOf={nameOf} submitted={submitted} rankStep={rankStep} />
     </>
   );
 }

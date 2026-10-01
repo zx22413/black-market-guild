@@ -546,6 +546,10 @@
   pointer-events: none;
 }
 
+.seat-rail > div {
+  position: relative;
+}
+
 .seat-rail .seat-tag {
   position: relative;
   align-items: flex-start;

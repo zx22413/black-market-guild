@@ -100,6 +100,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
         submitted={activeView?.submittedPlayerIds ?? []}
         floats={floats}
         beats={beats}
+        rankStep={played.filter((e) => e.type === 'round-ended').length}
         onReady={markReady}
       />
       {!ready && <div className="scene-loading">整理港口中…</div>}
