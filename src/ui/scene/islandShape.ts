@@ -4,7 +4,8 @@ import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatPosition } from './layo
 /** Sides of the craggy island cliff; also the number of points on each shoreline. */
 export const SHORE_POINTS = 11;
 /** How far the cliff reaches below the waterline, and how much wider it is at its foot. */
-const CLIFF_DEPTH = 2;
+// Deep enough that the troughs of the tallest waves (high-waves) never uncover the cliff's foot.
+const CLIFF_DEPTH = 3;
 const CLIFF_FLARE = 1.18;
 
 export const TARGET_ISLAND_SEED = 99;

@@ -5,7 +5,8 @@ import { Vector3, type Group } from 'three';
 import type { Deployment } from '../../game';
 import { headingOf, laneCurve } from './layout';
 import { Model, type ModelName } from './Model';
-import { useSwell } from './SwellContext';
+import { SEA_LEVEL, seaSurfaceY } from './seaWave';
+import { useSwell, useWavePhase } from './SwellContext';
 import type { SceneShip, ShipState } from './tableModel';
 
 /** Where along its lane a ship rests in each state: dock, danger zone, target dock. */
@@ -37,6 +38,7 @@ const WRECK_DEPTH = -1.5;
 function useGlide(target: LanePose, sinkTo: number) {
   const group = useRef<Group>(null);
   const swell = useSwell();
+  const phase = useWavePhase();
   // Eased height of the hull without the bob, so the bob never feeds back into the easing.
   const baseY = useRef<number | null>(null);
   // 0 = upright, 1 = fully heeled over as a wreck.
@@ -59,7 +61,9 @@ function useGlide(target: LanePose, sinkTo: number) {
     const t = clock.elapsedTime;
     heel.current += ((afloat ? 0 : 1) - heel.current) * ease;
     g.rotation.order = 'YXZ';
-    g.position.y = baseY.current + Math.sin(t * 1.6) * 0.04 * sway;
+    // Ride the waves: rise and fall with the sea surface under the hull (wrecks too).
+    const surge = seaSurfaceY(g.position.x, g.position.z, phase.current, swell.current.height) - SEA_LEVEL;
+    g.position.y = baseY.current + surge + Math.sin(t * 1.6) * 0.04 * sway;
     g.rotation.z = Math.sin(t * 1.2) * 0.03 * sway + heel.current * WRECK_HEEL.roll;
     g.rotation.x = Math.sin(t * 0.9 + 1) * 0.015 * sway + heel.current * WRECK_HEEL.pitch;
   });

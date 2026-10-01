@@ -53,11 +53,11 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 | `Storm.tsx`、`stormMath.ts` | 暴風雨事件：往左下斜打的低面數雨絲，以及每 3～9 秒一次打在桌面遠側島嶼空隙海面上的閃電（鋸齒光束、落點閃光，整個桌面跟著閃兩下）。閃電時間跟著真實時鐘走。 |
 | `Wind.tsx`、`windMath.ts` | 順風事件：Wind Waker 風格的風線，在島的台地上方往左下（與雨同向）掃過桌面；每條線從頭畫出、往前滑、再從尾巴收掉，兩端收細，帶一點 S 形擺動（不繞圈：直立的圈從桌面鏡頭看會變成 Ω 形）。 |
 | `SeaFog.tsx`、`fogMath.ts` | 海霧事件：貼著海面、平躺的柔和霧帶（霧團圖片由 canvas 即時畫出，不用外部素材），順著風向往左下慢慢漂、濃淡緩緩起伏；島的懸崖、碼頭和船會從霧裡冒出來。漂出桌面的霧帶從另一側回來，邊緣先淡出所以不會突然跳出。 |
-| `ShoreSpray.tsx`、`sprayBursts.ts` | 浪打上島岸時激起的低面數水珠，隨機落在各島岸線上；天氣越差越頻繁、噴得越高。 |
+| `Spray.tsx`、`sprayBursts.ts` | 低面數水珠（共用的粒子池）：`ShoreSpray` 是浪打上島岸時激起的水花，隨機落在各島岸線上，天氣越差越頻繁、噴得越高；`CrestSpray` 是浪高明顯高於晴天時（巨浪、暴風雨），開放海面浪頂碎開、順風飛散的水花。 |
 | `dieSteps.ts` | 骰子動畫的每一步數值與說明；播放節奏依最長的骰子決定。 |
 | `SceneLabels.tsx`、`ScreenLabels.tsx` | 島與船上方的 DOM 名牌；把 3D 位置投影成畫面座標（drei `<Html>` 在實測中會遺失內容）。 |
 | `CameraRig.tsx` | 固定俯角、依畫面大小自動取景：島嶼與名牌必須落在上方事件列與下方操作列之間的安全區。 |
-| `Sea.tsx`、`seaFoam.ts`、`islandShape.ts`、`weather.ts`、`SwellContext.tsx`、`WeatherFog.tsx` | 起伏的低面數海面，以及各航海事件的天空、海色、霧、光線與浪況（`Swell`：浪高、浪速、船隻搖晃、浪花量；海面用平滑著色，大浪時不會碎成馬賽克）。浪花由 `seaFoam.ts` 的著色器畫在每座島的實際岸線外（岸線由 `islandShape.ts` 從島嶼懸崖的幾何算出，與 `IslandBase` 共用），風平浪靜時只有細細一條，天氣越差越寬越翻騰；只有暴風雨、巨浪時開放海面才加淡淡的細紋，不改海色；浪況切換時數秒內平滑過渡，海面與船隻共用同一份浪況。霧距依鏡頭實際距離縮放，桌面放大或換畫面尺寸時不會把島吞掉。開發模式可用 `?weather=storm` 等網址參數直接預覽各事件的海面。 |
+| `Sea.tsx`、`seaWave.ts`、`seaFoam.ts`、`islandShape.ts`、`weather.ts`、`SwellContext.tsx`、`WeatherFog.tsx` | 起伏的低面數海面，以及各航海事件的天空、海色、霧、光線與浪況（`Swell`：浪高、浪速、船隻搖晃、浪花量；海面用平滑著色，大浪時不會碎成馬賽克）。浪花由 `seaFoam.ts` 的著色器畫在每座島的實際岸線外（岸線由 `islandShape.ts` 從島嶼懸崖的幾何算出，與 `IslandBase` 共用），風平浪靜時只有細細一條，天氣越差越寬越翻騰；只有暴風雨、巨浪時開放海面才加淡淡的細紋，不改海色；浪況切換時數秒內平滑過渡；浪高公式在 `seaWave.ts`，浪況與浪的相位由 `SwellProvider` 推進，海面、船隻與浪頂水花共用同一份。霧距依鏡頭實際距離縮放，桌面放大或換畫面尺寸時不會把島吞掉。開發模式可用 `?weather=storm` 等網址參數直接預覽各事件的海面。 |
 | `Model.tsx`、`layout.ts` | Kenney 模型載入與座位、航道、資產建築地基位置。 |
 | `buildings/` | 四種資產建築（造船廠、航運保險、打撈公司、貿易交易所）的原創低面數模型：`designs.ts` 以零件資料描述造型，`kit.ts` 是共用零件庫（柱、窗、木桶、屋頂等），`materials.ts` 是取自 Kenney Pirate Kit 色表的漸層材質；`polyhedra.ts` 把零件轉成多邊形，`Building.tsx` 以頂點色把整棟合併成一個網格。設計圖 [`docs/art/buildings-blueprint.svg`](../../docs/art/buildings-blueprint.svg) 由同一份資料以 `npm run art:buildings` 產生（`scripts/iso-painter.ts` 逐面判斷前後順序）。風格規則見 [`docs/art/lowpoly-style.md`](../../docs/art/lowpoly-style.md)，製作流程見 `.claude/skills/lowpoly-model`。 |
 

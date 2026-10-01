@@ -8,7 +8,7 @@ import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatAngles, seatPosition, t
 import { Routes } from './Routes';
 import { LabelTracker, type LabelAnchor } from './ScreenLabels';
 import { Sea } from './Sea';
-import { ShoreSpray } from './ShoreSpray';
+import { CrestSpray, ShoreSpray } from './Spray';
 import { SeaFog } from './SeaFog';
 import { Storm } from './Storm';
 import { Wind } from './Wind';
@@ -131,6 +131,7 @@ export function TableScene(props: TableSceneProps) {
           <Suspense fallback={null}>
             <Sea color={look.sea} shores={shores} />
             <ShoreSpray shores={shores} />
+            <CrestSpray shores={shores} />
             {weather === 'storm' && <Storm seatAngles={angles} />}
             {weather === 'tailwind' && <Wind />}
             {weather === 'sea-fog' && <SeaFog />}

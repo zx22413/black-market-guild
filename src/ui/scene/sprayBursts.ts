@@ -10,10 +10,12 @@ export interface Droplet {
 
 /** How far off the waterline a wave breaks, so the spray clears the cliff face. */
 const BREAK_OFFSET = 0.5;
+/** How much bigger shore spray is than a plain splash: more droplets, thrown higher, a little larger. */
+const SHORE_BOOST = { count: 1.5, lift: 1.25, size: 1.3, rate: 1.5 } as const;
 
 /** Spray bursts per second over the whole table: a gentle lap on calm days, steady in a storm. */
 export function burstRate(foam: number): number {
-  return 0.8 + foam * 6;
+  return (0.8 + foam * 6) * SHORE_BOOST.rate;
 }
 
 /** A random point on one island's waterline and the outward direction there. */
@@ -32,17 +34,24 @@ function shorePoint(line: readonly SeaPoint[], random: () => number): { x: numbe
 
 /**
  * A wave breaking on a random stretch of shore: a handful of droplets thrown up and away from the
- * island, taller and more of them in rougher seas. `random` returns values in [0, 1).
+ * island, taller and more of them in rougher seas, starting at the sea surface (`surface` gives its
+ * height at a point). `random` returns values in [0, 1).
  */
-export function shoreBurst(shores: readonly (readonly SeaPoint[])[], foam: number, random: () => number): Droplet[] {
+export function shoreBurst(
+  shores: readonly (readonly SeaPoint[])[],
+  foam: number,
+  random: () => number,
+  surface: (x: number, z: number) => number = () => 0,
+): Droplet[] {
   if (shores.length === 0) return [];
   const line = shores[Math.floor(random() * shores.length)]!;
   const { x, z, out } = shorePoint(line, random);
   const [ox, oz] = out;
   const bx = x + ox * BREAK_OFFSET;
   const bz = z + oz * BREAK_OFFSET;
-  const count = 5 + Math.floor(random() * (3 + foam * 6));
-  const lift = 2.6 + foam * 2.6;
+  const by = surface(bx, bz);
+  const count = Math.round((5 + Math.floor(random() * (3 + foam * 6))) * SHORE_BOOST.count);
+  const lift = (2.6 + foam * 2.6) * SHORE_BOOST.lift;
   return Array.from({ length: count }, (): Droplet => {
     // Spread along the shore (sideways) and a little in depth, all still on the sea side.
     const side = (random() - 0.5) * 1.2;
@@ -50,9 +59,9 @@ export function shoreBurst(shores: readonly (readonly SeaPoint[])[], foam: numbe
     const push = 0.6 + random() * 1.4;
     const along = (random() - 0.5) * 1.2;
     return {
-      position: [bx - oz * side + ox * depth, 0, bz + ox * side + oz * depth],
+      position: [bx - oz * side + ox * depth, by, bz + ox * side + oz * depth],
       velocity: [ox * push - oz * along, lift * (0.7 + random() * 0.6), oz * push + ox * along],
-      size: 0.3 + random() * 0.35,
+      size: (0.3 + random() * 0.35) * SHORE_BOOST.size,
     };
   });
 }

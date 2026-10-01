@@ -40,8 +40,11 @@ const RINGS: readonly { readonly delay: number; readonly seconds: number; readon
 const RING_HEIGHT = 1.1;
 const RING_TUBE = 0.09;
 
-/** An open, flaring cylinder with a ragged rim: the wall of water thrown up as the ship goes under. */
-function crownGeometry(): CylinderGeometry {
+/**
+ * An open, flaring cylinder with a ragged rim and its foot at y = 0: the wall of water thrown up as
+ * a ship goes under, and (smaller) the sheet of water under a burst of spray.
+ */
+export function crownGeometry(): CylinderGeometry {
   const g = new CylinderGeometry(1.25, 0.8, 1, 12, 1, true);
   const position = g.attributes.position!;
   for (let i = 0; i < position.count; i++) {

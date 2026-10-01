@@ -34,7 +34,7 @@ export const WEATHER: Readonly<Record<VoyageEventId | 'clear', WeatherLook>> = {
   tailwind: { ...DAY, sky: '#b9e3ea', sun: 2.9, swell: { height: 1.1, speed: 1.8, roll: 1.4, foam: 0.45 } },
   storm: {
     sky: '#4b5866', sea: '#2d5560', fogNear: 60, fogFar: 170, sun: 0.9, sunColor: '#c9d6e0', ambient: 0.8,
-    swell: { height: 1.9, speed: 2.1, roll: 3.2, foam: 0.75 },
+    swell: { height: 2.3, speed: 2.1, roll: 3.2, foam: 0.75 },
   },
   'sea-fog': {
     sky: '#c8d3d6', sea: '#6f9ea3', fogNear: 70, fogFar: 175, sun: 1.2, sunColor: '#ffffff', ambient: 1.2,
@@ -46,7 +46,7 @@ export const WEATHER: Readonly<Record<VoyageEventId | 'clear', WeatherLook>> = {
   },
   'high-waves': {
     sky: '#7fa9bb', sea: '#1f7f93', fogNear: 80, fogFar: 200, sun: 1.8, sunColor: '#f2f6ff', ambient: 0.9,
-    swell: { height: 2.4, speed: 1.3, roll: 4, foam: 0.9 },
+    swell: { height: 3.4, speed: 1.3, roll: 4, foam: 0.9 },
   },
   'black-market-rush': {
     sky: '#e9b98a', sea: '#2f8f99', fogNear: 90, fogFar: 220, sun: 2.2, sunColor: '#ffd29a', ambient: 1,

@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { TargetIsland } from '../scene/Islands';
 import { islandShorelines } from '../scene/islandShape';
 import { Sea } from '../scene/Sea';
-import { ShoreSpray } from '../scene/ShoreSpray';
+import { ShoreSpray } from '../scene/Spray';
 import { VoyageShip } from '../scene/Ships';
 import { SwellProvider } from '../scene/SwellContext';
 import type { SceneShip } from '../scene/tableModel';

@@ -55,3 +55,11 @@ describe('shore spray', () => {
     expect(shoreBurst([], 0.5, Math.random)).toEqual([]);
   });
 });
+
+describe('shore spray on a moving sea', () => {
+  it('starts at the sea surface where the wave breaks', () => {
+    const droplets = shoreBurst([SQUARE], 0.5, seeded(1), () => -0.9);
+    expect(droplets.length).toBeGreaterThan(0);
+    for (const d of droplets) expect(d.position[1]).toBe(-0.9);
+  });
+});
