@@ -8,6 +8,7 @@ import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatAngles, seatPosition, t
 import { Routes } from './Routes';
 import { LabelTracker, type LabelAnchor } from './ScreenLabels';
 import { Sea } from './Sea';
+import { ShoreSpray } from './ShoreSpray';
 import type { IntelTrace } from './dieSteps';
 import { SeatRail } from './SeatRail';
 import { SeatSign, ShipTag, TargetSign } from './SceneLabels';
@@ -126,6 +127,7 @@ export function TableScene(props: TableSceneProps) {
         <SwellProvider target={look.swell}>
           <Suspense fallback={null}>
             <Sea color={look.sea} shores={shores} />
+            <ShoreSpray shores={shores} />
             <Routes angles={angles} colors={table.seats.map((s) => s.color)} />
             <TargetIsland />
             {table.seats.map((seat, i) => (

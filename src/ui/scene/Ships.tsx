@@ -1,6 +1,6 @@
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Splash } from './Effects';
+import { SinkEffect } from './Effects';
 import { Vector3, type Group } from 'three';
 import type { Deployment } from '../../game';
 import { headingOf, laneCurve } from './layout';
@@ -28,12 +28,19 @@ export function shipPose(angle: number, state: ShipState): LanePose {
   return lanePose(angle, LANE_T[state]);
 }
 
+/** How far a wreck lists to its side and dips its bow, in radians. */
+const WRECK_HEEL = { roll: 0.38, pitch: 0.18 } as const;
+/** How deep a wreck settles: most of the hull under water, masts and the top of the deck still showing. */
+const WRECK_DEPTH = -1.5;
+
 /** Eases a group toward a target pose every frame, so state changes read as sailing. */
 function useGlide(target: LanePose, sinkTo: number) {
   const group = useRef<Group>(null);
   const swell = useSwell();
   // Eased height of the hull without the bob, so the bob never feeds back into the easing.
   const baseY = useRef<number | null>(null);
+  // 0 = upright, 1 = fully heeled over as a wreck.
+  const heel = useRef(0);
   useFrame(({ clock }, delta) => {
     const g = group.current;
     if (!g) return;
@@ -46,13 +53,15 @@ function useGlide(target: LanePose, sinkTo: number) {
     g.rotation.y += turn * ease;
     // Bob, roll and pitch while afloat, harder in rough seas; phases use time only so a gliding
     // ship does not shimmer. Heading-first order keeps roll and pitch about the hull's own axes.
+    // A wreck heels over and settles bow-down instead.
     const afloat = sinkTo === 0;
     const sway = afloat ? swell.current.roll : 0;
     const t = clock.elapsedTime;
+    heel.current += ((afloat ? 0 : 1) - heel.current) * ease;
     g.rotation.order = 'YXZ';
     g.position.y = baseY.current + Math.sin(t * 1.6) * 0.04 * sway;
-    g.rotation.z = Math.sin(t * 1.2) * 0.03 * sway;
-    g.rotation.x = Math.sin(t * 0.9 + 1) * 0.015 * sway;
+    g.rotation.z = Math.sin(t * 1.2) * 0.03 * sway + heel.current * WRECK_HEEL.roll;
+    g.rotation.x = Math.sin(t * 0.9 + 1) * 0.015 * sway + heel.current * WRECK_HEEL.pitch;
   });
   return group;
 }
@@ -70,9 +79,9 @@ export function VoyageShip({ ship, angle, selectable, onSelect }: VoyageShipProp
   // Where the ship first appears: its current pose, so a new ship is simply placed and only later
   // state changes sail. Kept in state because a changing position prop would snap the ship back.
   const [spawn] = useState(target);
-  const group = useGlide(target, ship.state === 'sunk' ? -0.6 : 0);
+  const group = useGlide(target, ship.state === 'sunk' ? WRECK_DEPTH : 0);
   const model: ModelName = ship.state === 'sunk' ? 'ship-wreck' : ship.kind === 'joint' ? 'ship-large' : 'ship-medium';
-  // Splash only when the ship sinks on screen, not when an already sunk ship is redrawn.
+  // Sinking scene only when the ship sinks on screen, not when an already sunk ship is redrawn.
   const [splash, setSplash] = useState(false);
   const previous = useRef(ship.state);
   useEffect(() => {
@@ -86,7 +95,7 @@ export function VoyageShip({ ship, angle, selectable, onSelect }: VoyageShipProp
   };
   return (
     <>
-    {splash && <Splash position={[target.position.x, 0, target.position.z]} />}
+    {splash && <SinkEffect position={[target.position.x, 0, target.position.z]} />}
     <group ref={group} position={spawn.position} rotation={[0, spawn.heading, 0]} onClick={click}>
       <Model name={model} scale={0.546} />
       {selectable && (

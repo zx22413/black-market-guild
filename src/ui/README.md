@@ -49,7 +49,8 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 | `tableModel.ts` | `buildSceneTable`：把 `Board` 轉成座位順序（你在最前）、玩家顏色（跟座位走，不隨視角改變）與船的航道和狀態。 |
 | `Islands.tsx`、`IslandBase.tsx` | 玩家小島（固定地基蓋資產建築）與目標島；島體為程序產生的低面數岩壁。 |
 | `Ships.tsx`、`Routes.tsx` | 航道（曲線虛線）；船、護衛小艇與海盜船沿航道滑行，可當部署目標點選。 |
-| `Effects.tsx` | 沉船水花（擴散泡沫環與水滴，只在畫面上發生沉沒時播放一次）。 |
+| `Effects.tsx` | 沉船場面（衝起後落回的水冠、兩圈有高度的低面數浪圈往外擴散、水花、殘骸旁冒出的氣泡、浮出後漂開再沉下的木桶與木箱，只在畫面上發生沉沒時播放一次）；殘骸本身的傾斜在 `Ships.tsx`。 |
+| `ShoreSpray.tsx`、`sprayBursts.ts` | 浪打上島岸時激起的低面數水珠，隨機落在各島岸線上；天氣越差越頻繁、噴得越高。 |
 | `dieSteps.ts` | 骰子動畫的每一步數值與說明；播放節奏依最長的骰子決定。 |
 | `SceneLabels.tsx`、`ScreenLabels.tsx` | 島與船上方的 DOM 名牌；把 3D 位置投影成畫面座標（drei `<Html>` 在實測中會遺失內容）。 |
 | `CameraRig.tsx` | 固定俯角、依畫面大小自動取景：島嶼與名牌必須落在上方事件列與下方操作列之間的安全區。 |
@@ -61,6 +62,7 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 
 | 檔案 | 職責 |
 |---|---|
+| `SinkPreview.tsx` | 沉船與岸邊水花預覽頁 `/?dev=sink`：一艘船每輪沉一次，可加 `&weather=storm` 等切換海況，可用滑鼠轉動視角。 |
 | `ModelPreview.tsx` | 模型預覽頁 `/?dev=models`：參數 `assets`（逗號分隔）、`mode=solo`（單棟）、`view=dock\|back\|far\|top`、`color`（旗幟色）。 |
 | `capture.ts` | `window.bmgCapture()`：以原始解析度讀取 3D 畫面，送給 `npm run capture -- <輸出檔>`（`scripts/capture-receiver.py`）存檔。 |
 | `uiMock/` | UI 風格樣張 `/?dev=ui-mock`：固定的第 1 回合部署畫面，參數 `v=flat\|props\|mix`（無底板／3D 道具／淺木＋羊皮紙混合）、`font=wenkai\|iansui\|song`、`tone=now\|ftk`。字體以 Google Fonts 載入（僅樣張），紙與木紋貼圖在 `docs/ui/mockups/tex/`。說明見 [`docs/ui/style-guide.md`](../../docs/ui/style-guide.md)。 |
