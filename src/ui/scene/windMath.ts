@@ -10,12 +10,10 @@ export const WIND_DIRECTION: readonly [number, number] = (() => {
 
 /** Samples along one wind line. */
 const SAMPLES = 64;
-/** Share of wind lines that curl into a loop on the way. */
-const LOOP_CHANCE = 0.45;
-
 /**
  * One wind line from `[x, z]`, in the style of Wind Waker: it runs downwind a little above the
- * sea, wavering from side to side, and some curl into an upright loop partway along.
+ * sea in a gentle S, wavering from side to side. No loops: seen from the table camera an upright
+ * loop flattens into an omega-like squiggle.
  */
 export function windPath([sx, sz]: readonly [number, number], random: () => number): ScenePoint[] {
   const [dx, dz] = WIND_DIRECTION;
@@ -24,23 +22,11 @@ export function windPath([sx, sz]: readonly [number, number], random: () => numb
   const height = 4 + random() * 1.5;
   const sway = 0.8 + random() * 1.2;
   const swayPhase = random() * Math.PI * 2;
-  const loop = random() < LOOP_CHANCE;
-  const loopAt = 0.4 + random() * 0.2;
-  const loopSpan = 0.18;
-  const loopRadius = 1.4 + random() * 0.8;
   return Array.from({ length: SAMPLES }, (_, i): ScenePoint => {
     const s = i / (SAMPLES - 1);
-    let forward = s * length;
-    let up = height;
-    const k = (s - loopAt) / loopSpan;
-    if (loop && k > 0 && k < 1) {
-      // An upright loop in the wind's plane: back over the top and down again.
-      const theta = k * Math.PI * 2;
-      forward -= loopRadius * Math.sin(theta) * 2.2;
-      up += loopRadius * (1 - Math.cos(theta));
-    }
+    const forward = s * length;
     const side = (Math.sin(s * Math.PI * 1.6 + swayPhase) - Math.sin(swayPhase)) * sway;
-    return [sx + dx * forward - dz * side, up, sz + dz * forward + dx * side];
+    return [sx + dx * forward - dz * side, height, sz + dz * forward + dx * side];
   });
 }
 

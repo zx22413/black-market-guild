@@ -32,14 +32,14 @@ describe('wind lines', () => {
     }
   });
 
-  it('sometimes curls into a loop that turns back upwind for a moment', () => {
+  it('never doubles back upwind (no loops)', () => {
     const random = seeded(9);
-    const loops = Array.from({ length: 40 }, () => {
+    for (let n = 0; n < 40; n++) {
       const path = windPath([0, 0], random);
-      return path.some((p, i) => i > 0 && along(p, [0, 0]) < along(path[i - 1]!, [0, 0]) - 0.05);
-    });
-    expect(loops.some(Boolean)).toBe(true);
-    expect(loops.every(Boolean)).toBe(false);
+      path.forEach((p, i) => {
+        if (i > 0) expect(along(p, [0, 0])).toBeGreaterThan(along(path[i - 1]!, [0, 0]));
+      });
+    }
   });
 
   it('draws on from the tail end, slides, then wipes off, never inverted', () => {
