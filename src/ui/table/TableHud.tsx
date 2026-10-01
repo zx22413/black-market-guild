@@ -5,8 +5,6 @@ import { Pins } from '../components/Pins';
 import { ASSET_LABELS, MARKET_EVENT_LABELS, VOYAGE_EVENT_LABELS } from '../labels';
 import type { SceneSeat } from '../scene/tableModel';
 import { marketEventText, voyageEventText } from '../rulesText';
-import { CashFloats } from './CashFloats';
-import type { CashFloat } from './useCashFloats';
 
 interface EventBandProps {
   readonly round: number;
@@ -46,15 +44,13 @@ interface LedgerCardProps {
   readonly seat: SceneSeat;
   /** Secret smuggling proceeds, only ever shown to their owner. */
   readonly blackMoney: number;
-  readonly floats: readonly CashFloat[];
 }
 
 /** Bottom-left: the viewer's own treasury, buildings and (private) black money. */
-export function LedgerCard({ seat, blackMoney, floats }: LedgerCardProps) {
+export function LedgerCard({ seat, blackMoney }: LedgerCardProps) {
   return (
     <div className="hud hud-bottom-left">
       <div className="ledger" style={{ borderColor: seat.color }}>
-        <CashFloats floats={floats} />
         <Pins />
         <strong className="ledger-name">{seat.name}</strong>
         <div className="ledger-row">

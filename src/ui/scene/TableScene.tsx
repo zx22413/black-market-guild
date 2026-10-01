@@ -8,7 +8,7 @@ import { Routes } from './Routes';
 import { LabelTracker, type LabelAnchor } from './ScreenLabels';
 import { Sea } from './Sea';
 import type { IntelTrace } from './dieSteps';
-import { SeatTag, ShipTag, TargetSign } from './SceneLabels';
+import { SeatSign, SeatTag, ShipTag, TargetSign } from './SceneLabels';
 import { Escorts, VoyageShip, shipPose } from './Ships';
 import type { CashFloat } from '../table/useCashFloats';
 import type { SceneTable } from './tableModel';
@@ -17,9 +17,7 @@ import { WeatherFog } from './WeatherFog';
 import './scene.css';
 
 /** Keep the islands clear of the top event band and the bottom hand/action band. */
-const SAFE_AREA: SafeArea = { top: 92, bottom: 136, left: 24, right: 24 };
-/** Above the tallest asset building (the exchange spire). */
-const SEAT_LABEL_HEIGHT = 15;
+const SAFE_AREA: SafeArea = { top: 80, bottom: 136, left: 24, right: 250 };
 const SHIP_LABEL_HEIGHT = 7;
 /**
  * The target's name plate sits on the sea at its front-left diagonal: no lane runs there, so it
@@ -53,14 +51,13 @@ function rim(center: Vec3, radius: number): FitPoint[] {
   });
 }
 
-/** Every island rim and name tag; independent of who is viewing, so the frame never shifts. */
+/** Every island rim; independent of who is viewing, so the frame never shifts. */
 function fitPoints(angles: readonly number[]): FitPoint[] {
   return [
     ...rim([0, 0, 0], TARGET_ISLAND_RADIUS),
     ...angles.flatMap((angle): FitPoint[] => {
       const center = seatPosition(angle);
-      const edge = rim(center, PLAYER_ISLAND_RADIUS + 1.5);
-      return [...edge, { position: [center[0], SEAT_LABEL_HEIGHT, center[2]], clearance: 90 }];
+      return rim(center, PLAYER_ISLAND_RADIUS + 1.5);
     }),
   ];
 }
@@ -80,7 +77,10 @@ export function TableScene(props: TableSceneProps) {
   const anchors = useMemo((): LabelAnchor[] => {
     const seatAnchors = table.seats.map((_, i): LabelAnchor => {
       const [x, , z] = seatPosition(angles[i]!);
-      return { id: `seat-${i}`, position: [x, SEAT_LABEL_HEIGHT, z] };
+      // Side islands carry the plate under them so it clears their buildings; the others outward.
+      if (Math.abs(x) > Math.abs(z)) return { id: `seat-${i}`, position: [x, 1, z + PLAYER_ISLAND_RADIUS + 1] };
+      const reach = (PLAYER_ISLAND_RADIUS + 2) / (Math.hypot(x, z) || 1);
+      return { id: `seat-${i}`, position: [x + x * reach, 1, z + z * reach] };
     });
     const shipAnchors = table.ships.map((ship): LabelAnchor => {
       const { position } = shipPose(angles[ship.lane]!, ship.state);
@@ -138,18 +138,9 @@ export function TableScene(props: TableSceneProps) {
       </Canvas>
       <div className="scene-labels">
         <TargetSign ref={pin('target')} />
-        {table.seats.map((seat, i) =>
-          seat.isViewer ? null : (
-            <SeatTag
-              key={seat.id}
-              ref={pin(`seat-${i}`)}
-              seat={seat}
-              nameOf={nameOf}
-              ready={submitted.includes(seat.id)}
-              floats={floats.filter((f) => f.playerId === seat.id)}
-            />
-          ),
-        )}
+        {table.seats.map((seat, i) => (
+          <SeatSign key={seat.id} ref={pin(`seat-${i}`)} seat={seat} floats={floats.filter((f) => f.playerId === seat.id)} />
+        ))}
         {table.ships.map((ship) => (
           <ShipTag
             key={ship.id}
@@ -163,6 +154,18 @@ export function TableScene(props: TableSceneProps) {
             onSelect={() => onSelectShip(ship.id)}
           />
         ))}
+      </div>
+      <div className="seat-rail">
+        {table.seats.map((seat) =>
+          seat.isViewer ? null : (
+            <SeatTag
+              key={seat.id}
+              seat={seat}
+              nameOf={nameOf}
+              ready={submitted.includes(seat.id)}
+            />
+          ),
+        )}
       </div>
     </>
   );

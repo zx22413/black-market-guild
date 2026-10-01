@@ -77,7 +77,7 @@ export function VoyageShip({ ship, angle, selectable, onSelect }: VoyageShipProp
     <>
     {splash && <Splash position={[target.position.x, 0, target.position.z]} />}
     <group ref={group} position={start.position} rotation={[0, start.heading, 0]} onClick={click}>
-      <Model name={model} scale={0.42} />
+      <Model name={model} scale={0.546} />
       {selectable && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.7, 0]}>
           <ringGeometry args={[3.6, 4.4, 32]} />

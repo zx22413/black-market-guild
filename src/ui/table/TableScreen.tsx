@@ -118,7 +118,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
       </div>
 
       {viewerSeat && (
-        <LedgerCard seat={viewerSeat} blackMoney={view?.myBlackMoney ?? 0} floats={floats.filter((f) => f.playerId === viewerSeat.id)} />
+        <LedgerCard seat={viewerSeat} blackMoney={view?.myBlackMoney ?? 0} />
       )}
 
       <div className="hud hud-private">

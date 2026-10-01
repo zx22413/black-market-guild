@@ -532,3 +532,43 @@
 .die-counter.sunk .die-step {
   color: #8a2f1d;
 }
+
+/* ── Other guilds' name plates: stacked at the right edge instead of floating over the islands ── */
+
+.seat-rail {
+  position: absolute;
+  top: 76px;
+  right: 24px;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  pointer-events: none;
+}
+
+.seat-rail .seat-tag {
+  position: relative;
+  align-items: flex-start;
+  white-space: normal;
+}
+
+.hud-private {
+  top: auto;
+  bottom: 190px;
+}
+
+.seat-sign {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.seat-sign i {
+  display: inline-block;
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-right: 6px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px #3d2211;
+}

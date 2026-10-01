@@ -18,21 +18,29 @@ export function TargetSign({ ref }: { readonly ref: Ref<HTMLDivElement> }) {
   );
 }
 
+/** Small plaque on a guild's island, in the guild's color, so the right-hand rail maps to islands. */
+export function SeatSign({ ref, seat, floats }: { readonly ref: Ref<HTMLDivElement>; readonly seat: SceneSeat; readonly floats: readonly CashFloat[] }) {
+  return (
+    <div ref={ref} className="island-sign seat-sign">
+      <CashFloats floats={floats} />
+      <i style={{ background: seat.color }} aria-hidden />
+      {seat.isViewer ? '你' : seat.name}
+    </div>
+  );
+}
+
 interface SeatTagProps {
-  readonly ref: Ref<HTMLDivElement>;
   readonly seat: SceneSeat;
   readonly nameOf: NameOf;
   /** Already locked this phase's choice. */
   readonly ready: boolean;
-  readonly floats: readonly CashFloat[];
 }
 
-/** Opponent guild board: name, cash, assets and this round's public status. */
-export function SeatTag({ ref, seat, nameOf, ready, floats }: SeatTagProps) {
+/** Opponent guild board, listed in the right-hand rail: name, cash, assets and this round's public status. */
+export function SeatTag({ seat, nameOf, ready }: SeatTagProps) {
   return (
-    <div ref={ref} className="seat-tag" style={{ borderColor: seat.color, '--seat': seat.color } as CSSProperties}>
+    <div className="seat-tag" style={{ borderColor: seat.color, '--seat': seat.color } as CSSProperties}>
       <i className="seat-rope" aria-hidden />
-      <CashFloats floats={floats} />
       <strong>
         {seat.name}
         {ready && <span className="tag-ready" title="已決定"> ✓</span>}
