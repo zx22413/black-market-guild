@@ -54,6 +54,7 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 | `Wind.tsx`、`windMath.ts` | 順風事件：Wind Waker 風格的風線，在島的台地上方往左下（與雨同向）掃過桌面；每條線從頭畫出、往前滑、再從尾巴收掉，兩端收細，帶一點 S 形擺動（不繞圈：直立的圈從桌面鏡頭看會變成 Ω 形）。 |
 | `SeaFog.tsx`、`fogMath.ts` | 海霧事件：貼著海面、平躺的柔和霧帶（霧團圖片由 canvas 即時畫出，不用外部素材），順著風向往左下慢慢漂、濃淡緩緩起伏；島的懸崖、碼頭和船會從霧裡冒出來。漂出桌面的霧帶從另一側回來，邊緣先淡出所以不會突然跳出。 |
 | `Night.tsx`、`nightMath.ts` | 無月之夜事件：海面上一群群藍綠色、會閃爍並隨風漂的夜光藻；每座島靠碼頭的台地上立一根燈柱（木柱、暖橘燈箱與小屋頂，光暈與照在草地上的微弱閃爍點光源）；夜裡半球補光也調暗（`WeatherLook.hemisphere`），島不會比海亮太多；航行中的船在桅杆上掛燈籠（`VoyageShip` 的 `lantern`）。岸邊浪花的藍綠夜光由海面著色器依浪況的 `glow` 發出。 |
+| `GoldRush.tsx`、`goldMath.ts` | 黑市熱潮事件：金色的星星與光點（Kenney Particle Pack 的三張閃光貼圖，放在 `public/art/particles/`，當透明度遮罩用，任何海色上都保持金色），多數從黑市港一帶、少數從整個桌面冒出，邊旋轉閃爍邊往上飄，再淡出。 |
 | `Spray.tsx`、`sprayBursts.ts` | 低面數水珠（共用的粒子池）：`ShoreSpray` 是浪打上島岸時激起的水花，隨機落在各島岸線上，天氣越差越頻繁、噴得越高；`CrestSpray` 是浪高明顯高於晴天時（巨浪、暴風雨），開放海面浪頂碎開、順風飛散的水花。 |
 | `dieSteps.ts` | 骰子動畫的每一步數值與說明；播放節奏依最長的骰子決定。 |
 | `SceneLabels.tsx`、`ScreenLabels.tsx` | 島與船上方的 DOM 名牌；把 3D 位置投影成畫面座標（drei `<Html>` 在實測中會遺失內容）。 |

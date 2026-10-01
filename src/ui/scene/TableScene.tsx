@@ -9,6 +9,7 @@ import { Routes } from './Routes';
 import { LabelTracker, type LabelAnchor } from './ScreenLabels';
 import { Sea } from './Sea';
 import { CrestSpray, ShoreSpray } from './Spray';
+import { GoldRush } from './GoldRush';
 import { Night } from './Night';
 import { SeaFog } from './SeaFog';
 import { Storm } from './Storm';
@@ -137,6 +138,7 @@ export function TableScene(props: TableSceneProps) {
             {weather === 'tailwind' && <Wind />}
             {weather === 'sea-fog' && <SeaFog />}
             {weather === 'moonless-night' && <Night seatAngles={angles} shores={shores} />}
+            {weather === 'black-market-rush' && <GoldRush />}
             <Routes angles={angles} colors={table.seats.map((s) => s.color)} />
             <TargetIsland />
             {table.seats.map((seat, i) => (

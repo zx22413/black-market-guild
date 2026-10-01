@@ -69,6 +69,25 @@
 | 取得日期 | 2026-09-29 |
 | 修改 | 未修改模型；只挑選部分檔案 |
 
+## 粒子貼圖（Kenney Particle Pack，CC0）
+
+放在 [`particles/`](particles/)，只收錄目前用到的三張，授權原文見同目錄的 `License.txt`。三張都是黑底白圖（無透明），在場景中當作透明度遮罩（alpha map）使用：白色處顯示為金色、黑色處透明。
+
+| 檔案 | 用途 | 原檔名 |
+|---|---|---|
+| particles/star_05.png | 黑市熱潮：柔和的金色光點 | `PNG/star_05.png` |
+| particles/star_06.png | 黑市熱潮：亮點帶光芒的閃光 | `PNG/star_06.png` |
+| particles/star_07.png | 黑市熱潮：四芒星閃光 | `PNG/star_07.png` |
+
+| 項目 | 內容 |
+|---|---|
+| 來源頁 | https://kenney.nl/assets/particle-pack（Kenney 本人上傳的鏡像：https://opengameart.org/content/particle-pack-80-sprites） |
+| 下載網址 | https://opengameart.org/sites/default/files/kenney_particlePack.zip（9.8 MB） |
+| 作者 | Kenney Vleugels（www.kenney.nl） |
+| 授權 | Creative Commons Zero（CC0），可商用，不需標示 |
+| 取得日期 | 2026-10-02 |
+| 修改 | 未修改圖檔；只挑選部分檔案 |
+
 ## UI 零件（本專案自製）
 
 `ui/*.svg` 由 [`scripts/draw-ui-art.ts`](../../scripts/draw-ui-art.ts) 產生（`npm run art:ui`），是本專案原創的向量圖，沒有使用外部素材。紙的填色疊有淡淡的顆粒雜訊（SVG `feTurbulence`，不影響輪廓線；強度見腳本的 `GRAIN_STRENGTH`）；木頭不加雜訊，以單一平滑漸層上色。風格參考使用者提供的手繪木框設計稿，以及 Kenney UI Pack: Adventure 的配色比例，但沒有使用這兩者的圖檔。

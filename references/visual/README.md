@@ -2,7 +2,7 @@
 
 此目錄目前不含圖片資產。
 
-**遊戲內佔位素材**（2026-09-28 起）：UI 使用的佔位圖示（game-icons.net，CC BY 3.0）與背景畫作（Wikimedia Commons 公有領域）放在 [`public/art/`](../../public/art/)，每個檔案的來源、作者、授權與取得日期記錄於 [`public/art/SOURCES.md`](../../public/art/SOURCES.md)。它們只是佔位用，不是正式美術。
+**遊戲內佔位素材**（2026-09-28 起）：UI 使用的佔位圖示（game-icons.net，CC BY 3.0）與背景畫作（Wikimedia Commons 公有領域）放在 [`public/art/`](../../public/art/)，每個檔案的來源、作者、授權與取得日期記錄於 [`public/art/SOURCES.md`](../../public/art/SOURCES.md)。它們只是佔位用，不是正式美術。3D 場景用的 Kenney 模型（Pirate Kit）與粒子貼圖（Particle Pack，2026-10-02 起）同樣為 CC0，來源也記錄在該檔。
 
 先前討論中的圖片僅為即時搜尋取得的視覺參考，並未實際下載至本機；其來源與商業使用授權也尚未確認。因此，不能將它們視為本專案可使用、可散布或可再授權的素材。
 
