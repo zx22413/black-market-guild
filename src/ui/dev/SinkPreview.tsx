@@ -2,6 +2,7 @@ import { OrbitControls } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { TargetIsland } from '../scene/Islands';
+import { Night } from '../scene/Night';
 import { islandShorelines } from '../scene/islandShape';
 import { Sea } from '../scene/Sea';
 import { ShoreSpray } from '../scene/Spray';
@@ -29,16 +30,20 @@ const SHIP: SceneShip = {
 };
 
 /**
- * Dev-only sinking preview at /?dev=sink (add &weather=storm etc. for another sea): a lone ship
- * sails onto the sea and sinks every loop, next to the target island for the shore spray.
+ * Dev-only sinking preview at /?dev=sink (add &weather=storm etc. for another sea, &sail to keep the
+ * ship afloat): a lone ship sails onto the sea and sinks every loop, next to the target island for
+ * the shore spray.
  */
 export function SinkPreview() {
-  const look = WEATHER[devWeatherOverride(window.location.search) ?? 'clear'];
+  const weather = devWeatherOverride(window.location.search);
+  // &sail keeps the ship afloat, for looking at the ship itself (e.g. its night lantern).
+  const keepSailing = new URLSearchParams(window.location.search).has('sail');
+  const look = WEATHER[weather ?? 'clear'];
   const shores = useMemo(() => islandShorelines([]), []);
   const [loop, setLoop] = useState(0);
   const [sunk, setSunk] = useState(false);
   useEffect(() => {
-    const sink = window.setTimeout(() => setSunk(true), SAIL_MS);
+    const sink = window.setTimeout(() => setSunk(!keepSailing), SAIL_MS);
     const restart = window.setTimeout(() => {
       setSunk(false);
       setLoop((n) => n + 1);
@@ -47,21 +52,22 @@ export function SinkPreview() {
       window.clearTimeout(sink);
       window.clearTimeout(restart);
     };
-  }, [loop]);
+  }, [loop, keepSailing]);
 
   return (
     <div style={{ position: 'fixed', inset: 0 }}>
       <Canvas shadows camera={{ position: [0, 34, 40], fov: 38 }}>
         <color attach="background" args={[look.sky]} />
         <ambientLight intensity={look.ambient} />
-        <hemisphereLight args={[look.sky, '#3a6b4a', 0.6]} />
+        <hemisphereLight args={[look.sky, '#3a6b4a', look.hemisphere]} />
         <directionalLight position={[-40, 60, 30]} intensity={look.sun} color={look.sunColor} castShadow />
         <SwellProvider target={look.swell}>
           <Suspense fallback={null}>
             <Sea color={look.sea} shores={shores} />
             <ShoreSpray shores={shores} />
             <TargetIsland />
-            <VoyageShip key={loop} ship={{ ...SHIP, state: sunk ? 'sunk' : 'sailing' }} angle={LANE_ANGLE} selectable={false} onSelect={() => undefined} />
+            {weather === 'moonless-night' && <Night seatAngles={[]} shores={shores} />}
+            <VoyageShip key={loop} ship={{ ...SHIP, state: sunk ? 'sunk' : 'sailing' }} angle={LANE_ANGLE} selectable={false} onSelect={() => undefined} lantern={weather === 'moonless-night'} />
           </Suspense>
         </SwellProvider>
         <OrbitControls target={[0, 0, 22]} />

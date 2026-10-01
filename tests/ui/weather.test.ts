@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { WEATHER, devWeatherOverride, easeSwell, type Swell } from '../../src/ui/scene/weather';
 
-const CALM: Swell = { height: 0.4, speed: 0.6, roll: 0.5, foam: 0 };
-const ROUGH: Swell = { height: 2.4, speed: 1.4, roll: 3, foam: 0.8 };
+const CALM: Swell = { height: 0.4, speed: 0.6, roll: 0.5, foam: 0, glow: 0 };
+const ROUGH: Swell = { height: 2.4, speed: 1.4, roll: 3, foam: 0.8, glow: 1 };
 
 describe('sea swell', () => {
   it('gives storms and high waves a rougher sea than calm seas', () => {
@@ -29,6 +29,14 @@ describe('sea swell', () => {
     expect(swell.height).toBeCloseTo(ROUGH.height, 2);
     expect(swell.roll).toBeCloseTo(ROUGH.roll, 2);
     expect(swell.foam).toBeCloseTo(ROUGH.foam, 2);
+    expect(swell.glow).toBeCloseTo(ROUGH.glow, 2);
+  });
+});
+
+describe('night glow', () => {
+  it('lights the shore foam only on a moonless night', () => {
+    expect(WEATHER['moonless-night'].swell.glow).toBe(1);
+    for (const [id, look] of Object.entries(WEATHER)) if (id !== 'moonless-night') expect(look.swell.glow).toBe(0);
   });
 });
 

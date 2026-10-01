@@ -34,7 +34,7 @@ export function Sea({ color, shores }: SeaProps) {
   const rest = useMemo(() => Float32Array.from(geometry.attributes.position!.array), [geometry]);
 
   useFrame(() => {
-    const { height, foam } = swell.current;
+    const { height, foam, glow } = swell.current;
     const t = phase.current;
     const position = geometry.attributes.position!;
     for (let i = 0; i < position.count; i++) {
@@ -45,6 +45,7 @@ export function Sea({ color, shores }: SeaProps) {
     position.needsUpdate = true;
     geometry.computeVertexNormals();
     sea.uniforms.uFoam.value = foam;
+    sea.uniforms.uGlow.value = glow;
     sea.uniforms.uTime.value = t;
     if (mesh.current) mesh.current.position.y = SEA_LEVEL - seaSink(height);
   });

@@ -9,6 +9,7 @@ import { Routes } from './Routes';
 import { LabelTracker, type LabelAnchor } from './ScreenLabels';
 import { Sea } from './Sea';
 import { CrestSpray, ShoreSpray } from './Spray';
+import { Night } from './Night';
 import { SeaFog } from './SeaFog';
 import { Storm } from './Storm';
 import { Wind } from './Wind';
@@ -115,7 +116,7 @@ export function TableScene(props: TableSceneProps) {
         <color attach="background" args={[look.sky]} />
         <WeatherFog color={look.sky} near={look.fogNear} far={look.fogFar} />
         <ambientLight intensity={look.ambient} />
-        <hemisphereLight args={[look.sky, '#3a6b4a', 0.6]} />
+        <hemisphereLight args={[look.sky, '#3a6b4a', look.hemisphere]} />
         <directionalLight
           position={[-40, 60, 30]}
           intensity={look.sun}
@@ -135,6 +136,7 @@ export function TableScene(props: TableSceneProps) {
             {weather === 'storm' && <Storm seatAngles={angles} />}
             {weather === 'tailwind' && <Wind />}
             {weather === 'sea-fog' && <SeaFog />}
+            {weather === 'moonless-night' && <Night seatAngles={angles} shores={shores} />}
             <Routes angles={angles} colors={table.seats.map((s) => s.color)} />
             <TargetIsland />
             {table.seats.map((seat, i) => (
@@ -146,6 +148,7 @@ export function TableScene(props: TableSceneProps) {
                   ship={ship}
                   angle={angles[ship.lane]!}
                   selectable={selectableShips.has(ship.id)}
+                lantern={weather === 'moonless-night'}
                   onSelect={() => onSelectShip(ship.id)}
                 />
                 <Escorts ship={ship} angle={angles[ship.lane]!} />

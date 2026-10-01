@@ -5,6 +5,7 @@ import { Vector3, type Group } from 'three';
 import type { Deployment } from '../../game';
 import { headingOf, laneCurve } from './layout';
 import { Model, type ModelName } from './Model';
+import { LanternGlow } from './Night';
 import { SEA_LEVEL, seaSurfaceY } from './seaWave';
 import { useSwell, useWavePhase } from './SwellContext';
 import type { SceneShip, ShipState } from './tableModel';
@@ -28,6 +29,9 @@ export function lanePose(angle: number, t: number, sideways = 0): LanePose {
 export function shipPose(angle: number, state: ShipState): LanePose {
   return lanePose(angle, LANE_T[state]);
 }
+
+/** Where a ship's night lantern hangs, in ship space: up the mainmast. */
+const SHIP_LANTERN = [0, 3.4, 0] as const;
 
 /** How far a wreck lists to its side and dips its bow, in radians. */
 const WRECK_HEEL = { roll: 0.38, pitch: 0.18 } as const;
@@ -75,10 +79,12 @@ interface VoyageShipProps {
   readonly angle: number;
   readonly selectable: boolean;
   readonly onSelect: () => void;
+  /** Hang a lit lantern at the masthead (moonless night). */
+  readonly lantern?: boolean;
 }
 
 /** A guild ship on its lane; glides from dock to the danger zone and on to the target. */
-export function VoyageShip({ ship, angle, selectable, onSelect }: VoyageShipProps) {
+export function VoyageShip({ ship, angle, selectable, onSelect, lantern = false }: VoyageShipProps) {
   const target = useMemo(() => shipPose(angle, ship.state), [angle, ship.state]);
   // Where the ship first appears: its current pose, so a new ship is simply placed and only later
   // state changes sail. Kept in state because a changing position prop would snap the ship back.
@@ -102,6 +108,11 @@ export function VoyageShip({ ship, angle, selectable, onSelect }: VoyageShipProp
     {splash && <SinkEffect position={[target.position.x, 0, target.position.z]} />}
     <group ref={group} position={spawn.position} rotation={[0, spawn.heading, 0]} onClick={click}>
       <Model name={model} scale={0.546} />
+      {lantern && ship.state !== 'sunk' && (
+        <group position={SHIP_LANTERN}>
+          <LanternGlow halo={1.8} />
+        </group>
+      )}
       {selectable && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.7, 0]}>
           <ringGeometry args={[3.6, 4.4, 32]} />

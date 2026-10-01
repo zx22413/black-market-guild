@@ -68,7 +68,7 @@ export function MockScene({ variant, tone, font, labels }: MockSceneProps) {
       <color attach="background" args={[look.sky]} />
       <WeatherFog color={look.sky} near={look.fogNear} far={look.fogFar} />
       <ambientLight intensity={look.ambient} />
-      <hemisphereLight args={[tone === 'ftk' ? '#9db8ff' : look.sky, '#3a6b4a', 0.6]} />
+      <hemisphereLight args={[tone === 'ftk' ? '#9db8ff' : look.sky, '#3a6b4a', look.hemisphere]} />
       <directionalLight position={[-40, 60, 30]} intensity={look.sun} color={look.sunColor} castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-80} shadow-camera-right={80} shadow-camera-top={80} shadow-camera-bottom={-80} />
       <SwellProvider target={look.swell}>
       <Suspense fallback={null}>
