@@ -50,6 +50,7 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 | `Islands.tsx`、`IslandBase.tsx` | 玩家小島（固定地基蓋資產建築）與目標島；島體為程序產生的低面數岩壁。 |
 | `Ships.tsx`、`Routes.tsx` | 航道（曲線虛線）；船、護衛小艇與海盜船沿航道滑行，可當部署目標點選。 |
 | `Effects.tsx` | 沉船場面（衝起後落回的水冠、兩圈有高度的低面數浪圈往外擴散、水花、殘骸旁冒出的氣泡、浮出後漂開再沉下的木桶與木箱，只在畫面上發生沉沒時播放一次）；殘骸本身的傾斜在 `Ships.tsx`。 |
+| `Storm.tsx`、`stormMath.ts` | 暴風雨事件：往左下斜打的低面數雨絲，以及每 3～9 秒一次打在桌面遠側島嶼空隙海面上的閃電（鋸齒光束、落點閃光，整個桌面跟著閃兩下）。閃電時間跟著真實時鐘走。 |
 | `ShoreSpray.tsx`、`sprayBursts.ts` | 浪打上島岸時激起的低面數水珠，隨機落在各島岸線上；天氣越差越頻繁、噴得越高。 |
 | `dieSteps.ts` | 骰子動畫的每一步數值與說明；播放節奏依最長的骰子決定。 |
 | `SceneLabels.tsx`、`ScreenLabels.tsx` | 島與船上方的 DOM 名牌；把 3D 位置投影成畫面座標（drei `<Html>` 在實測中會遺失內容）。 |
