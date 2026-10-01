@@ -14,6 +14,7 @@ import { usePlayback } from '../session/usePlayback';
 import { DecisionDock } from './DecisionDock';
 import { EventBand, LedgerCard } from './TableHud';
 import { useCashFloats } from './useCashFloats';
+import { useRecruitBeats } from './useRecruitBeats';
 import './table.css';
 import './hudSkin.css';
 
@@ -34,6 +35,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
 
   const names = useMemo(() => new Map(snapshot.players.map((p) => [p.id, p.name])), [snapshot.players]);
   const nameOf = useCallback((id: PlayerId) => names.get(id) ?? id, [names]);
+  const beats = useRecruitBeats(played, nameOf);
   // Spectators see the table from the first seat, with every guild's public tag.
   const viewerId = view?.playerId ?? null;
   // Hot-seat: keep facing the last player between turns; the table turns only once the next
@@ -97,6 +99,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
         intel={intel}
         submitted={activeView?.submittedPlayerIds ?? []}
         floats={floats}
+        beats={beats}
         onReady={markReady}
       />
       {!ready && <div className="scene-loading">整理港口中…</div>}

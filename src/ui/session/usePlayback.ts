@@ -22,6 +22,8 @@ function eventDelay(event: MatchEvent): number {
     }
     case 'ship-resolved':
       return 1000;
+    case 'joint-ventures-formed':
+      return 2200;
     default:
       return 450;
   }

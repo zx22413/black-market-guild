@@ -4,6 +4,7 @@ import { assetIcon, iconUrl, roleIcon } from '../art';
 import { ASSET_LABELS, ROLE_LABELS } from '../labels';
 import { CashFloats } from '../table/CashFloats';
 import type { CashFloat } from '../table/useCashFloats';
+import type { RecruitBeat } from '../table/useRecruitBeats';
 import { DIE_BEAT_MS, dieSteps, type DieStep, type IntelTrace } from './dieSteps';
 import type { SceneSeat, SceneShip } from './tableModel';
 
@@ -19,12 +20,17 @@ export function TargetSign({ ref }: { readonly ref: Ref<HTMLDivElement> }) {
 }
 
 /** Small plaque on a guild's island, in the guild's color, so the right-hand rail maps to islands. */
-export function SeatSign({ ref, seat, floats }: { readonly ref: Ref<HTMLDivElement>; readonly seat: SceneSeat; readonly floats: readonly CashFloat[] }) {
+export function SeatSign({ ref, seat, floats, beats }: { readonly ref: Ref<HTMLDivElement>; readonly seat: SceneSeat; readonly floats: readonly CashFloat[]; readonly beats: readonly RecruitBeat[] }) {
   return (
     <div ref={ref} className="island-sign seat-sign">
       <CashFloats floats={floats} />
       <i style={{ background: seat.color }} aria-hidden />
       {seat.isViewer ? '你' : seat.name}
+      {beats.map((b) => (
+        <span key={b.id} className={`recruit-beat ${b.ok ? 'ok' : 'fail'}`}>
+          {b.text}
+        </span>
+      ))}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import type { IntelTrace } from './dieSteps';
 import { SeatSign, SeatTag, ShipTag, TargetSign } from './SceneLabels';
 import { Escorts, VoyageShip, shipPose } from './Ships';
 import type { CashFloat } from '../table/useCashFloats';
+import type { RecruitBeat } from '../table/useRecruitBeats';
 import type { SceneTable } from './tableModel';
 import { WEATHER } from './weather';
 import { WeatherFog } from './WeatherFog';
@@ -40,6 +41,8 @@ export interface TableSceneProps {
   readonly intel: ReadonlyMap<ShipId, IntelTrace>;
   /** Recent cash changes floating above each guild's tag. */
   readonly floats: readonly CashFloat[];
+  /** Joint-venture success and failure stamps shown on the islands. */
+  readonly beats: readonly RecruitBeat[];
   /** Called once all models have loaded. */
   readonly onReady: () => void;
 }
@@ -69,7 +72,7 @@ function Ready({ onReady }: { readonly onReady: () => void }) {
 
 /** The whole 3D table: guild islands around the target island, lanes, ships and tags. */
 export function TableScene(props: TableSceneProps) {
-  const { table, weather, nameOf, selectableShips, onSelectShip, secret, intel, submitted, floats, onReady } = props;
+  const { table, weather, nameOf, selectableShips, onSelectShip, secret, intel, submitted, floats, beats, onReady } = props;
   const look = WEATHER[weather ?? 'clear'];
   const angles = useMemo(() => seatAngles(table.seats.length), [table.seats.length]);
   const points = useMemo(() => fitPoints(angles), [angles]);
@@ -139,7 +142,7 @@ export function TableScene(props: TableSceneProps) {
       <div className="scene-labels">
         <TargetSign ref={pin('target')} />
         {table.seats.map((seat, i) => (
-          <SeatSign key={seat.id} ref={pin(`seat-${i}`)} seat={seat} floats={floats.filter((f) => f.playerId === seat.id)} />
+          <SeatSign key={seat.id} ref={pin(`seat-${i}`)} seat={seat} floats={floats.filter((f) => f.playerId === seat.id)} beats={beats.filter((b) => b.playerId === seat.id)} />
         ))}
         {table.ships.map((ship) => (
           <ShipTag

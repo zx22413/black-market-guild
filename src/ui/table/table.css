@@ -572,3 +572,56 @@
   border-radius: 50%;
   box-shadow: 0 0 0 1.5px #3d2211;
 }
+
+/* ── Decision strip: description on one line, buttons on the next ── */
+
+.action-pill {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: 6px;
+}
+
+.action-pill > span,
+.action-pill > small {
+  flex: 0 0 100%;
+  text-align: center;
+}
+
+.action-pill > span .intel,
+.action-pill > .intel {
+  justify-content: center;
+}
+
+/* ── Recruitment result stamps under a guild's island plaque ── */
+
+.recruit-beat {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  translate: -50% 0;
+  white-space: nowrap;
+  padding: 3px 12px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  border: 2px solid currentColor;
+  animation: pop-in 0.45s ease-out both, beat-out 0.5s ease-in 2.4s forwards;
+  pointer-events: none;
+}
+
+.recruit-beat.ok {
+  color: #2f6a2b;
+  background: #eaf6e4;
+}
+
+.recruit-beat.fail {
+  color: #8a2f1d;
+  background: #fbe8e3;
+}
+
+@keyframes beat-out {
+  to {
+    opacity: 0;
+  }
+}
