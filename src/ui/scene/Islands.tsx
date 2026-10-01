@@ -1,7 +1,7 @@
 import { IslandBase } from './IslandBase';
 import { Building } from './buildings/Building';
-import { ASSET_BUILDING_SCALE, ASSET_LOTS, PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, headingOf, seatPosition } from './layout';
-import { Vector3 } from 'three';
+import { ASSET_BUILDING_SCALE, ASSET_LOTS, PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatPosition } from './layout';
+import { TARGET_ISLAND_HEIGHT, TARGET_ISLAND_SEED, playerIslandHeading } from './islandShape';
 import { Model } from './Model';
 import type { SceneSeat } from './tableModel';
 
@@ -35,7 +35,7 @@ interface PlayerIslandProps {
 export function PlayerIsland({ seat, angle, seed }: PlayerIslandProps) {
   const home = seatPosition(angle);
   return (
-    <group position={home} rotation={[0, headingOf(new Vector3(-home[0], 0, -home[2])), 0]}>
+    <group position={home} rotation={[0, playerIslandHeading(angle), 0]}>
       <IslandBase radius={PLAYER_ISLAND_RADIUS} seed={seed} />
       <group position={[0, PLATEAU, 0]}>
         {seat.assets.map((asset) => (
@@ -57,7 +57,7 @@ export function PlayerIsland({ seat, angle, seed }: PlayerIslandProps) {
 export function TargetIsland() {
   return (
     <group>
-      <IslandBase radius={TARGET_ISLAND_RADIUS} seed={99} height={3.2} />
+      <IslandBase radius={TARGET_ISLAND_RADIUS} seed={TARGET_ISLAND_SEED} height={TARGET_ISLAND_HEIGHT} />
       <group position={[0, 3.4, 0]} scale={TARGET_DECOR_SCALE}>
         <Model name="tower-complete-large" position={[0, 0, -1]} scale={0.8} />
         <Model name="castle-wall" position={[-3.2, 0, 0.6]} scale={0.7} rotation={[0, 0.5, 0]} />

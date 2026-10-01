@@ -5,6 +5,7 @@ import { Vector3, type Group } from 'three';
 import type { Deployment } from '../../game';
 import { headingOf, laneCurve } from './layout';
 import { Model, type ModelName } from './Model';
+import { useSwell } from './SwellContext';
 import type { SceneShip, ShipState } from './tableModel';
 
 /** Where along its lane a ship rests in each state: dock, danger zone, target dock. */
@@ -30,6 +31,7 @@ export function shipPose(angle: number, state: ShipState): LanePose {
 /** Eases a group toward a target pose every frame, so state changes read as sailing. */
 function useGlide(target: LanePose, sinkTo: number) {
   const group = useRef<Group>(null);
+  const swell = useSwell();
   // Eased height of the hull without the bob, so the bob never feeds back into the easing.
   const baseY = useRef<number | null>(null);
   useFrame(({ clock }, delta) => {
@@ -42,10 +44,15 @@ function useGlide(target: LanePose, sinkTo: number) {
     g.position.z += (target.position.z - g.position.z) * ease;
     const turn = Math.atan2(Math.sin(target.heading - g.rotation.y), Math.cos(target.heading - g.rotation.y));
     g.rotation.y += turn * ease;
-    // Gentle bob and roll while afloat; phases use time only so a gliding ship does not shimmer.
+    // Bob, roll and pitch while afloat, harder in rough seas; phases use time only so a gliding
+    // ship does not shimmer. Heading-first order keeps roll and pitch about the hull's own axes.
     const afloat = sinkTo === 0;
-    g.position.y = baseY.current + (afloat ? Math.sin(clock.elapsedTime * 1.6) * 0.04 : 0);
-    g.rotation.z = afloat ? Math.sin(clock.elapsedTime * 1.2) * 0.03 : 0;
+    const sway = afloat ? swell.current.roll : 0;
+    const t = clock.elapsedTime;
+    g.rotation.order = 'YXZ';
+    g.position.y = baseY.current + Math.sin(t * 1.6) * 0.04 * sway;
+    g.rotation.z = Math.sin(t * 1.2) * 0.03 * sway;
+    g.rotation.x = Math.sin(t * 0.9 + 1) * 0.015 * sway;
   });
   return group;
 }

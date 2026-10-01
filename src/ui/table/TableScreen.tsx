@@ -7,6 +7,7 @@ import { PrivateNotes } from '../components/PrivateNotes';
 import { TableScene } from '../scene/TableScene';
 import type { IntelTrace } from '../scene/dieSteps';
 import { buildSceneTable } from '../scene/tableModel';
+import { devWeatherOverride } from '../scene/weather';
 import { HandoffScreen } from '../screens/HandoffScreen';
 import { ResultScreen } from '../screens/ResultScreen';
 import type { GameSession } from '../session/gameSession';
@@ -17,6 +18,8 @@ import { useCashFloats } from './useCashFloats';
 import { useRecruitBeats } from './useRecruitBeats';
 import './table.css';
 import './hudSkin.css';
+
+const DEV_WEATHER = import.meta.env.DEV ? devWeatherOverride(window.location.search) : null;
 
 interface TableScreenProps {
   readonly session: GameSession;
@@ -91,7 +94,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
     <div className="scene-root" style={uiArtVars() as CSSProperties}>
       <TableScene
         table={table}
-        weather={board.voyageEvent}
+        weather={DEV_WEATHER ?? board.voyageEvent}
         nameOf={nameOf}
         selectableShips={selectableShips}
         onSelectShip={selectShip}

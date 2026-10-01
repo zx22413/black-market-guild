@@ -3,6 +3,7 @@ import { Suspense, useEffect, useMemo, useRef } from 'react';
 import type { Deployment, PlayerId, ShipId, VoyageEventId } from '../../game';
 import { CameraRig, type FitPoint, type SafeArea } from './CameraRig';
 import { PlayerIsland, TargetIsland } from './Islands';
+import { islandShorelines, playerIslandSeed } from './islandShape';
 import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatAngles, seatPosition, type Vec3 } from './layout';
 import { Routes } from './Routes';
 import { LabelTracker, type LabelAnchor } from './ScreenLabels';
@@ -11,6 +12,7 @@ import type { IntelTrace } from './dieSteps';
 import { SeatRail } from './SeatRail';
 import { SeatSign, ShipTag, TargetSign } from './SceneLabels';
 import { Escorts, VoyageShip, shipPose } from './Ships';
+import { SwellProvider } from './SwellContext';
 import type { CashFloat } from '../table/useCashFloats';
 import type { RecruitBeat } from '../table/useRecruitBeats';
 import type { SceneTable } from './tableModel';
@@ -79,6 +81,7 @@ export function TableScene(props: TableSceneProps) {
   const look = WEATHER[weather ?? 'clear'];
   const angles = useMemo(() => seatAngles(table.seats.length), [table.seats.length]);
   const points = useMemo(() => fitPoints(angles), [angles]);
+  const shores = useMemo(() => islandShorelines(angles), [angles]);
 
   const anchors = useMemo((): LabelAnchor[] => {
     const seatAnchors = table.seats.map((_, i): LabelAnchor => {
@@ -120,26 +123,28 @@ export function TableScene(props: TableSceneProps) {
           shadow-camera-top={80}
           shadow-camera-bottom={-80}
         />
-        <Suspense fallback={null}>
-          <Sea color={look.sea} />
-          <Routes angles={angles} colors={table.seats.map((s) => s.color)} />
-          <TargetIsland />
-          {table.seats.map((seat, i) => (
-            <PlayerIsland key={seat.id} seat={seat} angle={angles[i]!} seed={i + 1} />
-          ))}
-          {table.ships.map((ship) => (
-            <group key={ship.id}>
-              <VoyageShip
-                ship={ship}
-                angle={angles[ship.lane]!}
-                selectable={selectableShips.has(ship.id)}
-                onSelect={() => onSelectShip(ship.id)}
-              />
-              <Escorts ship={ship} angle={angles[ship.lane]!} />
-            </group>
-          ))}
-          <Ready onReady={onReady} />
-        </Suspense>
+        <SwellProvider target={look.swell}>
+          <Suspense fallback={null}>
+            <Sea color={look.sea} shores={shores} />
+            <Routes angles={angles} colors={table.seats.map((s) => s.color)} />
+            <TargetIsland />
+            {table.seats.map((seat, i) => (
+              <PlayerIsland key={seat.id} seat={seat} angle={angles[i]!} seed={playerIslandSeed(i)} />
+            ))}
+            {table.ships.map((ship) => (
+              <group key={ship.id}>
+                <VoyageShip
+                  ship={ship}
+                  angle={angles[ship.lane]!}
+                  selectable={selectableShips.has(ship.id)}
+                  onSelect={() => onSelectShip(ship.id)}
+                />
+                <Escorts ship={ship} angle={angles[ship.lane]!} />
+              </group>
+            ))}
+            <Ready onReady={onReady} />
+          </Suspense>
+        </SwellProvider>
         <LabelTracker anchors={anchors} elements={labels} />
       </Canvas>
       <div className="scene-labels">

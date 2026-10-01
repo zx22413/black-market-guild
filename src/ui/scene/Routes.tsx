@@ -2,8 +2,8 @@ import { Line } from '@react-three/drei';
 import { useMemo } from 'react';
 import { laneCurve } from './layout';
 
-/** Height above the rolling sea so the chart lines never dip under the waves. */
-const LANE_HEIGHT = 0.55;
+/** Height above the rolling sea so the chart lines never dip under the waves, even in a storm. */
+const LANE_HEIGHT = 0.8;
 
 /** A gently curved sea lane from a guild's dock to the target island, drawn like a chart route. */
 function Lane({ angle, color }: { readonly angle: number; readonly color: string }) {

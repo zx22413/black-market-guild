@@ -6,6 +6,8 @@ import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatAngles, seatPosition, t
 import { Routes } from '../../scene/Routes';
 import { LabelTracker, type LabelAnchor } from '../../scene/ScreenLabels';
 import { Sea } from '../../scene/Sea';
+import { SwellProvider } from '../../scene/SwellContext';
+import { islandShorelines, playerIslandSeed } from '../../scene/islandShape';
 import { VoyageShip } from '../../scene/Ships';
 import { WEATHER, type WeatherLook } from '../../scene/weather';
 import { WeatherFog } from '../../scene/WeatherFog';
@@ -49,6 +51,7 @@ interface MockSceneProps {
 export function MockScene({ variant, tone, font, labels }: MockSceneProps) {
   const look = tone === 'ftk' ? FTK : WEATHER.clear;
   const angles = useMemo(() => seatAngles(MOCK_TABLE.seats.length), []);
+  const shores = useMemo(() => islandShorelines(angles), [angles]);
   const centers = angles.map((a) => seatPosition(a));
   const points = useMemo((): FitPoint[] => {
     const base = [...rim([0, 0, 0], TARGET_ISLAND_RADIUS), ...centers.flatMap((c) => rim(c, PLAYER_ISLAND_RADIUS + 1.5))];
@@ -67,12 +70,13 @@ export function MockScene({ variant, tone, font, labels }: MockSceneProps) {
       <ambientLight intensity={look.ambient} />
       <hemisphereLight args={[tone === 'ftk' ? '#9db8ff' : look.sky, '#3a6b4a', 0.6]} />
       <directionalLight position={[-40, 60, 30]} intensity={look.sun} color={look.sunColor} castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-80} shadow-camera-right={80} shadow-camera-top={80} shadow-camera-bottom={-80} />
+      <SwellProvider target={look.swell}>
       <Suspense fallback={null}>
-        <Sea color={look.sea} />
+        <Sea color={look.sea} shores={shores} />
         <Routes angles={angles} colors={MOCK_TABLE.seats.map((s) => s.color)} />
         <TargetIsland />
         {MOCK_TABLE.seats.map((seat, i) => (
-          <PlayerIsland key={seat.id} seat={seat} angle={angles[i]!} seed={i + 1} />
+          <PlayerIsland key={seat.id} seat={seat} angle={angles[i]!} seed={playerIslandSeed(i)} />
         ))}
         {MOCK_TABLE.ships.map((ship) => (
           <VoyageShip key={ship.id} ship={ship} angle={angles[ship.lane]!} selectable={false} onSelect={() => undefined} />
@@ -97,6 +101,7 @@ export function MockScene({ variant, tone, font, labels }: MockSceneProps) {
           centers.map((c, i) => <CoinStack key={i} position={[c[0] + 6.5, PLATEAU, c[2] + 3]} cash={MOCK_SEATS[i]!.cash} seed={i + 11} />)}
         {variant === 'props' && <RoundTracker position={[-40, 3, -40]} round={1} total={6} phase="部署角色" font={font} />}
       </Suspense>
+      </SwellProvider>
       {variant !== 'props' && <LabelTracker anchors={anchors} elements={labels} />}
     </Canvas>
   );
