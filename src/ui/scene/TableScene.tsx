@@ -22,7 +22,7 @@ import { SwellProvider } from './SwellContext';
 import type { CashFloat } from '../table/useCashFloats';
 import type { RecruitBeat } from '../table/useRecruitBeats';
 import type { SceneTable } from './tableModel';
-import { WEATHER } from './weather';
+import { WEATHER, fillOf } from './weather';
 import { WeatherFog } from './WeatherFog';
 import './scene.css';
 
@@ -117,7 +117,7 @@ export function TableScene(props: TableSceneProps) {
         <color attach="background" args={[look.sky]} />
         <WeatherFog color={look.sky} near={look.fogNear} far={look.fogFar} />
         <ambientLight intensity={look.ambient} />
-        <hemisphereLight args={[look.sky, '#3a6b4a', look.hemisphere]} />
+        <hemisphereLight args={[fillOf(look).sky, fillOf(look).ground, fillOf(look).intensity]} />
         <directionalLight
           position={[-40, 60, 30]}
           intensity={look.sun}
@@ -131,13 +131,13 @@ export function TableScene(props: TableSceneProps) {
         />
         <SwellProvider target={look.swell}>
           <Suspense fallback={null}>
-            <Sea color={look.sea} shores={shores} />
+            <Sea color={look.sea} shores={shores} vignette={look.vignette ?? 0} lines={look.seaLines ?? 0} glow={look.seaGlow ?? 0} />
             <ShoreSpray shores={shores} />
             <CrestSpray shores={shores} />
             {weather === 'storm' && <Storm seatAngles={angles} />}
             {weather === 'tailwind' && <Wind />}
             {weather === 'sea-fog' && <SeaFog />}
-            {weather === 'moonless-night' && <Night seatAngles={angles} shores={shores} />}
+            {weather === 'moonless-night' && <Night seatAngles={angles} />}
             {weather === 'black-market-rush' && <GoldRush />}
             <Routes angles={angles} colors={table.seats.map((s) => s.color)} />
             <TargetIsland />

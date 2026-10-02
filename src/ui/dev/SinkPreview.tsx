@@ -9,7 +9,7 @@ import { ShoreSpray } from '../scene/Spray';
 import { VoyageShip } from '../scene/Ships';
 import { SwellProvider } from '../scene/SwellContext';
 import type { SceneShip } from '../scene/tableModel';
-import { WEATHER, devWeatherOverride } from '../scene/weather';
+import { WEATHER, devWeatherOverride, fillOf } from '../scene/weather';
 
 /** One full loop: sail for a moment, sink, let the wreck scene play out, then start over. */
 const SAIL_MS = 5000;
@@ -59,14 +59,14 @@ export function SinkPreview() {
       <Canvas shadows camera={{ position: [0, 34, 40], fov: 38 }}>
         <color attach="background" args={[look.sky]} />
         <ambientLight intensity={look.ambient} />
-        <hemisphereLight args={[look.sky, '#3a6b4a', look.hemisphere]} />
+        <hemisphereLight args={[fillOf(look).sky, fillOf(look).ground, fillOf(look).intensity]} />
         <directionalLight position={[-40, 60, 30]} intensity={look.sun} color={look.sunColor} castShadow />
         <SwellProvider target={look.swell}>
           <Suspense fallback={null}>
-            <Sea color={look.sea} shores={shores} />
+            <Sea color={look.sea} shores={shores} vignette={look.vignette ?? 0} lines={look.seaLines ?? 0} glow={look.seaGlow ?? 0} />
             <ShoreSpray shores={shores} />
             <TargetIsland />
-            {weather === 'moonless-night' && <Night seatAngles={[]} shores={shores} />}
+            {weather === 'moonless-night' && <Night seatAngles={[]} />}
             <VoyageShip key={loop} ship={{ ...SHIP, state: sunk ? 'sunk' : 'sailing' }} angle={LANE_ANGLE} selectable={false} onSelect={() => undefined} lantern={weather === 'moonless-night'} />
           </Suspense>
         </SwellProvider>

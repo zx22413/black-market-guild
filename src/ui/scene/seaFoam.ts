@@ -10,7 +10,11 @@ export interface FoamUniforms {
   readonly uFoam: { value: number };
   /** Wave phase, so the foam breathes and drifts with the waves. */
   readonly uTime: { value: number };
-  /** How brightly the foam glows with plankton at night, 0..1. */
+  /** How much the sea darkens toward the corners, 0..1. */
+  readonly uVignette: { value: number };
+  /** White wave lines on open water whatever the weather, 0..1 (rough seas add their own). */
+  readonly uLines: { value: number };
+  /** How much the foam and wave lines glow faintly on their own (at night), 0..1. */
   readonly uGlow: { value: number };
   /** Every island's waterline, `SHORE_POINTS` per island. */
   readonly uShore: { value: Vector2[] };
@@ -18,8 +22,8 @@ export interface FoamUniforms {
 }
 
 const FOAM_COLOR = '#f4fbfb';
-/** Bioluminescent teal the foam glows on a moonless night. */
-const GLOW_COLOR = '#3fe0c8';
+/** Half-size of the island cluster the vignette leaves untouched (guild islands sit about 52 x 44 out). */
+const VIGNETTE = { x: 68, z: 58 } as const;
 /** How far the foam whitens the sea: kept low so the foam reads as a soft tint, not white paint. */
 const FOAM_OPACITY = 0.5;
 
@@ -39,11 +43,12 @@ uniform float uTime;
 uniform vec2 uShore[MAX_SHORES * SHORE_POINTS];
 uniform int uShoreCount;
 uniform vec3 uFoamColor;
-uniform float uFoamOpacity;
+uniform float uVignette;
+uniform float uLines;
 uniform float uGlow;
-uniform vec3 uGlowColor;
-// How much foam covers this pixel, set in the colour pass and reused for the night glow.
+// How much foam covers this pixel, set in the colour pass and reused for the glow.
 float foamAmount;
+uniform float uFoamOpacity;
 varying vec2 vFoamXZ;
 
 float foamHash(vec2 p) {
@@ -97,19 +102,26 @@ const FRAGMENT_BODY = /* glsl */ `
   float flecks = near * smoothstep(0.0, 0.03, foamNoise(vFoamXZ * 0.9 + vec2(uTime * 0.15, 0.0)) - 0.7);
 
   float rough = smoothstep(0.5, 0.9, uFoam);
+  float lines = max(rough, uLines);
   vec2 s = vFoamXZ * vec2(0.22, 1.4) + vec2(uTime * 0.3, 0.0);
   float sn = foamNoise(s) * 0.7 + foamNoise(s * 2.1 + 9.0) * 0.3;
-  float region = smoothstep(0.55, 0.75, foamNoise(vFoamXZ * 0.04 + vec2(uTime * 0.02, 0.0)));
-  float streaks = rough * region * smoothstep(0.0, 0.03, sn - 0.8) * 0.5;
+  // Rough seas break into patches of streaks; steady wave lines (uLines) spread more evenly.
+  float region = mix(smoothstep(0.55, 0.75, foamNoise(vFoamXZ * 0.04 + vec2(uTime * 0.02, 0.0))), 1.0, uLines * 0.7);
+  float streaks = lines * region * smoothstep(0.0, 0.03, sn - 0.8) * mix(0.5, 0.85, uLines);
 
   foamAmount = max(max(shore, flecks), streaks);
   diffuseColor.rgb = mix(diffuseColor.rgb, uFoamColor, foamAmount * uFoamOpacity);
+
+  // Vignette: an ellipse around the islands (wider than deep, like the table) stays as it is and the
+  // sea darkens beyond it, deepest toward the corners of the screen.
+  float reach = length(vFoamXZ / vec2(${VIGNETTE.x.toFixed(1)}, ${VIGNETTE.z.toFixed(1)}));
+  diffuseColor.rgb *= 1.0 - uVignette * smoothstep(1.0, 2.2, reach);
 }
 `;
 
-// Night glow: the foam lights up teal on its own, so it shows even when the scene is dark.
+// Faint glow: the foam and wave lines light up a little on their own, so they still read on a dark sea.
 const GLOW_BODY = /* glsl */ `
-totalEmissiveRadiance += uGlowColor * foamAmount * uGlow * 0.8;
+totalEmissiveRadiance += uFoamColor * foamAmount * uGlow;
 `;
 
 /** Standard sea material plus shore foam and rough-sea streaks; the sea's own colour is untouched. */
@@ -117,13 +129,15 @@ export function createSeaMaterial(): { readonly material: MeshStandardMaterial; 
   const uniforms: FoamUniforms = {
     uFoam: { value: 0 },
     uTime: { value: 0 },
+    uVignette: { value: 0 },
+    uLines: { value: 0 },
     uGlow: { value: 0 },
     uShore: { value: Array.from({ length: MAX_SHORES * SHORE_POINTS }, () => new Vector2()) },
     uShoreCount: { value: 0 },
   };
   const material = new MeshStandardMaterial({ roughness: 0.6, metalness: 0.1 });
   material.onBeforeCompile = (shader) => {
-    Object.assign(shader.uniforms, uniforms, { uFoamColor: { value: new Color(FOAM_COLOR) }, uFoamOpacity: { value: FOAM_OPACITY }, uGlowColor: { value: new Color(GLOW_COLOR) } });
+    Object.assign(shader.uniforms, uniforms, { uFoamColor: { value: new Color(FOAM_COLOR) }, uFoamOpacity: { value: FOAM_OPACITY } });
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', `#include <common>\n${VERTEX_HEAD}`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>\n${VERTEX_BODY}`);

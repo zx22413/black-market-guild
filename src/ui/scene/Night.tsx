@@ -1,12 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
-import { AdditiveBlending, CanvasTexture, Object3D, type InstancedMesh, type PointLight } from 'three';
-import type { SeaPoint } from './islandShape';
-import { wrapAcross } from './fogMath';
-import { PLANKTON_AREA, lanternSpots, planktonField } from './nightMath';
-import { islandDiscs, seaSurfaceY } from './seaWave';
-import { useSwell, useWavePhase } from './SwellContext';
-import { WIND_DIRECTION } from './windMath';
+import { AdditiveBlending, CanvasTexture, type PointLight } from 'three';
+import { lanternSpots } from './nightMath';
 
 const LANTERN_COLOR = '#ffa04a';
 const LANTERN_LIGHT = '#ff9440';
@@ -18,9 +13,6 @@ const POST_HEIGHT = 1.6;
 const LANTERN_REACH = 12;
 const LANTERN_INTENSITY = 28;
 const FLICKER = 0.15;
-const PLANKTON_COLOR = '#5ff0d6';
-/** Plankton drift slowly with the wind, in units per second. */
-const PLANKTON_DRIFT = 0.4;
 
 let glow: CanvasTexture | null = null;
 
@@ -86,50 +78,14 @@ function PostLantern({ position, seed }: { readonly position: readonly [number, 
   );
 }
 
-/** Glowing plankton specks on the water: they ride the waves, drift with the wind and twinkle. */
-function PlanktonGlow({ shores }: { readonly shores: readonly (readonly SeaPoint[])[] }) {
-  const swell = useSwell();
-  const phase = useWavePhase();
-  const field = useMemo(() => planktonField(islandDiscs(shores), Math.random), [shores]);
-  const mesh = useRef<InstancedMesh>(null);
-  const dummy = useMemo(() => new Object3D(), []);
-
-  useFrame(({ clock }) => {
-    const m = mesh.current;
-    if (!m) return;
-    const t = clock.elapsedTime;
-    const drift = t * PLANKTON_DRIFT;
-    field.forEach((p, i) => {
-      // Drift with the wind; whatever drifts off one side of the table comes back on the other.
-      const x = wrapAcross(p.x + WIND_DIRECTION[0] * drift, PLANKTON_AREA.x);
-      const z = wrapAcross(p.z + WIND_DIRECTION[1] * drift, PLANKTON_AREA.z);
-      const twinkle = 0.35 + 0.65 * Math.max(0, Math.sin(t * 1.3 + p.phase));
-      dummy.position.set(x, seaSurfaceY(x, z, phase.current, swell.current.height) + 0.06, z);
-      dummy.rotation.set(-Math.PI / 2, 0, 0);
-      dummy.scale.setScalar(p.size * twinkle);
-      dummy.updateMatrix();
-      m.setMatrixAt(i, dummy.matrix);
-    });
-    m.instanceMatrix.needsUpdate = true;
-  });
-
-  return (
-    <instancedMesh ref={mesh} args={[undefined, undefined, field.length]} frustumCulled={false}>
-      <circleGeometry args={[1, 12]} />
-      <meshBasicMaterial color={PLANKTON_COLOR} transparent opacity={0.75} blending={AdditiveBlending} depthWrite={false} toneMapped={false} />
-    </instancedMesh>
-  );
-}
-
 /**
- * Moonless night: plankton glimmering on the dark water and a lantern post by every dock. (The shore
- * foam's teal glow comes from the sea itself; ship lanterns from `VoyageShip`.)
+ * Moonless night: a lantern post by every dock, the warm accents on a moonlit table. (The moonlight,
+ * the sea's vignette and the ship lanterns come from the weather look, `Sea` and `VoyageShip`.)
  */
-export function Night({ seatAngles, shores }: { readonly seatAngles: readonly number[]; readonly shores: readonly (readonly SeaPoint[])[] }) {
+export function Night({ seatAngles }: { readonly seatAngles: readonly number[] }) {
   const spots = useMemo(() => lanternSpots(seatAngles), [seatAngles]);
   return (
     <group>
-      <PlanktonGlow shores={shores} />
       {spots.map((position, i) => (
         <PostLantern key={i} position={position} seed={i} />
       ))}

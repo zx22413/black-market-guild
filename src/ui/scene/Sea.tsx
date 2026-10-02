@@ -14,9 +14,14 @@ interface SeaProps {
   readonly color: string;
   /** Island waterlines in world space, for the shore foam. */
   readonly shores: readonly (readonly SeaPoint[])[];
+  /** How much the sea darkens toward the corners around the islands, 0..1. */
+  readonly vignette?: number;
+  /** White wave lines on open water, 0..1, and how faintly the foam glows, 0..1. */
+  readonly lines?: number;
+  readonly glow?: number;
 }
 
-export function Sea({ color, shores }: SeaProps) {
+export function Sea({ color, shores, vignette = 0, lines = 0, glow = 0 }: SeaProps) {
   const swell = useSwell();
   const phase = useWavePhase();
   const mesh = useRef<Mesh>(null);
@@ -30,11 +35,16 @@ export function Sea({ color, shores }: SeaProps) {
     sea.material.color.set(color);
   }, [sea, color]);
   useEffect(() => setShores(sea.uniforms, shores), [sea, shores]);
+  useEffect(() => {
+    sea.uniforms.uVignette.value = vignette;
+    sea.uniforms.uLines.value = lines;
+    sea.uniforms.uGlow.value = glow;
+  }, [sea, vignette, lines, glow]);
   useEffect(() => () => sea.material.dispose(), [sea]);
   const rest = useMemo(() => Float32Array.from(geometry.attributes.position!.array), [geometry]);
 
   useFrame(() => {
-    const { height, foam, glow } = swell.current;
+    const { height, foam } = swell.current;
     const t = phase.current;
     const position = geometry.attributes.position!;
     for (let i = 0; i < position.count; i++) {
@@ -45,7 +55,6 @@ export function Sea({ color, shores }: SeaProps) {
     position.needsUpdate = true;
     geometry.computeVertexNormals();
     sea.uniforms.uFoam.value = foam;
-    sea.uniforms.uGlow.value = glow;
     sea.uniforms.uTime.value = t;
     if (mesh.current) mesh.current.position.y = SEA_LEVEL - seaSink(height);
   });

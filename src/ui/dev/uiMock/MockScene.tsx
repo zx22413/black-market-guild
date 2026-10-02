@@ -9,7 +9,7 @@ import { Sea } from '../../scene/Sea';
 import { SwellProvider } from '../../scene/SwellContext';
 import { islandShorelines, playerIslandSeed } from '../../scene/islandShape';
 import { VoyageShip } from '../../scene/Ships';
-import { WEATHER, type WeatherLook } from '../../scene/weather';
+import { WEATHER, fillOf, type WeatherLook } from '../../scene/weather';
 import { WeatherFog } from '../../scene/WeatherFog';
 import { MOCK_SEATS, MOCK_TABLE } from './mockData';
 import { CoinStack } from './Coins3d';
@@ -68,7 +68,7 @@ export function MockScene({ variant, tone, font, labels }: MockSceneProps) {
       <color attach="background" args={[look.sky]} />
       <WeatherFog color={look.sky} near={look.fogNear} far={look.fogFar} />
       <ambientLight intensity={look.ambient} />
-      <hemisphereLight args={[tone === 'ftk' ? '#9db8ff' : look.sky, '#3a6b4a', look.hemisphere]} />
+      <hemisphereLight args={[tone === 'ftk' ? '#9db8ff' : look.sky, fillOf(look).ground, fillOf(look).intensity]} />
       <directionalLight position={[-40, 60, 30]} intensity={look.sun} color={look.sunColor} castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-80} shadow-camera-right={80} shadow-camera-top={80} shadow-camera-bottom={-80} />
       <SwellProvider target={look.swell}>
       <Suspense fallback={null}>
