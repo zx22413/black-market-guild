@@ -94,6 +94,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
   const pickedId = partner?.kind === 'player' ? partner.id : null;
   useEffect(closeInspection, [pickedId, closeInspection]);
   const candidates = useMemo(() => (request && activeView ? (partnerChoice(request.context)?.candidates ?? []) : []), [request, activeView]);
+  const partnerPhase = request?.context.decision.phase === 'pick' ? 'pick' : 'apply';
   const selectableIslands = useMemo(() => new Set<PlayerId>(candidates), [candidates]);
 
   const submit = (action: Action) => {
@@ -120,7 +121,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
         onSelectIsland={(id) => setPartner({ kind: 'player', id })}
         islandCard={(() => {
           const seat = table.seats.find((s) => s.id === pickedId);
-          return seat ? <PartnerCard seat={seat} rules={rules} inspection={inspection} /> : null;
+          return seat ? <PartnerCard seat={seat} rules={rules} phase={partnerPhase} viewerAssets={viewerSeat?.assets ?? []} inspection={inspection} /> : null;
         })()}
         secret={activeView?.myDeployment ?? null}
         intel={intel}

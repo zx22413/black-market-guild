@@ -109,13 +109,23 @@ export function TableScene(props: TableSceneProps) {
       const { position } = shipPose(angles[ship.lane]!, ship.state);
       return { id: `ship-${ship.id}`, position: [position.x, SHIP_LABEL_HEIGHT, position.z] };
     });
-    // The island card hangs above the picked island, or below it when the top of the screen is full.
+    // The island card hangs above the picked island, or below it when the top of the screen is
+    // full. The island at the far middle would then cover the target island, so its card opens
+    // to the left (away from the ranking rail) instead.
     const picked = table.seats.findIndex((s) => s.id === selectedIsland);
     const [cx, , cz] = picked >= 0 ? seatPosition(angles[picked]!) : [0, 0, 0];
+    const farMiddle = cz < 0 && Math.abs(cx) < 5;
     const cardAnchors: LabelAnchor[] =
-      picked >= 0
-        ? [{ id: 'island-card', position: [cx, 7, cz - PLAYER_ISLAND_RADIUS * 0.4], flip: [cx, 1, cz + PLAYER_ISLAND_RADIUS + 3] }]
-        : [];
+      picked < 0
+        ? []
+        : [
+            {
+              id: 'island-card',
+              position: [cx, 7, cz - PLAYER_ISLAND_RADIUS * 0.4],
+              flip: [cx, 1, cz + PLAYER_ISLAND_RADIUS + 3],
+              ...(farMiddle ? { side: { position: [cx - PLAYER_ISLAND_RADIUS - 2, 3, cz] as Vec3, dir: -1 as const } } : {}),
+            },
+          ];
     return [{ id: 'target', position: TARGET_PLATE }, ...seatAnchors, ...shipAnchors, ...cardAnchors];
   }, [angles, table, selectedIsland]);
 

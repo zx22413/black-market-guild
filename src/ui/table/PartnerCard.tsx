@@ -5,6 +5,7 @@ import { Icon } from '../components/Icon';
 import { ASSET_LABELS } from '../labels';
 import type { SceneSeat } from '../scene/tableModel';
 import { assetText } from '../rulesText';
+import { jointBenefits } from './jointBenefits';
 import './partner.css';
 
 export interface AssetInspection {
@@ -36,11 +37,15 @@ export function useAssetInspection(): AssetInspection {
 interface PartnerCardProps {
   readonly seat: SceneSeat;
   readonly rules: Rules;
+  /** Which side of the joint venture the viewer is on. */
+  readonly phase: 'apply' | 'pick';
+  readonly viewerAssets: readonly AssetId[];
   readonly inspection: AssetInspection;
 }
 
 /** Public ledger of the picked island, hung on the island itself; never shows black money. */
-export function PartnerCard({ seat, rules, inspection }: PartnerCardProps) {
+export function PartnerCard({ seat, rules, phase, viewerAssets, inspection }: PartnerCardProps) {
+  const benefits = jointBenefits({ phase, viewerAssets, partnerAssets: seat.assets, rules });
   const opened = seat.assets.filter((a) => inspection.seen.has(`${seat.id}:${a}`)).length;
   return (
     <div className="partner-card" style={{ borderColor: seat.color }}>
@@ -79,6 +84,27 @@ export function PartnerCard({ seat, rules, inspection }: PartnerCardProps) {
       ) : (
         <p className="partner-detail">尚未擁有任何資產</p>
       )}
+      <div className="partner-benefits">
+        <h4>與{seat.name}合資</h4>
+        <div className="ledger-row">
+          <span>出資</span>
+          <b>
+            你 {benefits.yourShare} G・對方 {benefits.partnerShare} G
+          </b>
+        </div>
+        <div className="ledger-row">
+          <span>抵達各分</span>
+          <b>{benefits.payoutEach} G</b>
+        </div>
+        <ul>
+          {benefits.lines.map((line) => (
+            <li key={line.text} className={line.tone}>
+              {line.text}
+            </li>
+          ))}
+        </ul>
+        <small>不含市場事件與走私</small>
+      </div>
     </div>
   );
 }
