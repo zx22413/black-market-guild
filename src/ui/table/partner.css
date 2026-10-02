@@ -1,0 +1,113 @@
+/* Select-then-confirm partner picker: info card above the action strip. */
+
+.partner-card {
+  position: relative;
+  width: min(420px, 100%);
+  padding: 10px 14px;
+  background: rgba(252, 244, 226, 0.96);
+  border: 3px solid #7a5a36;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(30, 20, 5, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: pop-in 0.25s ease-out both;
+}
+
+.partner-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1rem;
+}
+
+.partner-name i,
+.partner-option i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px #3d2211;
+}
+
+.partner-assets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.asset-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: #3d2211;
+  background: #f6e7c4;
+  border: 2px solid #b08850;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.asset-chip .icon {
+  filter: brightness(0.35) sepia(1) saturate(2) hue-rotate(-10deg);
+}
+
+.asset-chip.open {
+  background: #ffe9a8;
+  border-color: #8a5a10;
+}
+
+/* A pulsing dot says "tap me" until the ability text has been opened once. */
+.asset-chip.unseen::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #e8a21c;
+  box-shadow: 0 0 0 2px #fff6dc;
+  animation: chip-hint 1.4s ease-in-out infinite;
+}
+
+@keyframes chip-hint {
+  0%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+}
+
+.partner-detail {
+  margin: 4px 0 0;
+  min-height: 2.4em;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #6b4a2b;
+}
+
+.partner-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+}
+
+.scene-root .action-pill button.partner-option.selected {
+  background: #ffe9a8;
+  outline: 3px solid #e8a21c;
+}
+
+.action-pill button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

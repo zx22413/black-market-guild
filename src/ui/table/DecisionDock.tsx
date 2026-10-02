@@ -1,20 +1,25 @@
 import type { DecisionContext } from '../../bots';
-import { ROLE_IDS, type Action, type PlayerId, type RoleId, type ShipId } from '../../game';
+import { ROLE_IDS, type Action, type RoleId, type ShipId } from '../../game';
 import { assetIcon, roleIcon } from '../art';
 import { Icon } from '../components/Icon';
 import { ASSET_LABELS, ROLE_LABELS } from '../labels';
+import type { SceneSeat } from '../scene/tableModel';
 import { assetText, roleText } from '../rulesText';
-
-type NameOf = (id: PlayerId) => string;
+import { PartnerPicker } from './PartnerPicker';
+import { partnerChoice, type PartnerPick } from './partnerChoice';
 
 export interface DecisionDockProps {
   readonly context: DecisionContext;
-  readonly nameOf: NameOf;
   readonly describeShip: (id: ShipId) => string;
   /** Role card picked during deployment; its targets are then chosen on the table. */
   readonly role: RoleId | null;
   readonly onRole: (role: RoleId | null) => void;
   readonly onSubmit: (action: Action) => void;
+  /** Seats as drawn on the table; their public ledgers feed the partner info card. */
+  readonly seats: readonly SceneSeat[];
+  /** Pending (not yet confirmed) partner selection, shared with the table's island highlight. */
+  readonly partner: PartnerPick | null;
+  readonly onPartner: (pick: PartnerPick | null) => void;
 }
 
 /** Fans a hand of cards in the bottom-right corner; the picked card rises out of the fan. */
@@ -50,7 +55,7 @@ function Choices<T extends Action['type']>({
 }
 
 /** Bottom-of-table controls for the viewer's current decision, one layout per phase. */
-export function DecisionDock({ context, nameOf, describeShip, role, onRole, onSubmit }: DecisionDockProps) {
+export function DecisionDock({ context, describeShip, role, onRole, onSubmit, seats, partner, onPartner }: DecisionDockProps) {
   const { view, decision } = context;
   const { rules } = view;
   const common = { context, onSubmit };
@@ -93,22 +98,10 @@ export function DecisionDock({ context, nameOf, describeShip, role, onRole, onSu
         </div>
       );
     case 'apply':
-      return (
-        <div className="action-pill">
-          <span>
-            應徵合資
-            {view.recruitment.recruiters.includes(view.playerId) && <small>（應徵他人會撤回你的招募）</small>}
-          </span>
-          <Choices {...common} type="apply" label={(a) => (a.recruiterId ? `應徵 ${nameOf(a.recruiterId)}` : '不應徵')} primary={(a) => a.recruiterId !== null} />
-        </div>
-      );
-    case 'pick':
-      return (
-        <div className="action-pill">
-          <span>挑選合資夥伴</span>
-          <Choices {...common} type="pick" label={(a) => (a.applicantId ? `選擇 ${nameOf(a.applicantId)}` : '都不選')} primary={(a) => a.applicantId !== null} />
-        </div>
-      );
+    case 'pick': {
+      const choice = partnerChoice(context);
+      return choice ? <PartnerPicker choice={choice} note={choice.phase === 'apply' && view.recruitment.recruiters.includes(view.playerId) ? '應徵他人會撤回你的招募' : null} seats={seats} rules={rules} pick={partner} onPick={onPartner} onSubmit={onSubmit} /> : null;
+    }
     case 'sailing-choice':
       return (
         <div className="action-pill">
@@ -135,7 +128,7 @@ export function DecisionDock({ context, nameOf, describeShip, role, onRole, onSu
   }
 }
 
-function RoleDeployment({ context, describeShip, role, onRole, onSubmit }: Omit<DecisionDockProps, 'nameOf'>) {
+function RoleDeployment({ context, describeShip, role, onRole, onSubmit }: Pick<DecisionDockProps, 'context' | 'describeShip' | 'role' | 'onRole' | 'onSubmit'>) {
   const deploys = context.legalActions.filter((a) => a.type === 'deploy-role');
   const available = new Set(deploys.map((a) => a.role));
   const none = deploys.find((a) => a.role === null);

@@ -27,6 +27,8 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 | `session/useSession.ts` | `useSyncExternalStore` 包裝。 |
 | `table/TableScreen.tsx` | 對局畫面：3D 桌面加上角落介面、決定列、日誌抽屜、結算與換人遮蔽（疊在場景上，不重建場景）。 |
 | `table/DecisionDock.tsx` | 七種決定的操作：資產與角色牌以右下角手牌呈現，部署角色時可直接點海上的船當目標，其餘決定在底部選項列。 |
+| `table/PartnerPicker.tsx`、`table/partnerChoice.ts` | 應徵與挑選夥伴階段的「選取 → 看資訊 → 確認」：點島（或底部名單）選取，島嶼出現金色外框，上方資訊卡顯示該商會的公開資金、資產與建築；建築晶片要點開才顯示能力說明（未看過的有呼吸光點提示）；「不應徵／都不選」也要先選取再按確認。黑錢不會出現。`partnerChoice` 從合法行動算出候選與可確認的行動。 |
+| `scene/IslandRing.tsx` | 候選島的淡色呼吸環與已選島的金色粗框。 |
 | `table/TableHud.tsx` | 左上回合與事件；左下自己的帳本：資金、資產價值與已蓋的建築、只給本人看的黑錢。 |
 | `table/useCashFloats.ts`、`table/CashFloats.tsx` | 把新播放的現金異動變成短暫浮起的「+350 G 航運收入」。 |
 | `screens/` | `SetupScreen`（模式與座位；手繪木框風格，樣式在 `setup.css`）、`HandoffScreen`（hot-seat 遮蔽）、`ResultScreen`。 |

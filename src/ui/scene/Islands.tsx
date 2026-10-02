@@ -1,4 +1,6 @@
+import type { ThreeEvent } from '@react-three/fiber';
 import { IslandBase } from './IslandBase';
+import { IslandRing } from './IslandRing';
 import { Building } from './buildings/Building';
 import { ASSET_BUILDING_SCALE, ASSET_LOTS, PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatPosition } from './layout';
 import { TARGET_ISLAND_HEIGHT, TARGET_ISLAND_SEED, playerIslandHeading } from './islandShape';
@@ -29,13 +31,33 @@ interface PlayerIslandProps {
   readonly seat: Pick<SceneSeat, 'assets' | 'color'>;
   readonly angle: number;
   readonly seed: number;
+  /** Partner candidate right now: shows a hint ring and can be clicked. */
+  readonly selectable?: boolean;
+  /** The current (unconfirmed) pick: shown with a bold frame. */
+  readonly selected?: boolean;
+  readonly onSelect?: () => void;
 }
 
 /** One guild's home island: dock toward the center, owned assets in fixed lots. */
-export function PlayerIsland({ seat, angle, seed }: PlayerIslandProps) {
+export function PlayerIsland({ seat, angle, seed, selectable = false, selected = false, onSelect }: PlayerIslandProps) {
   const home = seatPosition(angle);
+  const click = (e: ThreeEvent<MouseEvent>) => {
+    if (!selectable) return;
+    e.stopPropagation();
+    onSelect?.();
+  };
+  const cursor = (value: string) => () => {
+    if (selectable) document.body.style.cursor = value;
+  };
   return (
-    <group position={home} rotation={[0, playerIslandHeading(angle), 0]}>
+    <group
+      position={home}
+      rotation={[0, playerIslandHeading(angle), 0]}
+      onClick={click}
+      onPointerOver={cursor('pointer')}
+      onPointerOut={cursor('')}
+    >
+      {(selectable || selected) && <IslandRing selected={selected} />}
       <IslandBase radius={PLAYER_ISLAND_RADIUS} seed={seed} />
       <group position={[0, PLATEAU, 0]}>
         {seat.assets.map((asset) => (

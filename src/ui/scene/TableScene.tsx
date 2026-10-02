@@ -43,6 +43,11 @@ export interface TableSceneProps {
   /** Ships the viewer may click as a role target right now. */
   readonly selectableShips: ReadonlySet<ShipId>;
   readonly onSelectShip: (id: ShipId) => void;
+  /** Guild islands the viewer may pick as a joint-venture partner right now. */
+  readonly selectableIslands: ReadonlySet<PlayerId>;
+  /** The island picked but not yet confirmed. */
+  readonly selectedIsland: PlayerId | null;
+  readonly onSelectIsland: (id: PlayerId) => void;
   /** The viewer's own locked deployment, shown only to them before the reveal. */
   readonly secret: Deployment | null;
   /** Seats that already locked this phase's choice. */
@@ -84,7 +89,7 @@ function Ready({ onReady }: { readonly onReady: () => void }) {
 
 /** The whole 3D table: guild islands around the target island, lanes, ships and tags. */
 export function TableScene(props: TableSceneProps) {
-  const { table, weather, nameOf, selectableShips, onSelectShip, secret, intel, submitted, floats, beats, rankStep, onReady } = props;
+  const { table, weather, nameOf, selectableShips, onSelectShip, selectableIslands, selectedIsland, onSelectIsland, secret, intel, submitted, floats, beats, rankStep, onReady } = props;
   const look = WEATHER[weather ?? 'clear'];
   const angles = useMemo(() => seatAngles(table.seats.length), [table.seats.length]);
   const points = useMemo(() => fitPoints(angles), [angles]);
@@ -144,7 +149,15 @@ export function TableScene(props: TableSceneProps) {
             <Routes angles={angles} colors={table.seats.map((s) => s.color)} />
             <TargetIsland />
             {table.seats.map((seat, i) => (
-              <PlayerIsland key={seat.id} seat={seat} angle={angles[i]!} seed={playerIslandSeed(i)} />
+              <PlayerIsland
+                key={seat.id}
+                seat={seat}
+                angle={angles[i]!}
+                seed={playerIslandSeed(i)}
+                selectable={selectableIslands.has(seat.id)}
+                selected={selectedIsland === seat.id}
+                onSelect={() => onSelectIsland(seat.id)}
+              />
             ))}
             {table.ships.map((ship) => (
               <group key={ship.id}>

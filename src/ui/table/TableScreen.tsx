@@ -13,6 +13,7 @@ import { ResultScreen } from '../screens/ResultScreen';
 import type { GameSession } from '../session/gameSession';
 import { usePlayback } from '../session/usePlayback';
 import { DecisionDock } from './DecisionDock';
+import { partnerChoice, type PartnerPick } from './partnerChoice';
 import { EventBand, LedgerCard } from './TableHud';
 import { useCashFloats } from './useCashFloats';
 import { useRecruitBeats } from './useRecruitBeats';
@@ -31,6 +32,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
   const playback = usePlayback(session);
   const { snapshot, board, played, request, view, activeView, holding, caughtUp } = playback;
   const [role, setRole] = useState<RoleId | null>(null);
+  const [partner, setPartner] = useState<PartnerPick | null>(null);
   const [logOpen, setLogOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const floats = useCashFloats(played);
@@ -80,8 +82,15 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
     );
   }, [deploying, role, request]);
 
+  // A new decision starts with nothing picked, so a stale pick never carries into the next phase.
+  const requestId = request?.id;
+  useEffect(() => setPartner(null), [requestId]);
+  const candidates = useMemo(() => (request && activeView ? (partnerChoice(request.context)?.candidates ?? []) : []), [request, activeView]);
+  const selectableIslands = useMemo(() => new Set<PlayerId>(candidates), [candidates]);
+
   const submit = (action: Action) => {
     setRole(null);
+    setPartner(null);
     playback.submit(action);
   };
   const selectShip = (shipId: ShipId) => {
@@ -98,6 +107,9 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
         nameOf={nameOf}
         selectableShips={selectableShips}
         onSelectShip={selectShip}
+        selectableIslands={selectableIslands}
+        selectedIsland={partner?.kind === 'player' ? partner.id : null}
+        onSelectIsland={(id) => setPartner({ kind: 'player', id })}
         secret={activeView?.myDeployment ?? null}
         intel={intel}
         submitted={activeView?.submittedPlayerIds ?? []}
@@ -145,11 +157,13 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
           <DecisionDock
             key={request.id}
             context={request.context}
-            nameOf={nameOf}
             describeShip={describeShip}
             role={role}
             onRole={setRole}
             onSubmit={submit}
+            seats={table.seats}
+            partner={partner}
+            onPartner={setPartner}
           />
         )}
         {caughtUp && !request && snapshot.status === 'running' && (
