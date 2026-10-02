@@ -13,6 +13,7 @@ import { ResultScreen } from '../screens/ResultScreen';
 import type { GameSession } from '../session/gameSession';
 import { usePlayback } from '../session/usePlayback';
 import { DecisionDock } from './DecisionDock';
+import { PartnerCard, useAssetInspection } from './PartnerCard';
 import { partnerChoice, type PartnerPick } from './partnerChoice';
 import { EventBand, LedgerCard } from './TableHud';
 import { useCashFloats } from './useCashFloats';
@@ -33,6 +34,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
   const { snapshot, board, played, request, view, activeView, holding, caughtUp } = playback;
   const [role, setRole] = useState<RoleId | null>(null);
   const [partner, setPartner] = useState<PartnerPick | null>(null);
+  const inspection = useAssetInspection();
   const [logOpen, setLogOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const floats = useCashFloats(played);
@@ -84,7 +86,13 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
 
   // A new decision starts with nothing picked, so a stale pick never carries into the next phase.
   const requestId = request?.id;
-  useEffect(() => setPartner(null), [requestId]);
+  const { reset: resetInspection, close: closeInspection } = inspection;
+  useEffect(() => {
+    setPartner(null);
+    resetInspection();
+  }, [requestId, resetInspection]);
+  const pickedId = partner?.kind === 'player' ? partner.id : null;
+  useEffect(closeInspection, [pickedId, closeInspection]);
   const candidates = useMemo(() => (request && activeView ? (partnerChoice(request.context)?.candidates ?? []) : []), [request, activeView]);
   const selectableIslands = useMemo(() => new Set<PlayerId>(candidates), [candidates]);
 
@@ -110,6 +118,10 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
         selectableIslands={selectableIslands}
         selectedIsland={partner?.kind === 'player' ? partner.id : null}
         onSelectIsland={(id) => setPartner({ kind: 'player', id })}
+        islandCard={(() => {
+          const seat = table.seats.find((s) => s.id === pickedId);
+          return seat ? <PartnerCard seat={seat} rules={rules} inspection={inspection} /> : null;
+        })()}
         secret={activeView?.myDeployment ?? null}
         intel={intel}
         submitted={activeView?.submittedPlayerIds ?? []}

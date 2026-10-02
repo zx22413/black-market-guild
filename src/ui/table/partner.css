@@ -1,8 +1,10 @@
 /* Select-then-confirm partner picker: info card above the action strip. */
 
+/* Hangs from the picked island (positioned by LabelTracker); a tail points back at the island. */
 .partner-card {
   position: relative;
-  width: min(420px, 100%);
+  width: 250px;
+  pointer-events: auto;
   padding: 10px 14px;
   background: rgba(252, 244, 226, 0.96);
   border: 3px solid #7a5a36;
@@ -12,6 +14,30 @@
   flex-direction: column;
   gap: 4px;
   animation: pop-in 0.25s ease-out both;
+}
+
+.partner-card::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  background: rgba(252, 244, 226, 0.96);
+  border: inherit;
+  rotate: 45deg;
+  translate: -50% 0;
+}
+
+.partner-float[data-flip='above'] .partner-card::after {
+  bottom: -9px;
+  border-top: 0;
+  border-left: 0;
+}
+
+.partner-float[data-flip='below'] .partner-card::after {
+  top: -9px;
+  border-bottom: 0;
+  border-right: 0;
 }
 
 .partner-name {
@@ -89,7 +115,7 @@
 
 .partner-detail {
   margin: 4px 0 0;
-  min-height: 2.4em;
+  min-height: 3.6em;
   font-size: 0.8rem;
   line-height: 1.4;
   color: #6b4a2b;

@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber';
-import { Suspense, useEffect, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import type { Deployment, PlayerId, ShipId, VoyageEventId } from '../../game';
 import { CameraRig, type FitPoint, type SafeArea } from './CameraRig';
 import { PlayerIsland, TargetIsland } from './Islands';
@@ -48,6 +48,8 @@ export interface TableSceneProps {
   /** The island picked but not yet confirmed. */
   readonly selectedIsland: PlayerId | null;
   readonly onSelectIsland: (id: PlayerId) => void;
+  /** Info card hung on the selected island. */
+  readonly islandCard: ReactNode;
   /** The viewer's own locked deployment, shown only to them before the reveal. */
   readonly secret: Deployment | null;
   /** Seats that already locked this phase's choice. */
@@ -89,7 +91,7 @@ function Ready({ onReady }: { readonly onReady: () => void }) {
 
 /** The whole 3D table: guild islands around the target island, lanes, ships and tags. */
 export function TableScene(props: TableSceneProps) {
-  const { table, weather, nameOf, selectableShips, onSelectShip, selectableIslands, selectedIsland, onSelectIsland, secret, intel, submitted, floats, beats, rankStep, onReady } = props;
+  const { table, weather, nameOf, selectableShips, onSelectShip, selectableIslands, selectedIsland, onSelectIsland, islandCard, secret, intel, submitted, floats, beats, rankStep, onReady } = props;
   const look = WEATHER[weather ?? 'clear'];
   const angles = useMemo(() => seatAngles(table.seats.length), [table.seats.length]);
   const points = useMemo(() => fitPoints(angles), [angles]);
@@ -107,8 +109,15 @@ export function TableScene(props: TableSceneProps) {
       const { position } = shipPose(angles[ship.lane]!, ship.state);
       return { id: `ship-${ship.id}`, position: [position.x, SHIP_LABEL_HEIGHT, position.z] };
     });
-    return [{ id: 'target', position: TARGET_PLATE }, ...seatAnchors, ...shipAnchors];
-  }, [angles, table]);
+    // The island card hangs above the picked island, or below it when the top of the screen is full.
+    const picked = table.seats.findIndex((s) => s.id === selectedIsland);
+    const [cx, , cz] = picked >= 0 ? seatPosition(angles[picked]!) : [0, 0, 0];
+    const cardAnchors: LabelAnchor[] =
+      picked >= 0
+        ? [{ id: 'island-card', position: [cx, 7, cz - PLAYER_ISLAND_RADIUS * 0.4], flip: [cx, 1, cz + PLAYER_ISLAND_RADIUS + 3] }]
+        : [];
+    return [{ id: 'target', position: TARGET_PLATE }, ...seatAnchors, ...shipAnchors, ...cardAnchors];
+  }, [angles, table, selectedIsland]);
 
   const labels = useRef(new Map<string, HTMLElement>());
   const pin = (id: string) => (element: HTMLElement | null) => {
@@ -178,6 +187,11 @@ export function TableScene(props: TableSceneProps) {
       </Canvas>
       <div className="scene-labels">
         <TargetSign ref={pin('target')} />
+        {selectedIsland && islandCard && (
+          <div ref={pin('island-card')} className="partner-float">
+            {islandCard}
+          </div>
+        )}
         {table.seats.map((seat, i) => (
           <SeatSign key={seat.id} ref={pin(`seat-${i}`)} seat={seat} floats={floats.filter((f) => f.playerId === seat.id)} beats={beats.filter((b) => b.playerId === seat.id)} />
         ))}

@@ -100,7 +100,7 @@ export function DecisionDock({ context, describeShip, role, onRole, onSubmit, se
     case 'apply':
     case 'pick': {
       const choice = partnerChoice(context);
-      return choice ? <PartnerPicker choice={choice} note={choice.phase === 'apply' && view.recruitment.recruiters.includes(view.playerId) ? '應徵他人會撤回你的招募' : null} seats={seats} rules={rules} pick={partner} onPick={onPartner} onSubmit={onSubmit} /> : null;
+      return choice ? <PartnerPicker choice={choice} note={choice.phase === 'apply' && view.recruitment.recruiters.includes(view.playerId) ? '應徵他人會撤回你的招募' : null} seats={seats} pick={partner} onPick={onPartner} onSubmit={onSubmit} /> : null;
     }
     case 'sailing-choice':
       return (
