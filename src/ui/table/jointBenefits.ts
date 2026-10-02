@@ -46,26 +46,26 @@ export function jointBenefits({ phase, viewerAssets, partnerAssets, rules }: Joi
     if (partnerAssets.includes('shipyard')) {
       lines.push(
         viewerAssets.includes('shipyard')
-          ? { tone: 'note', text: `對方的造船廠與你自己的不疊加，出資仍是 ${applicantShare} G` }
-          : { tone: 'good', text: `對方的造船廠：你的出資 −${cut} G` },
+          ? { tone: 'note', text: `造船廠不疊加，你的出資仍是 ${applicantShare} G` }
+          : { tone: 'good', text: `對方造船廠：你的出資 −${cut} G` },
       );
     }
     if (partnerAssets.includes('exchange')) {
-      lines.push({ tone: 'good', text: `對方的貿易交易所：抵達時總收入 +${bonus} G，你多分 ${bonus / 2} G` });
+      lines.push({ tone: 'good', text: `對方貿易交易所：總收入 +${bonus} G（你多分 ${bonus / 2}）` });
     }
   } else if (viewerAssets.includes('shipyard') || viewerAssets.includes('exchange')) {
-    lines.push({ tone: 'note', text: '合資加成只看發起人（你）的資產，對方的資產不提供加成' });
+    lines.push({ tone: 'note', text: '加成只看發起人（你）的資產' });
   }
   if (partnerAssets.includes('salvage')) {
-    lines.push({ tone: 'good', text: `對方持有打撈公司：與他合資，這艘船沉沒時他賺不到 ${rules.assets.salvage.payout} G` });
+    lines.push({ tone: 'good', text: `對方有打撈公司：合資後他賺不到沉船 ${rules.assets.salvage.payout} G` });
   }
   if (partnerAssets.includes('exchange')) {
-    lines.push({ tone: 'good', text: `對方持有貿易交易所：與他合資，這艘船抵達時他賺不到 ${rules.assets.exchange.payout} G` });
+    lines.push({ tone: 'good', text: `對方有貿易交易所：合資後他賺不到抵達 ${rules.assets.exchange.payout} G` });
   }
   if (partnerAssets.includes('insurance')) {
-    lines.push({ tone: 'note', text: `對方的航運保險：沉沒時的 ${rules.assets.insurance.payout} G 補償只歸他本人` });
+    lines.push({ tone: 'note', text: `對方航運保險：沉沒補償 ${rules.assets.insurance.payout} G 只歸他` });
   }
-  if (lines.length === 0) lines.push({ tone: 'note', text: '對方沒有能強化這艘船的資產，只有基本收益' });
+  if (lines.length === 0) lines.push({ tone: 'note', text: '對方沒有強化這艘船的資產' });
 
   return {
     yourShare: phase === 'apply' ? applicantShare : recruiterShare,

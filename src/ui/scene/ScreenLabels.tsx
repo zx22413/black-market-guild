@@ -22,6 +22,8 @@ export interface LabelAnchor {
 /** Top band of the screen kept free for the event cards. */
 const TOP_MARGIN = 112;
 const SIDE_MARGIN = 8;
+/** Right band kept free for the guild ranking rail. */
+const RIGHT_MARGIN = 260;
 /** Bottom band kept free for the hand of cards and the action strip. */
 const BOTTOM_MARGIN = 190;
 
@@ -52,7 +54,7 @@ export function LabelTracker({
         const sideY = ((1 - below.y) / 2) * size.height;
         const width = element.offsetWidth;
         const height = element.offsetHeight;
-        const left = Math.min(Math.max(dir < 0 ? sideX - width : sideX, SIDE_MARGIN), size.width - width - SIDE_MARGIN);
+        const left = Math.min(Math.max(dir < 0 ? sideX - width : sideX, SIDE_MARGIN), size.width - width - RIGHT_MARGIN);
         const top = Math.min(Math.max(sideY - height / 2, TOP_MARGIN), size.height - height - BOTTOM_MARGIN);
         element.dataset['flip'] = dir < 0 ? 'left' : 'right';
         element.style.setProperty('--tail', `${Math.min(Math.max(sideY - top, 18), height - 18)}px`);
@@ -63,7 +65,7 @@ export function LabelTracker({
       if (anchor.flip) {
         const width = element.offsetWidth;
         const height = element.offsetHeight;
-        x = Math.min(Math.max(x, width / 2 + SIDE_MARGIN), size.width - width / 2 - SIDE_MARGIN);
+        x = Math.min(Math.max(x, width / 2 + SIDE_MARGIN), size.width - width / 2 - RIGHT_MARGIN);
         const flipped = y - height < TOP_MARGIN;
         const hang = flipped ? ((1 - below.set(...anchor.flip).project(camera).y) / 2) * size.height : y - height;
         // Stay between the event cards and the action strip; a card that had to slide loses its tail.

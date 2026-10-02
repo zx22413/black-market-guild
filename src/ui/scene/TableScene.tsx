@@ -122,7 +122,7 @@ export function TableScene(props: TableSceneProps) {
             {
               id: 'island-card',
               position: [cx, 7, cz - PLAYER_ISLAND_RADIUS * 0.4],
-              flip: [cx, 1, cz + PLAYER_ISLAND_RADIUS + 3],
+              flip: [cx, 1, cz + PLAYER_ISLAND_RADIUS + 5.5],
               ...(farMiddle ? { side: { position: [cx - PLAYER_ISLAND_RADIUS - 2, 3, cz] as Vec3, dir: -1 as const } } : {}),
             },
           ];

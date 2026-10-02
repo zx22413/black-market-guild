@@ -52,15 +52,10 @@ export function PartnerCard({ seat, rules, phase, viewerAssets, inspection }: Pa
       <strong className="partner-name">
         <i style={{ background: seat.color }} aria-hidden />
         {seat.name}
+        <span className="partner-money">
+          資金 <b>{seat.cash}</b>・資產 <b>{seat.assetValue}</b> G
+        </span>
       </strong>
-      <div className="ledger-row">
-        <span>資金</span>
-        <b>{seat.cash} G</b>
-      </div>
-      <div className="ledger-row">
-        <span>資產</span>
-        <b>{seat.assetValue} G</b>
-      </div>
       {seat.assets.length > 0 ? (
         <>
           <div className="partner-assets">
@@ -72,29 +67,29 @@ export function PartnerCard({ seat, rules, phase, viewerAssets, inspection }: Pa
                 aria-pressed={inspection.open === asset}
                 onClick={() => inspection.inspect(seat.id, asset)}
               >
-                <Icon name={assetIcon(asset)} size={20} />
+                <Icon name={assetIcon(asset)} size={18} />
                 {ASSET_LABELS[asset]}
               </button>
             ))}
           </div>
           <p className="partner-detail">
-            {inspection.open && seat.assets.includes(inspection.open) ? assetText(inspection.open, rules) : `點建築查看能力（已看 ${opened}/${seat.assets.length}）`}
+            {inspection.open && seat.assets.includes(inspection.open) ? assetText(inspection.open, rules) : `點建築看能力（${opened}/${seat.assets.length}）`}
           </p>
         </>
       ) : (
         <p className="partner-detail">尚未擁有任何資產</p>
       )}
       <div className="partner-benefits">
-        <h4>與{seat.name}合資</h4>
-        <div className="ledger-row">
-          <span>出資</span>
-          <b>
-            你 {benefits.yourShare} G・對方 {benefits.partnerShare} G
-          </b>
-        </div>
-        <div className="ledger-row">
-          <span>抵達各分</span>
-          <b>{benefits.payoutEach} G</b>
+        <div className="partner-stats">
+          <span>
+            你出資<b>{benefits.yourShare}</b>
+          </span>
+          <span>
+            對方出資<b>{benefits.partnerShare}</b>
+          </span>
+          <span title="不含市場事件與走私">
+            抵達各分<b>{benefits.payoutEach}</b>
+          </span>
         </div>
         <ul>
           {benefits.lines.map((line) => (
@@ -103,7 +98,6 @@ export function PartnerCard({ seat, rules, phase, viewerAssets, inspection }: Pa
             </li>
           ))}
         </ul>
-        <small>不含市場事件與走私</small>
       </div>
     </div>
   );

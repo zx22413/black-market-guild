@@ -29,24 +29,28 @@ export function PartnerPicker({ choice, note, seats, pick, onPick, onSubmit }: P
         {copy.prompt}
         {note && <small>（{note}）</small>}
       </span>
-      {choice.candidates.map((id) => {
-        const target = seats.find((s) => s.id === id);
-        const picked = pick?.kind === 'player' && pick.id === id;
-        return (
-          <button key={id} type="button" className={`partner-option ${picked ? 'selected' : ''}`} aria-pressed={picked} onClick={() => onPick({ kind: 'player', id })}>
-            <i style={{ background: target?.color ?? '#7a5a36' }} aria-hidden />
-            {target?.name ?? id}
+      <div className="pill-row">
+        {choice.candidates.map((id) => {
+          const target = seats.find((s) => s.id === id);
+          const picked = pick?.kind === 'player' && pick.id === id;
+          return (
+            <button key={id} type="button" className={`partner-option ${picked ? 'selected' : ''}`} aria-pressed={picked} onClick={() => onPick({ kind: 'player', id })}>
+              <i style={{ background: target?.color ?? '#7a5a36' }} aria-hidden />
+              {target?.name ?? id}
+            </button>
+          );
+        })}
+      </div>
+      <div className="pill-row">
+        {choice.decline && (
+          <button type="button" className={`partner-option ${pick?.kind === 'decline' ? 'selected' : ''}`} aria-pressed={pick?.kind === 'decline'} onClick={() => onPick({ kind: 'decline' })}>
+            {copy.decline}
           </button>
-        );
-      })}
-      {choice.decline && (
-        <button type="button" className={`partner-option ${pick?.kind === 'decline' ? 'selected' : ''}`} aria-pressed={pick?.kind === 'decline'} onClick={() => onPick({ kind: 'decline' })}>
-          {copy.decline}
+        )}
+        <button type="button" className="primary" disabled={action === null} onClick={() => action && onSubmit(action)}>
+          {pick?.kind === 'decline' ? copy.confirmNone : seat ? `${copy.confirm} ${seat.name}` : copy.confirm}
         </button>
-      )}
-      <button type="button" className="primary" disabled={action === null} onClick={() => action && onSubmit(action)}>
-        {pick?.kind === 'decline' ? copy.confirmNone : seat ? `${copy.confirm} ${seat.name}` : copy.confirm}
-      </button>
+      </div>
     </div>
   );
 }
