@@ -33,6 +33,8 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
   const playback = usePlayback(session);
   const { snapshot, board, played, request, view, activeView, holding, caughtUp } = playback;
   const [role, setRole] = useState<RoleId | null>(null);
+  const [ship, setShip] = useState<ShipId | null>(null);
+  const [noDeploy, setNoDeploy] = useState(false);
   const [partner, setPartner] = useState<PartnerPick | null>(null);
   const inspection = useAssetInspection();
   const [logOpen, setLogOpen] = useState(false);
@@ -88,6 +90,8 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
   const requestId = request?.id;
   const { reset: resetInspection, close: closeInspection } = inspection;
   useEffect(() => {
+    setShip(null);
+    setNoDeploy(false);
     setPartner(null);
     resetInspection();
   }, [requestId, resetInspection]);
@@ -97,14 +101,25 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
   const partnerPhase = request?.context.decision.phase === 'pick' ? 'pick' : 'apply';
   const selectableIslands = useMemo(() => new Set<PlayerId>(candidates), [candidates]);
 
+  const chooseRole = (next: RoleId | null) => {
+    setRole(next);
+    setShip(null);
+    setNoDeploy(false);
+  };
+  const chooseNoDeploy = () => {
+    setRole(null);
+    setShip(null);
+    setNoDeploy(true);
+  };
   const submit = (action: Action) => {
     setRole(null);
+    setShip(null);
+    setNoDeploy(false);
     setPartner(null);
     playback.submit(action);
   };
   const selectShip = (shipId: ShipId) => {
-    const action = request?.context.legalActions.find((a) => a.type === 'deploy-role' && a.role === role && a.targetShipId === shipId);
-    if (action) submit(action);
+    if (selectableShips.has(shipId)) setShip(shipId);
   };
 
   const viewerSeat = table.seats.find((s) => s.isViewer);
@@ -116,6 +131,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
         nameOf={nameOf}
         selectableShips={selectableShips}
         onSelectShip={selectShip}
+        selectedShip={ship}
         selectableIslands={selectableIslands}
         selectedIsland={partner?.kind === 'player' ? partner.id : null}
         onSelectIsland={(id) => setPartner({ kind: 'player', id })}
@@ -172,7 +188,11 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
             context={request.context}
             describeShip={describeShip}
             role={role}
-            onRole={setRole}
+            onRole={chooseRole}
+            ship={ship}
+            onShip={selectShip}
+            noDeploy={noDeploy}
+            onNoDeploy={chooseNoDeploy}
             onSubmit={submit}
             seats={table.seats}
             partner={partner}

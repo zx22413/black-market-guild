@@ -188,6 +188,11 @@
   box-shadow: 0 0 0 3px rgba(255, 224, 138, 0.7);
 }
 
+.ship-tag.chosen {
+  border-color: #e8a21c;
+  box-shadow: 0 0 0 4px #ffd45a, 0 0 14px 4px rgba(255, 212, 90, 0.9);
+}
+
 .ship-tag.sunk {
   border-color: #c2553d;
 }
@@ -631,4 +636,13 @@
   to {
     opacity: 0;
   }
+}
+
+/* Option row and confirm row of a select-then-confirm strip sit on separate lines. */
+.action-pill .pill-row {
+  flex: 0 0 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
 }

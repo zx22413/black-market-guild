@@ -78,13 +78,15 @@ interface VoyageShipProps {
   readonly ship: SceneShip;
   readonly angle: number;
   readonly selectable: boolean;
+  /** Picked as a role target but not yet confirmed: bold ring. */
+  readonly chosen?: boolean;
   readonly onSelect: () => void;
   /** Hang a lit lantern at the masthead (moonless night). */
   readonly lantern?: boolean;
 }
 
 /** A guild ship on its lane; glides from dock to the danger zone and on to the target. */
-export function VoyageShip({ ship, angle, selectable, onSelect, lantern = false }: VoyageShipProps) {
+export function VoyageShip({ ship, angle, selectable, chosen = false, onSelect, lantern = false }: VoyageShipProps) {
   const target = useMemo(() => shipPose(angle, ship.state), [angle, ship.state]);
   // Where the ship first appears: its current pose, so a new ship is simply placed and only later
   // state changes sail. Kept in state because a changing position prop would snap the ship back.
@@ -115,8 +117,8 @@ export function VoyageShip({ ship, angle, selectable, onSelect, lantern = false 
       )}
       {selectable && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.7, 0]}>
-          <ringGeometry args={[3.6, 4.4, 32]} />
-          <meshBasicMaterial color="#ffe08a" transparent opacity={0.85} />
+          <ringGeometry args={chosen ? [3.4, 5 , 32] : [3.6, 4.4, 32]} />
+          <meshBasicMaterial color={chosen ? '#ffc21a' : '#ffe08a'} transparent opacity={chosen ? 1 : 0.85} />
         </mesh>
       )}
     </group>

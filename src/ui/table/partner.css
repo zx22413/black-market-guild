@@ -248,11 +248,3 @@
   font-size: 1rem;
   color: #8a5a10;
 }
-
-.action-pill .pill-row {
-  flex: 0 0 100%;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-}

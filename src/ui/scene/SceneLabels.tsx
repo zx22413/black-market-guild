@@ -80,17 +80,19 @@ interface ShipTagProps {
   /** What the viewer's intel merchant saw on this ship; private to the viewer. */
   readonly intel: IntelTrace | null;
   readonly selectable: boolean;
+  /** Picked as a role target, awaiting confirmation. */
+  readonly chosen?: boolean;
   readonly onSelect: () => void;
 }
 
 /** Floating tag over a ship: owners, who targeted it, and its die once the voyage resolves. */
-export function ShipTag({ ref, ship, nameOf, colorOf, secret, intel, selectable, onSelect }: ShipTagProps) {
+export function ShipTag({ ref, ship, nameOf, colorOf, secret, intel, selectable, chosen = false, onSelect }: ShipTagProps) {
   const tokens = ship.roles.length > 0 || secret || ship.rerolled || ship.smuggled > 0 || ship.caughtSmugglers.length > 0;
   return (
     <button
       ref={ref}
       type="button"
-      className={`ship-tag ${ship.state} ${selectable ? 'selectable' : ''}`}
+      className={`ship-tag ${ship.state} ${selectable ? 'selectable' : ''} ${chosen ? 'chosen' : ''}`}
       disabled={!selectable}
       onClick={onSelect}
     >

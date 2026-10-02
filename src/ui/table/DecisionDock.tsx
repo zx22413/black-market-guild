@@ -14,6 +14,11 @@ export interface DecisionDockProps {
   /** Role card picked during deployment; its targets are then chosen on the table. */
   readonly role: RoleId | null;
   readonly onRole: (role: RoleId | null) => void;
+  /** Ship picked as the role's target, and the explicit "deploy nothing" pick; neither is sent until confirmed. */
+  readonly ship: ShipId | null;
+  readonly onShip: (ship: ShipId) => void;
+  readonly noDeploy: boolean;
+  readonly onNoDeploy: () => void;
   readonly onSubmit: (action: Action) => void;
   /** Seats as drawn on the table; their public ledgers feed the partner info card. */
   readonly seats: readonly SceneSeat[];
@@ -55,7 +60,7 @@ function Choices<T extends Action['type']>({
 }
 
 /** Bottom-of-table controls for the viewer's current decision, one layout per phase. */
-export function DecisionDock({ context, describeShip, role, onRole, onSubmit, seats, partner, onPartner }: DecisionDockProps) {
+export function DecisionDock({ context, describeShip, role, onRole, ship, onShip, noDeploy, onNoDeploy, onSubmit, seats, partner, onPartner }: DecisionDockProps) {
   const { view, decision } = context;
   const { rules } = view;
   const common = { context, onSubmit };
@@ -112,7 +117,7 @@ export function DecisionDock({ context, describeShip, role, onRole, onSubmit, se
         </div>
       );
     case 'role-deployment':
-      return <RoleDeployment context={context} describeShip={describeShip} role={role} onRole={onRole} onSubmit={onSubmit} />;
+      return <RoleDeployment context={context} describeShip={describeShip} role={role} onRole={onRole} ship={ship} onShip={onShip} noDeploy={noDeploy} onNoDeploy={onNoDeploy} onSubmit={onSubmit} />;
     case 'intel-reroll':
       return (
         <div className="action-pill">
@@ -128,12 +133,18 @@ export function DecisionDock({ context, describeShip, role, onRole, onSubmit, se
   }
 }
 
-function RoleDeployment({ context, describeShip, role, onRole, onSubmit }: Pick<DecisionDockProps, 'context' | 'describeShip' | 'role' | 'onRole' | 'onSubmit'>) {
+type RoleDeploymentProps = Pick<
+  DecisionDockProps,
+  'context' | 'describeShip' | 'role' | 'onRole' | 'ship' | 'onShip' | 'noDeploy' | 'onNoDeploy' | 'onSubmit'
+>;
+
+function RoleDeployment({ context, describeShip, role, onRole, ship, onShip, noDeploy, onNoDeploy, onSubmit }: RoleDeploymentProps) {
   const deploys = context.legalActions.filter((a) => a.type === 'deploy-role');
   const available = new Set(deploys.map((a) => a.role));
   const none = deploys.find((a) => a.role === null);
   const targets = deploys.filter((a) => a.role !== null && a.role === role);
   const { rules } = context.view;
+  const pending = noDeploy ? none : role && ship ? deploys.find((a) => a.role === role && a.targetShipId === ship) : undefined;
   return (
     <>
       <div className="card-hand">
@@ -153,25 +164,38 @@ function RoleDeployment({ context, describeShip, role, onRole, onSubmit }: Pick<
         ))}
       </div>
       <div className="action-pill">
-        {role ? (
-          <>
-            <span>
-              點選海上的船作為 <b>{ROLE_LABELS[role]}</b> 的目標<small>（{roleText(role, rules)}）</small>
-            </span>
+        <span>
+          {role ? (
+            <>
+              點選海上的船作為 <b>{ROLE_LABELS[role]}</b> 的目標，確認後才會鎖定<small>（{roleText(role, rules)}）</small>
+            </>
+          ) : noDeploy ? (
+            '本回合不部署角色，確認後才會鎖定'
+          ) : (
+            '秘密部署角色：選一張角色牌（鎖定後不能更改）'
+          )}
+        </span>
+        {role && (
+          <div className="pill-row">
             {targets.map((a) =>
               a.type === 'deploy-role' && a.targetShipId ? (
-                <button key={a.targetShipId} onClick={() => onSubmit(a)}>
+                <button key={a.targetShipId} type="button" className={`partner-option ${ship === a.targetShipId ? 'selected' : ''}`} aria-pressed={ship === a.targetShipId} onClick={() => onShip(a.targetShipId!)}>
                   {describeShip(a.targetShipId)}
                 </button>
               ) : null,
             )}
-          </>
-        ) : (
-          <span>秘密部署角色：選一張角色牌（鎖定後不能更改）</span>
+          </div>
         )}
-        {none && (
-          <button onClick={() => onSubmit(none)}>不部署</button>
-        )}
+        <div className="pill-row">
+          {none && (
+            <button type="button" className={`partner-option ${noDeploy ? 'selected' : ''}`} aria-pressed={noDeploy} onClick={onNoDeploy}>
+              不部署
+            </button>
+          )}
+          <button type="button" className="primary" disabled={!pending} onClick={() => pending && onSubmit(pending)}>
+            {noDeploy ? '確認不部署' : role && ship ? `確認部署 ${ROLE_LABELS[role]}` : '確認部署'}
+          </button>
+        </div>
       </div>
     </>
   );

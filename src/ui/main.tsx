@@ -4,13 +4,16 @@ import { App } from './App';
 import './styles.css';
 
 // Dev-only tools: the model viewer at /?dev=models, the UI style mock-up at /?dev=ui-mock, the
-// sinking / shore spray preview at /?dev=sink and
+// sinking / shore spray preview at /?dev=sink, the building construction preview at /?dev=build and
 // window.bmgCapture() (see src/ui/dev).
 const ModelPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/ModelPreview').then((m) => ({ default: m.ModelPreview })))
   : null;
 const SinkPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/SinkPreview').then((m) => ({ default: m.SinkPreview })))
+  : null;
+const BuildPreview = import.meta.env.DEV
+  ? lazy(() => import('./dev/BuildPreview').then((m) => ({ default: m.BuildPreview })))
   : null;
 const UiMock = import.meta.env.DEV ? lazy(() => import('./dev/uiMock/UiMock').then((m) => ({ default: m.UiMock }))) : null;
 const devPage = import.meta.env.DEV ? new URLSearchParams(window.location.search).get('dev') : null;
@@ -31,6 +34,10 @@ createRoot(container).render(
     ) : SinkPreview && devPage === 'sink' ? (
       <Suspense fallback={null}>
         <SinkPreview />
+      </Suspense>
+    ) : BuildPreview && devPage === 'build' ? (
+      <Suspense fallback={null}>
+        <BuildPreview />
       </Suspense>
     ) : UiMock && devPage === 'ui-mock' ? (
       <Suspense fallback={null}>

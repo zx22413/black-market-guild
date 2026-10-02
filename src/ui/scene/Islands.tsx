@@ -1,7 +1,8 @@
 import type { ThreeEvent } from '@react-three/fiber';
 import { IslandBase } from './IslandBase';
 import { IslandRing } from './IslandRing';
-import { Building } from './buildings/Building';
+import { useState } from 'react';
+import { BuildSite } from './BuildSite';
 import { ASSET_BUILDING_SCALE, ASSET_LOTS, PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatPosition } from './layout';
 import { TARGET_ISLAND_HEIGHT, TARGET_ISLAND_SEED, playerIslandHeading } from './islandShape';
 import { Model } from './Model';
@@ -41,6 +42,8 @@ interface PlayerIslandProps {
 /** One guild's home island: dock toward the center, owned assets in fixed lots. */
 export function PlayerIsland({ seat, angle, seed, selectable = false, selected = false, onSelect }: PlayerIslandProps) {
   const home = seatPosition(angle);
+  // Buildings already standing when the island appears are simply there; later ones are built on screen.
+  const [standing] = useState(() => new Set(seat.assets));
   const click = (e: ThreeEvent<MouseEvent>) => {
     if (!selectable) return;
     e.stopPropagation();
@@ -61,7 +64,7 @@ export function PlayerIsland({ seat, angle, seed, selectable = false, selected =
       <IslandBase radius={PLAYER_ISLAND_RADIUS} seed={seed} />
       <group position={[0, PLATEAU, 0]}>
         {seat.assets.map((asset) => (
-          <Building key={asset} asset={asset} color={seat.color} position={ASSET_LOTS[asset]} scale={ASSET_BUILDING_SCALE} />
+          <BuildSite key={asset} asset={asset} color={seat.color} position={ASSET_LOTS[asset]} scale={ASSET_BUILDING_SCALE} animate={!standing.has(asset)} />
         ))}
         <Model name="palm-bend" position={[-3.6, 0, 5.8]} scale={1} rotation={[0, 1.2, 0]} />
         <Model name="palm-straight" position={[5.2, 0, 4.2]} scale={0.9} />
