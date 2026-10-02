@@ -46,15 +46,24 @@ describe('night', () => {
     for (const [id, look] of Object.entries(WEATHER)) if (id !== 'moonless-night') expect(look.vignette ?? 0).toBe(0);
   });
 
-  it('gives the night sea faintly glowing white wave lines, and no other weather', () => {
+  it('gives the night sea faintly glowing white wave lines; only the night glows', () => {
     const night = WEATHER['moonless-night'];
     expect(night.seaLines).toBeGreaterThan(0);
     expect(night.seaGlow).toBeGreaterThan(0);
-    for (const [id, look] of Object.entries(WEATHER)) {
-      if (id === 'moonless-night') continue;
-      expect(look.seaLines ?? 0).toBe(0);
-      expect(look.seaGlow ?? 0).toBe(0);
+    for (const [id, look] of Object.entries(WEATHER)) if (id !== 'moonless-night') expect(look.seaGlow ?? 0).toBe(0);
+  });
+});
+
+describe('fair weather', () => {
+  it('draws white wave lines on the sea and floats clouds over a clear day and calm seas', () => {
+    for (const look of [WEATHER.clear, WEATHER['calm-seas']]) {
+      expect(look.seaLines).toBeGreaterThan(0);
+      expect(look.clouds).toBeGreaterThan(0);
     }
+  });
+
+  it('keeps clouds off the storm, fog and night skies', () => {
+    for (const id of ['storm', 'sea-fog', 'moonless-night'] as const) expect(WEATHER[id].clouds ?? 0).toBe(0);
   });
 });
 

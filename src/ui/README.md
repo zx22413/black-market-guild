@@ -55,6 +55,7 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 | `SeaFog.tsx`、`fogMath.ts` | 海霧事件：貼著海面、平躺的柔和霧帶（霧團圖片由 canvas 即時畫出，不用外部素材），順著風向往左下慢慢漂、濃淡緩緩起伏；島的懸崖、碼頭和船會從霧裡冒出來。漂出桌面的霧帶從另一側回來，邊緣先淡出所以不會突然跳出。 |
 | `Night.tsx`、`nightMath.ts` | 無月之夜事件：參考 Dorfromantik 的夜晚模式做成月夜而非全黑——深藍天空、比島亮的藍灰海面、偏灰藍的月光與補光（`WeatherLook.fill`），開放海面鋪滿細長的白色浪痕（`seaLines`），浪痕與岸邊浪花都帶一點白色微光（`seaGlow`），在暗處也看得到；海面以島嶼群為中心往畫面四角壓暗（`WeatherLook.vignette`，在海面著色器裡做，只影響海）；每座島靠碼頭的台地上立一根燈柱（木柱、暖橘燈箱與小屋頂，光暈與照在草地上的微弱閃爍點光源）；航行中的船在桅杆上掛燈籠（`VoyageShip` 的 `lantern`）。暖光只當點綴。 |
 | `GoldRush.tsx`、`goldMath.ts` | 黑市熱潮事件：金色的星星與光點（Kenney Particle Pack 的三張閃光貼圖，放在 `public/art/particles/`，當透明度遮罩用，任何海色上都保持金色），多數從黑市港一帶、少數從整個桌面冒出，邊旋轉閃爍邊往上飄，再淡出。 |
+| `Clouds.tsx`、`cloudMath.ts` | 晴天、風平浪靜（與沿用晴天設定的順風）的浮雲：每朵是一整塊低面數雲團（單一多面體拉長壓扁、頂部隆起、底部壓平，不是多顆圓球拼成），略帶自發光保持白色、微透明，只出現在桌面遠側、畫面上大約與遠側島嶼同高的一帶（最多 4 朵），水平往畫面左側慢慢飄，漂出桌面後從另一側回來；海面上依陽光方向落下柔和的淡雲影（不用即時陰影，以免切出像礁石的深色硬邊）。雲量由 `WeatherLook.clouds` 決定。晴天與風平浪靜的海面也有零星白色浪痕（`seaLines`，不發光）。 |
 | `Spray.tsx`、`sprayBursts.ts` | 低面數水珠（共用的粒子池）：`ShoreSpray` 是浪打上島岸時激起的水花，隨機落在各島岸線上，天氣越差越頻繁、噴得越高；`CrestSpray` 是浪高明顯高於晴天時（巨浪、暴風雨），開放海面浪頂碎開、順風飛散的水花。 |
 | `dieSteps.ts` | 骰子動畫的每一步數值與說明；播放節奏依最長的骰子決定。 |
 | `SceneLabels.tsx`、`ScreenLabels.tsx` | 島與船上方的 DOM 名牌；把 3D 位置投影成畫面座標（drei `<Html>` 在實測中會遺失內容）。 |

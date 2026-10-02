@@ -34,12 +34,17 @@ export interface WeatherLook {
   /** White wave lines on open water, 0..1, and how much the foam glows faintly, 0..1 (none when left out). */
   readonly seaLines?: number;
   readonly seaGlow?: number;
+  /** How many fair-weather clouds drift over the table, 0..1 (none when left out). */
+  readonly clouds?: number;
   readonly swell: Swell;
 }
 
 const STEADY: Swell = { height: 1, speed: 1, roll: 1, foam: 0.2 };
 
-const DAY: WeatherLook = { sky: '#9fd4e0', sea: '#2fa3a8', fogNear: 90, fogFar: 220, sun: 2.6, sunColor: '#fff3d6', ambient: 1.1, swell: STEADY };
+const DAY: WeatherLook = {
+  sky: '#9fd4e0', sea: '#2fa3a8', fogNear: 90, fogFar: 220, sun: 2.6, sunColor: '#fff3d6', ambient: 1.1,
+  seaLines: 0.25, clouds: 1, swell: STEADY,
+};
 
 /** The fill light of a look: its own, or by day the sky colour over the green island ground. */
 export function fillOf(look: WeatherLook): FillLight {
@@ -49,7 +54,7 @@ export function fillOf(look: WeatherLook): FillLight {
 /** How the table looks under each voyage event; before the reveal the sea is a clear day. */
 export const WEATHER: Readonly<Record<VoyageEventId | 'clear', WeatherLook>> = {
   clear: DAY,
-  'calm-seas': { ...DAY, sea: '#3bb5b0', swell: { height: 0.35, speed: 0.55, roll: 0.4, foam: 0 } },
+  'calm-seas': { ...DAY, sea: '#3bb5b0', clouds: 0.7, swell: { height: 0.35, speed: 0.55, roll: 0.4, foam: 0 } },
   tailwind: { ...DAY, sky: '#b9e3ea', sun: 2.9, swell: { height: 1.1, speed: 1.8, roll: 1.4, foam: 0.45 } },
   storm: {
     sky: '#4b5866', sea: '#2d5560', fogNear: 60, fogFar: 170, sun: 0.9, sunColor: '#c9d6e0', ambient: 0.8,
