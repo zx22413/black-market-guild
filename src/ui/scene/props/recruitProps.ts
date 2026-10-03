@@ -1,5 +1,6 @@
 import type { KitPart } from '../buildings/kit';
 import type { Vec2 } from '../buildings/polyhedra';
+import { HANDSHAKE_SHAPES, extrude } from './handshakeIcon';
 
 /**
  * The recruitment show's props in the table's low-poly style (docs/art/lowpoly-style.md): a
@@ -129,121 +130,31 @@ export function envelopeHalf(side: Side): readonly KitPart[] {
   ];
 }
 
-// ── Handshake, take A: two hands sculpted, sleeves in the two guilds' colors ──
+// ── Handshake, take A: the handshake icon in 3D, sleeves in the two guilds' colors ──
 
 /*
- * Laid out like the handshake icon (public/art/icons/handshake.svg): the forearms come down from
- * the two top corners, cuffs first, and the hands meet low in the middle — a V, not an arm
- * wrestle. The hand from the right wraps its fingers round the other hand, so their tips show
- * at the lower left; the hand from the left wraps its fingers the other way, showing as stripes
- * at the lower right; the right hand's thumb lies across the top of the grip.
+ * Traced from the handshake icon rather than sculpted from blocks: the forearms come down from
+ * the two top corners and the hands meet low in the middle, exactly as players know the icon,
+ * with its gaps between the hands kept as real gaps. See handshakeIcon.ts.
  */
-const ELBOW: Vec2 = [1.3, -0.8];
-const WRIST: Vec2 = [0.62, -0.3];
-const GRIP: readonly Vec2[] = [
-  [-0.5, -0.15],
-  [0, -0.32],
-  [0.5, -0.2],
-  [0.45, 0.15],
-  [0.05, 0.45],
-  [-0.45, 0.25],
-];
-const SKIN = 0.14;
-const FINGER = 0.3;
-const along = (from: Vec2, to: Vec2, k: number): Vec2 => [from[0] + (to[0] - from[0]) * k, from[1] + (to[1] - from[1]) * k];
-const turn = ([x, z]: Vec2, a: number): Vec2 => [x * Math.cos(a) - z * Math.sin(a), x * Math.sin(a) + z * Math.cos(a)];
-const unit = (v: Vec2): Vec2 => {
-  const len = Math.hypot(...v) || 1;
-  return [v[0] / len, v[1] / len];
-};
 
-/**
- * A finger in two six-sided joints from its knuckle at `base`, pointing along `dir`: the tip
- * joint is thinner, bends by `bend` (radians, in the plane of the badge) and dips toward the
- * hand it wraps, so the finger reads as curled rather than as a stick.
- */
-function finger(base: Vec2, dir: Vec2, length: number, bend: number, width = 0.09): KitPart[] {
-  const d1 = unit(dir);
-  const d2 = unit(turn(d1, bend));
-  const joint: Vec2 = [base[0] + d1[0] * length * 0.58, base[1] + d1[1] * length * 0.58];
-  const tip: Vec2 = [joint[0] + d2[0] * length * 0.46, joint[1] + d2[1] * length * 0.46];
-  return [
-    { kind: 'beam', from: [base[0], FINGER, base[1]], to: [joint[0], FINGER, joint[1]], width, sides: 6, mat: 'rope' },
-    { kind: 'beam', from: [joint[0], FINGER, joint[1]], to: [tip[0], FINGER - 0.03, tip[1]], width: width * 0.84, sides: 6, mat: 'rope' },
-  ];
-}
+/** The hands, in skin tones. */
+export const HANDS_A: readonly KitPart[] = HANDSHAKE_SHAPES.filter((shape) => shape.kind === 'skin').flatMap((shape) =>
+  extrude(shape.outline, 0.02, 0.22, 'rope'),
+);
 
-/** The back of the hand coming from the right, lying over the grip; its fingers start at its lower-left edge. */
-const BACK_OF_HAND: readonly Vec2[] = [
-  [0.48, -0.28],
-  [0.55, -0.02],
-  [-0.05, 0.32],
-  [-0.32, 0],
-  [-0.05, -0.22],
-];
-
-/** The clasped hands and bare forearms, in skin tones, built round enough to read as hands. */
-export const HANDS_A: readonly KitPart[] = [
-  // The grip in two layers, the upper one narrower, so its edge is rounded off.
-  { kind: 'loft', base: [0, 0, 0], outline: GRIP, height: 0.18, bottom: 0.9, top: 1, mat: 'rope' },
-  { kind: 'loft', base: [0, 0.18, 0], outline: GRIP, height: 0.06, bottom: 1, top: 0.88, mat: 'rope' },
-  { kind: 'loft', base: [0, 0.2, 0], outline: BACK_OF_HAND, height: 0.08, bottom: 1, top: 0.86, mat: 'rope' },
-  // Round forearms from the cuffs into the grip.
-  ...([-1, 1] as const).map((s): KitPart => ({
-    kind: 'beam',
-    from: [s * WRIST[0], SKIN, WRIST[1]],
-    to: [s * 0.24, SKIN, -0.08],
-    width: 0.3,
-    sides: 8,
-    mat: 'rope',
-  })),
-  // Knuckles of the hand from the right: a ridge where its fingers leave the back of the hand.
-  { kind: 'beam', from: [-0.3, FINGER + 0.01, 0.02], to: [-0.04, FINGER + 0.01, 0.3], width: 0.08, sides: 6, mat: 'rope' },
-  // Its fingers curl round the other hand: the tips show at the lower left, bending downward.
-  ...[0, 1, 2, 3].flatMap((i) => finger([-0.28 + i * 0.08, 0.02 + i * 0.09], [-0.77, 0.64], 0.36 - i * 0.03, -0.45)),
-  // The fingers of the hand from the left wrap the other way, across the lower right.
-  ...[0, 1, 2, 3].flatMap((i) => finger([0.06 - i * 0.04, 0.02 + i * 0.12], [0.85, 0.5], 0.48 - i * 0.06, 0.4)),
-  // The right hand's thumb: a heel at the base, then two joints lying across the top, pointing left.
-  { kind: 'loft', base: [0, 0.22, 0], outline: [[0.42, -0.3], [0.5, -0.12], [0.2, -0.12], [0.24, -0.28]], height: 0.1, bottom: 1, top: 0.8, mat: 'rope' },
-  { kind: 'beam', from: [0.32, FINGER + 0.02, -0.21], to: [0.04, FINGER + 0.02, -0.25], width: 0.13, sides: 6, mat: 'rope' },
-  { kind: 'beam', from: [0.04, FINGER + 0.02, -0.25], to: [-0.18, FINGER, -0.2], width: 0.11, sides: 6, mat: 'rope' },
-  // A brass button on each cuff.
-  ...([-1, 1] as const).map((s): KitPart => {
-    const [x, z] = along([s * ELBOW[0], ELBOW[1]], [s * WRIST[0], WRIST[1]], 0.93);
-    return { kind: 'box', center: [x, SKIN + 0.27, z], size: [0.08, 0.04, 0.08], bevel: 0.015, mat: 'brass' };
-  }),
-];
-
-/** One round sleeve, its cuff and the cuff's turned edge: white, tinted with that guild's color. */
+/** The cuff toward `side`, a little thicker than the hands: white, tinted with that guild's color. */
 export function sleeveA(side: Side): readonly KitPart[] {
-  const elbow: Vec2 = [side * ELBOW[0], ELBOW[1]];
-  const wrist: Vec2 = [side * WRIST[0], WRIST[1]];
-  const at = (k: number): [number, number, number] => {
-    const [x, z] = along(elbow, wrist, k);
-    return [x, SKIN, z];
-  };
-  return [
-    { kind: 'beam', from: at(0), to: at(0.84), width: 0.42, sides: 8, mat: 'marble' },
-    { kind: 'beam', from: at(0.84), to: at(0.97), width: 0.5, sides: 8, mat: 'marble' },
-    { kind: 'beam', from: at(0.97), to: at(1.02), width: 0.54, sides: 8, mat: 'marble' },
-  ];
+  const kind = side === -1 ? 'sleeve-left' : 'sleeve-right';
+  return HANDSHAKE_SHAPES.filter((shape) => shape.kind === kind).flatMap((shape) => extrude(shape.outline, 0, 0.3, 'marble'));
 }
-
-/** A plainer handshake for the medal's relief: at that size the detailed hands would blur. */
-const RELIEF_HANDS: readonly KitPart[] = [
-  { kind: 'loft', base: [0, 0, 0], outline: GRIP, height: 0.28, bottom: 0.88, top: 1, mat: 'rope' },
-  ...([-1, 1] as const).flatMap((s): KitPart[] => [
-    { kind: 'beam', from: [s * WRIST[0], SKIN, WRIST[1]], to: [s * 0.3, SKIN, -0.12], width: 0.28, mat: 'rope' },
-    { kind: 'beam', from: [s * ELBOW[0], SKIN, ELBOW[1]], to: [s * WRIST[0], SKIN, WRIST[1]], width: 0.44, mat: 'marble' },
-  ]),
-];
 
 // ── Handshake, take B: a gold medal with the handshake in relief and two guild ribbons ──
 
 const MEDAL_RADIUS = 1;
 const MEDAL_THICKNESS = 0.14;
 const RIM_SIDES = 16;
-const RELIEF_SCALE = 0.58;
+const RELIEF_SCALE = 0.48;
 
 /** The gold disc, a raised rim of short beams and the handshake embossed in darker gold. */
 export const MEDAL_B: readonly KitPart[] = [
@@ -256,8 +167,8 @@ export const MEDAL_B: readonly KitPart[] = [
     const [p, q] = [corner(i), corner(i + 1)];
     return { kind: 'beam', from: [p[0], MEDAL_THICKNESS + 0.04, p[1]], to: [q[0], MEDAL_THICKNESS + 0.04, q[1]], width: 0.08, mat: 'brass' };
   }),
-  // The handshake's pose, kept plain and flattened into a low relief on the face of the medal.
-  ...RELIEF_HANDS.map((part) => emboss(part)),
+  // The same traced handshake, flattened into a low relief on the face of the medal.
+  ...[...HANDS_A, ...sleeveA(-1), ...sleeveA(1)].map((part) => emboss(part)),
 ];
 
 /** Scales a relief part down onto the medal's face, in brass so it stands out from the gold. */

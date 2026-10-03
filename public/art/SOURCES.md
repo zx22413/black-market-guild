@@ -103,3 +103,5 @@
 | `ui/rope-mask-outer.svg`、`ui/rope-mask-inner.svg` | 名牌座位色繩子的遮罩（外框、繩身） |
 | `ui/icon-pencil.svg`、`ui/icon-plus.svg` | 編輯筆、虛線加號 |
 | `ui/table-backdrop.jpg` | 本專案 3D 桌面的擷取畫面（`window.bmgCapture`），選單背景用 |
+
+- `src/ui/scene/props/handshakeIcon.ts` 內含 `icons/handshake.svg` 的路徑資料，用來擠出合資演出的 3D 握手與獎章浮雕（衍生作品，授權同上：CC BY 3.0，作者 Delapouite）。

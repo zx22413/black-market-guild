@@ -22,10 +22,10 @@ const Y = 9;
 export function PropsPreview() {
   const params = new URLSearchParams(window.location.search);
   const close = params.has('close');
-  // &hands: right up to the two handshakes, to compare them with the handshake icon.
+  // &hands: right up to handshake take A, to compare it with the handshake icon.
   const hands = params.has('hands');
-  const camera: [number, number, number] = hands ? [24, 24, 26] : close ? [0, 42, 58] : [0, 82, 60];
-  const target: [number, number, number] = hands ? [24, Y, 4] : close ? [0, Y, 6] : [0, 0, 0];
+  const camera: [number, number, number] = hands ? [18, 19, 17] : close ? [0, 42, 58] : [0, 82, 60];
+  const target: [number, number, number] = hands ? [18, Y, 3] : close ? [0, Y, 6] : [0, 0, 0];
   const look = WEATHER.clear;
   const shores = useMemo(() => islandShorelines([]), []);
   return (
