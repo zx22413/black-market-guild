@@ -2,7 +2,7 @@ import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import type { Group } from 'three';
 import { geometryFromParts } from './buildings/Building';
-import { PIGEON_BODY, PIGEON_COLLAR, PIGEON_SHOULDER, pigeonWing } from './props/pigeon';
+import { PIGEON_BODY, PIGEON_COLLAR, PIGEON_SHOULDER, pigeonWing, pigeonWingTip } from './props/pigeon';
 import type { Vec3 } from './layout';
 import { flightPose, wingAngle } from './pigeonMath';
 
@@ -22,7 +22,11 @@ interface PigeonFlightProps {
 export function PigeonFlight({ from, to, at, duration, color, freezeAt }: PigeonFlightProps) {
   const body = useMemo(() => geometryFromParts(PIGEON_BODY), []);
   const collar = useMemo(() => geometryFromParts(PIGEON_COLLAR), []);
-  const wings = useMemo(() => [geometryFromParts(pigeonWing(1)), geometryFromParts(pigeonWing(-1))] as const, []);
+  const wings = useMemo(
+    () =>
+      ([1, -1] as const).map((side) => ({ feathers: geometryFromParts(pigeonWing(side)), tip: geometryFromParts(pigeonWingTip(side)) })),
+    [],
+  );
   const root = useRef<Group>(null);
   const hinges = useRef<(Group | null)[]>([]);
   const elapsed = useRef(0);
@@ -53,7 +57,7 @@ export function PigeonFlight({ from, to, at, duration, color, freezeAt }: Pigeon
       <mesh geometry={collar} castShadow dispose={null}>
         <meshStandardMaterial vertexColors color={color} roughness={0.7} />
       </mesh>
-      {wings.map((geometry, i) => (
+      {wings.map((wing, i) => (
         <group
           key={i}
           ref={(g) => {
@@ -61,8 +65,11 @@ export function PigeonFlight({ from, to, at, duration, color, freezeAt }: Pigeon
           }}
           position={[i === 0 ? x : -x, y, z]}
         >
-          <mesh geometry={geometry} castShadow dispose={null}>
+          <mesh geometry={wing.feathers} castShadow dispose={null}>
             <meshStandardMaterial vertexColors roughness={0.8} />
+          </mesh>
+          <mesh geometry={wing.tip} castShadow dispose={null}>
+            <meshStandardMaterial vertexColors color={color} roughness={0.7} />
           </mesh>
         </group>
       ))}

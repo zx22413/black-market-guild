@@ -58,12 +58,13 @@ export const PIGEON_BODY: readonly KitPart[] = [
  * color tints it. It is slightly wider than the neck so it reads from the table camera.
  */
 export const PIGEON_COLLAR: readonly KitPart[] = [
-  { kind: 'loft', base: [0, 0.42, 0.36], outline: CHEST.map(([x, z]): Vec2 => [x * 1.9, z * 1.9]), height: 0.2, bottom: 1, top: 0.9, mat: 'marble' },
+  { kind: 'loft', base: [0, 0.42, 0.36], outline: CHEST.map(([x, z]): Vec2 => [x * 2.3, z * 2.3]), height: 0.26, bottom: 1, top: 0.9, mat: 'marble' },
   // The loose ends of the knot, hanging down the chest.
-  { kind: 'box', center: [0, 0.3, 0.7], size: [0.16, 0.3, 0.05], bevel: 0.012, mat: 'marble' },
+  { kind: 'box', center: [0, 0.28, 0.72], size: [0.2, 0.36, 0.05], bevel: 0.012, mat: 'marble' },
 ];
 
 const mirrorX = (outline: readonly Vec2[]): Vec2[] => outline.map(([x, z]) => [-x, z]);
+const sided = (side: 1 | -1, outline: readonly Vec2[]): readonly Vec2[] => (side === 1 ? outline : mirrorX(outline));
 
 const WING_INNER: readonly Vec2[] = [
   [0, -0.28],
@@ -80,11 +81,16 @@ const WING_TIPS: readonly Vec2[] = [
 
 /** A wing spreading toward +x (`side` 1) or −x (`side` −1), with its hinge at the origin. */
 export function pigeonWing(side: 1 | -1): readonly KitPart[] {
-  const shape = (outline: readonly Vec2[]): readonly Vec2[] => (side === 1 ? outline : mirrorX(outline));
-  return [
-    { kind: 'loft', base: [0, 0, 0], outline: shape(WING_INNER), height: 0.05, bottom: 1, top: 1, mat: 'stone' },
-    { kind: 'loft', base: [side * 0.5, 0, 0], outline: shape(WING_TIPS), height: 0.05, bottom: 1, top: 1, mat: 'marble' },
-  ];
+  return [{ kind: 'loft', base: [0, 0, 0], outline: sided(side, WING_INNER), height: 0.05, bottom: 1, top: 1, mat: 'stone' }];
+}
+
+/**
+ * The outer feathers of a wing, hinged with it. Kept apart because they are white models that
+ * take the sending guild's color: from the table camera the wings are the biggest part of a
+ * pigeon, so this is what tells whose bird it is.
+ */
+export function pigeonWingTip(side: 1 | -1): readonly KitPart[] {
+  return [{ kind: 'loft', base: [side * 0.5, 0, 0], outline: sided(side, WING_TIPS), height: 0.06, bottom: 1, top: 1, mat: 'marble' }];
 }
 
 /** Where the wings hinge on the body. */

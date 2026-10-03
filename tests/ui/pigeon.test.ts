@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PIGEON_BODY, PIGEON_COLLAR, PIGEON_SHOULDER, pigeonWing } from '../../src/ui/scene/props/pigeon';
+import { PIGEON_BODY, PIGEON_COLLAR, PIGEON_SHOULDER, pigeonWing, pigeonWingTip } from '../../src/ui/scene/props/pigeon';
 import { partFaces } from '../../src/ui/scene/buildings/polyhedra';
 
 const extent = (parts: readonly Parameters<typeof partFaces>[0][]) => {
@@ -10,7 +10,7 @@ const extent = (parts: readonly Parameters<typeof partFaces>[0][]) => {
 
 describe('carrier pigeon model', () => {
   it('builds closed solids for every part', () => {
-    for (const part of [...PIGEON_BODY, ...pigeonWing(1), ...pigeonWing(-1)]) {
+    for (const part of [...PIGEON_BODY, ...pigeonWing(1), ...pigeonWing(-1), ...pigeonWingTip(1), ...pigeonWingTip(-1)]) {
       const faces = partFaces(part);
       expect(faces.length).toBeGreaterThanOrEqual(5);
       for (const face of faces) {
@@ -28,14 +28,14 @@ describe('carrier pigeon model', () => {
 
   it('keeps the body narrow enough for the wings to be what makes it wide', () => {
     const body = extent(PIGEON_BODY);
-    const wing = extent(pigeonWing(1));
+    const wing = extent([...pigeonWing(1), ...pigeonWingTip(1)]);
     expect(body.x[1] - body.x[0]).toBeLessThan(0.8);
     expect(wing.x[1]).toBeGreaterThan(1);
   });
 
-  it('mirrors the left wing from the right one', () => {
-    const right = extent(pigeonWing(1));
-    const left = extent(pigeonWing(-1));
+  it('mirrors the left wing (feathers and tip) from the right one', () => {
+    const right = extent([...pigeonWing(1), ...pigeonWingTip(1)]);
+    const left = extent([...pigeonWing(-1), ...pigeonWingTip(-1)]);
     expect(left.x[0]).toBeCloseTo(-right.x[1], 5);
     expect(left.x[1]).toBeCloseTo(-right.x[0], 5);
     expect(left.z).toEqual(right.z);
