@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Action, MatchEvent, PlayerId, PlayerView, PrivateEvent } from '../../game';
 import { DIE_BEAT_MS, dieSteps } from '../scene/dieSteps';
+import { recruitShow } from '../table/recruitShow';
 import { buildBoard, type Board } from './board';
 import type { GameSession, HumanRequest, SessionSnapshot } from './gameSession';
 import { useSession } from './useSession';
@@ -70,15 +71,19 @@ export function usePlayback(session: GameSession): Playback {
   const [lastView, setLastView] = useState<PlayerView | null>(null);
 
   const hotSeat = players.filter((p) => p.kind === 'local-human').length > 1;
+  const playerIds = useMemo(() => players.map((p) => p.id), [players]);
   const holding = cursor < events.length && isHold(events[cursor]) && releasedHold !== cursor;
   const caughtUp = cursor >= events.length;
 
   useEffect(() => {
     const next = events[cursor];
     if (next === undefined || holding) return;
-    const timer = setTimeout(() => setCursor(cursor + 1), eventDelay(next));
+    // The recruitment show (parchments, pigeons, handshakes) plays after its event appears, so the
+    // next event waits for it; every other event keeps the plain pause before it.
+    const linger = cursor > 0 ? recruitShow(events, cursor - 1, playerIds).duration : 0;
+    const timer = setTimeout(() => setCursor(cursor + 1), eventDelay(next) + linger);
     return () => clearTimeout(timer);
-  }, [cursor, events, holding]);
+  }, [cursor, events, holding, playerIds]);
 
   const played = useMemo(() => events.slice(0, cursor), [events, cursor]);
   const board = useMemo(() => buildBoard(players.map((p) => p.id), startingCash, played), [players, startingCash, played]);

@@ -21,7 +21,8 @@ import { SeatSign, ShipTag, TargetSign } from './SceneLabels';
 import { Escorts, VoyageShip, shipPose } from './Ships';
 import { SwellProvider } from './SwellContext';
 import type { CashFloat } from '../table/useCashFloats';
-import type { RecruitBeat } from '../table/useRecruitBeats';
+import { SeatFx } from '../table/RecruitFx';
+import type { RecruitCue } from '../table/recruitShow';
 import type { SceneTable } from './tableModel';
 import { WEATHER, fillOf } from './weather';
 import { WeatherFog } from './WeatherFog';
@@ -60,8 +61,10 @@ export interface TableSceneProps {
   readonly intel: ReadonlyMap<ShipId, IntelTrace>;
   /** Recent cash changes floating above each guild's tag. */
   readonly floats: readonly CashFloat[];
-  /** Joint-venture success and failure stamps shown on the islands. */
-  readonly beats: readonly RecruitBeat[];
+  /** The recruitment show: parchments, pigeons, handshakes and torn envelopes over the islands. */
+  readonly fx: readonly RecruitCue[];
+  /** The joint-venture results are out, so open parchments no longer stand on the table. */
+  readonly recruitResolved: boolean;
   /** Rounds finished so far; the right-hand ranking only re-sorts when this changes. */
   readonly rankStep: number;
   /** Called once all models have loaded. */
@@ -93,7 +96,7 @@ function Ready({ onReady }: { readonly onReady: () => void }) {
 
 /** The whole 3D table: guild islands around the target island, lanes, ships and tags. */
 export function TableScene(props: TableSceneProps) {
-  const { table, weather, nameOf, selectableShips, onSelectShip, selectedShip, selectableIslands, selectedIsland, onSelectIsland, islandCard, secret, intel, submitted, floats, beats, rankStep, onReady } = props;
+  const { table, weather, nameOf, selectableShips, onSelectShip, selectedShip, selectableIslands, selectedIsland, onSelectIsland, islandCard, secret, intel, submitted, floats, fx, recruitResolved, rankStep, onReady } = props;
   const look = WEATHER[weather ?? 'clear'];
   const angles = useMemo(() => seatAngles(table.seats.length), [table.seats.length]);
   const points = useMemo(() => fitPoints(angles), [angles]);
@@ -128,10 +131,19 @@ export function TableScene(props: TableSceneProps) {
               ...(farMiddle ? { side: { position: [cx - PLAYER_ISLAND_RADIUS - 2, 3, cz] as Vec3, dir: -1 as const } } : {}),
             },
           ];
-    return [{ id: 'target', position: TARGET_PLATE }, ...seatAnchors, ...shipAnchors, ...cardAnchors];
+    // An empty point above each island; the recruitment show hangs its pictures from it.
+    const fxAnchors = table.seats.map((_, i): LabelAnchor => {
+      const [x, , z] = seatPosition(angles[i]!);
+      return { id: `fx-${i}`, position: [x, 7, z] };
+    });
+    return [{ id: 'target', position: TARGET_PLATE }, ...seatAnchors, ...shipAnchors, ...fxAnchors, ...cardAnchors];
   }, [angles, table, selectedIsland]);
 
   const labels = useRef(new Map<string, HTMLElement>());
+  const rectOf = (id: PlayerId): DOMRect | undefined => {
+    const seat = table.seats.findIndex((s) => s.id === id);
+    return seat < 0 ? undefined : labels.current.get(`fx-${seat}`)?.getBoundingClientRect();
+  };
   const pin = (id: string) => (element: HTMLElement | null) => {
     if (element) labels.current.set(id, element);
     else labels.current.delete(id);
@@ -206,7 +218,12 @@ export function TableScene(props: TableSceneProps) {
           </div>
         )}
         {table.seats.map((seat, i) => (
-          <SeatSign key={seat.id} ref={pin(`seat-${i}`)} seat={seat} floats={floats.filter((f) => f.playerId === seat.id)} beats={beats.filter((b) => b.playerId === seat.id)} />
+          <SeatSign key={seat.id} ref={pin(`seat-${i}`)} seat={seat} floats={floats.filter((f) => f.playerId === seat.id)} />
+        ))}
+        {table.seats.map((seat, i) => (
+          <div key={seat.id} ref={pin(`fx-${i}`)} className="fx-anchor">
+            <SeatFx seat={seat} cues={fx} standing={!recruitResolved} rectOf={rectOf} />
+          </div>
         ))}
         {table.ships.map((ship) => (
           <ShipTag

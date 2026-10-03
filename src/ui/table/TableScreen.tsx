@@ -17,7 +17,7 @@ import { PartnerCard, useAssetInspection } from './PartnerCard';
 import { partnerChoice, type PartnerPick } from './partnerChoice';
 import { EventBand, LedgerCard } from './TableHud';
 import { useCashFloats } from './useCashFloats';
-import { useRecruitBeats } from './useRecruitBeats';
+import { useRecruitShow } from './useRecruitShow';
 import './table.css';
 import './hudSkin.css';
 
@@ -44,7 +44,8 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
 
   const names = useMemo(() => new Map(snapshot.players.map((p) => [p.id, p.name])), [snapshot.players]);
   const nameOf = useCallback((id: PlayerId) => names.get(id) ?? id, [names]);
-  const beats = useRecruitBeats(played);
+  const playerIds = useMemo(() => snapshot.players.map((p) => p.id), [snapshot.players]);
+  const fx = useRecruitShow(played, playerIds);
   // Spectators see the table from the first seat, with every guild's public tag.
   const viewerId = view?.playerId ?? null;
   // Hot-seat: keep facing the last player between turns; the table turns only once the next
@@ -143,7 +144,8 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
         intel={intel}
         submitted={activeView?.submittedPlayerIds ?? []}
         floats={floats}
-        beats={beats}
+        fx={fx}
+        recruitResolved={board.recruitResolved}
         rankStep={played.filter((e) => e.type === 'round-ended').length}
         onReady={markReady}
       />

@@ -581,41 +581,6 @@
   justify-content: center;
 }
 
-/* ── Recruitment result stamps under a guild's island plaque ── */
-
-.recruit-beat {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 50%;
-  translate: -50% 0;
-  white-space: nowrap;
-  padding: 4px 14px;
-  font-weight: 700;
-  font-size: 1.15rem;
-  letter-spacing: 0.06em;
-  text-shadow: none;
-  border-radius: 6px;
-  border: 2.5px solid currentColor;
-  box-shadow: 0 3px 8px rgba(30, 20, 5, 0.4);
-  animation: pop-in 0.45s ease-out both, beat-out 0.5s ease-in 2.4s forwards;
-  pointer-events: none;
-}
-
-.recruit-beat.ok {
-  color: #1f5a1c;
-  background: #f1fbe9;
-}
-
-.recruit-beat.fail {
-  color: #9a2512;
-  background: #fff0ec;
-}
-
-@keyframes beat-out {
-  to {
-    opacity: 0;
-  }
-}
 
 /* Option row and confirm row of a select-then-confirm strip sit on separate lines. */
 .action-pill .pill-row {

@@ -42,6 +42,8 @@ export interface Board {
   readonly withdrawn: readonly PlayerId[];
   readonly applications: readonly Application[];
   readonly ventures: readonly Venture[];
+  /** The joint-venture results are out: open recruitments no longer stand on the table. */
+  readonly recruitResolved: boolean;
   readonly launched: boolean;
   readonly stayedInPort: readonly PlayerId[];
   readonly ships: readonly BoardShip[];
@@ -56,6 +58,7 @@ const EMPTY_ROUND = {
   withdrawn: [],
   applications: [],
   ventures: [],
+  recruitResolved: false,
   launched: false,
   stayedInPort: [],
   ships: [],
@@ -96,7 +99,7 @@ export function applyBoardEvent(board: Board, event: MatchEvent): Board {
     case 'applications-announced':
       return { ...board, applications: event.applications };
     case 'joint-ventures-formed':
-      return { ...board, ventures: event.ventures };
+      return { ...board, ventures: event.ventures, recruitResolved: true };
     case 'ships-launched':
       return {
         ...board,
