@@ -26,6 +26,8 @@ export interface SessionSnapshot {
   readonly privateEvents: readonly PrivateEvent[];
   /** Pending human decisions in seat order; the UI answers the first one. */
   readonly requests: readonly HumanRequest[];
+  /** Seats still deciding the current phase (people only; bots answer at once). */
+  readonly waitingOn: readonly PlayerId[];
   readonly startingCash: number;
   readonly result: MatchResult | null;
   readonly error: string | null;
@@ -58,13 +60,15 @@ export function startGameSession(options: SessionOptions): GameSession {
     events: [],
     privateEvents: [],
     requests: [],
+    waitingOn: [],
     startingCash: (setup.rules ?? RULES_V06).startingCash,
     result: null,
     error: null,
   };
 
   const update = (patch: Partial<SessionSnapshot>): void => {
-    snapshot = { ...snapshot, ...patch };
+    const next = { ...snapshot, ...patch };
+    snapshot = { ...next, waitingOn: next.requests.map((r) => r.context.decision.playerId) };
     listeners.forEach((listener) => listener());
   };
 

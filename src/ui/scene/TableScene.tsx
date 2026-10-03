@@ -85,6 +85,8 @@ export interface TableSceneProps {
   readonly secretRole: Deployment | null;
   /** Seats that already locked this phase's choice. */
   readonly submitted: readonly PlayerId[];
+  /** Seats everyone is waiting on (see `Playback.waiting`). */
+  readonly waiting: readonly PlayerId[];
   /** What the viewer's intel merchant saw, by ship; shown to the viewer only. */
   readonly intel: ReadonlyMap<ShipId, IntelTrace>;
   /** Recent cash changes floating above each guild's tag. */
@@ -125,7 +127,7 @@ function fitPoints(angles: readonly number[]): FitPoint[] {
 
 /** The whole 3D table: guild islands around the target island, lanes, ships and tags. */
 export function TableScene(props: TableSceneProps) {
-  const { table, weather, nameOf, selectableShips, onSelectShip, selectedShip, selectableIslands, selectedIsland, onSelectIsland, islandCard, secret, secretRole, intel, submitted, floats, fx, recruitResolved, rankStep, onReady, layout, handOpen, blackMoney } = props;
+  const { table, weather, nameOf, selectableShips, onSelectShip, selectedShip, selectableIslands, selectedIsland, onSelectIsland, islandCard, secret, secretRole, intel, submitted, waiting, floats, fx, recruitResolved, rankStep, onReady, layout, handOpen, blackMoney } = props;
   const safe = useMemo((): SafeArea => {
     const base = SAFE_AREAS[layout];
     return handOpen ? { ...base, bottom: base.bottom + HAND_HEIGHT[layout] } : base;
@@ -344,7 +346,7 @@ export function TableScene(props: TableSceneProps) {
           />
         ))}
       </div>
-      <SeatRail seats={table.seats} nameOf={nameOf} submitted={submitted} rankStep={rankStep} blackMoney={blackMoney} />
+      <SeatRail seats={table.seats} nameOf={nameOf} submitted={submitted} waiting={waiting} rankStep={rankStep} blackMoney={blackMoney} />
     </>
   );
 }

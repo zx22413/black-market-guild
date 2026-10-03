@@ -43,6 +43,8 @@ export interface OnlineMatch {
   readonly privateEvents: readonly PrivateEvent[];
   /** Pending decisions of `you`. */
   readonly requests: readonly OnlineRequest[];
+  /** Seats (people only) still deciding the current phase. */
+  readonly waitingOn: readonly PlayerId[];
   readonly startingCash: number;
   readonly result: MatchResult | null;
   readonly error: string | null;
@@ -70,6 +72,7 @@ export type ServerMessage =
   | { readonly type: 'events'; readonly events: readonly MatchEvent[] }
   | { readonly type: 'private'; readonly event: PrivateEvent }
   | { readonly type: 'request'; readonly request: OnlineRequest }
+  | { readonly type: 'waiting'; readonly players: readonly PlayerId[] }
   | { readonly type: 'ended'; readonly result: MatchResult | null; readonly error: string | null }
   | { readonly type: 'error'; readonly code: ErrorCode; readonly message: string };
 

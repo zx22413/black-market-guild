@@ -29,6 +29,21 @@ async function autoplay(session: GameSession): Promise<SessionSnapshot> {
 }
 
 describe('game session', () => {
+  it('lists the seats still deciding (people only) in waitingOn', async () => {
+    const session = startGameSession({
+      seed: 3,
+      seats: [
+        { kind: 'local-human', name: '甲' },
+        { kind: 'local-human', name: '乙' },
+        { kind: 'bot', name: 'Bot', strategy: 'balanced' },
+      ],
+    });
+    const both = await waitFor(session, (s) => s.requests.length === 2);
+    expect(both.waitingOn).toEqual(['p1', 'p2']);
+    session.submit(both.requests[0]!.id, both.requests[0]!.context.legalActions[0]!);
+    expect(session.getSnapshot().waitingOn).toEqual(['p2']);
+  });
+
   it('asks the human seat and finishes a 1 human + 2 bot match', async () => {
     const session = startGameSession({
       seed: 7,

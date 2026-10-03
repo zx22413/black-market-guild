@@ -82,8 +82,10 @@ function applyMessage(room: RoomSnapshot | null, message: ServerMessage): RoomSn
       return { ...room, match: { ...match, privateEvents: [...match.privateEvents, message.event] } };
     case 'request':
       return { ...room, match: { ...match, requests: [...match.requests, message.request].sort((a, b) => a.id - b.id) } };
+    case 'waiting':
+      return { ...room, match: { ...match, waitingOn: message.players } };
     case 'ended':
-      return { ...room, phase: 'finished', match: { ...match, requests: [], result: message.result, error: message.error } };
+      return { ...room, phase: 'finished', match: { ...match, requests: [], waitingOn: [], result: message.result, error: message.error } };
     default:
       return room;
   }
@@ -98,6 +100,7 @@ function toSessionSnapshot(room: RoomSnapshot): SessionSnapshot | null {
     events: match.events,
     privateEvents: match.privateEvents,
     requests: match.requests,
+    waitingOn: match.waitingOn,
     startingCash: match.startingCash,
     result: match.result,
     error: match.error,

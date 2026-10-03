@@ -346,3 +346,8 @@
 .scene-root[data-layout='portrait'] .ship-tag .ship-owners i {
   margin-right: 0;
 }
+/* Who everyone is waiting on stays visible on the compact tags. */
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .seat-rail .tag-waiting {
+  padding: 0 6px;
+  font-size: 0.58rem;
+}

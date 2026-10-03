@@ -118,6 +118,7 @@ export class Room {
       events: match.events,
       privateEvents: match.privateEvents.filter((e) => e.playerId === you),
       requests: this.pending.filter((p) => p.token === token).map((p) => p.request),
+      waitingOn: this.waitingOn(),
       startingCash: match.startingCash,
       result: match.result,
       error: match.error,
@@ -212,6 +213,7 @@ export class Room {
           const request = { id: this.nextRequestId++, context };
           this.pending = [...this.pending, { token, request, resolve }];
           this.options.send(token, { type: 'request', request });
+          this.broadcast({ type: 'waiting', players: this.waitingOn() });
         }),
       onPrivateEvent: (event) => {
         match.privateEvents = [...match.privateEvents, event];
@@ -236,6 +238,7 @@ export class Room {
       return;
     }
     this.pending = this.pending.filter((p) => p !== pending);
+    this.broadcast({ type: 'waiting', players: this.waitingOn() });
     pending.resolve(legal);
   }
 
@@ -245,6 +248,12 @@ export class Room {
     this.phase = 'finished';
     this.pending = [];
     this.broadcast({ type: 'ended', result, error });
+  }
+
+  /** Seats with an unanswered decision, in seat order; public like `submittedPlayerIds`. */
+  private waitingOn(): readonly PlayerId[] {
+    const seats = new Set(this.pending.map((p) => p.request.context.decision.playerId));
+    return (this.match?.players ?? []).map((p) => p.id).filter((id) => seats.has(id));
   }
 
   private broadcast(message: ServerMessage): void {

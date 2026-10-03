@@ -110,6 +110,22 @@ describe('online room', () => {
     expect(sync?.type === 'sync' && sync.room.match?.requests.map((r) => r.id)).toEqual([request.request.id]);
   });
 
+  it('tells everyone which seats are still deciding', async () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'join', name: 'A' });
+    ctx.send(GUEST, { type: 'join', name: 'B' });
+    ctx.send(HOST, { type: 'start', seats: 3 });
+    await tick();
+    expect(ctx.last(GUEST, 'waiting')).toEqual({ type: 'waiting', players: ['p1', 'p2'] });
+    const request = ctx.last(GUEST, 'request');
+    if (request?.type !== 'request') throw new Error('no request');
+    ctx.send(GUEST, { type: 'submit', requestId: request.request.id, action: request.request.context.legalActions[0]! });
+    expect(ctx.last(HOST, 'waiting')).toEqual({ type: 'waiting', players: ['p1'] });
+    ctx.send(GUEST, { type: 'hello', token: GUEST, protocol: PROTOCOL_VERSION });
+    const sync = ctx.last(GUEST, 'sync');
+    expect(sync?.type === 'sync' && sync.room.match?.waitingOn).toEqual(['p1']);
+  });
+
   it('keeps late arrivals out of a started match and tells outdated tabs to reload', () => {
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'join', name: 'A' });

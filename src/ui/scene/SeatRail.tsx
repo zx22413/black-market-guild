@@ -14,6 +14,8 @@ interface SeatRailProps {
   readonly seats: readonly SceneSeat[];
   readonly nameOf: (id: PlayerId) => string;
   readonly submitted: readonly PlayerId[];
+  /** Seats everyone is waiting on. */
+  readonly waiting: readonly PlayerId[];
   /** Bumps when a round ends; the ranking is only re-sorted then, not as cash moves. */
   readonly rankStep: number;
   /** The viewer's own black money, for their tag (only the phone layouts show it there). */
@@ -25,7 +27,7 @@ interface SeatRailProps {
  * changes, and tags that change place slide to their new spot (rising ones glow), so the
  * standings visibly shift at the end of a round.
  */
-export function SeatRail({ seats, nameOf, submitted, rankStep, blackMoney = null }: SeatRailProps) {
+export function SeatRail({ seats, nameOf, submitted, waiting, rankStep, blackMoney = null }: SeatRailProps) {
   const [order, setOrder] = useState<readonly PlayerId[]>(() => rankIds(seats));
   const lastStep = useRef(rankStep);
   useEffect(() => {
@@ -71,7 +73,7 @@ export function SeatRail({ seats, nameOf, submitted, rankStep, blackMoney = null
               else nodes.current.delete(seat.id);
             }}
           >
-            <SeatTag seat={seat} nameOf={nameOf} ready={submitted.includes(seat.id)} blackMoney={seat.isViewer ? blackMoney : null} />
+            <SeatTag seat={seat} nameOf={nameOf} ready={submitted.includes(seat.id)} waiting={waiting.includes(seat.id)} blackMoney={seat.isViewer ? blackMoney : null} />
           </div>
         ))}
     </div>

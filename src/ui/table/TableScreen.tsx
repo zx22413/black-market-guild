@@ -158,6 +158,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
         secretRole={secretRole}
         intel={intel}
         submitted={activeView?.submittedPlayerIds ?? []}
+        waiting={playback.waiting}
         floats={floats}
         fx={fx}
         recruitResolved={board.recruitResolved}
@@ -221,7 +222,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
         )}
         {caughtUp && !request && snapshot.status === 'running' && (
           <div className="action-pill">
-            <span>等待其他商會決定…</span>
+            <span>{playback.waiting.length > 0 ? `等待 ${playback.waiting.map(nameOf).join('、')} 決定…` : '等待其他商會決定…'}</span>
           </div>
         )}
       </div>

@@ -52,6 +52,8 @@ export interface Playback {
   readonly activeView: PlayerView | null;
   /** This round's private events for the visible seat. */
   readonly privateNotes: readonly PrivateEvent[];
+  /** Other seats still deciding, once playback has caught up (the one deciding on screen is left out). */
+  readonly waiting: readonly PlayerId[];
   readonly skip: () => void;
   readonly release: () => void;
   readonly confirmHandoff: () => void;
@@ -102,6 +104,11 @@ export function usePlayback(session: GameSession): Playback {
     [view, snapshot.privateEvents, board.round],
   );
 
+  const waiting = useMemo(
+    () => (caughtUp && snapshot.status === 'running' ? snapshot.waitingOn.filter((id) => id !== seat) : []),
+    [caughtUp, snapshot.status, snapshot.waitingOn, seat],
+  );
+
   return {
     snapshot,
     played,
@@ -113,6 +120,7 @@ export function usePlayback(session: GameSession): Playback {
     view,
     activeView,
     privateNotes,
+    waiting,
     skip: () => {
       const nextHold = events.findIndex((e, i) => i > cursor && isHold(e));
       setReleasedHold(cursor);

@@ -135,6 +135,24 @@
   color: #3f8a3a;
 }
 
+.tag-waiting {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #e9a23b;
+  color: #3a2208;
+  font-size: 0.72rem;
+  font-weight: 700;
+  animation: waiting-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes waiting-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
 .seat-status {
   font-size: 0.72rem;
   color: #8a3a20;
@@ -263,6 +281,7 @@
 .result-overlay {
   position: absolute;
   inset: 0;
+  z-index: 15;
   display: flex;
   align-items: center;
   justify-content: center;
