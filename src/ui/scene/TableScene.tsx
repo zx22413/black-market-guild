@@ -95,7 +95,7 @@ export interface TableSceneProps {
   readonly recruitResolved: boolean;
   /** Rounds finished so far; the right-hand ranking only re-sorts when this changes. */
   readonly rankStep: number;
-  /** Called once all models have loaded. */
+  /** Called once all models have loaded and the shaders are compiled (see `EffectWarmup`). */
   readonly onReady: () => void;
   /** Screen layout of the HUD (desktop, phone upright, phone on its side). */
   readonly layout: Layout;
@@ -121,11 +121,6 @@ function fitPoints(angles: readonly number[]): FitPoint[] {
       return rim(center, PLAYER_ISLAND_RADIUS + 1.5);
     }),
   ];
-}
-
-function Ready({ onReady }: { readonly onReady: () => void }) {
-  useEffect(onReady, [onReady]);
-  return null;
 }
 
 /** The whole 3D table: guild islands around the target island, lanes, ships and tags. */
@@ -307,8 +302,8 @@ export function TableScene(props: TableSceneProps) {
             {pigeons.map((cue) => (
               <PigeonFlight key={cue.key} from={cue.from} to={cue.to} at={cue.at} duration={cue.duration} color={cue.color} />
             ))}
-            <EffectWarmup seatAngles={angles} />
-            <Ready onReady={onReady} />
+            {/* The table counts as loaded once the shaders are ready too, so the loading screen covers the compiling. */}
+            <EffectWarmup seatAngles={angles} onDone={onReady} />
           </Suspense>
         </SwellProvider>
         <LabelTracker anchors={anchors} elements={labels} margins={labelMargins} />

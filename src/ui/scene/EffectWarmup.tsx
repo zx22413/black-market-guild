@@ -31,7 +31,7 @@ const PASS_GAP = 2;
  * One copy of each effect stands in a scene that is never drawn, with its per-frame work off (see
  * `useLiveFrame`). They stay mounted: disposing their materials would free the programs again.
  */
-export function EffectWarmup({ seatAngles }: { readonly seatAngles: readonly number[] }) {
+export function EffectWarmup({ seatAngles, onDone }: { readonly seatAngles: readonly number[]; readonly onDone: () => void }) {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
   const camera = useThree((s) => s.camera);
@@ -66,6 +66,7 @@ export function EffectWarmup({ seatAngles }: { readonly seatAngles: readonly num
         scene={scene}
         camera={camera}
         passes={[[stages.effects], [stages.effects, stages.storm], [stages.effects, stages.night]]}
+        onDone={onDone}
       />
     </Suspense>
   );
@@ -77,24 +78,31 @@ interface CompilePassesProps {
   readonly camera: Camera;
   /** Each pass compiles the table together with these stages, under the lights they bring. */
   readonly passes: readonly (readonly Scene[])[];
+  /** Called once every pass has finished compiling, failed passes included. */
+  readonly onDone: () => void;
 }
 
 /**
- * Runs one pass every few frames. A pass hangs its stages into the table's scene, compiles it
+ * Runs one pass every few frames, then reports when all of them have finished linking. A pass hangs its stages into the table's scene, compiles it
  * all with the table's fog and lights plus any the stages carry, and takes them out again; this
  * happens before the frame is drawn, so they never show.
  */
-function CompilePasses({ gl, scene, camera, passes }: CompilePassesProps) {
+function CompilePasses({ gl, scene, camera, passes, onDone }: CompilePassesProps) {
   const frames = useRef(0);
+  const pending = useRef<Promise<unknown>[]>([]);
+  const done = useRef(onDone);
+  done.current = onDone;
   useFrame(() => {
     frames.current += 1;
     if (frames.current % PASS_GAP !== 0) return;
-    const pass = passes[frames.current / PASS_GAP - 1];
+    const index = frames.current / PASS_GAP - 1;
+    const pass = passes[index];
     if (!pass) return;
     pass.forEach((stage) => scene.add(stage));
     // The lights are read now; only the linking finishes in the background.
-    gl.compileAsync(scene, camera).catch((error: unknown) => console.warn('Shader warm-up failed', error));
+    pending.current.push(gl.compileAsync(scene, camera).catch((error: unknown) => console.warn('Shader warm-up failed', error)));
     pass.forEach((stage) => scene.remove(stage));
+    if (index === passes.length - 1) void Promise.all(pending.current).then(() => done.current());
   });
   return null;
 }
