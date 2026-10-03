@@ -54,25 +54,31 @@ export const paintingUrl = (key: PaintingKey): string => `${base}art/paintings/$
 
 /**
  * Hand-drawn UI parts: drawn as SVG by `npm run art:ui` (scripts/draw-ui-art.ts), then rendered
- * to 2× PNGs by `npm run art:ui:png` (scripts/raster-ui-art.ts). The page uses the PNGs: the
- * SVGs' grain filters are re-run on every paint at a new size, which stalls a frame.
+ * to PNGs at 2× (`<key>.png`) and 3× (`<key>@3x.png`) by `npm run art:ui:png`
+ * (scripts/raster-ui-art.ts). The page uses the PNGs: the SVGs' grain filters are re-run on every
+ * paint at a new size, which stalls a frame. Both densities are offered, so each screen loads one.
  */
 export const UI_ART = ['frame-wood', 'board-wood', 'paper', 'paper-small', 'plaque', 'button-arrow', 'button-tag', 'button-round', 'rope', 'rope-mask-outer', 'rope-mask-inner', 'icon-pencil', 'icon-plus'] as const;
 export type UiArtKey = (typeof UI_ART)[number];
 export const uiArtUrl = (key: UiArtKey): string => `${base}art/ui/${key}.png`;
+const uiArt3xUrl = (key: UiArtKey): string => `${base}art/ui/${key}@3x.png`;
 
-/** `<img>` props for a UI part: declared 2×, so it shows at the SVG's size. */
+/** `<img>` props for a UI part: shown at the SVG's size, from the 2× or 3× file to suit the screen. */
 export const uiArtImage = (key: UiArtKey): { readonly src: string; readonly srcSet: string } => ({
   src: uiArtUrl(key),
-  srcSet: `${uiArtUrl(key)} 2x`,
+  srcSet: `${uiArtUrl(key)} 2x, ${uiArt3xUrl(key)} 3x`,
 });
 
 /**
  * The UI parts as CSS custom properties (`--ui-frame-wood` …), for border-image and backgrounds.
- * Declared 2× with `image-set`, so border-image slices stay in the SVG's units.
+ * Declared by density with `image-set`, so border-image slices stay in the SVG's units. Written
+ * with the `-webkit-` prefix on purpose: Safari before 17 (older iOS web views) only knows that
+ * spelling, and an unknown value would drop every border-image, while all current browsers accept it.
  */
 export const uiArtVars = (): Record<string, string> =>
-  Object.fromEntries(UI_ART.map((key) => [`--ui-${key}`, `image-set(url(${uiArtUrl(key)}) 2x)`]));
+  Object.fromEntries(
+    UI_ART.map((key) => [`--ui-${key}`, `-webkit-image-set(url(${uiArtUrl(key)}) 2x, url(${uiArt3xUrl(key)}) 3x)`]),
+  );
 
 /** A render of the table itself (our own capture), used behind menus. */
 export const uiBackdropUrl = `${base}art/ui/table-backdrop.jpg`;

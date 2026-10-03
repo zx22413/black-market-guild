@@ -1,6 +1,6 @@
 /**
- * Renders the UI parts from `npm run art:ui` (public/art/ui/*.svg) to 2× PNGs next to them
- * (npm run art:ui:png). The page uses the PNGs: the SVGs draw their grain with SVG filters
+ * Renders the UI parts from `npm run art:ui` (public/art/ui/*.svg) to PNGs next to them
+ * (npm run art:ui:png): `<name>.png` at 2× and `<name>@3x.png` at 3×, for high-density phones. The page uses the PNGs: the SVGs draw their grain with SVG filters
  * (feTurbulence), which the browser re-runs every time a part is painted at a new size, a
  * visible stall when a hand of cards or a panel first appears. The SVGs stay as the sources.
  *
@@ -23,8 +23,11 @@ const NODE_FS = 'node:fs';
 const NODE_CHILD_PROCESS = 'node:child_process';
 
 const DIR = new URL('../public/art/ui/', import.meta.url);
-/** Pixels per SVG unit; the CSS declares the PNGs as 2x (see `uiArtVars`), so sizes stay the same. */
-const UI_ART_SCALE = 2;
+/** Pixels per SVG unit, and the file suffix for each; `uiArtVars` declares the same densities. */
+const SCALES = [
+  { scale: 2, suffix: '' },
+  { scale: 3, suffix: '@3x' },
+] as const;
 const DEFAULT_CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
 function sizeOf(svg: string, name: string): { readonly width: number; readonly height: number } {
@@ -43,19 +46,21 @@ const names = fs.readdirSync(DIR.pathname).filter((name) => name.endsWith('.svg'
 for (const name of names) {
   const source = new URL(name, DIR);
   const { width, height } = sizeOf(fs.readFileSync(source.pathname, 'utf8'), name);
-  execFileSync(
-    chrome,
-    [
-      '--headless',
-      '--disable-gpu',
-      '--hide-scrollbars',
-      `--force-device-scale-factor=${UI_ART_SCALE}`,
-      '--default-background-color=00000000',
-      `--window-size=${width},${height}`,
-      `--screenshot=${new URL(name.replace(/\.svg$/, '.png'), DIR).pathname}`,
-      source.href,
-    ],
-    { stdio: 'ignore' },
-  );
+  for (const { scale, suffix } of SCALES) {
+    execFileSync(
+      chrome,
+      [
+        '--headless',
+        '--disable-gpu',
+        '--hide-scrollbars',
+        `--force-device-scale-factor=${scale}`,
+        '--default-background-color=00000000',
+        `--window-size=${width},${height}`,
+        `--screenshot=${new URL(name.replace(/\.svg$/, `${suffix}.png`), DIR).pathname}`,
+        source.href,
+      ],
+      { stdio: 'ignore' },
+    );
+  }
 }
-console.log(`rendered ${names.length} PNGs at ${UI_ART_SCALE}x into ${DIR.pathname}`);
+console.log(`rendered ${names.length} parts at ${SCALES.map((s) => `${s.scale}x`).join(' and ')} into ${DIR.pathname}`);

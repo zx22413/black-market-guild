@@ -88,7 +88,7 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 
 ## 美術素材
 
-佔位素材放在 `public/art/`（圖示 `icons/<key>.svg`、畫作 `paintings/<key>.jpg`、自製 UI 零件 `ui/*.svg`，由 `npm run art:ui` 產生，再由 `npm run art:ui:png` 輸出成畫面實際使用的 2 倍 `ui/*.png`；對局 HUD 的手繪外觀在 `table/hudSkin.css`（試用中），取用方式見 `art.ts` 的 `uiArtUrl`／`uiArtImage`／`uiArtVars`）與 `public/models/pirate-kit/`（Kenney Pirate Kit，CC0），來源與授權見 [`public/art/SOURCES.md`](../../public/art/SOURCES.md)。圖示為 CC BY 3.0，**必須保留作者標示**（設定畫面底部）。
+佔位素材放在 `public/art/`（圖示 `icons/<key>.svg`、畫作 `paintings/<key>.jpg`、自製 UI 零件 `ui/*.svg`，由 `npm run art:ui` 產生，再由 `npm run art:ui:png` 輸出成畫面實際使用的 2 倍與 3 倍 `ui/*.png`；對局 HUD 的手繪外觀在 `table/hudSkin.css`（試用中），取用方式見 `art.ts` 的 `uiArtUrl`／`uiArtImage`／`uiArtVars`）與 `public/models/pirate-kit/`（Kenney Pirate Kit，CC0），來源與授權見 [`public/art/SOURCES.md`](../../public/art/SOURCES.md)。圖示為 CC BY 3.0，**必須保留作者標示**（設定畫面底部）。
 
 ## 待辦
 
