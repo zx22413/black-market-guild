@@ -133,6 +133,8 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
   };
 
   const viewerSeat = table.seats.find((s) => s.isViewer);
+  const phase = request && activeView ? request.context.decision.phase : null;
+  const handOpen = phase === 'asset-purchase' || phase === 'role-deployment';
   // Only the seat whose private view is on screen sees its own locked role (hot-seat hides it between turns).
   const myLocked = view ? lockedRoles.get(view.playerId) : undefined;
   const secretRole = myLocked && myLocked.round === board.round ? myLocked : null;
@@ -162,6 +164,8 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
         rankStep={played.filter((e) => e.type === 'round-ended').length}
         onReady={markReady}
         layout={layout}
+        handOpen={handOpen}
+        blackMoney={view?.myBlackMoney ?? null}
       />
       {!ready && <div className="scene-loading">整理港口中…</div>}
 

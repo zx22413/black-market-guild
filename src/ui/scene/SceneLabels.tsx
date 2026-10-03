@@ -58,10 +58,12 @@ interface SeatTagProps {
   readonly nameOf: NameOf;
   /** Already locked this phase's choice. */
   readonly ready: boolean;
+  /** The viewer's own black money; shown on their tag only in the phone layouts, which have no ledger. */
+  readonly blackMoney?: number | null;
 }
 
 /** Guild board (the viewer's own included), listed in the right-hand rail: name, cash, assets and this round's public status. */
-export function SeatTag({ seat, nameOf, ready }: SeatTagProps) {
+export function SeatTag({ seat, nameOf, ready, blackMoney = null }: SeatTagProps) {
   return (
     <div className="seat-tag" style={{ borderColor: seat.color, '--seat': seat.color } as CSSProperties}>
       <i className="seat-rope" aria-hidden />
@@ -73,6 +75,7 @@ export function SeatTag({ seat, nameOf, ready }: SeatTagProps) {
       <span className="seat-cash">
         {seat.cash} G<small className="seat-worth">資產 {seat.assetValue} G</small>
       </span>
+      {blackMoney !== null && <span className="seat-private">黑錢 {blackMoney} G</span>}
       {seat.assets.length > 0 && (
         <span className="seat-assets">
           {seat.assets.map((a) => (

@@ -1,5 +1,5 @@
-import { useThree } from '@react-three/fiber';
-import { useLayoutEffect } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
+import { useLayoutEffect, useRef } from 'react';
 import { Vector3, type PerspectiveCamera } from 'three';
 import type { Vec3 } from './layout';
 
@@ -50,24 +50,56 @@ function closestFit(camera: PerspectiveCamera, points: readonly FitPoint[], widt
   return far;
 }
 
+/** How quickly the camera glides to a new framing (share of the remaining way per 60 Hz frame). */
+const GLIDE = 0.12;
+
 /**
  * Frames the table as tightly as possible inside the HUD-free area of the screen, keeping a
- * fixed viewing angle. Recomputed whenever the canvas is resized.
+ * fixed viewing angle. Recomputed whenever the canvas or the safe area changes: the first framing
+ * is placed at once, later ones (the hand of cards coming and going) glide there.
  */
 export function CameraRig({ points, safe }: { readonly points: readonly FitPoint[]; readonly safe: SafeArea }) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const { width, height } = useThree((s) => s.size);
+  const target = useRef<{ distance: number; aimZ: number } | null>(null);
+  const current = useRef<{ distance: number; aimZ: number } | null>(null);
 
   useLayoutEffect(() => {
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
-    let best = { distance: Infinity, aimZ: 0 };
-    for (let aimZ = -30; aimZ <= 30; aimZ += 1) {
-      const distance = closestFit(camera, points, width, height, safe, aimZ);
-      if (distance < best.distance) best = { distance, aimZ };
-    }
-    place(camera, best.distance, best.aimZ);
+    const fits = Array.from({ length: 61 }, (_, i) => {
+      const aimZ = i - 30;
+      return { distance: closestFit(camera, points, width, height, safe, aimZ), aimZ };
+    });
+    const nearest = Math.min(...fits.map((f) => f.distance));
+    // When the table is held by the width (a phone held upright) many aims fit equally close;
+    // take the one that centers it in the free band instead of pushing it to the top.
+    const middle = (safe.top + height - safe.bottom) / 2;
+    const offCenter = ({ distance, aimZ }: { distance: number; aimZ: number }): number => {
+      place(camera, distance, aimZ);
+      const ys = points.map(({ position }) => ((1 - projected.set(...position).project(camera).y) / 2) * height);
+      return Math.abs((Math.min(...ys) + Math.max(...ys)) / 2 - middle);
+    };
+    const best = fits
+      .filter((f) => f.distance <= nearest * 1.01)
+      .reduce((a, b) => (offCenter(b) < offCenter(a) ? b : a));
+    target.current = best;
+    // The fit search moved the camera around; put it back where it was before gliding on.
+    const from = current.current ?? best;
+    current.current = from;
+    place(camera, from.distance, from.aimZ);
   }, [camera, width, height, points, safe]);
+
+  useFrame((_, delta) => {
+    const to = target.current;
+    const at = current.current;
+    if (!to || !at) return;
+    const k = 1 - (1 - GLIDE) ** (Math.min(delta, 0.1) * 60);
+    const next = { distance: at.distance + (to.distance - at.distance) * k, aimZ: at.aimZ + (to.aimZ - at.aimZ) * k };
+    if (Math.abs(next.distance - at.distance) < 1e-3 && Math.abs(next.aimZ - at.aimZ) < 1e-3) return;
+    current.current = next;
+    place(camera, next.distance, next.aimZ);
+  });
 
   return null;
 }

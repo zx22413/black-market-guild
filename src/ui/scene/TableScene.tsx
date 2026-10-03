@@ -31,16 +31,22 @@ import { WEATHER, fillOf } from './weather';
 import { WeatherFog } from './WeatherFog';
 import './scene.css';
 
-/** Keep the islands clear of the HUD bands, which sit differently on a phone. */
+/**
+ * Keep the islands clear of the HUD bands, which sit differently on a phone. `bottom` is for the
+ * action strip alone; while a hand of cards stands above it, HAND_HEIGHT is added, so the islands
+ * sit lower (and larger) in every other phase.
+ */
 const SAFE_AREAS: Readonly<Record<Layout, SafeArea>> = {
-  desktop: { top: 80, bottom: 250, left: 24, right: 250 },
-  portrait: { top: 178, bottom: 250, left: 6, right: 6 },
+  desktop: { top: 80, bottom: 150, left: 24, right: 250 },
+  portrait: { top: 214, bottom: 132, left: 26, right: 26 },
   landscape: { top: 84, bottom: 118, left: 8, right: 150 },
 };
+/** Extra room the hand of cards takes above the action strip (none on a short phone: it sits beside it). */
+const HAND_HEIGHT: Readonly<Record<Layout, number>> = { desktop: 105, portrait: 110, landscape: 0 };
 /** How far floating cards keep from the same bands. */
 const LABEL_MARGINS: Readonly<Record<Layout, LabelMargins>> = {
   desktop: DESKTOP_MARGINS,
-  portrait: { top: 182, right: 6, bottom: 256, side: 6 },
+  portrait: { top: 190, right: 6, bottom: 256, side: 6 },
   landscape: { top: 86, right: 152, bottom: 122, side: 6 },
 };
 const SHIP_LABEL_HEIGHT = 7;
@@ -92,6 +98,10 @@ export interface TableSceneProps {
   readonly onReady: () => void;
   /** Screen layout of the HUD (desktop, phone upright, phone on its side). */
   readonly layout: Layout;
+  /** A hand of cards stands above the action strip (buying an asset, deploying a role). */
+  readonly handOpen: boolean;
+  /** The viewer's own black money, shown on their tag in the phone layouts (no ledger there). */
+  readonly blackMoney: number | null;
 }
 
 function rim(center: Vec3, radius: number): FitPoint[] {
@@ -119,7 +129,13 @@ function Ready({ onReady }: { readonly onReady: () => void }) {
 
 /** The whole 3D table: guild islands around the target island, lanes, ships and tags. */
 export function TableScene(props: TableSceneProps) {
-  const { table, weather, nameOf, selectableShips, onSelectShip, selectedShip, selectableIslands, selectedIsland, onSelectIsland, islandCard, secret, secretRole, intel, submitted, floats, fx, recruitResolved, rankStep, onReady, layout } = props;
+  const { table, weather, nameOf, selectableShips, onSelectShip, selectedShip, selectableIslands, selectedIsland, onSelectIsland, islandCard, secret, secretRole, intel, submitted, floats, fx, recruitResolved, rankStep, onReady, layout, handOpen, blackMoney } = props;
+  const safe = useMemo((): SafeArea => {
+    const base = SAFE_AREAS[layout];
+    return handOpen ? { ...base, bottom: base.bottom + HAND_HEIGHT[layout] } : base;
+  }, [layout, handOpen]);
+  // Floating cards keep as clear of the bottom as the islands do.
+  const labelMargins = useMemo((): LabelMargins => ({ ...LABEL_MARGINS[layout], bottom: safe.bottom + 6 }), [layout, safe]);
   const look = WEATHER[weather ?? 'clear'];
   const angles = useMemo(() => seatAngles(table.seats.length), [table.seats.length]);
   const points = useMemo(() => fitPoints(angles), [angles]);
@@ -233,7 +249,7 @@ export function TableScene(props: TableSceneProps) {
   return (
     <>
       <Canvas shadows camera={{ position: [0, 82, 60], fov: 38 }}>
-        <CameraRig points={points} safe={SAFE_AREAS[layout]} />
+        <CameraRig points={points} safe={safe} />
         <color attach="background" args={[look.sky]} />
         <WeatherFog color={look.sky} near={look.fogNear} far={look.fogFar} />
         <ambientLight intensity={look.ambient} />
@@ -293,7 +309,7 @@ export function TableScene(props: TableSceneProps) {
             <Ready onReady={onReady} />
           </Suspense>
         </SwellProvider>
-        <LabelTracker anchors={anchors} elements={labels} margins={LABEL_MARGINS[layout]} />
+        <LabelTracker anchors={anchors} elements={labels} margins={labelMargins} />
       </Canvas>
       <div className="scene-labels">
         <TargetSign ref={pin('target')} />
@@ -331,7 +347,7 @@ export function TableScene(props: TableSceneProps) {
           />
         ))}
       </div>
-      <SeatRail seats={table.seats} nameOf={nameOf} submitted={submitted} rankStep={rankStep} />
+      <SeatRail seats={table.seats} nameOf={nameOf} submitted={submitted} rankStep={rankStep} blackMoney={blackMoney} />
     </>
   );
 }

@@ -666,3 +666,10 @@
     rotate: 0deg;
   }
 }
+
+/* The viewer's black money on their ranking tag: only the phone layouts show it (the desktop has the ledger). */
+.seat-private {
+  display: none;
+  font-size: 0.7rem;
+  color: #7a4fb0;
+}

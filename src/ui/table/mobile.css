@@ -81,8 +81,21 @@
   font-size: 0.68rem;
   gap: 0;
 }
-.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .seat-rail :is(.seat-assets, .seat-status, .seat-worth) {
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .seat-rail :is(.seat-assets, .seat-status) {
   display: none;
+}
+/* No separate ledger on a phone: the viewer's asset value and black money ride on their tag. */
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .hud-bottom-left {
+  display: none;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .seat-rail .seat-worth {
+  display: block;
+  margin: 0;
+  font-size: 0.6rem;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .seat-rail .seat-private {
+  display: block;
+  font-size: 0.6rem;
 }
 .scene-root:is([data-layout='portrait'], [data-layout='landscape']) .seat-rail .seat-tag strong {
   display: block;
@@ -220,7 +233,8 @@
 }
 /* The ranking runs across the screen under the top band. */
 .scene-root[data-layout='portrait'] .seat-rail {
-  top: 92px;
+  /* Below the events, leaving them room to open their descriptions without covering the tags. */
+  top: 128px;
   left: 6px;
   right: 6px;
   width: auto;
@@ -235,7 +249,7 @@
   top: 140px;
 }
 .scene-root[data-layout='portrait'] .hud-private {
-  top: 178px;
+  top: 196px;
   bottom: auto;
   right: 6px;
   max-width: 60%;
@@ -274,7 +288,7 @@
   top: 46px;
 }
 .scene-root[data-layout='landscape'] .hud-private {
-  top: 84px;
+  top: 48px;
   bottom: auto;
   left: 6px;
   right: auto;
@@ -313,4 +327,18 @@
 .scene-root:is([data-layout='portrait'], [data-layout='landscape']) .ship-tag .role-token img {
   width: 14px;
   height: 14px;
+}
+
+/* Labels on the table: smaller plates, and ship tags keep only the owners' color dots. */
+.scene-root[data-layout='portrait'] .island-sign {
+  padding: 1px 7px;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+.scene-root[data-layout='portrait'] .ship-tag .ship-owners {
+  font-size: 0;
+  gap: 2px;
+}
+.scene-root[data-layout='portrait'] .ship-tag .ship-owners i {
+  margin-right: 0;
 }
