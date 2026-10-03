@@ -206,6 +206,27 @@
 
 /* ---------- cards ---------- */
 
+/* The role card beside an island: the hand's parchment sheet, without changing its positioning. */
+.scene-root .role-card {
+  isolation: isolate;
+  background: none;
+}
+.scene-root .role-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 14px solid transparent;
+  border-image: var(--ui-paper-small) 16 fill stretch;
+  filter: var(--hud-shadow);
+}
+.scene-root .role-card.secret::before {
+  filter: var(--hud-shadow) drop-shadow(0 0 3px #b48be6) drop-shadow(0 0 2px #b48be6);
+}
+.scene-root .role-card.caught::before {
+  filter: var(--hud-shadow) drop-shadow(0 0 3px #e06a52);
+}
+
 .scene-root .table-card {
   color: var(--hud-ink);
 }

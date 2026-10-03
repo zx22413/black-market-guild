@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type ReactNode, type Ref } from 'react';
+import { useEffect, useState, type CSSProperties, type Ref } from 'react';
 import type { Deployment, PlayerId, RoleId } from '../../game';
 import { assetIcon, iconUrl, roleIcon } from '../art';
 import { ASSET_LABELS, ROLE_LABELS } from '../labels';
@@ -18,29 +18,19 @@ export function TargetSign({ ref }: { readonly ref: Ref<HTMLDivElement> }) {
   );
 }
 
-interface SeatSignProps {
-  readonly ref: Ref<HTMLDivElement>;
-  readonly seat: SceneSeat;
-  readonly floats: readonly CashFloat[];
-  /** The role card this guild played, shown beside its plate. */
-  readonly roleCard?: ReactNode;
-  /** Which side of the plate the role card goes: toward the middle of the screen. */
-  readonly cardSide?: 'left' | 'right';
-}
-
 /** Small plaque on a guild's island, in the guild's color, so the right-hand rail maps to islands. */
-export function SeatSign({ ref, seat, floats, roleCard, cardSide = 'right' }: SeatSignProps) {
+export function SeatSign({ ref, seat, floats }: { readonly ref: Ref<HTMLDivElement>; readonly seat: SceneSeat; readonly floats: readonly CashFloat[] }) {
   return (
-    <div ref={ref} className={`island-sign seat-sign card-${cardSide}`}>
+    <div ref={ref} className="island-sign seat-sign">
       <CashFloats floats={floats} />
       <i style={{ background: seat.color }} aria-hidden />
       {seat.isViewer ? '你' : seat.name}
-      {roleCard}
     </div>
   );
 }
 
 interface RoleCardProps {
+  readonly ref: Ref<HTMLDivElement>;
   readonly role: RoleId;
   /** Whose ship it targets, e.g. "霧港商團的船". */
   readonly target: string;
@@ -50,10 +40,10 @@ interface RoleCardProps {
   readonly caught?: boolean;
 }
 
-/** The role card a guild played this round, hung beside its island's name plate. */
-export function RoleCard({ role, target, secret = false, caught = false }: RoleCardProps) {
+/** The role card a guild played this round, standing beside its island, on the same parchment as the hand. */
+export function RoleCard({ ref, role, target, secret = false, caught = false }: RoleCardProps) {
   return (
-    <div className={`role-card ${secret ? 'secret' : ''} ${caught ? 'caught' : ''}`}>
+    <div ref={ref} className={`role-card ${secret ? 'secret' : ''} ${caught ? 'caught' : ''}`}>
       <img src={iconUrl(roleIcon(role))} alt="" />
       <strong>{ROLE_LABELS[role]}</strong>
       <small>{target}</small>

@@ -31,8 +31,10 @@ import { WeatherFog } from './WeatherFog';
 import './scene.css';
 
 /** Keep the islands clear of the top event band and the bottom hand/action band. */
-const SAFE_AREA: SafeArea = { top: 80, bottom: 150, left: 24, right: 250 };
+const SAFE_AREA: SafeArea = { top: 80, bottom: 185, left: 24, right: 250 };
 const SHIP_LABEL_HEIGHT = 7;
+/** How far from an island's rim its role card stands. */
+const ROLE_CARD_GAP = 4;
 /** How far the far island's recruitment props move sideways, clear of its name plate. */
 const FAR_SIDE_SHIFT = 12;
 /**
@@ -156,7 +158,16 @@ export function TableScene(props: TableSceneProps) {
           ];
     // A point on each island's grass, under its recruitment props, where their labels hang.
     const fxAnchors = fxSpots.map(([x, , z], i): LabelAnchor => ({ id: `fx-${i}`, position: [x, 3, z] }));
-    return [{ id: 'target', position: TARGET_PLATE }, ...seatAnchors, ...shipAnchors, ...fxAnchors, ...cardAnchors];
+    // Each role card stands beside its island at mid height, away from the name plate and the
+    // action strip: islands on the right of the table get it on their left, clear of the ranking
+    // rail. Where the top of the screen is too close, it hangs down instead.
+    const roleAnchors = table.seats.map((_, i): LabelAnchor => {
+      const [x, , z] = seatPosition(angles[i]!);
+      const side = x > 10 ? -1 : 1;
+      const cx = x + side * (PLAYER_ISLAND_RADIUS + ROLE_CARD_GAP);
+      return { id: `role-${i}`, position: [cx, 4, z], flip: [cx, 4, z + 4] };
+    });
+    return [{ id: 'target', position: TARGET_PLATE }, ...seatAnchors, ...shipAnchors, ...fxAnchors, ...roleAnchors, ...cardAnchors];
   }, [angles, table, selectedIsland, fxSpots]);
 
   // Each pigeon flies from its own island to the recruiter's scroll, at the height the props float.
@@ -171,18 +182,27 @@ export function TableScene(props: TableSceneProps) {
     [fx, table.seats, fxSpots],
   );
 
-  // The role a guild played: public once revealed (or a smuggler caught); the viewer's own until then, only for them.
-  const roleCardOf = (seat: SceneSeat) => {
-    const shown = seat.role ?? (seat.isViewer && secretRole ? { role: secretRole.role, targetShipId: secretRole.targetShipId, caught: false } : null);
-    if (!shown) return null;
-    const owners = table.ships.find((ship) => ship.id === shown.targetShipId)?.owners ?? [];
-    return <RoleCard key={shown.role} role={shown.role} target={`→ ${owners.map(nameOf).join('＋')}的船`} secret={!seat.role} caught={shown.caught} />;
-  };
-
   const labels = useRef(new Map<string, HTMLElement>());
   const pin = (id: string) => (element: HTMLElement | null) => {
     if (element) labels.current.set(id, element);
     else labels.current.delete(id);
+  };
+
+  // The role a guild played: public once revealed (or a smuggler caught); the viewer's own until then, only for them.
+  const roleCardOf = (seat: SceneSeat, i: number) => {
+    const shown = seat.role ?? (seat.isViewer && secretRole ? { role: secretRole.role, targetShipId: secretRole.targetShipId, caught: false } : null);
+    if (!shown) return null;
+    const owners = table.ships.find((ship) => ship.id === shown.targetShipId)?.owners ?? [];
+    return (
+      <RoleCard
+        key={`role-${seat.id}-${shown.role}`}
+        ref={pin(`role-${i}`)}
+        role={shown.role}
+        target={`→ ${owners.map(nameOf).join('＋')}的船`}
+        secret={!seat.role}
+        caught={shown.caught}
+      />
+    );
   };
 
   return (
@@ -263,11 +283,9 @@ export function TableScene(props: TableSceneProps) {
             ref={pin(`seat-${i}`)}
             seat={seat}
             floats={floats.filter((f) => f.playerId === seat.id)}
-            roleCard={roleCardOf(seat)}
-            // Islands on the right of the table hang the card on the left of the plate, clear of the ranking rail.
-            cardSide={seatPosition(angles[i]!)[0] > 10 ? 'left' : 'right'}
           />
         ))}
+        {table.seats.map((seat, i) => roleCardOf(seat, i))}
         {table.seats.map((seat, i) => (
           <div key={seat.id} ref={pin(`fx-${i}`)} className="fx-anchor">
             <SeatFx seat={seat} cues={fx} />

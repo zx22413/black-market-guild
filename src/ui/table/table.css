@@ -591,75 +591,60 @@
   gap: 8px;
 }
 
-/* ── Role card beside a guild's name plate: what it played this round ── */
-
-.seat-sign.card-left .role-card {
-  left: auto;
-  right: calc(100% + 8px);
-}
+/* ── Role card beside a guild's island: what it played this round ── */
+/* The parchment itself comes from hudSkin.css, the same sheet as the cards in hand. */
 
 .role-card {
-  position: absolute;
-  bottom: -6px;
-  left: calc(100% + 8px);
-  width: 74px;
-  letter-spacing: normal;
-  padding: 5px 4px 4px;
+  z-index: 3;
+  width: 86px;
+  padding: 12px 8px 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1px;
+  gap: 2px;
   text-align: center;
   color: #3a2a17;
-  background: #fcf4e2;
-  border: 2px solid #7a5a36;
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(30, 20, 5, 0.35);
   pointer-events: none;
   animation: role-card-in 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
 }
 
 .role-card img {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   filter: brightness(0.35) sepia(1) saturate(2) hue-rotate(-10deg);
 }
 
 .role-card strong {
-  font-size: 0.78rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
 }
 
 .role-card small {
-  font-size: 0.6rem;
-  line-height: 1.2;
+  font-size: 0.62rem;
+  line-height: 1.25;
   color: #6b4a2b;
 }
 
-/* Only the viewer sees it: their own role before the reveal, or a smuggler nobody caught. */
-.role-card.secret {
-  border-style: dashed;
-  border-color: #7a4fb0;
-  background: rgba(244, 236, 252, 0.95);
-}
-
+/* Only the viewer sees it: a purple ribbon across the foot of the card. */
 .role-card em {
-  font-size: 0.55rem;
+  margin-top: 3px;
+  padding: 1px 8px;
+  font-size: 0.58rem;
   font-style: normal;
-  color: #7a4fb0;
-}
-
-.role-card.caught {
-  border-color: #9a2512;
+  color: #fff;
+  background: #7a4fb0;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(30, 20, 5, 0.35);
 }
 
 .role-stamp {
   position: absolute;
-  top: 26%;
+  top: 30%;
   left: 50%;
   translate: -50% 0;
   rotate: -14deg;
   padding: 1px 6px;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   color: #9a2512;
