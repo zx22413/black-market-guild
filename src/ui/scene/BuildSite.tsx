@@ -1,7 +1,7 @@
 import { useTexture } from '@react-three/drei';
-import { createPortal, useFrame, useThree } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { Scene, SpriteMaterial, type Group, type Mesh, type MeshBasicMaterial, type Sprite } from 'three';
+import { SpriteMaterial, type Group, type Mesh, type MeshBasicMaterial, type Sprite } from 'three';
 import type { AssetId } from '../../game';
 import { Building } from './buildings/Building';
 import { BUILD_SECONDS, buildGlow, buildSparks, completionFlash, groundRing, riseScale, sparkProgress } from './buildMath';
@@ -35,41 +35,6 @@ export function BuildSite({ asset, color, position, scale, animate, freezeAt }: 
     <Suspense fallback={null}>
       <Constructing asset={asset} color={color} position={position} scale={scale} {...(freezeAt === undefined ? {} : { freezeAt })} />
     </Suspense>
-  );
-}
-
-/**
- * Compiles the construction effect's shaders and uploads its sparkle textures while the table
- * loads, in a scene that is never drawn, so the first building bought does not stall a frame
- * doing it. It stays mounted: disposing its materials would free the compiled programs again.
- */
-export function BuildWarmup() {
-  const gl = useThree((s) => s.gl);
-  const scene = useThree((s) => s.scene);
-  const camera = useThree((s) => s.camera);
-  const textures = useTexture(SPARKLES);
-  const offstage = useMemo(() => new Scene(), []);
-  const [glow] = useState(createGoldGlow);
-  const sparkle = useMemo(
-    () => new SpriteMaterial({ color: GOLD, alphaMap: textures[0] ?? null, transparent: true, depthWrite: false, toneMapped: false }),
-    [textures],
-  );
-  useEffect(() => () => sparkle.dispose(), [sparkle]);
-  useEffect(() => {
-    textures.forEach((texture) => gl.initTexture(texture));
-    // Lit by the table's own lights and fog, so the programs match the ones the real effect uses.
-    gl.compileAsync(offstage, camera, scene).catch((error: unknown) => console.warn('Construction effect warm-up failed', error));
-  }, [gl, scene, camera, offstage, textures]);
-  return createPortal(
-    <>
-      <Building asset="shipyard" color={GOLD} glow={glow} />
-      <sprite material={sparkle} />
-      <mesh>
-        <ringGeometry args={[0.8, 1, 64]} />
-        <meshBasicMaterial color={GOLD} transparent depthWrite={false} toneMapped={false} />
-      </mesh>
-    </>,
-    offstage,
   );
 }
 

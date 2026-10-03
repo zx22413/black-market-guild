@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { Suspense, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import type { Deployment, PlayerId, ShipId, VoyageEventId } from '../../game';
-import { BuildWarmup } from './BuildSite';
+import { EffectWarmup } from './EffectWarmup';
 import { CameraRig, type FitPoint, type SafeArea } from './CameraRig';
 import { PlayerIsland, TargetIsland } from './Islands';
 import { PigeonFlight } from './PigeonFlight';
@@ -307,7 +307,7 @@ export function TableScene(props: TableSceneProps) {
             {pigeons.map((cue) => (
               <PigeonFlight key={cue.key} from={cue.from} to={cue.to} at={cue.at} duration={cue.duration} color={cue.color} />
             ))}
-            <BuildWarmup />
+            <EffectWarmup />
             <Ready onReady={onReady} />
           </Suspense>
         </SwellProvider>
