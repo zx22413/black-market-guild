@@ -90,7 +90,7 @@
 
 ## UI 零件（本專案自製）
 
-`ui/*.svg` 由 [`scripts/draw-ui-art.ts`](../../scripts/draw-ui-art.ts) 產生（`npm run art:ui`），是本專案原創的向量圖，沒有使用外部素材。紙的填色疊有淡淡的顆粒雜訊（SVG `feTurbulence`，不影響輪廓線；強度見腳本的 `GRAIN_STRENGTH`）；木頭不加雜訊，以單一平滑漸層上色。畫面實際使用的是同名的 `ui/*.png`：由 [`scripts/raster-ui-art.ts`](../../scripts/raster-ui-art.ts)（`npm run art:ui:png`）用 headless Chrome 把 SVG 輸出成 2 倍（`<名稱>.png`）與 3 倍（`<名稱>@3x.png`）兩種解析度，瀏覽器依螢幕挑一種，避免瀏覽器每次以新尺寸繪製時重算 SVG 濾鏡而卡頓；改了 SVG 之後兩個指令都要跑。風格參考使用者提供的手繪木框設計稿，以及 Kenney UI Pack: Adventure 的配色比例，但沒有使用這兩者的圖檔。
+`ui/*.svg` 由 [`scripts/draw-ui-art.ts`](../../scripts/draw-ui-art.ts) 產生（`npm run art:ui`），是本專案原創的向量圖，沒有使用外部素材。紙的填色疊有淡淡的顆粒雜訊（SVG `feTurbulence`，不影響輪廓線；強度見腳本的 `GRAIN_STRENGTH`）；木頭不加雜訊，以單一平滑漸層上色。畫面實際使用的是同名的 `ui/*.png`：由 [`scripts/raster-ui-art.ts`](../../scripts/raster-ui-art.ts)（`npm run art:ui:png`）用 headless Chrome 把 SVG 輸出成 2 倍（`<名稱>.png`）與 3 倍（`<名稱>@3x.png`）兩種解析度，瀏覽器依螢幕挑一種，有紙紋的 `paper`、`paper-small`、`plaque` 再由 [`scripts/webp-ui-art.py`](../../scripts/webp-ui-art.py) 轉成品質 85 的 WebP（需要 Pillow；PNG 壓不下紙紋，減色又會讓焦痕漸層出現色帶），避免瀏覽器每次以新尺寸繪製時重算 SVG 濾鏡而卡頓；改了 SVG 之後兩個指令都要跑。風格參考使用者提供的手繪木框設計稿，以及 Kenney UI Pack: Adventure 的配色比例，但沒有使用這兩者的圖檔。
 
 | 檔案 | 內容 |
 |---|---|

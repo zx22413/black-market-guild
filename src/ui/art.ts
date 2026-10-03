@@ -54,14 +54,22 @@ export const paintingUrl = (key: PaintingKey): string => `${base}art/paintings/$
 
 /**
  * Hand-drawn UI parts: drawn as SVG by `npm run art:ui` (scripts/draw-ui-art.ts), then rendered
- * to PNGs at 2× (`<key>.png`) and 3× (`<key>@3x.png`) by `npm run art:ui:png`
- * (scripts/raster-ui-art.ts). The page uses the PNGs: the SVGs' grain filters are re-run on every
- * paint at a new size, which stalls a frame. Both densities are offered, so each screen loads one.
+ * to 2× (`<key>.png`) and 3× (`<key>@3x.png`) images by `npm run art:ui:png`
+ * (scripts/raster-ui-art.ts, then scripts/webp-ui-art.py for the paper-grained parts). The page
+ * uses those images, not the SVGs: the SVGs' grain filters are re-run on every paint at a new
+ * size, which stalls a frame. Both densities are offered, so each screen loads one.
  */
 export const UI_ART = ['frame-wood', 'board-wood', 'paper', 'paper-small', 'plaque', 'button-arrow', 'button-tag', 'button-round', 'rope', 'rope-mask-outer', 'rope-mask-inner', 'icon-pencil', 'icon-plus'] as const;
 export type UiArtKey = (typeof UI_ART)[number];
-export const uiArtUrl = (key: UiArtKey): string => `${base}art/ui/${key}.png`;
-const uiArt3xUrl = (key: UiArtKey): string => `${base}art/ui/${key}@3x.png`;
+/**
+ * Parts with paper grain ship as WebP: PNG cannot compress the grain. Keep in step with
+ * `WEBP_PARTS` in scripts/webp-ui-art.py, which writes them.
+ */
+const UI_ART_WEBP: ReadonlySet<UiArtKey> = new Set(['paper', 'paper-small', 'plaque']);
+const uiArtFile = (key: UiArtKey, suffix: string): string =>
+  `${base}art/ui/${key}${suffix}.${UI_ART_WEBP.has(key) ? 'webp' : 'png'}`;
+export const uiArtUrl = (key: UiArtKey): string => uiArtFile(key, '');
+const uiArt3xUrl = (key: UiArtKey): string => uiArtFile(key, '@3x');
 
 /** `<img>` props for a UI part: shown at the SVG's size, from the 2× or 3× file to suit the screen. */
 export const uiArtImage = (key: UiArtKey): { readonly src: string; readonly srcSet: string } => ({
