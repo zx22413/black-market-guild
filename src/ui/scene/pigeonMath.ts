@@ -2,7 +2,7 @@ import type { Vec3 } from './layout';
 
 /** How high the arc rises above the straight line, and how big the bird is in the world. */
 export const FLIGHT_ARC = 11;
-export const PIGEON_SCALE = 4.4;
+export const PIGEON_SCALE = 2.64;
 /** Share of the flight spent taking off and landing, when the bird grows in and shrinks out. */
 const EDGE = 0.1;
 /** Wing beats per second. */

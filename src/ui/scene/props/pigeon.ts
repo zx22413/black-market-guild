@@ -53,6 +53,16 @@ export const PIGEON_BODY: readonly KitPart[] = [
   { kind: 'prism', base: [0, 0.55, 0.8], radius: 0.045, height: 0.03, sides: 8, mat: 'roofRed' },
 ];
 
+/**
+ * A collar around the neck, in the sending guild's color: the model is white so the material's
+ * color tints it. It is slightly wider than the neck so it reads from the table camera.
+ */
+export const PIGEON_COLLAR: readonly KitPart[] = [
+  { kind: 'loft', base: [0, 0.42, 0.36], outline: CHEST.map(([x, z]): Vec2 => [x * 1.9, z * 1.9]), height: 0.2, bottom: 1, top: 0.9, mat: 'marble' },
+  // The loose ends of the knot, hanging down the chest.
+  { kind: 'box', center: [0, 0.3, 0.7], size: [0.16, 0.3, 0.05], bevel: 0.012, mat: 'marble' },
+];
+
 const mirrorX = (outline: readonly Vec2[]): Vec2[] => outline.map(([x, z]) => [-x, z]);
 
 const WING_INNER: readonly Vec2[] = [

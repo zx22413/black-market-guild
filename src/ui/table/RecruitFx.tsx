@@ -85,6 +85,15 @@ export function SeatFx({ seat, cues, standing }: SeatFxProps) {
                 <Parchment />
               </div>
             ) : null;
+          case 'parchment-withdraw':
+            return (
+              <div key={cue.key} className="fx-item" style={timing(cue)}>
+                <div className="fx-fade">
+                  <Parchment />
+                </div>
+                <b className="verdict note">撤回招募</b>
+              </div>
+            );
           case 'parchment-tear':
             return (
               <div key={cue.key} className="fx-item fx-fail" style={timing(cue)}>

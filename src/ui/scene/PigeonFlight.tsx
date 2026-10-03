@@ -2,7 +2,7 @@ import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import type { Group } from 'three';
 import { geometryFromParts } from './buildings/Building';
-import { PIGEON_BODY, PIGEON_SHOULDER, pigeonWing } from './props/pigeon';
+import { PIGEON_BODY, PIGEON_COLLAR, PIGEON_SHOULDER, pigeonWing } from './props/pigeon';
 import type { Vec3 } from './layout';
 import { flightPose, wingAngle } from './pigeonMath';
 
@@ -12,13 +12,16 @@ interface PigeonFlightProps {
   /** Milliseconds before taking off, and how long the flight lasts. */
   readonly at: number;
   readonly duration: number;
+  /** The sending guild's color, worn as a collar so each pigeon can be told apart. */
+  readonly color: string;
   /** Dev preview only: hold the bird at this many milliseconds into the flight. */
   readonly freezeAt?: number;
 }
 
 /** A carrier pigeon that flies an arc from one island to another and lands out of sight. */
-export function PigeonFlight({ from, to, at, duration, freezeAt }: PigeonFlightProps) {
+export function PigeonFlight({ from, to, at, duration, color, freezeAt }: PigeonFlightProps) {
   const body = useMemo(() => geometryFromParts(PIGEON_BODY), []);
+  const collar = useMemo(() => geometryFromParts(PIGEON_COLLAR), []);
   const wings = useMemo(() => [geometryFromParts(pigeonWing(1)), geometryFromParts(pigeonWing(-1))] as const, []);
   const root = useRef<Group>(null);
   const hinges = useRef<(Group | null)[]>([]);
@@ -46,6 +49,9 @@ export function PigeonFlight({ from, to, at, duration, freezeAt }: PigeonFlightP
     <group ref={root} visible={false}>
       <mesh geometry={body} castShadow dispose={null}>
         <meshStandardMaterial vertexColors roughness={0.8} />
+      </mesh>
+      <mesh geometry={collar} castShadow dispose={null}>
+        <meshStandardMaterial vertexColors color={color} roughness={0.7} />
       </mesh>
       {wings.map((geometry, i) => (
         <group

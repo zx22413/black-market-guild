@@ -38,9 +38,9 @@ describe('recruitment show', () => {
     expect(recruitShow(round(recruiters([])), 1, ORDER).duration).toBe(0);
   });
 
-  it('tears the parchment of a recruiter who withdrew', () => {
+  it('quietly withdraws the parchment of a recruiter who applied elsewhere, without tearing it', () => {
     const show = recruitShow(round(recruiters(['p2']), withdrawn(['p2'])), 2, ORDER);
-    expect(show.cues.map((c) => [c.kind, c.player])).toEqual([['parchment-tear', 'p2']]);
+    expect(show.cues.map((c) => [c.kind, c.player])).toEqual([['parchment-withdraw', 'p2']]);
   });
 
   it('sends one pigeon per application, one after another', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PIGEON_BODY, PIGEON_SHOULDER, pigeonWing } from '../../src/ui/scene/props/pigeon';
+import { PIGEON_BODY, PIGEON_COLLAR, PIGEON_SHOULDER, pigeonWing } from '../../src/ui/scene/props/pigeon';
 import { partFaces } from '../../src/ui/scene/buildings/polyhedra';
 
 const extent = (parts: readonly Parameters<typeof partFaces>[0][]) => {
@@ -39,6 +39,16 @@ describe('carrier pigeon model', () => {
     expect(left.x[0]).toBeCloseTo(-right.x[1], 5);
     expect(left.x[1]).toBeCloseTo(-right.x[0], 5);
     expect(left.z).toEqual(right.z);
+  });
+
+  it('puts the guild-colored collar around the neck, wider than the neck itself', () => {
+    for (const part of PIGEON_COLLAR) expect(partFaces(part).length).toBeGreaterThanOrEqual(5);
+    const collar = extent(PIGEON_COLLAR);
+    const body = extent(PIGEON_BODY);
+    // Between the body's middle and the head, and inside the bird's length.
+    expect(collar.z[0]).toBeGreaterThan(body.z[0]);
+    expect(collar.z[1]).toBeLessThan(body.z[1]);
+    expect(collar.x[1] - collar.x[0]).toBeGreaterThan(0.3);
   });
 
   it('hinges the wings on the back, above the belly', () => {

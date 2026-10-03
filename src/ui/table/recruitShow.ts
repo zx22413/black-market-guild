@@ -1,7 +1,7 @@
 import type { Application, MatchEvent, PlayerId, Venture } from '../../game';
 
-/** What an island plays: parchment tearing, a pigeon leaving, a handshake or a torn envelope. */
-export type CueKind = 'parchment-hold' | 'parchment-tear' | 'pigeon' | 'handshake' | 'envelope-tear';
+/** What an island plays: parchment tearing or quietly withdrawn, a pigeon leaving, a handshake or a torn envelope. */
+export type CueKind = 'parchment-hold' | 'parchment-tear' | 'parchment-withdraw' | 'pigeon' | 'handshake' | 'envelope-tear';
 
 export interface RecruitCue {
   /** Unique per show, so React keeps each cue's animation running. */
@@ -24,6 +24,8 @@ export interface RecruitShow {
 
 export const PARCHMENT_MS = 1400;
 export const TEAR_PARCHMENT_MS = 1200;
+/** A withdrawn recruitment just fades away with a hint, with no drama. */
+export const WITHDRAW_MS = 1500;
 export const PIGEON_STAGGER_MS = 550;
 export const PIGEON_FLIGHT_MS = 1400;
 /** One result group (a pairing or a rejection) plays this long before the next one starts. */
@@ -96,8 +98,8 @@ export function recruitShow(played: readonly MatchEvent[], index: number, order:
     case 'recruitments-withdrawn':
       return event.recruiters.length > 0
         ? {
-            cues: event.recruiters.map((id) => ({ key: `${tag}-tear-${id}`, kind: 'parchment-tear', player: id, at: 0, duration: TEAR_PARCHMENT_MS })),
-            duration: TEAR_PARCHMENT_MS + TAIL_MS,
+            cues: event.recruiters.map((id) => ({ key: `${tag}-withdraw-${id}`, kind: 'parchment-withdraw', player: id, at: 0, duration: WITHDRAW_MS })),
+            duration: WITHDRAW_MS + TAIL_MS,
           }
         : NO_SHOW;
     case 'applications-announced': {

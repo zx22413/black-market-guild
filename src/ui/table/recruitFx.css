@@ -99,6 +99,23 @@
   }
 }
 
+/* A withdrawn parchment drifts up and fades out; no rip. */
+.fx-fade {
+  animation: fx-fade-out calc(var(--dur) * 0.6) ease-in var(--at) both;
+}
+
+@keyframes fx-fade-out {
+  0%,
+  15% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-16px);
+    opacity: 0;
+  }
+}
+
 /* ── Torn halves: used for parchments and envelopes ── */
 
 .fx-torn {
@@ -224,6 +241,11 @@
 .verdict.ok {
   color: #1f5a1c;
   background: #f1fbe9;
+}
+
+.verdict.note {
+  color: #6b4a2b;
+  background: #fcf4e2;
 }
 
 .verdict.fail {

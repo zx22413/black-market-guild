@@ -11,6 +11,7 @@ const SPOTS: readonly { id: string; label: string; left: number; top: number; co
   { id: 'd', label: '合作成立', left: 340, top: 430, color: '#6db36a' },
   { id: 'e', label: '信封撕裂', left: 540, top: 430, color: '#e0b43c' },
   { id: 'f', label: '羊皮紙撕裂', left: 740, top: 430, color: '#d0553f' },
+  { id: 'g', label: '撤回招募（淡出＋提示）', left: 740, top: 190, color: '#6db36a' },
 ];
 
 function seatOf(spot: (typeof SPOTS)[number], recruiting: SceneSeat['recruiting']): SceneSeat {
@@ -30,6 +31,7 @@ export function FxPreview() {
     cue('handshake', 'd'),
     cue('envelope-tear', 'e'),
     cue('parchment-tear', 'f', { duration: 1200 }),
+    cue('parchment-withdraw', 'g', { duration: 1500 }),
   ];
   return (
     <div className="fx-frozen" style={{ position: 'fixed', inset: 0, background: '#4fa9ad', overflow: 'hidden' }}>

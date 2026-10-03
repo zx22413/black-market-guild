@@ -47,7 +47,7 @@ export function PigeonPreview() {
             <group position={[-30, 0, -4]}>
               <IslandBase radius={13} seed={2} />
             </group>
-            <PigeonFlight key={loop} from={FROM} to={TO} at={0} duration={DURATION} {...(freezeAt === undefined || Number.isNaN(freezeAt) ? {} : { freezeAt })} />
+            <PigeonFlight key={loop} from={FROM} to={TO} at={0} duration={DURATION} color={params.get('color') ?? '#d0553f'} {...(freezeAt === undefined || Number.isNaN(freezeAt) ? {} : { freezeAt })} />
           </Suspense>
         </SwellProvider>
         <OrbitControls target={close ? [-2, 18, 7] : [0, 4, 4]} />

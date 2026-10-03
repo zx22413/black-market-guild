@@ -153,7 +153,7 @@ export function TableScene(props: TableSceneProps) {
         if (cue.kind !== 'pigeon' || from < 0 || to < 0) return [];
         const [fx0, , fz0] = seatPosition(angles[from]!);
         const [tx, , tz] = seatPosition(angles[to]!);
-        return [{ key: cue.key, at: cue.at, duration: cue.duration, from: [fx0, 8, fz0] as Vec3, to: [tx, 8, tz] as Vec3 }];
+        return [{ key: cue.key, at: cue.at, duration: cue.duration, color: table.seats[from]!.color, from: [fx0, 8, fz0] as Vec3, to: [tx, 8, tz] as Vec3 }];
       }),
     [fx, table.seats, angles],
   );
@@ -221,7 +221,7 @@ export function TableScene(props: TableSceneProps) {
               </group>
             ))}
             {pigeons.map((cue) => (
-              <PigeonFlight key={cue.key} from={cue.from} to={cue.to} at={cue.at} duration={cue.duration} />
+              <PigeonFlight key={cue.key} from={cue.from} to={cue.to} at={cue.at} duration={cue.duration} color={cue.color} />
             ))}
             <Ready onReady={onReady} />
           </Suspense>
