@@ -1,0 +1,57 @@
+/* Tap-to-explain bubble (InfoTip.tsx): the parchment of the HUD notes, above the table and HUD. */
+
+.info-tip {
+  position: fixed;
+  z-index: 18;
+  max-width: min(260px, calc(100vw - 16px));
+  padding: 8px 11px 9px;
+  border: 2px solid #7a5a36;
+  border-radius: 8px;
+  background: #fbf1dc;
+  color: #3a2a17;
+  box-shadow: 0 6px 14px rgba(20, 10, 0, 0.35);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  animation: info-tip-in 0.12s ease-out;
+}
+.info-tip strong {
+  display: block;
+  font-size: 0.86rem;
+  color: #8a4a12;
+}
+.info-tip p {
+  margin: 2px 0 0;
+}
+.info-tip em {
+  display: block;
+  margin-top: 4px;
+  font-style: normal;
+  font-size: 0.72rem;
+  color: #6a3fa0;
+}
+@keyframes info-tip-in {
+  from {
+    opacity: 0;
+    translate: 0 3px;
+  }
+}
+
+/* Triggers keep the look of what they wrap. */
+.tip-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: help;
+  border-radius: 4px;
+  /* Some triggers sit in layers that let clicks through to the 3D table (the ranking rail). */
+  pointer-events: auto;
+}
+.tip-trigger.tip-open {
+  outline: 2px solid rgba(210, 122, 52, 0.75);
+  outline-offset: 1px;
+}

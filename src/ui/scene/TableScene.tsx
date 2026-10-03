@@ -236,6 +236,7 @@ export function TableScene(props: TableSceneProps) {
       <RoleCard
         key={`role-${seat.id}-${shown.role}`}
         ref={pin(`role-${i}`)}
+        owner={seat.id}
         role={shown.role}
         target={`→ ${owners.map(nameOf).join('＋')}的船`}
         secret={!seat.role}

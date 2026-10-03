@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import type { MarketEventId, Rules, VoyageEventId } from '../../game';
 import { assetIcon, marketIcon, voyageIcon } from '../art';
 import { Icon } from '../components/Icon';
+import { TipButton, useTip } from '../components/InfoTip';
 import { Pins } from '../components/Pins';
 import { ASSET_LABELS, MARKET_EVENT_LABELS, VOYAGE_EVENT_LABELS } from '../labels';
 import type { SceneSeat } from '../scene/tableModel';
@@ -16,15 +16,15 @@ interface EventBandProps {
 
 /** Top-left band: round counter, market event and (once revealed) the voyage event. */
 export function EventBand({ round, rules, marketEvent, voyageEvent }: EventBandProps) {
-  // On a phone the events shrink to icon and title; tapping one opens its description.
-  const [open, setOpen] = useState<'market' | 'voyage' | null>(null);
-  const toggle = (which: 'market' | 'voyage') => () => setOpen(open === which ? null : which);
+  // On a phone the events shrink to icon and title; tapping one opens its description in place.
+  const market = useTip('event-market', { kind: 'inline' });
+  const voyage = useTip('event-voyage', { kind: 'inline' });
   return (
     <div className="hud hud-top-left">
       <div className="hud-round">
         回合 <strong>{Math.max(round, 1)}</strong> / {rules.rounds}
       </div>
-      <div className={`hud-event ${open === 'market' ? 'open' : ''}`} onClick={toggle('market')}>
+      <div className={`hud-event ${market.open ? 'open' : ''}`} {...market.props}>
         {marketEvent ? <Icon name={marketIcon(marketEvent)} size={28} /> : <Icon name="coin" size={28} />}
         <div>
           <small>市場事件</small>
@@ -32,7 +32,7 @@ export function EventBand({ round, rules, marketEvent, voyageEvent }: EventBandP
           {marketEvent && <p>{marketEventText(marketEvent, rules)}</p>}
         </div>
       </div>
-      <div className={`hud-event ${open === 'voyage' ? 'open' : ''}`} onClick={toggle('voyage')}>
+      <div className={`hud-event ${voyage.open ? 'open' : ''}`} {...voyage.props}>
         {voyageEvent ? <Icon name={voyageIcon(voyageEvent)} size={28} /> : <Icon name="dice" size={28} />}
         <div>
           <small>航海事件</small>
@@ -68,10 +68,10 @@ export function LedgerCard({ seat, blackMoney }: LedgerCardProps) {
         {seat.assets.length > 0 && (
           <div className="ledger-assets">
             {seat.assets.map((a) => (
-              <span key={a} title={ASSET_LABELS[a]}>
+              <TipButton key={a} id={`ledger-${a}`} subject={{ kind: 'asset', asset: a }} label={ASSET_LABELS[a]}>
                 <Icon name={assetIcon(a)} size={18} />
                 {ASSET_LABELS[a]}
-              </span>
+              </TipButton>
             ))}
           </div>
         )}

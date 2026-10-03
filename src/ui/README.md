@@ -25,6 +25,7 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 | `session/board.ts` | `buildBoard`：只用公開事件重建桌面（現金、資產、招募、船、已揭露角色、結果），觀戰者也能安全使用。 |
 | `session/usePlayback.ts` | 事件逐筆播放、回合間暫停、略過演出、hot-seat 換人確認與可見的私有資訊。 |
 | `session/useSession.ts` | `useSyncExternalStore` 包裝。 |
+| `components/InfoTip.tsx` | 點擊說明：`TipProvider`（包在牌桌外層）同時只開一個說明，點同一個、點其他地方或按 Esc 關閉。角色卡、名牌與帳本的資產圖示用浮動說明；事件卡共用開關狀態、原地展開。說明文字由 `rulesText.ts` 依規則數值產生。 |
 | `online/onlineClient.ts` | 連線房間的 WebSocket 客戶端：自動重連、套用伺服器訊息，並把對局包成同一個 `GameSession` 介面給牌桌使用。 |
 | `online/OnlineScreen.tsx` | 開房（房主密碼）、大廳（加入、成員、座位數、開局）與連線中的牌桌；`/?room=房號` 直接進入。 |
 | `table/TableScreen.tsx` | 對局畫面：3D 桌面加上角落介面、決定列、日誌抽屜、結算與換人遮蔽（疊在場景上，不重建場景）。 |

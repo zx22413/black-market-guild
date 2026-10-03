@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties, type Ref } from 'react';
 import type { Deployment, PlayerId, RoleId } from '../../game';
 import { assetIcon, iconUrl, roleIcon } from '../art';
 import { ASSET_LABELS, ROLE_LABELS } from '../labels';
+import { TipButton, useTip } from '../components/InfoTip';
 import { CashFloats } from '../table/CashFloats';
 import type { CashFloat } from '../table/useCashFloats';
 import { DIE_BEAT_MS, dieSteps, type DieStep, type IntelTrace } from './dieSteps';
@@ -31,6 +32,8 @@ export function SeatSign({ ref, seat, floats }: { readonly ref: Ref<HTMLDivEleme
 
 interface RoleCardProps {
   readonly ref: Ref<HTMLDivElement>;
+  /** The guild that played it; two guilds may play the same role on the same ship. */
+  readonly owner: PlayerId;
   readonly role: RoleId;
   /** Whose ship it targets, e.g. "霧港商團的船". */
   readonly target: string;
@@ -41,9 +44,18 @@ interface RoleCardProps {
 }
 
 /** The role card a guild played this round, standing beside its island, on the same parchment as the hand. */
-export function RoleCard({ ref, role, target, secret = false, caught = false }: RoleCardProps) {
+export function RoleCard({ ref, owner, role, target, secret = false, caught = false }: RoleCardProps) {
+  // On a phone only the icon is left; tapping the card explains it (on every layout).
+  const { open, props } = useTip(`role-${owner}`, { kind: 'role', role, target, secret, caught });
   return (
-    <div ref={ref} className={`role-card ${secret ? 'secret' : ''} ${caught ? 'caught' : ''}`}>
+    <div
+      ref={ref}
+      className={`role-card ${secret ? 'secret' : ''} ${caught ? 'caught' : ''} ${open ? 'tip-open' : ''}`}
+      role="button"
+      tabIndex={0}
+      aria-label={`${ROLE_LABELS[role]} ${target}`}
+      {...props}
+    >
       <img src={iconUrl(roleIcon(role))} alt="" />
       <strong>{ROLE_LABELS[role]}</strong>
       <small>{target}</small>
@@ -82,7 +94,9 @@ export function SeatTag({ seat, nameOf, ready, waiting = false, blackMoney = nul
       {seat.assets.length > 0 && (
         <span className="seat-assets">
           {seat.assets.map((a) => (
-            <img key={a} src={iconUrl(assetIcon(a))} alt={ASSET_LABELS[a]} title={ASSET_LABELS[a]} />
+            <TipButton key={a} id={`asset-${seat.id}-${a}`} subject={{ kind: 'asset', asset: a }} label={ASSET_LABELS[a]}>
+              <img src={iconUrl(assetIcon(a))} alt="" />
+            </TipButton>
           ))}
         </span>
       )}

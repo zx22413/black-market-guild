@@ -3,6 +3,7 @@ import { RULES_V06, type Action, type Deployment, type PlayerId, type RoleId, ty
 import { EventLog } from '../components/EventLog';
 import { uiArtVars } from '../art';
 import { Icon } from '../components/Icon';
+import { TipProvider } from '../components/InfoTip';
 import { PrivateNotes } from '../components/PrivateNotes';
 import { TableScene } from '../scene/TableScene';
 import type { IntelTrace } from '../scene/dieSteps';
@@ -139,115 +140,117 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
   const myLocked = view ? lockedRoles.get(view.playerId) : undefined;
   const secretRole = myLocked && myLocked.round === board.round ? myLocked : null;
   return (
-    <div className="scene-root" data-layout={layout} style={uiArtVars() as CSSProperties}>
-      <TableScene
-        table={table}
-        weather={DEV_WEATHER ?? board.voyageEvent}
-        nameOf={nameOf}
-        selectableShips={selectableShips}
-        onSelectShip={selectShip}
-        selectedShip={ship}
-        selectableIslands={selectableIslands}
-        selectedIsland={partner?.kind === 'player' ? partner.id : null}
-        onSelectIsland={(id) => setPartner({ kind: 'player', id })}
-        islandCard={(() => {
-          const seat = table.seats.find((s) => s.id === pickedId);
-          return seat ? <PartnerCard seat={seat} rules={rules} phase={partnerPhase} viewerAssets={viewerSeat?.assets ?? []} inspection={inspection} /> : null;
-        })()}
-        secret={activeView?.myDeployment ?? null}
-        secretRole={secretRole}
-        intel={intel}
-        submitted={activeView?.submittedPlayerIds ?? []}
-        waiting={playback.waiting}
-        floats={floats}
-        fx={fx}
-        recruitResolved={board.recruitResolved}
-        rankStep={played.filter((e) => e.type === 'round-ended').length}
-        onReady={markReady}
-        layout={layout}
-        handOpen={handOpen}
-        blackMoney={view?.myBlackMoney ?? null}
-      />
-      {!ready && <div className="scene-loading">整理港口中…</div>}
+    <TipProvider rules={rules}>
+      <div className="scene-root" data-layout={layout} style={uiArtVars() as CSSProperties}>
+        <TableScene
+          table={table}
+          weather={DEV_WEATHER ?? board.voyageEvent}
+          nameOf={nameOf}
+          selectableShips={selectableShips}
+          onSelectShip={selectShip}
+          selectedShip={ship}
+          selectableIslands={selectableIslands}
+          selectedIsland={partner?.kind === 'player' ? partner.id : null}
+          onSelectIsland={(id) => setPartner({ kind: 'player', id })}
+          islandCard={(() => {
+            const seat = table.seats.find((s) => s.id === pickedId);
+            return seat ? <PartnerCard seat={seat} rules={rules} phase={partnerPhase} viewerAssets={viewerSeat?.assets ?? []} inspection={inspection} /> : null;
+          })()}
+          secret={activeView?.myDeployment ?? null}
+          secretRole={secretRole}
+          intel={intel}
+          submitted={activeView?.submittedPlayerIds ?? []}
+          waiting={playback.waiting}
+          floats={floats}
+          fx={fx}
+          recruitResolved={board.recruitResolved}
+          rankStep={played.filter((e) => e.type === 'round-ended').length}
+          onReady={markReady}
+          layout={layout}
+          handOpen={handOpen}
+          blackMoney={view?.myBlackMoney ?? null}
+        />
+        {!ready && <div className="scene-loading">整理港口中…</div>}
 
-      <EventBand round={board.round} rules={rules} marketEvent={board.marketEvent} voyageEvent={board.voyageEvent} />
+        <EventBand round={board.round} rules={rules} marketEvent={board.marketEvent} voyageEvent={board.voyageEvent} />
 
-      <div className="hud hud-top-right">
-        {!caughtUp && !holding && (
-          <button className="hud-button" onClick={playback.skip}>
-            略過演出 ▶▶
-          </button>
-        )}
-        <button className="hud-icon-button" aria-label="航海日誌" title="航海日誌" onClick={() => setLogOpen(!logOpen)}>
-          <Icon name="asset-insurance" size={24} />
-        </button>
-        <button className="hud-button" onClick={onExit}>
-          離開
-        </button>
-      </div>
-
-      {viewerSeat && (
-        <LedgerCard seat={viewerSeat} blackMoney={view?.myBlackMoney ?? 0} />
-      )}
-
-      <div className="hud hud-private">
-        <PrivateNotes events={playback.privateNotes} describeShip={describeShip} />
-      </div>
-
-      <div className="hud hud-dock">
-        {holding && (
-          <div className="action-pill">
-            <span>第 {board.round} 回合結束</span>
-            <button className="primary" onClick={playback.release}>
-              進入下一回合
+        <div className="hud hud-top-right">
+          {!caughtUp && !holding && (
+            <button className="hud-button" onClick={playback.skip}>
+              略過演出 ▶▶
             </button>
+          )}
+          <button className="hud-icon-button" aria-label="航海日誌" title="航海日誌" onClick={() => setLogOpen(!logOpen)}>
+            <Icon name="asset-insurance" size={24} />
+          </button>
+          <button className="hud-button" onClick={onExit}>
+            離開
+          </button>
+        </div>
+
+        {viewerSeat && (
+          <LedgerCard seat={viewerSeat} blackMoney={view?.myBlackMoney ?? 0} />
+        )}
+
+        <div className="hud hud-private">
+          <PrivateNotes events={playback.privateNotes} describeShip={describeShip} />
+        </div>
+
+        <div className="hud hud-dock">
+          {holding && (
+            <div className="action-pill">
+              <span>第 {board.round} 回合結束</span>
+              <button className="primary" onClick={playback.release}>
+                進入下一回合
+              </button>
+            </div>
+          )}
+          {request && activeView && (
+            <DecisionDock
+              key={request.id}
+              context={request.context}
+              describeShip={describeShip}
+              role={role}
+              onRole={chooseRole}
+              ship={ship}
+              onShip={selectShip}
+              noDeploy={noDeploy}
+              onNoDeploy={chooseNoDeploy}
+              onSubmit={submit}
+              seats={table.seats}
+              partner={partner}
+              onPartner={setPartner}
+            />
+          )}
+          {caughtUp && !request && snapshot.status === 'running' && (
+            <div className="action-pill">
+              <span>{playback.waiting.length > 0 ? `等待 ${playback.waiting.map(nameOf).join('、')} 決定…` : '等待其他商會決定…'}</span>
+            </div>
+          )}
+        </div>
+
+        {logOpen && (
+          <aside className="log-drawer">
+            <button className="hud-button close" onClick={() => setLogOpen(false)}>
+              收起
+            </button>
+            <EventLog events={played} names={names} startingCash={snapshot.startingCash} />
+          </aside>
+        )}
+
+        {caughtUp && snapshot.result && (
+          <div className="result-overlay">
+            <ResultScreen result={snapshot.result} nameOf={nameOf} onRestart={onExit} />
           </div>
         )}
-        {request && activeView && (
-          <DecisionDock
-            key={request.id}
-            context={request.context}
-            describeShip={describeShip}
-            role={role}
-            onRole={chooseRole}
-            ship={ship}
-            onShip={selectShip}
-            noDeploy={noDeploy}
-            onNoDeploy={chooseNoDeploy}
-            onSubmit={submit}
-            seats={table.seats}
-            partner={partner}
-            onPartner={setPartner}
-          />
-        )}
-        {caughtUp && !request && snapshot.status === 'running' && (
-          <div className="action-pill">
-            <span>{playback.waiting.length > 0 ? `等待 ${playback.waiting.map(nameOf).join('、')} 決定…` : '等待其他商會決定…'}</span>
+        {snapshot.error && <div className="result-overlay error">對局發生錯誤：{snapshot.error}</div>}
+        {/* Covers the table instead of replacing it, so the 3D scene is not rebuilt on every turn. */}
+        {playback.handoffTo && (
+          <div className="handoff-overlay">
+            <HandoffScreen playerName={nameOf(playback.handoffTo)} onReady={playback.confirmHandoff} />
           </div>
         )}
       </div>
-
-      {logOpen && (
-        <aside className="log-drawer">
-          <button className="hud-button close" onClick={() => setLogOpen(false)}>
-            收起
-          </button>
-          <EventLog events={played} names={names} startingCash={snapshot.startingCash} />
-        </aside>
-      )}
-
-      {caughtUp && snapshot.result && (
-        <div className="result-overlay">
-          <ResultScreen result={snapshot.result} nameOf={nameOf} onRestart={onExit} />
-        </div>
-      )}
-      {snapshot.error && <div className="result-overlay error">對局發生錯誤：{snapshot.error}</div>}
-      {/* Covers the table instead of replacing it, so the 3D scene is not rebuilt on every turn. */}
-      {playback.handoffTo && (
-        <div className="handoff-overlay">
-          <HandoffScreen playerName={nameOf(playback.handoffTo)} onReady={playback.confirmHandoff} />
-        </div>
-      )}
-    </div>
+    </TipProvider>
   );
 }
