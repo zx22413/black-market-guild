@@ -627,9 +627,7 @@
   /* Tappable for its explanation (InfoTip); the rest of the label layer lets clicks through. */
   pointer-events: auto;
   cursor: help;
-  /* Only the start is held (backwards): once it has popped in, the card is a plain element again
-     rather than a scaled layer, which would blur its parchment and show the slice seams. */
-  animation: role-card-in 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) backwards;
+  animation: role-card-in 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
 }
 
 .role-card img {

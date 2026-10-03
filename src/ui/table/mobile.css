@@ -209,11 +209,6 @@
   width: 38px;
   padding: 8px 5px;
 }
-/* The badge is narrower than two of the art's 16px corners: draw them at exactly half (8px), so
-   the bitmap is halved evenly and its slice seams do not show. */
-.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .role-card::before {
-  border-width: 8px;
-}
 .scene-root:is([data-layout='portrait'], [data-layout='landscape']) .role-card img {
   width: 24px;
   height: 24px;

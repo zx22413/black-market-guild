@@ -37,6 +37,17 @@ export const DESKTOP_MARGINS: LabelMargins = { top: 112, right: 260, bottom: 256
 const projected = new Vector3();
 const below = new Vector3();
 
+/**
+ * A translate to whole device pixels. The labels' parchment is a 9-slice bitmap: placed at a
+ * fractional pixel, each slice's edges are anti-aliased on their own and the seams between them
+ * show as faint lines across the paper.
+ */
+function translate(x: number, y: number): string {
+  const ratio = window.devicePixelRatio || 1;
+  const snap = (v: number) => Math.round(v * ratio) / ratio;
+  return `translate(${snap(x)}px, ${snap(y)}px)`;
+}
+
 interface Written {
   transform?: string;
   flip?: string;
@@ -113,7 +124,7 @@ export function LabelTracker({
     // Measure any new labels before writing anything, so at most one layout happens.
     const sized = anchors.map((anchor) => {
       const element = elements.current.get(anchor.id);
-      return element && (anchor.side || anchor.flip) ? sizeOf(element) : null;
+      return element ? sizeOf(element) : null;
     });
     anchors.forEach((anchor, i) => {
       const element = elements.current.get(anchor.id);
@@ -132,7 +143,7 @@ export function LabelTracker({
         write(element, {
           flip: dir < 0 ? 'left' : 'right',
           tail: `${Math.min(Math.max(sideY - top, 18), height - 18)}px`,
-          transform: `translate(${left}px, ${top}px)`,
+          transform: translate(left, top),
           visibility,
         });
         return;
@@ -145,12 +156,13 @@ export function LabelTracker({
         const top = Math.max(TOP_MARGIN, Math.min(hang, size.height - BOTTOM_MARGIN - height));
         write(element, {
           flip: top !== hang ? 'free' : flipped ? 'below' : 'above',
-          transform: `translate(${x - width / 2}px, ${top}px)`,
+          transform: translate(x - width / 2, top),
           visibility,
         });
         return;
       }
-      write(element, { transform: `translate(${x}px, ${y}px) translate(-50%, -100%)`, visibility });
+      // Centered above the anchor, worked out here rather than with a percentage so it can be snapped.
+      write(element, { transform: translate(x - width / 2, y - height), visibility });
     });
     prune(elements.current);
   });
