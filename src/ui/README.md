@@ -25,6 +25,8 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 | `session/board.ts` | `buildBoard`：只用公開事件重建桌面（現金、資產、招募、船、已揭露角色、結果），觀戰者也能安全使用。 |
 | `session/usePlayback.ts` | 事件逐筆播放、回合間暫停、略過演出、hot-seat 換人確認與可見的私有資訊。 |
 | `session/useSession.ts` | `useSyncExternalStore` 包裝。 |
+| `online/onlineClient.ts` | 連線房間的 WebSocket 客戶端：自動重連、套用伺服器訊息，並把對局包成同一個 `GameSession` 介面給牌桌使用。 |
+| `online/OnlineScreen.tsx` | 開房（房主密碼）、大廳（加入、成員、座位數、開局）與連線中的牌桌；`/?room=房號` 直接進入。 |
 | `table/TableScreen.tsx` | 對局畫面：3D 桌面加上角落介面、決定列、日誌抽屜、結算與換人遮蔽（疊在場景上，不重建場景）。 |
 | `table/DecisionDock.tsx` | 七種決定的操作：資產與角色牌排成一列置中站在操作列正上方（不重疊、不用滑過才看得到效果：點選後卡片浮起，效果說明顯示在操作列），部署角色時先選角色牌、再點海上的船（或底部名單）選目標，選中的船有粗外框，按「確認部署」才鎖定（「不部署」也要先選再確認），其餘決定（發起招募、獨資出航、情報重擲、購買資產）也一律「先選取、再按確認」，由 `ConfirmChoice` 與 `AssetPurchase` 處理。 |
 | `table/PartnerPicker.tsx`、`table/PartnerCard.tsx`、`table/partnerChoice.ts` | 應徵與挑選夥伴階段的「選取 → 看資訊 → 確認」：點島（或底部名單）選取，島嶼出現金色外框，資訊卡**掛在被選的島上**（`TableScene` 的 `islandCard`，由 `LabelTracker` 釘在島上方；上方沒空間時翻到島下方；位於桌面遠端中間的島則開在島的左側，避免蓋住黑市港；一律限制在事件卡與操作列之間），顯示該商會的公開資金、資產與建築，以及「與他合資」的合作好處（`jointBenefits.ts`：雙方出資、抵達各分的收入，並依規則 §6／§8 列出造船廠折抵、貿易交易所加成與「對方的打撈公司／貿易交易所無法從這艘船獲利」；只有發起人的資產提供合資加成，所以應徵與挑選兩個階段的算法不同；不含市場事件與走私）；建築晶片要點開才顯示能力說明（未看過的有呼吸光點）。底部只留名單、「不應徵／都不選」與確認鈕；不應徵也要先選取再確認。黑錢不會出現。`partnerChoice` 從合法行動算出候選與可確認的行動。 |

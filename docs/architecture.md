@@ -10,7 +10,7 @@
 - 自訂座位：玩家數 3～4 人（核心規則），每個座位可自由指定為真人或 Bot，Bot 可選不同策略。
 - 2 人模式（1v1）：規則需要中立船，尚未定案（見 `open-questions.md` Q-05）；座位設定需保留擴充空間，但在規則定案前不實作。
 - 全 Bot 模擬：不含 UI，大量執行以驗證平衡（對應 `game-design.md` 第 11 節）。
-- 多人連線：MVP 驗證後才實作，但架構現在就要預留。
+- 多人連線：臨時版已實作（房主開房、連結邀請、空位由 Bot 補上），見第 8 節。
 
 ## 2. 核心原則：引擎只認識座位
 
@@ -36,7 +36,8 @@
 | `src/bots/` | Bot 策略 | `src/game` |
 | `src/match/` | Match Runner、Controller 介面、座位設定 | `src/game`、`src/bots` |
 | `src/ui/` | 瀏覽器 UI、`LocalHumanController` | `src/game`、`src/match` |
-| `server/`（未建立） | 連線伺服器、`RemoteController` | `src/game`、`src/bots`、`src/match` |
+| `src/online/` | 連線房間：通訊協定、輸入驗證、房間邏輯（伺服器與瀏覽器共用） | `src/game`、`src/bots`、`src/match` |
+| `server/` | Cloudflare Worker 與 Durable Object，只負責 HTTP／WebSocket | `src/online` |
 
 - `src/game`、`src/bots` 不得使用 DOM 或 Node API，由 `tsconfig.engine.json` 強制。
 - `src/match` 同樣應保持環境無關，使其能在瀏覽器、Node 模擬與伺服器中共用。`TODO`：建立 `src/match` 時將其納入 `tsconfig.engine.json`。
@@ -112,7 +113,7 @@ interface Controller {
 | --- | --- |
 | `LocalHumanController` | 將決定交給 UI，等待玩家操作後 resolve。hot-seat 時會有多個。（UI 階段實作） |
 | `botController(bot)` | 把同步的 Bot（`decide(context) → Action`）包成 Controller。 |
-| `RemoteController` | 將決定送往客戶端，等待網路回應。（連線階段實作） |
+| 房間座位 Controller | 將決定送往該座位的連線，等待網路回應（`src/online/room.ts`）。 |
 
 介面採用 `Promise`，讓三種 Controller 可以互換。全 Bot 模擬使用同步版的 `runMatchSync` 與 `SyncController`，避免非同步開銷。
 
@@ -122,7 +123,7 @@ interface Controller {
 | --- | --- | --- |
 | 單機對電腦 | 瀏覽器 | 1 個 `LocalHuman`，其餘為 `Bot` |
 | 全 Bot 模擬 | Node（無 UI） | 全部為 `Bot` |
-| 多人連線 | Node 伺服器（權威結算） | `Remote`，並以伺服器端 `Bot` 補位 |
+| 多人連線 | Cloudflare Durable Object（權威結算） | 房間座位 Controller，並以伺服器端 `Bot` 補位 |
 
 連線模式下，客戶端只送出行動意圖，由伺服器以同一套引擎驗證並結算。
 
@@ -131,7 +132,7 @@ interface Controller {
 1. 規則引擎（依 `game-design.md` 已定案的部分）＋ Match Runner ＋ `BotController`。
 2. 全 Bot 模擬腳本，用於平衡驗證。
 3. 瀏覽器 UI ＋ `LocalHumanController`，完成單機 1v2～1v3、自訂座位與 hot-seat。
-4. MVP 驗證通過後，才建立 `server/` 與 `RemoteController`。
+4. 連線房間（臨時版，見第 8 節）。
 
 ## 7. 已決定與待確認事項
 
@@ -146,10 +147,26 @@ interface Controller {
 
 ### 7.2 連線時的超時與斷線處理（延後）
 
-`TODO`：多人連線延後到 MVP 驗證之後，屆時再決定。可選方向為超時採用預設行動、改由 Bot 代打，或暫停等待並設上限；若採用預設行動，需先在 `game-design.md` 定義。
+`TODO`：尚未決定。臨時版的行為是**無限等待**：有人斷線時，對局停在他的決定上，直到他用同一個瀏覽器重新連上（座位以瀏覽器保存的隨機 token 辨識）。可選方向為超時採用預設行動、改由 Bot 代打，或暫停等待並設上限；若採用預設行動，需先在 `game-design.md` 定義。
 
 ### 7.3 同一台裝置輪流遊玩（hot-seat，MVP 支援）
 
 - 以多個 `LocalHumanController` 實現，引擎與 Match Runner 不需特別處理。
 - UI 需提供「換人」遮蔽畫面：輪到下一位真人做秘密決定（角色部署）前，先顯示「請將裝置交給 ○○」並隱藏上一位的資訊，確認後才顯示該玩家的 `PlayerView`。
 - 公開決定（合資招募、應徵、挑選等）也使用遮蔽畫面：只要要做決定的座位換人就先遮蔽，避免上一位的私有資訊（例如黑錢、已鎖定的角色）留在畫面上。此為呈現問題，不影響規則（實作見 `src/ui/README.md`）。
+
+## 8. 連線房間（臨時版）
+
+部署在 Cloudflare：同一個 Worker 提供建置後的遊戲（`dist/`）與 `/api/*`，每個房間是一個 Durable Object（設定見 `wrangler.jsonc`）。
+
+- **開房：** `POST /api/rooms`，需附房主密碼（Worker secret `HOST_KEY`）。只有房主能開房與開始對局；其他人點 `/?room=房號` 連結加入。
+- **連線：** `/api/rooms/:code/ws`。客戶端第一則訊息是 `hello`（瀏覽器的隨機 token＋協定版本），之後才可 `join`、`start`、`submit`。協定與驗證在 `src/online/protocol.ts`。
+- **權威結算：** 房間在伺服器上用 `runMatch` 執行整局；客戶端送出的行動必須與伺服器提供的某個合法行動完全相同才會被接受。每個連線只收到公開事件、自己的私有事件與自己的待決定事項。
+- **重連：** 重新連線時伺服器送出 `sync`（該座位的完整快照），UI 以同一個 `GameSession` 介面呈現，牌桌畫面不需區分單機或連線。
+- **版本：** 客戶端與伺服器一起部署；協定版本不符時，伺服器要求重新整理。
+
+`TODO`（臨時版的限制）：
+- 對局只存在記憶體，**重新部署或 Durable Object 被回收都會中斷進行中的對局**。之後可把座位設定與行動紀錄存進 Durable Object storage，以 `replayMatch` 重建（Bot 的記憶也需重播事件）。
+- 沒有超時、代打、觀戰與中途加入（見 7.2）。
+- 房主密碼是單一共用密碼，沒有帳號系統。
+

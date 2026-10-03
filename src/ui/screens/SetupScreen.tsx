@@ -106,9 +106,10 @@ function SeatCard({ index, seat, removable, onChange, onRemove }: SeatCardProps)
 
 interface SetupScreenProps {
   readonly onStart: (options: SessionOptions) => void;
+  readonly onOnline: () => void;
 }
 
-export function SetupScreen({ onStart }: SetupScreenProps) {
+export function SetupScreen({ onStart, onOnline }: SetupScreenProps) {
   const [seats, setSeats] = useState<readonly SeatDraft[]>(PRESETS[1]!.seats);
   const [seed, setSeed] = useState(randomSeed);
   const { min, max } = RULES_V06.players;
@@ -135,6 +136,9 @@ export function SetupScreen({ onStart }: SetupScreenProps) {
                 {p.label}
               </button>
             ))}
+            <button className="tag-button" onClick={onOnline}>
+              線上房間
+            </button>
           </div>
 
           <ol className="seat-grid">

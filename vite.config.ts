@@ -3,6 +3,8 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   plugins: [react()],
+  // Online rooms live in the Worker (`npm run server:dev`, port 8787); the dev server forwards to it.
+  server: { proxy: { '/api': { target: 'http://localhost:8787', ws: true } } },
   test: {
     include: ['tests/**/*.test.ts'],
     coverage: {

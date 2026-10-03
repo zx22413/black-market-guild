@@ -20,3 +20,8 @@ Thumbs.db
 *.log
 tmp/
 temp/
+
+# Cloudflare local secrets and state
+.dev.vars
+.wrangler/
+.host-key

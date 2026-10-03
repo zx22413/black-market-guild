@@ -1,0 +1,17 @@
+// Cloudflare Worker: serves the built game (dist/) and the online rooms under /api.
+// Deploy with `npm run deploy`; set the host key once with `npx wrangler secret put HOST_KEY`.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "black-market-guild",
+  "main": "server/worker.ts",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "RoomObject" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["RoomObject"] }]
+}
