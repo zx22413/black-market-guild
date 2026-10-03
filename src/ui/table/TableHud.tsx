@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { MarketEventId, Rules, VoyageEventId } from '../../game';
 import { assetIcon, marketIcon, voyageIcon } from '../art';
 import { Icon } from '../components/Icon';
@@ -15,12 +16,15 @@ interface EventBandProps {
 
 /** Top-left band: round counter, market event and (once revealed) the voyage event. */
 export function EventBand({ round, rules, marketEvent, voyageEvent }: EventBandProps) {
+  // On a phone the events shrink to icon and title; tapping one opens its description.
+  const [open, setOpen] = useState<'market' | 'voyage' | null>(null);
+  const toggle = (which: 'market' | 'voyage') => () => setOpen(open === which ? null : which);
   return (
     <div className="hud hud-top-left">
       <div className="hud-round">
         回合 <strong>{Math.max(round, 1)}</strong> / {rules.rounds}
       </div>
-      <div className="hud-event">
+      <div className={`hud-event ${open === 'market' ? 'open' : ''}`} onClick={toggle('market')}>
         {marketEvent ? <Icon name={marketIcon(marketEvent)} size={28} /> : <Icon name="coin" size={28} />}
         <div>
           <small>市場事件</small>
@@ -28,7 +32,7 @@ export function EventBand({ round, rules, marketEvent, voyageEvent }: EventBandP
           {marketEvent && <p>{marketEventText(marketEvent, rules)}</p>}
         </div>
       </div>
-      <div className="hud-event">
+      <div className={`hud-event ${open === 'voyage' ? 'open' : ''}`} onClick={toggle('voyage')}>
         {voyageEvent ? <Icon name={voyageIcon(voyageEvent)} size={28} /> : <Icon name="dice" size={28} />}
         <div>
           <small>航海事件</small>

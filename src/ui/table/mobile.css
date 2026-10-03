@@ -1,0 +1,316 @@
+/*
+ * Phone layouts of the table HUD (see useLayout): `portrait` for a phone held upright,
+ * `landscape` for a phone on its side. Desktop styles stay as they are; these only override.
+ * Selectors carry the scene root and its layout, so they outrank the parchment skin (hudSkin.css).
+ */
+
+/* ── Shared by both phone layouts: a compact top band ── */
+
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .hud-top-left {
+  top: 6px;
+  left: 6px;
+  gap: 4px;
+  max-width: none;
+  align-items: flex-start;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .hud-round {
+  padding: 5px 9px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+/* Events shrink to icon and title; a tap opens the description (TableHud.EventBand). */
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .hud-event {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+  padding: 6px 9px;
+  gap: 5px;
+  align-items: center;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .hud-event > div {
+  min-width: 0;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .hud-event .icon {
+  width: 20px !important;
+  height: 20px !important;
+  flex: none;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .hud-event small {
+  display: none;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .hud-event strong {
+  display: block;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .hud-event p {
+  display: none;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .hud-event.open {
+  align-items: flex-start;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .hud-event.open strong {
+  white-space: normal;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .hud-event.open p {
+  display: block;
+  font-size: 0.68rem;
+}
+
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .hud-top-right {
+  top: 6px;
+  right: 6px;
+  gap: 4px;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .hud-button {
+  padding: 5px 9px;
+  font-size: 0.74rem;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .hud-icon-button {
+  width: 34px;
+  height: 34px;
+}
+
+/* Guild tags: name and cash only. */
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .seat-rail .seat-tag {
+  padding: 4px 6px 4px 15px;
+  font-size: 0.68rem;
+  gap: 0;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .seat-rail :is(.seat-assets, .seat-status, .seat-worth) {
+  display: none;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .seat-rail .seat-tag strong {
+  display: block;
+  max-width: 100%;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .seat-rail .seat-cash {
+  font-size: 0.74rem;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .seat-rail .seat-rope {
+  left: 1px;
+  width: 11px;
+  top: -5px;
+  bottom: -8px;
+}
+
+/* Own ledger as one compact row. */
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .hud-bottom-left {
+  bottom: auto;
+  left: 8px;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .ledger {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: none;
+  margin: 0;
+  padding: 7px 12px;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .ledger::before {
+  /* No wooden board behind the one-line ledger: just the paper. */
+  display: none;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) :is(.ledger-name, .ledger-assets, .ledger .pin) {
+  display: none;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .ledger-row {
+  gap: 4px;
+  align-items: baseline;
+  font-size: 0.64rem;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .ledger-row b {
+  font-size: 0.82rem;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .ledger-row.secret {
+  border-top: 0;
+  padding-top: 0;
+}
+
+/* Private notes: small, below the ledger. */
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .hud-private .panel {
+  padding: 9px 11px;
+  font-size: 0.68rem;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .hud-private .panel h2 {
+  font-size: 0.72rem;
+}
+
+/* Cards in hand: smaller, and the hand scrolls sideways if it does not fit. */
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .card-hand {
+  overflow-x: auto;
+  scrollbar-width: none;
+  max-width: 100%;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .table-card.hand {
+  flex: none;
+  font-size: 0.68rem;
+  gap: 2px;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .table-card.hand .icon {
+  width: 24px !important;
+  height: 24px !important;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .action-pill {
+  max-width: none;
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  row-gap: 5px;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .action-pill button {
+  padding: 6px 10px;
+  font-size: 0.78rem;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .action-pill small {
+  font-size: 0.66rem;
+}
+
+/* Cards floating over the table. */
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .partner-card {
+  width: 212px;
+  font-size: 0.78rem;
+}
+/* On a phone the islands are small, so a role card shrinks to a badge: just the role's icon,
+   glowing purple when only you can see it and red when a smuggler was caught. */
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .role-card {
+  width: 38px;
+  padding: 8px 5px;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .role-card img {
+  width: 24px;
+  height: 24px;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .role-card :is(strong, small, em) {
+  display: none;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .role-stamp {
+  top: auto;
+  bottom: -8px;
+  padding: 0 3px;
+  font-size: 0.55rem;
+  letter-spacing: 0;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .log-drawer {
+  width: auto;
+  left: 6px;
+  right: 6px;
+}
+
+/* ── Phone held upright ── */
+
+/* Round on the first line beside the buttons; the two events share the whole second line. */
+.scene-root[data-layout='portrait'] .hud-top-left {
+  right: 6px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.scene-root[data-layout='portrait'] .hud-round {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+/* The ranking runs across the screen under the top band. */
+.scene-root[data-layout='portrait'] .seat-rail {
+  top: 92px;
+  left: 6px;
+  right: 6px;
+  width: auto;
+  flex-direction: row;
+  gap: 4px;
+}
+.scene-root[data-layout='portrait'] .seat-rail > div {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.scene-root[data-layout='portrait'] .hud-bottom-left {
+  top: 140px;
+}
+.scene-root[data-layout='portrait'] .hud-private {
+  top: 178px;
+  bottom: auto;
+  right: 6px;
+  max-width: 60%;
+}
+/* Hand above the action strip, both the full width of the screen. */
+.scene-root[data-layout='portrait'] .hud-dock {
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.scene-root[data-layout='portrait'] .card-hand {
+  justify-content: safe center;
+  padding: 14px 4px 0;
+  gap: 6px;
+}
+.scene-root[data-layout='portrait'] .table-card.hand {
+  width: 68px;
+  height: 90px;
+}
+
+/* ── Phone on its side: everything short ── */
+
+.scene-root[data-layout='landscape'] .hud-top-left {
+  right: 300px;
+}
+.scene-root[data-layout='landscape'] .seat-rail {
+  top: 48px;
+  right: 6px;
+  width: 136px;
+  gap: 6px;
+}
+.scene-root[data-layout='landscape'] .hud-bottom-left {
+  top: 46px;
+}
+.scene-root[data-layout='landscape'] .hud-private {
+  top: 84px;
+  bottom: auto;
+  left: 6px;
+  right: auto;
+  max-width: 240px;
+}
+/* Too short to stack: the hand sits beside the action strip, on its right. */
+.scene-root[data-layout='landscape'] .hud-dock {
+  left: 6px;
+  right: 148px;
+  bottom: 4px;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 8px;
+}
+.scene-root[data-layout='landscape'] .card-hand {
+  order: 2;
+  padding-top: 12px;
+}
+.scene-root[data-layout='landscape'] .table-card.hand {
+  width: 56px;
+  height: 76px;
+}
+
+/* Ship tags: smaller, so the tags of ships waiting near the middle overlap less. */
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .ship-tag {
+  padding: 3px 7px;
+  font-size: 0.6rem;
+  gap: 1px;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .ship-tag .die-face {
+  min-width: 22px;
+  height: 22px;
+  font-size: 0.9rem;
+}
+.scene-root:is([data-layout='portrait'], [data-layout='landscape']) .ship-tag .role-token img {
+  width: 14px;
+  height: 14px;
+}

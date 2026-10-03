@@ -8,7 +8,8 @@ import { PROP_HEIGHT, RecruitStage } from './RecruitProps';
 import { islandShorelines, playerIslandSeed } from './islandShape';
 import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatAngles, seatPosition, type Vec3 } from './layout';
 import { Routes } from './Routes';
-import { LabelTracker, type LabelAnchor } from './ScreenLabels';
+import { DESKTOP_MARGINS, LabelTracker, type LabelAnchor, type LabelMargins } from './ScreenLabels';
+import type { Layout } from '../table/useLayout';
 import { Sea } from './Sea';
 import { CrestSpray, ShoreSpray } from './Spray';
 import { Clouds } from './Clouds';
@@ -30,8 +31,18 @@ import { WEATHER, fillOf } from './weather';
 import { WeatherFog } from './WeatherFog';
 import './scene.css';
 
-/** Keep the islands clear of the top event band and the bottom hand/action band. */
-const SAFE_AREA: SafeArea = { top: 80, bottom: 185, left: 24, right: 250 };
+/** Keep the islands clear of the HUD bands, which sit differently on a phone. */
+const SAFE_AREAS: Readonly<Record<Layout, SafeArea>> = {
+  desktop: { top: 80, bottom: 250, left: 24, right: 250 },
+  portrait: { top: 178, bottom: 250, left: 6, right: 6 },
+  landscape: { top: 84, bottom: 118, left: 8, right: 150 },
+};
+/** How far floating cards keep from the same bands. */
+const LABEL_MARGINS: Readonly<Record<Layout, LabelMargins>> = {
+  desktop: DESKTOP_MARGINS,
+  portrait: { top: 182, right: 6, bottom: 256, side: 6 },
+  landscape: { top: 86, right: 152, bottom: 122, side: 6 },
+};
 const SHIP_LABEL_HEIGHT = 7;
 /** How far from an island's rim its role card stands. */
 const ROLE_CARD_GAP = 4;
@@ -79,6 +90,8 @@ export interface TableSceneProps {
   readonly rankStep: number;
   /** Called once all models have loaded. */
   readonly onReady: () => void;
+  /** Screen layout of the HUD (desktop, phone upright, phone on its side). */
+  readonly layout: Layout;
 }
 
 function rim(center: Vec3, radius: number): FitPoint[] {
@@ -106,7 +119,7 @@ function Ready({ onReady }: { readonly onReady: () => void }) {
 
 /** The whole 3D table: guild islands around the target island, lanes, ships and tags. */
 export function TableScene(props: TableSceneProps) {
-  const { table, weather, nameOf, selectableShips, onSelectShip, selectedShip, selectableIslands, selectedIsland, onSelectIsland, islandCard, secret, secretRole, intel, submitted, floats, fx, recruitResolved, rankStep, onReady } = props;
+  const { table, weather, nameOf, selectableShips, onSelectShip, selectedShip, selectableIslands, selectedIsland, onSelectIsland, islandCard, secret, secretRole, intel, submitted, floats, fx, recruitResolved, rankStep, onReady, layout } = props;
   const look = WEATHER[weather ?? 'clear'];
   const angles = useMemo(() => seatAngles(table.seats.length), [table.seats.length]);
   const points = useMemo(() => fitPoints(angles), [angles]);
@@ -163,8 +176,8 @@ export function TableScene(props: TableSceneProps) {
     // Each role card goes where the sea is empty: never between an island and the middle, where
     // the lanes and ship tags are. Side islands hang it below, next to their name plate, on the
     // side toward the middle of the screen (clear of the ranking rail on the right); the near
-    // island beside it on the right; the far island beside it on the left. Near the top of the
-    // screen it hangs down instead; the tracker keeps it clear of the action strip.
+    // island beside it on the right, hanging down; the far island beside it on the left. Near the
+    // top of the screen a card hangs down instead; the tracker keeps it clear of the action strip.
     const roleAnchors = table.seats.map((_, i): LabelAnchor => {
       const [x, , z] = seatPosition(angles[i]!);
       const reach = PLAYER_ISLAND_RADIUS + ROLE_CARD_GAP;
@@ -174,7 +187,10 @@ export function TableScene(props: TableSceneProps) {
           : z > 0
             ? [x + reach, 4, z]
             : [x - reach, 4, z];
-      return { id: `role-${i}`, position, flip: [position[0], position[1], position[2] + 4] };
+      // The near island's card hangs down from its middle, into the open sea above the action
+      // strip, rather than standing up over the middle of the table.
+      const near = Math.abs(x) <= Math.abs(z) && z > 0;
+      return { id: `role-${i}`, position, flip: near ? position : [position[0], position[1], position[2] + 4], hang: near };
     });
     return [{ id: 'target', position: TARGET_PLATE }, ...seatAnchors, ...shipAnchors, ...fxAnchors, ...roleAnchors, ...cardAnchors];
   }, [angles, table, selectedIsland, fxSpots]);
@@ -217,7 +233,7 @@ export function TableScene(props: TableSceneProps) {
   return (
     <>
       <Canvas shadows camera={{ position: [0, 82, 60], fov: 38 }}>
-        <CameraRig points={points} safe={SAFE_AREA} />
+        <CameraRig points={points} safe={SAFE_AREAS[layout]} />
         <color attach="background" args={[look.sky]} />
         <WeatherFog color={look.sky} near={look.fogNear} far={look.fogFar} />
         <ambientLight intensity={look.ambient} />
@@ -277,7 +293,7 @@ export function TableScene(props: TableSceneProps) {
             <Ready onReady={onReady} />
           </Suspense>
         </SwellProvider>
-        <LabelTracker anchors={anchors} elements={labels} />
+        <LabelTracker anchors={anchors} elements={labels} margins={LABEL_MARGINS[layout]} />
       </Canvas>
       <div className="scene-labels">
         <TargetSign ref={pin('target')} />

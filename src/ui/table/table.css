@@ -3,13 +3,13 @@
 /* Centered without transform: a transformed ancestor would capture the fixed card hand. */
 .hud-dock {
   bottom: 18px;
-  /* From the right edge of the own ledger to the screen edge: the strip and the hand sit side by side. */
-  left: 236px;
-  right: 16px;
-  flex-direction: row;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 14px;
+  /* Slay-the-Spire style: the hand stands centered above the action strip, so neither squeezes
+     the other, between the own ledger on the left and the same width kept free on the right. */
+  left: 240px;
+  right: 240px;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
 
 .action-pill {
@@ -101,11 +101,12 @@
 }
 
 .card-hand {
-  order: 2;
   flex: none;
   display: flex;
   gap: 8px;
   align-items: flex-end;
+  /* Room for the picked card, which rises out of the row. */
+  padding-top: 12px;
 }
 
 .table-card.hand {

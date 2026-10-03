@@ -18,6 +18,8 @@ import { partnerChoice, type PartnerPick } from './partnerChoice';
 import { EventBand, LedgerCard } from './TableHud';
 import { useCashFloats } from './useCashFloats';
 import { useRecruitShow } from './useRecruitShow';
+import { useLayout } from './useLayout';
+import './mobile.css';
 import './table.css';
 import './hudSkin.css';
 
@@ -31,6 +33,7 @@ interface TableScreenProps {
 /** The playable 3D table: the scene fills the screen, controls sit in its corners. */
 export function TableScreen({ session, onExit }: TableScreenProps) {
   const playback = usePlayback(session);
+  const layout = useLayout();
   const { snapshot, board, played, request, view, activeView, holding, caughtUp } = playback;
   const [role, setRole] = useState<RoleId | null>(null);
   const [ship, setShip] = useState<ShipId | null>(null);
@@ -134,7 +137,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
   const myLocked = view ? lockedRoles.get(view.playerId) : undefined;
   const secretRole = myLocked && myLocked.round === board.round ? myLocked : null;
   return (
-    <div className="scene-root" style={uiArtVars() as CSSProperties}>
+    <div className="scene-root" data-layout={layout} style={uiArtVars() as CSSProperties}>
       <TableScene
         table={table}
         weather={DEV_WEATHER ?? board.voyageEvent}
@@ -158,6 +161,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
         recruitResolved={board.recruitResolved}
         rankStep={played.filter((e) => e.type === 'round-ended').length}
         onReady={markReady}
+        layout={layout}
       />
       {!ready && <div className="scene-loading">整理港口中…</div>}
 
