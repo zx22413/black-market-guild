@@ -18,6 +18,7 @@
     "simulate": "tsx scripts/simulate.ts",
     "art:buildings": "tsx scripts/draw-buildings.ts > docs/art/buildings-blueprint.svg",
     "art:ui": "tsx scripts/draw-ui-art.ts",
+    "art:ui:png": "tsx scripts/raster-ui-art.ts",
     "capture": "python3 scripts/capture-receiver.py",
     "server:dev": "wrangler dev",
     "deploy": "npm run build && wrangler deploy"

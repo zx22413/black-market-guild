@@ -2,7 +2,7 @@ import { useState, type CSSProperties } from 'react';
 import { BOT_STRATEGIES, type BotStrategy } from '../../bots';
 import { RULES_V06 } from '../../game';
 import type { SeatConfig } from '../../match';
-import { iconUrl, sourcesUrl, uiArtUrl, uiArtVars, uiBackdropUrl } from '../art';
+import { iconUrl, sourcesUrl, uiArtImage, uiArtVars, uiBackdropUrl } from '../art';
 import type { SessionOptions } from '../session/gameSession';
 import './setup.css';
 
@@ -93,7 +93,7 @@ function SeatCard({ index, seat, removable, onChange, onRemove }: SeatCardProps)
       </div>
       <label className="name-line">
         <input value={seat.name} maxLength={12} placeholder="商會名稱" onChange={(e) => onChange({ name: e.target.value })} />
-        <img src={uiArtUrl('icon-pencil')} alt="" />
+        <img {...uiArtImage('icon-pencil')} alt="" />
       </label>
       {removable && (
         <button className="seat-remove" aria-label={`移除座位 ${index + 1}`} onClick={onRemove}>
@@ -125,8 +125,8 @@ export function SetupScreen({ onStart, onOnline }: SetupScreenProps) {
         <div className="setup-plaque">
           <h1>黑市商會</h1>
         </div>
-        <img className="setup-rope rope-a" src={uiArtUrl('rope')} alt="" />
-        <img className="setup-rope rope-b" src={uiArtUrl('rope')} alt="" />
+        <img className="setup-rope rope-a" {...uiArtImage('rope')} alt="" />
+        <img className="setup-rope rope-b" {...uiArtImage('rope')} alt="" />
         <section className="setup-paper">
           <p className="setup-lead">選擇模式、設定每個座位後，即可開始對局</p>
 
@@ -156,7 +156,7 @@ export function SetupScreen({ onStart, onOnline }: SetupScreenProps) {
               <li className="seat-card">
                 <span className="seat-no">{seats.length + 1}P</span>
                 <button className="seat-slot seat-add" onClick={() => setSeats([...seats, bot(seats.length)])}>
-                  <img src={uiArtUrl('icon-plus')} alt="" />
+                  <img {...uiArtImage('icon-plus')} alt="" />
                   <span>新增座位</span>
                 </button>
               </li>
