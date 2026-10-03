@@ -88,9 +88,14 @@
   color: #ffd98a;
 }
 .scene-root .island-sign {
-  padding: 5px 16px;
+  padding: 6px 15px;
   line-height: 1.3;
   opacity: 1;
+}
+/* Name plates are shorter than the plank art's 20px corners: draw them at 12px so the whole plank
+   shows, light top to dark bottom, with the name in its middle instead of split across two halves. */
+.scene-root .island-sign::before {
+  border-width: 12px;
 }
 
 /* Round wooden token for the icon button; the cream icon reads on wood as it is. */

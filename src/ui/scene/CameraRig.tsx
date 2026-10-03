@@ -58,7 +58,16 @@ const GLIDE = 0.12;
  * fixed viewing angle. Recomputed whenever the canvas or the safe area changes: the first framing
  * is placed at once, later ones (the hand of cards coming and going) glide there.
  */
-export function CameraRig({ points, safe }: { readonly points: readonly FitPoint[]; readonly safe: SafeArea }) {
+export function CameraRig({
+  points,
+  safe,
+  settle = 1.01,
+}: {
+  readonly points: readonly FitPoint[];
+  readonly safe: SafeArea;
+  /** How much farther (smaller) the camera may stand to set the table down on the action strip. */
+  readonly settle?: number;
+}) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const { width, height } = useThree((s) => s.size);
   const target = useRef<{ distance: number; aimZ: number } | null>(null);
@@ -67,28 +76,31 @@ export function CameraRig({ points, safe }: { readonly points: readonly FitPoint
   useLayoutEffect(() => {
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
+    // Aims from well behind to well in front of the middle, two units apart.
     const fits = Array.from({ length: 61 }, (_, i) => {
-      const aimZ = i - 30;
+      const aimZ = (i - 30) * 2;
       return { distance: closestFit(camera, points, width, height, safe, aimZ), aimZ };
     });
     const nearest = Math.min(...fits.map((f) => f.distance));
-    // When the table is held by the width (a phone held upright) many aims fit equally close;
-    // take the one that centers it in the free band instead of pushing it to the top.
-    const middle = (safe.top + height - safe.bottom) / 2;
+    // When the table is held by the width (a phone held upright) there is spare height. Lower is
+    // nearer the camera, so the table widens as it moves down; give up a few percent of its size
+    // to set it down on the action strip, leaving the spare room under the busy top band instead
+    // of between the islands and the cards.
+    const floor = height - safe.bottom;
     const offCenter = ({ distance, aimZ }: { distance: number; aimZ: number }): number => {
       place(camera, distance, aimZ);
       const ys = points.map(({ position }) => ((1 - projected.set(...position).project(camera).y) / 2) * height);
-      return Math.abs((Math.min(...ys) + Math.max(...ys)) / 2 - middle);
+      return Math.abs(Math.max(...ys) - floor);
     };
     const best = fits
-      .filter((f) => f.distance <= nearest * 1.01)
+      .filter((f) => f.distance <= nearest * settle)
       .reduce((a, b) => (offCenter(b) < offCenter(a) ? b : a));
     target.current = best;
     // The fit search moved the camera around; put it back where it was before gliding on.
     const from = current.current ?? best;
     current.current = from;
     place(camera, from.distance, from.aimZ);
-  }, [camera, width, height, points, safe]);
+  }, [camera, width, height, points, safe, settle]);
 
   useFrame((_, delta) => {
     const to = target.current;

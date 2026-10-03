@@ -38,11 +38,11 @@ import './scene.css';
  */
 const SAFE_AREAS: Readonly<Record<Layout, SafeArea>> = {
   desktop: { top: 80, bottom: 150, left: 24, right: 250 },
-  portrait: { top: 214, bottom: 132, left: 26, right: 26 },
+  portrait: { top: 214, bottom: 122, left: 26, right: 26 },
   landscape: { top: 84, bottom: 118, left: 8, right: 150 },
 };
 /** Extra room the hand of cards takes above the action strip (none on a short phone: it sits beside it). */
-const HAND_HEIGHT: Readonly<Record<Layout, number>> = { desktop: 105, portrait: 110, landscape: 0 };
+const HAND_HEIGHT: Readonly<Record<Layout, number>> = { desktop: 105, portrait: 100, landscape: 0 };
 /** How far floating cards keep from the same bands. */
 const LABEL_MARGINS: Readonly<Record<Layout, LabelMargins>> = {
   desktop: DESKTOP_MARGINS,
@@ -249,7 +249,7 @@ export function TableScene(props: TableSceneProps) {
   return (
     <>
       <Canvas shadows camera={{ position: [0, 82, 60], fov: 38 }}>
-        <CameraRig points={points} safe={safe} />
+        <CameraRig points={points} safe={safe} settle={layout === 'portrait' ? 1.06 : 1.01} />
         <color attach="background" args={[look.sky]} />
         <WeatherFog color={look.sky} near={look.fogNear} far={look.fogFar} />
         <ambientLight intensity={look.ambient} />

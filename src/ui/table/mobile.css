@@ -23,7 +23,8 @@
   flex: 1 1 0;
   min-width: 0;
   max-width: none;
-  padding: 6px 9px;
+  /* The nail holding each note sits at the top: keep the words below it. */
+  padding: 15px 9px 6px;
   gap: 5px;
   align-items: center;
   pointer-events: auto;
@@ -331,9 +332,12 @@
 
 /* Labels on the table: smaller plates, and ship tags keep only the owners' color dots. */
 .scene-root[data-layout='portrait'] .island-sign {
-  padding: 1px 7px;
+  padding: 4px 9px;
   font-size: 0.7rem;
   letter-spacing: 0.04em;
+}
+.scene-root[data-layout='portrait'] .island-sign::before {
+  border-width: 9px;
 }
 .scene-root[data-layout='portrait'] .ship-tag .ship-owners {
   font-size: 0;
