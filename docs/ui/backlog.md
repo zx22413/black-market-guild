@@ -1,8 +1,8 @@
 # UI 待辦清單
 
-> 更新：2026-10-03。對局畫面（`src/ui/`）還沒做完、還沒驗證、或已知有問題的地方，供下一個 session 接手。做完一項就從這裡刪掉或移到文末「已完成」。
+> 更新：2026-10-04。對局畫面（`src/ui/`）還沒做完、還沒驗證、或已知有問題的地方，供下一個 session 接手。做完一項就從這裡刪掉或移到文末「已完成」。
 >
-> 這份只是工作清單，**不是規則來源**：任何牽涉規則或數值的項目，以 [`docs/game-design.md`](../game-design.md) 為準，未定案的見 [`docs/open-questions.md`](../open-questions.md)。
+> 這份只是工作清單，**不是規則來源**：任何牽涉規則或數值的項目，以 [`docs/game-design.md`](../game-design.md) 為準，未定案的見 [`docs/open-questions.md`](../open-questions.md)。線上房間與部署的待辦另見 [`docs/online/backlog.md`](../online/backlog.md)。
 
 ## 1. 已做完但還沒實際驗證
 
@@ -13,6 +13,10 @@
 | **直式手機的其他階段**：情報重擲、合資挑選（兩排按鈕）、回合結算、結果畫面 | 開發窗格設成 375×812 跑完一整局 | `table/mobile.css` |
 | **沒有手牌時的直式畫面**：保留區縮小後島往下、放大的樣子 | 同上，看招募、出航、揭曉階段 | `scene/TableScene.tsx`（`SAFE_AREAS`、`HAND_HEIGHT`） |
 | **大螢幕上的招募道具大小**（`PROP_SCALE = 3.8`） | 1600×900 以上看羊皮紙、握手、信封 | `scene/RecruitProps.tsx` |
+| **點擊說明在真手機上的手感**：名牌上的資產圖示只有 14px（可點範圍有加大）、角色卡、事件卡，點外面是否確實關閉 | 真手機上點各種圖示 | `components/InfoTip.tsx`、`table/mobile.css` |
+| **說明泡泡在鏡頭移動時不會跟著走**：泡泡位置在打開那一刻就固定了；角色卡會跟著鏡頭滑動（例如手牌出現時），泡泡可能錯位。目前只在視窗縮放時關閉 | 打開角色卡說明後進入下一階段 | `components/InfoTip.tsx` |
+| **手機直式私密筆記的位置**：改成 `top: 216px`，避開多了一排資產圖示的名牌；名牌沒有資產時會多出一點空隙 | 375×812 看第 1 回合與買了資產之後 | `table/mobile.css`（`.hud-private`） |
+| **「決定中」標記只用腳本測過** | 兩個真人線上或同機輪流，一人先送出後看另一人的名牌 | `scene/SceneLabels.tsx`（`tag-waiting`）、`session/usePlayback.ts`（`waiting`） |
 
 ## 2. 已知問題、可以再改善
 
@@ -37,7 +41,8 @@
 3. **存檔與續玩**：重新整理就沒了。引擎已能用 seed 加行動紀錄重建一局（`src/match` 的 `replayMatch`），缺存檔與讀檔的畫面。
 4. **2 人模式**：規則未定案（`open-questions.md` Q-05，中立船的數量、資金、行為），要使用者先決定規則。
 5. **平衡數值定案**：已有模擬報表（Q-06、`docs/simulations/`），最終數值要使用者決定。
-6. 之後才需要：多人連線（`docs/architecture.md` 已預留）、Electron／Tauri／Capacitor 打包、lint 與 formatter、佔位美術替換。
+6. 之後才需要：Electron／Tauri／Capacitor 打包、lint 與 formatter、佔位美術替換。（多人連線的臨時版已完成，後續見 [`docs/online/backlog.md`](../online/backlog.md)。）
+7. **線上對局結束後的畫面**：「再來一局」會離開房間回到首頁；線上時應改成「回大廳」，房主可以直接再開一局。
 
 ## 開發用預覽頁
 
@@ -53,6 +58,12 @@
 | `/?dev=ui-mock` | UI 風格樣張 |
 
 手機版面：在開發窗格把視窗設成 375×812（直式）或 812×375（橫式），`data-layout` 會自動切換。
+
+## 已完成（2026-10-04 這輪）
+
+- 結算畫面蓋在角色卡上面（`.result-overlay` 加上 `z-index`）。
+- 等待時點名「等待 某某 決定…」，還沒決定的商會名牌上標「決定中」。
+- 點擊說明（`components/InfoTip.tsx`）：角色卡、名牌與帳本的資產圖示點了會跳出說明；事件卡原地展開；同時只開一個，點同一個、點其他地方或按 Esc 關閉。手機名牌補回資產小圖示。
 
 ## 已完成（2026-10-03 這輪）
 
