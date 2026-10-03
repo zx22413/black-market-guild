@@ -35,6 +35,8 @@ const SAFE_AREA: SafeArea = { top: 80, bottom: 185, left: 24, right: 250 };
 const SHIP_LABEL_HEIGHT = 7;
 /** How far from an island's rim its role card stands. */
 const ROLE_CARD_GAP = 4;
+/** How far a side island's role card sits from its name plate. */
+const ROLE_CARD_BESIDE_PLATE = 15;
 /** How far the far island's recruitment props move sideways, clear of its name plate. */
 const FAR_SIDE_SHIFT = 12;
 /**
@@ -158,14 +160,21 @@ export function TableScene(props: TableSceneProps) {
           ];
     // A point on each island's grass, under its recruitment props, where their labels hang.
     const fxAnchors = fxSpots.map(([x, , z], i): LabelAnchor => ({ id: `fx-${i}`, position: [x, 3, z] }));
-    // Each role card stands beside its island at mid height, away from the name plate and the
-    // action strip: islands on the right of the table get it on their left, clear of the ranking
-    // rail. Where the top of the screen is too close, it hangs down instead.
+    // Each role card goes where the sea is empty: never between an island and the middle, where
+    // the lanes and ship tags are. Side islands hang it below, next to their name plate, on the
+    // side toward the middle of the screen (clear of the ranking rail on the right); the near
+    // island beside it on the right; the far island beside it on the left. Near the top of the
+    // screen it hangs down instead; the tracker keeps it clear of the action strip.
     const roleAnchors = table.seats.map((_, i): LabelAnchor => {
       const [x, , z] = seatPosition(angles[i]!);
-      const side = x > 10 ? -1 : 1;
-      const cx = x + side * (PLAYER_ISLAND_RADIUS + ROLE_CARD_GAP);
-      return { id: `role-${i}`, position: [cx, 4, z], flip: [cx, 4, z + 4] };
+      const reach = PLAYER_ISLAND_RADIUS + ROLE_CARD_GAP;
+      const position: Vec3 =
+        Math.abs(x) > Math.abs(z)
+          ? [x - Math.sign(x) * ROLE_CARD_BESIDE_PLATE, 1, z + PLAYER_ISLAND_RADIUS + 15]
+          : z > 0
+            ? [x + reach, 4, z]
+            : [x - reach, 4, z];
+      return { id: `role-${i}`, position, flip: [position[0], position[1], position[2] + 4] };
     });
     return [{ id: 'target', position: TARGET_PLATE }, ...seatAnchors, ...shipAnchors, ...fxAnchors, ...roleAnchors, ...cardAnchors];
   }, [angles, table, selectedIsland, fxSpots]);
