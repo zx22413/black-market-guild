@@ -4,14 +4,15 @@ import { BufferGeometry, Color, Float32BufferAttribute } from 'three';
 import type { AssetId } from '../../../game';
 import { goldGlowPatch, type GoldGlow } from '../goldGlow';
 import { BUILDING_DESIGNS } from './designs';
+import type { KitPart } from './kit';
 import { SWATCHES, type Mat } from './materials';
 import { partFaces, type Face } from './polyhedra';
 
 /**
- * One flat-shaded geometry for a whole building. Vertex colors fade each solid from its
+ * One flat-shaded geometry for a whole model (a building, a prop). Vertex colors fade each solid from its
  * swatch's top color to its bottom color, the way Kenney's colormap gradients do.
  */
-function buildingGeometry(asset: AssetId): BufferGeometry {
+export function geometryFromParts(parts: readonly KitPart[]): BufferGeometry {
   const positions: number[] = [];
   const normals: number[] = [];
   const colors: number[] = [];
@@ -26,7 +27,7 @@ function buildingGeometry(asset: AssetId): BufferGeometry {
     normals.push(...face.normal);
     colors.push(mixed.r, mixed.g, mixed.b);
   };
-  for (const face of BUILDING_DESIGNS[asset].parts.flatMap(partFaces)) {
+  for (const face of parts.flatMap(partFaces)) {
     const swatch = SWATCHES[face.mat as Mat];
     top.set(swatch.top);
     bottom.set(swatch.bottom);
@@ -49,7 +50,7 @@ const geometryCache = new Map<AssetId, BufferGeometry>();
 function geometryOf(asset: AssetId): BufferGeometry {
   const cached = geometryCache.get(asset);
   if (cached) return cached;
-  const geometry = buildingGeometry(asset);
+  const geometry = geometryFromParts(BUILDING_DESIGNS[asset].parts);
   geometryCache.set(asset, geometry);
   return geometry;
 }

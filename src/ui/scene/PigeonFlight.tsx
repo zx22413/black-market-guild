@@ -1,0 +1,65 @@
+import { useFrame } from '@react-three/fiber';
+import { useMemo, useRef } from 'react';
+import type { Group } from 'three';
+import { geometryFromParts } from './buildings/Building';
+import { PIGEON_BODY, PIGEON_SHOULDER, pigeonWing } from './props/pigeon';
+import type { Vec3 } from './layout';
+import { flightPose, wingAngle } from './pigeonMath';
+
+interface PigeonFlightProps {
+  readonly from: Vec3;
+  readonly to: Vec3;
+  /** Milliseconds before taking off, and how long the flight lasts. */
+  readonly at: number;
+  readonly duration: number;
+  /** Dev preview only: hold the bird at this many milliseconds into the flight. */
+  readonly freezeAt?: number;
+}
+
+/** A carrier pigeon that flies an arc from one island to another and lands out of sight. */
+export function PigeonFlight({ from, to, at, duration, freezeAt }: PigeonFlightProps) {
+  const body = useMemo(() => geometryFromParts(PIGEON_BODY), []);
+  const wings = useMemo(() => [geometryFromParts(pigeonWing(1)), geometryFromParts(pigeonWing(-1))] as const, []);
+  const root = useRef<Group>(null);
+  const hinges = useRef<(Group | null)[]>([]);
+  const elapsed = useRef(0);
+
+  useFrame((_, delta) => {
+    elapsed.current += Math.min(delta, 0.1) * 1000;
+    const ms = freezeAt ?? elapsed.current - at;
+    const group = root.current;
+    if (!group) return;
+    const k = ms / duration;
+    group.visible = k > 0 && k < 1;
+    if (!group.visible) return;
+    const pose = flightPose(from, to, k);
+    group.position.set(...pose.position);
+    group.rotation.set(pose.pitch, pose.heading, pose.roll, 'YXZ');
+    group.scale.setScalar(Math.max(pose.scale, 0.001));
+    const flap = wingAngle(ms / 1000, k);
+    hinges.current[0]?.rotation.set(0, 0, flap);
+    hinges.current[1]?.rotation.set(0, 0, -flap);
+  });
+
+  const { x, y, z } = PIGEON_SHOULDER;
+  return (
+    <group ref={root} visible={false}>
+      <mesh geometry={body} castShadow dispose={null}>
+        <meshStandardMaterial vertexColors roughness={0.8} />
+      </mesh>
+      {wings.map((geometry, i) => (
+        <group
+          key={i}
+          ref={(g) => {
+            hinges.current[i] = g;
+          }}
+          position={[i === 0 ? x : -x, y, z]}
+        >
+          <mesh geometry={geometry} castShadow dispose={null}>
+            <meshStandardMaterial vertexColors roughness={0.8} />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+}

@@ -3,6 +3,7 @@ import { Suspense, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import type { Deployment, PlayerId, ShipId, VoyageEventId } from '../../game';
 import { CameraRig, type FitPoint, type SafeArea } from './CameraRig';
 import { PlayerIsland, TargetIsland } from './Islands';
+import { PigeonFlight } from './PigeonFlight';
 import { islandShorelines, playerIslandSeed } from './islandShape';
 import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatAngles, seatPosition, type Vec3 } from './layout';
 import { Routes } from './Routes';
@@ -31,6 +32,8 @@ import './scene.css';
 /** Keep the islands clear of the top event band and the bottom hand/action band. */
 const SAFE_AREA: SafeArea = { top: 80, bottom: 150, left: 24, right: 250 };
 const SHIP_LABEL_HEIGHT = 7;
+/** How far the far island's recruitment pictures move sideways, clear of its name plate. */
+const FAR_SIDE_SHIFT = 12;
 /**
  * The target's name plate sits on the sea at its front-left diagonal: no lane runs there, so it
  * never covers the far island, its tag or an arriving ship.
@@ -134,16 +137,28 @@ export function TableScene(props: TableSceneProps) {
     // An empty point above each island; the recruitment show hangs its pictures from it.
     const fxAnchors = table.seats.map((_, i): LabelAnchor => {
       const [x, , z] = seatPosition(angles[i]!);
-      return { id: `fx-${i}`, position: [x, 7, z] };
+      // The far island's name plate sits above it on screen; its pictures stand to the side instead.
+      const plateAbove = z < 0 && Math.abs(x) <= Math.abs(z);
+      return { id: `fx-${i}`, position: plateAbove ? [x + FAR_SIDE_SHIFT, 7, z + 3] : [x, 7, z] };
     });
     return [{ id: 'target', position: TARGET_PLATE }, ...seatAnchors, ...shipAnchors, ...fxAnchors, ...cardAnchors];
   }, [angles, table, selectedIsland]);
 
+  // Each pigeon flies from its own island to the recruiter's, 8 units up where the parchments hang.
+  const pigeons = useMemo(
+    () =>
+      fx.flatMap((cue) => {
+        const from = table.seats.findIndex((s) => s.id === cue.player);
+        const to = table.seats.findIndex((s) => s.id === cue.to);
+        if (cue.kind !== 'pigeon' || from < 0 || to < 0) return [];
+        const [fx0, , fz0] = seatPosition(angles[from]!);
+        const [tx, , tz] = seatPosition(angles[to]!);
+        return [{ key: cue.key, at: cue.at, duration: cue.duration, from: [fx0, 8, fz0] as Vec3, to: [tx, 8, tz] as Vec3 }];
+      }),
+    [fx, table.seats, angles],
+  );
+
   const labels = useRef(new Map<string, HTMLElement>());
-  const rectOf = (id: PlayerId): DOMRect | undefined => {
-    const seat = table.seats.findIndex((s) => s.id === id);
-    return seat < 0 ? undefined : labels.current.get(`fx-${seat}`)?.getBoundingClientRect();
-  };
   const pin = (id: string) => (element: HTMLElement | null) => {
     if (element) labels.current.set(id, element);
     else labels.current.delete(id);
@@ -205,6 +220,9 @@ export function TableScene(props: TableSceneProps) {
                 <Escorts ship={ship} angle={angles[ship.lane]!} />
               </group>
             ))}
+            {pigeons.map((cue) => (
+              <PigeonFlight key={cue.key} from={cue.from} to={cue.to} at={cue.at} duration={cue.duration} />
+            ))}
             <Ready onReady={onReady} />
           </Suspense>
         </SwellProvider>
@@ -222,7 +240,7 @@ export function TableScene(props: TableSceneProps) {
         ))}
         {table.seats.map((seat, i) => (
           <div key={seat.id} ref={pin(`fx-${i}`)} className="fx-anchor">
-            <SeatFx seat={seat} cues={fx} standing={!recruitResolved} rectOf={rectOf} />
+            <SeatFx seat={seat} cues={fx} standing={!recruitResolved} />
           </div>
         ))}
         {table.ships.map((ship) => (

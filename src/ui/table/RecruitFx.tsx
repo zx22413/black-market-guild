@@ -1,11 +1,8 @@
-import { useLayoutEffect, useState, type CSSProperties, type ReactNode } from 'react';
-import type { PlayerId } from '../../game';
+import type { CSSProperties, ReactNode } from 'react';
 import { Icon } from '../components/Icon';
 import type { SceneSeat } from '../scene/tableModel';
 import type { RecruitCue } from './recruitShow';
 import './recruitFx.css';
-
-type RectOf = (id: PlayerId) => DOMRect | undefined;
 
 const timing = (cue: RecruitCue): CSSProperties => ({ '--at': `${cue.at}ms`, '--dur': `${cue.duration}ms` }) as CSSProperties;
 
@@ -33,42 +30,6 @@ function Envelope() {
     <div className="fx-envelope">
       <i className="flap" />
       <i className="seal" />
-    </div>
-  );
-}
-
-function Pigeon() {
-  return (
-    <svg className="fx-pigeon-art" viewBox="0 0 80 52" aria-hidden>
-      <path d="M8 24 L0 14 L16 20 Z" fill="#9aa3ad" />
-      <ellipse cx="34" cy="28" rx="24" ry="13" fill="#e9edf2" stroke="#6b7480" strokeWidth="2" />
-      <circle cx="56" cy="20" r="8" fill="#e9edf2" stroke="#6b7480" strokeWidth="2" />
-      <circle cx="58.5" cy="18.5" r="1.6" fill="#2b2f36" />
-      <path d="M63 21 L72 23.5 L63 25.5 Z" fill="#e8943a" />
-      <g className="wing">
-        <path d="M30 24 C22 6 8 4 2 8 C12 10 18 18 22 28 Z" fill="#c4ccd6" stroke="#6b7480" strokeWidth="2" strokeLinejoin="round" />
-      </g>
-      <rect x="64" y="22" width="12" height="9" rx="1.5" fill="#fff6dc" stroke="#7a5a36" strokeWidth="1.5" />
-      <path d="M64 22 L70 27 L76 22" fill="none" stroke="#7a5a36" strokeWidth="1.5" />
-    </svg>
-  );
-}
-
-/** A pigeon flying from its own island to the recruiter's, an arc over the sea. */
-function PigeonFlight({ cue, rectOf }: { readonly cue: RecruitCue; readonly rectOf: RectOf }) {
-  const [shift, setShift] = useState<{ dx: number; dy: number } | null>(null);
-  useLayoutEffect(() => {
-    const from = rectOf(cue.player);
-    const to = cue.to ? rectOf(cue.to) : undefined;
-    if (from && to) setShift({ dx: to.left - from.left, dy: to.top - from.top });
-  }, [cue, rectOf]);
-  if (!shift) return null;
-  const style = { ...timing(cue), '--dx': `${shift.dx}px`, '--dy': `${shift.dy}px` } as CSSProperties;
-  return (
-    <div className="fx-pigeon" style={style}>
-      <div className={shift.dx < 0 ? 'flip' : ''}>
-        <Pigeon />
-      </div>
     </div>
   );
 }
@@ -104,11 +65,10 @@ interface SeatFxProps {
   readonly cues: readonly RecruitCue[];
   /** The open recruitment is still on the table (the results are not out yet). */
   readonly standing: boolean;
-  readonly rectOf: RectOf;
 }
 
 /** Everything the recruitment show draws over one guild's island. */
-export function SeatFx({ seat, cues, standing, rectOf }: SeatFxProps) {
+export function SeatFx({ seat, cues, standing }: SeatFxProps) {
   const mine = cues.filter((c) => c.player === seat.id);
   return (
     <>
@@ -134,7 +94,8 @@ export function SeatFx({ seat, cues, standing, rectOf }: SeatFxProps) {
               </div>
             );
           case 'pigeon':
-            return <PigeonFlight key={cue.key} cue={cue} rectOf={rectOf} />;
+            // The pigeon is a 3D model flying over the table (scene/PigeonFlight), not drawn here.
+            return null;
           case 'handshake':
             return <Handshake key={cue.key} cue={cue} />;
           case 'envelope-tear':

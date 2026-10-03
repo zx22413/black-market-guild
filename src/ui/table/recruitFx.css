@@ -8,7 +8,6 @@
 }
 
 .fx-item,
-.fx-pigeon,
 .fx-handshake,
 .fx-fail {
   position: absolute;
@@ -337,58 +336,6 @@
   }
   100% {
     transform: rotate(var(--a)) translateY(-70px) scale(1.4);
-    opacity: 0;
-  }
-}
-
-/* ── Pigeon ── */
-
-.fx-pigeon {
-  translate: -50% 50%;
-  animation: fx-fly var(--dur) cubic-bezier(0.45, 0, 0.55, 1) var(--at) both;
-}
-
-.fx-pigeon .flip {
-  transform: scaleX(-1);
-}
-
-.fx-pigeon-art {
-  width: 64px;
-  height: 42px;
-  filter: drop-shadow(0 4px 4px rgba(30, 20, 5, 0.4));
-}
-
-.fx-pigeon-art .wing {
-  transform-origin: 30px 24px;
-  animation: fx-flap 0.28s ease-in-out infinite alternate;
-}
-
-@keyframes fx-flap {
-  from {
-    transform: rotate(-24deg);
-  }
-  to {
-    transform: rotate(22deg);
-  }
-}
-
-@keyframes fx-fly {
-  0% {
-    transform: translate(0, 0) scale(0.5);
-    opacity: 0;
-  }
-  8% {
-    opacity: 1;
-    transform: translate(calc(var(--dx) * 0.04), calc(var(--dy) * 0.04 - 14px)) scale(1);
-  }
-  50% {
-    transform: translate(calc(var(--dx) * 0.5), calc(var(--dy) * 0.5 - 80px)) scale(1.1);
-  }
-  92% {
-    opacity: 1;
-  }
-  100% {
-    transform: translate(var(--dx), calc(var(--dy) - 18px)) scale(0.6);
     opacity: 0;
   }
 }
