@@ -46,6 +46,7 @@ export const MOCK_TABLE: SceneTable = {
     recruiting: null,
     appliedTo: [],
     stayedInPort: false,
+    role: null,
   })),
   ships: [ship('r1-s1', 'p0', 0), ship('r1-s2', 'p1', 1)],
 };

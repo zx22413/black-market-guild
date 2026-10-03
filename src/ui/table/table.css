@@ -590,3 +590,93 @@
   justify-content: center;
   gap: 8px;
 }
+
+/* ── Role card beside a guild's name plate: what it played this round ── */
+
+.seat-sign.card-left .role-card {
+  left: auto;
+  right: calc(100% + 8px);
+}
+
+.role-card {
+  position: absolute;
+  bottom: -6px;
+  left: calc(100% + 8px);
+  width: 74px;
+  letter-spacing: normal;
+  padding: 5px 4px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  text-align: center;
+  color: #3a2a17;
+  background: #fcf4e2;
+  border: 2px solid #7a5a36;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(30, 20, 5, 0.35);
+  pointer-events: none;
+  animation: role-card-in 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.role-card img {
+  width: 28px;
+  height: 28px;
+  filter: brightness(0.35) sepia(1) saturate(2) hue-rotate(-10deg);
+}
+
+.role-card strong {
+  font-size: 0.78rem;
+}
+
+.role-card small {
+  font-size: 0.6rem;
+  line-height: 1.2;
+  color: #6b4a2b;
+}
+
+/* Only the viewer sees it: their own role before the reveal, or a smuggler nobody caught. */
+.role-card.secret {
+  border-style: dashed;
+  border-color: #7a4fb0;
+  background: rgba(244, 236, 252, 0.95);
+}
+
+.role-card em {
+  font-size: 0.55rem;
+  font-style: normal;
+  color: #7a4fb0;
+}
+
+.role-card.caught {
+  border-color: #9a2512;
+}
+
+.role-stamp {
+  position: absolute;
+  top: 26%;
+  left: 50%;
+  translate: -50% 0;
+  rotate: -14deg;
+  padding: 1px 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #9a2512;
+  border: 2px solid #9a2512;
+  border-radius: 4px;
+  background: rgba(255, 240, 236, 0.9);
+}
+
+@keyframes role-card-in {
+  0% {
+    opacity: 0;
+    scale: 0.3;
+    rotate: -10deg;
+  }
+  100% {
+    opacity: 1;
+    scale: 1;
+    rotate: 0deg;
+  }
+}

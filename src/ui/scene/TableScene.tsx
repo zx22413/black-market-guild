@@ -19,13 +19,13 @@ import { Storm } from './Storm';
 import { Wind } from './Wind';
 import type { IntelTrace } from './dieSteps';
 import { SeatRail } from './SeatRail';
-import { SeatSign, ShipTag, TargetSign } from './SceneLabels';
+import { RoleCard, SeatSign, ShipTag, TargetSign } from './SceneLabels';
 import { Escorts, VoyageShip, shipPose } from './Ships';
 import { SwellProvider } from './SwellContext';
 import type { CashFloat } from '../table/useCashFloats';
 import { SeatFx } from '../table/RecruitFx';
 import type { RecruitCue } from '../table/recruitShow';
-import type { SceneTable } from './tableModel';
+import type { SceneSeat, SceneTable } from './tableModel';
 import { WEATHER, fillOf } from './weather';
 import { WeatherFog } from './WeatherFog';
 import './scene.css';
@@ -59,6 +59,8 @@ export interface TableSceneProps {
   readonly islandCard: ReactNode;
   /** The viewer's own locked deployment, shown only to them before the reveal. */
   readonly secret: Deployment | null;
+  /** The viewer's own role this round, for the card on their island until it is public. */
+  readonly secretRole: Deployment | null;
   /** Seats that already locked this phase's choice. */
   readonly submitted: readonly PlayerId[];
   /** What the viewer's intel merchant saw, by ship; shown to the viewer only. */
@@ -100,7 +102,7 @@ function Ready({ onReady }: { readonly onReady: () => void }) {
 
 /** The whole 3D table: guild islands around the target island, lanes, ships and tags. */
 export function TableScene(props: TableSceneProps) {
-  const { table, weather, nameOf, selectableShips, onSelectShip, selectedShip, selectableIslands, selectedIsland, onSelectIsland, islandCard, secret, intel, submitted, floats, fx, recruitResolved, rankStep, onReady } = props;
+  const { table, weather, nameOf, selectableShips, onSelectShip, selectedShip, selectableIslands, selectedIsland, onSelectIsland, islandCard, secret, secretRole, intel, submitted, floats, fx, recruitResolved, rankStep, onReady } = props;
   const look = WEATHER[weather ?? 'clear'];
   const angles = useMemo(() => seatAngles(table.seats.length), [table.seats.length]);
   const points = useMemo(() => fitPoints(angles), [angles]);
@@ -168,6 +170,14 @@ export function TableScene(props: TableSceneProps) {
       }),
     [fx, table.seats, fxSpots],
   );
+
+  // The role a guild played: public once revealed (or a smuggler caught); the viewer's own until then, only for them.
+  const roleCardOf = (seat: SceneSeat) => {
+    const shown = seat.role ?? (seat.isViewer && secretRole ? { role: secretRole.role, targetShipId: secretRole.targetShipId, caught: false } : null);
+    if (!shown) return null;
+    const owners = table.ships.find((ship) => ship.id === shown.targetShipId)?.owners ?? [];
+    return <RoleCard key={shown.role} role={shown.role} target={`→ ${owners.map(nameOf).join('＋')}的船`} secret={!seat.role} caught={shown.caught} />;
+  };
 
   const labels = useRef(new Map<string, HTMLElement>());
   const pin = (id: string) => (element: HTMLElement | null) => {
@@ -248,7 +258,15 @@ export function TableScene(props: TableSceneProps) {
           </div>
         )}
         {table.seats.map((seat, i) => (
-          <SeatSign key={seat.id} ref={pin(`seat-${i}`)} seat={seat} floats={floats.filter((f) => f.playerId === seat.id)} />
+          <SeatSign
+            key={seat.id}
+            ref={pin(`seat-${i}`)}
+            seat={seat}
+            floats={floats.filter((f) => f.playerId === seat.id)}
+            roleCard={roleCardOf(seat)}
+            // Islands on the right of the table hang the card on the left of the plate, clear of the ranking rail.
+            cardSide={seatPosition(angles[i]!)[0] > 10 ? 'left' : 'right'}
+          />
         ))}
         {table.seats.map((seat, i) => (
           <div key={seat.id} ref={pin(`fx-${i}`)} className="fx-anchor">

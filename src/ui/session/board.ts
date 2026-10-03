@@ -42,7 +42,7 @@ export interface Board {
   readonly withdrawn: readonly PlayerId[];
   readonly applications: readonly Application[];
   readonly ventures: readonly Venture[];
-  /** The joint-venture results are out: open recruitments no longer stand on the table. */
+  /** Recruitment is over (see closesRecruitment): open recruitments no longer stand on the table. */
   readonly recruitResolved: boolean;
   readonly launched: boolean;
   readonly stayedInPort: readonly PlayerId[];
@@ -79,6 +79,18 @@ function updateShip(board: Board, shipId: ShipId, patch: (ship: BoardShip) => Pa
   return { ...board, ships: board.ships.map((s) => (s.id === shipId ? { ...s, ...patch(s) } : s)) };
 }
 
+/** Phases that come after picking: once one of them starts, recruitment is over. */
+const AFTER_PICK = new Set(['sailing-choice', 'role-deployment', 'intel-reroll']);
+
+/**
+ * Recruitment is over once the round moves on to sailing (or, if nobody has to choose, to the
+ * launch). The engine skips phases nobody has to decide, so a round where nobody applied never
+ * announces any ventures: this, not the ventures event, is when the results can be shown.
+ */
+export function closesRecruitment(event: MatchEvent | undefined): boolean {
+  return event?.type === 'ships-launched' || (event?.type === 'phase-started' && AFTER_PICK.has(event.phase));
+}
+
 export function applyBoardEvent(board: Board, event: MatchEvent): Board {
   switch (event.type) {
     case 'round-started':
@@ -99,10 +111,11 @@ export function applyBoardEvent(board: Board, event: MatchEvent): Board {
     case 'applications-announced':
       return { ...board, applications: event.applications };
     case 'joint-ventures-formed':
-      return { ...board, ventures: event.ventures, recruitResolved: true };
+      return { ...board, ventures: [...board.ventures, ...event.ventures] };
     case 'ships-launched':
       return {
         ...board,
+        recruitResolved: true,
         launched: true,
         stayedInPort: event.stayedInPort,
         ships: event.ships.map((s) => ({ ...s, outcome: null, rerolled: false, smuggled: 0, caughtSmugglers: [], modifier: null })),
@@ -130,6 +143,8 @@ export function applyBoardEvent(board: Board, event: MatchEvent): Board {
     case 'match-ended':
       return { ...board, result: event.result };
     case 'phase-started':
+      // Once sailing starts, recruitment is over (see closesRecruitment).
+      return closesRecruitment(event) ? { ...board, recruitResolved: true } : board;
     case 'round-ended':
       return board;
     default: {

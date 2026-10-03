@@ -1,4 +1,4 @@
-import { assetValue, type AssetId, type Deployment, type PlayerId, type Rules, type ShipId, type ShipKind, type VoyageModifier } from '../../game';
+import { assetValue, type AssetId, type Deployment, type PlayerId, type RoleId, type Rules, type ShipId, type ShipKind, type VoyageModifier } from '../../game';
 import type { Board } from '../session/board';
 
 export const PLAYER_COLORS = ['#e0b43c', '#d0553f', '#4f8fd6', '#6db36a'] as const;
@@ -21,6 +21,24 @@ export interface SceneSeat {
   /** Recruiters this seat applied to. */
   readonly appliedTo: readonly PlayerId[];
   readonly stayedInPort: boolean;
+  /** The role this guild played this round, once it is public. */
+  readonly role: SeatRole | null;
+}
+
+/** A guild's role this round as everyone can see it: revealed, or an anonymous smuggler caught. */
+export interface SeatRole {
+  readonly role: RoleId;
+  readonly targetShipId: ShipId;
+  /** A smuggler stays anonymous unless a guard catches them; then the card shows it was caught. */
+  readonly caught: boolean;
+}
+
+/** The public role of one guild: its revealed deployment, or the smuggler card if it was caught. */
+export function seatRole(board: Board, playerId: PlayerId): SeatRole | null {
+  const deployment = board.revealedRoles.find((d) => d.playerId === playerId);
+  if (deployment) return { role: deployment.role, targetShipId: deployment.targetShipId, caught: false };
+  const caughtOn = board.ships.find((ship) => ship.caughtSmugglers.includes(playerId));
+  return caughtOn ? { role: 'smuggler', targetShipId: caughtOn.id, caught: true } : null;
 }
 
 export interface SceneShip {
@@ -90,6 +108,7 @@ export function buildSceneTable(
       recruiting: board.withdrawn.includes(p.id) ? 'withdrawn' : board.recruiters.includes(p.id) ? 'open' : null,
       appliedTo: board.applications.filter((a) => a.applicantId === p.id).map((a) => a.recruiterId),
       stayedInPort: board.stayedInPort.includes(p.id),
+      role: seatRole(board, p.id),
     }),
   );
   const ships = board.ships.map((ship): SceneShip => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { RULES_V06, type MatchEvent } from '../../src/game';
 import { buildBoard, initialBoard, type Board } from '../../src/ui/session/board';
-import { PLAYER_COLORS, buildSceneTable, seatOrder } from '../../src/ui/scene/tableModel';
+import { PLAYER_COLORS, buildSceneTable, seatOrder, seatRole } from '../../src/ui/scene/tableModel';
 
 const PLAYERS = [
   { id: 'p1', name: 'A' },
@@ -106,5 +106,46 @@ describe('scene table model', () => {
       ['r1-s1', 'sailing', 0],
       ['r1-s2', 'sunk', 1],
     ]);
+  });
+
+  it('shows each guild the role it played once roles are revealed', () => {
+    const table = buildSceneTable(
+      boardAfter([
+        launch,
+        { type: 'roles-revealed', round: 1, role: 'guard', deployments: [{ playerId: 'p3', role: 'guard', targetShipId: 'r1-s1' }], rerolledShipIds: [] },
+        { type: 'roles-revealed', round: 1, role: 'pirate', deployments: [{ playerId: 'p1', role: 'pirate', targetShipId: 'r1-s2' }], rerolledShipIds: [] },
+      ]),
+      PLAYERS,
+      'p1',
+      RULES_V06,
+    );
+    const role = (id: string) => table.seats.find((s) => s.id === id)?.role;
+    expect(role('p1')).toEqual({ role: 'pirate', targetShipId: 'r1-s2', caught: false });
+    expect(role('p3')).toEqual({ role: 'guard', targetShipId: 'r1-s1', caught: false });
+    expect(role('p2')).toBeNull();
+  });
+
+  it('keeps an anonymous smuggler hidden until a guard catches them', () => {
+    const smuggled = boardAfter([
+      launch,
+      { type: 'roles-revealed', round: 1, role: 'smuggler', deployments: [], rerolledShipIds: [] },
+    ]);
+    expect(seatRole(smuggled, 'p4')).toBeNull();
+    const caught = boardAfter([
+      launch,
+      { type: 'roles-revealed', round: 1, role: 'smuggler', deployments: [], rerolledShipIds: [] },
+      { type: 'smugglers-caught', round: 1, shipId: 'r1-s1', smugglers: ['p4'] },
+    ]);
+    expect(seatRole(caught, 'p4')).toEqual({ role: 'smuggler', targetShipId: 'r1-s1', caught: true });
+  });
+
+  it('clears the roles when a new round starts', () => {
+    const next = buildBoard(IDS, 1000, [
+      { type: 'round-started', round: 1 },
+      launch,
+      { type: 'roles-revealed', round: 1, role: 'pirate', deployments: [{ playerId: 'p1', role: 'pirate', targetShipId: 'r1-s2' }], rerolledShipIds: [] },
+      { type: 'round-started', round: 2 },
+    ]);
+    expect(seatRole(next, 'p1')).toBeNull();
   });
 });

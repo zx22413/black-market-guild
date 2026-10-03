@@ -21,6 +21,10 @@ const applied = (pairs: [string, string][]): MatchEvent => ({
   round: 1,
   applications: pairs.map(([applicantId, recruiterId]) => ({ applicantId, recruiterId })),
 });
+const sailing: MatchEvent = { type: 'phase-started', round: 1, phase: 'sailing-choice' };
+const launched: MatchEvent = { type: 'ships-launched', round: 1, ships: [], stayedInPort: [] };
+/** The results play when recruitment closes: at the last event of the list. */
+const closing = (events: MatchEvent[]) => recruitShow(events, events.length - 1, ORDER);
 const formed = (pairs: [string, string][]): MatchEvent => ({
   type: 'joint-ventures-formed',
   round: 1,
@@ -54,8 +58,8 @@ describe('recruitment show', () => {
   });
 
   it('plays a handshake on both islands for a pairing', () => {
-    const events = round(recruiters(['p2']), applied([['p1', 'p2']]), formed([['p2', 'p1']]));
-    const show = recruitShow(events, 3, ORDER);
+    const events = round(recruiters(['p2']), applied([['p1', 'p2']]), formed([['p2', 'p1']]), sailing);
+    const show = closing(events);
     const handshakes = show.cues.filter((c) => c.kind === 'handshake');
     expect(handshakes.map((c) => c.player).sort()).toEqual(['p1', 'p2']);
     expect(handshakes.every((c) => c.at === 0 && c.duration === HANDSHAKE_MS)).toBe(true);
@@ -67,8 +71,8 @@ describe('recruitment show', () => {
   });
 
   it('tears the envelope of a rejected applicant after the recruiter picked someone else', () => {
-    const events = round(recruiters(['p2']), applied([['p1', 'p2'], ['p3', 'p2']]), formed([['p2', 'p1']]));
-    const show = recruitShow(events, 3, ORDER);
+    const events = round(recruiters(['p2']), applied([['p1', 'p2'], ['p3', 'p2']]), formed([['p2', 'p1']]), sailing);
+    const show = closing(events);
     const tear = show.cues.find((c) => c.kind === 'envelope-tear');
     expect(tear?.player).toBe('p3');
     // The pairing plays first, then the rejection.
@@ -77,28 +81,61 @@ describe('recruitment show', () => {
   });
 
   it('tears the parchment of a recruiter nobody applied to', () => {
-    const events = round(recruiters(['p2']), applied([]), formed([]));
-    const show = recruitShow(events, 3, ORDER);
+    const events = round(recruiters(['p2']), applied([]), formed([]), sailing);
+    const show = closing(events);
     expect(show.cues.filter((c) => c.kind === 'parchment-tear').map((c) => c.player)).toEqual(['p2']);
   });
 
   it('plays the groups one after another, ordered by the recruiter\'s seat', () => {
-    const events = round(recruiters(['p4', 'p2']), applied([['p1', 'p4'], ['p3', 'p2']]), formed([['p4', 'p1'], ['p2', 'p3']]));
-    const show = recruitShow(events, 3, ORDER);
+    const events = round(recruiters(['p4', 'p2']), applied([['p1', 'p4'], ['p3', 'p2']]), formed([['p4', 'p1'], ['p2', 'p3']]), sailing);
+    const show = closing(events);
     const starts = show.cues.filter((c) => c.kind === 'handshake').map((c) => [c.player, c.at]);
     // p2 (seat 2) and its partner p3 go first, then p4 and p1.
     expect(starts).toEqual([['p2', 0], ['p3', 0], ['p4', HANDSHAKE_MS], ['p1', HANDSHAKE_MS]]);
   });
 
   it('keeps a parchment up until its own group comes up', () => {
-    const events = round(recruiters(['p2', 'p4']), applied([['p1', 'p2'], ['p3', 'p4']]), formed([['p2', 'p1'], ['p4', 'p3']]));
-    const holds = recruitShow(events, 3, ORDER).cues.filter((c) => c.kind === 'parchment-hold');
+    const events = round(recruiters(['p2', 'p4']), applied([['p1', 'p2'], ['p3', 'p4']]), formed([['p2', 'p1'], ['p4', 'p3']]), sailing);
+    const holds = closing(events).cues.filter((c) => c.kind === 'parchment-hold');
     expect(holds.map((c) => [c.player, c.duration])).toEqual([['p2', 0], ['p4', HANDSHAKE_MS]]);
   });
 
   it('does not count a withdrawn recruiter as a failed recruitment', () => {
-    const events = round(recruiters(['p2', 'p3']), withdrawn(['p2']), applied([['p2', 'p3']]), formed([['p3', 'p2']]));
-    const show = recruitShow(events, 4, ORDER);
+    const events = round(recruiters(['p2', 'p3']), withdrawn(['p2']), applied([['p2', 'p3']]), formed([['p3', 'p2']]), sailing);
+    const show = closing(events);
     expect(show.cues.some((c) => c.kind === 'parchment-tear')).toBe(false);
+  });
+
+  it('waits for recruitment to close instead of playing results at the ventures event', () => {
+    const events = round(recruiters(['p2']), applied([['p1', 'p2']]), formed([['p2', 'p1']]));
+    expect(recruitShow(events, 3, ORDER).cues).toEqual([]);
+  });
+
+  it('tears the parchment when nobody applied, though the engine skipped the pick phase', () => {
+    // No pick phase means no ventures event at all; the launch closes recruitment instead.
+    const events = round(recruiters(['p2']), applied([]), launched);
+    expect(closing(events).cues.filter((c) => c.kind === 'parchment-tear').map((c) => c.player)).toEqual(['p2']);
+  });
+
+  it('judges a mutual pair and a later pick together, never failing someone before they picked', () => {
+    // p1 and p2 recruit and apply to each other (a venture formed while applying); p3 recruits,
+    // p4 applies to p3 and is picked afterwards.
+    const events = round(
+      recruiters(['p1', 'p2', 'p3']),
+      applied([['p1', 'p2'], ['p2', 'p1'], ['p4', 'p3']]),
+      withdrawn(['p1', 'p2']),
+      formed([['p1', 'p2']]),
+      formed([['p3', 'p4']]),
+      sailing,
+    );
+    const show = closing(events);
+    expect(show.cues.filter((c) => c.kind === 'handshake').map((c) => c.player).sort()).toEqual(['p1', 'p2', 'p3', 'p4']);
+    expect(show.cues.some((c) => c.kind === 'envelope-tear' || c.kind === 'parchment-tear')).toBe(false);
+  });
+
+  it('plays the results only once a round, at the first event that closes recruitment', () => {
+    const events = round(recruiters(['p2']), applied([]), sailing, launched);
+    expect(recruitShow(events, 3, ORDER).cues.length).toBeGreaterThan(0);
+    expect(recruitShow(events, 4, ORDER).cues).toEqual([]);
   });
 });

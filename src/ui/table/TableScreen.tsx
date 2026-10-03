@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { RULES_V06, type Action, type PlayerId, type RoleId, type ShipId } from '../../game';
+import { RULES_V06, type Action, type Deployment, type PlayerId, type RoleId, type ShipId } from '../../game';
 import { EventLog } from '../components/EventLog';
 import { uiArtVars } from '../art';
 import { Icon } from '../components/Icon';
@@ -35,6 +35,8 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
   const [role, setRole] = useState<RoleId | null>(null);
   const [ship, setShip] = useState<ShipId | null>(null);
   const [noDeploy, setNoDeploy] = useState(false);
+  // Roles the humans at this screen locked this round, kept so each can see their own card on their island.
+  const [lockedRoles, setLockedRoles] = useState<ReadonlyMap<PlayerId, Deployment & { readonly round: number }>>(new Map());
   const [partner, setPartner] = useState<PartnerPick | null>(null);
   const inspection = useAssetInspection();
   const [logOpen, setLogOpen] = useState(false);
@@ -113,6 +115,10 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
     setNoDeploy(true);
   };
   const submit = (action: Action) => {
+    if (action.type === 'deploy-role' && action.role && action.targetShipId) {
+      const locked = { playerId: action.playerId, role: action.role, targetShipId: action.targetShipId, round: board.round };
+      setLockedRoles((current) => new Map([...current, [action.playerId, locked]]));
+    }
     setRole(null);
     setShip(null);
     setNoDeploy(false);
@@ -124,6 +130,9 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
   };
 
   const viewerSeat = table.seats.find((s) => s.isViewer);
+  // Only the seat whose private view is on screen sees its own locked role (hot-seat hides it between turns).
+  const myLocked = view ? lockedRoles.get(view.playerId) : undefined;
+  const secretRole = myLocked && myLocked.round === board.round ? myLocked : null;
   return (
     <div className="scene-root" style={uiArtVars() as CSSProperties}>
       <TableScene
@@ -141,6 +150,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
           return seat ? <PartnerCard seat={seat} rules={rules} phase={partnerPhase} viewerAssets={viewerSeat?.assets ?? []} inspection={inspection} /> : null;
         })()}
         secret={activeView?.myDeployment ?? null}
+        secretRole={secretRole}
         intel={intel}
         submitted={activeView?.submittedPlayerIds ?? []}
         floats={floats}

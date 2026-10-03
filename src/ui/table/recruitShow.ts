@@ -1,4 +1,5 @@
 import type { Application, MatchEvent, PlayerId, Venture } from '../../game';
+import { closesRecruitment } from '../session/board';
 
 /** What an island plays: parchment tearing or quietly withdrawn, a pigeon leaving, a handshake or a torn envelope. */
 export type CueKind = 'parchment-hold' | 'parchment-tear' | 'parchment-withdraw' | 'pigeon' | 'handshake' | 'envelope-tear';
@@ -43,6 +44,10 @@ interface RoundContext {
   readonly recruiters: readonly PlayerId[];
   readonly withdrawn: readonly PlayerId[];
   readonly applications: readonly Application[];
+  /** Every joint venture formed so far this round: a mutual pair while applying, then the picks. */
+  readonly ventures: readonly Venture[];
+  /** An earlier event of the round already closed recruitment. */
+  readonly closed: boolean;
 }
 
 /** Public recruitment events of the round that `index` belongs to, up to (not including) it. */
@@ -54,6 +59,8 @@ function roundContext(played: readonly MatchEvent[], index: number): RoundContex
     recruiters: round.flatMap((e) => (e.type === 'recruitments-announced' ? e.recruiters : [])),
     withdrawn: round.flatMap((e) => (e.type === 'recruitments-withdrawn' ? e.recruiters : [])),
     applications: round.flatMap((e) => (e.type === 'applications-announced' ? e.applications : [])),
+    ventures: round.flatMap((e) => (e.type === 'joint-ventures-formed' ? e.ventures : [])),
+    closed: round.some(closesRecruitment),
   };
 }
 
@@ -91,7 +98,10 @@ function groupsOf(ventures: readonly Venture[], ctx: RoundContext, order: readon
     .map(({ group }) => group);
 }
 
-/** The animation that goes with the public recruitment event at `index`; none for other events. */
+/**
+ * The animation that goes with the public event at `index`: parchments, withdrawals and pigeons
+ * as recruitment goes on, and the results, pair by pair, once recruitment closes.
+ */
 export function recruitShow(played: readonly MatchEvent[], index: number, order: readonly PlayerId[]): RecruitShow {
   const event = played[index];
   const tag = `${index}`;
@@ -113,9 +123,11 @@ export function recruitShow(played: readonly MatchEvent[], index: number, order:
       );
       return { cues, duration: (event.applications.length - 1) * PIGEON_STAGGER_MS + PIGEON_FLIGHT_MS + TAIL_MS };
     }
-    case 'joint-ventures-formed': {
+    default: {
+      if (!closesRecruitment(event)) return NO_SHOW;
       const ctx = roundContext(played, index);
-      const groups = groupsOf(event.ventures, ctx, order);
+      if (ctx.closed) return NO_SHOW;
+      const groups = groupsOf(ctx.ventures, ctx, order);
       if (groups.length === 0) return NO_SHOW;
       const cues: RecruitCue[] = [];
       const holdUntil = new Map<PlayerId, number>();
@@ -144,7 +156,5 @@ export function recruitShow(played: readonly MatchEvent[], index: number, order:
       tearing.forEach((id) => cues.push({ key: `${tag}-hold-${id}`, kind: 'parchment-hold', player: id, at: 0, duration: holdUntil.get(id) ?? 0 }));
       return { cues, duration: at + TAIL_MS };
     }
-    default:
-      return NO_SHOW;
   }
 }
