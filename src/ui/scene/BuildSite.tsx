@@ -1,7 +1,7 @@
 import { useTexture } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
+import { createPortal, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { SpriteMaterial, type Group, type Mesh, type MeshBasicMaterial, type Sprite } from 'three';
+import { Scene, SpriteMaterial, type Group, type Mesh, type MeshBasicMaterial, type Sprite } from 'three';
 import type { AssetId } from '../../game';
 import { Building } from './buildings/Building';
 import { BUILD_SECONDS, buildGlow, buildSparks, completionFlash, groundRing, riseScale, sparkProgress } from './buildMath';
@@ -38,6 +38,41 @@ export function BuildSite({ asset, color, position, scale, animate, freezeAt }: 
   );
 }
 
+/**
+ * Compiles the construction effect's shaders and uploads its sparkle textures while the table
+ * loads, in a scene that is never drawn, so the first building bought does not stall a frame
+ * doing it. It stays mounted: disposing its materials would free the compiled programs again.
+ */
+export function BuildWarmup() {
+  const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  const camera = useThree((s) => s.camera);
+  const textures = useTexture(SPARKLES);
+  const offstage = useMemo(() => new Scene(), []);
+  const [glow] = useState(createGoldGlow);
+  const sparkle = useMemo(
+    () => new SpriteMaterial({ color: GOLD, alphaMap: textures[0] ?? null, transparent: true, depthWrite: false, toneMapped: false }),
+    [textures],
+  );
+  useEffect(() => () => sparkle.dispose(), [sparkle]);
+  useEffect(() => {
+    textures.forEach((texture) => gl.initTexture(texture));
+    // Lit by the table's own lights and fog, so the programs match the ones the real effect uses.
+    gl.compileAsync(offstage, camera, scene).catch((error: unknown) => console.warn('Construction effect warm-up failed', error));
+  }, [gl, scene, camera, offstage, textures]);
+  return createPortal(
+    <>
+      <Building asset="shipyard" color={GOLD} glow={glow} />
+      <sprite material={sparkle} />
+      <mesh>
+        <ringGeometry args={[0.8, 1, 64]} />
+        <meshBasicMaterial color={GOLD} transparent depthWrite={false} toneMapped={false} />
+      </mesh>
+    </>,
+    offstage,
+  );
+}
+
 function Constructing({ asset, color, position, scale, freezeAt }: Omit<BuildSiteProps, 'animate'>) {
   const textures = useTexture(SPARKLES);
   const sparks = useMemo(() => buildSparks(Math.random), []);
@@ -63,12 +98,15 @@ function Constructing({ asset, color, position, scale, freezeAt }: Omit<BuildSit
   const ringMaterial = useRef<MeshBasicMaterial>(null);
   const flash = useRef<Sprite>(null);
   const sparkSprites = useRef<(Sprite | null)[]>([]);
-  const elapsed = useRef(0);
+  // Real time since the first frame, so a dropped frame skips ahead instead of slowing the show down.
+  const started = useRef<number | null>(null);
   const [done, setDone] = useState(false);
 
-  useFrame((_, rawDelta) => {
-    elapsed.current = freezeAt ?? elapsed.current + Math.min(rawDelta, 0.1);
-    const t = elapsed.current;
+  useFrame(() => {
+    if (done) return;
+    const now = performance.now();
+    started.current ??= now;
+    const t = freezeAt ?? (now - started.current) / 1000;
     gold.uGlow.value = buildGlow(t);
     gold.uTime.value = t;
     const height = riseScale(t);
@@ -102,7 +140,12 @@ function Constructing({ asset, color, position, scale, freezeAt }: Omit<BuildSit
       sprite.scale.setScalar(spark.size * (1 - 0.4 * k));
     });
 
-    if (t > BUILD_SECONDS) setDone(true);
+    if (t > BUILD_SECONDS) {
+      // Settle on the finished building before the effect stops updating it.
+      gold.uGlow.value = 0;
+      body.current?.scale.setScalar(scale);
+      setDone(true);
+    }
   });
 
   return (
