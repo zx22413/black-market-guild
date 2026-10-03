@@ -4,7 +4,7 @@ import { App } from './App';
 import './styles.css';
 
 // Dev-only tools: the model viewer at /?dev=models, the UI style mock-up at /?dev=ui-mock, the
-// sinking / shore spray preview at /?dev=sink, the building construction preview at /?dev=build, the recruitment show stills at /?dev=fx, the carrier pigeon at /?dev=pigeon, the recruitment props at /?dev=props and
+// sinking / shore spray preview at /?dev=sink, the building construction preview at /?dev=build, the carrier pigeon at /?dev=pigeon, the recruitment props at /?dev=props and
 // window.bmgCapture() (see src/ui/dev).
 const ModelPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/ModelPreview').then((m) => ({ default: m.ModelPreview })))
@@ -14,9 +14,6 @@ const SinkPreview = import.meta.env.DEV
   : null;
 const BuildPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/BuildPreview').then((m) => ({ default: m.BuildPreview })))
-  : null;
-const FxPreview = import.meta.env.DEV
-  ? lazy(() => import('./dev/FxPreview').then((m) => ({ default: m.FxPreview })))
   : null;
 const PigeonPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/PigeonPreview').then((m) => ({ default: m.PigeonPreview })))
@@ -47,10 +44,6 @@ createRoot(container).render(
     ) : BuildPreview && devPage === 'build' ? (
       <Suspense fallback={null}>
         <BuildPreview />
-      </Suspense>
-    ) : FxPreview && devPage === 'fx' ? (
-      <Suspense fallback={null}>
-        <FxPreview />
       </Suspense>
     ) : PigeonPreview && devPage === 'pigeon' ? (
       <Suspense fallback={null}>

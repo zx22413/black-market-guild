@@ -4,6 +4,7 @@ import type { Deployment, PlayerId, ShipId, VoyageEventId } from '../../game';
 import { CameraRig, type FitPoint, type SafeArea } from './CameraRig';
 import { PlayerIsland, TargetIsland } from './Islands';
 import { PigeonFlight } from './PigeonFlight';
+import { PROP_HEIGHT, RecruitStage } from './RecruitProps';
 import { islandShorelines, playerIslandSeed } from './islandShape';
 import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatAngles, seatPosition, type Vec3 } from './layout';
 import { Routes } from './Routes';
@@ -32,7 +33,7 @@ import './scene.css';
 /** Keep the islands clear of the top event band and the bottom hand/action band. */
 const SAFE_AREA: SafeArea = { top: 80, bottom: 150, left: 24, right: 250 };
 const SHIP_LABEL_HEIGHT = 7;
-/** How far the far island's recruitment pictures move sideways, clear of its name plate. */
+/** How far the far island's recruitment props move sideways, clear of its name plate. */
 const FAR_SIDE_SHIFT = 12;
 /**
  * The target's name plate sits on the sea at its front-left diagonal: no lane runs there, so it
@@ -105,6 +106,23 @@ export function TableScene(props: TableSceneProps) {
   const points = useMemo(() => fitPoints(angles), [angles]);
   const shores = useMemo(() => islandShorelines(angles), [angles]);
 
+  // Where each island's recruitment props float: over the island, except the far island, whose
+  // name plate sits above it on screen, so its props stand to the side instead.
+  const fxSpots = useMemo(
+    () =>
+      table.seats.map((_, i): Vec3 => {
+        const [x, , z] = seatPosition(angles[i]!);
+        const plateAbove = z < 0 && Math.abs(x) <= Math.abs(z);
+        return plateAbove ? [x + FAR_SIDE_SHIFT, PROP_HEIGHT, z + 3] : [x, PROP_HEIGHT, z];
+      }),
+    [table.seats, angles],
+  );
+  // The middle of each island's grass, where a handshake spreads its ring.
+  const grounds = useMemo(() => table.seats.map((_, i): Vec3 => {
+    const [x, , z] = seatPosition(angles[i]!);
+    return [x, 2.9, z];
+  }), [table.seats, angles]);
+
   const anchors = useMemo((): LabelAnchor[] => {
     const seatAnchors = table.seats.map((_, i): LabelAnchor => {
       const [x, , z] = seatPosition(angles[i]!);
@@ -134,28 +152,21 @@ export function TableScene(props: TableSceneProps) {
               ...(farMiddle ? { side: { position: [cx - PLAYER_ISLAND_RADIUS - 2, 3, cz] as Vec3, dir: -1 as const } } : {}),
             },
           ];
-    // An empty point above each island; the recruitment show hangs its pictures from it.
-    const fxAnchors = table.seats.map((_, i): LabelAnchor => {
-      const [x, , z] = seatPosition(angles[i]!);
-      // The far island's name plate sits above it on screen; its pictures stand to the side instead.
-      const plateAbove = z < 0 && Math.abs(x) <= Math.abs(z);
-      return { id: `fx-${i}`, position: plateAbove ? [x + FAR_SIDE_SHIFT, 7, z + 3] : [x, 7, z] };
-    });
+    // A point on each island's grass, under its recruitment props, where their labels hang.
+    const fxAnchors = fxSpots.map(([x, , z], i): LabelAnchor => ({ id: `fx-${i}`, position: [x, 3, z] }));
     return [{ id: 'target', position: TARGET_PLATE }, ...seatAnchors, ...shipAnchors, ...fxAnchors, ...cardAnchors];
-  }, [angles, table, selectedIsland]);
+  }, [angles, table, selectedIsland, fxSpots]);
 
-  // Each pigeon flies from its own island to the recruiter's, 8 units up where the parchments hang.
+  // Each pigeon flies from its own island to the recruiter's scroll, at the height the props float.
   const pigeons = useMemo(
     () =>
       fx.flatMap((cue) => {
         const from = table.seats.findIndex((s) => s.id === cue.player);
         const to = table.seats.findIndex((s) => s.id === cue.to);
         if (cue.kind !== 'pigeon' || from < 0 || to < 0) return [];
-        const [fx0, , fz0] = seatPosition(angles[from]!);
-        const [tx, , tz] = seatPosition(angles[to]!);
-        return [{ key: cue.key, at: cue.at, duration: cue.duration, color: table.seats[from]!.color, from: [fx0, 8, fz0] as Vec3, to: [tx, 8, tz] as Vec3 }];
+        return [{ key: cue.key, at: cue.at, duration: cue.duration, color: table.seats[from]!.color, from: fxSpots[from]!, to: fxSpots[to]! }];
       }),
-    [fx, table.seats, angles],
+    [fx, table.seats, fxSpots],
   );
 
   const labels = useRef(new Map<string, HTMLElement>());
@@ -220,6 +231,7 @@ export function TableScene(props: TableSceneProps) {
                 <Escorts ship={ship} angle={angles[ship.lane]!} />
               </group>
             ))}
+            <RecruitStage cues={fx} seats={table.seats} points={fxSpots} grounds={grounds} standing={!recruitResolved} />
             {pigeons.map((cue) => (
               <PigeonFlight key={cue.key} from={cue.from} to={cue.to} at={cue.at} duration={cue.duration} color={cue.color} />
             ))}
@@ -240,7 +252,7 @@ export function TableScene(props: TableSceneProps) {
         ))}
         {table.seats.map((seat, i) => (
           <div key={seat.id} ref={pin(`fx-${i}`)} className="fx-anchor">
-            <SeatFx seat={seat} cues={fx} standing={!recruitResolved} />
+            <SeatFx seat={seat} cues={fx} />
           </div>
         ))}
         {table.ships.map((ship) => (

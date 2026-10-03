@@ -7,11 +7,8 @@ import { Building } from './buildings/Building';
 import { BUILD_SECONDS, buildGlow, buildSparks, completionFlash, groundRing, riseScale, sparkProgress } from './buildMath';
 import { createGoldGlow } from './goldGlow';
 import type { Vec3 } from './layout';
+import { SPARKLES } from './sparkles';
 
-/** Kenney Particle Pack sparkles (CC0; see public/art/SOURCES.md), the same ones as the black market rush. */
-const SPARKLES = ['star_05', 'star_06', 'star_07'].map((name) => `${import.meta.env.BASE_URL}art/particles/${name}.png`);
-// Load before the first building is bought: a texture that suspends mid-game would hide the whole table.
-useTexture.preload(SPARKLES);
 const GOLD = '#ffd25c';
 const FLASH_HEIGHT = 2.2;
 const FLASH_SIZE = 20;

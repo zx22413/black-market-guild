@@ -1,36 +1,44 @@
 import { OrbitControls } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
-import { Suspense, useMemo } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { IslandBase } from '../scene/IslandBase';
 import { islandShorelines } from '../scene/islandShape';
-import { EnvelopeProp, HandshakeA, HandshakeB, ScrollProp } from '../scene/RecruitProps';
+import type { Vec3 } from '../scene/layout';
+import { PROP_HEIGHT, RecruitEnvelope, RecruitHandshake, RecruitScroll } from '../scene/RecruitProps';
 import { Sea } from '../scene/Sea';
 import { SwellProvider } from '../scene/SwellContext';
 import { WEATHER, fillOf } from '../scene/weather';
+import { ENVELOPE_TEAR_MS, HANDSHAKE_MS, TEAR_PARCHMENT_MS, WITHDRAW_MS } from '../table/recruitShow';
 
 const RED = '#d0553f';
 const BLUE = '#4f8fd6';
-const SCALE = 3.5;
-const Y = 9;
+const LOOP_MS = 3200;
+const at = (x: number): Vec3 => [x, PROP_HEIGHT, 4];
 
 /**
- * Dev-only still preview of the recruitment props at /?dev=props: from left to right a scroll
- * (handshake take A on it), the same scroll torn, an envelope, the envelope torn, handshake take A
- * and take B. Both rows sit at the table's height next to a guild island for scale. The camera
- * stands about as far as the table camera; add &close to walk up to them, &hands for the handshakes.
+ * Dev-only preview of the recruitment props at /?dev=props, playing on a loop from left to right:
+ * a new scroll unrolling, a withdrawn scroll rolling up and fading, a failed scroll tearing, a
+ * rejected envelope ripping and a handshake with its ring. &t=900 holds every prop at that
+ * millisecond; &far stands about as far as the table camera.
  */
 export function PropsPreview() {
   const params = new URLSearchParams(window.location.search);
-  const close = params.has('close');
-  // &hands: right up to handshake take A, to compare it with the handshake icon.
-  const hands = params.has('hands');
-  const camera: [number, number, number] = hands ? [18, 19, 17] : close ? [0, 42, 58] : [0, 82, 60];
-  const target: [number, number, number] = hands ? [18, Y, 3] : close ? [0, Y, 6] : [0, 0, 0];
+  const freeze = params.get('t');
+  const freezeAt = freeze === null || Number.isNaN(Number(freeze)) ? undefined : Number(freeze);
+  const far = params.has('far');
   const look = WEATHER.clear;
   const shores = useMemo(() => islandShorelines([]), []);
+  const [loop, setLoop] = useState(0);
+  useEffect(() => {
+    if (freezeAt !== undefined) return;
+    const timer = window.setTimeout(() => setLoop((n) => n + 1), LOOP_MS);
+    return () => window.clearTimeout(timer);
+  }, [loop, freezeAt]);
+  const hold = freezeAt === undefined ? {} : { freezeAt };
+
   return (
     <div style={{ position: 'fixed', inset: 0 }}>
-      <Canvas shadows camera={{ position: camera, fov: 38 }}>
+      <Canvas shadows camera={{ position: far ? [0, 82, 60] : [0, 42, 58], fov: 38 }}>
         <color attach="background" args={[look.sky]} />
         <ambientLight intensity={look.ambient} />
         <hemisphereLight args={[fillOf(look).sky, fillOf(look).ground, fillOf(look).intensity]} />
@@ -41,16 +49,16 @@ export function PropsPreview() {
             <group position={[0, 0, -26]}>
               <IslandBase radius={13} seed={3} />
             </group>
-            <ScrollProp position={[-30, Y, 4]} scale={SCALE} emblem="A" />
-            <ScrollProp position={[-18, Y, 4]} scale={SCALE} emblem="A" apart={0.7} />
-            <EnvelopeProp position={[-6, Y, 4]} scale={SCALE} />
-            <EnvelopeProp position={[6, Y, 4]} scale={SCALE} apart={0.7} />
-            <HandshakeA position={[18, Y, 4]} scale={SCALE} colors={[RED, BLUE]} />
-            <HandshakeB position={[30, Y, 4]} scale={SCALE} colors={[RED, BLUE]} />
-            <ScrollProp position={[-18, Y, 22]} scale={SCALE} emblem="B" />
+            <group key={loop}>
+              <RecruitScroll position={at(-30)} mode="intro" {...hold} />
+              <RecruitScroll position={at(-15)} mode="withdraw" duration={WITHDRAW_MS} {...hold} />
+              <RecruitScroll position={at(0)} mode="tear" duration={TEAR_PARCHMENT_MS} {...hold} />
+              <RecruitEnvelope position={at(15)} duration={ENVELOPE_TEAR_MS} {...hold} />
+              <RecruitHandshake position={at(30)} ground={[30, 0.4, 4]} colors={[RED, BLUE]} duration={HANDSHAKE_MS} {...hold} />
+            </group>
           </Suspense>
         </SwellProvider>
-        <OrbitControls target={target} />
+        <OrbitControls target={far ? [0, 0, 0] : [0, PROP_HEIGHT, 6]} />
       </Canvas>
     </div>
   );

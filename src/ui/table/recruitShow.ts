@@ -11,6 +11,10 @@ export interface RecruitCue {
   readonly player: PlayerId;
   /** A pigeon's destination island. */
   readonly to?: PlayerId;
+  /** A handshake's other guild: the cuffs wear both colors, the recruiter's on the left. */
+  readonly partner?: PlayerId;
+  /** A handshake's recruiter, whose cuff is drawn on the left on both islands. */
+  readonly recruiter?: PlayerId;
   /** Milliseconds from the start of the show, and how long the cue lasts. */
   readonly at: number;
   readonly duration: number;
@@ -120,8 +124,9 @@ export function recruitShow(played: readonly MatchEvent[], index: number, order:
         const length = groupMs(group);
         const id = `${tag}-${g}`;
         if (group.kind === 'handshake') {
-          cues.push({ key: `${id}-r`, kind: 'handshake', player: group.recruiter, at, duration: length });
-          cues.push({ key: `${id}-a`, kind: 'handshake', player: group.applicant, at, duration: length });
+          const pair = { recruiter: group.recruiter, at, duration: length } as const;
+          cues.push({ key: `${id}-r`, kind: 'handshake', player: group.recruiter, partner: group.applicant, ...pair });
+          cues.push({ key: `${id}-a`, kind: 'handshake', player: group.applicant, partner: group.recruiter, ...pair });
         } else if (group.kind === 'envelope-tear') {
           cues.push({ key: id, kind: 'envelope-tear', player: group.applicant, at, duration: length });
         } else {

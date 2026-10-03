@@ -71,12 +71,14 @@ function roll(x: number, z0: number, z1: number, width: number, mat: KitPart['ma
   return { kind: 'beam', from: [x, 0.13, z0], to: [x, 0.13, z1], width, sides: 8, mat };
 }
 
-/** Half of the scroll: the paper torn down the middle, a border strip top and bottom, the rolled end. */
-export function scrollHalf(side: Side): readonly KitPart[] {
+/** Where a rolled end sits when the scroll is fully open. */
+export const SCROLL_ROLL_X = SCROLL_HALF_WIDTH + 0.06;
+
+/** Half of the scroll's paper, torn down the middle, with a border strip top and bottom. */
+export function scrollPaper(side: Side): readonly KitPart[] {
   const w = SCROLL_HALF_WIDTH;
   const d = SCROLL_HALF_DEPTH;
   const edge = side * w;
-  const end = side * (w + 0.06);
   const top = SCROLL_TEAR[0]![0];
   const bottom = SCROLL_TEAR[SCROLL_TEAR.length - 1]![0];
   // Border strips sit on the paper (not in it), from the outer edge to where the tear starts.
@@ -87,16 +89,30 @@ export function scrollHalf(side: Side): readonly KitPart[] {
     bevel: 0.01,
     mat: 'rope',
   });
+  return [...tornBands(SCROLL_TEAR, edge, side, 0, SHEET, 'plaster'), strip(-d + 0.08, top), strip(d - 0.08, bottom)];
+}
+
+/**
+ * The rolled end on one side, in segments that meet end to end: cap, roll, red tie, roll, cap.
+ * Centered on x = 0, so the scene can slide it from the middle (rolled up) out to the edge.
+ */
+export function scrollRoll(): readonly KitPart[] {
+  const d = SCROLL_HALF_DEPTH;
   return [
-    ...tornBands(SCROLL_TEAR, edge, side, 0, SHEET, 'plaster'),
-    strip(-d + 0.08, top),
-    strip(d - 0.08, bottom),
-    // The rolled end in segments that meet end to end: cap, roll, red tie, roll, cap.
-    roll(end, -d - 0.14, -d - 0.04, 0.36, 'woodDark'),
-    roll(end, -d - 0.04, -0.07, 0.3, 'wood'),
-    roll(end, -0.07, 0.07, 0.36, 'roofRed'),
-    roll(end, 0.07, d + 0.04, 0.3, 'wood'),
-    roll(end, d + 0.04, d + 0.14, 0.36, 'woodDark'),
+    roll(0, -d - 0.14, -d - 0.04, 0.36, 'woodDark'),
+    roll(0, -d - 0.04, -0.07, 0.3, 'wood'),
+    roll(0, -0.07, 0.07, 0.36, 'roofRed'),
+    roll(0, 0.07, d + 0.04, 0.3, 'wood'),
+    roll(0, d + 0.04, d + 0.14, 0.36, 'woodDark'),
+  ];
+}
+
+/** Half of the open scroll as one model: its paper and its rolled end at the edge. */
+export function scrollHalf(side: Side): readonly KitPart[] {
+  const x = side * SCROLL_ROLL_X;
+  return [
+    ...scrollPaper(side),
+    ...scrollRoll().map((part): KitPart => (part.kind === 'beam' ? { ...part, from: [x, part.from[1], part.from[2]], to: [x, part.to[1], part.to[2]] } : part)),
   ];
 }
 

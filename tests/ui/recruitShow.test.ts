@@ -59,6 +59,11 @@ describe('recruitment show', () => {
     const handshakes = show.cues.filter((c) => c.kind === 'handshake');
     expect(handshakes.map((c) => c.player).sort()).toEqual(['p1', 'p2']);
     expect(handshakes.every((c) => c.at === 0 && c.duration === HANDSHAKE_MS)).toBe(true);
+    // Each island's handshake knows the other guild, and both draw the recruiter on the left.
+    expect(handshakes.map((c) => [c.player, c.partner, c.recruiter]).sort()).toEqual([
+      ['p1', 'p2', 'p2'],
+      ['p2', 'p1', 'p2'],
+    ]);
   });
 
   it('tears the envelope of a rejected applicant after the recruiter picked someone else', () => {
