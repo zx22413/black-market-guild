@@ -50,6 +50,27 @@
 - **煙霧測試腳本沒有進版本控制**：這次用的 Node WebSocket 腳本放在 session 的暫存目錄。可整理成 `scripts/online-smoke.ts`（開房 → 兩個客戶端加入 → 隨機行動打完一局 → 檢查沒有收到別人的私有事件），部署後跑一次。注意 Node 20 要加 `--experimental-websocket` 才有 `WebSocket`。
 - **前端主程式偏大**：`TableScreen` chunk 約 1.1 MB（gzip 後 310 KB），Vite 會警告。手機網路慢時首次載入較久。
 
+## 5. 後端藍圖（未排程，供之後評估）
+
+現在的後端就是 Worker＋Durable Object：單機對 Bot 與同機輪流完全在瀏覽器跑、不需要後端；線上房間由伺服器權威結算。之後的功能大多是在這套架構上**加東西，不用換架構**。
+
+| 之後的功能 | 需要的後端 | Cloudflare 對應 |
+|---|---|---|
+| 對局撐過部署 | 房間把進度寫進儲存空間 | Durable Object storage（第 1 節第 1 項） |
+| 對局紀錄、重播 | 存放結束後的整份紀錄 | R2（第 1 節第 8 項） |
+| 帳號與登入（換裝置回座位、保留戰績） | 使用者資料、登入驗證 | D1（SQL 資料庫）＋登入服務 |
+| 戰績、排行榜 | 可查詢、排序的資料 | D1 |
+| 自動配對（不用房主開房） | 等候佇列 | Durable Object |
+| AI 對手 | 在伺服器呼叫 AI，金鑰不進瀏覽器 | Worker＋AI Gateway（或 Workers AI） |
+| Steam 成就、內購 | 與 Steam 伺服器溝通 | Worker |
+
+- **分水嶺是「帳號」**：一旦要登入、戰績、排行榜，就要有資料庫（D1），也要開始處理個人資料與隱私。目前沒有需求，想做時再評估。
+- **AI 對手的做法**：做成另一種 Bot／Controller，放在房間的 Durable Object 裡。AI 只看得到該座位的 `PlayerView`、只能從 `legalActions` 選；回傳不合法時退回現有 Bot 策略。AI 的台詞或說明不得自己編規則（以 `game-design.md`、`rulesText.ts` 為準）。要先想清楚：
+  - 費用：一局幾十個決定，要設用量上限。
+  - 速度：回應要 1～數秒，可搭配「決定中」標記演出。
+  - 連網：AI 對手需要連伺服器，單機 Bot 版維持離線可玩。
+  - 試做時先縮小範圍，例如「單一 AI 對手、只負責角色部署」，評估效果與費用。
+
 ## 已完成（2026-10-03～04）
 
 - 部署到 Cloudflare：Worker 同時提供遊戲與 `/api`，房間用 Durable Object。
