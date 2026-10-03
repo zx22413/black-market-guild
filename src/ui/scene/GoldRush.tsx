@@ -1,8 +1,8 @@
 import { useTexture } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import { SpriteMaterial, type Sprite } from 'three';
 import { spawnMote, type Mote } from './goldMath';
+import { useLiveFrame } from './liveFrame';
 
 /** Kenney Particle Pack sparkles (CC0; see public/art/SOURCES.md), in `MOTE_KINDS` order. */
 const SPARKLES = ['star_05', 'star_06', 'star_07'].map((name) => `${import.meta.env.BASE_URL}art/particles/${name}.png`);
@@ -40,7 +40,7 @@ export function GoldRush() {
   }), []);
   const sprites = useRef<(Sprite | null)[]>([]);
 
-  useFrame(({ clock }, rawDelta) => {
+  useLiveFrame(({ clock }, rawDelta) => {
     const delta = Math.min(rawDelta, 0.1);
     const t = clock.elapsedTime;
     live.forEach((slot, i) => {

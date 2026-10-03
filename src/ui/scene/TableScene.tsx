@@ -307,7 +307,7 @@ export function TableScene(props: TableSceneProps) {
             {pigeons.map((cue) => (
               <PigeonFlight key={cue.key} from={cue.from} to={cue.to} at={cue.at} duration={cue.duration} color={cue.color} />
             ))}
-            <EffectWarmup />
+            <EffectWarmup seatAngles={angles} />
             <Ready onReady={onReady} />
           </Suspense>
         </SwellProvider>

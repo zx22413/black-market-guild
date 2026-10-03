@@ -1,8 +1,8 @@
-import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BufferAttribute, BufferGeometry, DoubleSide, ShaderMaterial, UniformsLib, UniformsUtils } from 'three';
 import type { ScenePoint } from './stormMath';
 import { WIND_DIRECTION, strokeWindow, windPath } from './windMath';
+import { useLiveFrame } from './liveFrame';
 
 /** Wind lines on screen at once, each living a couple of seconds and then starting elsewhere. */
 const LINES = 7;
@@ -111,7 +111,7 @@ function WindLine({ delay }: { readonly delay: number }) {
   useEffect(() => () => material.dispose(), [material]);
   const age = useRef(-delay);
 
-  useFrame((_, delta) => {
+  useLiveFrame((_, delta) => {
     age.current += Math.min(delta, 0.1);
     if (age.current >= LIFE_SECONDS) {
       age.current -= LIFE_SECONDS;

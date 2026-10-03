@@ -1,5 +1,4 @@
 import { useTexture } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { MeshBasicMaterial, MeshStandardMaterial, SpriteMaterial, type BufferGeometry, type Group, type Mesh, type Sprite } from 'three';
 import type { PlayerId } from '../../game';
@@ -22,6 +21,7 @@ import {
 } from './recruitMotion';
 import { SPARKLES } from './sparkles';
 import type { SceneSeat } from './tableModel';
+import { useLiveFrame } from './liveFrame';
 
 /** Props are modelled lying flat; this tilts their face up toward the table camera. */
 export const PROP_TILT = (50 * Math.PI) / 180;
@@ -127,7 +127,7 @@ export function RecruitScroll({ position, mode, at = 0, duration = 0, freezeAt }
   const medal = useRef<Group>(null);
   const clock = useCueClock(at, freezeAt);
 
-  useFrame(({ clock: scene }) => {
+  useLiveFrame(({ clock: scene }) => {
     const ms = clock();
     const group = root.current;
     if (!group) return;
@@ -206,7 +206,7 @@ export function RecruitEnvelope({ position, at = 0, duration = 0, freezeAt }: Cu
   const halves = useRef<(Group | null)[]>([]);
   const clock = useCueClock(at, freezeAt);
 
-  useFrame(({ clock: scene }) => {
+  useLiveFrame(({ clock: scene }) => {
     const ms = clock();
     const group = root.current;
     if (!group) return;
@@ -266,7 +266,7 @@ export function RecruitHandshake({ position, ground, colors, at = 0, duration = 
   const sparks = useRef<(Sprite | null)[]>([]);
   const clock = useCueClock(at, freezeAt);
 
-  useFrame(({ clock: scene }) => {
+  useLiveFrame(({ clock: scene }) => {
     const ms = clock();
     const group = root.current;
     if (!group) return;

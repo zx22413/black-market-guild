@@ -1,8 +1,8 @@
-import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import { CanvasTexture, type Group, type Mesh, type MeshBasicMaterial } from 'three';
 import { FOG_AREA, FOG_TEXTURES, fogBanks, wrapAcross } from './fogMath';
 import { WIND_DIRECTION } from './windMath';
+import { useLiveFrame } from './liveFrame';
 
 /** How fast the fog banks drift downwind, in units per second. */
 const DRIFT_SPEED = 1.4;
@@ -60,7 +60,7 @@ export function SeaFog() {
   const groups = useRef<(Group | null)[]>([]);
   const age = useRef(0);
 
-  useFrame(({ clock }, delta) => {
+  useLiveFrame(({ clock }, delta) => {
     age.current += Math.min(delta, 0.1);
     const t = clock.elapsedTime;
     const fadeIn = Math.min(1, age.current / FADE_IN);

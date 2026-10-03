@@ -1,8 +1,8 @@
 import { Line } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef, useState } from 'react';
 import { Object3D, Quaternion, Vector3, type AmbientLight, type DirectionalLight, type InstancedMesh, type Mesh, type MeshBasicMaterial } from 'three';
 import { FLASH_SECONDS, boltPath, flashLevel, nextStrikeDelay, strikePoint, type ScenePoint } from './stormMath';
+import { useLiveFrame } from './liveFrame';
 
 /** Rain falls through a box over the whole table, wider than deep like the table itself. */
 const RAIN_DROPS = 380;
@@ -33,7 +33,7 @@ function Rain() {
   const tilt = useMemo(() => new Quaternion().setFromUnitVectors(new Vector3(0, -1, 0), RAIN_VELOCITY.clone().normalize()), []);
   const dummy = useMemo(() => new Object3D(), []);
 
-  useFrame((_, rawDelta) => {
+  useLiveFrame((_, rawDelta) => {
     const m = mesh.current;
     if (!m) return;
     const delta = Math.min(rawDelta, 0.05);
@@ -87,7 +87,7 @@ function Lightning({ seatAngles }: { readonly seatAngles: readonly number[] }) {
   const [bolt, setBolt] = useState<ScenePoint[]>(newBolt);
   const relaid = useRef(true);
 
-  useFrame(({ clock }) => {
+  useLiveFrame(({ clock }) => {
     const now = clock.elapsedTime;
     nextAt.current ??= now + nextStrikeDelay(Math.random);
     if (now >= nextAt.current) {

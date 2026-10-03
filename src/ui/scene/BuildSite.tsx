@@ -1,5 +1,4 @@
 import { useTexture } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { SpriteMaterial, type Group, type Mesh, type MeshBasicMaterial, type Sprite } from 'three';
 import type { AssetId } from '../../game';
@@ -8,6 +7,7 @@ import { BUILD_SECONDS, buildGlow, buildSparks, completionFlash, groundRing, ris
 import { createGoldGlow } from './goldGlow';
 import type { Vec3 } from './layout';
 import { SPARKLES } from './sparkles';
+import { useLiveFrame } from './liveFrame';
 
 const GOLD = '#ffd25c';
 const FLASH_HEIGHT = 2.2;
@@ -67,7 +67,7 @@ function Constructing({ asset, color, position, scale, freezeAt }: Omit<BuildSit
   const started = useRef<number | null>(null);
   const [done, setDone] = useState(false);
 
-  useFrame(() => {
+  useLiveFrame(() => {
     if (done) return;
     const now = performance.now();
     started.current ??= now;

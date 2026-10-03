@@ -1,9 +1,9 @@
-import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import { IcosahedronGeometry, MeshBasicMaterial, MeshStandardMaterial, type BufferGeometry, type Group, type Mesh } from 'three';
 import { CLOUD_AREA, cloudLayout, type Cloud } from './cloudMath';
 import { wrapAcross } from './fogMath';
 import { glowTexture } from './Night';
+import { useLiveFrame } from './liveFrame';
 
 /** How fast the clouds drift, in units per second. */
 const DRIFT_SPEED = 1.2;
@@ -84,7 +84,7 @@ export function Clouds({ amount }: { readonly amount: number }) {
   const bodies = useRef<(Group | null)[]>([]);
   const shadows = useRef<(Mesh | null)[]>([]);
 
-  useFrame(({ clock }) => {
+  useLiveFrame(({ clock }) => {
     const drift = clock.elapsedTime * DRIFT_SPEED;
     clouds.forEach((cloud, i) => {
       const x = wrapAcross(cloud.x + CLOUD_DIRECTION.x * drift, CLOUD_AREA.x);

@@ -1,7 +1,7 @@
-import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef, useState } from 'react';
 import { CylinderGeometry, DoubleSide, type Group, type Mesh, type MeshStandardMaterial } from 'three';
 import { Model, type ModelName } from './Model';
+import { useLiveFrame } from './liveFrame';
 
 /** How long the whole sinking scene plays before it removes itself. */
 const SINK_SECONDS = 9;
@@ -69,7 +69,7 @@ function SinkSurge({ elapsed }: { readonly elapsed: { readonly current: number }
   const rings = useRef<Group>(null);
   const crownShape = useMemo(() => crownGeometry(), []);
 
-  useFrame(() => {
+  useLiveFrame(() => {
     const t = elapsed.current;
     const c = crown.current;
     if (c) {
@@ -142,7 +142,7 @@ export function SinkEffect({ position }: { readonly position: readonly [number, 
     [],
   );
 
-  useFrame(({ clock }) => {
+  useLiveFrame(({ clock }) => {
     started.current ??= clock.elapsedTime;
     const t = clock.elapsedTime - started.current;
     elapsed.current = t;

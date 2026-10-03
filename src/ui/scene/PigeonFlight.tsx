@@ -1,10 +1,10 @@
-import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef, useState } from 'react';
 import type { Group } from 'three';
 import { geometryFromParts } from './buildings/Building';
 import { PIGEON_BODY, PIGEON_COLLAR, PIGEON_SHOULDER, pigeonWing, pigeonWingTip } from './props/pigeon';
 import type { Vec3 } from './layout';
 import { flightPose, wingAngle } from './pigeonMath';
+import { useLiveFrame } from './liveFrame';
 
 interface PigeonFlightProps {
   readonly from: Vec3;
@@ -32,7 +32,7 @@ export function PigeonFlight({ from, to, at, duration, color, freezeAt }: Pigeon
   // Wall-clock time, so a slow frame rate cannot make the bird lag behind the rest of the show.
   const [mounted] = useState(() => performance.now());
 
-  useFrame(() => {
+  useLiveFrame(() => {
     const ms = freezeAt ?? performance.now() - mounted - at;
     const group = root.current;
     if (!group) return;

@@ -1,7 +1,7 @@
-import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import { AdditiveBlending, CanvasTexture, type PointLight } from 'three';
 import { lanternSpots } from './nightMath';
+import { useLiveFrame } from './liveFrame';
 
 const LANTERN_COLOR = '#ffa04a';
 const LANTERN_LIGHT = '#ff9440';
@@ -59,7 +59,7 @@ export function LanternGlow({ halo = 2 }: { readonly halo?: number }) {
 /** A lantern on a wooden post standing on an island, casting a small warm, gently flickering pool of light. */
 function PostLantern({ position, seed }: { readonly position: readonly [number, number, number]; readonly seed: number }) {
   const light = useRef<PointLight>(null);
-  useFrame(({ clock }) => {
+  useLiveFrame(({ clock }) => {
     const t = clock.elapsedTime * 7 + seed * 13;
     const flicker = 1 - FLICKER * (0.5 + 0.5 * Math.sin(t) * Math.sin(t * 1.7 + 1));
     if (light.current) light.current.intensity = LANTERN_INTENSITY * flicker;
