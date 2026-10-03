@@ -30,6 +30,12 @@ export function completionFlash(t: number): number {
   return clamp01(1 - (t - RISE_SECONDS) / FLASH_SECONDS);
 }
 
+/** How strongly the building's own surface glows gold: steady (with a slow throb) while it rises, fading out after the flash. */
+export function buildGlow(t: number): number {
+  if (t < RISE_SECONDS) return 0.85 + 0.15 * Math.sin(t * 9);
+  return completionFlash(t);
+}
+
 /** Gold ring on the ground: a steady small ring while rising, a shockwave once complete. */
 export function groundRing(t: number): { readonly radius: number; readonly opacity: number } {
   if (t < RISE_SECONDS) {

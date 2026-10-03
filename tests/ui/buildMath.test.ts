@@ -3,6 +3,7 @@ import {
   BUILD_SECONDS,
   RISE_SECONDS,
   SPARK_KINDS,
+  buildGlow,
   buildSparks,
   completionFlash,
   groundRing,
@@ -38,6 +39,15 @@ describe('building completion effect', () => {
     expect(completionFlash(RISE_SECONDS)).toBe(1);
     expect(completionFlash(RISE_SECONDS + 0.4)).toBeGreaterThan(0);
     expect(completionFlash(BUILD_SECONDS)).toBe(0);
+  });
+
+  it('keeps the building glowing gold while it rises, then lets the glow fade', () => {
+    for (const t of [0, 0.4, 0.9, RISE_SECONDS - 0.01]) {
+      expect(buildGlow(t)).toBeGreaterThan(0.6);
+      expect(buildGlow(t)).toBeLessThanOrEqual(1);
+    }
+    expect(buildGlow(RISE_SECONDS + 0.4)).toBeLessThan(buildGlow(RISE_SECONDS));
+    expect(buildGlow(BUILD_SECONDS)).toBe(0);
   });
 
   it('sends a shockwave ring outward that fades away', () => {

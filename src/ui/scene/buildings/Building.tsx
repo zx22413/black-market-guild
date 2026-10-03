@@ -1,6 +1,8 @@
 import type { ThreeElements } from '@react-three/fiber';
+import { useMemo } from 'react';
 import { BufferGeometry, Color, Float32BufferAttribute } from 'three';
 import type { AssetId } from '../../../game';
+import { goldGlowPatch, type GoldGlow } from '../goldGlow';
 import { BUILDING_DESIGNS } from './designs';
 import { SWATCHES, type Mat } from './materials';
 import { partFaces, type Face } from './polyhedra';
@@ -56,15 +58,22 @@ type BuildingProps = ThreeElements['group'] & {
   readonly asset: AssetId;
   /** The owner's color, flown on the pennant. */
   readonly color: string;
+  /** While under construction: drives a gold glow shader on the walls. */
+  readonly glow?: GoldGlow;
 };
 
 /** A guild's asset building, drawn from the same part list as `docs/art/buildings-blueprint.svg`. */
-export function Building({ asset, color, ...props }: BuildingProps) {
+export function Building({ asset, color, glow, ...props }: BuildingProps) {
   const [fx, fy, fz] = BUILDING_DESIGNS[asset].flag;
+  const patch = useMemo(() => (glow ? goldGlowPatch(glow) : undefined), [glow]);
   return (
     <group {...props}>
       <mesh geometry={geometryOf(asset)} castShadow receiveShadow dispose={null}>
-        <meshStandardMaterial vertexColors roughness={0.8} />
+        <meshStandardMaterial
+          vertexColors
+          roughness={0.8}
+          {...(patch ? { onBeforeCompile: patch, customProgramCacheKey: () => 'gold-glow' } : {})}
+        />
       </mesh>
       <mesh position={[fx, fy - 0.375, fz]} castShadow>
         <cylinderGeometry args={[0.03, 0.03, 0.75, 6]} />

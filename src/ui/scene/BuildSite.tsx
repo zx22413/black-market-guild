@@ -4,7 +4,8 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { SpriteMaterial, type Group, type Mesh, type MeshBasicMaterial, type Sprite } from 'three';
 import type { AssetId } from '../../game';
 import { Building } from './buildings/Building';
-import { BUILD_SECONDS, buildSparks, completionFlash, groundRing, riseScale, sparkProgress } from './buildMath';
+import { BUILD_SECONDS, buildGlow, buildSparks, completionFlash, groundRing, riseScale, sparkProgress } from './buildMath';
+import { createGoldGlow } from './goldGlow';
 import type { Vec3 } from './layout';
 
 /** Kenney Particle Pack sparkles (CC0; see public/art/SOURCES.md), the same ones as the black market rush. */
@@ -59,6 +60,7 @@ function Constructing({ asset, color, position, scale, freezeAt }: Omit<BuildSit
     [materials, flashMaterial],
   );
 
+  const gold = useMemo(createGoldGlow, []);
   const body = useRef<Group>(null);
   const ring = useRef<Mesh>(null);
   const ringMaterial = useRef<MeshBasicMaterial>(null);
@@ -70,6 +72,8 @@ function Constructing({ asset, color, position, scale, freezeAt }: Omit<BuildSit
   useFrame((_, rawDelta) => {
     elapsed.current = freezeAt ?? elapsed.current + Math.min(rawDelta, 0.1);
     const t = elapsed.current;
+    gold.uGlow.value = buildGlow(t);
+    gold.uTime.value = t;
     const height = riseScale(t);
     // Slightly narrower while it is low, so it looks like it is growing rather than being stretched.
     const width = 0.9 + 0.1 * Math.min(1, height);
@@ -107,7 +111,7 @@ function Constructing({ asset, color, position, scale, freezeAt }: Omit<BuildSit
   return (
     <>
       <group ref={body} position={position} scale={[scale, scale * riseScale(0), scale]}>
-        <Building asset={asset} color={color} />
+        <Building asset={asset} color={color} glow={gold} />
       </group>
       {done ? null : (
         <group position={position}>
