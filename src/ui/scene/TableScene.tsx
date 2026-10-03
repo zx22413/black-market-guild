@@ -28,7 +28,7 @@ import { WeatherFog } from './WeatherFog';
 import './scene.css';
 
 /** Keep the islands clear of the top event band and the bottom hand/action band. */
-const SAFE_AREA: SafeArea = { top: 80, bottom: 136, left: 24, right: 250 };
+const SAFE_AREA: SafeArea = { top: 80, bottom: 150, left: 24, right: 250 };
 const SHIP_LABEL_HEIGHT = 7;
 /**
  * The target's name plate sits on the sea at its front-left diagonal: no lane runs there, so it

@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import type { DecisionContext } from '../../bots';
-import { ROLE_IDS, type Action, type RoleId, type ShipId } from '../../game';
+import { ROLE_IDS, type Action, type AssetId, type RoleId, type ShipId } from '../../game';
 import { assetIcon, roleIcon } from '../art';
 import { Icon } from '../components/Icon';
 import { ASSET_LABELS, ROLE_LABELS } from '../labels';
 import type { SceneSeat } from '../scene/tableModel';
 import { assetText, roleText } from '../rulesText';
+import { ConfirmChoice } from './ConfirmChoice';
 import { PartnerPicker } from './PartnerPicker';
 import { partnerChoice, type PartnerPick } from './partnerChoice';
 
@@ -27,80 +29,22 @@ export interface DecisionDockProps {
   readonly onPartner: (pick: PartnerPick | null) => void;
 }
 
-/** Fans a hand of cards in the bottom-right corner; the picked card rises out of the fan. */
-function fanStyle(index: number, count: number, raised = false): { transform: string } {
-  const offset = index - (count - 1) / 2;
-  return { transform: `rotate(${offset * 6}deg) translateY(${Math.abs(offset) * 6 - (raised ? 22 : 0)}px)` };
-}
-
-/** One button per legal action of the given type, labelled by the caller. */
-function Choices<T extends Action['type']>({
-  context,
-  type,
-  label,
-  primary,
-  onSubmit,
-}: {
-  readonly context: DecisionContext;
-  readonly type: T;
-  readonly label: (action: Extract<Action, { type: T }>) => string;
-  readonly primary?: (action: Extract<Action, { type: T }>) => boolean;
-  readonly onSubmit: (action: Action) => void;
-}) {
-  const actions = context.legalActions.filter((a): a is Extract<Action, { type: T }> => a.type === type);
-  return (
-    <>
-      {actions.map((a, i) => (
-        <button key={i} className={primary?.(a) ? 'primary' : ''} onClick={() => onSubmit(a)}>
-          {label(a)}
-        </button>
-      ))}
-    </>
-  );
-}
-
 /** Bottom-of-table controls for the viewer's current decision, one layout per phase. */
 export function DecisionDock({ context, describeShip, role, onRole, ship, onShip, noDeploy, onNoDeploy, onSubmit, seats, partner, onPartner }: DecisionDockProps) {
   const { view, decision } = context;
   const { rules } = view;
-  const common = { context, onSubmit };
+  const legal = <T extends Action['type']>(type: T) => context.legalActions.filter((a): a is Extract<Action, { type: T }> => a.type === type);
 
   switch (decision.phase) {
-    case 'asset-purchase': {
-      const buys = context.legalActions.filter((a) => a.type === 'buy-asset' && a.asset !== null);
-      const pass = context.legalActions.find((a) => a.type === 'buy-asset' && a.asset === null);
-      return (
-        <>
-          <div className="card-hand">
-            {buys.map((a, i) =>
-              a.type === 'buy-asset' && a.asset ? (
-                <button
-                  key={a.asset}
-                  className="table-card hand"
-                  style={fanStyle(i, buys.length)}
-                  onClick={() => onSubmit(a)}
-                >
-                  <Icon name={assetIcon(a.asset)} size={34} />
-                  <strong>{ASSET_LABELS[a.asset]}</strong>
-                  <span className="price">{rules.assets[a.asset].price} G</span>
-                  <small className="card-tip">{assetText(a.asset, rules)}</small>
-                </button>
-              ) : null,
-            )}
-          </div>
-          <div className="action-pill">
-            <span>購買資產（每回合最多一張）</span>
-            {pass && <button onClick={() => onSubmit(pass)}>不購買</button>}
-          </div>
-        </>
-      );
-    }
+    case 'asset-purchase':
+      return <AssetPurchase context={context} onSubmit={onSubmit} />;
     case 'recruit':
       return (
-        <div className="action-pill">
-          <span>要發起合資招募嗎？（公開，不指定對象）</span>
-          <Choices {...common} type="recruit" label={(a) => (a.recruit ? '發起招募' : '不發起')} primary={(a) => a.recruit} />
-        </div>
+        <ConfirmChoice
+          prompt="要發起合資招募嗎？（公開，不指定對象）"
+          options={legal('recruit').map((action) => ({ label: action.recruit ? '發起招募' : '不發起', action }))}
+          onSubmit={onSubmit}
+        />
       );
     case 'apply':
     case 'pick': {
@@ -109,28 +53,83 @@ export function DecisionDock({ context, describeShip, role, onRole, ship, onShip
     }
     case 'sailing-choice':
       return (
-        <div className="action-pill">
-          <span>
-            獨資出航或留港<small>（獨資成本 {rules.soloShip.cost} G，抵達收入 {rules.soloShip.income} G；造船廠可折抵）</small>
-          </span>
-          <Choices {...common} type="choose-sailing" label={(a) => (a.choice === 'solo' ? '獨資出航' : '不出航')} primary={(a) => a.choice === 'solo'} />
-        </div>
+        <ConfirmChoice
+          prompt={
+            <>
+              獨資出航或留港<small>（獨資成本 {rules.soloShip.cost} G，抵達收入 {rules.soloShip.income} G；造船廠可折抵）</small>
+            </>
+          }
+          options={legal('choose-sailing').map((action) => ({ label: action.choice === 'solo' ? '獨資出航' : '不出航', action }))}
+          onSubmit={onSubmit}
+        />
       );
     case 'role-deployment':
       return <RoleDeployment context={context} describeShip={describeShip} role={role} onRole={onRole} ship={ship} onShip={onShip} noDeploy={noDeploy} onNoDeploy={onNoDeploy} onSubmit={onSubmit} />;
     case 'intel-reroll':
       return (
-        <div className="action-pill">
-          {view.intel && (
-            <span className="intel">
-              <Icon name="dice" size={26} /> {describeShip(view.intel.shipId)} 的原始骰值 <b>{view.intel.rawRoll}</b>
-              <small>（修正前{view.intel.rawRoll >= rules.sailing.successMin ? '會抵達' : '會沉沒'}，尚未計入角色與事件）</small>
-            </span>
-          )}
-          <Choices {...common} type="intel-reroll" label={(a) => (a.reroll ? '重擲（必須接受新結果）' : '保留原骰值')} />
-        </div>
+        <ConfirmChoice
+          prompt={
+            view.intel ? (
+              <span className="intel">
+                <Icon name="dice" size={26} /> {describeShip(view.intel.shipId)} 的原始骰值 <b>{view.intel.rawRoll}</b>
+                <small>（修正前{view.intel.rawRoll >= rules.sailing.successMin ? '會抵達' : '會沉沒'}，尚未計入角色與事件）</small>
+              </span>
+            ) : (
+              '是否重擲？'
+            )
+          }
+          options={legal('intel-reroll').map((action) => ({ label: action.reroll ? '重擲（必須接受新結果）' : '保留原骰值', action }))}
+          onSubmit={onSubmit}
+        />
       );
   }
+}
+
+/** Buying an asset: tap a card to read its effect, then confirm; "don't buy" is a pick too. */
+function AssetPurchase({ context, onSubmit }: Pick<DecisionDockProps, 'context' | 'onSubmit'>) {
+  const [pick, setPick] = useState<AssetId | 'none' | null>(null);
+  const { rules } = context.view;
+  const buys = context.legalActions.filter((a) => a.type === 'buy-asset' && a.asset !== null);
+  const pass = context.legalActions.find((a) => a.type === 'buy-asset' && a.asset === null);
+  const pending = pick === 'none' ? pass : pick ? buys.find((a) => a.type === 'buy-asset' && a.asset === pick) : undefined;
+  return (
+    <>
+      <div className="card-hand">
+        {buys.map((a) =>
+          a.type === 'buy-asset' && a.asset ? (
+            <button key={a.asset} type="button" className={`table-card hand ${pick === a.asset ? 'selected' : ''}`} aria-pressed={pick === a.asset} onClick={() => setPick(pick === a.asset ? null : a.asset!)}>
+              <Icon name={assetIcon(a.asset)} size={30} />
+              <strong>{ASSET_LABELS[a.asset]}</strong>
+              <span className="price">{rules.assets[a.asset].price} G</span>
+            </button>
+          ) : null,
+        )}
+      </div>
+      <div className="action-pill">
+        <span>
+          {pick && pick !== 'none' ? (
+            <>
+              <b>{ASSET_LABELS[pick]}</b>（{rules.assets[pick].price} G）：{assetText(pick, rules)}
+            </>
+          ) : pick === 'none' ? (
+            '本回合不購買資產，確認後才會送出'
+          ) : (
+            '購買資產（每回合最多一張）：點選一張卡查看效果，確認後才購買'
+          )}
+        </span>
+        <div className="pill-row">
+          {pass && (
+            <button type="button" className={`partner-option ${pick === 'none' ? 'selected' : ''}`} aria-pressed={pick === 'none'} onClick={() => setPick('none')}>
+              不購買
+            </button>
+          )}
+          <button type="button" className="primary" disabled={!pending} onClick={() => pending && onSubmit(pending)}>
+            {pick === 'none' ? '確認不購買' : pick ? `確認購買 ${ASSET_LABELS[pick]}` : '確認購買'}
+          </button>
+        </div>
+      </div>
+    </>
+  );
 }
 
 type RoleDeploymentProps = Pick<
@@ -148,18 +147,16 @@ function RoleDeployment({ context, describeShip, role, onRole, ship, onShip, noD
   return (
     <>
       <div className="card-hand">
-        {ROLE_IDS.map((r, i) => (
+        {ROLE_IDS.map((r) => (
           <button
             key={r}
             className={`table-card hand ${r === role ? 'selected' : ''}`}
             disabled={!available.has(r)}
-            style={fanStyle(i, ROLE_IDS.length, r === role)}
             onClick={() => onRole(r === role ? null : r)}
           >
-            <Icon name={roleIcon(r)} size={34} />
+            <Icon name={roleIcon(r)} size={30} />
             <strong>{ROLE_LABELS[r]}</strong>
             <span className="price">{rules.roles[r].fee} G</span>
-            <small className="card-tip">{roleText(r, rules)}</small>
           </button>
         ))}
       </div>
