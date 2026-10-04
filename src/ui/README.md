@@ -35,6 +35,7 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 | `table/recruitShow.ts`、`table/useRecruitShow.ts`、`table/RecruitFx.tsx`、`scene/RecruitProps.tsx`、`scene/recruitMotion.ts` | 合資招募的具象演出，依公開事件逐步播放，道具都是 3D 低面數模型（`scene/props/recruitProps.ts`）：發起招募時發起方的島上冒出捲起的羊皮紙，攤開後露出握手獎章並在空中輕輕飄（由桌面狀態畫出，結果出來前一直在；最遠那座島的名牌在島上方，所以它的道具往旁邊移開）；應徵公開時，應徵方放出 3D 信鴿（領巾與翅尖是發信商會的隊色；`scene/props/pigeon.ts`、`scene/PigeonFlight.tsx`）飛向發起方的羊皮紙；撤回招募的羊皮紙捲回去、往上淡出並彈出「撤回招募」；結果公開時依發起方座位順序一組一組演出：成功的配對兩座島同時彈出握手（袖口是雙方隊色，左邊是發起方）、地面擴散光環並噴出金星，標「合作成立」；被拒絕的應徵者島上信封彈出、抖動後撕成兩半，標「合作破裂」；沒人被選的發起方羊皮紙抖動撕開、獎章掉落。握手是把 `public/art/icons/handshake.svg` 的輪廓擠出成 3D（`scene/props/handshakeIcon.ts`、`svgPath.ts`），羊皮紙上的獎章浮雕用同一份輪廓。`recruitShow` 是純函式（誰、什麼時候、多久），`recruitMotion` 是各道具的時間曲線；3D 道具與文字標籤都用實際時間計時，畫面掉幀也不會錯開；`usePlayback` 會在這些事件後多停留讓演出播完，跳過演出時不播。開發預覽：`/?dev=props`（循環播放所有道具，`&t=900` 定格、`&far` 遊戲距離）、`/?dev=pigeon`。 |
 | `scene/IslandRing.tsx` | 候選島的淡色呼吸環與已選島的金色粗框。 |
 | `table/useLayout.ts`、`table/mobile.css` | 手機版面：依視窗判斷 `desktop`／`portrait`（直式手機，寬 < 700）／`landscape`（橫式手機，高 < 500），寫在場景根節點的 `data-layout` 上。手機上頂端精簡成一列（事件只顯示圖示與名稱，點一下展開說明；直式時回合一行、事件一行），排名改成一排（直式，放在事件下方並留空間給事件展開說明）或窄欄（橫式），手機上不另放帳本，自己的資產與黑錢併在排名列自己那一格；直式時手牌與操作列佔滿底部，手牌可左右滑；島上的角色卡縮成只有圖示的徽章，船標籤縮小。3D 鏡頭的保留區（`TableScene` 的 `SAFE_AREAS`，有手牌時再加 `HAND_HEIGHT`）與浮動卡片的避讓邊界（`LabelTracker` 的 `margins`）都跟著版面與手牌切換；鏡頭換位時平滑移動（`CameraRig`），桌面受寬度限制時在可用範圍內垂直置中。桌機與直式手機的手牌都像《殺戮尖塔》一樣置中站在操作列正上方，橫式手機太矮則放在操作列右側。 |
+| `table/EventShowcase.tsx`、`table/eventReveal.ts`、`table/eventShowcase.css` | 事件揭曉卡：市場事件（回合開始）與航海事件（部署鎖定後）公開時，畫面壓暗、中央翻出一張羊皮紙卡（圖示、名稱、效果說明；市場事件金色光暈，航海事件冷藍光暈且遮罩略淺，看得到天氣換上），停留 `SHOWCASE_MS`（3 秒）後縮向左上角事件欄淡出，點一下可提前收起。`usePlayback` 在卡片收起前不播下一筆事件、也不顯示待決定事項；「略過演出」跳過的卡不會補播。 |
 | `table/TableHud.tsx` | 左上回合與事件；左下自己的帳本：資金、資產價值與已蓋的建築、只給本人看的黑錢。 |
 | `table/useCashFloats.ts`、`table/CashFloats.tsx` | 把新播放的現金異動變成短暫浮起的「+350 G 航運收入」。 |
 | `screens/` | `SetupScreen`（模式與座位；手繪木框風格，樣式在 `setup.css`）、`HandoffScreen`（hot-seat 遮蔽）、`ResultScreen`。 |
@@ -83,7 +84,7 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 
 ## 呈現規則
 
-- **事件演出：** 公開事件逐筆播放（`eventDelay`），每回合開始前暫停，等玩家按「進入下一回合」；「略過演出」直接跳到下一個暫停點。播放追上最新事件後才顯示待決定事項。
+- **事件演出：** 公開事件逐筆播放（`eventDelay`），市場與航海事件揭曉時以全螢幕卡片停留 3 秒，每回合開始前暫停，等玩家按「進入下一回合」；「略過演出」直接跳到下一個暫停點。播放追上最新事件後才顯示待決定事項。
 - **hot-seat：** 每當要做決定的座位換人（公開決定也一樣），先顯示「請將裝置交給 ○○」；兩次決定之間不顯示任何座位的私有資訊；桌子維持面向上一位玩家，下一位確認後才轉向他，取景範圍固定不縮放。
 - **角色揭露：** 引擎依情報商人 → 護衛 → 海盜 → 走私商人送出揭露事件，UI 逐組播放；自己已鎖定的角色在揭露前只以虛線標記顯示給自己。
 

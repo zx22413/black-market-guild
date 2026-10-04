@@ -1,0 +1,146 @@
+/* ── Revealed event card: full screen, centered, over a darkened table ── */
+
+.event-showcase {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(8, 6, 4, 0.78);
+  cursor: pointer;
+  animation-name: showcase-dim;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+/* The voyage event changes the weather: a lighter veil lets the new sea show through behind the card. */
+.event-showcase.voyage {
+  background: rgba(6, 8, 16, 0.72);
+}
+
+.showcase-card {
+  position: relative;
+  isolation: isolate;
+  width: min(340px, 100%);
+  padding: 30px 28px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  color: var(--hud-ink, #4a2c14);
+  animation-name: showcase-card;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+.showcase-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 28px solid transparent;
+  border-image: var(--ui-paper) 40 fill stretch;
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.6));
+}
+/* Gold glow for market news, cold blue for the sea. */
+.event-showcase.market .showcase-card::before {
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 18px rgba(255, 196, 92, 0.55));
+}
+.event-showcase.voyage .showcase-card::before {
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 18px rgba(130, 190, 255, 0.5));
+}
+
+.showcase-kind {
+  font-size: 0.85rem;
+  letter-spacing: 0.15em;
+  color: var(--hud-ink-soft, #7a5a3a);
+}
+
+.showcase-emblem {
+  width: 112px;
+  height: 112px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 3px double #8a5a2b;
+  background: radial-gradient(circle at 50% 40%, #fff6e0, #ead2a4);
+}
+.showcase-emblem img.icon {
+  filter: brightness(0.35) sepia(1) saturate(2) hue-rotate(-10deg);
+}
+
+.showcase-title {
+  font-size: 1.9rem;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+}
+
+.showcase-text {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.showcase-hint {
+  margin-top: 4px;
+  font-size: 0.72rem;
+  color: var(--hud-ink-soft, #7a5a3a);
+  opacity: 0.7;
+}
+
+/* Times are fractions of the showcase (3 s): in by 15%, hold, out over the last 15%. */
+@keyframes showcase-dim {
+  0% {
+    opacity: 0;
+  }
+  8%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes showcase-card {
+  0% {
+    opacity: 0;
+    transform: perspective(900px) translateY(40px) rotateY(90deg) scale(0.6);
+  }
+  10% {
+    opacity: 1;
+    transform: perspective(900px) translateY(0) rotateY(-8deg) scale(1.06);
+  }
+  15%,
+  85% {
+    opacity: 1;
+    transform: perspective(900px) rotateY(0deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    /* Off toward the event notes in the top-left corner. */
+    transform: translate(-38vw, -40vh) scale(0.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .showcase-card {
+    animation-name: showcase-dim;
+  }
+}
+
+.scene-root[data-layout='landscape'] .showcase-card {
+  padding: 18px 24px 14px;
+  gap: 6px;
+}
+.scene-root[data-layout='landscape'] .showcase-emblem {
+  width: 72px;
+  height: 72px;
+}
+.scene-root[data-layout='landscape'] .showcase-emblem img.icon {
+  width: 48px !important;
+  height: 48px !important;
+}
+.scene-root[data-layout='landscape'] .showcase-title {
+  font-size: 1.4rem;
+}

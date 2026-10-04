@@ -16,6 +16,7 @@ import { usePlayback } from '../session/usePlayback';
 import { DecisionDock } from './DecisionDock';
 import { PartnerCard, useAssetInspection } from './PartnerCard';
 import { partnerChoice, type PartnerPick } from './partnerChoice';
+import { EventShowcase } from './EventShowcase';
 import { EventBand, LedgerCard } from './TableHud';
 import { useCashFloats } from './useCashFloats';
 import { useRecruitShow } from './useRecruitShow';
@@ -228,6 +229,8 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
             </div>
           )}
         </div>
+
+        {playback.showcase && <EventShowcase showcase={playback.showcase} rules={rules} onDismiss={playback.dismissShowcase} />}
 
         {logOpen && (
           <aside className="log-drawer">
