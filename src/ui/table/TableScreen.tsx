@@ -34,7 +34,9 @@ interface TableScreenProps {
 
 /** The playable 3D table: the scene fills the screen, controls sit in its corners. */
 export function TableScreen({ session, onExit }: TableScreenProps) {
-  const playback = usePlayback(session);
+  const [ready, setReady] = useState(false);
+  // The first round's events wait for the table, so its market event card is seen over the islands.
+  const playback = usePlayback(session, ready);
   const layout = useLayout();
   const { snapshot, board, played, request, view, activeView, holding, caughtUp } = playback;
   const [role, setRole] = useState<RoleId | null>(null);
@@ -45,7 +47,6 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
   const [partner, setPartner] = useState<PartnerPick | null>(null);
   const inspection = useAssetInspection();
   const [logOpen, setLogOpen] = useState(false);
-  const [ready, setReady] = useState(false);
   const floats = useCashFloats(played);
   const markReady = useCallback(() => setReady(true), []);
 

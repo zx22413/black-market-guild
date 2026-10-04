@@ -66,9 +66,10 @@ export interface Playback {
 
 /**
  * Plays public events one by one, pauses between rounds and hands decisions to the UI only
- * after playback catches up. Shared by every game screen.
+ * after playback catches up. Shared by every game screen. Nothing plays until `started`, so the
+ * first round's market event is not revealed behind a table that is still loading.
  */
-export function usePlayback(session: GameSession): Playback {
+export function usePlayback(session: GameSession, started = true): Playback {
   const snapshot = useSession(session);
   const { events, players, requests, startingCash } = snapshot;
   const [cursor, setCursor] = useState(0);
@@ -92,13 +93,13 @@ export function usePlayback(session: GameSession): Playback {
 
   useEffect(() => {
     const next = events[cursor];
-    if (next === undefined || holding || showcase !== null) return;
+    if (!started || next === undefined || holding || showcase !== null) return;
     // The recruitment show (parchments, pigeons, handshakes) plays after its event appears, so the
     // next event waits for it; every other event keeps the plain pause before it.
     const linger = cursor > 0 ? recruitShow(events, cursor - 1, playerIds).duration : 0;
     const timer = setTimeout(() => setCursor(cursor + 1), eventDelay(next) + linger);
     return () => clearTimeout(timer);
-  }, [cursor, events, holding, showcase, playerIds]);
+  }, [started, cursor, events, holding, showcase, playerIds]);
 
   const played = useMemo(() => events.slice(0, cursor), [events, cursor]);
   const board = useMemo(() => buildBoard(players.map((p) => p.id), startingCash, played), [players, startingCash, played]);
