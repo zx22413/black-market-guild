@@ -1,14 +1,13 @@
-import { ROLE_IDS } from '../../game';
 import { nextInt } from '../../game/rng';
 import { chain, changeCash, holds } from './state';
-import type { Deployment, EconomyState, EconomyStep, EconShip } from './types';
+import { ECON_ROLE_IDS, type Deployment, type EconomyState, type EconomyStep, type EconShip } from './types';
 
 /** Locks the secret role deployments (same rules as V0.6 §7). */
 export function resolveDeployment(state: EconomyState): EconomyStep {
   const deployments: Deployment[] = state.players.flatMap(({ id }) => {
     const action = state.roundState.submissions[id];
-    return action?.type === 'deploy-role' && action.role !== null && action.targetShipId !== null
-      ? [{ playerId: id, role: action.role, targetShipId: action.targetShipId }]
+    return action?.type === 'deploy-role' && action.role !== null && (action.targetShipId !== null || action.bet !== null)
+      ? [{ playerId: id, role: action.role, targetShipId: action.targetShipId, bet: action.bet }]
       : [];
   });
   return { state: { ...state, roundState: { ...state.roundState, deployments } }, events: [] };
@@ -54,7 +53,7 @@ export function revealRoles(state: EconomyState): EconomyStep {
       .map((d) => (current: EconomyState) => changeCash(current, d.playerId, -current.rules.roles[d.role].fee, 'role-fee', null)),
   );
   const hideSmugglers = state.rules.roles.smuggler.anonymous === 1;
-  const ordered = ROLE_IDS.flatMap((role) => deployments.filter((d) => d.role === role && !(hideSmugglers && role === 'smuggler')));
+  const ordered = ECON_ROLE_IDS.flatMap((role) => deployments.filter((d) => d.role === role && !(hideSmugglers && role === 'smuggler')));
   return {
     state: fees.state,
     events: [

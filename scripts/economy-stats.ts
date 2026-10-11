@@ -1,5 +1,4 @@
-import { ROLE_IDS } from '../src/game';
-import { BUILDING_IDS, MATERIALS, type EconomyMatchRun } from '../src/proto/economy';
+import { BUILDING_IDS, ECON_ROLE_IDS, MATERIALS, type EconomyMatchRun } from '../src/proto/economy';
 
 /** Aggregated simulation statistics for the economy prototype. */
 export interface EconomyStats {
@@ -22,6 +21,7 @@ export interface EconomyStats {
   insuredKept: number;
   commission: number;
   manipulations: number;
+  betsWon: number;
   smugglerCovers: number;
   contrabandShips: number;
   coveredContrabandShips: number;
@@ -41,7 +41,7 @@ export function emptyEconomyStats(steps: number): EconomyStats {
     seats: 0,
     byStrategy: {},
     buildings: Object.fromEntries(BUILDING_IDS.map((b) => [b, { count: 0, roundSum: 0 }])),
-    roles: Object.fromEntries(ROLE_IDS.map((r) => [r, 0])),
+    roles: Object.fromEntries(ECON_ROLE_IDS.map((r) => [r, 0])),
     guardOthers: 0,
     pirateIncome: 0,
     pirateFees: 0,
@@ -56,6 +56,7 @@ export function emptyEconomyStats(steps: number): EconomyStats {
     insuredKept: 0,
     commission: 0,
     manipulations: 0,
+    betsWon: 0,
     smugglerCovers: 0,
     contrabandShips: 0,
     coveredContrabandShips: 0,
@@ -139,6 +140,8 @@ export function addEconomyMatch(stats: EconomyStats, run: EconomyMatchRun, strat
         stats.escortFees += event.amount;
       } else if (event.reason === 'insurance') {
         stats.insurance += event.amount;
+      } else if (event.reason === 'broker-bet') {
+        stats.betsWon += 1;
       } else if (event.reason === 'contraband-seized') {
         stats.contrabandSeizedCash += event.amount;
       } else if (event.reason === 'exchange-commission') {

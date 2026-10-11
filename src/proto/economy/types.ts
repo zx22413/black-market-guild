@@ -1,4 +1,4 @@
-import type { RngState, RoleId } from '../../game';
+import { ROLE_IDS, type RngState } from '../../game';
 import type { EconomyRules } from './rules';
 
 // Prototype of docs/proposals/2026-10-economy-rework.md §12-13. Not a rule source.
@@ -30,6 +30,10 @@ export const PROTO_VOYAGE_EVENT_IDS = [
 ] as const;
 export type ProtoVoyageEventId = (typeof PROTO_VOYAGE_EVENT_IDS)[number];
 
+/** V0.6 roles plus the broker (牙人), who bets on a price move (proposal §22). */
+export const ECON_ROLE_IDS = [...ROLE_IDS, 'broker'] as const;
+export type EconRoleId = (typeof ECON_ROLE_IDS)[number];
+
 export const ECONOMY_PHASES = ['invest', 'role-deployment', 'intel-reroll'] as const;
 export type EconomyPhase = (typeof ECONOMY_PHASES)[number];
 
@@ -48,8 +52,10 @@ export type EconomyAction =
   | {
       readonly type: 'deploy-role';
       readonly playerId: PlayerId;
-      readonly role: RoleId | null;
+      readonly role: EconRoleId | null;
+      /** Ship roles target a ship; the broker targets a material and direction instead. */
       readonly targetShipId: ShipId | null;
+      readonly bet: Manipulation | null;
     }
   | { readonly type: 'intel-reroll'; readonly playerId: PlayerId; readonly reroll: boolean };
 
@@ -89,8 +95,10 @@ export interface EconShip {
 
 export interface Deployment {
   readonly playerId: PlayerId;
-  readonly role: RoleId;
-  readonly targetShipId: ShipId;
+  readonly role: EconRoleId;
+  /** null for the broker. */
+  readonly targetShipId: ShipId | null;
+  readonly bet: Manipulation | null;
 }
 
 export interface Build {
@@ -184,6 +192,7 @@ export type CashReason =
   | 'insurance'
   | 'exchange-commission'
   | 'contraband-seized'
+  | 'broker-bet'
   | 'direct-sale'
   | 'black-money';
 

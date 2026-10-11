@@ -16,6 +16,7 @@ import {
   expectedOwnSeizable,
   expectedSeizure,
   seizureRisk,
+  othersExpectedArrivals,
   shiftValue,
   insuredValue,
   perUnitCost,
@@ -82,7 +83,33 @@ function scoreInvest(view: EconomyView, action: Invest, persona: EconomyPersonal
   return score;
 }
 
+/**
+ * Broker bet: the payout times a rough chance the price moves the bet's way (arrivals guessed
+ * against the shifted demand), plus the shift's effect on my landed units and on rivals.
+ */
+function scoreBet(view: EconomyView, action: Deploy): number {
+  const { rules } = view;
+  const bet = action.bet;
+  if (bet === null) {
+    return 0;
+  }
+  const p = arriveChance(rules, 0);
+  const mine = view.ships.reduce(
+    (sum, s) => sum + (s.cargo ?? []).filter((lot) => lot.playerId === view.playerId).reduce((u, lot) => u + lot.goods[bet.material], 0),
+    0,
+  );
+  const shift = bet.delta * rules.roles.broker.shift;
+  const gap = view.demand[bet.material] + shift - (othersExpectedArrivals(view, bet.material) + mine * p);
+  const step = view.prices[bet.material];
+  const room = bet.delta > 0 ? step < rules.price.steps - 1 : step > 0;
+  const chance = room ? Math.min(0.95, Math.max(0.05, 0.45 + 0.25 * gap * bet.delta)) : 0;
+  return rules.roles.broker.payout * chance + shiftValue(view, bet.material, shift, mine) - rules.roles.broker.fee;
+}
+
 function scoreDeploy(view: EconomyView, action: Deploy, persona: EconomyPersonality): number {
+  if (action.role === 'broker') {
+    return scoreBet(view, action);
+  }
   const ship = view.ships.find((s) => s.id === action.targetShipId);
   if (action.role === null || ship === undefined) {
     return 0;

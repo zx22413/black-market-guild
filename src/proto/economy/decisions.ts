@@ -1,9 +1,9 @@
-import { ROLE_IDS } from '../../game';
 import { covers, enumerateGoods, subtractGoods, units } from './goods';
 import { EXCHANGE_DIRECT_SALE, buildingCostGoods, type EconomyRules } from './rules';
 import { playerOf } from './state';
 import {
   BUILDING_IDS,
+  ECON_ROLE_IDS,
   MATERIALS,
   type Manipulation,
   type Material,
@@ -164,13 +164,24 @@ export function carriesOwnSeizable(rules: EconomyRules, ship: EconShip, playerId
 function deployOptions(state: EconomyState, playerId: PlayerId): EconomyAction[] {
   const { cash } = playerOf(state, playerId);
   const { ships } = state.roundState;
-  const options: EconomyAction[] = [{ type: 'deploy-role', playerId, role: null, targetShipId: null }];
-  for (const role of ROLE_IDS) {
-    if (cash < state.rules.roles[role].fee) {
+  const { rules } = state;
+  const options: EconomyAction[] = [{ type: 'deploy-role', playerId, role: null, targetShipId: null, bet: null }];
+  for (const role of ECON_ROLE_IDS) {
+    if (cash < rules.roles[role].fee) {
+      continue;
+    }
+    if (role === 'broker') {
+      if (rules.roles.broker.enabled === 1) {
+        materialsInPlay(rules).forEach((material) =>
+          ([1, -1] as const).forEach((delta) =>
+            options.push({ type: 'deploy-role', playerId, role, targetShipId: null, bet: { material, delta } }),
+          ),
+        );
+      }
       continue;
     }
     const targets = role === 'smuggler' ? ships.filter((s) => smugglerMayTarget(state.rules, s, playerId)) : ships;
-    targets.forEach((ship) => options.push({ type: 'deploy-role', playerId, role, targetShipId: ship.id }));
+    targets.forEach((ship) => options.push({ type: 'deploy-role', playerId, role, targetShipId: ship.id, bet: null }));
   }
   return options;
 }
@@ -187,7 +198,7 @@ export function economyActionKey(action: EconomyAction): string {
         action.manipulate === null ? 'none' : `${action.manipulate.material}${action.manipulate.delta}`,
       ].join('|');
     case 'deploy-role':
-      return `${action.type}|${action.playerId}|${action.role}|${action.targetShipId}`;
+      return `${action.type}|${action.playerId}|${action.role}|${action.targetShipId}|${action.bet === null ? 'none' : `${action.bet.material}${action.bet.delta}`}`;
     case 'intel-reroll':
       return `${action.type}|${action.playerId}|${action.reroll}`;
   }

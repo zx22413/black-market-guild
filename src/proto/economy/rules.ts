@@ -65,6 +65,12 @@ export interface EconomyRules {
      * `anonymous` 1: hidden at the reveal, the take is secret black money added at the end (V0.6);
      * 0: an ordinary public role whose take is cash (proposal §21).
      */
+    /**
+     * The broker role (proposal §22): bet on one material moving up or down; the bet shifts this
+     * round's demand by `shift` the bet's way, and pays `payout` if the price moves that way.
+     * `enabled` 0 = not deployable.
+     */
+    readonly broker: { readonly fee: number; readonly enabled: number; readonly shift: number; readonly payout: number };
     readonly smuggler: {
       readonly fee: number;
       readonly goodsValue: number;
@@ -119,7 +125,7 @@ export interface EconomyRules {
 }
 
 export const ECONOMY_RULES: EconomyRules = {
-  version: 'economy-proto-7',
+  version: 'economy-proto-8',
   mode: 'A',
   players: { min: 3, max: 4 },
   rounds: 6,
@@ -139,6 +145,7 @@ export const ECONOMY_RULES: EconomyRules = {
     intel: { fee: 50 },
     guard: { fee: 50, rollModifier: 1, escortFee: 75, escortWhenSeizing: 0 },
     pirate: { fee: 100, modifier: -1, loot: 150 },
+    broker: { fee: 50, enabled: 0, shift: 1, payout: 50 },
     smuggler: { fee: 0, goodsValue: 50, caughtFine: 200, coversSeizable: 1, anonymous: 1 },
   },
   wanted: { lootBonus: 100 },

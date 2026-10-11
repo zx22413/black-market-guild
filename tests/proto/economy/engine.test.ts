@@ -77,7 +77,7 @@ describe('invest options', () => {
   it('rejects illegal and out-of-phase actions', () => {
     const state = start('A');
     expect(applyEconomyAction(state, { type: 'invest', playerId: 'p1', build: null, load: G(3, 0), direct: G(0), manipulate: null }).ok).toBe(false);
-    expect(applyEconomyAction(state, { type: 'deploy-role', playerId: 'p1', role: null, targetShipId: null }).ok).toBe(false);
+    expect(applyEconomyAction(state, { type: 'deploy-role', playerId: 'p1', role: null, targetShipId: null, bet: null }).ok).toBe(false);
     expect(applyEconomyAction(state, { type: 'invest', playerId: 'zz', build: null, load: G(0, 0), direct: G(0), manipulate: null }).ok).toBe(false);
     const once = apply(state, { type: 'invest', playerId: 'p1', build: null, load: G(0, 0), direct: G(0), manipulate: null }).state;
     expect(applyEconomyAction(once, { type: 'invest', playerId: 'p1', build: null, load: G(0, 0), direct: G(0), manipulate: null }).ok).toBe(false);
@@ -156,9 +156,9 @@ describe('investing and launching', () => {
       state = apply(state, { type: 'invest', playerId: id, build: null, load: id === 'p1' ? G(1, 0) : G(0, 0), direct: G(0), manipulate: null }).state;
     }
     state = { ...state, roundState: { ...state.roundState, ships: state.roundState.ships.map((s) => ({ ...s, rawRoll: 2 })) } };
-    state = apply(state, { type: 'deploy-role', playerId: 'p1', role: 'intel', targetShipId: 'r2-p1' }).state;
-    state = apply(state, { type: 'deploy-role', playerId: 'p2', role: null, targetShipId: null }).state;
-    state = apply(state, { type: 'deploy-role', playerId: 'p3', role: null, targetShipId: null }).state;
+    state = apply(state, { type: 'deploy-role', playerId: 'p1', role: 'intel', targetShipId: 'r2-p1', bet: null }).state;
+    state = apply(state, { type: 'deploy-role', playerId: 'p2', role: null, targetShipId: null, bet: null }).state;
+    state = apply(state, { type: 'deploy-role', playerId: 'p3', role: null, targetShipId: null, bet: null }).state;
     expect(state.phase).toBe('intel-reroll');
     expect(getEconomyView(state, 'p1').intelRoll).toBe(2);
     expect(getEconomyView(state, 'p2').intelRoll).toBeNull();

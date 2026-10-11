@@ -7,11 +7,11 @@ import {
   type EconomyMode,
   type EconomyRules,
   type EconomyState,
+  type EconRoleId,
   type Goods,
   type Manipulation,
   type ProtoVoyageEventId,
 } from '../../../src/proto/economy';
-import type { RoleId } from '../../../src/game';
 
 export const IDS = ['p1', 'p2', 'p3', 'p4'] as const;
 
@@ -66,7 +66,9 @@ export interface RoundPlan {
   readonly manipulate?: Readonly<Record<string, Manipulation>>;
   /** Raw roll per ship id; ships not listed roll 6. */
   readonly rolls?: Readonly<Record<string, number>>;
-  readonly roles?: Readonly<Record<string, readonly [RoleId, string]>>;
+  readonly roles?: Readonly<Record<string, readonly [Exclude<EconRoleId, 'broker'>, string]>>;
+  /** Broker bets, instead of a ship role. */
+  readonly bets?: Readonly<Record<string, Manipulation>>;
   readonly voyageEvent?: ProtoVoyageEventId;
 }
 
@@ -97,12 +99,13 @@ export function playRound(state: EconomyState, plan: RoundPlan): { state: Econom
   if (current.phase === 'role-deployment') {
     for (const p of current.players) {
       const role = plan.roles?.[p.id];
-      const step = apply(current, {
-        type: 'deploy-role',
-        playerId: p.id,
-        role: role?.[0] ?? null,
-        targetShipId: role?.[1] ?? null,
-      });
+      const bet = plan.bets?.[p.id];
+      const step = apply(
+        current,
+        bet !== undefined
+          ? { type: 'deploy-role', playerId: p.id, role: 'broker', targetShipId: null, bet }
+          : { type: 'deploy-role', playerId: p.id, role: role?.[0] ?? null, targetShipId: role?.[1] ?? null, bet: null },
+      );
       current = step.state;
       events.push(...step.events);
     }

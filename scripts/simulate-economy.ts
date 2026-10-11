@@ -3,7 +3,7 @@
  * and prints a Markdown report.
  * Usage: npm run simulate:economy -- [--mode A|B] [--matches 1000] [--players 4] [--seed 1]
  *        [--lineup balanced,cautious,aggressive,builder] [--set capacity.base=3 ...] [--summary]
- *        [--preset round5|round6|round7|round8]
+ *        [--preset round5|round6|round7|round8|round9]
  * A preset is a named list of `--set` overrides applied before any explicit `--set`.
  * Seats rotate every match so each strategy plays every seat position.
  */
@@ -59,6 +59,17 @@ const ROUND5 = [
   'buildings.exchange.commissionPerUnit=20',
 ];
 
+const ROUND8 = [
+  ...ROUND5,
+  'roles.smuggler.coversSeizable=1',
+  'roles.guard.escortWhenSeizing=0',
+  'roles.smuggler.caughtFine=100',
+  'buildings.exchange.commissionPerUnit=15',
+  'roles.smuggler.anonymous=0',
+  'roles.smuggler.goodsValue=100',
+  'buildings.insurance.keepPerRound=1',
+];
+
 const PRESETS: Readonly<Record<string, readonly string[]>> = {
   round5: [...ROUND5, 'roles.smuggler.coversSeizable=0', 'roles.guard.escortWhenSeizing=1'],
   /** Round 6 (proposal §19): smugglers cover contraband; confiscating guards get no escort fee. */
@@ -72,17 +83,11 @@ const PRESETS: Readonly<Record<string, readonly string[]>> = {
     'buildings.exchange.commissionPerUnit=15',
   ],
   /** Round 8 (proposal §21): round 7 with public 100 G smuggling and one insured unit per round. */
-  round8: [
-    ...ROUND5,
-    'roles.smuggler.coversSeizable=1',
-    'roles.guard.escortWhenSeizing=0',
-    'roles.smuggler.caughtFine=100',
-    'buildings.exchange.commissionPerUnit=15',
-    'roles.smuggler.anonymous=0',
-    'roles.smuggler.goodsValue=100',
-    'buildings.insurance.keepPerRound=1',
-  ],
+  round8: ROUND8,
+  /** Round 9 (proposal §22): round 8 with the broker as a role (bet on a price move, 100 G) instead of a building. */
+  round9: [...ROUND8, 'buildings.broker.enabled=0', 'roles.broker.enabled=1', 'roles.broker.payout=100'],
 };
+
 
 function parseOptions(): Options {
   const argv = (globalThis as { process?: { argv?: string[] } }).process?.argv?.slice(2) ?? [];
@@ -146,7 +151,7 @@ function table(header: readonly string[], rows: readonly (readonly (string | num
 }
 
 const BUILDING_LABELS: Record<string, string> = { shipyard: '造船廠', insurance: '航運保險', salvage: '打撈公司', exchange: '貿易交易所', broker: '牙行' };
-const ROLE_LABELS: Record<string, string> = { intel: '情報商人', guard: '護衛', pirate: '海盜', smuggler: '走私商人' };
+const ROLE_LABELS: Record<string, string> = { intel: '情報商人', guard: '護衛', pirate: '海盜', smuggler: '走私商人', broker: '牙人' };
 const MATERIAL_LABELS: Record<string, string> = { wood: '木材', iron: '鐵礦', spice: '香料', contraband: '違禁品' };
 
 function totalRoles(s: EconomyStats): number {
@@ -210,6 +215,7 @@ function report(options: Options, s: EconomyStats): string {
     '',
     ...table(['材料', ...Array.from({ length: rules.price.steps }, (_, k) => `${priceAt(rules, k)} G`)], priceRows),
     '',
+    `- 牙人：押注 ${s.roles.broker ?? 0} 次，押中 ${pct(s.betsWon, s.roles.broker ?? 0)}。`,
     `- 牙行調整需求 ${s.manipulations} 次（每局平均 ${per(s.manipulations, s.matches)}）；違禁品被護衛沒收 ${s.contrabandSeizedUnits} 單位、${s.contrabandSeizedCash} G。`,
     `- 交易所（效果 ${['跌價保護', '做市佣金', '倉庫直售'][rules.buildings.exchange.variant] ?? rules.buildings.exchange.variant}）：佣金共 ${s.commission} G；直售 ${s.directUnits} 單位、${s.directCash} G。`,
     '',

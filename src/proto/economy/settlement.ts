@@ -12,6 +12,7 @@ import {
   type Goods,
   type Material,
   type PlayerId,
+  type PlayerManipulation,
 } from './types';
 
 interface Prices {
@@ -29,8 +30,10 @@ interface Prices {
 export function settleMarket(state: EconomyState): EconomyStep {
   const { rules } = state;
   const { ships, manipulations } = state.roundState;
+  const bets = state.roundState.deployments.flatMap((d) => (d.role === 'broker' && d.bet !== null ? [{ playerId: d.playerId, ...d.bet }] : []));
+  const shifts = [...manipulations, ...bets.map((b) => ({ ...b, delta: (b.delta * rules.roles.broker.shift) as 1 | -1 }))];
   const demand = mapGoods((m) =>
-    Math.max(0, state.roundState.demand[m] + manipulations.filter((x) => x.material === m).reduce((sum, x) => sum + x.delta, 0)),
+    Math.max(0, state.roundState.demand[m] + shifts.filter((x) => x.material === m).reduce((sum, x) => sum + x.delta, 0)),
   );
   const arrivedShips = ships.filter((s) => s.outcome === 'arrived');
   const sunkShips = ships.filter((s) => s.outcome === 'sank');
@@ -48,6 +51,7 @@ export function settleMarket(state: EconomyState): EconomyStep {
     payCommission,
     payInsurance(prices.before),
     salvage(sunkShips),
+    payBets(bets, prices),
     spoil,
   ]);
   const record = {
@@ -205,6 +209,17 @@ function seizeContraband(state: EconomyState, ship: EconShip, guards: readonly P
     },
     { state, events: [] },
   );
+}
+
+/** Brokers whose material's price moved the way they bet are paid by the bank. */
+function payBets(bets: readonly PlayerManipulation[], prices: Prices): StepFn {
+  return (state) =>
+    chain(
+      state,
+      bets
+        .filter((b) => Math.sign(prices.after[b.material] - prices.before[b.material]) === b.delta)
+        .map((b) => (current: EconomyState) => changeCash(current, b.playerId, current.rules.roles.broker.payout, 'broker-bet', null)),
+    );
 }
 
 /** Perishable goods left in any warehouse spoil at the end of the round. */

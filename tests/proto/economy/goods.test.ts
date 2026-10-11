@@ -173,3 +173,44 @@ describe('round 8 rules', () => {
     expect(events.filter((e) => e.type === 'insured-goods-kept')).toHaveLength(1);
   });
 });
+
+describe('broker role (牙人)', () => {
+  function brokerRules(): EconomyRules {
+    const base = goodsRules('A');
+    return { ...base, roles: { ...base.roles, broker: { ...base.roles.broker, enabled: 1, payout: 100 } } };
+  }
+
+  it('is only deployable when enabled, betting on a material and direction', () => {
+    let state = start('A', 3, brokerRules());
+    for (const id of ['p1', 'p2', 'p3']) {
+      state = applyOk(state, { type: 'invest', playerId: id, build: null, load: id === 'p1' ? G(1) : G(0), direct: G(0), manipulate: null });
+    }
+    const bets = getEconomyLegalActions(state, 'p2').filter((a) => a.type === 'deploy-role' && a.role === 'broker');
+    expect(bets).toHaveLength(8);
+    expect(bets.every((a) => a.type === 'deploy-role' && a.targetShipId === null && a.bet !== null)).toBe(true);
+  });
+
+  it('shifts demand the bet way and pays when the price moves that way', () => {
+    const state = withDemand(start('A', 3, brokerRules()), G(1, 1, 1, 0));
+    const { events, state: next } = playRound(state, {
+      loads: { p1: G(1) },
+      bets: { p2: { material: 'wood', delta: 1 }, p3: { material: 'iron', delta: -1 } },
+    });
+    // Wood demand 1 + 1 = 2 > arrivals 1: up, p2 wins. Iron demand 1 − 1 = 0 = arrivals 0: flat, p3 loses.
+    expect(settled(events).demand).toMatchObject({ wood: 2, iron: 0 });
+    expect(cashEvents(events, 'broker-bet', 'p2')).toBe(100);
+    expect(cashEvents(events, 'broker-bet', 'p3')).toBe(0);
+    expect(cashEvents(events, 'role-fee', 'p3')).toBe(-50);
+    const revealed = events.find((e) => e.type === 'roles-revealed');
+    expect(revealed?.type === 'roles-revealed' && revealed.deployments.map((d) => d.role)).toEqual(['broker', 'broker']);
+    expect(next.history[0]!.deployments.filter((d) => d.role === 'broker')).toHaveLength(2);
+  });
+});
+
+function applyOk(state: Parameters<typeof applyEconomyAction>[0], action: Parameters<typeof applyEconomyAction>[1]) {
+  const result = applyEconomyAction(state, action);
+  if (!result.ok) {
+    throw new Error(result.error);
+  }
+  return result.value.state;
+}
