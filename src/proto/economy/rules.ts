@@ -62,6 +62,8 @@ export interface EconomyRules {
       readonly directPriceSteps: number;
     };
   };
+  /** Buildings one player may hold; 4 means no limit. */
+  readonly maxBuildingsPerPlayer: number;
   /** Share of each held building's cash cost counted in final wealth; materials are not counted. */
   readonly buildingValueRatio: number;
   readonly voyageEvents: {
@@ -75,7 +77,7 @@ export interface EconomyRules {
 }
 
 export const ECONOMY_RULES: EconomyRules = {
-  version: 'economy-proto-3',
+  version: 'economy-proto-4',
   mode: 'A',
   players: { min: 3, max: 4 },
   rounds: 6,
@@ -101,6 +103,7 @@ export const ECONOMY_RULES: EconomyRules = {
     salvage: { cash: 100, wood: 0, iron: 2, maxHoldersPerShip: 2, maxPerRound: 2 },
     exchange: { cash: 150, wood: 1, iron: 1, variant: 0, commissionPerUnit: 15, commissionCap: 4, directUnits: 1, directPriceSteps: 1 },
   },
+  maxBuildingsPerPlayer: 4,
   buildingValueRatio: 0.5,
   voyageEvents: {
     copies: {

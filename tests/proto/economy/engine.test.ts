@@ -181,3 +181,13 @@ describe('investing and launching', () => {
     expect(ECONOMY_RULES.mode).toBe('A');
   });
 });
+
+describe('building limit', () => {
+  it('offers no new building once a player holds the maximum', () => {
+    const rules = { ...economyRules('A'), maxBuildingsPerPlayer: 2 };
+    let state = start('A', 3, rules);
+    state = { ...state, players: state.players.map((p) => (p.id === 'p1' ? { ...p, buildings: ['shipyard', 'salvage'] } : p)) };
+    expect(getEconomyLegalActions(state, 'p1').every((a) => a.type === 'invest' && a.build === null)).toBe(true);
+    expect(getEconomyLegalActions(state, 'p2').some((a) => a.type === 'invest' && a.build === 'insurance')).toBe(true);
+  });
+});

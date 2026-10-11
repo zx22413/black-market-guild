@@ -99,6 +99,7 @@ function investOptions(state: EconomyState, playerId: PlayerId): EconomyAction[]
     null,
     ...BUILDING_IDS.filter(
       (b) =>
+        player.buildings.length < rules.maxBuildingsPerPlayer &&
         !player.buildings.includes(b) &&
         player.cash >= rules.buildings[b].cash &&
         covers(player.stock, buildingCostGoods(rules, b)),
