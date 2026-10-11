@@ -188,7 +188,7 @@ const ISLAND_LABELS: Record<string, string> = {
   fortress: '要塞島',
   lighthouse: '燈塔島',
 };
-const MATERIAL_LABELS: Record<string, string> = { wood: '木材', iron: '鐵礦', spice: '香料', contraband: '走私鹽' };
+const MATERIAL_LABELS: Record<string, string> = { wood: '木材', iron: '鐵礦', spice: '香料', contraband: '軍火' };
 
 function totalRoles(s: EconomyStats): number {
   return Object.values(s.roles).reduce((a, b) => a + b, 0);
@@ -267,7 +267,7 @@ function report(options: Options, s: EconomyStats): string {
     ...table(['材料', ...Array.from({ length: rules.price.steps }, (_, k) => `${priceAt(rules, k)} G`)], priceRows),
     '',
     `- 莊家：押注 ${s.roles.broker ?? 0} 次，押中 ${pct(s.betsWon, s.roles.broker ?? 0)}。`,
-    `- 牙行調整需求 ${s.manipulations} 次（每局平均 ${per(s.manipulations, s.matches)}）；走私鹽被護衛沒收 ${s.contrabandSeizedUnits} 單位、${s.contrabandSeizedCash} G。`,
+    `- 牙行調整需求 ${s.manipulations} 次（每局平均 ${per(s.manipulations, s.matches)}）；軍火被護衛沒收 ${s.contrabandSeizedUnits} 單位、${s.contrabandSeizedCash} G。`,
     `- 交易所（效果 ${['跌價保護', '做市佣金', '倉庫直售'][rules.buildings.exchange.variant] ?? rules.buildings.exchange.variant}）：佣金共 ${s.commission} G；直售 ${s.directUnits} 單位、${s.directCash} G。`,
     '',
     '## 4. 角色',
@@ -278,10 +278,10 @@ function report(options: Options, s: EconomyStats): string {
     ),
     '',
     `- 護衛守「自己沒有貨的船」：${pct(s.guardOthers, s.roles.guard ?? 0)}（V0.6 約 23%）。`,
-    `- 走私商人：掩護自己走私鹽 ${s.smugglerCovers} 次、上別人船走私 ${(s.roles.smuggler ?? 0) - s.smugglerCovers} 次；掩護佔走私 ${pct(
+    `- 走私商人：掩護自己軍火 ${s.smugglerCovers} 次、上別人船走私 ${(s.roles.smuggler ?? 0) - s.smugglerCovers} 次；掩護佔走私 ${pct(
       s.smugglerCovers,
       s.roles.smuggler ?? 0,
-    )}；有走私鹽的出航中被掩護 ${pct(s.coveredContrabandShips, s.contrabandShips)}。`,
+    )}；有軍火的出航中被掩護 ${pct(s.coveredContrabandShips, s.contrabandShips)}。`,
     `- 海盜：目標沉沒率 ${pct(s.pirateSinks, s.roles.pirate ?? 0)}；每次平均淨收益 ${pirateNet(s).toFixed(0)} G。`,
     `- 護航費總額 ${s.escortFees} G；保險補償 ${s.insurance} G、保住 ${s.insuredKept} 單位；打撈 ${s.salvaged} 單位；走私取走 ${s.smuggled} G。共 ${roleCount} 次部署。`,
     '',
