@@ -23,16 +23,18 @@ export interface EconomyMatchConfig {
 export type EconomyResultOf<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: string };
 
 /**
- * One card per combination of per-material values in [min, max]; materials in play (max > 0)
- * grow with each player above 3.
+ * One card per combination of per-material values in [min, max]; for each player above 3, both
+ * ends of a material in play (max > 0) grow by extraPerPlayerAbove3, plus extraMin / extraMax.
  */
 export function buildDemandDeck(rules: EconomyRules, playerCount: number): Goods[] {
-  const extra = Math.max(0, playerCount - 3) * rules.demand.extraPerPlayerAbove3;
+  const above = Math.max(0, playerCount - 3);
+  const { demand } = rules;
   return MATERIALS.reduce<Goods[]>(
     (cards, m) => {
-      const { min, max } = { min: rules.demand.min[m], max: rules.demand.max[m] };
-      const bump = max > 0 ? extra : 0;
-      const values = Array.from({ length: Math.max(1, max - min + 1) }, (_, i) => min + i + bump);
+      const bump = demand.max[m] > 0 ? demand.extraPerPlayerAbove3 : 0;
+      const min = demand.min[m] + above * (bump + demand.extraMin[m]);
+      const max = demand.max[m] + above * (bump + demand.extraMax[m]);
+      const values = Array.from({ length: Math.max(1, max - min + 1) }, (_, i) => min + i);
       return cards.flatMap((card) => values.map((v) => ({ ...card, [m]: v })));
     },
     [NO_GOODS],

@@ -3,7 +3,7 @@
  * and prints a Markdown report.
  * Usage: npm run simulate:economy -- [--mode A|B] [--matches 1000] [--players 4] [--seed 1]
  *        [--lineup balanced,cautious,aggressive,builder] [--set capacity.base=3 ...] [--summary]
- *        [--preset round5|round6|round7|round8|round9]
+ *        [--preset round5|…|round10]
  * A preset is a named list of `--set` overrides applied before any explicit `--set`.
  * Seats rotate every match so each strategy plays every seat position.
  */
@@ -70,6 +70,8 @@ const ROUND8 = [
   'buildings.insurance.keepPerRound=1',
 ];
 
+const ROUND9 = [...ROUND8, 'buildings.broker.enabled=0', 'roles.broker.enabled=1', 'roles.broker.payout=100'];
+
 const PRESETS: Readonly<Record<string, readonly string[]>> = {
   round5: [...ROUND5, 'roles.smuggler.coversSeizable=0', 'roles.guard.escortWhenSeizing=1'],
   /** Round 6 (proposal §19): smugglers cover contraband; confiscating guards get no escort fee. */
@@ -85,7 +87,18 @@ const PRESETS: Readonly<Record<string, readonly string[]>> = {
   /** Round 8 (proposal §21): round 7 with public 100 G smuggling and one insured unit per round. */
   round8: ROUND8,
   /** Round 9 (proposal §22): round 8 with the broker as a role (bet on a price move, 100 G) instead of a building. */
-  round9: [...ROUND8, 'buildings.broker.enabled=0', 'roles.broker.enabled=1', 'roles.broker.payout=100'],
+  round9: ROUND9,
+  /** Round 10 (proposal §23): round 9 with demand 1-2 for 3 players and 1-3 for 4 (contraband 0-1 for both). */
+  round10: [
+    ...ROUND9,
+    'demand.extraPerPlayerAbove3=0',
+    'demand.max.wood=2',
+    'demand.max.iron=2',
+    'demand.max.spice=2',
+    'demand.extraMax.wood=1',
+    'demand.extraMax.iron=1',
+    'demand.extraMax.spice=1',
+  ],
 };
 
 

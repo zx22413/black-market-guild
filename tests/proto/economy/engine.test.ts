@@ -34,6 +34,16 @@ describe('economy prototype setup', () => {
     expect(buildDemandDeck(ECONOMY_RULES, 4)).not.toContainEqual(G(1, 1));
   });
 
+  it('can raise only the upper end of a demand range for a fourth player', () => {
+    const rules = {
+      ...ECONOMY_RULES,
+      demand: { ...ECONOMY_RULES.demand, max: G(2, 2), extraPerPlayerAbove3: 0, extraMax: G(1, 1) },
+    };
+    const values = (n: number) => [...new Set(buildDemandDeck(rules, n).map((c) => c.wood))].sort();
+    expect(values(3)).toEqual([1, 2]);
+    expect(values(4)).toEqual([1, 2, 3]);
+  });
+
   it('rejects invalid configurations', () => {
     const players = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `p${i}`, name: `p${i}` }));
     expect(createEconomyMatch({ seed: 1, players: players(2) }).ok).toBe(false);

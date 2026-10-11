@@ -37,10 +37,17 @@ export interface EconomyRules {
     readonly volatility: Goods;
   };
   /**
-   * One demand card per combination of values in [min, max] per material; each value of a
-   * material in play (max > 0) grows per player above 3.
+   * One demand card per combination of values in [min, max] per material. For each player above
+   * 3, both ends of a material in play (max > 0) grow by `extraPerPlayerAbove3`, and each end
+   * also grows by its own `extraMin` / `extraMax`.
    */
-  readonly demand: { readonly min: Goods; readonly max: Goods; readonly extraPerPlayerAbove3: number };
+  readonly demand: {
+    readonly min: Goods;
+    readonly max: Goods;
+    readonly extraPerPlayerAbove3: number;
+    readonly extraMin: Goods;
+    readonly extraMax: Goods;
+  };
   /** 1 = guards of other players confiscate this material on ships that arrive (contraband). */
   readonly seizable: Goods;
   /** Units a player may ship per round. */
@@ -136,7 +143,7 @@ export const ECONOMY_RULES: EconomyRules = {
   productionEvery: goodsOf({ wood: 1, iron: 1, spice: 1, contraband: 1 }),
   perishable: goodsOf({ spice: 1 }),
   price: { base: 75, step: 25, steps: 7, start: goodsOf({ wood: 3, iron: 3, spice: 3, contraband: 3 }), volatility: goodsOf({ wood: 1, iron: 1, spice: 1, contraband: 1 }) },
-  demand: { min: goodsOf({ wood: 1, iron: 1 }), max: goodsOf({ wood: 3, iron: 3 }), extraPerPlayerAbove3: 1 },
+  demand: { min: goodsOf({ wood: 1, iron: 1 }), max: goodsOf({ wood: 3, iron: 3 }), extraPerPlayerAbove3: 1, extraMin: goodsOf({}), extraMax: goodsOf({}) },
   seizable: goodsOf({ contraband: 1 }),
   capacity: { base: 2, shipyardBonus: 1 },
   ownShip: { cost: 100 },
