@@ -187,3 +187,22 @@ describe('round 15 island traits', () => {
     expect(cashEvents(after.events, 'role-fee', 'p1')).toBe(0);
   });
 });
+
+describe('round 16 island traits', () => {
+  it('stops lumber wood after round 5', () => {
+    let state = withIsland(start('A', 3, islandRules()), 'p1', 'lumber');
+    while (state.round < 6) {
+      state = playRound(state, { loads: {} }).state;
+    }
+    const before = stockOf(state, 'p1').wood;
+    // Round 6 opened: wood produced through round 5 only, so round 6 added nothing.
+    expect(before).toBe(1 + 5);
+  });
+
+  it('gives the lighthouse ship +1', () => {
+    const state = withIsland(start('A', 3, islandRules()), 'p1', 'lighthouse');
+    const { events } = playRound(state, { loads: { p1: G(1) } });
+    expect(resolved(events, 'r1-p1').island).toBe(1);
+    expect(cashEvents(events, 'ship-cost', 'p1')).toBe(-150);
+  });
+});

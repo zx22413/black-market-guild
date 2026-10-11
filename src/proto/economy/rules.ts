@@ -155,7 +155,7 @@ export interface EconomyRules {
 }
 
 export const ECONOMY_RULES: EconomyRules = {
-  version: 'economy-proto-12',
+  version: 'economy-proto-13',
   mode: 'A',
   players: { min: 3, max: 4 },
   rounds: 6,
