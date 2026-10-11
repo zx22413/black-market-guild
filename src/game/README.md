@@ -1,5 +1,7 @@
 # `src/game`｜規則引擎
 
+> **版本：** 本引擎實作的是 **V0.6** 規則（[`docs/archive/game-design-v0.6.md`](../../docs/archive/game-design-v0.6.md)）。現行規則已是 V0.7（[`docs/game-design.md`](../../docs/game-design.md)），搬遷待進行；V0.7 的原型在 [`src/proto/economy`](../proto/README.md)。下文的章節引用皆指 V0.6 文件。
+
 黑市商會的純規則引擎。只依規則與玩家行動推進對局，不依賴瀏覽器、Node 或任何執行期套件（由 `tsconfig.engine.json` 強制）。規則來源為 [`docs/game-design.md`](../../docs/game-design.md)，設計背景見 [`docs/architecture.md`](../../docs/architecture.md)，開發進度見 [`docs/implementation-plan.md`](../../docs/implementation-plan.md)。
 
 外部程式（UI、Bot、Match Runner）只能從 `index.ts` 匯入。

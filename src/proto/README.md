@@ -1,6 +1,6 @@
 # `src/proto`｜規則原型
 
-用來以 Bot 模擬比較**尚未定案**的改版方案。這裡的程式碼與數值**不是規則**，也不接 UI 或連線；方案定案後，才依 [`docs/game-design.md`](../../docs/game-design.md) 的更新搬進 `src/game`。
+用來以 Bot 模擬比較改版方案。`economy/` 的 `--preset round14` 與 [`docs/game-design.md`](../../docs/game-design.md) 的 V0.7 規則一致，可作為搬遷到正式引擎時的參考實作；其他預設組合只是比較用的歷史版本。這裡的程式碼與數值**不是規則**，也不接 UI 或連線；方案定案後，才依 [`docs/game-design.md`](../../docs/game-design.md) 的更新搬進 `src/game`。
 
 純度限制與 `src/game` 相同：只用 `ES2022`，不得使用 DOM 或 Node API（`tsconfig.engine.json`）；所有隨機性透過 `src/game/rng.ts`；狀態可 JSON 往返，且不修改傳入物件。
 

@@ -30,13 +30,13 @@ npm run simulate:economy -- --mode B --matches 2000 [--set capacity.base=3] [--s
 
 ## 規則來源（最重要）
 
-[`docs/game-design.md`](docs/game-design.md)（V0.6「市場風向」）是 gameplay 的**唯一 source of truth**，詳細協作規則見 [`AGENTS.md`](AGENTS.md)。重點：
+[`docs/game-design.md`](docs/game-design.md)（V0.7，2026-10-11 由 V0.6 改版）是 gameplay 的**唯一 source of truth**，詳細協作規則見 [`AGENTS.md`](AGENTS.md)。**注意：正式引擎 `src/game`、UI 與線上版仍是 V0.6 實作**（原文封存於 [`docs/archive/game-design-v0.6.md`](docs/archive/game-design-v0.6.md)），V0.7 尚待搬遷；V0.7 規則已在原型 `src/proto/economy`（`--preset round14`）完整實作。重點：
 
 - 不得自行發明、推定或補完未定案的規則、數值、卡牌、角色能力或結算順序。[`docs/open-questions.md`](docs/open-questions.md) 是待確認清單，不是規則來源；其中的提案與範例數字絕對不可自行採用。
 - 實作遇到未定案規則時：停止具體化該規則，在程式碼中以 `TODO` 記錄問題、影響範圍與待確認決策；必要時設計成可注入的參數／設定，而不是寫死猜測值。
 - 規則變更流程：先更新 `docs/game-design.md` → 再改實作 → 再改測試。
-- 目前已定案、可直接依據的內容與數值，以 `docs/game-design.md` 的 V0.6 快照為準；不要以本段摘要、舊 commit 或沿革文件補完規則。
-- 設計文件第 10 節列出的擴充方向（秘密交易、市場操縱、不同比例合資等）**不屬於 V0.6 / MVP 範圍**，不要實作。
+- 目前已定案、可直接依據的內容與數值，以 `docs/game-design.md` 的 V0.7 快照為準；不要以本段摘要、舊 commit、沿革文件或 `docs/proposals/` 補完規則。
+- 設計文件第 14 節列出的範圍外項目（合資、秘密交易、玩家間交易材料等）**不屬於 V0.7 範圍**，不要實作。
 
 ## 架構
 

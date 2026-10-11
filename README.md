@@ -2,7 +2,7 @@
 
 《黑市商會》是一款供 3～4 人遊玩（2 人模式規劃中）的商業、航運與心理博弈策略遊戲。玩家在每回合面對公開的市場條件，決定獨資或合資出航，並以秘密角色部署影響商船的命運與彼此的收益。
 
-目前專案以 [V0.6 遊戲設計文件](docs/game-design.md) 為唯一的 gameplay 規則基準。
+目前專案以 [V0.7 遊戲設計文件](docs/game-design.md) 為唯一的 gameplay 規則基準。正式引擎、UI 與線上版仍是 V0.6 實作（[封存的 V0.6 規則](docs/archive/game-design-v0.6.md)），V0.7 待搬遷。
 
 ## 專案狀態
 
@@ -33,9 +33,9 @@ npm run simulate -- --summary --set roles.pirate.modifier=-2  # 覆寫規則數�
 
 ## 文件
 
-- [`docs/game-design.md`](docs/game-design.md)：V0.6 當前完整規則，唯一 gameplay source of truth。
+- [`docs/game-design.md`](docs/game-design.md)：V0.7 當前完整規則，唯一 gameplay source of truth。
 - [`docs/open-questions.md`](docs/open-questions.md)：待驗證／待確認清單；不是可供實作的規則來源。
-- [`docs/changelog.md`](docs/changelog.md)：V0.1～V0.6 的設計沿革與已否決／暫緩項目。
+- [`docs/changelog.md`](docs/changelog.md)：V0.1～V0.7 的設計沿革與已否決／暫緩項目。
 - [`docs/architecture.md`](docs/architecture.md)：程式分層、座位與 Controller 設計、多種對局模式的驅動方式。
 - [`docs/implementation-plan.md`](docs/implementation-plan.md)：規則引擎的實作計畫、里程碑與進度。
 - 各模組說明：[`src/game`](src/game/README.md)（規則引擎）、[`src/match`](src/match/README.md)（Match Runner）、[`src/bots`](src/bots/README.md)（Bot）、[`src/ui`](src/ui/README.md)（瀏覽器 UI）。

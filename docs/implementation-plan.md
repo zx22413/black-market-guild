@@ -1,5 +1,7 @@
 # 黑市商會｜規則引擎實作計畫
 
+> **注意（2026-10-11）：** 本計畫的 M1～M8 對應 V0.6 規則（[`archive/game-design-v0.6.md`](archive/game-design-v0.6.md)），已完成。規則已改版為 V0.7，搬遷計畫待擬定；V0.7 的完整原型在 `src/proto/economy`。
+
 本文件是 MVP 規則引擎的實作計畫與進度追蹤。規則以 [`game-design.md`](game-design.md) 為準，架構以 [`architecture.md`](architecture.md) 為準；本文件只描述**怎麼做、做到哪裡**。
 
 ## 1. 範圍
