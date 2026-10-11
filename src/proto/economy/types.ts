@@ -6,12 +6,17 @@ import type { EconomyRules } from './rules';
 export type PlayerId = string;
 export type ShipId = string;
 
-export const MATERIALS = ['wood', 'iron'] as const;
+/**
+ * Wood and iron build and sell; spice (perishable) and contraband (seizable by guards) only sell
+ * (proposal §18). Goods unused by a rule set simply have no production and no demand.
+ */
+export const MATERIALS = ['wood', 'iron', 'spice', 'contraband'] as const;
 export type Material = (typeof MATERIALS)[number];
 /** Units per material; also used for price-track steps per material. */
 export type Goods = Readonly<Record<Material, number>>;
 
-export const BUILDING_IDS = ['shipyard', 'insurance', 'salvage', 'exchange'] as const;
+/** `broker` (牙行, proposal §18) shifts one demand by ±1 each round. */
+export const BUILDING_IDS = ['shipyard', 'insurance', 'salvage', 'exchange', 'broker'] as const;
 export type BuildingId = (typeof BUILDING_IDS)[number];
 
 /** V0.6 voyage events minus high waves (proposal §13.3). */
@@ -37,6 +42,8 @@ export type EconomyAction =
       readonly load: Goods;
       /** Exchange direct sale from the warehouse (exchange variant 2); otherwise zero. */
       readonly direct: Goods;
+      /** Broker holders only: shift this round's demand for one material. */
+      readonly manipulate: Manipulation | null;
     }
   | {
       readonly type: 'deploy-role';
@@ -51,6 +58,15 @@ export const PHASE_ACTION_TYPE: Readonly<Record<EconomyPhase, EconomyAction['typ
   'role-deployment': 'deploy-role',
   'intel-reroll': 'intel-reroll',
 };
+
+export interface Manipulation {
+  readonly material: Material;
+  readonly delta: 1 | -1;
+}
+
+export interface PlayerManipulation extends Manipulation {
+  readonly playerId: PlayerId;
+}
 
 export interface CargoLot {
   readonly playerId: PlayerId;
@@ -102,6 +118,8 @@ export interface EconRound {
   readonly builds: readonly Build[];
   /** Secret until settlement, like Option A cargo. */
   readonly directSales: readonly CargoLot[];
+  /** Public once investments are revealed. */
+  readonly manipulations: readonly PlayerManipulation[];
   readonly ships: readonly EconShip[];
   readonly deployments: readonly Deployment[];
 }
@@ -113,6 +131,7 @@ export interface RoundRecord {
   readonly wanted: readonly PlayerId[];
   readonly builds: readonly Build[];
   readonly directSales: readonly CargoLot[];
+  readonly manipulations: readonly PlayerManipulation[];
   readonly ships: readonly EconShip[];
   readonly deployments: readonly Deployment[];
   readonly voyageEvent: ProtoVoyageEventId | null;
@@ -163,6 +182,7 @@ export type CashReason =
   | 'escort-fee'
   | 'insurance'
   | 'exchange-commission'
+  | 'contraband-seized'
   | 'direct-sale'
   | 'black-money';
 
@@ -185,6 +205,15 @@ export type EconomyEvent =
   | { readonly type: 'phase-started'; readonly round: number; readonly phase: EconomyPhase }
   | { readonly type: 'buildings-built'; readonly round: number; readonly builds: readonly Build[] }
   | { readonly type: 'ships-launched'; readonly round: number; readonly ships: readonly PublicShip[] }
+  | { readonly type: 'market-manipulated'; readonly round: number; readonly manipulations: readonly PlayerManipulation[] }
+  | {
+      readonly type: 'contraband-seized';
+      readonly round: number;
+      readonly shipId: ShipId;
+      readonly ownerId: PlayerId;
+      readonly units: number;
+      readonly guards: readonly PlayerId[];
+    }
   | {
       readonly type: 'cash-changed';
       readonly round: number;

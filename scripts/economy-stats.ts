@@ -21,6 +21,9 @@ export interface EconomyStats {
   insurance: number;
   insuredKept: number;
   commission: number;
+  manipulations: number;
+  contrabandSeizedUnits: number;
+  contrabandSeizedCash: number;
   directUnits: number;
   directCash: number;
   salvaged: number;
@@ -49,6 +52,9 @@ export function emptyEconomyStats(steps: number): EconomyStats {
     insurance: 0,
     insuredKept: 0,
     commission: 0,
+    manipulations: 0,
+    contrabandSeizedUnits: 0,
+    contrabandSeizedCash: 0,
     directUnits: 0,
     directCash: 0,
     salvaged: 0,
@@ -76,7 +82,7 @@ export function addEconomyMatch(stats: EconomyStats, run: EconomyMatchRun, strat
   }
   const wealths = result.standings.map((s) => s.wealth);
   stats.wealthSpread += Math.max(...wealths) - Math.min(...wealths);
-  stats.unsoldUnits += state.players.reduce((sum, p) => sum + p.stock.wood + p.stock.iron, 0);
+  stats.unsoldUnits += state.players.reduce((sum, p) => sum + MATERIALS.reduce((u, m) => u + p.stock[m], 0), 0);
 
   for (const record of state.history) {
     record.builds.forEach((b) => {
@@ -84,10 +90,11 @@ export function addEconomyMatch(stats: EconomyStats, run: EconomyMatchRun, strat
       stats.buildings[b.building]!.roundSum += record.round;
     });
     stats.playerRounds += state.players.length;
-    stats.directUnits += record.directSales.reduce((sum, lot) => sum + lot.goods.wood + lot.goods.iron, 0);
+    stats.manipulations += record.manipulations.length;
+    stats.directUnits += record.directSales.reduce((sum, lot) => sum + MATERIALS.reduce((u, m) => u + lot.goods[m], 0), 0);
     const loaders = new Set(record.ships.flatMap((s) => s.cargo.map((lot) => lot.playerId)));
     stats.loadingRounds += loaders.size;
-    stats.unitsShipped += record.ships.reduce((sum, s) => sum + s.cargo.reduce((u, lot) => u + lot.goods.wood + lot.goods.iron, 0), 0);
+    stats.unitsShipped += record.ships.reduce((sum, s) => sum + s.cargo.reduce((u, lot) => u + MATERIALS.reduce((x, m) => x + lot.goods[m], 0), 0), 0);
     for (const d of record.deployments) {
       stats.roles[d.role] = (stats.roles[d.role] ?? 0) + 1;
       const ship = record.ships.find((s) => s.id === d.targetShipId);
@@ -100,7 +107,7 @@ export function addEconomyMatch(stats: EconomyStats, run: EconomyMatchRun, strat
         stats.pirateSinks += ship?.outcome === 'sank' ? 1 : 0;
       }
     }
-    for (const m of MATERIALS) {
+    for (const m of MATERIALS.filter((x) => state.rules.demand.max[x] > 0)) {
       const steps = stats.priceSteps[m]!;
       steps[record.priceAfter[m]] = (steps[record.priceAfter[m]] ?? 0) + 1;
       const arrived = record.arrived[m];
@@ -116,13 +123,17 @@ export function addEconomyMatch(stats: EconomyStats, run: EconomyMatchRun, strat
         stats.escortFees += event.amount;
       } else if (event.reason === 'insurance') {
         stats.insurance += event.amount;
+      } else if (event.reason === 'contraband-seized') {
+        stats.contrabandSeizedCash += event.amount;
       } else if (event.reason === 'exchange-commission') {
         stats.commission += event.amount;
       } else if (event.reason === 'direct-sale') {
         stats.directCash += event.amount;
       }
     } else if (event.type === 'insured-goods-kept') {
-      stats.insuredKept += event.goods.wood + event.goods.iron;
+      stats.insuredKept += MATERIALS.reduce((u, m) => u + event.goods[m], 0);
+    } else if (event.type === 'contraband-seized') {
+      stats.contrabandSeizedUnits += event.units;
     } else if (event.type === 'salvaged') {
       stats.salvaged += 1;
     } else if (event.type === 'ship-smuggled') {

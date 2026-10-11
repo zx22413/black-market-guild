@@ -1,5 +1,5 @@
 import { getEconomyDeciders } from './decisions';
-import { addGoods } from './goods';
+import { addGoods, mapGoods } from './goods';
 import { resolveInvest } from './invest';
 import { chain, changeCash } from './state';
 import { computeEconomyResult } from './scoring';
@@ -35,7 +35,9 @@ export function openRound(base: Omit<EconomyState, 'roundState'>, round: number)
   if (demand === undefined) {
     throw new Error('demand deck is empty');
   }
-  const players = base.players.map((p) => ({ ...p, stock: addGoods(p.stock, base.rules.production) }));
+  const { production, productionEvery } = base.rules;
+  const produced = mapGoods((m) => ((round - 1) % productionEvery[m] === 0 ? production[m] : 0));
+  const players = base.players.map((p) => ({ ...p, stock: addGoods(p.stock, produced) }));
   const wanted = wantedPlayers(base);
   const stockAtStart: Record<PlayerId, Goods> = Object.fromEntries(players.map((p) => [p.id, p.stock]));
   const state: EconomyState = {
@@ -44,7 +46,7 @@ export function openRound(base: Omit<EconomyState, 'roundState'>, round: number)
     phase: 'invest',
     players,
     demandDeck,
-    roundState: { demand, wanted, stockAtStart, voyageEvent: null, submissions: {}, builds: [], directSales: [], ships: [], deployments: [] },
+    roundState: { demand, wanted, stockAtStart, voyageEvent: null, submissions: {}, builds: [], directSales: [], manipulations: [], ships: [], deployments: [] },
   };
   return runFrom(state, 0, [{ type: 'round-started', round, demand, wanted, prices: base.prices }]);
 }

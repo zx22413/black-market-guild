@@ -1,9 +1,12 @@
 import { ROLE_IDS } from '../../game';
-import { covers, subtractGoods, units } from './goods';
+import { covers, enumerateGoods, subtractGoods, units } from './goods';
 import { EXCHANGE_DIRECT_SALE, buildingCostGoods, type EconomyRules } from './rules';
 import { playerOf } from './state';
 import {
   BUILDING_IDS,
+  MATERIALS,
+  type Manipulation,
+  type Material,
   type BuildingId,
   type EconomyAction,
   type EconomyPhase,
@@ -79,13 +82,31 @@ export function getEconomyLegalActions(state: EconomyState, playerId: PlayerId):
 /** Direct sales the exchange allows from `stock` (exchange variant 2), including none. */
 export function directSaleOptions(rules: EconomyRules, buildings: readonly BuildingId[], stock: Goods): Goods[] {
   const max = buildings.includes('exchange') && rules.buildings.exchange.variant === EXCHANGE_DIRECT_SALE ? rules.buildings.exchange.directUnits : 0;
-  const options: Goods[] = [];
-  for (let wood = 0; wood <= Math.min(stock.wood, max); wood += 1) {
-    for (let iron = 0; iron <= Math.min(stock.iron, max - wood); iron += 1) {
-      options.push({ wood, iron });
-    }
+  return enumerateGoods(stock, max);
+}
+
+/** Materials with demand on the cards; the others are not part of this rule set. */
+export function materialsInPlay(rules: EconomyRules): Material[] {
+  return MATERIALS.filter((m) => rules.demand.max[m] > 0);
+}
+
+/** No shift, or ±1 on any material in play the broker can pay for from `stock`. */
+export function manipulationOptions(rules: EconomyRules, buildings: readonly BuildingId[], stock: Goods): (Manipulation | null)[] {
+  if (!buildings.includes('broker')) {
+    return [null];
   }
-  return options;
+  const cost = rules.buildings.broker.unitCost;
+  const shifts = materialsInPlay(rules)
+    .filter((m) => stock[m] >= cost)
+    .flatMap((material): Manipulation[] => [
+      { material, delta: 1 },
+      { material, delta: -1 },
+    ]);
+  return [null, ...shifts];
+}
+
+function buildable(rules: EconomyRules, building: BuildingId): boolean {
+  return building !== 'broker' || rules.buildings.broker.enabled === 1;
 }
 
 /**
@@ -99,6 +120,7 @@ function investOptions(state: EconomyState, playerId: PlayerId): EconomyAction[]
     null,
     ...BUILDING_IDS.filter(
       (b) =>
+        buildable(rules, b) &&
         player.buildings.length < rules.maxBuildingsPerPlayer &&
         !player.buildings.includes(b) &&
         player.cash >= rules.buildings[b].cash &&
@@ -110,18 +132,16 @@ function investOptions(state: EconomyState, playerId: PlayerId): EconomyAction[]
     const cash = player.cash - (build === null ? 0 : rules.buildings[build].cash);
     const buildings = build === null ? player.buildings : [...player.buildings, build];
     const capacity = capacityOf(rules, buildings);
-    const options: EconomyAction[] = [];
-    for (let wood = 0; wood <= Math.min(stock.wood, capacity); wood += 1) {
-      for (let iron = 0; iron <= Math.min(stock.iron, capacity - wood); iron += 1) {
-        const load = { wood, iron };
-        if (cash >= shippingCost(rules, load)) {
-          directSaleOptions(rules, buildings, subtractGoods(stock, load)).forEach((direct) =>
-            options.push({ type: 'invest', playerId, build, load, direct }),
-          );
-        }
-      }
-    }
-    return options;
+    return enumerateGoods(stock, capacity)
+      .filter((load) => cash >= shippingCost(rules, load))
+      .flatMap((load) => {
+        const left = subtractGoods(stock, load);
+        return directSaleOptions(rules, buildings, left).flatMap((direct) =>
+          manipulationOptions(rules, buildings, subtractGoods(left, direct)).map(
+            (manipulate): EconomyAction => ({ type: 'invest', playerId, build, load, direct, manipulate }),
+          ),
+        );
+      });
   });
 }
 
@@ -143,7 +163,14 @@ function deployOptions(state: EconomyState, playerId: PlayerId): EconomyAction[]
 export function economyActionKey(action: EconomyAction): string {
   switch (action.type) {
     case 'invest':
-      return `${action.type}|${action.playerId}|${action.build}|${action.load.wood}|${action.load.iron}|${action.direct.wood}|${action.direct.iron}`;
+      return [
+        action.type,
+        action.playerId,
+        action.build,
+        MATERIALS.map((m) => action.load[m]).join(','),
+        MATERIALS.map((m) => action.direct[m]).join(','),
+        action.manipulate === null ? 'none' : `${action.manipulate.material}${action.manipulate.delta}`,
+      ].join('|');
     case 'deploy-role':
       return `${action.type}|${action.playerId}|${action.role}|${action.targetShipId}`;
     case 'intel-reroll':

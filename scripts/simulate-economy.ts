@@ -3,6 +3,8 @@
  * and prints a Markdown report.
  * Usage: npm run simulate:economy -- [--mode A|B] [--matches 1000] [--players 4] [--seed 1]
  *        [--lineup balanced,cautious,aggressive,builder] [--set capacity.base=3 ...] [--summary]
+ *        [--preset round5]
+ * A preset is a named list of `--set` overrides applied before any explicit `--set`.
  * Seats rotate every match so each strategy plays every seat position.
  */
 import { BUILDING_IDS, MATERIALS, economyRules, priceAt, runEconomyMatch, type EconomyMode, type EconomyRules } from '../src/proto/economy';
@@ -40,6 +42,25 @@ function applyOverrides(base: EconomyRules, overrides: readonly string[]): Econo
   return rules as unknown as EconomyRules;
 }
 
+/** Round 5 (proposal §18): spice, contraband, the broker, a two-building limit and a 20 G commission. */
+const PRESETS: Readonly<Record<string, readonly string[]>> = {
+  round5: [
+    'production.spice=1',
+    'production.contraband=1',
+    'productionEvery.contraband=2',
+    'price.volatility.spice=2',
+    'demand.min.spice=1',
+    'demand.max.spice=3',
+    'demand.min.contraband=0',
+    'demand.max.contraband=1',
+    'capacity.base=3',
+    'buildings.broker.enabled=1',
+    'maxBuildingsPerPlayer=2',
+    'buildings.exchange.variant=1',
+    'buildings.exchange.commissionPerUnit=20',
+  ],
+};
+
 function parseOptions(): Options {
   const argv = (globalThis as { process?: { argv?: string[] } }).process?.argv?.slice(2) ?? [];
   const get = (name: string) => {
@@ -50,7 +71,12 @@ function parseOptions(): Options {
   if (mode !== 'A' && mode !== 'B') {
     throw new Error(`--mode must be A or B, got ${mode}`);
   }
-  const overrides = argv.flatMap((arg, i) => (arg === '--set' && argv[i + 1] ? [argv[i + 1]!] : []));
+  const preset = get('preset');
+  if (preset !== undefined && PRESETS[preset] === undefined) {
+    throw new Error(`unknown preset ${preset}; choose from ${Object.keys(PRESETS).join(', ')}`);
+  }
+  const explicit = argv.flatMap((arg, i) => (arg === '--set' && argv[i + 1] ? [argv[i + 1]!] : []));
+  const overrides = [...(preset === undefined ? [] : PRESETS[preset]!), ...explicit];
   const lineup = (get('lineup') ?? 'balanced,cautious,aggressive,builder').split(',') as EconomyBotStrategy[];
   const unknown = lineup.filter((s) => !(ECONOMY_BOT_STRATEGIES as readonly string[]).includes(s));
   if (unknown.length > 0) {
@@ -96,9 +122,9 @@ function table(header: readonly string[], rows: readonly (readonly (string | num
   return [`| ${header.join(' | ')} |`, `| ${header.map(() => '---').join(' | ')} |`, ...rows.map((r) => `| ${r.join(' | ')} |`)];
 }
 
-const BUILDING_LABELS: Record<string, string> = { shipyard: '造船廠', insurance: '航運保險', salvage: '打撈公司', exchange: '貿易交易所' };
+const BUILDING_LABELS: Record<string, string> = { shipyard: '造船廠', insurance: '航運保險', salvage: '打撈公司', exchange: '貿易交易所', broker: '牙行' };
 const ROLE_LABELS: Record<string, string> = { intel: '情報商人', guard: '護衛', pirate: '海盜', smuggler: '走私商人' };
-const MATERIAL_LABELS: Record<string, string> = { wood: '木材', iron: '鐵礦' };
+const MATERIAL_LABELS: Record<string, string> = { wood: '木材', iron: '鐵礦', spice: '香料', contraband: '違禁品' };
 
 function totalRoles(s: EconomyStats): number {
   return Object.values(s.roles).reduce((a, b) => a + b, 0);
@@ -112,7 +138,8 @@ function report(options: Options, s: EconomyStats): string {
   const { rules } = options;
   const strategies = [...new Set(options.lineup)];
   const roleCount = totalRoles(s);
-  const priceRows = MATERIALS.map((m) => {
+  const inPlay = MATERIALS.filter((m) => rules.demand.max[m] > 0);
+  const priceRows = inPlay.map((m) => {
     const counts = s.priceSteps[m]!;
     const total = counts.reduce((a, b) => a + b, 0);
     return [MATERIAL_LABELS[m]!, ...counts.map((c) => pct(c, total))];
@@ -150,16 +177,17 @@ function report(options: Options, s: EconomyStats): string {
     '## 3. 出航與市場',
     '',
     `- 有裝貨出航的玩家回合：${pct(s.loadingRounds, s.playerRounds)}；平均每回合到港前裝運 ${per(s.unitsShipped, s.matches * rules.rounds)} 單位。`,
-    `- 到港量對需求：少於需求 ${pct(s.demandVsArrived.under, s.matches * rules.rounds * 2)}、剛好 ${pct(s.demandVsArrived.exact, s.matches * rules.rounds * 2)}、多於需求 ${pct(
-      s.demandVsArrived.over,
-      s.matches * rules.rounds * 2,
-    )}。`,
+    `- 到港量對需求（每種材料每回合）：少於需求 ${pct(s.demandVsArrived.under, s.matches * rules.rounds * inPlay.length)}、剛好 ${pct(
+      s.demandVsArrived.exact,
+      s.matches * rules.rounds * inPlay.length,
+    )}、多於需求 ${pct(s.demandVsArrived.over, s.matches * rules.rounds * inPlay.length)}。`,
     `- 終局每名玩家平均剩下 ${per(s.unsoldUnits, s.seats)} 單位材料（歸零）。`,
     '',
     '回合結束時的價格分布：',
     '',
     ...table(['材料', ...Array.from({ length: rules.price.steps }, (_, k) => `${priceAt(rules, k)} G`)], priceRows),
     '',
+    `- 牙行調整需求 ${s.manipulations} 次（每局平均 ${per(s.manipulations, s.matches)}）；違禁品被護衛沒收 ${s.contrabandSeizedUnits} 單位、${s.contrabandSeizedCash} G。`,
     `- 交易所（效果 ${['跌價保護', '做市佣金', '倉庫直售'][rules.buildings.exchange.variant] ?? rules.buildings.exchange.variant}）：佣金共 ${s.commission} G；直售 ${s.directUnits} 單位、${s.directCash} G。`,
     '',
     '## 4. 角色',
@@ -184,7 +212,8 @@ function summaryRow(options: Options, s: EconomyStats): string {
     return e === undefined || e.seats === 0 ? 0 : e.wins / e.seats;
   });
   const buildingRates = BUILDING_IDS.map((b) => pct(s.buildings[b]!.count, s.seats)).join(' / ');
-  return `| ${options.mode} | ${options.overrides.join(' ') || '預設'} | ${buildingRates} | ${pct(s.guardOthers, s.roles.guard ?? 0)} | ${pct(
+  const label = options.overrides.join(' ') || '預設';
+  return `| ${options.mode} | ${label.length > 60 ? `${label.slice(0, 57)}…` : label} | ${buildingRates} | ${pct(s.guardOthers, s.roles.guard ?? 0)} | ${pct(
     s.roles.pirate ?? 0,
     s.playerRounds,
   )} | ${pirateNet(s).toFixed(0)} | ${pct(s.loadingRounds, s.playerRounds)} | ${(100 * Math.min(...winRates)).toFixed(1)}–${(100 * Math.max(...winRates)).toFixed(1)}% |`;

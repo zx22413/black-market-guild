@@ -2,7 +2,9 @@ import { seedToRngState, shuffle } from '../../game/rng';
 import { economyActionKey, getEconomyDeciders, getEconomyLegalActions } from './decisions';
 import { submitEconomyDecision, openRound } from './flow';
 import { ECONOMY_RULES, type EconomyRules } from './rules';
+import { NO_GOODS } from './goods';
 import {
+  MATERIALS,
   PHASE_ACTION_TYPE,
   PROTO_VOYAGE_EVENT_IDS,
   type EconomyAction,
@@ -20,11 +22,21 @@ export interface EconomyMatchConfig {
 
 export type EconomyResultOf<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: string };
 
-/** One card per wood/iron pair in [min, max]; values grow with each player above 3. */
+/**
+ * One card per combination of per-material values in [min, max]; materials in play (max > 0)
+ * grow with each player above 3.
+ */
 export function buildDemandDeck(rules: EconomyRules, playerCount: number): Goods[] {
   const extra = Math.max(0, playerCount - 3) * rules.demand.extraPerPlayerAbove3;
-  const values = Array.from({ length: rules.demand.max - rules.demand.min + 1 }, (_, i) => rules.demand.min + i + extra);
-  return values.flatMap((wood) => values.map((iron) => ({ wood, iron })));
+  return MATERIALS.reduce<Goods[]>(
+    (cards, m) => {
+      const { min, max } = { min: rules.demand.min[m], max: rules.demand.max[m] };
+      const bump = max > 0 ? extra : 0;
+      const values = Array.from({ length: Math.max(1, max - min + 1) }, (_, i) => min + i + bump);
+      return cards.flatMap((card) => values.map((v) => ({ ...card, [m]: v })));
+    },
+    [NO_GOODS],
+  );
 }
 
 export function buildProtoVoyageDeck(rules: EconomyRules): ProtoVoyageEventId[] {
@@ -45,8 +57,11 @@ function validate(config: EconomyMatchConfig, rules: EconomyRules): string | nul
   if (rules.roles.smuggler.fee !== 0) {
     return 'anonymous smuggling requires a zero smuggler fee';
   }
-  if (rules.price.start < 0 || rules.price.start >= rules.price.steps) {
+  if (MATERIALS.some((m) => rules.price.start[m] < 0 || rules.price.start[m] >= rules.price.steps)) {
     return `price.start must be within 0-${rules.price.steps - 1}`;
+  }
+  if (MATERIALS.some((m) => rules.productionEvery[m] < 1)) {
+    return 'productionEvery must be at least 1';
   }
   if (buildDemandDeck(rules, count).length < rules.rounds || buildProtoVoyageDeck(rules).length < rules.rounds) {
     return `decks must hold at least ${rules.rounds} cards`;
@@ -79,7 +94,7 @@ export function createEconomyMatch(config: EconomyMatchConfig): EconomyResultOf<
       rng: voyage.state,
       demandDeck: demand.items,
       voyageDeck: voyage.items,
-      prices: { wood: rules.price.start, iron: rules.price.start },
+      prices: rules.price.start,
       history: [],
       result: null,
     },

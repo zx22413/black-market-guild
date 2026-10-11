@@ -1,4 +1,4 @@
-import { capacityOf } from '../decisions';
+import { capacityOf, materialsInPlay } from '../decisions';
 import { priceAt } from '../goods';
 import { EXCHANGE_COMMISSION, EXCHANGE_DIRECT_SALE, type EconomyRules } from '../rules';
 import { MATERIALS, type BuildingId, type Goods, type Material, type PublicShip } from '../types';
@@ -29,16 +29,49 @@ export function currentPrice(view: EconomyView, material: Material): number {
 }
 
 export function averagePrice(view: EconomyView): number {
-  return MATERIALS.reduce((sum, m) => sum + currentPrice(view, m), 0) / MATERIALS.length;
+  const inPlay = materialsInPlay(view.rules);
+  return inPlay.reduce((sum, m) => sum + currentPrice(view, m), 0) / Math.max(1, inPlay.length);
 }
 
-/** Expected sale price if I ship `mine` units, guessing the others from their public stock. */
-export function expectedPrice(view: EconomyView, material: Material, mine: number): number {
+/** Assumed chance that another player's guard inspects a ship carrying contraband. */
+export function seizureRisk(view: EconomyView, material: Material): number {
+  if (view.rules.seizable[material] !== 1) {
+    return 0;
+  }
+  return view.rules.mode === 'A' ? 0.3 : 0.5;
+}
+
+/** Units of a material the other players are expected to land this round. */
+export function othersExpectedArrivals(view: EconomyView, material: Material): number {
+  return (
+    view.players
+      .filter((p) => p.id !== view.playerId)
+      .reduce((sum, p) => sum + Math.min(p.stockAtRoundStart[material], capacityOf(view.rules, p.buildings)) * OTHERS_LOAD_SHARE, 0) *
+    arriveChance(view.rules, 0)
+  );
+}
+
+/**
+ * Relative gain of shifting demand: my own units gain or lose one step, and each opponent's
+ * expected units move the other way relative to me (winning is relative, so hurting the average
+ * opponent counts at 1 / opponents).
+ */
+export function shiftValue(view: EconomyView, material: Material, delta: number, mine: number): number {
+  const step = view.rules.price.step * view.rules.price.volatility[material];
+  const opponents = Math.max(1, view.players.length - 1);
+  return delta * step * (mine * arriveChance(view.rules, 0) - othersExpectedArrivals(view, material) / opponents);
+}
+
+/**
+ * Expected sale price if I ship `mine` units, guessing the others from their public stock;
+ * `shift` is a demand change I make myself (broker).
+ */
+export function expectedPrice(view: EconomyView, material: Material, mine: number, shift = 0): number {
   const others = view.players
     .filter((p) => p.id !== view.playerId)
     .reduce((sum, p) => sum + Math.min(p.stockAtRoundStart[material], capacityOf(view.rules, p.buildings)) * OTHERS_LOAD_SHARE, 0);
   const arrivals = (others + mine) * arriveChance(view.rules, 0);
-  const delta = Math.max(-1, Math.min(1, view.demand[material] - arrivals));
+  const delta = Math.max(-1, Math.min(1, view.demand[material] + shift - arrivals)) * view.rules.price.volatility[material];
   return priceOfStep(view.rules, view.prices[material] + delta);
 }
 
@@ -66,6 +99,10 @@ export function buildingWorth(view: EconomyView, building: BuildingId): number {
     }
     case 'exchange':
       return endValue + roundsLeft * exchangeValuePerRound(view, price, p, opponents);
+    case 'broker': {
+      const best = Math.max(0, ...materialsInPlay(rules).map((m) => Math.abs(shiftValue(view, m, -1, 0))));
+      return endValue + roundsLeft * (best + rules.capacity.base * rules.price.step * p * 0.3 - rules.buildings.broker.unitCost * Math.max(0, price * p - perUnitCost(rules)));
+    }
   }
 }
 
@@ -98,6 +135,21 @@ export function insuredValue(rules: EconomyRules, shipped: number, price: number
   const { keepUnits, payoutRatio } = rules.buildings.insurance;
   const kept = Math.min(keepUnits, shipped);
   return kept * price * 0.6 + (shipped - kept) * price * payoutRatio;
+}
+
+/**
+ * Value of other players' seizable goods my guard could confiscate on a ship: visible cargo
+ * (Option B) or a guess from the owner's public stock (Option A).
+ */
+export function expectedSeizure(view: EconomyView, ship: PublicShip): number {
+  return MATERIALS.filter((m) => view.rules.seizable[m] === 1).reduce((sum, m) => {
+    const price = currentPrice(view, m);
+    if (ship.cargo !== null) {
+      return sum + ship.cargo.filter((lot) => lot.playerId !== view.playerId).reduce((s, lot) => s + lot.goods[m] * price, 0);
+    }
+    const owner = view.players.find((p) => p.id === ship.owner);
+    return sum + (owner === undefined || owner.id === view.playerId ? 0 : owner.stockAtRoundStart[m] * OTHERS_LOAD_SHARE * price);
+  }, 0);
 }
 
 /** Value of my own cargo on a ship at current prices. */

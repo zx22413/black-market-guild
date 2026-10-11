@@ -1,4 +1,4 @@
-import type { BuildingId, Goods, ProtoVoyageEventId } from './types';
+import { MATERIALS, type BuildingId, type Goods, type ProtoVoyageEventId } from './types';
 
 /**
  * Prototype numbers from docs/proposals/2026-10-economy-rework.md §13.2. Every value is a
@@ -20,12 +20,29 @@ export interface EconomyRules {
   readonly rounds: number;
   readonly startingCash: number;
   readonly startingStock: Goods;
-  /** Added to every warehouse at the start of each round, including round 1. */
+  /** Added to every warehouse at the start of rounds 1, 1 + every, 1 + 2 * every, … */
   readonly production: Goods;
-  /** Price of step k is base + k * step; `start` is the opening step for both materials. */
-  readonly price: { readonly base: number; readonly step: number; readonly steps: number; readonly start: number };
-  /** One demand card per wood/iron pair in [min, max]; each value grows per player above 3. */
-  readonly demand: { readonly min: number; readonly max: number; readonly extraPerPlayerAbove3: number };
+  readonly productionEvery: Goods;
+  /** 1 = whatever is left in the warehouse spoils at the end of the round (spice). */
+  readonly perishable: Goods;
+  /**
+   * Price of step k is base + k * step; `start` is the opening step per material. `volatility`
+   * is how many steps a price moves when arrivals miss demand.
+   */
+  readonly price: {
+    readonly base: number;
+    readonly step: number;
+    readonly steps: number;
+    readonly start: Goods;
+    readonly volatility: Goods;
+  };
+  /**
+   * One demand card per combination of values in [min, max] per material; each value of a
+   * material in play (max > 0) grows per player above 3.
+   */
+  readonly demand: { readonly min: Goods; readonly max: Goods; readonly extraPerPlayerAbove3: number };
+  /** 1 = guards of other players confiscate this material on ships that arrive (contraband). */
+  readonly seizable: Goods;
   /** Units a player may ship per round. */
   readonly capacity: { readonly base: number; readonly shipyardBonus: number };
   /** Option A sailing cost per ship. */
@@ -61,8 +78,10 @@ export interface EconomyRules {
       readonly directUnits: number;
       readonly directPriceSteps: number;
     };
+    /** Pays `unitCost` units of the material it shifts; the shift is public. `enabled` 0 = not buildable. */
+    readonly broker: BuildingCost & { readonly enabled: number; readonly unitCost: number };
   };
-  /** Buildings one player may hold; 4 means no limit. */
+  /** Buildings one player may hold; 5 means no limit. */
   readonly maxBuildingsPerPlayer: number;
   /** Share of each held building's cash cost counted in final wealth; materials are not counted. */
   readonly buildingValueRatio: number;
@@ -77,15 +96,18 @@ export interface EconomyRules {
 }
 
 export const ECONOMY_RULES: EconomyRules = {
-  version: 'economy-proto-4',
+  version: 'economy-proto-5',
   mode: 'A',
   players: { min: 3, max: 4 },
   rounds: 6,
   startingCash: 1000,
-  startingStock: { wood: 1, iron: 1 },
-  production: { wood: 1, iron: 1 },
-  price: { base: 75, step: 25, steps: 7, start: 3 },
-  demand: { min: 1, max: 3, extraPerPlayerAbove3: 1 },
+  startingStock: goodsOf({ wood: 1, iron: 1 }),
+  production: goodsOf({ wood: 1, iron: 1 }),
+  productionEvery: goodsOf({ wood: 1, iron: 1, spice: 1, contraband: 1 }),
+  perishable: goodsOf({ spice: 1 }),
+  price: { base: 75, step: 25, steps: 7, start: goodsOf({ wood: 3, iron: 3, spice: 3, contraband: 3 }), volatility: goodsOf({ wood: 1, iron: 1, spice: 1, contraband: 1 }) },
+  demand: { min: goodsOf({ wood: 1, iron: 1 }), max: goodsOf({ wood: 3, iron: 3 }), extraPerPlayerAbove3: 1 },
+  seizable: goodsOf({ contraband: 1 }),
   capacity: { base: 2, shipyardBonus: 1 },
   ownShip: { cost: 100 },
   neutralShip: { freightPerUnit: 30 },
@@ -102,8 +124,9 @@ export const ECONOMY_RULES: EconomyRules = {
     insurance: { cash: 100, wood: 1, iron: 1, keepUnits: 1, payoutRatio: 0, guardRollBonus: 1 },
     salvage: { cash: 100, wood: 0, iron: 2, maxHoldersPerShip: 2, maxPerRound: 2 },
     exchange: { cash: 150, wood: 1, iron: 1, variant: 0, commissionPerUnit: 15, commissionCap: 4, directUnits: 1, directPriceSteps: 1 },
+    broker: { cash: 100, wood: 1, iron: 1, enabled: 0, unitCost: 1 },
   },
-  maxBuildingsPerPlayer: 4,
+  maxBuildingsPerPlayer: 5,
   buildingValueRatio: 0.5,
   voyageEvents: {
     copies: {
@@ -122,6 +145,10 @@ export const ECONOMY_RULES: EconomyRules = {
   },
 };
 
+function goodsOf(partial: Partial<Goods>): Goods {
+  return Object.fromEntries(MATERIALS.map((m) => [m, partial[m] ?? 0])) as Goods;
+}
+
 export function economyRules(mode: EconomyMode): EconomyRules {
   return { ...ECONOMY_RULES, mode };
 }
@@ -132,5 +159,5 @@ export const EXCHANGE_DIRECT_SALE = 2;
 
 export function buildingCostGoods(rules: EconomyRules, building: BuildingId): Goods {
   const { wood, iron } = rules.buildings[building];
-  return { wood, iron };
+  return goodsOf({ wood, iron });
 }

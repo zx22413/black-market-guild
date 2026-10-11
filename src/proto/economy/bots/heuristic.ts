@@ -3,7 +3,7 @@ import { shippingCost } from '../decisions';
 import { subtractGoods } from '../goods';
 import { buildingCostGoods } from '../rules';
 import type { EconomyDecider } from '../runner';
-import { MATERIALS, type EconomyAction } from '../types';
+import { MATERIALS, type EconomyAction, type Material } from '../types';
 import type { EconomyView } from '../view';
 import {
   arriveChance,
@@ -13,6 +13,9 @@ import {
   currentPrice,
   directSalePrice,
   expectedPrice,
+  expectedSeizure,
+  seizureRisk,
+  shiftValue,
   insuredValue,
   perUnitCost,
   stakeOn,
@@ -50,19 +53,27 @@ function scoreInvest(view: EconomyView, action: Invest, persona: EconomyPersonal
   const lastRound = view.round >= rules.rounds;
   let score = -shippingCost(rules, action.load);
   let cargoValue = 0;
+  const shift = (m: Material) => (action.manipulate?.material === m ? action.manipulate.delta : 0);
+  const brokerCost = (m: Material) => (action.manipulate?.material === m ? rules.buildings.broker.unitCost : 0);
   for (const m of MATERIALS) {
     const shipped = action.load[m];
-    const price = expectedPrice(view, m, shipped);
+    const price = expectedPrice(view, m, shipped, shift(m));
     const atRisk = shipped * price * (1 - p);
-    score += shipped * price * p - atRisk * persona.risk * (insured ? 0.5 : 1);
+    const kept = 1 - seizureRisk(view, m);
+    score += shipped * price * p * kept - atRisk * persona.risk * (insured ? 0.5 : 1);
     cargoValue += shipped * price;
     score += action.direct[m] * directSalePrice(view, m);
-    const keepEach = lastRound ? 0 : Math.max(0, currentPrice(view, m) * p - perUnitCost(rules)) * persona.patience;
-    score += (stock[m] - shipped - action.direct[m]) * keepEach;
+    const spoils = lastRound || rules.perishable[m] === 1;
+    const keepEach = spoils ? 0 : Math.max(0, currentPrice(view, m) * p - perUnitCost(rules)) * persona.patience;
+    score += (stock[m] - shipped - action.direct[m] - brokerCost(m)) * keepEach;
   }
-  const shippedUnits = action.load.wood + action.load.iron;
+  const shippedUnits = MATERIALS.reduce((sum, m) => sum + action.load[m], 0);
   if (insured && shippedUnits > 0) {
     score += (1 - p) * insuredValue(rules, shippedUnits, cargoValue / shippedUnits);
+  }
+  if (action.manipulate !== null) {
+    // The own-unit price effect is already in expectedPrice; add the relative effect on rivals.
+    score += shiftValue(view, action.manipulate.material, action.manipulate.delta, 0);
   }
   if (action.build !== null) {
     score += persona.builder * buildingWorth(view, action.build) - rules.buildings[action.build].cash;
@@ -84,7 +95,7 @@ function scoreDeploy(view: EconomyView, action: Deploy, persona: EconomyPersonal
       const boost = rules.roles.guard.rollModifier + (view.me.buildings.includes('insurance') ? rules.buildings.insurance.guardRollBonus : 0);
       const guarded = arriveChance(rules, boost);
       const escort = rules.mode === 'A' && stake === 0 ? rules.roles.guard.escortFee * guarded : 0;
-      return (guarded - base) * stake + escort - fee;
+      return (guarded - base) * stake + escort + expectedSeizure(view, ship) * guarded - fee;
     }
     case 'pirate': {
       const attacked = arriveChance(rules, rules.roles.pirate.modifier);

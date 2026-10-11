@@ -1,6 +1,6 @@
 import { nextInt } from '../../game/rng';
 import { hasCargoOn, shippingCost } from './decisions';
-import { addGoods, mapGoods, subtractGoods, units } from './goods';
+import { addGoods, mapGoods, only, subtractGoods, units } from './goods';
 import { buildingCostGoods } from './rules';
 import { chain, changeCash, playerOf, setStock, updatePlayer, type StepFn } from './state';
 import {
@@ -12,6 +12,7 @@ import {
   type EconShip,
   type Goods,
   type PlayerId,
+  type PlayerManipulation,
   type PublicShip,
 } from './types';
 
@@ -26,24 +27,29 @@ function investOf(state: EconomyState, playerId: PlayerId): InvestAction {
 }
 
 /**
- * Builds first (public), then loads and launches ships: Option A gives each loading player
- * their own ship with secret cargo, Option B puts every lot on the wood or iron neutral ship.
+ * Builds first (public), then broker shifts (public, each paid with one unit of the material),
+ * then loads and launches ships: Option A gives each loading player their own ship with secret
+ * cargo, Option B puts every lot on the neutral ship of its material.
  */
 export function resolveInvest(state: EconomyState): EconomyStep {
   const actions = state.players.map((p) => investOf(state, p.id));
   const builds: Build[] = actions.flatMap((a) => (a.build === null ? [] : [{ playerId: a.playerId, building: a.build }]));
   const built = chain(state, builds.map(build));
   const directSales = actions.filter((a) => units(a.direct) > 0).map((a) => ({ playerId: a.playerId, goods: a.direct }));
-  const withBuilds: EconomyState = { ...built.state, roundState: { ...built.state.roundState, builds, directSales } };
+  const manipulations: PlayerManipulation[] = actions.flatMap((a) => (a.manipulate === null ? [] : [{ playerId: a.playerId, ...a.manipulate }]));
+  const withBuilds: EconomyState = { ...built.state, roundState: { ...built.state.roundState, builds, directSales, manipulations } };
   const ships = launchShips(withBuilds, actions);
+  const brokerCost = (a: InvestAction) =>
+    a.manipulate === null ? mapGoods(() => 0) : only(a.manipulate.material, state.rules.buildings.broker.unitCost);
   const loaded = chain(withBuilds, [
-    ...actions.map((a) => unload(a.playerId, addGoods(a.load, a.direct))),
+    ...actions.map((a) => unload(a.playerId, addGoods(addGoods(a.load, a.direct), brokerCost(a)))),
     ...actions.map(payShipping),
   ]);
   const rolled = rollDice({ ...loaded.state, roundState: { ...loaded.state.roundState, ships } });
   const builtEvent = builds.length > 0 ? [{ type: 'buildings-built' as const, round: state.round, builds }] : [];
   const launched = ships.length > 0 ? [{ type: 'ships-launched' as const, round: state.round, ships: ships.map((s) => publicShip(state, s, null)) }] : [];
-  return { state: rolled, events: [...built.events, ...builtEvent, ...launched, ...loaded.events] };
+  const manipulated = manipulations.length > 0 ? [{ type: 'market-manipulated' as const, round: state.round, manipulations }] : [];
+  return { state: rolled, events: [...built.events, ...builtEvent, ...manipulated, ...launched, ...loaded.events] };
 }
 
 function build({ playerId, building }: Build): StepFn {

@@ -22,19 +22,23 @@ interface Prices {
 /**
  * Black-market settlement (proposal §12.1, §13.3): the new price is set by arrivals against the
  * demand card and applies to this round's sales; exchange direct sales count as arrivals.
- * Order: arrivals (smuggling, sales) → direct sales → sinkings (loot, seized goods) → escort fees
- * → exchange commission → insurance → salvage.
+ * Broker shifts adjust the demand card first. Order: arrivals (contraband seizure, smuggling,
+ * sales) → direct sales → sinkings (loot, seized goods) → escort fees → exchange commission →
+ * insurance → salvage → perishables spoil.
  */
 export function settleMarket(state: EconomyState): EconomyStep {
   const { rules } = state;
-  const { ships, demand } = state.roundState;
+  const { ships, manipulations } = state.roundState;
+  const demand = mapGoods((m) =>
+    Math.max(0, state.roundState.demand[m] + manipulations.filter((x) => x.material === m).reduce((sum, x) => sum + x.delta, 0)),
+  );
   const arrivedShips = ships.filter((s) => s.outcome === 'arrived');
   const sunkShips = ships.filter((s) => s.outcome === 'sank');
   const { directSales } = state.roundState;
   const arrived = sumGoods([...arrivedShips.flatMap((s) => s.cargo.map((lot) => lot.goods)), ...directSales.map((lot) => lot.goods)]);
   const prices: Prices = {
     before: state.prices,
-    after: mapGoods((m) => nextPriceStep(rules, state.prices[m], arrived[m], demand[m])),
+    after: mapGoods((m) => nextPriceStep(rules, m, state.prices[m], arrived[m], demand[m])),
   };
   const settled = chain(state, [
     ...arrivedShips.map((ship) => settleArrival(ship, prices)),
@@ -44,6 +48,7 @@ export function settleMarket(state: EconomyState): EconomyStep {
     payCommission,
     payInsurance(prices.before),
     salvage(sunkShips),
+    spoil,
   ]);
   const record = {
     round: state.round,
@@ -51,6 +56,7 @@ export function settleMarket(state: EconomyState): EconomyStep {
     wanted: state.roundState.wanted,
     builds: state.roundState.builds,
     directSales,
+    manipulations,
     ships,
     deployments: state.roundState.deployments,
     voyageEvent: state.roundState.voyageEvent,
@@ -113,25 +119,75 @@ function smuggledGoodsValue(state: EconomyState): number {
 }
 
 function settleArrival(ship: EconShip, prices: Prices): StepFn {
-  return (current) => {
+  return (state) => {
+    const guards = deployed(state, ship, 'guard');
+    const seized = seizeContraband(state, ship, guards, prices);
+    const current = seized.state;
     const proceeds = ship.cargo.map((lot) => ({
       playerId: lot.playerId,
-      amount: MATERIALS.reduce((sum, m) => sum + lot.goods[m] * salePrice(current, lot.playerId, m, prices), 0),
+      amount: MATERIALS.reduce((sum, m) => sum + lotUnitsSold(state, lot, guards, m) * salePrice(current, lot.playerId, m, prices), 0),
     }));
     const smugglers = deployed(current, ship, 'smuggler');
-    const guards = deployed(current, ship, 'guard');
-    if (smugglers.length === 0) {
-      return chain(current, payAll(proceeds, 'sale', ship.id));
-    }
-    if (guards.length > 0) {
-      return chain(current, [
-        ...payAll(proceeds, 'sale', ship.id),
-        ...catchSmugglers(ship, smugglers, guards),
-      ]);
-    }
-    return smuggle(current, ship, smugglers, proceeds);
+    const rest =
+      smugglers.length === 0
+        ? chain(current, payAll(proceeds, 'sale', ship.id))
+        : guards.length > 0
+          ? chain(current, [...payAll(proceeds, 'sale', ship.id), ...catchSmugglers(ship, smugglers, guards)])
+          : smuggle(current, ship, smugglers, proceeds);
+    return { state: rest.state, events: [...seized.events, ...rest.events] };
   };
 }
+
+/** Guards of other players on the ship: they confiscate that lot's seizable goods. */
+function inspectorsOf(guards: readonly PlayerId[], lot: CargoLot): PlayerId[] {
+  return guards.filter((id) => id !== lot.playerId);
+}
+
+/** Units of `material` the lot owner still sells after any confiscation. */
+function lotUnitsSold(state: EconomyState, lot: CargoLot, guards: readonly PlayerId[], material: Material): number {
+  return state.rules.seizable[material] === 1 && inspectorsOf(guards, lot).length > 0 ? 0 : lot.goods[material];
+}
+
+/**
+ * Contraband on an arrived ship is confiscated by any other player's guard on it: the bank pays
+ * its value at the settled price to those guards, split evenly (rounded down); it still counts as
+ * arrived.
+ */
+function seizeContraband(state: EconomyState, ship: EconShip, guards: readonly PlayerId[], prices: Prices): EconomyStep {
+  return ship.cargo.reduce<EconomyStep>(
+    (acc, lot) => {
+      const inspectors = inspectorsOf(guards, lot);
+      const seizedUnits = MATERIALS.filter((m) => state.rules.seizable[m] === 1).reduce((sum, m) => sum + lot.goods[m], 0);
+      if (inspectors.length === 0 || seizedUnits === 0) {
+        return acc;
+      }
+      const value = MATERIALS.filter((m) => state.rules.seizable[m] === 1).reduce(
+        (sum, m) => sum + lot.goods[m] * priceAt(state.rules, prices.after[m]),
+        0,
+      );
+      const each = Math.floor(value / inspectors.length);
+      const paid = chain(acc.state, payAll(inspectors.map((playerId) => ({ playerId, amount: each })), 'contraband-seized', ship.id));
+      return {
+        state: paid.state,
+        events: [
+          ...acc.events,
+          { type: 'contraband-seized', round: state.round, shipId: ship.id, ownerId: lot.playerId, units: seizedUnits, guards: inspectors },
+          ...paid.events,
+        ],
+      };
+    },
+    { state, events: [] },
+  );
+}
+
+/** Perishable goods left in any warehouse spoil at the end of the round. */
+const spoil: StepFn = (state) => ({
+  state: {
+    ...state,
+    players: state.players.map((p) => ({ ...p, stock: mapGoods((m) => (state.rules.perishable[m] === 1 ? 0 : p.stock[m])) })),
+  },
+  events: [],
+});
 
 /** Guards confiscate the goods (paid by the bank) and expose the smugglers, who pay a fine. */
 function catchSmugglers(ship: EconShip, smugglers: readonly PlayerId[], guards: readonly PlayerId[]): StepFn[] {
@@ -264,7 +320,7 @@ function keepGoods(playerId: PlayerId, kept: Goods, shipId: string): StepFn {
 }
 
 /**
- * Each sunk ship gives 1 unit of its most common material (wood on ties) to up to
+ * Each sunk ship gives 1 unit of its most common material (earlier in MATERIALS on ties) to up to
  * `maxHoldersPerShip` salvage holders in seat order who had no cargo on it, each capped per round.
  */
 function salvage(sunk: readonly EconShip[]): StepFn {
@@ -273,7 +329,7 @@ function salvage(sunk: readonly EconShip[]): StepFn {
     const holders = state.players.filter((p) => p.buildings.includes('salvage')).map((p) => p.id);
     const claims = sunk.flatMap((ship) => {
       const total = sumGoods(ship.cargo.map((lot) => lot.goods));
-      const material: Material = total.wood >= total.iron ? 'wood' : 'iron';
+      const material = MATERIALS.reduce<Material>((best, m) => (total[m] > total[best] ? m : best), 'wood');
       return total[material] > 0
         ? holders.filter((id) => !hasCargoOn(ship, id)).map((playerId) => ({ playerId, ship, material }))
         : [];

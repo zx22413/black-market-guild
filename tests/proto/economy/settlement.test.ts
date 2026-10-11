@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { economyRules, getEconomyLegalActions, type EconomyEvent, type EconomyState } from '../../../src/proto/economy';
-import { cashEvents, cashOf, playRound, start, stockOf, withBuildings, withDemand, withStock, withWanted } from './helpers';
+import { G, cashEvents, cashOf, playRound, start, stockOf, withBuildings, withDemand, withStock, withWanted } from './helpers';
 
-const W = (wood: number, iron = 0) => ({ wood, iron });
+const W = (wood: number, iron = 0) => G(wood, iron);
 
 function settled(events: readonly EconomyEvent[]) {
   const e = events.find((x) => x.type === 'market-settled');
@@ -24,18 +24,18 @@ describe('black market prices', () => {
   it('moves each price by arrivals against the demand card and sells at the new price', () => {
     const state = withDemand(start('A'), W(1, 1));
     const { state: next, events } = playRound(state, { loads: { p1: W(2), p2: W(1) } });
-    expect(settled(events)).toMatchObject({ arrived: W(3), priceBefore: W(3, 3), priceAfter: W(2, 4) });
+    expect(settled(events)).toMatchObject({ arrived: W(3), priceBefore: G(3, 3, 3, 3), priceAfter: G(2, 4, 3, 3) });
     expect(cashEvents(events, 'sale', 'p1')).toBe(250);
     expect(cashEvents(events, 'sale', 'p2')).toBe(125);
-    expect(next.prices).toEqual(W(2, 4));
+    expect(next.prices).toEqual(G(2, 4, 3, 3));
     expect(next.history).toHaveLength(1);
   });
 
   it('keeps the price when arrivals meet demand and clamps at the track ends', () => {
     const exact = playRound(withDemand(start('A'), W(2, 1)), { loads: { p1: W(2) } });
     expect(settled(exact.events).priceAfter.wood).toBe(3);
-    const top = playRound(withDemand({ ...start('A'), prices: W(6, 0) }, W(3, 1)), { loads: { p1: W(0, 2) } });
-    expect(settled(top.events).priceAfter).toEqual(W(6, 0));
+    const top = playRound(withDemand({ ...start('A'), prices: G(6, 0, 3, 3) }, W(3, 1)), { loads: { p1: W(0, 2) } });
+    expect(settled(top.events).priceAfter).toEqual(G(6, 0, 3, 3));
   });
 
   it('lets the exchange holder sell at the better of the old and new price', () => {
@@ -70,7 +70,7 @@ describe('sinking, loot and the wanted bonus', () => {
     expect(cashEvents(tie.events, 'insurance')).toBe(0);
     // 2/2 at start − 1/1 loaded + 1 wood kept + 1/1 production.
     expect(stockOf(tie.state, 'p1')).toEqual(W(3, 2));
-    const pricier = playRound({ ...state, prices: W(3, 5) }, { loads: { p1: W(1, 1) }, rolls: { 'r1-p1': 1 } });
+    const pricier = playRound({ ...state, prices: G(3, 5, 3, 3) }, { loads: { p1: W(1, 1) }, rolls: { 'r1-p1': 1 } });
     expect(stockOf(pricier.state, 'p1')).toEqual(W(2, 3));
   });
 

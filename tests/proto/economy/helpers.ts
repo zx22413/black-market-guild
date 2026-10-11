@@ -8,11 +8,17 @@ import {
   type EconomyRules,
   type EconomyState,
   type Goods,
+  type Manipulation,
   type ProtoVoyageEventId,
 } from '../../../src/proto/economy';
 import type { RoleId } from '../../../src/game';
 
 export const IDS = ['p1', 'p2', 'p3', 'p4'] as const;
+
+/** Goods with all four materials; unspecified ones are 0. */
+export function G(wood: number, iron = 0, spice = 0, contraband = 0): Goods {
+  return { wood, iron, spice, contraband };
+}
 
 export function start(mode: EconomyMode, players = 3, rules?: EconomyRules): EconomyState {
   const created = createEconomyMatch({
@@ -57,6 +63,7 @@ export interface RoundPlan {
   readonly loads: Readonly<Record<string, Goods>>;
   readonly builds?: Readonly<Record<string, BuildingId>>;
   readonly direct?: Readonly<Record<string, Goods>>;
+  readonly manipulate?: Readonly<Record<string, Manipulation>>;
   /** Raw roll per ship id; ships not listed roll 6. */
   readonly rolls?: Readonly<Record<string, number>>;
   readonly roles?: Readonly<Record<string, readonly [RoleId, string]>>;
@@ -72,8 +79,9 @@ export function playRound(state: EconomyState, plan: RoundPlan): { state: Econom
       type: 'invest',
       playerId: p.id,
       build: plan.builds?.[p.id] ?? null,
-      load: plan.loads[p.id] ?? { wood: 0, iron: 0 },
-      direct: plan.direct?.[p.id] ?? { wood: 0, iron: 0 },
+      load: plan.loads[p.id] ?? G(0),
+      direct: plan.direct?.[p.id] ?? G(0),
+      manipulate: plan.manipulate?.[p.id] ?? null,
     });
     current = step.state;
     events.push(...step.events);
