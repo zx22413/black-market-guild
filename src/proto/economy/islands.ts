@@ -24,6 +24,10 @@ export interface IslandTrait {
   readonly capacityDelta: number;
   /** 1 = smugglers cannot cover this player's contraband. */
   readonly uncoverable: number;
+  /** Per material: 1 = this player only gets half (rounded down) of a price rise when selling. */
+  readonly halfRise: Goods;
+  /** Extra ships this player's intel merchant may peek at (and choose to reroll instead). */
+  readonly intelPeeks: number;
 }
 
 const NO_FEES: Readonly<Record<EconRoleId, number>> = { intel: 0, guard: 0, pirate: 0, smuggler: 0, broker: 0 };
@@ -38,6 +42,8 @@ export const NEUTRAL_TRAIT: IslandTrait = {
   shipCostDelta: 0,
   capacityDelta: 0,
   uncoverable: 0,
+  halfRise: { wood: 0, iron: 0, spice: 0, contraband: 0 },
+  intelPeeks: 0,
 };
 
 function trait(patch: Partial<IslandTrait>): IslandTrait {
@@ -46,18 +52,16 @@ function trait(patch: Partial<IslandTrait>): IslandTrait {
 
 const every = (patch: Partial<Goods>): Goods => ({ ...NEUTRAL_TRAIT.productionEvery, ...patch });
 
-/**
- * Placeholder traits (proposal §28, revised from §27); numbers are for simulation only. Pirate
- * cove and the spice isles have no drawback yet.
- */
+/** Placeholder traits (proposal §29); numbers are for simulation only. */
 export const DEFAULT_ISLAND_TRAITS: Readonly<Record<IslandId, IslandTrait>> = {
-  'spice-isles': trait({ keepsPerishable: 1 }),
-  'pirate-cove': trait({ pirateModifier: -1 }),
+  'spice-isles': trait({ keepsPerishable: 1, halfRise: every({ spice: 1 }) }),
+  'pirate-cove': trait({ pirateModifier: -1, feeDelta: { ...NO_FEES, guard: 25 } }),
   lumber: trait({ productionEvery: every({ wood: 1, iron: 3 }) }),
   mine: trait({ productionEvery: every({ iron: 1, wood: 3 }) }),
   'smuggler-port': trait({ productionEvery: every({ contraband: 1 }), uncoverable: 1, feeDelta: { ...NO_FEES, guard: 50 } }),
   'free-port': trait({ shipCostDelta: -50, capacityDelta: -1 }),
-  fortress: trait({ guardModifier: 1, feeDelta: { ...NO_FEES, pirate: 50 } }),
+  fortress: trait({ guardModifier: 1, feeDelta: { ...NO_FEES, pirate: 25 } }),
+  lighthouse: trait({ intelPeeks: 1, feeDelta: { ...NO_FEES, intel: -50 }, shipCostDelta: 50 }),
 };
 
 export function traitOf(rules: EconomyRules, island: IslandId | null): IslandTrait {

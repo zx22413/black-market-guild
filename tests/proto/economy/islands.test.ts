@@ -86,7 +86,7 @@ describe('island traits', () => {
     const { events } = playRound(state, { loads: { p2: G(1) }, roles: { p1: ['guard', 'r1-p2'] } });
     expect(resolved(events, 'r1-p2').guard).toBe(2);
     const pirates = playRound(state, { loads: { p2: G(1) }, roles: { p1: ['pirate', 'r1-p2'] } });
-    expect(cashEvents(pirates.events, 'role-fee', 'p1')).toBe(-150);
+    expect(cashEvents(pirates.events, 'role-fee', 'p1')).toBe(-125);
   });
 
   it('lets the smuggler port make contraband every round but not have it covered', () => {
@@ -148,5 +148,42 @@ describe('island draft (draw 2, keep 1)', () => {
     const state = start('A', 3, draftRules());
     const notOffered = ISLAND_IDS.find((i) => !state.islandOffers.p1!.includes(i))!;
     expect(applyEconomyAction(state, { type: 'choose-island', playerId: 'p1', island: notOffered }).ok).toBe(false);
+  });
+});
+
+describe('round 15 island traits', () => {
+  it('gives the spice isles only half of a spice price rise', () => {
+    const base = islandRules();
+    const rules = { ...base, price: { ...base.price, volatility: G(1, 1, 2, 1) } };
+    const state = withDemand(withIsland(start('A', 3, rules), 'p1', 'spice-isles'), G(1, 1, 3, 0));
+    const { events } = playRound(state, { loads: { p1: G(0, 0, 1), p2: G(0, 0, 1) } });
+    // Spice arrivals 2 < demand 3: up two steps to 200; the spice isles sell one step up (175).
+    expect(cashEvents(events, 'sale', 'p1')).toBe(175);
+    expect(cashEvents(events, 'sale', 'p2')).toBe(200);
+  });
+
+  it('charges pirate cove 25 G more for guards', () => {
+    const state = withIsland(start('A', 3, islandRules()), 'p1', 'pirate-cove');
+    const { events } = playRound(state, { loads: { p2: G(1) }, roles: { p1: ['guard', 'r1-p2'] } });
+    expect(cashEvents(events, 'role-fee', 'p1')).toBe(-75);
+  });
+
+  it('lets the lighthouse deploy intel for free, peek at a second ship and reroll it', () => {
+    let state = withIsland(start('A', 3, islandRules()), 'p1', 'lighthouse');
+    for (const id of ['p1', 'p2', 'p3']) {
+      state = apply(state, { type: 'invest', playerId: id, build: null, load: id === 'p1' ? G(0) : G(1), direct: G(0), manipulate: null }).state;
+    }
+    const peeks = getEconomyLegalActions(state, 'p1').filter((a) => a.type === 'deploy-role' && a.role === 'intel' && a.peekShipId !== null);
+    expect(peeks).toHaveLength(2);
+    expect(getEconomyLegalActions(state, 'p2').every((a) => a.type === 'deploy-role' && a.peekShipId === null)).toBe(true);
+    state = { ...state, roundState: { ...state.roundState, ships: state.roundState.ships.map((s) => ({ ...s, rawRoll: 2 })) } };
+    state = apply(state, { type: 'deploy-role', playerId: 'p1', role: 'intel', targetShipId: 'r1-p2', bet: null, peekShipId: 'r1-p3' }).state;
+    state = apply(state, { type: 'deploy-role', playerId: 'p2', role: null, targetShipId: null, bet: null, peekShipId: null }).state;
+    state = apply(state, { type: 'deploy-role', playerId: 'p3', role: null, targetShipId: null, bet: null, peekShipId: null }).state;
+    expect(getEconomyView(state, 'p1').intelPeek).toEqual({ shipId: 'r1-p3', roll: 2 });
+    expect(getEconomyLegalActions(state, 'p1').map((a) => (a.type === 'intel-reroll' ? a.rerollShipId : 'x'))).toEqual([null, 'r1-p2', 'r1-p3']);
+    const after = apply(state, { type: 'intel-reroll', playerId: 'p1', rerollShipId: 'r1-p3' });
+    expect(after.events.some((e) => e.type === 'roles-revealed' && e.rerolledShipIds.includes('r1-p3') && !e.rerolledShipIds.includes('r1-p2'))).toBe(true);
+    expect(cashEvents(after.events, 'role-fee', 'p1')).toBe(0);
   });
 });

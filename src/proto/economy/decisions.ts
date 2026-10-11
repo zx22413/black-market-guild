@@ -77,11 +77,11 @@ export function getEconomyLegalActions(state: EconomyState, playerId: PlayerId):
       return investOptions(state, playerId);
     case 'role-deployment':
       return deployOptions(state, playerId);
-    case 'intel-reroll':
-      return [
-        { type: 'intel-reroll', playerId, reroll: false },
-        { type: 'intel-reroll', playerId, reroll: true },
-      ];
+    case 'intel-reroll': {
+      const d = state.roundState.deployments.find((x) => x.playerId === playerId && x.role === 'intel');
+      const looked = [d?.targetShipId ?? null, d?.peekShipId ?? null].filter((id): id is string => id !== null);
+      return [null, ...looked].map((rerollShipId): EconomyAction => ({ type: 'intel-reroll', playerId, rerollShipId }));
+    }
   }
 }
 
@@ -171,7 +171,7 @@ function deployOptions(state: EconomyState, playerId: PlayerId): EconomyAction[]
   const player = playerOf(state, playerId);
   const { ships } = state.roundState;
   const { rules } = state;
-  const options: EconomyAction[] = [{ type: 'deploy-role', playerId, role: null, targetShipId: null, bet: null }];
+  const options: EconomyAction[] = [{ type: 'deploy-role', playerId, role: null, targetShipId: null, bet: null, peekShipId: null }];
   for (const role of ECON_ROLE_IDS) {
     if (player.cash < roleFee(rules, player.island, role) || !mayDeploy(state, player, role)) {
       continue;
@@ -180,14 +180,22 @@ function deployOptions(state: EconomyState, playerId: PlayerId): EconomyAction[]
       if (rules.roles.broker.enabled === 1) {
         materialsInPlay(rules).forEach((material) =>
           ([1, -1] as const).forEach((delta) =>
-            options.push({ type: 'deploy-role', playerId, role, targetShipId: null, bet: { material, delta } }),
+            options.push({ type: 'deploy-role', playerId, role, targetShipId: null, bet: { material, delta }, peekShipId: null }),
           ),
         );
       }
       continue;
     }
     const targets = role === 'smuggler' ? ships.filter((s) => smugglerMayTarget(state.rules, s, playerId)) : ships;
-    targets.forEach((ship) => options.push({ type: 'deploy-role', playerId, role, targetShipId: ship.id, bet: null }));
+    const peeks = role === 'intel' && traitOf(rules, player.island).intelPeeks > 0;
+    targets.forEach((ship) => {
+      options.push({ type: 'deploy-role', playerId, role, targetShipId: ship.id, bet: null, peekShipId: null });
+      if (peeks) {
+        ships
+          .filter((other) => other.id !== ship.id)
+          .forEach((other) => options.push({ type: 'deploy-role', playerId, role, targetShipId: ship.id, bet: null, peekShipId: other.id }));
+      }
+    });
   }
   return options;
 }
@@ -204,9 +212,9 @@ export function economyActionKey(action: EconomyAction): string {
         action.manipulate === null ? 'none' : `${action.manipulate.material}${action.manipulate.delta}`,
       ].join('|');
     case 'deploy-role':
-      return `${action.type}|${action.playerId}|${action.role}|${action.targetShipId}|${action.bet === null ? 'none' : `${action.bet.material}${action.bet.delta}`}`;
+      return `${action.type}|${action.playerId}|${action.role}|${action.targetShipId}|${action.bet === null ? 'none' : `${action.bet.material}${action.bet.delta}`}|${action.peekShipId}`;
     case 'intel-reroll':
-      return `${action.type}|${action.playerId}|${action.reroll}`;
+      return `${action.type}|${action.playerId}|${action.rerollShipId}`;
     case 'choose-island':
       return `${action.type}|${action.playerId}|${action.island}`;
   }

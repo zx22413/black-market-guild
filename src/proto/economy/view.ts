@@ -43,6 +43,8 @@ export interface EconomyView {
   readonly myHand: readonly EconRoleId[] | null;
   /** The intel merchant's view of its target: the rerolled value if rerolled, else the raw roll. */
   readonly intelRoll: number | null;
+  /** Lighthouse intel: the second ship looked at and its roll. */
+  readonly intelPeek: { readonly shipId: string; readonly roll: number | null } | null;
 }
 
 export function getEconomyView(state: EconomyState, playerId: PlayerId): EconomyView {
@@ -71,5 +73,14 @@ export function getEconomyView(state: EconomyState, playerId: PlayerId): Economy
     myHand: roundState.hands[playerId] ?? null,
     myIslandOffers: state.islandOffers[playerId] ?? [],
     intelRoll: target === undefined ? null : (target.rerolledRoll ?? target.rawRoll),
+    intelPeek: peekView(state, myDeployment),
   };
+}
+
+function peekView(state: EconomyState, deployment: Deployment | null): EconomyView['intelPeek'] {
+  if (deployment?.role !== 'intel' || deployment.peekShipId === null) {
+    return null;
+  }
+  const ship = state.roundState.ships.find((s) => s.id === deployment.peekShipId);
+  return { shipId: deployment.peekShipId, roll: ship === undefined ? null : (ship.rerolledRoll ?? ship.rawRoll) };
 }

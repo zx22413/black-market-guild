@@ -152,8 +152,10 @@ function scoreDeploy(view: EconomyView, action: Deploy, persona: EconomyPersonal
       const guardedChance = 0.25;
       return base * ((1 - guardedChance) * rules.roles.smuggler.goodsValue - guardedChance * rules.roles.smuggler.caughtFine) - fee;
     }
-    case 'intel':
-      return stake * (1 - base) * base * 0.5 - fee;
+    case 'intel': {
+      const peek = view.ships.find((s) => s.id === action.peekShipId);
+      return (stake + (peek === undefined ? 0 : stakeOn(view, peek))) * (1 - base) * base * 0.5 - fee;
+    }
   }
 }
 
@@ -164,10 +166,16 @@ function score(view: EconomyView, action: EconomyAction, persona: EconomyPersona
     case 'deploy-role':
       return scoreDeploy(view, action, persona);
     case 'intel-reroll': {
-      const ship = view.ships.find((s) => s.id === view.myDeployment?.targetShipId);
-      const wantsArrival = ship !== undefined && stakeOn(view, ship) > 0;
-      const bad = view.intelRoll !== null && view.intelRoll < view.rules.sailing.successMin;
-      return action.reroll === (wantsArrival && bad) ? 1 : 0;
+      // Reroll a looked-at ship carrying my cargo whose roll would sink it; prefer the target.
+      const looked = [
+        { shipId: view.myDeployment?.targetShipId ?? null, roll: view.intelRoll },
+        { shipId: view.intelPeek?.shipId ?? null, roll: view.intelPeek?.roll ?? null },
+      ];
+      const want = looked.find(({ shipId, roll }) => {
+        const ship = view.ships.find((s) => s.id === shipId);
+        return ship !== undefined && stakeOn(view, ship) > 0 && roll !== null && roll < view.rules.sailing.successMin;
+      });
+      return action.rerollShipId === (want?.shipId ?? null) ? 1 : 0;
     }
     case 'choose-island':
       return persona.islands?.[action.island] ?? 0;

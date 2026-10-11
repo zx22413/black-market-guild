@@ -80,7 +80,10 @@ export function settleMarket(state: EconomyState): EconomyStep {
 
 /** Exchange variant 0 sells at the better of the old and new price; everyone else at the new price. */
 export function salePrice(state: EconomyState, playerId: PlayerId, material: Material, prices: Prices): number {
-  const after = priceAt(state.rules, prices.after[material]);
+  const before = prices.before[material];
+  const rise = prices.after[material] - before;
+  const halved = rise > 0 && traitOf(state.rules, playerOf(state, playerId).island).halfRise[material] === 1;
+  const after = priceAt(state.rules, halved ? before + Math.floor(rise / 2) : prices.after[material]);
   const floor = state.rules.buildings.exchange.variant === EXCHANGE_PRICE_FLOOR && holds(state, playerId, 'exchange');
   return floor ? Math.max(after, priceAt(state.rules, prices.before[material])) : after;
 }

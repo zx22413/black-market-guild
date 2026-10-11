@@ -186,6 +186,7 @@ const ISLAND_LABELS: Record<string, string> = {
   'smuggler-port': '走私港',
   'free-port': '自由港',
   fortress: '要塞島',
+  lighthouse: '燈塔島',
 };
 const MATERIAL_LABELS: Record<string, string> = { wood: '木材', iron: '鐵礦', spice: '香料', contraband: '違禁品' };
 

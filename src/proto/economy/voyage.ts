@@ -8,7 +8,7 @@ export function resolveDeployment(state: EconomyState): EconomyStep {
   const deployments: Deployment[] = state.players.flatMap(({ id }) => {
     const action = state.roundState.submissions[id];
     return action?.type === 'deploy-role' && action.role !== null && (action.targetShipId !== null || action.bet !== null)
-      ? [{ playerId: id, role: action.role, targetShipId: action.targetShipId, bet: action.bet }]
+      ? [{ playerId: id, role: action.role, targetShipId: action.targetShipId, bet: action.bet, peekShipId: action.peekShipId }]
       : [];
   });
   return { state: { ...state, roundState: { ...state.roundState, deployments } }, events: [] };
@@ -21,7 +21,12 @@ export function resolveIntelRerolls(state: EconomyState): EconomyStep {
   const ships = state.roundState.ships.map((ship) => {
     const wants = deployments.some((d) => {
       const action = submissions[d.playerId];
-      return d.role === 'intel' && d.targetShipId === ship.id && action?.type === 'intel-reroll' && action.reroll;
+      return (
+        d.role === 'intel' &&
+        (d.targetShipId === ship.id || d.peekShipId === ship.id) &&
+        action?.type === 'intel-reroll' &&
+        action.rerollShipId === ship.id
+      );
     });
     if (!wants) {
       return ship;

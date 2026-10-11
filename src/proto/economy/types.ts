@@ -35,7 +35,7 @@ export const ECON_ROLE_IDS = [...ROLE_IDS, 'broker'] as const;
 export type EconRoleId = (typeof ECON_ROLE_IDS)[number];
 
 /** Island traits (proposal §27). */
-export const ISLAND_IDS = ['spice-isles', 'pirate-cove', 'lumber', 'mine', 'smuggler-port', 'free-port', 'fortress'] as const;
+export const ISLAND_IDS = ['spice-isles', 'pirate-cove', 'lumber', 'mine', 'smuggler-port', 'free-port', 'fortress', 'lighthouse'] as const;
 export type IslandId = (typeof ISLAND_IDS)[number];
 
 /** `island-choice` runs once before round 1 when islands are drafted (draw 2, keep 1). */
@@ -61,8 +61,11 @@ export type EconomyAction =
       /** Ship roles target a ship; the broker targets a material and direction instead. */
       readonly targetShipId: ShipId | null;
       readonly bet: Manipulation | null;
+      /** Lighthouse intel only: a second ship to peek at (and possibly reroll). */
+      readonly peekShipId: ShipId | null;
     }
-  | { readonly type: 'intel-reroll'; readonly playerId: PlayerId; readonly reroll: boolean }
+  /** Reroll one ship the intel merchant looked at, or none. */
+  | { readonly type: 'intel-reroll'; readonly playerId: PlayerId; readonly rerollShipId: ShipId | null }
   | { readonly type: 'choose-island'; readonly playerId: PlayerId; readonly island: IslandId };
 
 export const PHASE_ACTION_TYPE: Readonly<Record<EconomyPhase, EconomyAction['type']>> = {
@@ -106,6 +109,7 @@ export interface Deployment {
   /** null for the broker. */
   readonly targetShipId: ShipId | null;
   readonly bet: Manipulation | null;
+  readonly peekShipId: ShipId | null;
 }
 
 export interface Build {

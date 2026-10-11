@@ -103,8 +103,8 @@ export function playRound(state: EconomyState, plan: RoundPlan): { state: Econom
       const step = apply(
         current,
         bet !== undefined
-          ? { type: 'deploy-role', playerId: p.id, role: 'broker', targetShipId: null, bet }
-          : { type: 'deploy-role', playerId: p.id, role: role?.[0] ?? null, targetShipId: role?.[1] ?? null, bet: null },
+          ? { type: 'deploy-role', playerId: p.id, role: 'broker', targetShipId: null, bet, peekShipId: null }
+          : { type: 'deploy-role', playerId: p.id, role: role?.[0] ?? null, targetShipId: role?.[1] ?? null, bet: null, peekShipId: null },
       );
       current = step.state;
       events.push(...step.events);
@@ -116,7 +116,7 @@ export function playRound(state: EconomyState, plan: RoundPlan): { state: Econom
     if (next === undefined) {
       break;
     }
-    const step = apply(current, { type: 'intel-reroll', playerId: next.playerId, reroll: false });
+    const step = apply(current, { type: 'intel-reroll', playerId: next.playerId, rerollShipId: null });
     current = step.state;
     events.push(...step.events);
   }
