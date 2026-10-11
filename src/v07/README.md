@@ -46,4 +46,8 @@ V0.7 的 Bot，由原型 `src/proto/economy/bots` 移植。介面與 V0.6 相同
 
 V0.7 的 Match Runner，程式與 `src/match` 相同（說明見 [`src/match/README.md`](../match/README.md)），只改接 `src/v07/game` 與 `src/v07/bots`，預設規則是 `RULES_V07`：`setupFromSeats`、`runMatchSync`、`runMatch`、`replayMatch`、`botController`。V0.6 的 UI 與連線層仍使用 `src/match`，搬遷到第 4、5 階段時改接這裡。測試在 `tests/v07/match/`。
 
+## `online/`
+
+V0.7 的連線房間，程式與 `src/online` 相同（說明見 [`src/online/README.md`](../online/README.md)），改接 V0.7 的 Runner 與 Bot：`PROTOCOL_VERSION` 為 2、座位數與起始現金取自 `RULES_V07`、空位由 V0.7 個性的 Bot 補上。伺服器入口是 `server/worker-v07.ts`（共用的 Worker／Durable Object 程式在 `server/rooms.ts`），只在本機以 `npm run server:dev:v07`（`wrangler.v07.jsonc`，port 8788）執行，不部署；`npm run online:smoke` 對它跑一局無頭連線測試。測試在 `tests/v07/online/`。
+
 批量模擬：`npm run simulate`（`scripts/simulate.ts`、`scripts/sim-stats.ts`）已改為 V0.7，統計只取自對局紀錄的公開事件與最終狀態。

@@ -2,7 +2,7 @@
 
 房主開房、朋友用連結加入、空位由 Bot 補上的線上對局。設計與限制見 [`docs/architecture.md`](../../docs/architecture.md) 第 8 節。
 
-環境無關（由 `tsconfig.engine.json` 與 `tsconfig.server.json` 強制），同時給 Cloudflare 伺服器（`server/worker.ts`）與瀏覽器（`src/ui/online/`）使用。
+環境無關（由 `tsconfig.engine.json` 與 `tsconfig.server.json` 強制），同時給 Cloudflare 伺服器（`server/worker.ts`，共用程式在 `server/rooms.ts`）與瀏覽器（`src/ui/online/`）使用。V0.7 版本在 `src/v07/online`。
 
 ## 檔案
 

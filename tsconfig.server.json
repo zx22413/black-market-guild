@@ -4,5 +4,5 @@
     "lib": ["ES2022"],
     "types": ["@cloudflare/workers-types"]
   },
-  "include": ["server", "src/game", "src/bots", "src/match", "src/online"]
+  "include": ["server", "src/game", "src/bots", "src/match", "src/online", "src/v07"]
 }

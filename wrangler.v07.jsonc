@@ -1,0 +1,12 @@
+// Local-only Worker for the V0.7 online rooms: `npm run server:dev:v07` (port 8788). Never deployed;
+// replaces wrangler.jsonc when the V0.7 migration cuts over (docs/v07-migration-plan.md stage 6).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "black-market-guild-v07",
+  "main": "server/worker-v07.ts",
+  "compatibility_date": "2025-09-01",
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "RoomObject" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["RoomObject"] }]
+}
