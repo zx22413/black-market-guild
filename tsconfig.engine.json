@@ -4,5 +4,5 @@
     "lib": ["ES2022"],
     "types": []
   },
-  "include": ["src/game", "src/bots", "src/match", "src/online", "src/proto"]
+  "include": ["src/game", "src/bots", "src/match", "src/online", "src/proto", "src/v07"]
 }

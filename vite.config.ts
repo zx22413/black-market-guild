@@ -8,7 +8,7 @@ export default defineConfig({
   test: {
     include: ['tests/**/*.test.ts'],
     coverage: {
-      include: ['src/game/**/*.ts', 'src/bots/**/*.ts', 'src/match/**/*.ts', 'src/proto/**/*.ts'],
+      include: ['src/game/**/*.ts', 'src/bots/**/*.ts', 'src/match/**/*.ts', 'src/proto/**/*.ts', 'src/v07/**/*.ts'],
       thresholds: { lines: 80, functions: 80, branches: 80, statements: 80 },
     },
   },
