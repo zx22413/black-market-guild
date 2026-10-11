@@ -111,6 +111,8 @@ export interface EconPlayer {
   readonly name: string;
   readonly cash: number;
   readonly blackMoney: number;
+  /** Round each role was last deployed (role-hand cycle mode); public once roles are revealed. */
+  readonly lastUsed: Readonly<Partial<Record<EconRoleId, number>>>;
   readonly buildings: readonly BuildingId[];
   readonly stock: Goods;
 }
@@ -122,6 +124,8 @@ export interface EconRound {
   /** Warehouse contents after production, public before anyone loads. */
   readonly stockAtStart: Readonly<Record<PlayerId, Goods>>;
   readonly voyageEvent: ProtoVoyageEventId | null;
+  /** Role-hand draw mode: each player's private hand this round; empty otherwise. */
+  readonly hands: Readonly<Record<PlayerId, readonly EconRoleId[]>>;
   readonly submissions: Readonly<Record<PlayerId, EconomyAction>>;
   readonly builds: readonly Build[];
   /** Secret until settlement, like Option A cargo. */

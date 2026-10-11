@@ -1,4 +1,5 @@
 import { covers, enumerateGoods, subtractGoods, units } from './goods';
+import { mayDeploy } from './hands';
 import { EXCHANGE_DIRECT_SALE, buildingCostGoods, type EconomyRules } from './rules';
 import { playerOf } from './state';
 import {
@@ -162,12 +163,12 @@ export function carriesOwnSeizable(rules: EconomyRules, ship: EconShip, playerId
 
 /** No role, or any affordable role on a sailing ship (see smugglerMayTarget). */
 function deployOptions(state: EconomyState, playerId: PlayerId): EconomyAction[] {
-  const { cash } = playerOf(state, playerId);
+  const player = playerOf(state, playerId);
   const { ships } = state.roundState;
   const { rules } = state;
   const options: EconomyAction[] = [{ type: 'deploy-role', playerId, role: null, targetShipId: null, bet: null }];
   for (const role of ECON_ROLE_IDS) {
-    if (cash < rules.roles[role].fee) {
+    if (player.cash < rules.roles[role].fee || !mayDeploy(state, player, role)) {
       continue;
     }
     if (role === 'broker') {

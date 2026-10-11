@@ -2,6 +2,7 @@ import { getEconomyDeciders } from './decisions';
 import { addGoods, mapGoods } from './goods';
 import { resolveInvest } from './invest';
 import { chain, changeCash } from './state';
+import { dealHands, markUsed } from './hands';
 import { computeEconomyResult } from './scoring';
 import { settleMarket } from './settlement';
 import type { EconomyAction, EconomyEvent, EconomyPhase, EconomyState, EconomyStep, Goods, PlayerId } from './types';
@@ -46,9 +47,21 @@ export function openRound(base: Omit<EconomyState, 'roundState'>, round: number)
     phase: 'invest',
     players,
     demandDeck,
-    roundState: { demand, wanted, stockAtStart, voyageEvent: null, submissions: {}, builds: [], directSales: [], manipulations: [], ships: [], deployments: [] },
+    roundState: {
+      demand,
+      wanted,
+      stockAtStart,
+      voyageEvent: null,
+      hands: {},
+      submissions: {},
+      builds: [],
+      directSales: [],
+      manipulations: [],
+      ships: [],
+      deployments: [],
+    },
   };
-  return runFrom(state, 0, [{ type: 'round-started', round, demand, wanted, prices: base.prices }]);
+  return runFrom(dealHands(state), 0, [{ type: 'round-started', round, demand, wanted, prices: base.prices }]);
 }
 
 function runFrom(state: EconomyState, index: number, events: readonly EconomyEvent[]): EconomyStep {
@@ -98,8 +111,10 @@ function resolvePhase(state: EconomyState, phase: EconomyPhase): EconomyStep {
   switch (phase) {
     case 'invest':
       return resolveInvest(state);
-    case 'role-deployment':
-      return resolveDeployment(state);
+    case 'role-deployment': {
+      const locked = resolveDeployment(state);
+      return { state: markUsed(locked.state), events: locked.events };
+    }
     case 'intel-reroll':
       return resolveIntelRerolls(state);
   }

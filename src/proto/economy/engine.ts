@@ -90,6 +90,7 @@ export function createEconomyMatch(config: EconomyMatchConfig): EconomyResultOf<
         name,
         cash: rules.startingCash,
         blackMoney: 0,
+        lastUsed: {},
         buildings: [],
         stock: rules.startingStock,
       })),

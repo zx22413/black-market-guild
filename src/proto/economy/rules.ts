@@ -1,4 +1,4 @@
-import { MATERIALS, type BuildingId, type Goods, type ProtoVoyageEventId } from './types';
+import { MATERIALS, type BuildingId, type EconRoleId, type Goods, type ProtoVoyageEventId } from './types';
 
 /**
  * Prototype numbers from docs/proposals/2026-10-economy-rework.md §13.2. Every value is a
@@ -79,6 +79,17 @@ export interface EconomyRules {
      * `enabled` 0 = not deployable.
      */
     readonly broker: { readonly fee: number; readonly enabled: number; readonly shift: number; readonly payout: number };
+    /**
+     * Role hands (proposal §26). `mode` 0: any role. 1: draw `size` cards each round from a
+     * personal deck with `copies` of each enabled role. 2: a role used in round r is unavailable
+     * until round r + cooldown + 1.
+     */
+    readonly hand: {
+      readonly mode: number;
+      readonly size: number;
+      readonly copies: Readonly<Record<EconRoleId, number>>;
+      readonly cooldown: number;
+    };
     readonly smuggler: {
       readonly fee: number;
       readonly goodsValue: number;
@@ -133,7 +144,7 @@ export interface EconomyRules {
 }
 
 export const ECONOMY_RULES: EconomyRules = {
-  version: 'economy-proto-8',
+  version: 'economy-proto-9',
   mode: 'A',
   players: { min: 3, max: 4 },
   rounds: 6,
@@ -154,6 +165,7 @@ export const ECONOMY_RULES: EconomyRules = {
     guard: { fee: 50, rollModifier: 1, escortFee: 75, escortWhenSeizing: 0 },
     pirate: { fee: 100, modifier: -1, loot: 150 },
     broker: { fee: 50, enabled: 0, shift: 1, payout: 50 },
+    hand: { mode: 0, size: 3, copies: { intel: 2, guard: 2, pirate: 2, smuggler: 2, broker: 2 }, cooldown: 1 },
     smuggler: { fee: 0, goodsValue: 50, caughtFine: 200, coversSeizable: 1, anonymous: 1 },
   },
   wanted: { lootBonus: 100 },

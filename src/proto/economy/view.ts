@@ -6,6 +6,7 @@ import type {
   Deployment,
   EconPlayer,
   EconomyPhase,
+  EconRoleId,
   EconomyState,
   Goods,
   PlayerId,
@@ -34,6 +35,8 @@ export interface EconomyView {
   readonly wanted: readonly PlayerId[];
   readonly ships: readonly PublicShip[];
   readonly myDeployment: Deployment | null;
+  /** My role hand this round (draw mode); null when every role is open. */
+  readonly myHand: readonly EconRoleId[] | null;
   /** The intel merchant's view of its target: the rerolled value if rerolled, else the raw roll. */
   readonly intelRoll: number | null;
 }
@@ -60,6 +63,7 @@ export function getEconomyView(state: EconomyState, playerId: PlayerId): Economy
     wanted: roundState.wanted,
     ships: roundState.ships.map((s) => publicShip(state, s, playerId)),
     myDeployment,
+    myHand: roundState.hands[playerId] ?? null,
     intelRoll: target === undefined ? null : (target.rerolledRoll ?? target.rawRoll),
   };
 }
