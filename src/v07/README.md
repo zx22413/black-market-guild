@@ -25,3 +25,19 @@
 私有事件：選島選項（`island-offers`）、自己船上的貨（`cargo-loaded`）、情報商人看到的骰值（`intel-report`、`intel-reroll-result`）。
 
 測試在 `tests/v07/game/`，依設計文件章節分檔。
+
+## `bots/`
+
+V0.7 的 Bot，由原型 `src/proto/economy/bots` 移植。介面與 V0.6 相同：`decide(DecisionContext) → Action`，`DecisionContext` 只有自己的 `PlayerView`、待決定事項與合法行動；自己船上的貨（`view.ships[].cargo`）與情報商人看到的骰值（`view.intel`）都已在視角裡，不需要讀 `MatchState`。
+
+| 檔案 | 說明 |
+| --- | --- |
+| `index.ts` | `createBot(strategy, seed)`、`BOT_STRATEGIES`。 |
+| `random.ts` | 從合法行動中均勻隨機選擇。 |
+| `heuristic.ts` | 期望值 Bot：為每個合法行動估分（G），softmax 抽樣；情報重擲固定照經驗法則（自己有貨的船、骰值會沉就重擲）。 |
+| `personality.ts` | 四種個性 `balanced`、`cautious`、`aggressive`、`builder`：風險、攻擊性、建築偏好、留貨耐心、隨機程度。 |
+| `estimates.ts` | 只用公開資訊的估算：抵達機率、依對手公開倉庫猜到港量與新價格、建築價值、各角色在各艘船上的價值。 |
+| `islands.ts` | 選島：依島嶼特色估算整局價值（生產、出航修正與成本、可裝貨量、角色修正、部署費與冷卻、香料、掩護），再乘上個性權重。原型只依個性偏好選島。 |
+| `choose.ts` | softmax 抽樣；溫度 0 永遠選最高分。 |
+
+測試在 `tests/v07/bots/`；`helpers.ts` 的 `playBots` 是階段 3 Match Runner 完成前的最小對局迴圈。
