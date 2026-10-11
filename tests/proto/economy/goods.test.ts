@@ -146,3 +146,30 @@ describe('smugglers covering contraband', () => {
     expect(cashEvents(events, 'escort-fee', 'p2')).toBe(0);
   });
 });
+
+describe('round 8 rules', () => {
+  function round8(mode: 'A' | 'B'): EconomyRules {
+    const base = goodsRules(mode);
+    return {
+      ...base,
+      roles: { ...base.roles, smuggler: { ...base.roles.smuggler, anonymous: 0, goodsValue: 100 } },
+      buildings: { ...base.buildings, insurance: { ...base.buildings.insurance, keepPerRound: 1 } },
+    };
+  }
+
+  it('pays public smugglers in cash and reveals them', () => {
+    const state = withDemand(start('A', 3, round8('A')), G(2, 2, 2, 1));
+    const { events, state: next } = playRound(state, { loads: { p1: G(2) }, roles: { p2: ['smuggler', 'r1-p1'] } });
+    expect(cashEvents(events, 'smuggling', 'p2')).toBe(100);
+    expect(cashEvents(events, 'sale', 'p1')).toBe(200);
+    expect(next.players.find((p) => p.id === 'p2')!.blackMoney).toBe(0);
+    const revealed = events.find((e) => e.type === 'roles-revealed');
+    expect(revealed?.type === 'roles-revealed' && revealed.deployments.map((d) => d.role)).toEqual(['smuggler']);
+  });
+
+  it('keeps at most one insured unit per round however many ships sink', () => {
+    const state = withBuildings(start('B', 3, round8('B')), 'p1', ['insurance']);
+    const { events } = playRound(state, { loads: { p1: G(1, 1) }, rolls: { 'r1-wood': 1, 'r1-iron': 1 } });
+    expect(events.filter((e) => e.type === 'insured-goods-kept')).toHaveLength(1);
+  });
+});

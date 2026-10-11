@@ -175,6 +175,7 @@ export type CashReason =
   | 'freight'
   | 'sale'
   | 'role-fee'
+  | 'smuggling'
   | 'smuggling-confiscated'
   | 'smuggling-fine'
   | 'smuggling-seized'
@@ -240,7 +241,7 @@ export type EconomyEvent =
   | {
       readonly type: 'roles-revealed';
       readonly round: number;
-      /** Smugglers stay anonymous unless caught. */
+      /** Smugglers stay anonymous unless caught, or are listed when smuggling is public. */
       readonly deployments: readonly Deployment[];
       readonly rerolledShipIds: readonly ShipId[];
     }

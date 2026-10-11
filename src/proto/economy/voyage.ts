@@ -44,7 +44,7 @@ export function revealVoyageEvent(state: EconomyState): EconomyStep {
   };
 }
 
-/** Reveals every role except anonymous smugglers, then charges fees. */
+/** Reveals every role (smugglers only when smuggling is public), then charges fees. */
 export function revealRoles(state: EconomyState): EconomyStep {
   const { deployments, ships } = state.roundState;
   const fees = chain(
@@ -53,7 +53,8 @@ export function revealRoles(state: EconomyState): EconomyStep {
       .filter((d) => state.rules.roles[d.role].fee > 0)
       .map((d) => (current: EconomyState) => changeCash(current, d.playerId, -current.rules.roles[d.role].fee, 'role-fee', null)),
   );
-  const ordered = ROLE_IDS.flatMap((role) => deployments.filter((d) => d.role === role && role !== 'smuggler'));
+  const hideSmugglers = state.rules.roles.smuggler.anonymous === 1;
+  const ordered = ROLE_IDS.flatMap((role) => deployments.filter((d) => d.role === role && !(hideSmugglers && role === 'smuggler')));
   return {
     state: fees.state,
     events: [

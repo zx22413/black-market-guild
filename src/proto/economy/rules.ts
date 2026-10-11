@@ -62,15 +62,31 @@ export interface EconomyRules {
      * Anonymous smuggling as in V0.6; the fee must stay 0. With `coversSeizable` 1 a smuggler on a
      * ship stops guards confiscating its contraband, and may board a ship carrying their own
      * contraband just to cover it (no take, and only exposed — not fined — when caught).
+     * `anonymous` 1: hidden at the reveal, the take is secret black money added at the end (V0.6);
+     * 0: an ordinary public role whose take is cash (proposal §21).
      */
-    readonly smuggler: { readonly fee: number; readonly goodsValue: number; readonly caughtFine: number; readonly coversSeizable: number };
+    readonly smuggler: {
+      readonly fee: number;
+      readonly goodsValue: number;
+      readonly caughtFine: number;
+      readonly coversSeizable: number;
+      readonly anonymous: number;
+    };
   };
   /** Extra loot when a ship carrying a wanted player's cargo sinks. */
   readonly wanted: { readonly lootBonus: number };
   readonly buildings: {
     readonly shipyard: BuildingCost;
-    /** Per sunk ship: keep `keepUnits` of your cargo, then recover `payoutRatio` of the rest in cash. */
-    readonly insurance: BuildingCost & { readonly keepUnits: number; readonly payoutRatio: number; readonly guardRollBonus: number };
+    /**
+     * Per sunk ship: keep `keepUnits` of your cargo (at most `keepPerRound` per round in all), then
+     * recover `payoutRatio` of the rest in cash.
+     */
+    readonly insurance: BuildingCost & {
+      readonly keepUnits: number;
+      readonly keepPerRound: number;
+      readonly payoutRatio: number;
+      readonly guardRollBonus: number;
+    };
     readonly salvage: BuildingCost & { readonly maxHoldersPerShip: number; readonly maxPerRound: number };
     /**
      * `variant` 0: sell at the better of the old and new price (round 1-2).
@@ -103,7 +119,7 @@ export interface EconomyRules {
 }
 
 export const ECONOMY_RULES: EconomyRules = {
-  version: 'economy-proto-6',
+  version: 'economy-proto-7',
   mode: 'A',
   players: { min: 3, max: 4 },
   rounds: 6,
@@ -123,12 +139,12 @@ export const ECONOMY_RULES: EconomyRules = {
     intel: { fee: 50 },
     guard: { fee: 50, rollModifier: 1, escortFee: 75, escortWhenSeizing: 0 },
     pirate: { fee: 100, modifier: -1, loot: 150 },
-    smuggler: { fee: 0, goodsValue: 50, caughtFine: 200, coversSeizable: 1 },
+    smuggler: { fee: 0, goodsValue: 50, caughtFine: 200, coversSeizable: 1, anonymous: 1 },
   },
   wanted: { lootBonus: 100 },
   buildings: {
     shipyard: { cash: 100, wood: 2, iron: 0 },
-    insurance: { cash: 100, wood: 1, iron: 1, keepUnits: 1, payoutRatio: 0, guardRollBonus: 1 },
+    insurance: { cash: 100, wood: 1, iron: 1, keepUnits: 1, keepPerRound: 4, payoutRatio: 0, guardRollBonus: 1 },
     salvage: { cash: 100, wood: 0, iron: 2, maxHoldersPerShip: 2, maxPerRound: 2 },
     exchange: { cash: 150, wood: 1, iron: 1, variant: 0, commissionPerUnit: 15, commissionCap: 4, directUnits: 1, directPriceSteps: 1 },
     broker: { cash: 100, wood: 1, iron: 1, enabled: 0, unitCost: 1 },

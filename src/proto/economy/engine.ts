@@ -54,7 +54,7 @@ function validate(config: EconomyMatchConfig, rules: EconomyRules): string | nul
   if (new Set(config.players.map((p) => p.id)).size !== count) {
     return 'player ids must be unique';
   }
-  if (rules.roles.smuggler.fee !== 0) {
+  if (rules.roles.smuggler.anonymous === 1 && rules.roles.smuggler.fee !== 0) {
     return 'anonymous smuggling requires a zero smuggler fee';
   }
   if (MATERIALS.some((m) => rules.price.start[m] < 0 || rules.price.start[m] >= rules.price.steps)) {
