@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { economyRules, getEconomyLegalActions, type EconomyEvent, type EconomyRules } from '../../../src/proto/economy';
+import { applyEconomyAction, economyRules, getEconomyLegalActions, type EconomyEvent, type EconomyRules } from '../../../src/proto/economy';
 import { G, cashEvents, playRound, start, stockOf, withBuildings, withDemand, withStock } from './helpers';
 
 /** Spice (perishable, volatile), contraband (seizable, every other round) and the broker. */
@@ -94,5 +94,55 @@ describe('broker (牙行)', () => {
     const state = withBuildings(withDemand(start('A', 3, goodsRules()), G(1, 1, 1, 0)), 'p1', ['broker']);
     const { events } = playRound(state, { loads: {}, manipulate: { p1: { material: 'contraband', delta: -1 } } });
     expect(settled(events).demand.contraband).toBe(0);
+  });
+});
+
+describe('smugglers covering contraband', () => {
+  it('lets a smuggler cover their own contraband: no take, exposed but not fined', () => {
+    const state = withDemand(start('A', 3, goodsRules()), G(2, 2, 2, 1));
+    const { events, state: next } = playRound(state, {
+      loads: { p1: G(1, 0, 0, 1) },
+      roles: { p1: ['smuggler', 'r1-p1'], p2: ['guard', 'r1-p1'] },
+    });
+    expect(cashEvents(events, 'contraband-seized')).toBe(0);
+    expect(cashEvents(events, 'sale', 'p1')).toBe(175 + 150);
+    expect(cashEvents(events, 'smuggling-fine')).toBe(0);
+    expect(events.some((e) => e.type === 'smugglers-caught' && e.smugglers.includes('p1'))).toBe(true);
+    expect(next.players.find((p) => p.id === 'p1')!.blackMoney).toBe(0);
+    // Nothing was confiscated, so the guard still earns the escort fee.
+    expect(cashEvents(events, 'escort-fee', 'p2')).toBe(75);
+  });
+
+  it('only lets a smuggler board a ship with their cargo when it carries contraband', () => {
+    const state = withDemand(start('A', 3, goodsRules()), G(2, 2, 2, 1));
+    let invest = state;
+    for (const [id, load] of [['p1', G(1, 0, 0, 1)], ['p2', G(1)], ['p3', G(0)]] as const) {
+      const result = applyEconomyAction(invest, { type: 'invest', playerId: id, build: null, load, direct: G(0), manipulate: null });
+      if (!result.ok) {
+        throw new Error(result.error);
+      }
+      invest = result.value.state;
+    }
+    const targets = (id: string) =>
+      getEconomyLegalActions(invest, id).flatMap((a) => (a.type === 'deploy-role' && a.role === 'smuggler' ? [a.targetShipId] : []));
+    expect(targets('p1')).toEqual(['r1-p1', 'r1-p2']);
+    expect(targets('p2')).toEqual(['r1-p1']);
+  });
+
+  it('covers contraband even when another player smuggles, who is still caught and fined', () => {
+    const state = withDemand(start('A', 3, goodsRules()), G(2, 2, 2, 1));
+    const { events } = playRound(state, {
+      loads: { p1: G(1, 0, 0, 1) },
+      roles: { p3: ['smuggler', 'r1-p1'], p2: ['guard', 'r1-p1'] },
+    });
+    expect(cashEvents(events, 'contraband-seized')).toBe(0);
+    expect(cashEvents(events, 'smuggling-fine', 'p3')).toBe(-200);
+  });
+
+  it('withholds the escort fee from a guard who confiscated contraband', () => {
+    const state = withDemand(start('A', 3, goodsRules()), G(2, 2, 2, 1));
+    const { events } = playRound(state, { loads: { p1: G(1, 0, 0, 1) }, roles: { p2: ['guard', 'r1-p1'] } });
+    expect(cashEvents(events, 'contraband-seized', 'p2')).toBe(150);
+    expect(cashEvents(events, 'escort-fee', 'p2')).toBe(0);
   });
 });

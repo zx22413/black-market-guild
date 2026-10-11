@@ -145,7 +145,22 @@ function investOptions(state: EconomyState, playerId: PlayerId): EconomyAction[]
   });
 }
 
-/** No role, or any affordable role on a sailing ship; smugglers skip ships carrying their cargo. */
+/**
+ * A smuggler may board ships without their cargo, or (when smugglers cover contraband) a ship
+ * carrying their own seizable goods, to cover it.
+ */
+export function smugglerMayTarget(rules: EconomyRules, ship: EconShip, playerId: PlayerId): boolean {
+  if (!hasCargoOn(ship, playerId)) {
+    return true;
+  }
+  return rules.roles.smuggler.coversSeizable === 1 && carriesOwnSeizable(rules, ship, playerId);
+}
+
+export function carriesOwnSeizable(rules: EconomyRules, ship: EconShip, playerId: PlayerId): boolean {
+  return ship.cargo.some((lot) => lot.playerId === playerId && MATERIALS.some((m) => rules.seizable[m] === 1 && lot.goods[m] > 0));
+}
+
+/** No role, or any affordable role on a sailing ship (see smugglerMayTarget). */
 function deployOptions(state: EconomyState, playerId: PlayerId): EconomyAction[] {
   const { cash } = playerOf(state, playerId);
   const { ships } = state.roundState;
@@ -154,7 +169,7 @@ function deployOptions(state: EconomyState, playerId: PlayerId): EconomyAction[]
     if (cash < state.rules.roles[role].fee) {
       continue;
     }
-    const targets = role === 'smuggler' ? ships.filter((s) => !hasCargoOn(s, playerId)) : ships;
+    const targets = role === 'smuggler' ? ships.filter((s) => smugglerMayTarget(state.rules, s, playerId)) : ships;
     targets.forEach((ship) => options.push({ type: 'deploy-role', playerId, role, targetShipId: ship.id }));
   }
   return options;

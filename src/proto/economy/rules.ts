@@ -52,11 +52,18 @@ export interface EconomyRules {
   readonly sailing: { readonly dieMin: number; readonly dieMax: number; readonly successMin: number };
   readonly roles: {
     readonly intel: { readonly fee: number };
-    /** `escortFee` is paid by the bank to a guard whose target arrives without their cargo (Option A only). */
-    readonly guard: { readonly fee: number; readonly rollModifier: number; readonly escortFee: number };
+    /**
+     * `escortFee` is paid by the bank to a guard whose target arrives without their cargo (Option A
+     * only); with `escortWhenSeizing` 0 a guard who confiscated contraband on that ship gets none.
+     */
+    readonly guard: { readonly fee: number; readonly rollModifier: number; readonly escortFee: number; readonly escortWhenSeizing: number };
     readonly pirate: { readonly fee: number; readonly modifier: number; readonly loot: number };
-    /** Anonymous smuggling as in V0.6; the fee must stay 0. */
-    readonly smuggler: { readonly fee: number; readonly goodsValue: number; readonly caughtFine: number };
+    /**
+     * Anonymous smuggling as in V0.6; the fee must stay 0. With `coversSeizable` 1 a smuggler on a
+     * ship stops guards confiscating its contraband, and may board a ship carrying their own
+     * contraband just to cover it (no take, and only exposed — not fined — when caught).
+     */
+    readonly smuggler: { readonly fee: number; readonly goodsValue: number; readonly caughtFine: number; readonly coversSeizable: number };
   };
   /** Extra loot when a ship carrying a wanted player's cargo sinks. */
   readonly wanted: { readonly lootBonus: number };
@@ -96,7 +103,7 @@ export interface EconomyRules {
 }
 
 export const ECONOMY_RULES: EconomyRules = {
-  version: 'economy-proto-5',
+  version: 'economy-proto-6',
   mode: 'A',
   players: { min: 3, max: 4 },
   rounds: 6,
@@ -114,9 +121,9 @@ export const ECONOMY_RULES: EconomyRules = {
   sailing: { dieMin: 1, dieMax: 6, successMin: 4 },
   roles: {
     intel: { fee: 50 },
-    guard: { fee: 50, rollModifier: 1, escortFee: 75 },
+    guard: { fee: 50, rollModifier: 1, escortFee: 75, escortWhenSeizing: 0 },
     pirate: { fee: 100, modifier: -1, loot: 150 },
-    smuggler: { fee: 0, goodsValue: 50, caughtFine: 200 },
+    smuggler: { fee: 0, goodsValue: 50, caughtFine: 200, coversSeizable: 1 },
   },
   wanted: { lootBonus: 100 },
   buildings: {

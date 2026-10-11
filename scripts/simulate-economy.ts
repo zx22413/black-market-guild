@@ -3,7 +3,7 @@
  * and prints a Markdown report.
  * Usage: npm run simulate:economy -- [--mode A|B] [--matches 1000] [--players 4] [--seed 1]
  *        [--lineup balanced,cautious,aggressive,builder] [--set capacity.base=3 ...] [--summary]
- *        [--preset round5]
+ *        [--preset round5|round6]
  * A preset is a named list of `--set` overrides applied before any explicit `--set`.
  * Seats rotate every match so each strategy plays every seat position.
  */
@@ -43,8 +43,7 @@ function applyOverrides(base: EconomyRules, overrides: readonly string[]): Econo
 }
 
 /** Round 5 (proposal §18): spice, contraband, the broker, a two-building limit and a 20 G commission. */
-const PRESETS: Readonly<Record<string, readonly string[]>> = {
-  round5: [
+const ROUND5 = [
     'production.spice=1',
     'production.contraband=1',
     'productionEvery.contraband=2',
@@ -57,8 +56,13 @@ const PRESETS: Readonly<Record<string, readonly string[]>> = {
     'buildings.broker.enabled=1',
     'maxBuildingsPerPlayer=2',
     'buildings.exchange.variant=1',
-    'buildings.exchange.commissionPerUnit=20',
-  ],
+  'buildings.exchange.commissionPerUnit=20',
+];
+
+const PRESETS: Readonly<Record<string, readonly string[]>> = {
+  round5: [...ROUND5, 'roles.smuggler.coversSeizable=0', 'roles.guard.escortWhenSeizing=1'],
+  /** Round 6 (proposal §19): smugglers cover contraband; confiscating guards get no escort fee. */
+  round6: [...ROUND5, 'roles.smuggler.coversSeizable=1', 'roles.guard.escortWhenSeizing=0'],
 };
 
 function parseOptions(): Options {
@@ -198,6 +202,10 @@ function report(options: Options, s: EconomyStats): string {
     ),
     '',
     `- 護衛守「自己沒有貨的船」：${pct(s.guardOthers, s.roles.guard ?? 0)}（V0.6 約 23%）。`,
+    `- 走私商人：掩護自己違禁品 ${s.smugglerCovers} 次、上別人船走私 ${(s.roles.smuggler ?? 0) - s.smugglerCovers} 次；掩護佔走私 ${pct(
+      s.smugglerCovers,
+      s.roles.smuggler ?? 0,
+    )}；有違禁品的出航中被掩護 ${pct(s.coveredContrabandShips, s.contrabandShips)}。`,
     `- 海盜：目標沉沒率 ${pct(s.pirateSinks, s.roles.pirate ?? 0)}；每次平均淨收益 ${pirateNet(s).toFixed(0)} G。`,
     `- 護航費總額 ${s.escortFees} G；保險補償 ${s.insurance} G、保住 ${s.insuredKept} 單位；打撈 ${s.salvaged} 單位；走私取走 ${s.smuggled} G。共 ${roleCount} 次部署。`,
     '',

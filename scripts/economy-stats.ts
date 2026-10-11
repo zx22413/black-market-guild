@@ -22,6 +22,9 @@ export interface EconomyStats {
   insuredKept: number;
   commission: number;
   manipulations: number;
+  smugglerCovers: number;
+  contrabandShips: number;
+  coveredContrabandShips: number;
   contrabandSeizedUnits: number;
   contrabandSeizedCash: number;
   directUnits: number;
@@ -53,6 +56,9 @@ export function emptyEconomyStats(steps: number): EconomyStats {
     insuredKept: 0,
     commission: 0,
     manipulations: 0,
+    smugglerCovers: 0,
+    contrabandShips: 0,
+    coveredContrabandShips: 0,
     contrabandSeizedUnits: 0,
     contrabandSeizedCash: 0,
     directUnits: 0,
@@ -91,6 +97,13 @@ export function addEconomyMatch(stats: EconomyStats, run: EconomyMatchRun, strat
     });
     stats.playerRounds += state.players.length;
     stats.manipulations += record.manipulations.length;
+    for (const ship of record.ships) {
+      const owners = ship.cargo.filter((lot) => MATERIALS.some((m) => state.rules.seizable[m] === 1 && lot.goods[m] > 0)).map((lot) => lot.playerId);
+      if (owners.length > 0) {
+        stats.contrabandShips += 1;
+        stats.coveredContrabandShips += record.deployments.some((d) => d.role === 'smuggler' && d.targetShipId === ship.id) ? 1 : 0;
+      }
+    }
     stats.directUnits += record.directSales.reduce((sum, lot) => sum + MATERIALS.reduce((u, m) => u + lot.goods[m], 0), 0);
     const loaders = new Set(record.ships.flatMap((s) => s.cargo.map((lot) => lot.playerId)));
     stats.loadingRounds += loaders.size;
@@ -101,6 +114,9 @@ export function addEconomyMatch(stats: EconomyStats, run: EconomyMatchRun, strat
       const ownCargo = ship?.cargo.some((lot) => lot.playerId === d.playerId) ?? false;
       if (d.role === 'guard' && !ownCargo) {
         stats.guardOthers += 1;
+      }
+      if (d.role === 'smuggler' && ownCargo) {
+        stats.smugglerCovers += 1;
       }
       if (d.role === 'pirate') {
         stats.pirateFees += state.rules.roles.pirate.fee;

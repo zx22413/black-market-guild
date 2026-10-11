@@ -121,26 +121,53 @@ function smuggledGoodsValue(state: EconomyState): number {
 function settleArrival(ship: EconShip, prices: Prices): StepFn {
   return (state) => {
     const guards = deployed(state, ship, 'guard');
-    const seized = seizeContraband(state, ship, guards, prices);
+    const inspecting = covered(state, ship) ? [] : guards;
+    const seized = seizeContraband(state, ship, inspecting, prices);
     const current = seized.state;
     const proceeds = ship.cargo.map((lot) => ({
       playerId: lot.playerId,
-      amount: MATERIALS.reduce((sum, m) => sum + lotUnitsSold(state, lot, guards, m) * salePrice(current, lot.playerId, m, prices), 0),
+      amount: MATERIALS.reduce((sum, m) => sum + lotUnitsSold(state, lot, inspecting, m) * salePrice(current, lot.playerId, m, prices), 0),
     }));
-    const smugglers = deployed(current, ship, 'smuggler');
+    const smugglers = takers(current, ship);
+    const covers = coverers(current, ship);
+    const exposed: EconomyEvent[] =
+      covers.length > 0 && guards.length > 0 ? [{ type: 'smugglers-caught', round: current.round, shipId: ship.id, smugglers: covers }] : [];
     const rest =
       smugglers.length === 0
         ? chain(current, payAll(proceeds, 'sale', ship.id))
         : guards.length > 0
           ? chain(current, [...payAll(proceeds, 'sale', ship.id), ...catchSmugglers(ship, smugglers, guards)])
           : smuggle(current, ship, smugglers, proceeds);
-    return { state: rest.state, events: [...seized.events, ...rest.events] };
+    return { state: rest.state, events: [...seized.events, ...exposed, ...rest.events] };
   };
+}
+
+/** Smugglers on the ship who carry none of its cargo: they take goods as usual. */
+function takers(state: EconomyState, ship: EconShip): PlayerId[] {
+  return deployed(state, ship, 'smuggler').filter((id) => !hasCargoOn(ship, id));
+}
+
+/** Smugglers covering their own contraband on the ship: no take, exposed but not fined if caught. */
+function coverers(state: EconomyState, ship: EconShip): PlayerId[] {
+  return deployed(state, ship, 'smuggler').filter((id) => hasCargoOn(ship, id));
+}
+
+/** Any smuggler on the ship keeps guards from confiscating its contraband. */
+function covered(state: EconomyState, ship: EconShip): boolean {
+  return state.rules.roles.smuggler.coversSeizable === 1 && deployed(state, ship, 'smuggler').length > 0;
 }
 
 /** Guards of other players on the ship: they confiscate that lot's seizable goods. */
 function inspectorsOf(guards: readonly PlayerId[], lot: CargoLot): PlayerId[] {
   return guards.filter((id) => id !== lot.playerId);
+}
+
+/** Whether this guard confiscated contraband on an arrived ship. */
+function confiscatedBy(state: EconomyState, ship: EconShip, guardId: PlayerId): boolean {
+  return (
+    !covered(state, ship) &&
+    ship.cargo.some((lot) => lot.playerId !== guardId && MATERIALS.some((m) => state.rules.seizable[m] === 1 && lot.goods[m] > 0))
+  );
 }
 
 /** Units of `material` the lot owner still sells after any confiscation. */
@@ -246,7 +273,7 @@ function settleSinking(ship: EconShip): StepFn {
     const { wanted } = current.roundState;
     const bonus = ship.cargo.some((lot) => wanted.includes(lot.playerId)) ? current.rules.wanted.lootBonus : 0;
     const loot = Math.floor((current.rules.roles.pirate.loot + bonus) / pirates.length);
-    const smugglers = deployed(current, ship, 'smuggler').length;
+    const smugglers = takers(current, ship).length;
     const seized = Math.floor(smuggledGoodsValue(current) / pirates.length) * smugglers;
     return chain(current, [
       ...payAll(pirates.map((playerId) => ({ playerId, amount: loot })), 'pirate-loot', ship.id),
@@ -255,7 +282,10 @@ function settleSinking(ship: EconShip): StepFn {
   };
 }
 
-/** Option A: a guard whose target arrived without their own cargo is paid by the bank. */
+/**
+ * Option A: a guard whose target arrived without their own cargo is paid by the bank, unless
+ * they confiscated contraband there (with escortWhenSeizing 0).
+ */
 const payEscortFees: StepFn = (state) => {
   if (state.rules.mode !== 'A') {
     return { state, events: [] };
@@ -265,7 +295,8 @@ const payEscortFees: StepFn = (state) => {
     state,
     deployments.flatMap((d) => {
       const ship = ships.find((s) => s.id === d.targetShipId);
-      return d.role === 'guard' && ship?.outcome === 'arrived' && !hasCargoOn(ship, d.playerId)
+      const seizing = ship !== undefined && state.rules.roles.guard.escortWhenSeizing !== 1 && confiscatedBy(state, ship, d.playerId);
+      return d.role === 'guard' && ship?.outcome === 'arrived' && !hasCargoOn(ship, d.playerId) && !seizing
         ? payAll([{ playerId: d.playerId, amount: state.rules.roles.guard.escortFee }], 'escort-fee', ship.id)
         : [];
     }),

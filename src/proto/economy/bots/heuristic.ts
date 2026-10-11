@@ -13,6 +13,7 @@ import {
   currentPrice,
   directSalePrice,
   expectedPrice,
+  expectedOwnSeizable,
   expectedSeizure,
   seizureRisk,
   shiftValue,
@@ -94,8 +95,11 @@ function scoreDeploy(view: EconomyView, action: Deploy, persona: EconomyPersonal
     case 'guard': {
       const boost = rules.roles.guard.rollModifier + (view.me.buildings.includes('insurance') ? rules.buildings.insurance.guardRollBonus : 0);
       const guarded = arriveChance(rules, boost);
-      const escort = rules.mode === 'A' && stake === 0 ? rules.roles.guard.escortFee * guarded : 0;
-      return (guarded - base) * stake + escort + expectedSeizure(view, ship) * guarded - fee;
+      const seizure = expectedSeizure(view, ship);
+      // Without escortWhenSeizing, a likely confiscation forfeits the escort fee.
+      const forfeit = rules.roles.guard.escortWhenSeizing === 1 || seizure === 0 ? 0 : Math.min(1, seizure / currentPrice(view, 'contraband'));
+      const escort = rules.mode === 'A' && stake === 0 ? rules.roles.guard.escortFee * guarded * (1 - forfeit) : 0;
+      return (guarded - base) * stake + escort + seizure * guarded - fee;
     }
     case 'pirate': {
       const attacked = arriveChance(rules, rules.roles.pirate.modifier);
@@ -104,6 +108,10 @@ function scoreDeploy(view: EconomyView, action: Deploy, persona: EconomyPersonal
       return loot * persona.aggression + salvage - (base - attacked) * stake - fee;
     }
     case 'smuggler': {
+      if (stake > 0) {
+        // Covering my own contraband: worth it only if another guard would inspect.
+        return expectedOwnSeizable(view, ship) * seizureRisk(view, 'contraband') * base - fee;
+      }
       const guardedChance = 0.25;
       return base * ((1 - guardedChance) * rules.roles.smuggler.goodsValue - guardedChance * rules.roles.smuggler.caughtFine) - fee;
     }

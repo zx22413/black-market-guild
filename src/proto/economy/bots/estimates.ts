@@ -38,7 +38,7 @@ export function seizureRisk(view: EconomyView, material: Material): number {
   if (view.rules.seizable[material] !== 1) {
     return 0;
   }
-  return view.rules.mode === 'A' ? 0.3 : 0.5;
+  return 0.5;
 }
 
 /** Units of a material the other players are expected to land this round. */
@@ -150,6 +150,15 @@ export function expectedSeizure(view: EconomyView, ship: PublicShip): number {
     const owner = view.players.find((p) => p.id === ship.owner);
     return sum + (owner === undefined || owner.id === view.playerId ? 0 : owner.stockAtRoundStart[m] * OTHERS_LOAD_SHARE * price);
   }, 0);
+}
+
+/** Value of my own seizable goods on a ship at current prices. */
+export function expectedOwnSeizable(view: EconomyView, ship: PublicShip): number {
+  const lots = ship.cargo?.filter((lot) => lot.playerId === view.playerId) ?? [];
+  return MATERIALS.filter((m) => view.rules.seizable[m] === 1).reduce(
+    (sum, m) => sum + lots.reduce((s, lot) => s + lot.goods[m] * currentPrice(view, m), 0),
+    0,
+  );
 }
 
 /** Value of my own cargo on a ship at current prices. */
