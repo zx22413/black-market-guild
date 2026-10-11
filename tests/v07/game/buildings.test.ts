@@ -30,8 +30,20 @@ describe('§10.2 buildings', () => {
     }
     const { events } = playRound(state, { loads: { p1: G(1, 2), p2: G(1) }, rolls: { p1: 1, p2: 1 } });
     const salvaged = find(events, 'goods-salvaged').map((e) => `${e.playerId}:${e.good}:${e.shipId}`);
-    // Ship p1 (iron 2): p2 and p3. Ship p2 (wood): p3 and p4 (p2 owns it).
+    // Both goods rise to 175 G, so ties go by ship order. Holders take turns in seat order:
+    // p2 takes p1's iron; p3 takes p1's iron and p2's wood; p1's ship is full, so p4 takes p2's wood.
     expect(salvaged).toEqual(['p2:iron:r1-p1', 'p3:iron:r1-p1', 'p3:wood:r1-p2', 'p4:wood:r1-p2']);
+  });
+
+  it('salvages the most valuable units when more ships sink than a holder may take', () => {
+    let state: MatchState = withDemand(withPrices(ready(4), G(0, 3, 5, 6)), G(0, 0, 0, 0));
+    state = edit(state, 'p4', { buildings: ['salvage'] });
+    const { events } = playRound(state, {
+      loads: { p1: G(1), p2: G(0, 0, 0, 1), p3: G(0, 0, 1) },
+      rolls: { p1: 1, p2: 1, p3: 1 },
+    });
+    // Wood 75 G, spice 200 G, arms 225 G: p4 takes the arms and the spice.
+    expect(find(events, 'goods-salvaged').map((e) => `${e.good}:${e.shipId}`)).toEqual(['arms:r1-p2', 'spice:r1-p3']);
   });
 
   it('the exchange earns 15 G per unit of other players goods that arrive, up to 4 units', () => {

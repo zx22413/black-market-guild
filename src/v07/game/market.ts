@@ -36,7 +36,7 @@ export function settleMarket(state: MatchState): Step {
     payEscortFees,
     payCommission,
     keepInsuredGoods(prices.before),
-    salvage(sunkShips),
+    salvage(sunkShips, prices.after),
     payBets(bets, prices),
     spoilSpice,
   ]);
@@ -210,23 +210,30 @@ function keepInsuredGoods(before: Goods): StepFn {
 }
 
 /**
- * §10.2: each sunk ship gives 1 unit of its most common good (ties in good order) to up to
- * `maxHoldersPerShip` salvage holders in seat order other than its owner, each capped per round.
+ * §10.2: each sunk ship gives 1 unit of its most common good (ties in good order). Holders take
+ * turns in seat order; each takes up to `maxPerRound` of the most valuable units at this round's
+ * new price (ties by ship order) from other players' ships that fewer than `maxHoldersPerShip`
+ * holders have salvaged.
  */
-function salvage(sunk: readonly Ship[]): StepFn {
+function salvage(sunk: readonly Ship[], after: Goods): StepFn {
   return (state) => {
     const { maxHoldersPerShip, maxPerRound } = state.rules.buildings.salvage;
-    const holders = state.players.filter((p) => p.buildings.includes('salvage')).map((p) => p.id);
-    const claims = sunk.flatMap((ship) => {
+    const offers = sunk.map((ship, order) => {
       const good = GOODS.reduce<GoodId>((best, g) => (ship.cargo[g] > ship.cargo[best] ? g : best), 'wood');
-      return holders.filter((id) => id !== ship.owner).map((playerId) => ({ playerId, ship, good }));
+      return { ship, good, order, value: priceAt(state.rules, after[good]) };
     });
-    const granted = claims.reduce<typeof claims>((acc, claim) => {
-      const perShip = acc.filter((c) => c.ship.id === claim.ship.id).length;
-      const perPlayer = acc.filter((c) => c.playerId === claim.playerId).length;
-      return perShip < maxHoldersPerShip && perPlayer < maxPerRound ? [...acc, claim] : acc;
-    }, []);
-    return granted.reduce<Step>(
+    const taken = new Map<string, number>();
+    const claims = state.players
+      .filter((p) => p.buildings.includes('salvage'))
+      .flatMap((holder) => {
+        const picks = offers
+          .filter((o) => o.ship.owner !== holder.id && (taken.get(o.ship.id) ?? 0) < maxHoldersPerShip)
+          .sort((a, b) => b.value - a.value || a.order - b.order)
+          .slice(0, maxPerRound);
+        picks.forEach((o) => taken.set(o.ship.id, (taken.get(o.ship.id) ?? 0) + 1));
+        return picks.map((o) => ({ playerId: holder.id, ship: o.ship, good: o.good }));
+      });
+    return claims.reduce<Step>(
       (acc, { playerId, ship, good }) => ({
         state: updatePlayer(acc.state, playerId, (p) => ({ ...p, stock: addGoods(p.stock, only(good, 1)) })),
         events: [...acc.events, { type: 'goods-salvaged', round: acc.state.round, playerId, good, shipId: ship.id }],
