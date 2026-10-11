@@ -1,4 +1,5 @@
 import { shuffle } from '../../game/rng';
+import { traitOf } from './islands';
 import type { EconomyRules } from './rules';
 import { ECON_ROLE_IDS, type EconomyState, type EconPlayer, type EconRoleId, type PlayerId } from './types';
 
@@ -41,7 +42,8 @@ export function mayDeploy(state: EconomyState, player: EconPlayer, role: EconRol
       return state.roundState.hands[player.id]?.includes(role) ?? false;
     case HAND_CYCLE: {
       const last = player.lastUsed[role];
-      return last === undefined || state.round - last > hand.cooldown;
+      const cooldown = hand.cooldown + traitOf(state.rules, player.island).cooldownDelta[role];
+      return last === undefined || state.round - last > cooldown;
     }
     default:
       return true;

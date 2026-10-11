@@ -55,10 +55,11 @@ describe('island traits', () => {
     expect(stockOf(r3, 'p1').iron - stockOf(r2, 'p1').iron).toBe(0);
   });
 
-  it('keeps spice on the spice isles', () => {
+  it('keeps spice on the spice isles and makes one more each round', () => {
     const state = withIsland(start('A', 3, islandRules()), 'p1', 'spice-isles');
     const next = playRound(state, { loads: {} }).state;
-    expect(stockOf(next, 'p1').spice).toBe(2);
+    // Round 1 ran before the island was set (1 spice, kept); round 2 made 1 + 1 bonus. Others' spice spoiled.
+    expect(stockOf(next, 'p1').spice).toBe(3);
     expect(stockOf(next, 'p2').spice).toBe(1);
   });
 
@@ -204,5 +205,24 @@ describe('round 16 island traits', () => {
     const { events } = playRound(state, { loads: { p1: G(1) } });
     expect(resolved(events, 'r1-p1').island).toBe(1);
     expect(cashEvents(events, 'ship-cost', 'p1')).toBe(-150);
+  });
+});
+
+describe('round 17 island traits', () => {
+  it('lets fortress guards cool down one round less', () => {
+    const base = islandRules();
+    const rules = { ...base, roles: { ...base.roles, hand: { ...base.roles.hand, mode: 2, cooldown: 2 } } };
+    let state = withIsland(start('A', 3, rules), 'p1', 'fortress');
+    state = withIsland(state, 'p2', 'mine');
+    state = playRound(state, { loads: { p3: G(1) }, roles: { p1: ['guard', 'r1-p3'], p2: ['guard', 'r1-p3'] } }).state;
+    state = playRound(state, { loads: { p3: G(1) } }).state;
+    expect(state.round).toBe(3);
+    let invest = state;
+    for (const id of ['p1', 'p2', 'p3']) {
+      invest = apply(invest, { type: 'invest', playerId: id, build: null, load: id === 'p3' ? G(1) : G(0), direct: G(0), manipulate: null }).state;
+    }
+    const canGuard = (id: string) => getEconomyLegalActions(invest, id).some((a) => a.type === 'deploy-role' && a.role === 'guard');
+    expect(canGuard('p1')).toBe(true);
+    expect(canGuard('p2')).toBe(false);
   });
 });

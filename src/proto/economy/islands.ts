@@ -10,6 +10,8 @@ export interface IslandTrait {
   readonly productionEvery: Goods;
   /** Per material: the last round that produces it; 0 means no limit. */
   readonly productionUntil: Goods;
+  /** Per material: extra units produced every round, on top of the normal schedule. */
+  readonly bonusProduction: Goods;
   /** 1 = perishable goods do not spoil in this warehouse. */
   readonly keepsPerishable: number;
   /** Added to this player's own ship's roll. */
@@ -20,6 +22,8 @@ export interface IslandTrait {
   readonly guardModifier: number;
   /** Added to this player's deployment fee per role. */
   readonly feeDelta: Readonly<Record<EconRoleId, number>>;
+  /** Added to this player's role-hand cooldown per role (cycle mode). */
+  readonly cooldownDelta: Readonly<Record<EconRoleId, number>>;
   /** Added to this player's ship cost. */
   readonly shipCostDelta: number;
   /** Added to this player's capacity. */
@@ -37,11 +41,13 @@ const NO_FEES: Readonly<Record<EconRoleId, number>> = { intel: 0, guard: 0, pira
 export const NEUTRAL_TRAIT: IslandTrait = {
   productionEvery: { wood: 0, iron: 0, spice: 0, contraband: 0 },
   productionUntil: { wood: 0, iron: 0, spice: 0, contraband: 0 },
+  bonusProduction: { wood: 0, iron: 0, spice: 0, contraband: 0 },
   keepsPerishable: 0,
   ownShipModifier: 0,
   pirateModifier: 0,
   guardModifier: 0,
   feeDelta: NO_FEES,
+  cooldownDelta: NO_FEES,
   shipCostDelta: 0,
   capacityDelta: 0,
   uncoverable: 0,
@@ -55,15 +61,15 @@ function trait(patch: Partial<IslandTrait>): IslandTrait {
 
 const every = (patch: Partial<Goods>): Goods => ({ ...NEUTRAL_TRAIT.productionEvery, ...patch });
 
-/** Placeholder traits (proposal §29-30); numbers are for simulation only. */
+/** Placeholder traits (proposal §29-31); numbers are for simulation only. */
 export const DEFAULT_ISLAND_TRAITS: Readonly<Record<IslandId, IslandTrait>> = {
-  'spice-isles': trait({ keepsPerishable: 1, halfRise: every({ spice: 1 }) }),
+  'spice-isles': trait({ keepsPerishable: 1, bonusProduction: every({ spice: 1 }), halfRise: every({ spice: 1 }) }),
   'pirate-cove': trait({ pirateModifier: -1, feeDelta: { ...NO_FEES, guard: 25 } }),
   lumber: trait({ productionEvery: every({ wood: 1, iron: 3 }), productionUntil: every({ wood: 5 }) }),
   mine: trait({ productionEvery: every({ iron: 1, wood: 3 }), productionUntil: every({ iron: 5 }) }),
   'smuggler-port': trait({ productionEvery: every({ contraband: 1 }), uncoverable: 1, feeDelta: { ...NO_FEES, guard: 50 } }),
   'free-port': trait({ shipCostDelta: -50, capacityDelta: -1 }),
-  fortress: trait({ guardModifier: 1, feeDelta: { ...NO_FEES, pirate: 25 } }),
+  fortress: trait({ guardModifier: 1, cooldownDelta: { ...NO_FEES, guard: -1 }, feeDelta: { ...NO_FEES, pirate: 25 } }),
   lighthouse: trait({ intelPeeks: 1, feeDelta: { ...NO_FEES, intel: -50 }, ownShipModifier: 1, shipCostDelta: 50 }),
 };
 
@@ -77,11 +83,11 @@ export function productionEveryFor(rules: EconomyRules, island: IslandId | null,
 }
 
 export function producedFor(rules: EconomyRules, island: IslandId | null, round: number): Goods {
-  const until = traitOf(rules, island).productionUntil;
+  const { productionUntil: until, bonusProduction: bonus } = traitOf(rules, island);
   return Object.fromEntries(
     MATERIALS.map((m) => {
       const due = (round - 1) % productionEveryFor(rules, island, m) === 0 && (until[m] === 0 || round <= until[m]);
-      return [m, due ? rules.production[m] : 0];
+      return [m, (due ? rules.production[m] : 0) + bonus[m]];
     }),
   ) as Record<Material, number>;
 }
