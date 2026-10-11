@@ -106,7 +106,8 @@ export function resolveVoyages(state: EconomyState): EconomyStep {
     const pirate = targeting(state, ship, 'pirate').length * rules.roles.pirate.modifier + 0;
     const event = eventModifier(state, ship);
     const final = Math.min(rules.sailing.dieMax, Math.max(rules.sailing.dieMin, base + guard + pirate + event));
-    const outcome = final >= rules.sailing.successMin ? ('arrived' as const) : ('sank' as const);
+    const arrives = final >= rules.sailing.successMin && final <= rules.sailing.successMax;
+    const outcome = arrives ? ('arrived' as const) : ('sank' as const);
     return { ship: { ...ship, outcome }, summary: { base, guard, pirate, event, final, outcome } };
   });
   return {

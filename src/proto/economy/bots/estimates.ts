@@ -9,10 +9,11 @@ const OTHERS_LOAD_SHARE = 0.5;
 
 /** Chance a ship arrives with a known total modifier, over a fair die. */
 export function arriveChance(rules: EconomyRules, modifier: number): number {
-  const { dieMin, dieMax, successMin } = rules.sailing;
+  const { dieMin, dieMax, successMin, successMax } = rules.sailing;
   let hits = 0;
   for (let face = dieMin; face <= dieMax; face += 1) {
-    if (Math.min(dieMax, Math.max(dieMin, face + modifier)) >= successMin) {
+    const final = Math.min(dieMax, Math.max(dieMin, face + modifier));
+    if (final >= successMin && final <= successMax) {
       hits += 1;
     }
   }

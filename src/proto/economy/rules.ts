@@ -49,7 +49,8 @@ export interface EconomyRules {
   readonly ownShip: { readonly cost: number };
   /** Option B freight per unit loaded. */
   readonly neutralShip: { readonly freightPerUnit: number };
-  readonly sailing: { readonly dieMin: number; readonly dieMax: number; readonly successMin: number };
+  /** A ship arrives when its final value is within [successMin, successMax]; 6 = no upper limit. */
+  readonly sailing: { readonly dieMin: number; readonly dieMax: number; readonly successMin: number; readonly successMax: number };
   readonly roles: {
     readonly intel: { readonly fee: number };
     /**
@@ -140,7 +141,7 @@ export const ECONOMY_RULES: EconomyRules = {
   capacity: { base: 2, shipyardBonus: 1 },
   ownShip: { cost: 100 },
   neutralShip: { freightPerUnit: 30 },
-  sailing: { dieMin: 1, dieMax: 6, successMin: 4 },
+  sailing: { dieMin: 1, dieMax: 6, successMin: 4, successMax: 6 },
   roles: {
     intel: { fee: 50 },
     guard: { fee: 50, rollModifier: 1, escortFee: 75, escortWhenSeizing: 0 },
