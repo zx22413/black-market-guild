@@ -1,6 +1,7 @@
 import { seedToRngState, shuffle } from '../../game/rng';
 import { economyActionKey, getEconomyDeciders, getEconomyLegalActions } from './decisions';
-import { submitEconomyDecision, openRound } from './flow';
+import { emptyRound, submitEconomyDecision, openRound } from './flow';
+import { dealIslandOffers } from './islands';
 import { ECONOMY_RULES, type EconomyRules } from './rules';
 import { NO_GOODS } from './goods';
 import {
@@ -83,33 +84,44 @@ export function createEconomyMatch(config: EconomyMatchConfig): EconomyResultOf<
   }
   const demand = shuffle(buildDemandDeck(rules, config.players.length), seedToRngState(config.seed));
   const voyage = shuffle(buildProtoVoyageDeck(rules), demand.state);
-  const islands = rules.islands.enabled === 1 ? shuffle([...ISLAND_IDS], voyage.state) : { items: [], state: voyage.state };
-  const step = openRound(
-    {
-      rules,
-      seed: config.seed,
-      round: 0,
-      phase: 'invest',
-      players: config.players.map(({ id, name }, i) => ({
-        id,
-        name,
-        cash: rules.startingCash,
-        blackMoney: 0,
-        island: islands.items[i] ?? null,
-        lastUsed: {},
-        buildings: [],
-        stock: rules.startingStock,
-      })),
-      rng: islands.state,
-      demandDeck: demand.items,
-      voyageDeck: voyage.items,
-      prices: rules.price.start,
-      history: [],
-      result: null,
-    },
-    1,
-  );
-  return { ok: true, value: step };
+  const drafting = rules.islands.enabled === 1 && rules.islands.draft === 1;
+  const dealt = rules.islands.enabled === 1 && !drafting ? shuffle([...ISLAND_IDS], voyage.state) : { items: [], state: voyage.state };
+  const draft = drafting
+    ? dealIslandOffers(config.players.map((p) => p.id), rules.islands.offered, dealt.state)
+    : { offers: {}, state: dealt.state };
+  const base: Omit<EconomyState, 'roundState'> = {
+    rules,
+    seed: config.seed,
+    round: 0,
+    phase: 'invest',
+    players: config.players.map(({ id, name }, i) => ({
+      id,
+      name,
+      cash: rules.startingCash,
+      blackMoney: 0,
+      island: dealt.items[i] ?? null,
+      lastUsed: {},
+      buildings: [],
+      stock: rules.startingStock,
+    })),
+    rng: draft.state,
+    demandDeck: demand.items,
+    voyageDeck: voyage.items,
+    prices: rules.price.start,
+    islandOffers: draft.offers,
+    history: [],
+    result: null,
+  };
+  if (drafting) {
+    return {
+      ok: true,
+      value: {
+        state: { ...base, phase: 'island-choice', roundState: emptyRound() },
+        events: [{ type: 'phase-started', round: 0, phase: 'island-choice' }],
+      },
+    };
+  }
+  return { ok: true, value: openRound(base, 1) };
 }
 
 /** Validates and applies one action. Never mutates `state`. */

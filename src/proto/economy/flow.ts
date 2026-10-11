@@ -1,12 +1,12 @@
 import { getEconomyDeciders } from './decisions';
-import { addGoods } from './goods';
+import { NO_GOODS, addGoods } from './goods';
 import { producedFor } from './islands';
 import { resolveInvest } from './invest';
 import { chain, changeCash } from './state';
 import { dealHands, markUsed } from './hands';
 import { computeEconomyResult } from './scoring';
 import { settleMarket } from './settlement';
-import type { EconomyAction, EconomyEvent, EconomyPhase, EconomyState, EconomyStep, Goods, PlayerId } from './types';
+import type { EconomyAction, EconomyEvent, EconomyPhase, EconomyState, EconomyStep, EconRound, Goods, IslandId, PlayerId } from './types';
 import { resolveDeployment, resolveIntelRerolls, resolveVoyages, revealRoles, revealVoyageEvent } from './voyage';
 
 type RoundStep =
@@ -29,6 +29,39 @@ function wantedPlayers(state: Omit<EconomyState, 'roundState'>): PlayerId[] {
   const top = Math.max(...state.players.map((p) => p.cash));
   const leaders = state.players.filter((p) => p.cash === top).map((p) => p.id);
   return leaders.length === state.players.length ? [] : leaders;
+}
+
+/** Round state before round 1 (used during the island draft). */
+export function emptyRound(): EconRound {
+  return {
+    demand: NO_GOODS,
+    wanted: [],
+    stockAtStart: {},
+    voyageEvent: null,
+    hands: {},
+    submissions: {},
+    builds: [],
+    directSales: [],
+    manipulations: [],
+    ships: [],
+    deployments: [],
+  };
+}
+
+/** Assigns every drafted island, announces them, then opens round 1. */
+function finishIslandDraft(state: EconomyState): EconomyStep {
+  const islands: Record<PlayerId, IslandId> = {};
+  const players = state.players.map((p) => {
+    const action = state.roundState.submissions[p.id];
+    if (action?.type !== 'choose-island') {
+      throw new Error(`${p.id} has not chosen an island`);
+    }
+    islands[p.id] = action.island;
+    return { ...p, island: action.island };
+  });
+  const { roundState: _, ...base } = { ...state, players };
+  const opened = openRound(base, 1);
+  return { state: opened.state, events: [{ type: 'islands-chosen', islands }, ...opened.events] };
 }
 
 /** Production, demand card and wanted list, then the first decision phase. */
@@ -116,6 +149,8 @@ function resolvePhase(state: EconomyState, phase: EconomyPhase): EconomyStep {
     }
     case 'intel-reroll':
       return resolveIntelRerolls(state);
+    case 'island-choice':
+      return { state, events: [] };
   }
 }
 
@@ -125,6 +160,9 @@ export function submitEconomyDecision(state: EconomyState, phase: EconomyPhase, 
   const recorded: EconomyState = { ...state, roundState: { ...state.roundState, submissions } };
   if (!getEconomyDeciders(recorded, phase).every((id) => submissions[id] !== undefined)) {
     return { state: recorded, events: [] };
+  }
+  if (phase === 'island-choice') {
+    return finishIslandDraft(recorded);
   }
   const resolved = resolvePhase(recorded, phase);
   const cleared: EconomyState = { ...resolved.state, roundState: { ...resolved.state.roundState, submissions: {} } };

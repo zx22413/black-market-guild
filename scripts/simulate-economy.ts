@@ -3,7 +3,7 @@
  * and prints a Markdown report.
  * Usage: npm run simulate:economy -- [--mode A|B] [--matches 1000] [--players 4] [--seed 1]
  *        [--lineup balanced,cautious,aggressive,builder] [--set capacity.base=3 ...] [--summary]
- *        [--preset round5|…|round13]
+ *        [--preset round5|…|round14]
  * A preset is a named list of `--set` overrides applied before any explicit `--set`.
  * Seats rotate every match so each strategy plays every seat position.
  */
@@ -108,8 +108,10 @@ const PRESETS: Readonly<Record<string, readonly string[]>> = {
   round11: ROUND11,
   /** Round 12 (proposal §27): round 11 with role hands cycling on a two-round cooldown. */
   round12: ROUND12,
-  /** Round 13 (proposal §27): round 12 with island traits. */
+  /** Round 13 (proposal §27): round 12 with island traits dealt at random. */
   round13: [...ROUND12, 'islands.enabled=1'],
+  /** Round 14 (proposal §28): round 13 with an island draft (draw 2, keep 1). */
+  round14: [...ROUND12, 'islands.enabled=1', 'islands.draft=1'],
 };
 
 

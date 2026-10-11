@@ -130,8 +130,16 @@ export interface EconomyRules {
     /** Pays `unitCost` units of the material it shifts; the shift is public. `enabled` 0 = not buildable. */
     readonly broker: BuildingCost & { readonly enabled: number; readonly unitCost: number };
   };
-  /** Island traits (proposal §27): `enabled` 1 deals each player a distinct random island. */
-  readonly islands: { readonly enabled: number; readonly traits: Readonly<Record<IslandId, IslandTrait>> };
+  /**
+   * Island traits (proposal §27): `enabled` 1 gives each player an island. `draft` 0 deals one
+   * distinct island at random; 1 offers each player `offered` islands to keep one (§28).
+   */
+  readonly islands: {
+    readonly enabled: number;
+    readonly draft: number;
+    readonly offered: number;
+    readonly traits: Readonly<Record<IslandId, IslandTrait>>;
+  };
   /** Buildings one player may hold; 5 means no limit. */
   readonly maxBuildingsPerPlayer: number;
   /** Share of each held building's cash cost counted in final wealth; materials are not counted. */
@@ -147,7 +155,7 @@ export interface EconomyRules {
 }
 
 export const ECONOMY_RULES: EconomyRules = {
-  version: 'economy-proto-10',
+  version: 'economy-proto-11',
   mode: 'A',
   players: { min: 3, max: 4 },
   rounds: 6,
@@ -179,7 +187,7 @@ export const ECONOMY_RULES: EconomyRules = {
     exchange: { cash: 150, wood: 1, iron: 1, variant: 0, commissionPerUnit: 15, commissionCap: 4, directUnits: 1, directPriceSteps: 1 },
     broker: { cash: 100, wood: 1, iron: 1, enabled: 0, unitCost: 1 },
   },
-  islands: { enabled: 0, traits: DEFAULT_ISLAND_TRAITS },
+  islands: { enabled: 0, draft: 0, offered: 2, traits: DEFAULT_ISLAND_TRAITS },
   maxBuildingsPerPlayer: 5,
   buildingValueRatio: 0.5,
   voyageEvents: {

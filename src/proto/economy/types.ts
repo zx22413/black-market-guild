@@ -38,7 +38,8 @@ export type EconRoleId = (typeof ECON_ROLE_IDS)[number];
 export const ISLAND_IDS = ['spice-isles', 'pirate-cove', 'lumber', 'mine', 'smuggler-port', 'free-port', 'fortress'] as const;
 export type IslandId = (typeof ISLAND_IDS)[number];
 
-export const ECONOMY_PHASES = ['invest', 'role-deployment', 'intel-reroll'] as const;
+/** `island-choice` runs once before round 1 when islands are drafted (draw 2, keep 1). */
+export const ECONOMY_PHASES = ['island-choice', 'invest', 'role-deployment', 'intel-reroll'] as const;
 export type EconomyPhase = (typeof ECONOMY_PHASES)[number];
 
 export type EconomyAction =
@@ -61,9 +62,11 @@ export type EconomyAction =
       readonly targetShipId: ShipId | null;
       readonly bet: Manipulation | null;
     }
-  | { readonly type: 'intel-reroll'; readonly playerId: PlayerId; readonly reroll: boolean };
+  | { readonly type: 'intel-reroll'; readonly playerId: PlayerId; readonly reroll: boolean }
+  | { readonly type: 'choose-island'; readonly playerId: PlayerId; readonly island: IslandId };
 
 export const PHASE_ACTION_TYPE: Readonly<Record<EconomyPhase, EconomyAction['type']>> = {
+  'island-choice': 'choose-island',
   invest: 'invest',
   'role-deployment': 'deploy-role',
   'intel-reroll': 'intel-reroll',
@@ -182,6 +185,8 @@ export interface EconomyState {
   readonly voyageDeck: readonly ProtoVoyageEventId[];
   /** Current price-track step per material (0 = cheapest). */
   readonly prices: Goods;
+  /** Island draft: the islands each player may choose from (private until chosen). */
+  readonly islandOffers: Readonly<Record<PlayerId, readonly IslandId[]>>;
   readonly roundState: EconRound;
   readonly history: readonly RoundRecord[];
   readonly result: EconomyResult | null;
@@ -223,6 +228,7 @@ export type EconomyEvent =
       readonly prices: Goods;
     }
   | { readonly type: 'phase-started'; readonly round: number; readonly phase: EconomyPhase }
+  | { readonly type: 'islands-chosen'; readonly islands: Readonly<Record<PlayerId, IslandId>> }
   | { readonly type: 'buildings-built'; readonly round: number; readonly builds: readonly Build[] }
   | { readonly type: 'ships-launched'; readonly round: number; readonly ships: readonly PublicShip[] }
   | { readonly type: 'market-manipulated'; readonly round: number; readonly manipulations: readonly PlayerManipulation[] }

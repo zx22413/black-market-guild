@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ISLAND_IDS,
+  applyEconomyAction,
   economyRules,
   getEconomyLegalActions,
   getEconomyView,
@@ -9,7 +10,7 @@ import {
   type EconomyState,
   type IslandId,
 } from '../../../src/proto/economy';
-import { G, cashEvents, playRound, start, stockOf, withDemand } from './helpers';
+import { G, apply, cashEvents, playRound, start, stockOf, withDemand } from './helpers';
 
 function islandRules(): EconomyRules {
   const base = economyRules('A');
@@ -45,7 +46,7 @@ describe('island traits', () => {
     expect(start('A').players.every((p) => p.island === null)).toBe(true);
   });
 
-  it('changes production: lumber makes wood every round and iron only in round 1', () => {
+  it('changes production: lumber makes wood every round and iron every third round', () => {
     const state = withIsland(start('A', 3, islandRules()), 'p1', 'lumber');
     const r2 = playRound(state, { loads: {} }).state;
     const r3 = playRound(r2, { loads: {} }).state;
@@ -61,14 +62,14 @@ describe('island traits', () => {
     expect(stockOf(next, 'p2').spice).toBe(1);
   });
 
-  it('gives pirate cove stronger pirates and a weaker own ship', () => {
+  it('gives pirate cove stronger pirates', () => {
     const state = withIsland(start('A', 3, islandRules()), 'p1', 'pirate-cove');
     const { events } = playRound(state, {
       loads: { p1: G(1), p2: G(1) },
       rolls: { 'r1-p1': 6, 'r1-p2': 6 },
       roles: { p1: ['pirate', 'r1-p2'] },
     });
-    expect(resolved(events, 'r1-p1').island).toBe(-1);
+    expect(resolved(events, 'r1-p1').island).toBe(0);
     expect(resolved(events, 'r1-p2').pirate).toBe(-2);
   });
 
@@ -98,5 +99,54 @@ describe('island traits', () => {
       roles: { p1: ['smuggler', 'r1-p1'], p2: ['guard', 'r1-p1'] },
     });
     expect(cashEvents(events, 'contraband-seized', 'p2')).toBe(150);
+  });
+});
+
+describe('island draft (draw 2, keep 1)', () => {
+  function draftRules(): EconomyRules {
+    const base = islandRules();
+    return { ...base, islands: { ...base.islands, draft: 1 } };
+  }
+
+  it('offers two islands to each player before round 1 and opens round 1 once all have chosen', () => {
+    let state = start('A', 4, draftRules());
+    expect(state.phase).toBe('island-choice');
+    expect(state.round).toBe(0);
+    state.players.forEach((p) => {
+      const offers = state.islandOffers[p.id]!;
+      expect(offers).toHaveLength(2);
+      expect(new Set(offers).size).toBe(2);
+      expect(getEconomyLegalActions(state, p.id).map((a) => (a.type === 'choose-island' ? a.island : null))).toEqual(offers);
+      expect(getEconomyView(state, p.id).myIslandOffers).toEqual(offers);
+    });
+    let events: EconomyEvent[] = [];
+    for (const p of state.players) {
+      const step = apply(state, { type: 'choose-island', playerId: p.id, island: state.islandOffers[p.id]![1]! });
+      state = step.state;
+      events = [...events, ...step.events];
+    }
+    expect(state.phase).toBe('invest');
+    expect(state.round).toBe(1);
+    state.players.forEach((p) => expect(p.island).toBe(state.islandOffers[p.id]![1]));
+    expect(events[0]?.type).toBe('islands-chosen');
+  });
+
+  it('applies the chosen island to round-1 production', () => {
+    let state = start('A', 3, draftRules());
+    const offers = state.islandOffers;
+    for (const p of state.players) {
+      state = apply(state, { type: 'choose-island', playerId: p.id, island: offers[p.id]![0]! }).state;
+    }
+    const smuggler = state.players.find((p) => p.island === 'smuggler-port');
+    if (smuggler !== undefined) {
+      expect(stockOf(state, smuggler.id).contraband).toBe(1);
+    }
+    expect(state.players.every((p) => p.island !== null)).toBe(true);
+  });
+
+  it('rejects an island that was not offered', () => {
+    const state = start('A', 3, draftRules());
+    const notOffered = ISLAND_IDS.find((i) => !state.islandOffers.p1!.includes(i))!;
+    expect(applyEconomyAction(state, { type: 'choose-island', playerId: 'p1', island: notOffered }).ok).toBe(false);
   });
 });

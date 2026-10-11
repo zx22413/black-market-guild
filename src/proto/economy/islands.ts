@@ -1,5 +1,6 @@
+import { shuffle, type RngState } from '../../game/rng';
 import type { EconomyRules } from './rules';
-import { MATERIALS, type BuildingId, type EconRoleId, type Goods, type IslandId, type Material } from './types';
+import { ISLAND_IDS, MATERIALS, type BuildingId, type EconRoleId, type Goods, type IslandId, type Material, type PlayerId } from './types';
 
 // Island traits (proposal §27): each player's island has an advantage and a drawback.
 
@@ -45,13 +46,16 @@ function trait(patch: Partial<IslandTrait>): IslandTrait {
 
 const every = (patch: Partial<Goods>): Goods => ({ ...NEUTRAL_TRAIT.productionEvery, ...patch });
 
-/** Placeholder traits from proposal §25.3; numbers are for simulation only. */
+/**
+ * Placeholder traits (proposal §28, revised from §27); numbers are for simulation only. Pirate
+ * cove and the spice isles have no drawback yet.
+ */
 export const DEFAULT_ISLAND_TRAITS: Readonly<Record<IslandId, IslandTrait>> = {
-  'spice-isles': trait({ keepsPerishable: 1, productionEvery: every({ wood: 6 }) }),
-  'pirate-cove': trait({ pirateModifier: -1, ownShipModifier: -1 }),
-  lumber: trait({ productionEvery: every({ wood: 1, iron: 6 }) }),
-  mine: trait({ productionEvery: every({ iron: 1, wood: 6 }) }),
-  'smuggler-port': trait({ productionEvery: every({ contraband: 1 }), uncoverable: 1 }),
+  'spice-isles': trait({ keepsPerishable: 1 }),
+  'pirate-cove': trait({ pirateModifier: -1 }),
+  lumber: trait({ productionEvery: every({ wood: 1, iron: 3 }) }),
+  mine: trait({ productionEvery: every({ iron: 1, wood: 3 }) }),
+  'smuggler-port': trait({ productionEvery: every({ contraband: 1 }), uncoverable: 1, feeDelta: { ...NO_FEES, guard: 50 } }),
   'free-port': trait({ shipCostDelta: -50, capacityDelta: -1 }),
   fortress: trait({ guardModifier: 1, feeDelta: { ...NO_FEES, pirate: 50 } }),
 };
@@ -78,4 +82,36 @@ export function roleFee(rules: EconomyRules, island: IslandId | null, role: Econ
 /** Units a player may ship this round; a shipyard built this round already counts. */
 export function capacityFor(rules: EconomyRules, buildings: readonly BuildingId[], island: IslandId | null): number {
   return rules.capacity.base + (buildings.includes('shipyard') ? rules.capacity.shipyardBonus : 0) + traitOf(rules, island).capacityDelta;
+}
+
+/**
+ * Island draft: deals `offered` distinct islands to each player from a shuffled deck, refilling
+ * with a fresh shuffle when it runs out (so two players may be offered the same island when there
+ * are fewer islands than offers).
+ */
+export function dealIslandOffers(
+  playerIds: readonly PlayerId[],
+  offered: number,
+  rng: RngState,
+): { offers: Record<PlayerId, IslandId[]>; state: RngState } {
+  let deck: IslandId[] = [];
+  let state = rng;
+  const offers: Record<PlayerId, IslandId[]> = {};
+  for (const id of playerIds) {
+    const hand: IslandId[] = [];
+    while (hand.length < Math.min(offered, ISLAND_IDS.length)) {
+      if (deck.length === 0) {
+        const shuffled = shuffle([...ISLAND_IDS], state);
+        deck = shuffled.items;
+        state = shuffled.state;
+      }
+      const [next, ...rest] = deck;
+      deck = rest;
+      if (next !== undefined && !hand.includes(next)) {
+        hand.push(next);
+      }
+    }
+    offers[id] = hand;
+  }
+  return { offers, state };
 }

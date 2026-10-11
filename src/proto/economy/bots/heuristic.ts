@@ -4,7 +4,7 @@ import { roleFee, traitOf } from '../islands';
 import { subtractGoods } from '../goods';
 import { buildingCostGoods } from '../rules';
 import type { EconomyDecider } from '../runner';
-import { MATERIALS, type EconomyAction, type Material } from '../types';
+import { MATERIALS, type EconomyAction, type IslandId, type Material } from '../types';
 import type { EconomyView } from '../view';
 import {
   arriveChance,
@@ -35,13 +35,18 @@ export interface EconomyPersonality {
   /** Multiplier on the future value of materials kept in the warehouse. */
   readonly patience: number;
   readonly temperature: number;
+  /**
+   * Taste for island traits in the draft (score in G); unlisted islands score 0. A stand-in for
+   * real evaluation: drafting results show which traits each personality ends up with.
+   */
+  readonly islands?: Readonly<Partial<Record<IslandId, number>>>;
 }
 
 export const ECONOMY_PERSONALITIES = {
   balanced: { risk: 0.2, aggression: 1, builder: 1, patience: 0.9, temperature: 25 },
-  cautious: { risk: 0.5, aggression: 0.6, builder: 1, patience: 1, temperature: 25 },
-  aggressive: { risk: 0, aggression: 1.5, builder: 0.8, patience: 0.8, temperature: 25 },
-  builder: { risk: 0.2, aggression: 0.8, builder: 1.5, patience: 1, temperature: 25 },
+  cautious: { risk: 0.5, aggression: 0.6, builder: 1, patience: 1, temperature: 25, islands: { fortress: 40, 'free-port': 20 } },
+  aggressive: { risk: 0, aggression: 1.5, builder: 0.8, patience: 0.8, temperature: 25, islands: { 'pirate-cove': 40, 'smuggler-port': 20 } },
+  builder: { risk: 0.2, aggression: 0.8, builder: 1.5, patience: 1, temperature: 25, islands: { lumber: 40, mine: 40, 'spice-isles': 20 } },
 } as const satisfies Record<string, EconomyPersonality>;
 export type EconomyPersonalityName = keyof typeof ECONOMY_PERSONALITIES;
 
@@ -164,6 +169,8 @@ function score(view: EconomyView, action: EconomyAction, persona: EconomyPersona
       const bad = view.intelRoll !== null && view.intelRoll < view.rules.sailing.successMin;
       return action.reroll === (wantsArrival && bad) ? 1 : 0;
     }
+    case 'choose-island':
+      return persona.islands?.[action.island] ?? 0;
   }
 }
 

@@ -37,6 +37,8 @@ export interface EconomyView {
   readonly wanted: readonly PlayerId[];
   readonly ships: readonly PublicShip[];
   readonly myDeployment: Deployment | null;
+  /** Islands I may choose from during the island draft. */
+  readonly myIslandOffers: readonly IslandId[];
   /** My role hand this round (draw mode); null when every role is open. */
   readonly myHand: readonly EconRoleId[] | null;
   /** The intel merchant's view of its target: the rerolled value if rerolled, else the raw roll. */
@@ -67,6 +69,7 @@ export function getEconomyView(state: EconomyState, playerId: PlayerId): Economy
     ships: roundState.ships.map((s) => publicShip(state, s, playerId)),
     myDeployment,
     myHand: roundState.hands[playerId] ?? null,
+    myIslandOffers: state.islandOffers[playerId] ?? [],
     intelRoll: target === undefined ? null : (target.rerolledRoll ?? target.rawRoll),
   };
 }

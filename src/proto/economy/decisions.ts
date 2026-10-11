@@ -44,6 +44,7 @@ export function hasCargoOn(ship: EconShip, playerId: PlayerId): boolean {
 
 export function getEconomyDeciders(state: EconomyState, phase: EconomyPhase): PlayerId[] {
   switch (phase) {
+    case 'island-choice':
     case 'invest':
       return state.players.map((p) => p.id);
     case 'role-deployment':
@@ -70,6 +71,8 @@ export function getEconomyLegalActions(state: EconomyState, playerId: PlayerId):
     return [];
   }
   switch (state.phase) {
+    case 'island-choice':
+      return (state.islandOffers[playerId] ?? []).map((island): EconomyAction => ({ type: 'choose-island', playerId, island }));
     case 'invest':
       return investOptions(state, playerId);
     case 'role-deployment':
@@ -204,5 +207,7 @@ export function economyActionKey(action: EconomyAction): string {
       return `${action.type}|${action.playerId}|${action.role}|${action.targetShipId}|${action.bet === null ? 'none' : `${action.bet.material}${action.bet.delta}`}`;
     case 'intel-reroll':
       return `${action.type}|${action.playerId}|${action.reroll}`;
+    case 'choose-island':
+      return `${action.type}|${action.playerId}|${action.island}`;
   }
 }
