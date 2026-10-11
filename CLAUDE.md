@@ -13,7 +13,7 @@ npm run dev                              # Vite 開發伺服器
 npm test                                 # 執行全部測試（vitest run）
 npx vitest run tests/game/rng.test.ts    # 執行單一測試檔
 npx vitest run -t "same seed"            # 依測試名稱篩選
-npm run test:coverage                    # 測試＋覆蓋率（src/game、src/bots、src/match，門檻 80%）
+npm run test:coverage                    # 測試＋覆蓋率（src/game、src/bots、src/match、src/proto，門檻 80%）
 npm run typecheck                        # 兩套 tsconfig 的型別檢查
 npm run build                            # typecheck + vite build
 npm run match:log -- 42 4                # 隨機選擇跑一局並印出中文對局紀錄（scripts/print-match.ts）
@@ -21,6 +21,7 @@ npm run simulate -- --matches 2000 --players 4 [--lineup a,b,c,d] [--seed 1]  # 
 npm run server:dev                       # 本機模擬 Cloudflare Worker（先 npm run build；port 8787，`npm run dev` 會把 /api 轉過去）
 npm run deploy                           # build + wrangler deploy（會中斷進行中的線上對局）
 npm run simulate -- --summary --set roles.pirate.modifier=-1 --set roles.guard.fee=60  # 覆寫任意規則數值試算，只輸出一行關鍵指標（比較方案用）
+npm run simulate:economy -- --mode B --matches 2000 [--set capacity.base=3] [--summary]  # 經濟改版原型（src/proto/economy）的模擬報表
 ```
 
 - 需要 Node.js 20.19 以上。TypeScript 為 7.x（原生編譯器）。
@@ -46,9 +47,10 @@ npm run simulate -- --summary --set roles.pirate.modifier=-1 --set roles.guard.f
 - `src/match/`：Match Runner 與 Controller 介面，座位上是真人、Bot 或遠端玩家由此層決定，引擎只認識 `PlayerId`。Runner 代 Bot／UI 計算合法行動（`DecisionContext`），公開事件廣播、私有事件只轉交給對應座位；`runMatchSync` 供模擬、`runMatch` 供 UI／連線、`replayMatch` 以 seed＋行動紀錄重建對局。
 - `src/online/`＋`server/`：連線房間（docs/architecture.md 第 8 節）。`src/online` 是環境無關的通訊協定與房間邏輯（納入 `tsconfig.engine.json`），`server/worker.ts` 是 Cloudflare Worker＋Durable Object，只做 HTTP／WebSocket 轉接；型別檢查用 `tsconfig.server.json`。房主密碼是 Worker secret `HOST_KEY`（本機在 `.dev.vars`，正式的在 `.host-key`，兩者皆不進版本控制）。
 - `src/ui/`：React 呈現層（`index.html` → `src/ui/main.tsx`），只透過 `src/game`、`src/match` 的公開 API 取得資料：桌面由公開事件重建（`session/board.ts`），私有資訊只來自該座位的 `PlayerView` 與私有事件。佔位美術在 `public/art/`，來源與授權記錄於 `public/art/SOURCES.md`。自製的低面數模型（資產建築等）依 [`docs/art/lowpoly-style.md`](docs/art/lowpoly-style.md) 製作，流程在 `.claude/skills/lowpoly-model` skill。
+- `src/proto/`：尚未定案改版方案的規則原型，只給 Bot 模擬比較用，**不是規則**、不接 UI；目前是 `economy/`（docs/proposals/2026-10-economy-rework.md 第 12～13 節的方案 A／B）。純度限制同 `src/game`，納入 `tsconfig.engine.json` 與覆蓋率門檻。
 - `tests/`：鏡像 `src/` 的結構（如 `tests/game/*.test.ts`），測試需以固定 seed 保持可重現。`tests/game/helpers.ts` 的 `startMatch` 預設使用 `NEUTRAL_EVENT_RULES`（事件效果歸零），避免隨機抽到的事件影響其他規則的測試；測試事件效果或做隨機 fuzz 時要明確傳入 `RULES_V06`。需要特定情境時用 `withRawRolls`、`withCash`、`withAssets`、`withMarketEvent`、`withNextVoyageEvent` 直接改寫狀態，並用 `scripted` 劇本指定玩家行動。
 
-**純度限制**：`tsconfig.engine.json` 只以 `lib: ES2022`、`types: []` 編譯 `src/game`、`src/bots` 與 `src/match`，因此這三層使用 DOM 或 Node API 會在 `npm run typecheck` 時失敗；`tsconfig.json` 則涵蓋全部程式碼（含 DOM）。兩者共用 `tsconfig.base.json`（strict、`noUncheckedIndexedAccess`、`exactOptionalPropertyTypes`、`verbatimModuleSyntax`）。
+**純度限制**：`tsconfig.engine.json` 只以 `lib: ES2022`、`types: []` 編譯 `src/game`、`src/bots`、`src/match`、`src/online` 與 `src/proto`，因此這些目錄使用 DOM 或 Node API 會在 `npm run typecheck` 時失敗；`tsconfig.json` 則涵蓋全部程式碼（含 DOM）。兩者共用 `tsconfig.base.json`（strict、`noUncheckedIndexedAccess`、`exactOptionalPropertyTypes`、`verbatimModuleSyntax`）。
 
 尚待驗證的平衡數值不要當成定案規則寫死。
 

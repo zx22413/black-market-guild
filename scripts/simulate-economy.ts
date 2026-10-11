@@ -1,0 +1,193 @@
+/**
+ * Runs bot-only matches of the economy prototype (docs/proposals/2026-10-economy-rework.md §13)
+ * and prints a Markdown report.
+ * Usage: npm run simulate:economy -- [--mode A|B] [--matches 1000] [--players 4] [--seed 1]
+ *        [--lineup balanced,cautious,aggressive,builder] [--set capacity.base=3 ...] [--summary]
+ * Seats rotate every match so each strategy plays every seat position.
+ */
+import { BUILDING_IDS, MATERIALS, economyRules, priceAt, runEconomyMatch, type EconomyMode, type EconomyRules } from '../src/proto/economy';
+import { ECONOMY_BOT_STRATEGIES, createEconomyBot, type EconomyBotStrategy } from '../src/proto/economy/bots';
+import { addEconomyMatch, emptyEconomyStats, type EconomyStats } from './economy-stats';
+
+interface Options {
+  readonly mode: EconomyMode;
+  readonly matches: number;
+  readonly players: number;
+  readonly seed: number;
+  readonly lineup: readonly EconomyBotStrategy[];
+  readonly overrides: readonly string[];
+  readonly rules: EconomyRules;
+  readonly summary: boolean;
+}
+
+/** Returns a copy of the rules with `path=value` numeric overrides applied. */
+function applyOverrides(base: EconomyRules, overrides: readonly string[]): EconomyRules {
+  const rules = JSON.parse(JSON.stringify(base)) as Record<string, unknown>;
+  for (const entry of overrides) {
+    const [path, raw] = entry.split('=');
+    const value = Number(raw);
+    const keys = (path ?? '').split('.');
+    const parent = keys.slice(0, -1).reduce<Record<string, unknown> | undefined>(
+      (node, key) => node?.[key] as Record<string, unknown> | undefined,
+      rules,
+    );
+    const leaf = keys.at(-1)!;
+    if (parent === undefined || typeof parent[leaf] !== 'number' || Number.isNaN(value)) {
+      throw new Error(`invalid override "${entry}": expected an existing numeric rule path=number`);
+    }
+    parent[leaf] = value;
+  }
+  return rules as unknown as EconomyRules;
+}
+
+function parseOptions(): Options {
+  const argv = (globalThis as { process?: { argv?: string[] } }).process?.argv?.slice(2) ?? [];
+  const get = (name: string) => {
+    const i = argv.indexOf(`--${name}`);
+    return i >= 0 ? argv[i + 1] : undefined;
+  };
+  const mode = (get('mode') ?? 'A').toUpperCase();
+  if (mode !== 'A' && mode !== 'B') {
+    throw new Error(`--mode must be A or B, got ${mode}`);
+  }
+  const overrides = argv.flatMap((arg, i) => (arg === '--set' && argv[i + 1] ? [argv[i + 1]!] : []));
+  const lineup = (get('lineup') ?? 'balanced,cautious,aggressive,builder').split(',') as EconomyBotStrategy[];
+  const unknown = lineup.filter((s) => !(ECONOMY_BOT_STRATEGIES as readonly string[]).includes(s));
+  if (unknown.length > 0) {
+    throw new Error(`unknown strategies: ${unknown.join(', ')}; choose from ${ECONOMY_BOT_STRATEGIES.join(', ')}`);
+  }
+  const options = {
+    mode,
+    matches: Number.parseInt(get('matches') ?? '1000', 10),
+    players: Number.parseInt(get('players') ?? '4', 10),
+    seed: Number.parseInt(get('seed') ?? '1', 10),
+    lineup,
+    overrides,
+    rules: applyOverrides(economyRules(mode), overrides),
+    summary: argv.includes('--summary'),
+  } as const;
+  if (![options.matches, options.players, options.seed].every(Number.isInteger)) {
+    throw new Error('--matches, --players and --seed must be integers');
+  }
+  return options;
+}
+
+function run(options: Options): EconomyStats {
+  const stats = emptyEconomyStats(options.rules.price.steps);
+  for (let i = 0; i < options.matches; i += 1) {
+    const strategies = Array.from({ length: options.players }, (_, k) => options.lineup[(i + k) % options.lineup.length]!);
+    const seats = strategies.map((strategy, k) => ({
+      id: `p${k + 1}`,
+      name: `${strategy}#${k + 1}`,
+      bot: createEconomyBot(strategy, options.seed * 1000 + i * 10 + k),
+    }));
+    const result = runEconomyMatch(options.seed + i, seats, options.rules);
+    addEconomyMatch(stats, result, (id) => strategies[Number(id.slice(1)) - 1]!);
+  }
+  return stats;
+}
+
+// ── Formatting ────────────────────────────────────────────────────────────────
+
+const pct = (part: number, whole: number) => (whole === 0 ? '—' : `${((100 * part) / whole).toFixed(1)}%`);
+const per = (part: number, whole: number) => (whole === 0 ? '—' : (part / whole).toFixed(2));
+
+function table(header: readonly string[], rows: readonly (readonly (string | number)[])[]): string[] {
+  return [`| ${header.join(' | ')} |`, `| ${header.map(() => '---').join(' | ')} |`, ...rows.map((r) => `| ${r.join(' | ')} |`)];
+}
+
+const BUILDING_LABELS: Record<string, string> = { shipyard: '造船廠', insurance: '航運保險', salvage: '打撈公司', exchange: '貿易交易所' };
+const ROLE_LABELS: Record<string, string> = { intel: '情報商人', guard: '護衛', pirate: '海盜', smuggler: '走私商人' };
+const MATERIAL_LABELS: Record<string, string> = { wood: '木材', iron: '鐵礦' };
+
+function totalRoles(s: EconomyStats): number {
+  return Object.values(s.roles).reduce((a, b) => a + b, 0);
+}
+
+function pirateNet(s: EconomyStats): number {
+  return (s.pirateIncome - s.pirateFees) / Math.max(1, s.roles.pirate ?? 0);
+}
+
+function report(options: Options, s: EconomyStats): string {
+  const { rules } = options;
+  const strategies = [...new Set(options.lineup)];
+  const roleCount = totalRoles(s);
+  const priceRows = MATERIALS.map((m) => {
+    const counts = s.priceSteps[m]!;
+    const total = counts.reduce((a, b) => a + b, 0);
+    return [MATERIAL_LABELS[m]!, ...counts.map((c) => pct(c, total))];
+  });
+  return [
+    `# 黑市商會 經濟原型模擬報表（方案 ${options.mode}）`,
+    '',
+    `- 規則：${rules.version}（原型，非正式規則）${options.overrides.length > 0 ? `，覆寫：${options.overrides.join('、')}` : ''}`,
+    `- 對局數：${s.matches}；人數：${options.players}；起始 seed：${options.seed}；陣容（每局輪換座位）：${options.lineup.join('、')}`,
+    `- 可裝貨量 ${rules.capacity.base}（造船廠 +${rules.capacity.shipyardBonus}）；${
+      options.mode === 'A' ? `出航成本 ${rules.ownShip.cost} G；護航費 ${rules.roles.guard.escortFee} G` : `運費每單位 ${rules.neutralShip.freightPerUnit} G`
+    }`,
+    '',
+    '## 1. 勝率與財富',
+    '',
+    ...table(
+      ['策略', '座位數', '勝率', '平均財富'],
+      strategies.map((st) => {
+        const e = s.byStrategy[st] ?? { seats: 0, wins: 0, wealth: 0 };
+        return [st, e.seats, pct(e.wins, e.seats), per(e.wealth, e.seats)];
+      }),
+    ),
+    '',
+    `- 每局最高與最低財富差距平均 ${per(s.wealthSpread, s.matches)} G。`,
+    '',
+    '## 2. 建築',
+    '',
+    ...table(
+      ['建築', '建造次數', '建造率（每座位）', '平均建造回合'],
+      BUILDING_IDS.map((b) => [BUILDING_LABELS[b]!, s.buildings[b]!.count, pct(s.buildings[b]!.count, s.seats), per(s.buildings[b]!.roundSum, s.buildings[b]!.count)]),
+    ),
+    '',
+    `- 每名玩家終局平均持有 ${per(BUILDING_IDS.reduce((sum, b) => sum + s.buildings[b]!.count, 0), s.seats)} 棟（目標 2～3）。`,
+    '',
+    '## 3. 出航與市場',
+    '',
+    `- 有裝貨出航的玩家回合：${pct(s.loadingRounds, s.playerRounds)}；平均每回合到港前裝運 ${per(s.unitsShipped, s.matches * rules.rounds)} 單位。`,
+    `- 到港量對需求：少於需求 ${pct(s.demandVsArrived.under, s.matches * rules.rounds * 2)}、剛好 ${pct(s.demandVsArrived.exact, s.matches * rules.rounds * 2)}、多於需求 ${pct(
+      s.demandVsArrived.over,
+      s.matches * rules.rounds * 2,
+    )}。`,
+    `- 終局每名玩家平均剩下 ${per(s.unsoldUnits, s.seats)} 單位材料（歸零）。`,
+    '',
+    '回合結束時的價格分布：',
+    '',
+    ...table(['材料', ...Array.from({ length: rules.price.steps }, (_, k) => `${priceAt(rules, k)} G`)], priceRows),
+    '',
+    '## 4. 角色',
+    '',
+    ...table(
+      ['角色', '部署次數', '佔所有玩家回合'],
+      Object.entries(s.roles).map(([role, n]) => [ROLE_LABELS[role] ?? role, n, pct(n, s.playerRounds)]),
+    ),
+    '',
+    `- 護衛守「自己沒有貨的船」：${pct(s.guardOthers, s.roles.guard ?? 0)}（V0.6 約 23%）。`,
+    `- 海盜：目標沉沒率 ${pct(s.pirateSinks, s.roles.pirate ?? 0)}；每次平均淨收益 ${pirateNet(s).toFixed(0)} G。`,
+    `- 護航費總額 ${s.escortFees} G；保險補償 ${s.insurance} G；打撈 ${s.salvaged} 單位；走私取走 ${s.smuggled} G。共 ${roleCount} 次部署。`,
+    '',
+    '> 原型模擬只反映目前 Bot 的決策方式與暫定數值，作為比較方案的參考，不是規則。',
+  ].join('\n');
+}
+
+/** One row: mode, overrides, building rates, guard-others, pirate share and net, sailing, win spread. */
+function summaryRow(options: Options, s: EconomyStats): string {
+  const winRates = [...new Set(options.lineup)].map((st) => {
+    const e = s.byStrategy[st];
+    return e === undefined || e.seats === 0 ? 0 : e.wins / e.seats;
+  });
+  const buildingRates = BUILDING_IDS.map((b) => pct(s.buildings[b]!.count, s.seats)).join(' / ');
+  return `| ${options.mode} | ${options.overrides.join(' ') || '預設'} | ${buildingRates} | ${pct(s.guardOthers, s.roles.guard ?? 0)} | ${pct(
+    s.roles.pirate ?? 0,
+    s.playerRounds,
+  )} | ${pirateNet(s).toFixed(0)} | ${pct(s.loadingRounds, s.playerRounds)} | ${(100 * Math.min(...winRates)).toFixed(1)}–${(100 * Math.max(...winRates)).toFixed(1)}% |`;
+}
+
+const options = parseOptions();
+const stats = run(options);
+console.log(options.summary ? summaryRow(options, stats) : report(options, stats));
