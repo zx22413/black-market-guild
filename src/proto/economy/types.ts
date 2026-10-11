@@ -34,6 +34,10 @@ export type ProtoVoyageEventId = (typeof PROTO_VOYAGE_EVENT_IDS)[number];
 export const ECON_ROLE_IDS = [...ROLE_IDS, 'broker'] as const;
 export type EconRoleId = (typeof ECON_ROLE_IDS)[number];
 
+/** Island traits (proposal §27). */
+export const ISLAND_IDS = ['spice-isles', 'pirate-cove', 'lumber', 'mine', 'smuggler-port', 'free-port', 'fortress'] as const;
+export type IslandId = (typeof ISLAND_IDS)[number];
+
 export const ECONOMY_PHASES = ['invest', 'role-deployment', 'intel-reroll'] as const;
 export type EconomyPhase = (typeof ECONOMY_PHASES)[number];
 
@@ -111,6 +115,8 @@ export interface EconPlayer {
   readonly name: string;
   readonly cash: number;
   readonly blackMoney: number;
+  /** Public island trait; null when island traits are off. */
+  readonly island: IslandId | null;
   /** Round each role was last deployed (role-hand cycle mode); public once roles are revealed. */
   readonly lastUsed: Readonly<Partial<Record<EconRoleId, number>>>;
   readonly buildings: readonly BuildingId[];
@@ -266,6 +272,8 @@ export type EconomyEvent =
       readonly guard: number;
       readonly pirate: number;
       readonly event: number;
+      /** The owner's island trait modifier. */
+      readonly island: number;
       readonly final: number;
       readonly outcome: VoyageOutcome;
       readonly cargo: readonly CargoLot[];

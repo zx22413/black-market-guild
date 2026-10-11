@@ -1,6 +1,7 @@
 import { hasCargoOn } from './decisions';
 import { NO_GOODS, addGoods, mapGoods, nextPriceStep, priceAt, subtractGoods, sumGoods, units } from './goods';
 import { chain, changeCash, holds, payAll, playerOf, setStock, type StepFn } from './state';
+import { traitOf } from './islands';
 import { EXCHANGE_COMMISSION, EXCHANGE_PRICE_FLOOR } from './rules';
 import {
   MATERIALS,
@@ -125,12 +126,11 @@ function smuggledGoodsValue(state: EconomyState): number {
 function settleArrival(ship: EconShip, prices: Prices): StepFn {
   return (state) => {
     const guards = deployed(state, ship, 'guard');
-    const inspecting = covered(state, ship) ? [] : guards;
-    const seized = seizeContraband(state, ship, inspecting, prices);
+    const seized = seizeContraband(state, ship, guards, prices);
     const current = seized.state;
     const proceeds = ship.cargo.map((lot) => ({
       playerId: lot.playerId,
-      amount: MATERIALS.reduce((sum, m) => sum + lotUnitsSold(state, lot, inspecting, m) * salePrice(current, lot.playerId, m, prices), 0),
+      amount: MATERIALS.reduce((sum, m) => sum + lotUnitsSold(state, ship, lot, guards, m) * salePrice(current, lot.playerId, m, prices), 0),
     }));
     const smugglers = takers(current, ship);
     const covers = coverers(current, ship);
@@ -161,22 +161,30 @@ function covered(state: EconomyState, ship: EconShip): boolean {
   return state.rules.roles.smuggler.coversSeizable === 1 && deployed(state, ship, 'smuggler').length > 0;
 }
 
-/** Guards of other players on the ship: they confiscate that lot's seizable goods. */
-function inspectorsOf(guards: readonly PlayerId[], lot: CargoLot): PlayerId[] {
+/**
+ * Guards of other players on the ship confiscate that lot's seizable goods, unless a smuggler
+ * covers the ship and the owner's island allows cover.
+ */
+function inspectorsOf(state: EconomyState, ship: EconShip, guards: readonly PlayerId[], lot: CargoLot): PlayerId[] {
+  const coverable = traitOf(state.rules, playerOf(state, lot.playerId).island).uncoverable !== 1;
+  if (covered(state, ship) && coverable) {
+    return [];
+  }
   return guards.filter((id) => id !== lot.playerId);
+}
+
+function hasSeizable(state: EconomyState, lot: CargoLot): boolean {
+  return MATERIALS.some((m) => state.rules.seizable[m] === 1 && lot.goods[m] > 0);
 }
 
 /** Whether this guard confiscated contraband on an arrived ship. */
 function confiscatedBy(state: EconomyState, ship: EconShip, guardId: PlayerId): boolean {
-  return (
-    !covered(state, ship) &&
-    ship.cargo.some((lot) => lot.playerId !== guardId && MATERIALS.some((m) => state.rules.seizable[m] === 1 && lot.goods[m] > 0))
-  );
+  return ship.cargo.some((lot) => hasSeizable(state, lot) && inspectorsOf(state, ship, [guardId], lot).includes(guardId));
 }
 
 /** Units of `material` the lot owner still sells after any confiscation. */
-function lotUnitsSold(state: EconomyState, lot: CargoLot, guards: readonly PlayerId[], material: Material): number {
-  return state.rules.seizable[material] === 1 && inspectorsOf(guards, lot).length > 0 ? 0 : lot.goods[material];
+function lotUnitsSold(state: EconomyState, ship: EconShip, lot: CargoLot, guards: readonly PlayerId[], material: Material): number {
+  return state.rules.seizable[material] === 1 && inspectorsOf(state, ship, guards, lot).length > 0 ? 0 : lot.goods[material];
 }
 
 /**
@@ -187,7 +195,7 @@ function lotUnitsSold(state: EconomyState, lot: CargoLot, guards: readonly Playe
 function seizeContraband(state: EconomyState, ship: EconShip, guards: readonly PlayerId[], prices: Prices): EconomyStep {
   return ship.cargo.reduce<EconomyStep>(
     (acc, lot) => {
-      const inspectors = inspectorsOf(guards, lot);
+      const inspectors = inspectorsOf(state, ship, guards, lot);
       const seizedUnits = MATERIALS.filter((m) => state.rules.seizable[m] === 1).reduce((sum, m) => sum + lot.goods[m], 0);
       if (inspectors.length === 0 || seizedUnits === 0) {
         return acc;
@@ -222,11 +230,14 @@ function payBets(bets: readonly PlayerManipulation[], prices: Prices): StepFn {
     );
 }
 
-/** Perishable goods left in any warehouse spoil at the end of the round. */
+/** Perishable goods left in any warehouse spoil at the end of the round, unless the island keeps them. */
 const spoil: StepFn = (state) => ({
   state: {
     ...state,
-    players: state.players.map((p) => ({ ...p, stock: mapGoods((m) => (state.rules.perishable[m] === 1 ? 0 : p.stock[m])) })),
+    players: state.players.map((p) => {
+      const keeps = traitOf(state.rules, p.island).keepsPerishable === 1;
+      return { ...p, stock: mapGoods((m) => (state.rules.perishable[m] === 1 && !keeps ? 0 : p.stock[m])) };
+    }),
   },
   events: [],
 });

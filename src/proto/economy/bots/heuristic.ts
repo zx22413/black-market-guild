@@ -1,5 +1,6 @@
 import { createRng, type Rng } from '../../../game';
 import { shippingCost } from '../decisions';
+import { roleFee, traitOf } from '../islands';
 import { subtractGoods } from '../goods';
 import { buildingCostGoods } from '../rules';
 import type { EconomyDecider } from '../runner';
@@ -49,11 +50,12 @@ type Deploy = Extract<EconomyAction, { type: 'deploy-role' }>;
 
 function scoreInvest(view: EconomyView, action: Invest, persona: EconomyPersonality): number {
   const { rules } = view;
-  const p = arriveChance(rules, 0);
+  const trait = traitOf(rules, view.me.island);
+  const p = arriveChance(rules, trait.ownShipModifier);
   const insured = view.me.buildings.includes('insurance') || action.build === 'insurance';
   const stock = action.build === null ? view.me.stock : subtractGoods(view.me.stock, buildingCostGoods(rules, action.build));
   const lastRound = view.round >= rules.rounds;
-  let score = -shippingCost(rules, action.load);
+  let score = -shippingCost(rules, action.load, view.me.island);
   let cargoValue = 0;
   const shift = (m: Material) => (action.manipulate?.material === m ? action.manipulate.delta : 0);
   const brokerCost = (m: Material) => (action.manipulate?.material === m ? rules.buildings.broker.unitCost : 0);
@@ -65,7 +67,7 @@ function scoreInvest(view: EconomyView, action: Invest, persona: EconomyPersonal
     score += shipped * price * p * kept - atRisk * persona.risk * (insured ? 0.5 : 1);
     cargoValue += shipped * price;
     score += action.direct[m] * directSalePrice(view, m);
-    const spoils = lastRound || rules.perishable[m] === 1;
+    const spoils = lastRound || (rules.perishable[m] === 1 && trait.keepsPerishable !== 1);
     const keepEach = spoils ? 0 : Math.max(0, currentPrice(view, m) * p - perUnitCost(rules)) * persona.patience;
     score += (stock[m] - shipped - action.direct[m] - brokerCost(m)) * keepEach;
   }
@@ -103,7 +105,7 @@ function scoreBet(view: EconomyView, action: Deploy): number {
   const step = view.prices[bet.material];
   const room = bet.delta > 0 ? step < rules.price.steps - 1 : step > 0;
   const chance = room ? Math.min(0.95, Math.max(0.05, 0.45 + 0.25 * gap * bet.delta)) : 0;
-  return rules.roles.broker.payout * chance + shiftValue(view, bet.material, shift, mine) - rules.roles.broker.fee;
+  return rules.roles.broker.payout * chance + shiftValue(view, bet.material, shift, mine) - roleFee(rules, view.me.island, 'broker');
 }
 
 function scoreDeploy(view: EconomyView, action: Deploy, persona: EconomyPersonality): number {
@@ -117,10 +119,13 @@ function scoreDeploy(view: EconomyView, action: Deploy, persona: EconomyPersonal
   const { rules } = view;
   const stake = stakeOn(view, ship);
   const base = arriveChance(rules, 0);
-  const fee = rules.roles[action.role].fee;
+  const fee = roleFee(rules, view.me.island, action.role);
   switch (action.role) {
     case 'guard': {
-      const boost = rules.roles.guard.rollModifier + (view.me.buildings.includes('insurance') ? rules.buildings.insurance.guardRollBonus : 0);
+      const boost =
+        rules.roles.guard.rollModifier +
+        traitOf(rules, view.me.island).guardModifier +
+        (view.me.buildings.includes('insurance') ? rules.buildings.insurance.guardRollBonus : 0);
       const guarded = arriveChance(rules, boost);
       const seizure = expectedSeizure(view, ship);
       // Without escortWhenSeizing, a likely confiscation forfeits the escort fee.
@@ -129,7 +134,7 @@ function scoreDeploy(view: EconomyView, action: Deploy, persona: EconomyPersonal
       return (guarded - base) * stake + escort + seizure * guarded - fee;
     }
     case 'pirate': {
-      const attacked = arriveChance(rules, rules.roles.pirate.modifier);
+      const attacked = arriveChance(rules, rules.roles.pirate.modifier + traitOf(rules, view.me.island).pirateModifier);
       const loot = (rules.roles.pirate.loot + (carriesWanted(view, ship) ? rules.wanted.lootBonus : 0)) * (1 - attacked);
       const salvage = view.me.buildings.includes('salvage') && stake === 0 ? (base - attacked) * averagePrice(view) * base : 0;
       return loot * persona.aggression + salvage - (base - attacked) * stake - fee;

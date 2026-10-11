@@ -5,6 +5,7 @@ export interface EconomyStats {
   matches: number;
   seats: number;
   byStrategy: Record<string, { seats: number; wins: number; wealth: number }>;
+  byIsland: Record<string, { seats: number; wins: number; wealth: number }>;
   buildings: Record<string, { count: number; roundSum: number }>;
   roles: Record<string, number>;
   guardOthers: number;
@@ -41,6 +42,7 @@ export function emptyEconomyStats(steps: number): EconomyStats {
     matches: 0,
     seats: 0,
     byStrategy: {},
+    byIsland: {},
     buildings: Object.fromEntries(BUILDING_IDS.map((b) => [b, { count: 0, roundSum: 0 }])),
     roles: Object.fromEntries(ECON_ROLE_IDS.map((r) => [r, 0])),
     guardOthers: 0,
@@ -88,6 +90,13 @@ export function addEconomyMatch(stats: EconomyStats, run: EconomyMatchRun, strat
     entry.seats += 1;
     entry.wealth += standing.wealth;
     entry.wins += standing.rank === 1 ? 1 / result.winners.length : 0;
+    const island = state.players.find((p) => p.id === standing.playerId)?.island;
+    if (island !== null && island !== undefined) {
+      const byIsland = (stats.byIsland[island] ??= { seats: 0, wins: 0, wealth: 0 });
+      byIsland.seats += 1;
+      byIsland.wealth += standing.wealth;
+      byIsland.wins += standing.rank === 1 ? 1 / result.winners.length : 0;
+    }
   }
   const wealths = result.standings.map((s) => s.wealth);
   stats.wealthSpread += Math.max(...wealths) - Math.min(...wealths);

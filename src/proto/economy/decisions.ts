@@ -1,11 +1,13 @@
 import { covers, enumerateGoods, subtractGoods, units } from './goods';
 import { mayDeploy } from './hands';
+import { capacityFor, roleFee, traitOf } from './islands';
 import { EXCHANGE_DIRECT_SALE, buildingCostGoods, type EconomyRules } from './rules';
 import { playerOf } from './state';
 import {
   BUILDING_IDS,
   ECON_ROLE_IDS,
   MATERIALS,
+  type IslandId,
   type Manipulation,
   type Material,
   type BuildingId,
@@ -22,16 +24,16 @@ export interface PendingEconomyDecision {
   readonly phase: EconomyPhase;
 }
 
-/** Units a player may ship this round; a shipyard built this round already counts. */
+/** Units a player may ship this round without island traits (see capacityFor). */
 export function capacityOf(rules: EconomyRules, buildings: readonly BuildingId[]): number {
-  return rules.capacity.base + (buildings.includes('shipyard') ? rules.capacity.shipyardBonus : 0);
+  return capacityFor(rules, buildings, null);
 }
 
-/** Option A: one ship cost if anything is loaded. Option B: freight per unit. */
-export function shippingCost(rules: EconomyRules, load: Goods): number {
+/** Option A: one ship cost if anything is loaded (island traits may change it). Option B: freight per unit. */
+export function shippingCost(rules: EconomyRules, load: Goods, island: IslandId | null = null): number {
   const loaded = units(load);
   if (rules.mode === 'A') {
-    return loaded > 0 ? rules.ownShip.cost : 0;
+    return loaded > 0 ? rules.ownShip.cost + traitOf(rules, island).shipCostDelta : 0;
   }
   return loaded * rules.neutralShip.freightPerUnit;
 }
@@ -132,9 +134,9 @@ function investOptions(state: EconomyState, playerId: PlayerId): EconomyAction[]
     const stock = build === null ? player.stock : subtractGoods(player.stock, buildingCostGoods(rules, build));
     const cash = player.cash - (build === null ? 0 : rules.buildings[build].cash);
     const buildings = build === null ? player.buildings : [...player.buildings, build];
-    const capacity = capacityOf(rules, buildings);
+    const capacity = capacityFor(rules, buildings, player.island);
     return enumerateGoods(stock, capacity)
-      .filter((load) => cash >= shippingCost(rules, load))
+      .filter((load) => cash >= shippingCost(rules, load, player.island))
       .flatMap((load) => {
         const left = subtractGoods(stock, load);
         return directSaleOptions(rules, buildings, left).flatMap((direct) =>
@@ -168,7 +170,7 @@ function deployOptions(state: EconomyState, playerId: PlayerId): EconomyAction[]
   const { rules } = state;
   const options: EconomyAction[] = [{ type: 'deploy-role', playerId, role: null, targetShipId: null, bet: null }];
   for (const role of ECON_ROLE_IDS) {
-    if (player.cash < rules.roles[role].fee || !mayDeploy(state, player, role)) {
+    if (player.cash < roleFee(rules, player.island, role) || !mayDeploy(state, player, role)) {
       continue;
     }
     if (role === 'broker') {

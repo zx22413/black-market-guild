@@ -4,6 +4,7 @@ import { submitEconomyDecision, openRound } from './flow';
 import { ECONOMY_RULES, type EconomyRules } from './rules';
 import { NO_GOODS } from './goods';
 import {
+  ISLAND_IDS,
   MATERIALS,
   PHASE_ACTION_TYPE,
   PROTO_VOYAGE_EVENT_IDS,
@@ -50,6 +51,9 @@ function validate(config: EconomyMatchConfig, rules: EconomyRules): string | nul
   if (!Number.isInteger(config.seed)) {
     return `seed must be an integer, got ${config.seed}`;
   }
+  if (rules.islands.enabled === 1 && count > ISLAND_IDS.length) {
+    return `island traits need at most ${ISLAND_IDS.length} players`;
+  }
   if (count < rules.players.min || count > rules.players.max) {
     return `player count must be ${rules.players.min}-${rules.players.max}, got ${count}`;
   }
@@ -79,22 +83,24 @@ export function createEconomyMatch(config: EconomyMatchConfig): EconomyResultOf<
   }
   const demand = shuffle(buildDemandDeck(rules, config.players.length), seedToRngState(config.seed));
   const voyage = shuffle(buildProtoVoyageDeck(rules), demand.state);
+  const islands = rules.islands.enabled === 1 ? shuffle([...ISLAND_IDS], voyage.state) : { items: [], state: voyage.state };
   const step = openRound(
     {
       rules,
       seed: config.seed,
       round: 0,
       phase: 'invest',
-      players: config.players.map(({ id, name }) => ({
+      players: config.players.map(({ id, name }, i) => ({
         id,
         name,
         cash: rules.startingCash,
         blackMoney: 0,
+        island: islands.items[i] ?? null,
         lastUsed: {},
         buildings: [],
         stock: rules.startingStock,
       })),
-      rng: voyage.state,
+      rng: islands.state,
       demandDeck: demand.items,
       voyageDeck: voyage.items,
       prices: rules.price.start,

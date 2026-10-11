@@ -3,7 +3,7 @@
  * and prints a Markdown report.
  * Usage: npm run simulate:economy -- [--mode A|B] [--matches 1000] [--players 4] [--seed 1]
  *        [--lineup balanced,cautious,aggressive,builder] [--set capacity.base=3 ...] [--summary]
- *        [--preset round5|…|round11]
+ *        [--preset round5|…|round13]
  * A preset is a named list of `--set` overrides applied before any explicit `--set`.
  * Seats rotate every match so each strategy plays every seat position.
  */
@@ -83,6 +83,9 @@ const ROUND10 = [
   'demand.extraMax.spice=1',
 ];
 
+const ROUND11 = [...ROUND10, 'roles.broker.fee=75', 'productionEvery.wood=2', 'productionEvery.iron=2'];
+const ROUND12 = [...ROUND11, 'roles.hand.mode=2', 'roles.hand.cooldown=2'];
+
 const PRESETS: Readonly<Record<string, readonly string[]>> = {
   round5: [...ROUND5, 'roles.smuggler.coversSeizable=0', 'roles.guard.escortWhenSeizing=1'],
   /** Round 6 (proposal §19): smugglers cover contraband; confiscating guards get no escort fee. */
@@ -102,7 +105,11 @@ const PRESETS: Readonly<Record<string, readonly string[]>> = {
   /** Round 10 (proposal §23): round 9 with demand 1-2 for 3 players and 1-3 for 4 (contraband 0-1 for both). */
   round10: ROUND10,
   /** Round 11 (proposal §25): round 10 with a 75 G broker and wood and iron produced every other round. */
-  round11: [...ROUND10, 'roles.broker.fee=75', 'productionEvery.wood=2', 'productionEvery.iron=2'],
+  round11: ROUND11,
+  /** Round 12 (proposal §27): round 11 with role hands cycling on a two-round cooldown. */
+  round12: ROUND12,
+  /** Round 13 (proposal §27): round 12 with island traits. */
+  round13: [...ROUND12, 'islands.enabled=1'],
 };
 
 
@@ -169,6 +176,15 @@ function table(header: readonly string[], rows: readonly (readonly (string | num
 
 const BUILDING_LABELS: Record<string, string> = { shipyard: '造船廠', insurance: '航運保險', salvage: '打撈公司', exchange: '貿易交易所', broker: '牙行' };
 const ROLE_LABELS: Record<string, string> = { intel: '情報商人', guard: '護衛', pirate: '海盜', smuggler: '走私商人', broker: '牙人' };
+const ISLAND_LABELS: Record<string, string> = {
+  'spice-isles': '香料群島',
+  'pirate-cove': '海盜灣',
+  lumber: '林場島',
+  mine: '礦山島',
+  'smuggler-port': '走私港',
+  'free-port': '自由港',
+  fortress: '要塞島',
+};
 const MATERIAL_LABELS: Record<string, string> = { wood: '木材', iron: '鐵礦', spice: '香料', contraband: '違禁品' };
 
 function totalRoles(s: EconomyStats): number {
@@ -209,6 +225,19 @@ function report(options: Options, s: EconomyStats): string {
     ),
     '',
     `- 每局最高與最低財富差距平均 ${per(s.wealthSpread, s.matches)} G。`,
+    ...(Object.keys(s.byIsland).length === 0
+      ? []
+      : [
+          '',
+          `島嶼特色（公平勝率 ${(100 / options.players).toFixed(1)}%）：`,
+          '',
+          ...table(
+            ['島', '座位數', '勝率', '平均財富'],
+            Object.entries(s.byIsland)
+              .sort(([, a], [, b]) => b.wins / b.seats - a.wins / a.seats)
+              .map(([island, e]) => [ISLAND_LABELS[island] ?? island, e.seats, pct(e.wins, e.seats), per(e.wealth, e.seats)]),
+          ),
+        ]),
     '',
     '## 2. 建築',
     '',

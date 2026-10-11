@@ -1,5 +1,6 @@
 import { nextInt } from '../../game/rng';
-import { chain, changeCash, holds } from './state';
+import { roleFee, traitOf } from './islands';
+import { chain, changeCash, holds, playerOf } from './state';
 import { ECON_ROLE_IDS, type Deployment, type EconomyState, type EconomyStep, type EconShip } from './types';
 
 /** Locks the secret role deployments (same rules as V0.6 §7). */
@@ -49,8 +50,9 @@ export function revealRoles(state: EconomyState): EconomyStep {
   const fees = chain(
     state,
     deployments
-      .filter((d) => state.rules.roles[d.role].fee > 0)
-      .map((d) => (current: EconomyState) => changeCash(current, d.playerId, -current.rules.roles[d.role].fee, 'role-fee', null)),
+      .map((d) => ({ d, fee: roleFee(state.rules, playerOf(state, d.playerId).island, d.role) }))
+      .filter(({ fee }) => fee > 0)
+      .map(({ d, fee }) => (current: EconomyState) => changeCash(current, d.playerId, -fee, 'role-fee', null)),
   );
   const hideSmugglers = state.rules.roles.smuggler.anonymous === 1;
   const ordered = ECON_ROLE_IDS.flatMap((role) => deployments.filter((d) => d.role === role && !(hideSmugglers && role === 'smuggler')));
@@ -90,7 +92,7 @@ function eventModifier(state: EconomyState, ship: EconShip): number {
   }
 }
 
-/** Roll → reroll → guards → pirates → events → clamp, as in V0.6 §7. */
+/** Roll → reroll → guards → pirates → events → island trait → clamp, as in V0.6 §7. */
 export function resolveVoyages(state: EconomyState): EconomyStep {
   const { rules } = state;
   const resolved = state.roundState.ships.map((ship) => {
@@ -98,17 +100,23 @@ export function resolveVoyages(state: EconomyState): EconomyStep {
       throw new Error(`ship ${ship.id} has not been rolled`);
     }
     const base = ship.rerolledRoll ?? ship.rawRoll;
+    const trait = (playerId: string) => traitOf(rules, playerOf(state, playerId).island);
     const guard = targeting(state, ship, 'guard').reduce(
-      (sum, d) => sum + rules.roles.guard.rollModifier + (holds(state, d.playerId, 'insurance') ? rules.buildings.insurance.guardRollBonus : 0),
+      (sum, d) =>
+        sum +
+        rules.roles.guard.rollModifier +
+        trait(d.playerId).guardModifier +
+        (holds(state, d.playerId, 'insurance') ? rules.buildings.insurance.guardRollBonus : 0),
       0,
     );
     // + 0 turns -0 into 0.
-    const pirate = targeting(state, ship, 'pirate').length * rules.roles.pirate.modifier + 0;
+    const pirate = targeting(state, ship, 'pirate').reduce((sum, d) => sum + rules.roles.pirate.modifier + trait(d.playerId).pirateModifier, 0) + 0;
     const event = eventModifier(state, ship);
-    const final = Math.min(rules.sailing.dieMax, Math.max(rules.sailing.dieMin, base + guard + pirate + event));
+    const island = (ship.owner === null ? 0 : trait(ship.owner).ownShipModifier) + 0;
+    const final = Math.min(rules.sailing.dieMax, Math.max(rules.sailing.dieMin, base + guard + pirate + event + island));
     const arrives = final >= rules.sailing.successMin && final <= rules.sailing.successMax;
     const outcome = arrives ? ('arrived' as const) : ('sank' as const);
-    return { ship: { ...ship, outcome }, summary: { base, guard, pirate, event, final, outcome } };
+    return { ship: { ...ship, outcome }, summary: { base, guard, pirate, event, island, final, outcome } };
   });
   return {
     state: { ...state, roundState: { ...state.roundState, ships: resolved.map((r) => r.ship) } },

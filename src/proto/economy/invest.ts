@@ -74,7 +74,7 @@ function unload(playerId: PlayerId, load: Goods): StepFn {
 
 function payShipping(action: InvestAction): StepFn {
   return (current) => {
-    const cost = shippingCost(current.rules, action.load);
+    const cost = shippingCost(current.rules, action.load, playerOf(current, action.playerId).island);
     const reason = current.rules.mode === 'A' ? 'ship-cost' : 'freight';
     return cost > 0 ? changeCash(current, action.playerId, -cost, reason, null) : { state: current, events: [] };
   };

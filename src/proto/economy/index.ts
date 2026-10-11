@@ -12,4 +12,6 @@ export { priceAt } from './goods';
 export { buildingValue } from './scoring';
 export { runEconomyMatch } from './runner';
 export type { EconomyDecider, EconomySeat, EconomyMatchRun } from './runner';
+export { DEFAULT_ISLAND_TRAITS, NEUTRAL_TRAIT } from './islands';
+export type { IslandTrait } from './islands';
 export * from './types';

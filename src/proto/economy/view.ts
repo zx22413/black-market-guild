@@ -9,6 +9,7 @@ import type {
   EconRoleId,
   EconomyState,
   Goods,
+  IslandId,
   PlayerId,
   PublicShip,
 } from './types';
@@ -18,6 +19,7 @@ export interface PublicEconPlayer {
   readonly name: string;
   readonly cash: number;
   readonly buildings: readonly BuildingId[];
+  readonly island: IslandId | null;
   /** Warehouse after production, before anyone loaded this round. */
   readonly stockAtRoundStart: Goods;
 }
@@ -56,6 +58,7 @@ export function getEconomyView(state: EconomyState, playerId: PlayerId): Economy
       name: p.name,
       cash: p.cash,
       buildings: p.buildings,
+      island: p.island,
       stockAtRoundStart: roundState.stockAtStart[p.id] ?? p.stock,
     })),
     prices: state.prices,

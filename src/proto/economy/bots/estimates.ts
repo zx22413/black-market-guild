@@ -1,4 +1,5 @@
-import { capacityOf, materialsInPlay } from '../decisions';
+import { materialsInPlay } from '../decisions';
+import { capacityFor } from '../islands';
 import { priceAt } from '../goods';
 import { EXCHANGE_COMMISSION, EXCHANGE_DIRECT_SALE, type EconomyRules } from '../rules';
 import { MATERIALS, type BuildingId, type Goods, type Material, type PublicShip } from '../types';
@@ -47,7 +48,7 @@ export function othersExpectedArrivals(view: EconomyView, material: Material): n
   return (
     view.players
       .filter((p) => p.id !== view.playerId)
-      .reduce((sum, p) => sum + Math.min(p.stockAtRoundStart[material], capacityOf(view.rules, p.buildings)) * OTHERS_LOAD_SHARE, 0) *
+      .reduce((sum, p) => sum + Math.min(p.stockAtRoundStart[material], capacityFor(view.rules, p.buildings, p.island)) * OTHERS_LOAD_SHARE, 0) *
     arriveChance(view.rules, 0)
   );
 }
@@ -70,7 +71,7 @@ export function shiftValue(view: EconomyView, material: Material, delta: number,
 export function expectedPrice(view: EconomyView, material: Material, mine: number, shift = 0): number {
   const others = view.players
     .filter((p) => p.id !== view.playerId)
-    .reduce((sum, p) => sum + Math.min(p.stockAtRoundStart[material], capacityOf(view.rules, p.buildings)) * OTHERS_LOAD_SHARE, 0);
+    .reduce((sum, p) => sum + Math.min(p.stockAtRoundStart[material], capacityFor(view.rules, p.buildings, p.island)) * OTHERS_LOAD_SHARE, 0);
   const arrivals = (others + mine) * arriveChance(view.rules, 0);
   const delta = Math.max(-1, Math.min(1, view.demand[material] + shift - arrivals)) * view.rules.price.volatility[material];
   return priceOfStep(view.rules, view.prices[material] + delta);
