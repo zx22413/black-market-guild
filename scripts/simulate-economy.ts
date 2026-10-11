@@ -177,7 +177,7 @@ function table(header: readonly string[], rows: readonly (readonly (string | num
 }
 
 const BUILDING_LABELS: Record<string, string> = { shipyard: '造船廠', insurance: '航運保險', salvage: '打撈公司', exchange: '貿易交易所', broker: '牙行' };
-const ROLE_LABELS: Record<string, string> = { intel: '情報商人', guard: '護衛', pirate: '海盜', smuggler: '走私商人', broker: '牙人' };
+const ROLE_LABELS: Record<string, string> = { intel: '情報商人', guard: '護衛', pirate: '海盜', smuggler: '走私商人', broker: '莊家' };
 const ISLAND_LABELS: Record<string, string> = {
   'spice-isles': '香料群島',
   'pirate-cove': '海盜灣',
@@ -266,7 +266,7 @@ function report(options: Options, s: EconomyStats): string {
     '',
     ...table(['材料', ...Array.from({ length: rules.price.steps }, (_, k) => `${priceAt(rules, k)} G`)], priceRows),
     '',
-    `- 牙人：押注 ${s.roles.broker ?? 0} 次，押中 ${pct(s.betsWon, s.roles.broker ?? 0)}。`,
+    `- 莊家：押注 ${s.roles.broker ?? 0} 次，押中 ${pct(s.betsWon, s.roles.broker ?? 0)}。`,
     `- 牙行調整需求 ${s.manipulations} 次（每局平均 ${per(s.manipulations, s.matches)}）；違禁品被護衛沒收 ${s.contrabandSeizedUnits} 單位、${s.contrabandSeizedCash} G。`,
     `- 交易所（效果 ${['跌價保護', '做市佣金', '倉庫直售'][rules.buildings.exchange.variant] ?? rules.buildings.exchange.variant}）：佣金共 ${s.commission} G；直售 ${s.directUnits} 單位、${s.directCash} G。`,
     '',

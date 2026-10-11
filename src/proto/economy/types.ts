@@ -30,7 +30,7 @@ export const PROTO_VOYAGE_EVENT_IDS = [
 ] as const;
 export type ProtoVoyageEventId = (typeof PROTO_VOYAGE_EVENT_IDS)[number];
 
-/** V0.6 roles plus the broker (牙人), who bets on a price move (proposal §22). */
+/** V0.6 roles plus the broker (莊家), who bets on a price move (proposal §22). */
 export const ECON_ROLE_IDS = [...ROLE_IDS, 'broker'] as const;
 export type EconRoleId = (typeof ECON_ROLE_IDS)[number];
 

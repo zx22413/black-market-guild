@@ -174,7 +174,7 @@ describe('round 8 rules', () => {
   });
 });
 
-describe('broker role (牙人)', () => {
+describe('broker role (莊家)', () => {
   function brokerRules(): EconomyRules {
     const base = goodsRules('A');
     return { ...base, roles: { ...base.roles, broker: { ...base.roles.broker, enabled: 1, payout: 100 } } };
