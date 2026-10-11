@@ -12,6 +12,7 @@ import {
   carriesWanted,
   currentPrice,
   expectedPrice,
+  insuredValue,
   perUnitCost,
   stakeOn,
 } from './estimates';
@@ -47,14 +48,19 @@ function scoreInvest(view: EconomyView, action: Invest, persona: EconomyPersonal
   const stock = action.build === null ? view.me.stock : subtractGoods(view.me.stock, buildingCostGoods(rules, action.build));
   const lastRound = view.round >= rules.rounds;
   let score = -shippingCost(rules, action.load);
+  let cargoValue = 0;
   for (const m of MATERIALS) {
     const shipped = action.load[m];
     const price = expectedPrice(view, m, shipped);
     const atRisk = shipped * price * (1 - p);
     score += shipped * price * p - atRisk * persona.risk * (insured ? 0.5 : 1);
-    score += insured ? atRisk * rules.buildings.insurance.payoutRatio : 0;
+    cargoValue += shipped * price;
     const keepEach = lastRound ? 0 : Math.max(0, currentPrice(view, m) * p - perUnitCost(rules)) * persona.patience;
     score += (stock[m] - shipped) * keepEach;
+  }
+  const shippedUnits = action.load.wood + action.load.iron;
+  if (insured && shippedUnits > 0) {
+    score += (1 - p) * insuredValue(rules, shippedUnits, cargoValue / shippedUnits);
   }
   if (action.build !== null) {
     score += persona.builder * buildingWorth(view, action.build) - rules.buildings[action.build].cash;

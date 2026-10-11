@@ -19,6 +19,7 @@ export interface EconomyStats {
   demandVsArrived: { under: number; exact: number; over: number };
   escortFees: number;
   insurance: number;
+  insuredKept: number;
   salvaged: number;
   smuggled: number;
   unsoldUnits: number;
@@ -43,6 +44,7 @@ export function emptyEconomyStats(steps: number): EconomyStats {
     demandVsArrived: { under: 0, exact: 0, over: 0 },
     escortFees: 0,
     insurance: 0,
+    insuredKept: 0,
     salvaged: 0,
     smuggled: 0,
     unsoldUnits: 0,
@@ -108,6 +110,8 @@ export function addEconomyMatch(stats: EconomyStats, run: EconomyMatchRun, strat
       } else if (event.reason === 'insurance') {
         stats.insurance += event.amount;
       }
+    } else if (event.type === 'insured-goods-kept') {
+      stats.insuredKept += event.goods.wood + event.goods.iron;
     } else if (event.type === 'salvaged') {
       stats.salvaged += 1;
     } else if (event.type === 'ship-smuggled') {

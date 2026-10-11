@@ -193,6 +193,13 @@ export type EconomyEvent =
       readonly material: Material;
       readonly shipId: ShipId;
     }
+  | {
+      readonly type: 'insured-goods-kept';
+      readonly round: number;
+      readonly playerId: PlayerId;
+      readonly goods: Goods;
+      readonly shipId: ShipId;
+    }
   | { readonly type: 'voyage-event-revealed'; readonly round: number; readonly event: ProtoVoyageEventId }
   | {
       readonly type: 'roles-revealed';

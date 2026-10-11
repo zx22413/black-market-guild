@@ -45,7 +45,8 @@ export interface EconomyRules {
   readonly wanted: { readonly lootBonus: number };
   readonly buildings: {
     readonly shipyard: BuildingCost;
-    readonly insurance: BuildingCost & { readonly payoutRatio: number; readonly guardRollBonus: number };
+    /** Per sunk ship: keep `keepUnits` of your cargo, then recover `payoutRatio` of the rest in cash. */
+    readonly insurance: BuildingCost & { readonly keepUnits: number; readonly payoutRatio: number; readonly guardRollBonus: number };
     readonly salvage: BuildingCost & { readonly maxHoldersPerShip: number; readonly maxPerRound: number };
     readonly exchange: BuildingCost;
   };
@@ -62,7 +63,7 @@ export interface EconomyRules {
 }
 
 export const ECONOMY_RULES: EconomyRules = {
-  version: 'economy-proto-1',
+  version: 'economy-proto-2',
   mode: 'A',
   players: { min: 3, max: 4 },
   rounds: 6,
@@ -84,7 +85,7 @@ export const ECONOMY_RULES: EconomyRules = {
   wanted: { lootBonus: 100 },
   buildings: {
     shipyard: { cash: 100, wood: 2, iron: 0 },
-    insurance: { cash: 100, wood: 1, iron: 1, payoutRatio: 0.5, guardRollBonus: 1 },
+    insurance: { cash: 100, wood: 1, iron: 1, keepUnits: 1, payoutRatio: 0, guardRollBonus: 1 },
     salvage: { cash: 100, wood: 0, iron: 2, maxHoldersPerShip: 2, maxPerRound: 2 },
     exchange: { cash: 150, wood: 1, iron: 1 },
   },

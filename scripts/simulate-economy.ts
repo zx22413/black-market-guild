@@ -169,7 +169,7 @@ function report(options: Options, s: EconomyStats): string {
     '',
     `- 護衛守「自己沒有貨的船」：${pct(s.guardOthers, s.roles.guard ?? 0)}（V0.6 約 23%）。`,
     `- 海盜：目標沉沒率 ${pct(s.pirateSinks, s.roles.pirate ?? 0)}；每次平均淨收益 ${pirateNet(s).toFixed(0)} G。`,
-    `- 護航費總額 ${s.escortFees} G；保險補償 ${s.insurance} G；打撈 ${s.salvaged} 單位；走私取走 ${s.smuggled} G。共 ${roleCount} 次部署。`,
+    `- 護航費總額 ${s.escortFees} G；保險補償 ${s.insurance} G、保住 ${s.insuredKept} 單位；打撈 ${s.salvaged} 單位；走私取走 ${s.smuggled} G。共 ${roleCount} 次部署。`,
     '',
     '> 原型模擬只反映目前 Bot 的決策方式與暫定數值，作為比較方案的參考，不是規則。',
   ].join('\n');

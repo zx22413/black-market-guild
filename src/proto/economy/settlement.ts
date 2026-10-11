@@ -1,5 +1,5 @@
 import { hasCargoOn } from './decisions';
-import { addGoods, mapGoods, nextPriceStep, priceAt, sumGoods, units } from './goods';
+import { NO_GOODS, addGoods, mapGoods, nextPriceStep, priceAt, subtractGoods, sumGoods, units } from './goods';
 import { chain, changeCash, holds, payAll, playerOf, setStock, type StepFn } from './state';
 import {
   MATERIALS,
@@ -180,7 +180,11 @@ const payEscortFees: StepFn = (state) => {
   );
 };
 
-/** Insured holders recover a share of their sunk cargo at the pre-settlement price. */
+/**
+ * For each sunk ship carrying their cargo, insured holders keep up to `keepUnits` units
+ * (the most valuable at the pre-settlement price, wood on ties) back in their warehouse,
+ * and recover `payoutRatio` of the rest of the lost value in cash (proposal §15).
+ */
 function payInsurance(before: Goods): StepFn {
   return (state) =>
     chain(
@@ -191,14 +195,36 @@ function payInsurance(before: Goods): StepFn {
           state.roundState.ships
             .filter((s) => s.outcome === 'sank')
             .flatMap((ship) => {
-              const lost = ship.cargo
-                .filter((lot) => lot.playerId === p.id)
-                .reduce((sum, lot) => sum + MATERIALS.reduce((s, m) => s + lot.goods[m] * priceAt(state.rules, before[m]), 0), 0);
-              const amount = Math.floor(lost * state.rules.buildings.insurance.payoutRatio);
-              return payAll([{ playerId: p.id, amount }], 'insurance', ship.id);
+              const lost = sumGoods(ship.cargo.filter((lot) => lot.playerId === p.id).map((lot) => lot.goods));
+              const kept = keptUnits(state, lost, before);
+              const value = (goods: Goods) => MATERIALS.reduce((s, m) => s + goods[m] * priceAt(state.rules, before[m]), 0);
+              const amount = Math.floor(value(subtractGoods(lost, kept)) * state.rules.buildings.insurance.payoutRatio);
+              return [keepGoods(p.id, kept, ship.id), ...payAll([{ playerId: p.id, amount }], 'insurance', ship.id)];
             }),
         ),
     );
+}
+
+/** The most valuable lost units first; a stable sort keeps wood first on equal prices. */
+function keptUnits(state: EconomyState, lost: Goods, before: Goods): Goods {
+  const order = [...MATERIALS].sort((a, b) => before[b] - before[a]);
+  return order.reduce<{ kept: Goods; left: number }>(
+    ({ kept, left }, m) => {
+      const take = Math.min(left, lost[m]);
+      return { kept: { ...kept, [m]: take }, left: left - take };
+    },
+    { kept: NO_GOODS, left: state.rules.buildings.insurance.keepUnits },
+  ).kept;
+}
+
+function keepGoods(playerId: PlayerId, kept: Goods, shipId: string): StepFn {
+  return (state) =>
+    units(kept) === 0
+      ? { state, events: [] }
+      : {
+          state: setStock(state, playerId, addGoods(playerOf(state, playerId).stock, kept)),
+          events: [{ type: 'insured-goods-kept', round: state.round, playerId, goods: kept, shipId }],
+        };
 }
 
 /**

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { EconomyEvent, EconomyState } from '../../../src/proto/economy';
+import { economyRules, type EconomyEvent, type EconomyState } from '../../../src/proto/economy';
 import { cashEvents, cashOf, playRound, start, stockOf, withBuildings, withDemand, withStock, withWanted } from './helpers';
 
 const W = (wood: number, iron = 0) => ({ wood, iron });
@@ -63,10 +63,32 @@ describe('sinking, loot and the wanted bonus', () => {
     expect(settled(events).arrived).toEqual(W(0));
   });
 
-  it('pays insured holders half of their sunk cargo at the old price', () => {
+  it('lets insured holders keep their most valuable sunk unit, wood on ties', () => {
     const state = withBuildings(start('A'), 'p1', ['insurance']);
+    const tie = playRound(state, { loads: { p1: W(1, 1) }, rolls: { 'r1-p1': 1 } });
+    expect(tie.events.some((e) => e.type === 'insured-goods-kept' && e.goods.wood === 1 && e.goods.iron === 0)).toBe(true);
+    expect(cashEvents(tie.events, 'insurance')).toBe(0);
+    // 2/2 at start − 1/1 loaded + 1 wood kept + 1/1 production.
+    expect(stockOf(tie.state, 'p1')).toEqual(W(3, 2));
+    const pricier = playRound({ ...state, prices: W(3, 5) }, { loads: { p1: W(1, 1) }, rolls: { 'r1-p1': 1 } });
+    expect(stockOf(pricier.state, 'p1')).toEqual(W(2, 3));
+  });
+
+  it('keeps one unit per sunk ship carrying the holder cargo (Option B)', () => {
+    const state = withBuildings(start('B'), 'p1', ['insurance']);
+    const { events } = playRound(state, { loads: { p1: W(1, 1) }, rolls: { 'r1-wood': 1, 'r1-iron': 1 } });
+    expect(events.filter((e) => e.type === 'insured-goods-kept').map((e) => (e.type === 'insured-goods-kept' ? e.shipId : ''))).toEqual([
+      'r1-wood',
+      'r1-iron',
+    ]);
+  });
+
+  it('can still pay a cash share of the rest of the sunk cargo', () => {
+    const rules = economyRules('A');
+    const cash = { ...rules, buildings: { ...rules.buildings, insurance: { ...rules.buildings.insurance, keepUnits: 1, payoutRatio: 0.5 } } };
+    const state = withBuildings(start('A', 3, cash), 'p1', ['insurance']);
     const { events } = playRound(state, { loads: { p1: W(1, 1) }, rolls: { 'r1-p1': 1 } });
-    expect(cashEvents(events, 'insurance', 'p1')).toBe(150);
+    expect(cashEvents(events, 'insurance', 'p1')).toBe(75);
   });
 
   it('salvages the most common material for at most two holders without cargo aboard', () => {

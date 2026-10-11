@@ -59,7 +59,7 @@ export function buildingWorth(view: EconomyView, building: BuildingId): number {
     case 'shipyard':
       return endValue + roundsLeft * rules.capacity.shipyardBonus * Math.max(0, price * p - (rules.mode === 'B' ? perUnitCost(rules) : 0)) * 0.6;
     case 'insurance':
-      return endValue + roundsLeft * (rules.capacity.base * price * (1 - p) * rules.buildings.insurance.payoutRatio * 0.7 + 10);
+      return endValue + roundsLeft * ((1 - p) * 0.7 * insuredValue(rules, rules.capacity.base, price) + 10);
     case 'salvage': {
       const sinks = rules.mode === 'A' ? opponents * 0.6 * (1 - p) : 2 * 0.8 * (1 - p);
       return endValue + roundsLeft * Math.min(rules.buildings.salvage.maxPerRound, sinks) * price * p * 0.8;
@@ -67,6 +67,16 @@ export function buildingWorth(view: EconomyView, building: BuildingId): number {
     case 'exchange':
       return endValue + roundsLeft * rules.capacity.base * rules.price.step * 0.4;
   }
+}
+
+/**
+ * Insurance value if `shipped` units worth `price` each sink: kept units count at the future
+ * value of a warehoused unit, the rest at the cash payout ratio.
+ */
+export function insuredValue(rules: EconomyRules, shipped: number, price: number): number {
+  const { keepUnits, payoutRatio } = rules.buildings.insurance;
+  const kept = Math.min(keepUnits, shipped);
+  return kept * price * 0.6 + (shipped - kept) * price * payoutRatio;
 }
 
 /** Value of my own cargo on a ship at current prices. */
