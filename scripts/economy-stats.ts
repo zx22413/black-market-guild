@@ -32,6 +32,7 @@ export interface EconomyStats {
   salvaged: number;
   smuggled: number;
   unsoldUnits: number;
+  unsoldByMaterial: Record<string, number>;
   wealthSpread: number;
 }
 
@@ -67,6 +68,7 @@ export function emptyEconomyStats(steps: number): EconomyStats {
     salvaged: 0,
     smuggled: 0,
     unsoldUnits: 0,
+    unsoldByMaterial: Object.fromEntries(MATERIALS.map((m) => [m, 0])),
     wealthSpread: 0,
   };
 }
@@ -90,6 +92,9 @@ export function addEconomyMatch(stats: EconomyStats, run: EconomyMatchRun, strat
   const wealths = result.standings.map((s) => s.wealth);
   stats.wealthSpread += Math.max(...wealths) - Math.min(...wealths);
   stats.unsoldUnits += state.players.reduce((sum, p) => sum + MATERIALS.reduce((u, m) => u + p.stock[m], 0), 0);
+  for (const m of MATERIALS) {
+    stats.unsoldByMaterial[m] = (stats.unsoldByMaterial[m] ?? 0) + state.players.reduce((sum, p) => sum + p.stock[m], 0);
+  }
 
   for (const record of state.history) {
     record.builds.forEach((b) => {

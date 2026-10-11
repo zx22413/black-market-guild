@@ -222,7 +222,9 @@ function report(options: Options, s: EconomyStats): string {
       s.demandVsArrived.exact,
       s.matches * rules.rounds * inPlay.length,
     )}、多於需求 ${pct(s.demandVsArrived.over, s.matches * rules.rounds * inPlay.length)}。`,
-    `- 終局每名玩家平均剩下 ${per(s.unsoldUnits, s.seats)} 單位材料（歸零）。`,
+    `- 終局每名玩家平均剩下 ${per(s.unsoldUnits, s.seats)} 單位材料（歸零）：${inPlay
+      .map((m) => `${MATERIAL_LABELS[m]} ${per(s.unsoldByMaterial[m] ?? 0, s.seats)}`)
+      .join('、')}。`,
     '',
     '回合結束時的價格分布：',
     '',
