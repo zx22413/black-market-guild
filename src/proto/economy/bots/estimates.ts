@@ -1,6 +1,6 @@
 import { capacityOf } from '../decisions';
 import { priceAt } from '../goods';
-import type { EconomyRules } from '../rules';
+import { EXCHANGE_COMMISSION, EXCHANGE_DIRECT_SALE, type EconomyRules } from '../rules';
 import { MATERIALS, type BuildingId, type Goods, type Material, type PublicShip } from '../types';
 import type { EconomyView } from '../view';
 
@@ -65,8 +65,29 @@ export function buildingWorth(view: EconomyView, building: BuildingId): number {
       return endValue + roundsLeft * Math.min(rules.buildings.salvage.maxPerRound, sinks) * price * p * 0.8;
     }
     case 'exchange':
-      return endValue + roundsLeft * rules.capacity.base * rules.price.step * 0.4;
+      return endValue + roundsLeft * exchangeValuePerRound(view, price, p, opponents);
   }
+}
+
+function exchangeValuePerRound(view: EconomyView, price: number, p: number, opponents: number): number {
+  const { rules } = view;
+  const exchange = rules.buildings.exchange;
+  switch (exchange.variant) {
+    case EXCHANGE_COMMISSION:
+      return Math.min(exchange.commissionCap, opponents * rules.capacity.base * 0.8 * p) * exchange.commissionPerUnit;
+    case EXCHANGE_DIRECT_SALE: {
+      const direct = Math.max(rules.price.base, price - exchange.directPriceSteps * rules.price.step);
+      return exchange.directUnits * Math.max(0, direct - Math.max(0, price * p - perUnitCost(rules)));
+    }
+    default:
+      return rules.capacity.base * rules.price.step * 0.4;
+  }
+}
+
+/** Expected cash for one unit sold directly by the exchange. */
+export function directSalePrice(view: EconomyView, material: Material): number {
+  const steps = view.rules.buildings.exchange.directPriceSteps;
+  return priceAt(view.rules, Math.max(0, view.prices[material] - steps));
 }
 
 /**

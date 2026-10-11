@@ -48,7 +48,19 @@ export interface EconomyRules {
     /** Per sunk ship: keep `keepUnits` of your cargo, then recover `payoutRatio` of the rest in cash. */
     readonly insurance: BuildingCost & { readonly keepUnits: number; readonly payoutRatio: number; readonly guardRollBonus: number };
     readonly salvage: BuildingCost & { readonly maxHoldersPerShip: number; readonly maxPerRound: number };
-    readonly exchange: BuildingCost;
+    /**
+     * `variant` 0: sell at the better of the old and new price (round 1-2).
+     * 1: market-maker commission per unit of other players' goods that arrives, capped per round.
+     * 2: direct sale of up to `directUnits` from the warehouse each round, `directPriceSteps` below
+     * the settled price; direct sales count as arrivals.
+     */
+    readonly exchange: BuildingCost & {
+      readonly variant: number;
+      readonly commissionPerUnit: number;
+      readonly commissionCap: number;
+      readonly directUnits: number;
+      readonly directPriceSteps: number;
+    };
   };
   /** Share of each held building's cash cost counted in final wealth; materials are not counted. */
   readonly buildingValueRatio: number;
@@ -63,7 +75,7 @@ export interface EconomyRules {
 }
 
 export const ECONOMY_RULES: EconomyRules = {
-  version: 'economy-proto-2',
+  version: 'economy-proto-3',
   mode: 'A',
   players: { min: 3, max: 4 },
   rounds: 6,
@@ -87,7 +99,7 @@ export const ECONOMY_RULES: EconomyRules = {
     shipyard: { cash: 100, wood: 2, iron: 0 },
     insurance: { cash: 100, wood: 1, iron: 1, keepUnits: 1, payoutRatio: 0, guardRollBonus: 1 },
     salvage: { cash: 100, wood: 0, iron: 2, maxHoldersPerShip: 2, maxPerRound: 2 },
-    exchange: { cash: 150, wood: 1, iron: 1 },
+    exchange: { cash: 150, wood: 1, iron: 1, variant: 0, commissionPerUnit: 15, commissionCap: 4, directUnits: 1, directPriceSteps: 1 },
   },
   buildingValueRatio: 0.5,
   voyageEvents: {
@@ -110,6 +122,10 @@ export const ECONOMY_RULES: EconomyRules = {
 export function economyRules(mode: EconomyMode): EconomyRules {
   return { ...ECONOMY_RULES, mode };
 }
+
+export const EXCHANGE_PRICE_FLOOR = 0;
+export const EXCHANGE_COMMISSION = 1;
+export const EXCHANGE_DIRECT_SALE = 2;
 
 export function buildingCostGoods(rules: EconomyRules, building: BuildingId): Goods {
   const { wood, iron } = rules.buildings[building];

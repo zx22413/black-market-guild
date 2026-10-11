@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { economyRules, type EconomyEvent, type EconomyState } from '../../../src/proto/economy';
+import { economyRules, getEconomyLegalActions, type EconomyEvent, type EconomyState } from '../../../src/proto/economy';
 import { cashEvents, cashOf, playRound, start, stockOf, withBuildings, withDemand, withStock, withWanted } from './helpers';
 
 const W = (wood: number, iron = 0) => ({ wood, iron });
@@ -229,5 +229,51 @@ describe('match end', () => {
     const state = withDemand(start('A'), W(2, 2));
     const { state: next } = playRound(state, { loads: { p1: W(2) } });
     expect(next.roundState.wanted).toEqual(['p1']);
+  });
+});
+
+function exchangeRules(variant: number, mode: 'A' | 'B' = 'A') {
+  const rules = economyRules(mode);
+  return { ...rules, buildings: { ...rules.buildings, exchange: { ...rules.buildings.exchange, variant } } };
+}
+
+describe('exchange variants', () => {
+  it('pays a commission on other players arrived goods, capped per round (variant 1)', () => {
+    const state = withBuildings(withDemand(start('A', 4, exchangeRules(1)), W(3, 3)), 'p3', ['exchange']);
+    const { events } = playRound(state, { loads: { p1: W(2), p2: W(1, 1), p3: W(0, 1), p4: W(1) } });
+    expect(cashEvents(events, 'exchange-commission', 'p3')).toBe(60);
+    const few = playRound(withBuildings(withDemand(start('A', 3, exchangeRules(1)), W(3, 3)), 'p3', ['exchange']), {
+      loads: { p1: W(2), p3: W(0, 1) },
+      rolls: { 'r1-p1': 1 },
+    });
+    expect(cashEvents(few.events, 'exchange-commission', 'p3')).toBe(0);
+  });
+
+  it('drops the price floor outside variant 0', () => {
+    const state = withBuildings(withDemand(start('A', 3, exchangeRules(1)), W(1, 3)), 'p1', ['exchange']);
+    const { events } = playRound(state, { loads: { p1: W(2), p2: W(1) } });
+    expect(cashEvents(events, 'sale', 'p1')).toBe(250);
+  });
+
+  it('sells directly from the warehouse below the settled price, counting as arrivals (variant 2)', () => {
+    const state = withBuildings(withDemand(start('A', 3, exchangeRules(2)), W(1, 3)), 'p1', ['exchange']);
+    const options = getEconomyLegalActions(state, 'p1').filter((a) => a.type === 'invest' && a.build === null && a.load.wood === 0 && a.load.iron === 0);
+    expect(options.map((a) => (a.type === 'invest' ? a.direct : null))).toEqual([W(0, 0), W(0, 1), W(1, 0)]);
+    // A non-holder may only sell directly in the round they build the exchange.
+    const p2 = getEconomyLegalActions(state, 'p2');
+    expect(p2.every((a) => a.type === 'invest' && (a.build === 'exchange' || a.direct.wood + a.direct.iron === 0))).toBe(true);
+    expect(p2.some((a) => a.type === 'invest' && a.build === 'exchange' && a.direct.wood + a.direct.iron > 0)).toBe(true);
+    const { events, state: next } = playRound(state, { loads: { p2: W(1) }, direct: { p1: W(1) } });
+    expect(settled(events).arrived.wood).toBe(2);
+    expect(cashEvents(events, 'direct-sale', 'p1')).toBe(100);
+    expect(cashEvents(events, 'sale', 'p2')).toBe(125);
+    // 2/2 − 1 wood sold + 1/1 production.
+    expect(stockOf(next, 'p1')).toEqual(W(2, 3));
+    expect(next.history[0]!.directSales).toEqual([{ playerId: 'p1', goods: W(1) }]);
+  });
+
+  it('offers no direct sale under the price-floor variant', () => {
+    const state = withBuildings(start('A'), 'p1', ['exchange']);
+    expect(getEconomyLegalActions(state, 'p1').every((a) => a.type === 'invest' && a.direct.wood + a.direct.iron === 0)).toBe(true);
   });
 });

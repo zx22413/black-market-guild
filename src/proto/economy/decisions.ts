@@ -1,6 +1,6 @@
 import { ROLE_IDS } from '../../game';
 import { covers, subtractGoods, units } from './goods';
-import { buildingCostGoods, type EconomyRules } from './rules';
+import { EXCHANGE_DIRECT_SALE, buildingCostGoods, type EconomyRules } from './rules';
 import { playerOf } from './state';
 import {
   BUILDING_IDS,
@@ -76,7 +76,22 @@ export function getEconomyLegalActions(state: EconomyState, playerId: PlayerId):
   }
 }
 
-/** Build at most one new affordable building, then load what is left within capacity and cash. */
+/** Direct sales the exchange allows from `stock` (exchange variant 2), including none. */
+export function directSaleOptions(rules: EconomyRules, buildings: readonly BuildingId[], stock: Goods): Goods[] {
+  const max = buildings.includes('exchange') && rules.buildings.exchange.variant === EXCHANGE_DIRECT_SALE ? rules.buildings.exchange.directUnits : 0;
+  const options: Goods[] = [];
+  for (let wood = 0; wood <= Math.min(stock.wood, max); wood += 1) {
+    for (let iron = 0; iron <= Math.min(stock.iron, max - wood); iron += 1) {
+      options.push({ wood, iron });
+    }
+  }
+  return options;
+}
+
+/**
+ * Build at most one new affordable building, then load what is left within capacity and cash;
+ * an exchange (variant 2) may also sell directly from what is left after loading.
+ */
 function investOptions(state: EconomyState, playerId: PlayerId): EconomyAction[] {
   const { rules } = state;
   const player = playerOf(state, playerId);
@@ -92,13 +107,16 @@ function investOptions(state: EconomyState, playerId: PlayerId): EconomyAction[]
   return builds.flatMap((build) => {
     const stock = build === null ? player.stock : subtractGoods(player.stock, buildingCostGoods(rules, build));
     const cash = player.cash - (build === null ? 0 : rules.buildings[build].cash);
-    const capacity = capacityOf(rules, build === null ? player.buildings : [...player.buildings, build]);
+    const buildings = build === null ? player.buildings : [...player.buildings, build];
+    const capacity = capacityOf(rules, buildings);
     const options: EconomyAction[] = [];
     for (let wood = 0; wood <= Math.min(stock.wood, capacity); wood += 1) {
       for (let iron = 0; iron <= Math.min(stock.iron, capacity - wood); iron += 1) {
         const load = { wood, iron };
         if (cash >= shippingCost(rules, load)) {
-          options.push({ type: 'invest', playerId, build, load });
+          directSaleOptions(rules, buildings, subtractGoods(stock, load)).forEach((direct) =>
+            options.push({ type: 'invest', playerId, build, load, direct }),
+          );
         }
       }
     }
@@ -124,7 +142,7 @@ function deployOptions(state: EconomyState, playerId: PlayerId): EconomyAction[]
 export function economyActionKey(action: EconomyAction): string {
   switch (action.type) {
     case 'invest':
-      return `${action.type}|${action.playerId}|${action.build}|${action.load.wood}|${action.load.iron}`;
+      return `${action.type}|${action.playerId}|${action.build}|${action.load.wood}|${action.load.iron}|${action.direct.wood}|${action.direct.iron}`;
     case 'deploy-role':
       return `${action.type}|${action.playerId}|${action.role}|${action.targetShipId}`;
     case 'intel-reroll':

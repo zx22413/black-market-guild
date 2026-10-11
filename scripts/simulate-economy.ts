@@ -160,6 +160,8 @@ function report(options: Options, s: EconomyStats): string {
     '',
     ...table(['材料', ...Array.from({ length: rules.price.steps }, (_, k) => `${priceAt(rules, k)} G`)], priceRows),
     '',
+    `- 交易所（效果 ${['跌價保護', '做市佣金', '倉庫直售'][rules.buildings.exchange.variant] ?? rules.buildings.exchange.variant}）：佣金共 ${s.commission} G；直售 ${s.directUnits} 單位、${s.directCash} G。`,
+    '',
     '## 4. 角色',
     '',
     ...table(

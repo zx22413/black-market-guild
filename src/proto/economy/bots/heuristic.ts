@@ -11,6 +11,7 @@ import {
   buildingWorth,
   carriesWanted,
   currentPrice,
+  directSalePrice,
   expectedPrice,
   insuredValue,
   perUnitCost,
@@ -55,8 +56,9 @@ function scoreInvest(view: EconomyView, action: Invest, persona: EconomyPersonal
     const atRisk = shipped * price * (1 - p);
     score += shipped * price * p - atRisk * persona.risk * (insured ? 0.5 : 1);
     cargoValue += shipped * price;
+    score += action.direct[m] * directSalePrice(view, m);
     const keepEach = lastRound ? 0 : Math.max(0, currentPrice(view, m) * p - perUnitCost(rules)) * persona.patience;
-    score += (stock[m] - shipped) * keepEach;
+    score += (stock[m] - shipped - action.direct[m]) * keepEach;
   }
   const shippedUnits = action.load.wood + action.load.iron;
   if (insured && shippedUnits > 0) {

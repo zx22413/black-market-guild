@@ -56,6 +56,7 @@ export function apply(state: EconomyState, action: Parameters<typeof applyEconom
 export interface RoundPlan {
   readonly loads: Readonly<Record<string, Goods>>;
   readonly builds?: Readonly<Record<string, BuildingId>>;
+  readonly direct?: Readonly<Record<string, Goods>>;
   /** Raw roll per ship id; ships not listed roll 6. */
   readonly rolls?: Readonly<Record<string, number>>;
   readonly roles?: Readonly<Record<string, readonly [RoleId, string]>>;
@@ -72,6 +73,7 @@ export function playRound(state: EconomyState, plan: RoundPlan): { state: Econom
       playerId: p.id,
       build: plan.builds?.[p.id] ?? null,
       load: plan.loads[p.id] ?? { wood: 0, iron: 0 },
+      direct: plan.direct?.[p.id] ?? { wood: 0, iron: 0 },
     });
     current = step.state;
     events.push(...step.events);

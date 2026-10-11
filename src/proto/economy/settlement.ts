@@ -1,8 +1,10 @@
 import { hasCargoOn } from './decisions';
 import { NO_GOODS, addGoods, mapGoods, nextPriceStep, priceAt, subtractGoods, sumGoods, units } from './goods';
 import { chain, changeCash, holds, payAll, playerOf, setStock, type StepFn } from './state';
+import { EXCHANGE_COMMISSION, EXCHANGE_PRICE_FLOOR } from './rules';
 import {
   MATERIALS,
+  type CargoLot,
   type EconomyEvent,
   type EconomyState,
   type EconomyStep,
@@ -19,23 +21,27 @@ interface Prices {
 
 /**
  * Black-market settlement (proposal §12.1, §13.3): the new price is set by arrivals against the
- * demand card and applies to this round's sales. Order: arrivals (smuggling, sales) → sinkings
- * (loot, seized goods) → escort fees → insurance → salvage.
+ * demand card and applies to this round's sales; exchange direct sales count as arrivals.
+ * Order: arrivals (smuggling, sales) → direct sales → sinkings (loot, seized goods) → escort fees
+ * → exchange commission → insurance → salvage.
  */
 export function settleMarket(state: EconomyState): EconomyStep {
   const { rules } = state;
   const { ships, demand } = state.roundState;
   const arrivedShips = ships.filter((s) => s.outcome === 'arrived');
   const sunkShips = ships.filter((s) => s.outcome === 'sank');
-  const arrived = sumGoods(arrivedShips.flatMap((s) => s.cargo.map((lot) => lot.goods)));
+  const { directSales } = state.roundState;
+  const arrived = sumGoods([...arrivedShips.flatMap((s) => s.cargo.map((lot) => lot.goods)), ...directSales.map((lot) => lot.goods)]);
   const prices: Prices = {
     before: state.prices,
     after: mapGoods((m) => nextPriceStep(rules, state.prices[m], arrived[m], demand[m])),
   };
   const settled = chain(state, [
     ...arrivedShips.map((ship) => settleArrival(ship, prices)),
+    ...directSales.map((lot) => payDirectSale(lot, prices.after)),
     ...sunkShips.map(settleSinking),
     payEscortFees,
+    payCommission,
     payInsurance(prices.before),
     salvage(sunkShips),
   ]);
@@ -44,6 +50,7 @@ export function settleMarket(state: EconomyState): EconomyStep {
     demand,
     wanted: state.roundState.wanted,
     builds: state.roundState.builds,
+    directSales,
     ships,
     deployments: state.roundState.deployments,
     voyageEvent: state.roundState.voyageEvent,
@@ -60,11 +67,40 @@ export function settleMarket(state: EconomyState): EconomyStep {
   };
 }
 
-/** The exchange sells at the better of the pre-settlement and new price; others at the new price. */
+/** Exchange variant 0 sells at the better of the old and new price; everyone else at the new price. */
 export function salePrice(state: EconomyState, playerId: PlayerId, material: Material, prices: Prices): number {
   const after = priceAt(state.rules, prices.after[material]);
-  return holds(state, playerId, 'exchange') ? Math.max(after, priceAt(state.rules, prices.before[material])) : after;
+  const floor = state.rules.buildings.exchange.variant === EXCHANGE_PRICE_FLOOR && holds(state, playerId, 'exchange');
+  return floor ? Math.max(after, priceAt(state.rules, prices.before[material])) : after;
 }
+
+/** Exchange variant 2: warehouse units sold `directPriceSteps` below the settled price. */
+function payDirectSale(lot: CargoLot, after: Goods): StepFn {
+  return (state) => {
+    const steps = state.rules.buildings.exchange.directPriceSteps;
+    const amount = MATERIALS.reduce((sum, m) => sum + lot.goods[m] * priceAt(state.rules, Math.max(0, after[m] - steps)), 0);
+    return changeCash(state, lot.playerId, amount, 'direct-sale', null);
+  };
+}
+
+/** Exchange variant 1: a commission per unit of other players' goods that arrived, capped per round. */
+const payCommission: StepFn = (state) => {
+  const { variant, commissionPerUnit, commissionCap } = state.rules.buildings.exchange;
+  if (variant !== EXCHANGE_COMMISSION) {
+    return { state, events: [] };
+  }
+  const arrivedLots = state.roundState.ships.filter((s) => s.outcome === 'arrived').flatMap((s) => s.cargo);
+  return chain(
+    state,
+    state.players
+      .filter((p) => p.buildings.includes('exchange'))
+      .flatMap((p) => {
+        const others = arrivedLots.filter((lot) => lot.playerId !== p.id).reduce((sum, lot) => sum + units(lot.goods), 0);
+        const amount = Math.min(others, commissionCap) * commissionPerUnit;
+        return amount > 0 ? [(current: EconomyState) => changeCash(current, p.id, amount, 'exchange-commission', null)] : [];
+      }),
+  );
+};
 
 function deployed(state: EconomyState, ship: EconShip, role: 'guard' | 'pirate' | 'smuggler'): PlayerId[] {
   return state.roundState.deployments.filter((d) => d.role === role && d.targetShipId === ship.id).map((d) => d.playerId);

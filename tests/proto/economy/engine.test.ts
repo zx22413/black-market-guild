@@ -76,11 +76,11 @@ describe('invest options', () => {
 
   it('rejects illegal and out-of-phase actions', () => {
     const state = start('A');
-    expect(applyEconomyAction(state, { type: 'invest', playerId: 'p1', build: null, load: { wood: 3, iron: 0 } }).ok).toBe(false);
+    expect(applyEconomyAction(state, { type: 'invest', playerId: 'p1', build: null, load: { wood: 3, iron: 0 }, direct: { wood: 0, iron: 0 } }).ok).toBe(false);
     expect(applyEconomyAction(state, { type: 'deploy-role', playerId: 'p1', role: null, targetShipId: null }).ok).toBe(false);
-    expect(applyEconomyAction(state, { type: 'invest', playerId: 'zz', build: null, load: { wood: 0, iron: 0 } }).ok).toBe(false);
-    const once = apply(state, { type: 'invest', playerId: 'p1', build: null, load: { wood: 0, iron: 0 } }).state;
-    expect(applyEconomyAction(once, { type: 'invest', playerId: 'p1', build: null, load: { wood: 0, iron: 0 } }).ok).toBe(false);
+    expect(applyEconomyAction(state, { type: 'invest', playerId: 'zz', build: null, load: { wood: 0, iron: 0 }, direct: { wood: 0, iron: 0 } }).ok).toBe(false);
+    const once = apply(state, { type: 'invest', playerId: 'p1', build: null, load: { wood: 0, iron: 0 }, direct: { wood: 0, iron: 0 } }).state;
+    expect(applyEconomyAction(once, { type: 'invest', playerId: 'p1', build: null, load: { wood: 0, iron: 0 }, direct: { wood: 0, iron: 0 } }).ok).toBe(false);
     expect(getEconomyPending(once).map((d) => d.playerId)).toEqual(['p2', 'p3']);
   });
 });
@@ -88,9 +88,9 @@ describe('invest options', () => {
 describe('investing and launching', () => {
   it('builds before loading and pays the ship cost (Option A)', () => {
     let state = start('A');
-    state = apply(state, { type: 'invest', playerId: 'p1', build: 'insurance', load: { wood: 1, iron: 1 } }).state;
-    state = apply(state, { type: 'invest', playerId: 'p2', build: null, load: { wood: 2, iron: 0 } }).state;
-    const launched = apply(state, { type: 'invest', playerId: 'p3', build: null, load: { wood: 0, iron: 0 } });
+    state = apply(state, { type: 'invest', playerId: 'p1', build: 'insurance', load: { wood: 1, iron: 1 }, direct: { wood: 0, iron: 0 } }).state;
+    state = apply(state, { type: 'invest', playerId: 'p2', build: null, load: { wood: 2, iron: 0 }, direct: { wood: 0, iron: 0 } }).state;
+    const launched = apply(state, { type: 'invest', playerId: 'p3', build: null, load: { wood: 0, iron: 0 }, direct: { wood: 0, iron: 0 } });
     state = launched.state;
     expect(state.phase).toBe('role-deployment');
     expect(cashOf(state, 'p1')).toBe(1000 - 100 - 100);
@@ -104,7 +104,7 @@ describe('investing and launching', () => {
   it('hides Option A cargo from everyone but the owner until resolution', () => {
     let state = start('A');
     for (const id of ['p1', 'p2', 'p3']) {
-      state = apply(state, { type: 'invest', playerId: id, build: null, load: { wood: 1, iron: 0 } }).state;
+      state = apply(state, { type: 'invest', playerId: id, build: null, load: { wood: 1, iron: 0 }, direct: { wood: 0, iron: 0 } }).state;
     }
     const view = getEconomyView(state, 'p2');
     expect(view.ships.find((s) => s.owner === 'p2')?.cargo).toEqual([{ playerId: 'p2', goods: { wood: 1, iron: 0 } }]);
@@ -114,9 +114,9 @@ describe('investing and launching', () => {
 
   it('puts Option B cargo on public neutral ships by material', () => {
     let state = start('B');
-    state = apply(state, { type: 'invest', playerId: 'p1', build: null, load: { wood: 1, iron: 1 } }).state;
-    state = apply(state, { type: 'invest', playerId: 'p2', build: null, load: { wood: 2, iron: 0 } }).state;
-    state = apply(state, { type: 'invest', playerId: 'p3', build: null, load: { wood: 0, iron: 0 } }).state;
+    state = apply(state, { type: 'invest', playerId: 'p1', build: null, load: { wood: 1, iron: 1 }, direct: { wood: 0, iron: 0 } }).state;
+    state = apply(state, { type: 'invest', playerId: 'p2', build: null, load: { wood: 2, iron: 0 }, direct: { wood: 0, iron: 0 } }).state;
+    state = apply(state, { type: 'invest', playerId: 'p3', build: null, load: { wood: 0, iron: 0 }, direct: { wood: 0, iron: 0 } }).state;
     expect(cashOf(state, 'p1')).toBe(1000 - 60);
     const view = getEconomyView(state, 'p3');
     expect(view.ships).toEqual([
@@ -142,9 +142,9 @@ describe('investing and launching', () => {
 
   it('keeps smugglers off ships carrying their own cargo', () => {
     let state = start('B');
-    state = apply(state, { type: 'invest', playerId: 'p1', build: null, load: { wood: 1, iron: 0 } }).state;
-    state = apply(state, { type: 'invest', playerId: 'p2', build: null, load: { wood: 0, iron: 1 } }).state;
-    state = apply(state, { type: 'invest', playerId: 'p3', build: null, load: { wood: 0, iron: 0 } }).state;
+    state = apply(state, { type: 'invest', playerId: 'p1', build: null, load: { wood: 1, iron: 0 }, direct: { wood: 0, iron: 0 } }).state;
+    state = apply(state, { type: 'invest', playerId: 'p2', build: null, load: { wood: 0, iron: 1 }, direct: { wood: 0, iron: 0 } }).state;
+    state = apply(state, { type: 'invest', playerId: 'p3', build: null, load: { wood: 0, iron: 0 }, direct: { wood: 0, iron: 0 } }).state;
     const smuggle = getEconomyLegalActions(state, 'p1').filter((a) => a.type === 'deploy-role' && a.role === 'smuggler');
     expect(smuggle.map((a) => (a.type === 'deploy-role' ? a.targetShipId : null))).toEqual(['r1-iron']);
   });
@@ -153,7 +153,7 @@ describe('investing and launching', () => {
     let state = playRound(start('A'), { loads: { p1: { wood: 1, iron: 0 } } }).state;
     expect(state.round).toBe(2);
     for (const id of ['p1', 'p2', 'p3']) {
-      state = apply(state, { type: 'invest', playerId: id, build: null, load: id === 'p1' ? { wood: 1, iron: 0 } : { wood: 0, iron: 0 } }).state;
+      state = apply(state, { type: 'invest', playerId: id, build: null, load: id === 'p1' ? { wood: 1, iron: 0 } : { wood: 0, iron: 0 }, direct: { wood: 0, iron: 0 } }).state;
     }
     state = { ...state, roundState: { ...state.roundState, ships: state.roundState.ships.map((s) => ({ ...s, rawRoll: 2 })) } };
     state = apply(state, { type: 'deploy-role', playerId: 'p1', role: 'intel', targetShipId: 'r2-p1' }).state;
@@ -171,7 +171,7 @@ describe('investing and launching', () => {
   it('never mutates the input state and survives a JSON round trip', () => {
     const state = start('A');
     const frozen = JSON.stringify(state);
-    apply(state, { type: 'invest', playerId: 'p1', build: 'insurance', load: { wood: 1, iron: 1 } });
+    apply(state, { type: 'invest', playerId: 'p1', build: 'insurance', load: { wood: 1, iron: 1 }, direct: { wood: 0, iron: 0 } });
     expect(JSON.stringify(state)).toBe(frozen);
     expect(JSON.parse(frozen)).toEqual(state);
   });

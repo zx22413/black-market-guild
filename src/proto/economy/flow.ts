@@ -44,7 +44,7 @@ export function openRound(base: Omit<EconomyState, 'roundState'>, round: number)
     phase: 'invest',
     players,
     demandDeck,
-    roundState: { demand, wanted, stockAtStart, voyageEvent: null, submissions: {}, builds: [], ships: [], deployments: [] },
+    roundState: { demand, wanted, stockAtStart, voyageEvent: null, submissions: {}, builds: [], directSales: [], ships: [], deployments: [] },
   };
   return runFrom(state, 0, [{ type: 'round-started', round, demand, wanted, prices: base.prices }]);
 }

@@ -1,6 +1,6 @@
 import { nextInt } from '../../game/rng';
 import { hasCargoOn, shippingCost } from './decisions';
-import { mapGoods, subtractGoods, units } from './goods';
+import { addGoods, mapGoods, subtractGoods, units } from './goods';
 import { buildingCostGoods } from './rules';
 import { chain, changeCash, playerOf, setStock, updatePlayer, type StepFn } from './state';
 import {
@@ -33,10 +33,11 @@ export function resolveInvest(state: EconomyState): EconomyStep {
   const actions = state.players.map((p) => investOf(state, p.id));
   const builds: Build[] = actions.flatMap((a) => (a.build === null ? [] : [{ playerId: a.playerId, building: a.build }]));
   const built = chain(state, builds.map(build));
-  const withBuilds: EconomyState = { ...built.state, roundState: { ...built.state.roundState, builds } };
+  const directSales = actions.filter((a) => units(a.direct) > 0).map((a) => ({ playerId: a.playerId, goods: a.direct }));
+  const withBuilds: EconomyState = { ...built.state, roundState: { ...built.state.roundState, builds, directSales } };
   const ships = launchShips(withBuilds, actions);
   const loaded = chain(withBuilds, [
-    ...actions.map((a) => unload(a.playerId, a.load)),
+    ...actions.map((a) => unload(a.playerId, addGoods(a.load, a.direct))),
     ...actions.map(payShipping),
   ]);
   const rolled = rollDice({ ...loaded.state, roundState: { ...loaded.state.roundState, ships } });

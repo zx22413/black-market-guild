@@ -35,6 +35,8 @@ export type EconomyAction =
       readonly build: BuildingId | null;
       /** Option A: cargo on the player's own ship. Option B: wood on the wood ship, iron on the iron ship. */
       readonly load: Goods;
+      /** Exchange direct sale from the warehouse (exchange variant 2); otherwise zero. */
+      readonly direct: Goods;
     }
   | {
       readonly type: 'deploy-role';
@@ -98,6 +100,8 @@ export interface EconRound {
   readonly voyageEvent: ProtoVoyageEventId | null;
   readonly submissions: Readonly<Record<PlayerId, EconomyAction>>;
   readonly builds: readonly Build[];
+  /** Secret until settlement, like Option A cargo. */
+  readonly directSales: readonly CargoLot[];
   readonly ships: readonly EconShip[];
   readonly deployments: readonly Deployment[];
 }
@@ -108,6 +112,7 @@ export interface RoundRecord {
   readonly demand: Goods;
   readonly wanted: readonly PlayerId[];
   readonly builds: readonly Build[];
+  readonly directSales: readonly CargoLot[];
   readonly ships: readonly EconShip[];
   readonly deployments: readonly Deployment[];
   readonly voyageEvent: ProtoVoyageEventId | null;
@@ -157,6 +162,8 @@ export type CashReason =
   | 'pirate-loot'
   | 'escort-fee'
   | 'insurance'
+  | 'exchange-commission'
+  | 'direct-sale'
   | 'black-money';
 
 /** Ship information every player may see; Option A hides other owners' cargo until resolution. */

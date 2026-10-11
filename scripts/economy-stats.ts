@@ -20,6 +20,9 @@ export interface EconomyStats {
   escortFees: number;
   insurance: number;
   insuredKept: number;
+  commission: number;
+  directUnits: number;
+  directCash: number;
   salvaged: number;
   smuggled: number;
   unsoldUnits: number;
@@ -45,6 +48,9 @@ export function emptyEconomyStats(steps: number): EconomyStats {
     escortFees: 0,
     insurance: 0,
     insuredKept: 0,
+    commission: 0,
+    directUnits: 0,
+    directCash: 0,
     salvaged: 0,
     smuggled: 0,
     unsoldUnits: 0,
@@ -78,6 +84,7 @@ export function addEconomyMatch(stats: EconomyStats, run: EconomyMatchRun, strat
       stats.buildings[b.building]!.roundSum += record.round;
     });
     stats.playerRounds += state.players.length;
+    stats.directUnits += record.directSales.reduce((sum, lot) => sum + lot.goods.wood + lot.goods.iron, 0);
     const loaders = new Set(record.ships.flatMap((s) => s.cargo.map((lot) => lot.playerId)));
     stats.loadingRounds += loaders.size;
     stats.unitsShipped += record.ships.reduce((sum, s) => sum + s.cargo.reduce((u, lot) => u + lot.goods.wood + lot.goods.iron, 0), 0);
@@ -109,6 +116,10 @@ export function addEconomyMatch(stats: EconomyStats, run: EconomyMatchRun, strat
         stats.escortFees += event.amount;
       } else if (event.reason === 'insurance') {
         stats.insurance += event.amount;
+      } else if (event.reason === 'exchange-commission') {
+        stats.commission += event.amount;
+      } else if (event.reason === 'direct-sale') {
+        stats.directCash += event.amount;
       }
     } else if (event.type === 'insured-goods-kept') {
       stats.insuredKept += event.goods.wood + event.goods.iron;
