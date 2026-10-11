@@ -1,7 +1,7 @@
 # 黑市商會｜V0.7 當前規則快照
 
 **狀態：** gameplay 唯一有效規則來源（Current Rules Snapshot），2026-10-11 由 V0.6 改版而來。
-**實作狀態：** 正式引擎 `src/game`、UI 與線上版**仍是 V0.6**（原文封存於 [`archive/game-design-v0.6.md`](archive/game-design-v0.6.md)），V0.7 尚待搬進正式引擎。V0.7 的規則已在原型 `src/proto/economy/` 以 `npm run simulate:economy -- --mode A --preset round14` 完整模擬；設計過程與模擬數據見 [`proposals/2026-10-economy-rework.md`](proposals/2026-10-economy-rework.md)，該文件只是沿革，不是規則來源。
+**實作狀態：** 正式引擎 `src/game`、UI 與線上版**仍是 V0.6**（原文封存於 [`archive/game-design-v0.6.md`](archive/game-design-v0.6.md)），V0.7 尚待搬進正式引擎。V0.7 的規則已在原型 `src/proto/economy/` 以 `--preset round14` 完整模擬（該模擬腳本已於搬遷階段 3 移除，正式引擎的模擬改用 `npm run simulate`）；設計過程與模擬數據見 [`proposals/2026-10-economy-rework.md`](proposals/2026-10-economy-rework.md)，該文件只是沿革，不是規則來源。
 **不屬於本文件的內容：** 尚未定案的事項列於 [open-questions.md](open-questions.md)，不得據此實作或推定規則。
 
 本文件刻意不把「曾討論過」等同於「已定案」。若本文件沒有明定數值、目標或結算結果，該項目就是未定案；不得以設計意圖、舊版規則、提案文件或 `open-questions.md` 補完。

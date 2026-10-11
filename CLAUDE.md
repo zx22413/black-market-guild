@@ -17,11 +17,10 @@ npm run test:coverage                    # 測試＋覆蓋率（src/game、src/b
 npm run typecheck                        # 兩套 tsconfig 的型別檢查
 npm run build                            # typecheck + vite build
 npm run match:log -- 42 4                # 隨機選擇跑一局並印出中文對局紀錄（scripts/print-match.ts）
-npm run simulate -- --matches 2000 --players 4 [--lineup a,b,c,d] [--seed 1]  # 策略 Bot 批量模擬，輸出 Markdown 平衡報表
+npm run simulate -- --matches 2000 --players 4 [--lineup a,b,c,d] [--seed 1]  # V0.7 策略 Bot 批量模擬（src/v07），輸出 Markdown 平衡報表
 npm run server:dev                       # 本機模擬 Cloudflare Worker（先 npm run build；port 8787，`npm run dev` 會把 /api 轉過去）
 npm run deploy                           # build + wrangler deploy（會中斷進行中的線上對局）
-npm run simulate -- --summary --set roles.pirate.modifier=-1 --set roles.guard.fee=60  # 覆寫任意規則數值試算，只輸出一行關鍵指標（比較方案用）
-npm run simulate:economy -- --mode B --matches 2000 [--set capacity.base=3] [--summary]  # 經濟改版原型（src/proto/economy）的模擬報表
+npm run simulate -- --summary --set roles.pirate.loot=200 --set roles.fees.guard=60  # 覆寫任意規則數值試算，只輸出一行關鍵指標（比較方案用）
 ```
 
 - 需要 Node.js 20.19 以上。TypeScript 為 7.x（原生編譯器）。

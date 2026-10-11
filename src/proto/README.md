@@ -29,4 +29,4 @@
 | `runner.ts` | `runEconomyMatch`：同步跑完一局全 Bot 對局。 |
 | `bots/` | 隨機 Bot 與四種期望值個性（`balanced`、`cautious`、`aggressive`、`builder`）。 |
 
-模擬：`npm run simulate:economy -- --mode A|B [--matches 2000] [--players 4] [--set capacity.base=3] [--summary]`，報表存於 `docs/simulations/`。測試在 `tests/proto/economy/`。
+模擬腳本 `npm run simulate:economy` 已於 V0.7 搬遷階段 3 移除（最後版本見 commit `3b16c4b` 的 `scripts/simulate-economy.ts`）；過去的報表存於 `docs/simulations/`。測試在 `tests/proto/economy/`。

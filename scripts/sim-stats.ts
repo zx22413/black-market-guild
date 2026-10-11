@@ -1,224 +1,225 @@
-import type { MarketEventId, MatchEvent, RoleId, VoyageOutcome } from '../src/game';
-import type { MatchLog } from '../src/match';
+import { BUILDING_IDS, GOODS, ROLE_IDS, roleFee, type Goods, type PlayerId, type ShipId } from '../src/v07/game';
+import type { MatchLog } from '../src/v07/match';
 
-/** One seat of one simulated match, tagged with the strategy that played it. */
-export interface SeatRecord {
-  readonly strategy: string;
-  readonly playerId: string;
+/** Wins, seats and wealth of one strategy or island. */
+export interface Tally {
+  seats: number;
+  wins: number;
+  wealth: number;
 }
 
-type Voyage = 'joint' | 'solo' | 'stay';
-
+/** Aggregated V0.7 simulation statistics, built from match logs (public events and final state). */
 export interface SimStats {
   matches: number;
+  seats: number;
   playerRounds: number;
-  wins: Map<string, number>;
-  seatsPlayed: Map<string, number>;
-  wealth: Map<string, number[]>;
-  voyages: Map<Voyage, number>;
-  voyagesByMarket: Map<MarketEventId, Map<Voyage, number>>;
-  ships: Map<'solo' | 'joint', Map<VoyageOutcome, number>>;
-  roles: Map<string, Map<RoleId | 'none', number>>;
-  guardOwnShip: number;
-  guardOtherShip: number;
-  betrayals: number;
-  pirateDeployments: number;
+  byStrategy: Record<string, Tally>;
+  byIsland: Record<string, Tally>;
+  wealthSpread: number;
+  buildings: Record<string, { count: number; roundSum: number }>;
+  ships: number;
+  shipsArrived: number;
+  unitsShipped: number;
+  armsShipped: number;
+  demandVsArrived: { under: number; exact: number; over: number };
+  priceSteps: Record<string, number[]>;
+  unsoldUnits: number;
+  unsoldByGood: Record<string, number>;
+  roles: Record<string, number>;
+  guardOthers: number;
+  smugglerCovers: number;
+  armsShips: number;
+  coveredArmsShips: number;
+  pirateIncome: number;
+  pirateFees: number;
   pirateSinks: number;
-  pirateNet: number;
-  smuggling: Map<'taken' | 'confiscated' | 'seized' | 'lost', number>;
-  jointOwnerRounds: number;
-  /** Player-rounds shown as undeployed at the reveal, and how many of those were disguised smugglers. */
-  shownUndeployed: number;
-  disguisedSmugglers: number;
-  assetsHeld: Map<string, number[]>;
-  purchases: Map<string, number>;
-  purchaseRounds: Map<string, number[]>;
+  escortFees: number;
+  insuredKept: number;
+  salvaged: number;
+  smuggled: number;
+  smugglersCaught: number;
+  commission: number;
+  betsWon: number;
+  armsConfiscatedUnits: number;
+  armsConfiscatedCash: number;
+  intelRerolls: number;
 }
 
-export function emptyStats(): SimStats {
+const units = (goods: Goods) => GOODS.reduce((sum, g) => sum + goods[g], 0);
+const tally = (): Tally => ({ seats: 0, wins: 0, wealth: 0 });
+
+export function emptyStats(steps: number): SimStats {
   return {
     matches: 0,
+    seats: 0,
     playerRounds: 0,
-    wins: new Map(),
-    seatsPlayed: new Map(),
-    wealth: new Map(),
-    voyages: new Map(),
-    voyagesByMarket: new Map(),
-    ships: new Map(),
-    roles: new Map(),
-    guardOwnShip: 0,
-    guardOtherShip: 0,
-    betrayals: 0,
-    pirateDeployments: 0,
+    byStrategy: {},
+    byIsland: {},
+    wealthSpread: 0,
+    buildings: Object.fromEntries(BUILDING_IDS.map((b) => [b, { count: 0, roundSum: 0 }])),
+    ships: 0,
+    shipsArrived: 0,
+    unitsShipped: 0,
+    armsShipped: 0,
+    demandVsArrived: { under: 0, exact: 0, over: 0 },
+    priceSteps: Object.fromEntries(GOODS.map((g) => [g, Array.from({ length: steps }, () => 0)])),
+    unsoldUnits: 0,
+    unsoldByGood: Object.fromEntries(GOODS.map((g) => [g, 0])),
+    roles: Object.fromEntries(ROLE_IDS.map((r) => [r, 0])),
+    guardOthers: 0,
+    smugglerCovers: 0,
+    armsShips: 0,
+    coveredArmsShips: 0,
+    pirateIncome: 0,
+    pirateFees: 0,
     pirateSinks: 0,
-    pirateNet: 0,
-    smuggling: new Map(),
-    jointOwnerRounds: 0,
-    shownUndeployed: 0,
-    disguisedSmugglers: 0,
-    assetsHeld: new Map(),
-    purchases: new Map(),
-    purchaseRounds: new Map(),
+    escortFees: 0,
+    insuredKept: 0,
+    salvaged: 0,
+    smuggled: 0,
+    smugglersCaught: 0,
+    commission: 0,
+    betsWon: 0,
+    armsConfiscatedUnits: 0,
+    armsConfiscatedCash: 0,
+    intelRerolls: 0,
   };
 }
 
-function bump<K>(map: Map<K, number>, key: K, amount = 1): void {
-  map.set(key, (map.get(key) ?? 0) + amount);
+function addStandings(stats: SimStats, log: MatchLog, strategyOf: (playerId: PlayerId) => string): void {
+  const { result, finalState } = log;
+  for (const standing of result.standings) {
+    const win = standing.rank === 1 ? 1 / result.winners.length : 0;
+    const island = finalState.players.find((p) => p.id === standing.playerId)?.island ?? 'none';
+    for (const entry of [(stats.byStrategy[strategyOf(standing.playerId)] ??= tally()), (stats.byIsland[island] ??= tally())]) {
+      entry.seats += 1;
+      entry.wins += win;
+      entry.wealth += standing.wealth;
+    }
+  }
+  const wealths = result.standings.map((s) => s.wealth);
+  stats.wealthSpread += Math.max(...wealths) - Math.min(...wealths);
+  for (const player of finalState.players) {
+    stats.unsoldUnits += units(player.stock);
+    GOODS.forEach((g) => (stats.unsoldByGood[g] = (stats.unsoldByGood[g] ?? 0) + player.stock[g]));
+  }
 }
 
-function push<K>(map: Map<K, number[]>, key: K, value: number): void {
-  map.set(key, [...(map.get(key) ?? []), value]);
-}
-
-function nested<K, J>(map: Map<K, Map<J, number>>, key: K): Map<J, number> {
-  const inner = map.get(key) ?? new Map<J, number>();
-  map.set(key, inner);
-  return inner;
-}
-
-/** Folds one match into the running statistics. */
-export function addMatch(stats: SimStats, log: MatchLog, seats: readonly SeatRecord[]): void {
-  const strategyOf = new Map(seats.map((s) => [s.playerId, s.strategy]));
+/** Adds one finished match; `strategyOf` maps a player id to its bot strategy. Mutates `stats` (local accumulator). */
+export function addMatch(stats: SimStats, log: MatchLog, strategyOf: (playerId: PlayerId) => string): void {
+  const { finalState } = log;
+  const { rules } = finalState;
   stats.matches += 1;
-  const winnerShare = 1 / log.result.winners.length;
-  for (const standing of log.result.standings) {
-    const strategy = strategyOf.get(standing.playerId)!;
-    bump(stats.seatsPlayed, strategy);
-    push(stats.wealth, strategy, standing.wealth);
-    if (standing.rank === 1) {
-      bump(stats.wins, strategy, winnerShare);
-    }
-  }
-  for (const player of log.finalState.players) {
-    push(stats.assetsHeld, strategyOf.get(player.id)!, player.assets.length);
-  }
-  foldEvents(stats, log.events, strategyOf, deploymentsByRound(log), log.finalState.rules.roles.smuggler.anonymous === 1);
-}
+  stats.seats += finalState.players.length;
+  stats.playerRounds += finalState.players.length * rules.rounds;
+  addStandings(stats, log, strategyOf);
 
-type RoundDeployment = RoundTracker['deployments'][number];
-
-/**
- * Deployments per round, read from the action log rather than public events, because
- * anonymous smugglers never appear in public reveals.
- */
-function deploymentsByRound(log: MatchLog): Map<number, RoundDeployment[]> {
-  const byRound = new Map<number, RoundDeployment[]>();
-  log.actions.forEach((action, i) => {
-    if (action.type === 'deploy-role' && action.role !== null && action.targetShipId !== null) {
-      const round = log.actionRounds[i]!;
-      byRound.set(round, [...(byRound.get(round) ?? []), { playerId: action.playerId, role: action.role, shipId: action.targetShipId }]);
-    }
-  });
-  return byRound;
-}
-
-interface RoundTracker {
-  market: MarketEventId | null;
-  owners: Map<string, readonly string[]>;
-  kinds: Map<string, 'solo' | 'joint'>;
-  deployments: { playerId: string; role: RoleId; shipId: string }[];
-}
-
-function newRound(market: MarketEventId | null, deployments: RoundTracker['deployments'] = []): RoundTracker {
-  return { market, owners: new Map(), kinds: new Map(), deployments };
-}
-
-/** Classifies each smuggled stash on a resolved ship (game-design.md §7 走私結算). */
-function foldSmuggling(stats: SimStats, round: RoundTracker, shipId: string, outcome: VoyageOutcome): void {
-  const on = (role: RoleId) => round.deployments.filter((d) => d.role === role && d.shipId === shipId);
-  const smugglers = on('smuggler').map((d) => d.playerId);
-  for (const _ of smugglers) {
-    if (outcome === 'arrived') {
-      const inspectors = on('guard').filter((d) => !smugglers.includes(d.playerId));
-      bump(stats.smuggling, inspectors.length > 0 ? 'confiscated' : 'taken');
-    } else {
-      bump(stats.smuggling, on('pirate').length > 0 ? 'seized' : 'lost');
-    }
-  }
-}
-
-function foldRoles(stats: SimStats, round: RoundTracker, strategyOf: ReadonlyMap<string, string>): void {
-  for (const [playerId, strategy] of strategyOf) {
-    const d = round.deployments.find((x) => x.playerId === playerId);
-    bump(nested(stats.roles, strategy), d?.role ?? 'none');
-  }
-  for (const d of round.deployments) {
-    const own = (round.owners.get(d.shipId) ?? []).includes(d.playerId);
-    if (d.role === 'guard') {
-      own ? (stats.guardOwnShip += 1) : (stats.guardOtherShip += 1);
-    } else if (d.role === 'pirate') {
-      stats.pirateDeployments += 1;
-      stats.betrayals += own ? 1 : 0;
-    }
-  }
-}
-
-/** How well anonymous smugglers hide among players who really deployed nothing. */
-function foldDisguise(stats: SimStats, round: RoundTracker, strategyOf: ReadonlyMap<string, string>, anonymous: boolean): void {
-  for (const playerId of strategyOf.keys()) {
-    const role = round.deployments.find((d) => d.playerId === playerId)?.role;
-    if (role === undefined || (anonymous && role === 'smuggler')) {
-      stats.shownUndeployed += 1;
-      stats.disguisedSmugglers += role === 'smuggler' ? 1 : 0;
-    }
-  }
-}
-
-function foldEvents(
-  stats: SimStats,
-  events: readonly MatchEvent[],
-  strategyOf: ReadonlyMap<string, string>,
-  deployments: ReadonlyMap<number, RoundTracker['deployments']>,
-  anonymous: boolean,
-): void {
-  let round = newRound(null);
-  for (const event of events) {
+  const owners = new Map<ShipId, PlayerId>();
+  const cargo = new Map<ShipId, Goods>();
+  const sank = new Set<ShipId>();
+  const smuggled = new Set<ShipId>();
+  for (const event of log.events) {
     switch (event.type) {
-      case 'market-event-revealed':
-        round = newRound(event.event, [...(deployments.get(event.round) ?? [])]);
-        break;
-      case 'assets-purchased':
-        event.purchases.forEach((p) => {
-          bump(stats.purchases, p.asset);
-          push(stats.purchaseRounds, p.asset, event.round);
+      case 'buildings-built':
+        event.builds.forEach((b) => {
+          stats.buildings[b.building]!.count += 1;
+          stats.buildings[b.building]!.roundSum += event.round;
         });
         break;
-      case 'ships-launched': {
-        const byMarket = nested(stats.voyagesByMarket, round.market!);
-        for (const ship of event.ships) {
-          round.owners.set(ship.id, ship.owners);
-          round.kinds.set(ship.id, ship.kind);
-          ship.owners.forEach(() => {
-            bump(stats.voyages, ship.kind);
-            bump(byMarket, ship.kind);
-          });
-          stats.jointOwnerRounds += ship.kind === 'joint' ? ship.owners.length : 0;
+      case 'ships-launched':
+        event.ships.forEach((s) => owners.set(s.id, s.owner));
+        break;
+      case 'ship-resolved':
+        cargo.set(event.shipId, event.cargo);
+        if (event.outcome === 'sank') {
+          sank.add(event.shipId);
         }
-        event.stayedInPort.forEach(() => {
-          bump(stats.voyages, 'stay');
-          bump(byMarket, 'stay');
-        });
-        stats.playerRounds += strategyOf.size;
         break;
-      }
-      case 'ship-resolved': {
-        bump(nested(stats.ships, round.kinds.get(event.shipId)!), event.outcome);
-        const pirates = round.deployments.filter((d) => d.role === 'pirate' && d.shipId === event.shipId);
-        stats.pirateSinks += event.outcome === 'sank' ? pirates.length : 0;
-        foldSmuggling(stats, round, event.shipId, event.outcome);
+      case 'roles-revealed':
+        stats.intelRerolls += event.rerolledShipIds.length;
+        for (const d of event.deployments) {
+          stats.roles[d.role] = (stats.roles[d.role] ?? 0) + 1;
+          const own = d.targetShipId !== null && owners.get(d.targetShipId) === d.playerId;
+          stats.guardOthers += d.role === 'guard' && !own ? 1 : 0;
+          stats.smugglerCovers += d.role === 'smuggler' && own ? 1 : 0;
+          if (d.role === 'smuggler' && d.targetShipId !== null) {
+            smuggled.add(d.targetShipId);
+          }
+        }
         break;
-      }
+      case 'market-settled':
+        for (const g of GOODS) {
+          const steps = stats.priceSteps[g]!;
+          steps[event.priceAfter[g]] = (steps[event.priceAfter[g]] ?? 0) + 1;
+          const arrived = event.arrived[g];
+          const demand = event.demand[g];
+          stats.demandVsArrived[arrived < demand ? 'under' : arrived > demand ? 'over' : 'exact'] += 1;
+        }
+        break;
+      case 'arms-confiscated':
+        stats.armsConfiscatedUnits += event.units;
+        break;
+      case 'smuggling-settled':
+        stats.smugglersCaught += event.result === 'caught' ? event.smugglers.length : 0;
+        break;
+      case 'goods-kept':
+        stats.insuredKept += units(event.goods);
+        break;
+      case 'goods-salvaged':
+        stats.salvaged += 1;
+        break;
       case 'cash-changed':
-        if (event.reason === 'pirate-loot' || event.reason === 'smuggling-seized') {
-          stats.pirateNet += event.amount;
-        }
-        break;
-      case 'round-ended':
-        foldRoles(stats, round, strategyOf);
-        foldDisguise(stats, round, strategyOf, anonymous);
+        addCash(stats, event.reason, event.amount);
         break;
       default:
         break;
+    }
+  }
+  addShips(stats, log, cargo, sank, smuggled);
+}
+
+function addCash(stats: SimStats, reason: string, amount: number): void {
+  if (reason === 'pirate-loot' || reason === 'smuggling-seized') {
+    stats.pirateIncome += amount;
+  } else if (reason === 'escort-fee') {
+    stats.escortFees += amount;
+  } else if (reason === 'broker-bet') {
+    stats.betsWon += 1;
+  } else if (reason === 'arms-confiscated') {
+    stats.armsConfiscatedCash += amount;
+  } else if (reason === 'exchange-commission') {
+    stats.commission += amount;
+  } else if (reason === 'smuggling' && amount > 0) {
+    stats.smuggled += amount;
+  }
+}
+
+function addShips(
+  stats: SimStats,
+  log: MatchLog,
+  cargo: ReadonlyMap<ShipId, Goods>,
+  sank: ReadonlySet<ShipId>,
+  smuggled: ReadonlySet<ShipId>,
+): void {
+  for (const [shipId, goods] of cargo) {
+    stats.ships += 1;
+    stats.shipsArrived += sank.has(shipId) ? 0 : 1;
+    stats.unitsShipped += units(goods);
+    stats.armsShipped += goods.arms;
+    if (goods.arms > 0) {
+      stats.armsShips += 1;
+      stats.coveredArmsShips += smuggled.has(shipId) ? 1 : 0;
+    }
+  }
+  const { rules } = log.finalState;
+  for (const event of log.events) {
+    if (event.type !== 'roles-revealed' || event.role !== 'pirate') {
+      continue;
+    }
+    for (const d of event.deployments) {
+      const island = log.finalState.players.find((p) => p.id === d.playerId)?.island ?? null;
+      stats.pirateFees += roleFee(rules, island, 'pirate');
+      stats.pirateSinks += d.targetShipId !== null && sank.has(d.targetShipId) ? 1 : 0;
     }
   }
 }

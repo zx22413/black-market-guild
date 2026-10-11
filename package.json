@@ -21,8 +21,7 @@
     "art:ui:png": "tsx scripts/raster-ui-art.ts && python3 scripts/webp-ui-art.py",
     "capture": "python3 scripts/capture-receiver.py",
     "server:dev": "wrangler dev",
-    "deploy": "npm run build && wrangler deploy",
-    "simulate:economy": "tsx scripts/simulate-economy.ts"
+    "deploy": "npm run build && wrangler deploy"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260702.1",

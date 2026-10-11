@@ -40,4 +40,10 @@ V0.7 的 Bot，由原型 `src/proto/economy/bots` 移植。介面與 V0.6 相同
 | `islands.ts` | 選島：依島嶼特色估算整局價值（生產、出航修正與成本、可裝貨量、角色修正、部署費與冷卻、香料、掩護），再乘上個性權重。原型只依個性偏好選島。 |
 | `choose.ts` | softmax 抽樣；溫度 0 永遠選最高分。 |
 
-測試在 `tests/v07/bots/`；`helpers.ts` 的 `playBots` 是階段 3 Match Runner 完成前的最小對局迴圈。
+測試在 `tests/v07/bots/`。
+
+## `match/`
+
+V0.7 的 Match Runner，程式與 `src/match` 相同（說明見 [`src/match/README.md`](../match/README.md)），只改接 `src/v07/game` 與 `src/v07/bots`，預設規則是 `RULES_V07`：`setupFromSeats`、`runMatchSync`、`runMatch`、`replayMatch`、`botController`。V0.6 的 UI 與連線層仍使用 `src/match`，搬遷到第 4、5 階段時改接這裡。測試在 `tests/v07/match/`。
+
+批量模擬：`npm run simulate`（`scripts/simulate.ts`、`scripts/sim-stats.ts`）已改為 V0.7，統計只取自對局紀錄的公開事件與最終狀態。
