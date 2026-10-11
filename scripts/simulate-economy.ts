@@ -3,7 +3,7 @@
  * and prints a Markdown report.
  * Usage: npm run simulate:economy -- [--mode A|B] [--matches 1000] [--players 4] [--seed 1]
  *        [--lineup balanced,cautious,aggressive,builder] [--set capacity.base=3 ...] [--summary]
- *        [--preset round5|round6]
+ *        [--preset round5|round6|round7]
  * A preset is a named list of `--set` overrides applied before any explicit `--set`.
  * Seats rotate every match so each strategy plays every seat position.
  */
@@ -63,6 +63,14 @@ const PRESETS: Readonly<Record<string, readonly string[]>> = {
   round5: [...ROUND5, 'roles.smuggler.coversSeizable=0', 'roles.guard.escortWhenSeizing=1'],
   /** Round 6 (proposal §19): smugglers cover contraband; confiscating guards get no escort fee. */
   round6: [...ROUND5, 'roles.smuggler.coversSeizable=1', 'roles.guard.escortWhenSeizing=0'],
+  /** Round 7 (proposal §20): round 6 with a 100 G smuggling fine and a 15 G commission. */
+  round7: [
+    ...ROUND5,
+    'roles.smuggler.coversSeizable=1',
+    'roles.guard.escortWhenSeizing=0',
+    'roles.smuggler.caughtFine=100',
+    'buildings.exchange.commissionPerUnit=15',
+  ],
 };
 
 function parseOptions(): Options {
