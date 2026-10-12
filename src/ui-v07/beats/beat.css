@@ -722,3 +722,188 @@
   border-color: #b9822a;
   font-weight: 700;
 }
+
+/* Investment on the 3D island (src/ui-v07/dev/Invest3DPreview.tsx). */
+.beat3d-pin button,
+.beat3d-pin .inv-cards {
+  pointer-events: auto;
+}
+.inv-market {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  z-index: 20;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: rgb(91 70 54 / 0.92);
+  color: #f6ead0;
+  font-size: 14px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.inv-chip {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgb(255 255 255 / 0.12);
+  border-left: 4px solid;
+}
+.inv-chip.good-wood { border-color: var(--wood); background: rgb(255 255 255 / 0.12); }
+.inv-chip.good-iron { border-color: var(--iron); background: rgb(255 255 255 / 0.12); }
+.inv-chip.good-spice { border-color: var(--spice); background: rgb(255 255 255 / 0.12); }
+.inv-chip.good-arms { border-color: var(--arms); background: rgb(255 255 255 / 0.12); }
+.inv-chip.wanted {
+  border-color: #c0392b;
+  color: #ffb4a8;
+}
+.inv-plate small {
+  font-weight: 400;
+  color: #6b5537;
+}
+.inv-plate .inv-stock {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: #6b5537;
+}
+.inv-plate em {
+  margin-left: 6px;
+  font-style: normal;
+  font-size: 12px;
+  color: #8a6d55;
+}
+.inv-plate em.done {
+  color: #1d7a35;
+}
+.inv-plate em.wanted {
+  color: #b2332a;
+}
+.inv-build {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.inv-build > button {
+  padding: 6px 14px;
+  border: 2px solid #e0a63c;
+  border-radius: 999px;
+  background: rgb(245 236 212 / 0.95);
+  color: #2b2116;
+  font-weight: 700;
+  cursor: pointer;
+}
+.inv-build > button.on {
+  background: #ffe3a3;
+}
+.inv-cards {
+  display: flex;
+  gap: 6px;
+  order: -1;
+}
+.inv-card {
+  display: grid;
+  gap: 2px;
+  width: 132px;
+  padding: 8px;
+  border: 1px solid #b9a77d;
+  border-radius: 10px;
+  background: rgb(245 236 212 / 0.97);
+  color: #2b2116;
+  text-align: left;
+  cursor: pointer;
+  animation: beat-pop 220ms cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+.inv-card small {
+  font-size: 12px;
+  color: #6b5537;
+}
+.inv-card .inv-effect {
+  font-size: 11px;
+}
+.inv-card .inv-why {
+  color: #b2332a;
+}
+.inv-card.no {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.inv-card.sel {
+  border: 2px solid #e0a63c;
+  background: #fff3c9;
+}
+.inv-note {
+  max-width: 280px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgb(245 236 212 / 0.92);
+  color: #2b2116;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.inv-note div {
+  color: #8a4b12;
+  font-size: 12px;
+}
+.beat3d-pin > .inv-note.side-left {
+  transform: translate(calc(-100% - 10px), -50%);
+}
+.beat3d-pin > .inv-note.side-right {
+  transform: translate(10px, -50%);
+}
+.beat3d-pin > .inv-build {
+  transform: translate(-50%, -50%);
+}
+.inv-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 4px 14px;
+  align-items: center;
+  max-width: min(980px, calc(100% - 32px));
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: rgb(245 236 212 / 0.96);
+  color: #2b2116;
+  transform: translateX(-50%);
+}
+.inv-bar small {
+  grid-column: 1 / -1;
+  color: #6b5537;
+}
+.inv-bar button {
+  padding: 8px 16px;
+  border: 1px solid #b9a77d;
+  border-radius: 8px;
+  background: #efe3c4;
+  color: #2b2116;
+  cursor: pointer;
+}
+.inv-bar button.primary {
+  background: #e0a63c;
+  border-color: #b9822a;
+  font-weight: 700;
+}
+.inv-bar button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.inv-stack {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgb(245 236 212 / 0.9);
+  border-bottom: 3px solid;
+  color: #2b2116;
+  font-size: 12px;
+  font-weight: 700;
+}
+.inv-stack.good-wood { border-color: var(--wood); }
+.inv-stack.good-iron { border-color: var(--iron); }
+.inv-stack.good-spice { border-color: var(--spice); }
+.inv-stack.good-arms { border-color: var(--arms); }

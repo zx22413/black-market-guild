@@ -1,34 +1,19 @@
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Suspense, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { Vector3, type Group, type Mesh, type MeshBasicMaterial } from 'three';
 import type { PlayerId, ShipId, VoyageEventId } from '../../v07/game';
-import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
-import { Clouds } from '../../ui/scene/Clouds';
-import { EffectWarmup } from '../../ui/scene/EffectWarmup';
-import { GoldRush } from '../../ui/scene/GoldRush';
-import { PlayerIsland, TargetIsland } from '../../ui/scene/Islands';
-import { islandShorelines, playerIslandSeed } from '../../ui/scene/islandShape';
-import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatAngles, seatPosition, type Vec3 } from '../../ui/scene/layout';
+import type { SafeArea } from '../../ui/scene/CameraRig';
+import { seatPosition } from '../../ui/scene/layout';
 import { Model, type ModelName } from '../../ui/scene/Model';
-import { Night } from '../../ui/scene/Night';
-import { Routes } from '../../ui/scene/Routes';
-import { Sea } from '../../ui/scene/Sea';
-import { SeaFog } from '../../ui/scene/SeaFog';
 import { SEA_LEVEL, seaSurfaceY } from '../../ui/scene/seaWave';
-import { VoyageShip, shipPose } from '../../ui/scene/Ships';
-import { CrestSpray, ShoreSpray } from '../../ui/scene/Spray';
-import { Storm } from '../../ui/scene/Storm';
-import { SwellProvider, useSwell, useWavePhase } from '../../ui/scene/SwellContext';
-import type { SceneShip, ShipState } from '../../ui/scene/tableModel';
-import { WEATHER, fillOf } from '../../ui/scene/weather';
-import { WeatherFog } from '../../ui/scene/WeatherFog';
-import { Wind } from '../../ui/scene/Wind';
+import { shipPose } from '../../ui/scene/Ships';
+import { useSwell, useWavePhase } from '../../ui/scene/SwellContext';
+import type { ShipState } from '../../ui/scene/tableModel';
 import type { BeatView } from '../beats/beatTimeline';
 import type { ShipBeat } from '../beats/shipBeat';
-import { FocusCamera } from './FocusCamera';
 import { around } from './focusMath';
 import { actorsShown, framingOf, involved, stepHit, type BeatActor, type BeatHit, type BeatSeat } from './beatStage';
-import '../../ui/scene/scene.css';
+import { TableCanvas, overviewPoints, platePosition, useTableLayout, type TablePin } from './TableCanvas';
 
 // The V0.6 table (sea, weather, islands, ships) playing one V0.7 ship beat: the camera closes in
 // on the ship, each pirate or guard sails in from the side of its own island, the ship takes the
@@ -160,36 +145,8 @@ function Reaction({ hit, heading, children }: { readonly hit: BeatHit | null; re
   return <group ref={group}>{children}</group>;
 }
 
-interface Pin {
-  readonly id: string;
-  readonly position: Vec3;
-}
-
-/** Keeps DOM labels over their 3D anchors (V0.6's LabelTracker does the same, with HUD avoidance). */
-function PinTracker({ pins, elements }: { readonly pins: readonly Pin[]; readonly elements: RefObject<Map<string, HTMLElement>> }) {
-  const camera = useThree((s) => s.camera);
-  const { width, height } = useThree((s) => s.size);
-  const v = useMemo(() => new Vector3(), []);
-  useFrame(() => {
-    for (const pin of pins) {
-      const el = elements.current.get(pin.id);
-      if (!el) continue;
-      v.set(...pin.position).project(camera);
-      el.style.transform = `translate(${((v.x + 1) / 2) * width}px, ${((1 - v.y) / 2) * height}px)`;
-    }
-  });
-  return null;
-}
-
-function asSceneShip(id: ShipId, owner: PlayerId, lane: number, state: ShipState): SceneShip {
-  return { id, kind: 'solo', owners: [owner], lane, state, roles: [], rerolled: false, smuggled: 0, caughtSmugglers: [], modifier: null };
-}
-
 export function BeatScene({ seats, ships, beat, view, weather, safe, onReady, tag, onClick }: BeatSceneProps) {
-  const look = WEATHER[weather ?? 'clear'];
-  const angles = useMemo(() => seatAngles(seats.length), [seats.length]);
-  const shores = useMemo(() => islandShorelines(angles), [angles]);
-  const laneOf = (id: PlayerId) => Math.max(0, seats.findIndex((s) => s.id === id));
+  const { angles, laneOf } = useTableLayout(seats);
   const focusLane = laneOf(beat.owner);
   const focusPose = useMemo(() => shipPose(angles[focusLane]!, 'sailing'), [angles, focusLane]);
   const related = useMemo(() => involved(beat), [beat]);
@@ -197,126 +154,59 @@ export function BeatScene({ seats, ships, beat, view, weather, safe, onReady, ta
   const hit = stepHit(beat, view, weather);
   const framing = framingOf(view);
 
-  const overview = useMemo(
-    (): FitPoint[] => [
-      ...around([0, 0, 0], TARGET_ISLAND_RADIUS),
-      ...angles.flatMap((a) => around(seatPosition(a), PLAYER_ISLAND_RADIUS + 1.5)),
-    ],
-    [angles],
-  );
+  const overview = useMemo(() => overviewPoints(angles), [angles]);
   const closeUp = useMemo(() => {
     const p = focusPose.position;
     return [...around([p.x, 0, p.z], CLOSE_UP_RADIUS), { position: [p.x, TAG_HEIGHT, p.z] as const, clearance: TAG_CLEARANCE }];
   }, [focusPose]);
 
   const focusState: ShipState = view.showOutcome ? (beat.outcome === 'sank' ? 'sunk' : 'arrived') : 'sailing';
-  const labels = useRef(new Map<string, HTMLElement>());
-  const pin = (id: string) => (el: HTMLElement | null) => {
-    if (el) labels.current.set(id, el);
-    else labels.current.delete(id);
-  };
-  const pins = useMemo(
-    (): Pin[] => [
-      ...seats.map((s, i): Pin => {
-        const [x, , z] = seatPosition(angles[i]!);
-        return { id: `seat-${s.id}`, position: [x, 1, z + PLAYER_ISLAND_RADIUS + 1] };
+  const tableShips = ships.map((ship) => ({ ...ship, state: ship.id === beat.shipId ? focusState : ('sailing' as const) }));
+  const pins: TablePin[] = [
+    ...seats.map(
+      (s, i): TablePin => ({
+        id: `seat-${s.id}`,
+        position: platePosition(angles[i]!),
+        node: (
+          <span className={`beat3d-plate ${framing === 'ship' && !related.has(s.id) ? 'dim' : ''}`} style={{ borderColor: s.color }}>
+            {s.isViewer ? '你' : s.name}
+          </span>
+        ),
       }),
-      { id: 'tag', position: [focusPose.position.x, TAG_HEIGHT, focusPose.position.z] },
-    ],
-    [seats, angles, focusPose],
-  );
-  const [ready, setReady] = useState(false);
+    ),
+    { id: 'tag', position: [focusPose.position.x, TAG_HEIGHT, focusPose.position.z], node: tag, hidden: !(framing === 'ship' && view.showStart) },
+  ];
 
   return (
-    <div className="beat3d" onClick={onClick}>
-      <Canvas shadows camera={{ position: [0, 82, 60], fov: 38 }} onCreated={() => setReady(true)}>
-        <FocusCamera points={framing === 'ship' ? closeUp : overview} safe={safe} />
-        <color attach="background" args={[look.sky]} />
-        <WeatherFog color={look.sky} near={look.fogNear} far={look.fogFar} />
-        <ambientLight intensity={look.ambient} />
-        <hemisphereLight args={[fillOf(look).sky, fillOf(look).ground, fillOf(look).intensity]} />
-        <directionalLight
-          position={[-40, 60, 30]}
-          intensity={look.sun}
-          color={look.sunColor}
-          castShadow
-          shadow-mapSize={[2048, 2048]}
-          shadow-camera-left={-80}
-          shadow-camera-right={80}
-          shadow-camera-top={80}
-          shadow-camera-bottom={-80}
-        />
-        <SwellProvider target={look.swell}>
-          <Suspense fallback={null}>
-            <Sea color={look.sea} shores={shores} vignette={look.vignette ?? 0} lines={look.seaLines ?? 0} glow={look.seaGlow ?? 0} />
-            <ShoreSpray shores={shores} />
-            <CrestSpray shores={shores} />
-            {(look.clouds ?? 0) > 0 && <Clouds amount={look.clouds ?? 0} />}
-            {weather === 'storm' && <Storm seatAngles={angles} />}
-            {weather === 'tailwind' && <Wind />}
-            {weather === 'sea-fog' && <SeaFog />}
-            {weather === 'moonless-night' && <Night seatAngles={angles} />}
-            {weather === 'black-market-rush' && <GoldRush />}
-            <Routes angles={angles} colors={seats.map((s) => s.color)} />
-            <TargetIsland />
-            {seats.map((seat, i) => (
-              <PlayerIsland
-                key={seat.id}
-                seat={{ assets: seat.buildings, color: seat.color }}
-                angle={angles[i]!}
-                seed={playerIslandSeed(i)}
-                // The islands the beat is about breathe a ring: owner, pirates, guards.
-                selectable={framing === 'ship' && related.has(seat.id)}
-              />
-            ))}
-            {ships.map((ship) => {
-              const lane = laneOf(ship.owner);
-              const focused = ship.id === beat.shipId;
-              const body = (
-                <VoyageShip
-                  ship={asSceneShip(ship.id, ship.owner, lane, focused ? focusState : 'sailing')}
-                  angle={angles[lane]!}
-                  selectable={false}
-                  lantern={weather === 'moonless-night'}
-                  onSelect={() => {}}
-                />
-              );
-              return focused ? (
-                <Reaction key={ship.id} hit={hit} heading={focusPose.heading}>
-                  {body}
-                </Reaction>
-              ) : (
-                <group key={ship.id}>{body}</group>
-              );
-            })}
-            {actors.map((actor) => {
-              const look = ACTOR_LOOK[actor.role];
-              const p = focusPose.position;
-              const to = new Vector3(p.x + look.dx * (ACTOR_SPOT.x + ACTOR_SPOT.spread * actor.order), 0, p.z + ACTOR_SPOT.z);
-              const [hx, , hz] = seatPosition(angles[laneOf(actor.playerId)]!);
-              const away = new Vector3(hx - to.x, 0, hz - to.z).normalize().multiplyScalar(ACTOR_APPROACH);
-              return <ActorBoat key={`${actor.role}-${actor.playerId}`} from={to.clone().add(away)} to={to} model={look.model} scale={look.scale} />;
-            })}
-            {hit && <HitFx key={hit.key} hit={hit} at={focusPose.position} />}
-            <EffectWarmup seatAngles={angles} onDone={onReady} />
-          </Suspense>
-        </SwellProvider>
-        <PinTracker pins={pins} elements={labels} />
-      </Canvas>
-      {ready && (
-        <div className="beat3d-labels">
-          {seats.map((s) => (
-            <div key={s.id} ref={pin(`seat-${s.id}`)} className="beat3d-pin">
-              <span className={`beat3d-plate ${framing === 'ship' && !related.has(s.id) ? 'dim' : ''}`} style={{ borderColor: s.color }}>
-                {s.isViewer ? '你' : s.name}
-              </span>
-            </div>
-          ))}
-          <div ref={pin('tag')} className={`beat3d-pin ${framing === 'ship' && view.showStart ? '' : 'hidden'}`}>
-            {tag}
-          </div>
-        </div>
-      )}
-    </div>
+    <TableCanvas
+      seats={seats}
+      weather={weather}
+      ships={tableShips}
+      cameraPoints={framing === 'ship' ? closeUp : overview}
+      safe={safe}
+      ringed={framing === 'ship' ? related : new Set()}
+      wrapShip={(id, body) =>
+        id === beat.shipId ? (
+          <Reaction hit={hit} heading={focusPose.heading}>
+            {body}
+          </Reaction>
+        ) : (
+          body
+        )
+      }
+      pins={pins}
+      onReady={onReady}
+      {...(onClick ? { onClick } : {})}
+    >
+      {actors.map((actor) => {
+        const look = ACTOR_LOOK[actor.role];
+        const p = focusPose.position;
+        const to = new Vector3(p.x + look.dx * (ACTOR_SPOT.x + ACTOR_SPOT.spread * actor.order), 0, p.z + ACTOR_SPOT.z);
+        const [hx, , hz] = seatPosition(angles[laneOf(actor.playerId)]!);
+        const away = new Vector3(hx - to.x, 0, hz - to.z).normalize().multiplyScalar(ACTOR_APPROACH);
+        return <ActorBoat key={`${actor.role}-${actor.playerId}`} from={to.clone().add(away)} to={to} model={look.model} scale={look.scale} />;
+      })}
+      {hit && <HitFx key={hit.key} hit={hit} at={focusPose.position} />}
+    </TableCanvas>
   );
 }

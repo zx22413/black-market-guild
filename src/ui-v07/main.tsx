@@ -7,6 +7,8 @@ import './v07.css';
 // played on the 3D table at /v07.html?dev=beat3d.
 const BeatPreview = import.meta.env.DEV ? lazy(() => import('./dev/BeatPreview').then((m) => ({ default: m.BeatPreview }))) : null;
 const Beat3DPreview = import.meta.env.DEV ? lazy(() => import('./dev/Beat3DPreview').then((m) => ({ default: m.Beat3DPreview }))) : null;
+// The investment decision on your island in 3D: /v07.html?dev=invest3d.
+const Invest3DPreview = import.meta.env.DEV ? lazy(() => import('./dev/Invest3DPreview').then((m) => ({ default: m.Invest3DPreview }))) : null;
 const devPage = import.meta.env.DEV ? new URLSearchParams(window.location.search).get('dev') : null;
 
 const container = document.querySelector<HTMLDivElement>('#app');
@@ -15,7 +17,11 @@ if (!container) {
 }
 createRoot(container).render(
   <StrictMode>
-    {devPage === 'beat3d' && Beat3DPreview ? (
+    {devPage === 'invest3d' && Invest3DPreview ? (
+      <Suspense fallback={null}>
+        <Invest3DPreview />
+      </Suspense>
+    ) : devPage === 'beat3d' && Beat3DPreview ? (
       <Suspense fallback={null}>
         <Beat3DPreview />
       </Suspense>
