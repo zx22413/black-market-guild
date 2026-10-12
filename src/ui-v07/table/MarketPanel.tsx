@@ -32,11 +32,11 @@ export function MarketPanel({ prices, demand, settlement, compact = false }: Mar
             </div>
             <b className="v7-price">{priceAt(RULES_V07, prices[good])} G</b>
             <span className="v7-demand" title="本回合需求">
-              需求 {demand[good]}
+              需 {demand[good]}
             </span>
             {settlement && (
               <span className={`v7-arrived${moved ? (settlement.priceAfter[good] > (before ?? 0) ? ' up' : ' down') : ''}`} title="本回合到港量">
-                到港 {settlement.arrived[good]}
+                到 {settlement.arrived[good]}
                 {moved ? (settlement.priceAfter[good] > (before ?? 0) ? ' ▲' : ' ▼') : ''}
               </span>
             )}

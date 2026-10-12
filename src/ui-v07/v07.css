@@ -392,6 +392,10 @@ button:disabled {
 }
 .v7-demand {
   color: var(--muted);
+  white-space: nowrap;
+}
+.v7-arrived {
+  white-space: nowrap;
 }
 .v7-arrived.up {
   color: var(--good);
@@ -400,14 +404,21 @@ button:disabled {
   color: var(--bad);
 }
 @media (max-width: 480px) {
-  .v7-market-row {
-    grid-template-columns: 4.2em minmax(48px, 1fr) 3.6em;
-    row-gap: 2px;
+  .v7-market {
+    padding: 6px 8px;
+    gap: 4px;
   }
-  .v7-market-row .v7-demand,
-  .v7-market-row .v7-arrived {
-    grid-column: 2 / -1;
-    font-size: 0.8rem;
+  .v7-market-row {
+    grid-template-columns: 3.7em minmax(40px, 1fr) 3.3em 2.4em 3em;
+    gap: 5px;
+    font-size: 0.82rem;
+  }
+  .v7-good {
+    gap: 3px;
+  }
+  .v7-choice .v7-muted,
+  .v7-role-card .v7-muted {
+    font-size: 0.78rem;
   }
 }
 
@@ -721,4 +732,44 @@ button:disabled {
   display: grid;
   gap: 10px;
   max-width: 360px;
+}
+
+/* ---------- short landscape screens (phones on their side): market in four columns ---------- */
+@media (max-height: 480px) and (orientation: landscape) {
+  .v7-table {
+    padding: 4px 8px 4px;
+    gap: 4px;
+  }
+  .v7-top-actions .v7-btn {
+    min-height: 30px;
+    padding: 2px 8px;
+  }
+  .v7-market {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 4px 8px;
+  }
+  .v7-market-row {
+    grid-template-columns: 1fr auto;
+    row-gap: 2px;
+    font-size: 0.8rem;
+  }
+  .v7-market-row .v7-track {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+  .v7-market-row .v7-track span {
+    height: 6px;
+  }
+  .v7-market-row .v7-price {
+    text-align: right;
+  }
+  .v7-market-row .v7-demand,
+  .v7-market-row .v7-arrived {
+    order: 4;
+    grid-column: auto;
+  }
+  .v7-card {
+    padding: 6px 8px 8px;
+  }
 }
