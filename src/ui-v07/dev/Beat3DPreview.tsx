@@ -5,7 +5,7 @@ import { runMatchSync, setupFromSeats, type SeatConfig } from '../../v07/match';
 import type { SafeArea } from '../../ui/scene/CameraRig';
 import { devWeatherOverride } from '../../ui/scene/weather';
 import { ReceiptCard } from '../beats/ReceiptCard';
-import { BeatCard } from '../beats/ShipBeatStage';
+import { BeatTag } from '../beats/BeatTag';
 import { buildReceipt, buildShipBeat, type ShipBeat } from '../beats/shipBeat';
 import { useBeatPlayback } from '../beats/useBeatPlayback';
 import { VOYAGE_EVENT_LABELS } from '../labels';
@@ -23,8 +23,8 @@ const SEATS: SeatConfig[] = [
   { kind: 'bot', name: '霧港商團', strategy: 'builder' },
 ];
 const VIEWER: PlayerId = 'p1';
-/** The docked panel (340 px + gutter) and the dev bar stay clear of the table. */
-const SAFE: SafeArea = { top: 64, bottom: 24, left: 24, right: 380 };
+/** The dev bar above and the playback buttons below stay clear of the table. */
+const SAFE: SafeArea = { top: 56, bottom: 64, left: 24, right: 24 };
 
 const interest = (b: ShipBeat): number =>
   (b.steps.some((s) => s.kind === 'pirate') ? 4 : 0) + (b.outcome === 'sank' ? 2 : 0) + (b.steps.length > 1 ? 1 : 0);
@@ -47,8 +47,30 @@ function Stage({ beat, events, players, weather }: { readonly beat: ShipBeat; re
   const seats = useMemo(() => beatSeats(players, VIEWER, stage.buildings), [players, stage]);
   return (
     <>
-      <BeatScene seats={seats} ships={stage.ships} beat={beat} view={playback.view} weather={weather ?? stage.weather} safe={SAFE} onReady={() => setReady(true)} />
-      {ready && !receipt && <BeatCard beat={beat} playback={playback} names={names} viewer={VIEWER} mode="docked" onDone={() => setReceipt(true)} />}
+      <BeatScene
+        seats={seats}
+        ships={stage.ships}
+        beat={beat}
+        view={playback.view}
+        weather={weather ?? stage.weather}
+        safe={SAFE}
+        onReady={() => setReady(true)}
+        onClick={() => (playback.next() ? undefined : setReceipt(true))}
+        tag={<BeatTag beat={beat} view={playback.view} names={names} viewer={VIEWER} />}
+      />
+      {ready && !receipt && (
+        <div className="beat3d-controls">
+          <button type="button" onClick={() => playback.jump(0)}>
+            再看一次
+          </button>
+          <button type="button" onClick={() => playback.jump(playback.total)}>
+            跳到結果
+          </button>
+          <button type="button" className="primary" onClick={() => (playback.view.done ? setReceipt(true) : playback.next())}>
+            {playback.view.done ? '看帳單' : '下一步 ▸'}
+          </button>
+        </div>
+      )}
       {receipt && <ReceiptCard round={beat.round} viewer={VIEWER} {...buildReceipt(events, beat.round, VIEWER)} onClose={() => setReceipt(false)} />}
     </>
   );

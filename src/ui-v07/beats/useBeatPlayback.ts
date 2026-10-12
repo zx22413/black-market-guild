@@ -3,7 +3,7 @@ import { beatCues, beatView, cuesStarted, type BeatView, type Cue } from './beat
 import type { ShipBeat } from './shipBeat';
 
 // Playback clock of one ship beat: plays by itself, `next` jumps to the following cue, `jump`
-// to any time. The card, the docked panel and the 3D scene all read the same `view`.
+// to any time. The card, the tag above the ship and the 3D scene all read the same `view`.
 
 export interface BeatPlayback {
   readonly cues: readonly Cue[];

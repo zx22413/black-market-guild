@@ -15,7 +15,7 @@ import { Routes } from '../../ui/scene/Routes';
 import { Sea } from '../../ui/scene/Sea';
 import { SeaFog } from '../../ui/scene/SeaFog';
 import { SEA_LEVEL, seaSurfaceY } from '../../ui/scene/seaWave';
-import { VoyageShip, lanePose, shipPose, type LanePose } from '../../ui/scene/Ships';
+import { VoyageShip, shipPose } from '../../ui/scene/Ships';
 import { CrestSpray, ShoreSpray } from '../../ui/scene/Spray';
 import { Storm } from '../../ui/scene/Storm';
 import { SwellProvider, useSwell, useWavePhase } from '../../ui/scene/SwellContext';
@@ -25,7 +25,6 @@ import { WeatherFog } from '../../ui/scene/WeatherFog';
 import { Wind } from '../../ui/scene/Wind';
 import type { BeatView } from '../beats/beatTimeline';
 import type { ShipBeat } from '../beats/shipBeat';
-import { BeatDie } from '../beats/ShipBeatStage';
 import { FocusCamera } from './FocusCamera';
 import { around } from './focusMath';
 import { actorsShown, framingOf, involved, stepHit, type BeatActor, type BeatHit, type BeatSeat } from './beatStage';
@@ -33,22 +32,27 @@ import '../../ui/scene/scene.css';
 
 // The V0.6 table (sea, weather, islands, ships) playing one V0.7 ship beat: the camera closes in
 // on the ship, each pirate or guard sails in from the side of its own island, the ship takes the
-// hit, and the die above it changes. The numbers and the money are in the docked BeatCard.
+// hit, and the tag above it (`tag`, see BeatTag) says what just happened, right where it happened.
 
 /** Each actor appears this far from the ship, on the side of its own island, and sails in. */
 const ACTOR_APPROACH = 18;
-const ACTOR_LOOK: Readonly<Record<BeatActor['role'], { readonly model: ModelName; readonly scale: number; readonly side: number }>> = {
-  pirate: { model: 'ship-pirate-medium', scale: 0.32, side: 6.5 },
-  guard: { model: 'boat-row-small', scale: 0.9, side: -5 },
+/**
+ * Where each actor stops beside the ship, on the near side (toward the camera) so the tag above
+ * the ship never covers it: pirates to the right, guards to the left, later ones further out.
+ */
+const ACTOR_LOOK: Readonly<Record<BeatActor['role'], { readonly model: ModelName; readonly scale: number; readonly dx: number }>> = {
+  pirate: { model: 'ship-pirate-medium', scale: 0.32, dx: 1 },
+  guard: { model: 'boat-row-small', scale: 0.9, dx: -1 },
 };
+const ACTOR_SPOT = { x: 7, z: 5, spread: 5 } as const;
 /** How long after a step begins the ship takes the hit (an actor first has to arrive). */
 const HIT_DELAY: Readonly<Record<BeatHit['kind'], number>> = { cannon: 0.55, lightning: 0.2, push: 0.15, lift: 0.45, jolt: 0.15 };
 const HIT_LENGTH = 0.7;
-const DIE_HEIGHT = 15;
+const TAG_HEIGHT = 7;
 /** The close-up shows this much sea around the ship: room for the pirates and guards beside it. */
 const CLOSE_UP_RADIUS = 24;
-/** Room above the ship for the die tag, so the close-up keeps it on screen. */
-const DIE_CLEARANCE = 150;
+/** Room above the ship for its tag, so the close-up keeps the whole tag on screen. */
+const TAG_CLEARANCE = 300;
 
 export interface BeatSceneProps {
   readonly seats: readonly BeatSeat[];
@@ -57,14 +61,18 @@ export interface BeatSceneProps {
   readonly beat: ShipBeat;
   readonly view: BeatView;
   readonly weather: VoyageEventId | null;
-  /** Screen margins kept clear of the docked panel and other HUD. */
+  /** Screen margins kept clear of the HUD. */
   readonly safe: SafeArea;
   /** Called once the models are loaded and the shaders compiled; start the beat then. */
   readonly onReady: () => void;
+  /** What the beat says right now, pinned above the ship during the close-up. */
+  readonly tag: ReactNode;
+  /** A click on the table (to play the next step). */
+  readonly onClick?: () => void;
 }
 
 /** Eases a group to `to`, riding the waves; starts at `from`. */
-function ActorBoat({ from, to, model, scale }: { readonly from: Vector3; readonly to: LanePose; readonly model: ModelName; readonly scale: number }) {
+function ActorBoat({ from, to, model, scale }: { readonly from: Vector3; readonly to: Vector3; readonly model: ModelName; readonly scale: number }) {
   const group = useRef<Group>(null);
   // Kept in state: a position prop that changes on re-render would snap the boat back.
   const [spawn] = useState(from);
@@ -74,11 +82,11 @@ function ActorBoat({ from, to, model, scale }: { readonly from: Vector3; readonl
     const g = group.current;
     if (!g) return;
     const ease = 1 - Math.exp(-delta * 4);
-    g.position.x += (to.position.x - g.position.x) * ease;
-    g.position.z += (to.position.z - g.position.z) * ease;
+    g.position.x += (to.x - g.position.x) * ease;
+    g.position.z += (to.z - g.position.z) * ease;
     g.position.y = seaSurfaceY(g.position.x, g.position.z, phase.current, swell.current.height) - SEA_LEVEL;
   });
-  const [heading] = useState(() => Math.atan2(to.position.x - spawn.x, to.position.z - spawn.z));
+  const [heading] = useState(() => Math.atan2(to.x - spawn.x, to.z - spawn.z));
   return (
     <group ref={group} position={spawn} rotation={[0, heading, 0]}>
       <Model name={model} scale={scale} />
@@ -177,7 +185,7 @@ function asSceneShip(id: ShipId, owner: PlayerId, lane: number, state: ShipState
   return { id, kind: 'solo', owners: [owner], lane, state, roles: [], rerolled: false, smuggled: 0, caughtSmugglers: [], modifier: null };
 }
 
-export function BeatScene({ seats, ships, beat, view, weather, safe, onReady }: BeatSceneProps) {
+export function BeatScene({ seats, ships, beat, view, weather, safe, onReady, tag, onClick }: BeatSceneProps) {
   const look = WEATHER[weather ?? 'clear'];
   const angles = useMemo(() => seatAngles(seats.length), [seats.length]);
   const shores = useMemo(() => islandShorelines(angles), [angles]);
@@ -198,7 +206,7 @@ export function BeatScene({ seats, ships, beat, view, weather, safe, onReady }: 
   );
   const closeUp = useMemo(() => {
     const p = focusPose.position;
-    return [...around([p.x, 0, p.z], CLOSE_UP_RADIUS), { position: [p.x, DIE_HEIGHT, p.z] as const, clearance: DIE_CLEARANCE }];
+    return [...around([p.x, 0, p.z], CLOSE_UP_RADIUS), { position: [p.x, TAG_HEIGHT, p.z] as const, clearance: TAG_CLEARANCE }];
   }, [focusPose]);
 
   const focusState: ShipState = view.showOutcome ? (beat.outcome === 'sank' ? 'sunk' : 'arrived') : 'sailing';
@@ -213,15 +221,14 @@ export function BeatScene({ seats, ships, beat, view, weather, safe, onReady }: 
         const [x, , z] = seatPosition(angles[i]!);
         return { id: `seat-${s.id}`, position: [x, 1, z + PLAYER_ISLAND_RADIUS + 1] };
       }),
-      { id: 'die', position: [focusPose.position.x, DIE_HEIGHT, focusPose.position.z] },
+      { id: 'tag', position: [focusPose.position.x, TAG_HEIGHT, focusPose.position.z] },
     ],
     [seats, angles, focusPose],
   );
-  const lastStep = view.stepsShown > 0 ? beat.steps[view.stepsShown - 1]! : null;
   const [ready, setReady] = useState(false);
 
   return (
-    <div className="beat3d">
+    <div className="beat3d" onClick={onClick}>
       <Canvas shadows camera={{ position: [0, 82, 60], fov: 38 }} onCreated={() => setReady(true)}>
         <FocusCamera points={framing === 'ship' ? closeUp : overview} safe={safe} />
         <color attach="background" args={[look.sky]} />
@@ -284,10 +291,11 @@ export function BeatScene({ seats, ships, beat, view, weather, safe, onReady }: 
             })}
             {actors.map((actor) => {
               const look = ACTOR_LOOK[actor.role];
-              const to = lanePose(angles[focusLane]!, 0.5 - 0.06 * actor.order, look.side);
+              const p = focusPose.position;
+              const to = new Vector3(p.x + look.dx * (ACTOR_SPOT.x + ACTOR_SPOT.spread * actor.order), 0, p.z + ACTOR_SPOT.z);
               const [hx, , hz] = seatPosition(angles[laneOf(actor.playerId)]!);
-              const away = new Vector3(hx - to.position.x, 0, hz - to.position.z).normalize().multiplyScalar(ACTOR_APPROACH);
-              return <ActorBoat key={`${actor.role}-${actor.playerId}`} from={to.position.clone().add(away)} to={to} model={look.model} scale={look.scale} />;
+              const away = new Vector3(hx - to.x, 0, hz - to.z).normalize().multiplyScalar(ACTOR_APPROACH);
+              return <ActorBoat key={`${actor.role}-${actor.playerId}`} from={to.clone().add(away)} to={to} model={look.model} scale={look.scale} />;
             })}
             {hit && <HitFx key={hit.key} hit={hit} at={focusPose.position} />}
             <EffectWarmup seatAngles={angles} onDone={onReady} />
@@ -304,10 +312,8 @@ export function BeatScene({ seats, ships, beat, view, weather, safe, onReady }: 
               </span>
             </div>
           ))}
-          <div ref={pin('die')} className={`beat3d-pin ${framing === 'ship' && view.showStart ? '' : 'hidden'}`}>
-            <div className="beat3d-die">
-              <BeatDie value={view.die} step={lastStep} stepsShown={view.stepsShown} />
-            </div>
+          <div ref={pin('tag')} className={`beat3d-pin ${framing === 'ship' && view.showStart ? '' : 'hidden'}`}>
+            {tag}
           </div>
         </div>
       )}

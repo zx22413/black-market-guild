@@ -3,7 +3,7 @@ import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
 
 // Framing for the focus camera: the same fixed viewing angle as the V0.6 table camera
 // (src/ui/scene/CameraRig.tsx), but the aim can move sideways too, so the camera can close in on
-// one ship anywhere on the table and center it in the space left of a docked panel.
+// one ship anywhere on the table and center it in the space left free by the HUD.
 
 /** Camera looks down along this direction (same as V0.6). */
 export const VIEW_DIRECTION = new Vector3(0, 82, 60).normalize();

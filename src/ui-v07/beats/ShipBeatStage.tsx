@@ -6,8 +6,8 @@ import { useBeatPlayback, type BeatPlayback } from './useBeatPlayback';
 import './beat.css';
 
 // Focus-layer prototype (docs/ui/v07-layout-research.md §6): one ship's resolution, one thing at a
-// time. `ShipBeatStage` is the full-screen card over the dimmed table; `BeatCard` is its content,
-// also used docked beside the 3D table while the scene plays the action.
+// time, as a full-screen card over the dimmed table. On the 3D table the same beat is told by
+// BeatTag, pinned above the ship.
 
 /** §9.1 step 8: 1–3 sinks, 4–6 arrives. Display only; the outcome itself comes from the event. */
 export const SINK_MAX = 3;
@@ -78,12 +78,10 @@ export interface BeatCardProps {
   readonly playback: BeatPlayback;
   readonly names: Names;
   readonly viewer: PlayerId | null;
-  /** 'docked': beside the 3D table, which plays the ship and its die itself; no sea strip. */
-  readonly mode: 'overlay' | 'docked';
   readonly onDone?: () => void;
 }
 
-export function BeatCard({ beat, playback, names, viewer, mode, onDone }: BeatCardProps) {
+export function BeatCard({ beat, playback, names, viewer, onDone }: BeatCardProps) {
   const { view, jump, next, total } = playback;
   const current = currentStep(beat, view);
   const lastStep = view.stepsShown > 0 ? beat.steps[view.stepsShown - 1]! : null;
@@ -99,7 +97,7 @@ export function BeatCard({ beat, playback, names, viewer, mode, onDone }: BeatCa
   };
 
   return (
-    <div className={`beat-card beat-${mode}`} onClick={mode === 'docked' ? advance : undefined}>
+    <div className="beat-card">
       <header className="beat-head">
         <span>第 {beat.round} 回合 · 航程結算</span>
         <strong>
@@ -108,16 +106,14 @@ export function BeatCard({ beat, playback, names, viewer, mode, onDone }: BeatCa
         </strong>
       </header>
 
-      {mode === 'overlay' && (
-        <div className="beat-sea">
-          <div key={view.stepsShown} className={`beat-lane ${current ? laneHit(current) : ''}`}>
-            <Ship sank={sank} shown={view.showOutcome} />
-            {current && <Actor step={current} />}
-            {current?.kind === 'pirate' && <span className="beat-flash" />}
-          </div>
-          <BeatDie value={view.die} step={lastStep} stepsShown={view.stepsShown} />
+      <div className="beat-sea">
+        <div key={view.stepsShown} className={`beat-lane ${current ? laneHit(current) : ''}`}>
+          <Ship sank={sank} shown={view.showOutcome} />
+          {current && <Actor step={current} />}
+          {current?.kind === 'pirate' && <span className="beat-flash" />}
         </div>
-      )}
+        <BeatDie value={view.die} step={lastStep} stepsShown={view.stepsShown} />
+      </div>
 
       <div className="beat-caption" aria-live="polite">
         {!view.showStart && <span className="beat-big">出航</span>}
@@ -209,7 +205,7 @@ export function ShipBeatStage({ beat, names, viewer, onDone }: ShipBeatStageProp
   const owner = names[beat.owner] ?? beat.owner;
   return (
     <div className="beat-backdrop" onClick={() => (playback.next() ? undefined : onDone?.())} role="dialog" aria-label={`${owner}的船：結算`}>
-      <BeatCard beat={beat} playback={playback} names={names} viewer={viewer} mode="overlay" {...(onDone ? { onDone } : {})} />
+      <BeatCard beat={beat} playback={playback} names={names} viewer={viewer} {...(onDone ? { onDone } : {})} />
     </div>
   );
 }
