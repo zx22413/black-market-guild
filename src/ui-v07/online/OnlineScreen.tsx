@@ -127,8 +127,18 @@ function Lobby({ code, client, state, onLeave }: { readonly code: string; readon
 }
 
 function Room({ code, onLeave }: { readonly code: string; readonly onLeave: () => void }) {
-  const [client] = useState(() => connectRoom(code));
-  useEffect(() => () => client.close(), [client]);
+  // Created inside the effect so React StrictMode's mount-unmount-mount does not leave a closed client.
+  const [client, setClient] = useState<OnlineClient | null>(null);
+  useEffect(() => {
+    const next = connectRoom(code);
+    setClient(next);
+    return () => next.close();
+  }, [code]);
+  if (!client) return null;
+  return <RoomView code={code} client={client} onLeave={onLeave} />;
+}
+
+function RoomView({ code, client, onLeave }: { readonly code: string; readonly client: OnlineClient; readonly onLeave: () => void }) {
   const state = useSyncExternalStore(client.subscribe, client.getState);
   const session = state.room?.match?.you ? client.getSession() : null;
   if (session) {
