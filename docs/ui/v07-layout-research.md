@@ -314,3 +314,24 @@
   - 操作按鈕縮成底部一條小列；點畫面任何地方也能前進。
 - **截圖：** [順風那一步](v07-layout/beat3d-tag.jpg)、[擊沉後](v07-layout/beat3d-tag-sunk.jpg)。
 - **之後所有時刻都照這條原則：** 演出在哪裡，文字就在哪裡。
+
+## 7. GitHub 上可參考的開源專案（2026-10-13）
+
+以 `gh search repos` 搜尋。只參考做法，不複製程式碼或美術；授權不明的專案只看概念。
+
+| 專案 | 授權 | 和我們相關的地方 |
+| --- | --- | --- |
+| [delucis/bgio-effects](https://github.com/delucis/bgio-effects) | 自訂的 MIT 變體（GitHub 判定為 NOASSERTION） | 給 boardgame.io 用的「效果」層：規則程式在行動中發出短暫的效果事件，可設定時間長度、排成時間軸，前端依事件類型播放對應演出。**和我們的公開事件流是同一種思路**。我們缺的是把每一種公開事件（不只骰值）對應到一段演出。 |
+| [boardgameio/boardgame.io](https://github.com/boardgameio/boardgame.io) | MIT | 回合制遊戲的狀態管理與連線框架；我們的引擎、Runner、`PlayerView` 架構與它類似。 |
+| [kestasjk/webDiplomacy](https://github.com/kestasjk/webDiplomacy) | （未查授權，只看概念） | 同時秘密下令的經典。揭曉時**在地圖上畫箭頭**，從部隊指向目標。這就是「誰打誰」最直接的呈現方式。 |
+| [tobymao/18xx](https://github.com/tobymao/18xx) | NOASSERTION | 18xx 系列的線上平台，有**股價格子市場**（價格依交易上下移動），可作為黑市價格軌的參考。 |
+| [joffrey-bion/seven-wonders](https://github.com/joffrey-bion/seven-wonders) | MIT | 同時出牌的數位版。買不起的牌和不能做的行動直接變灰，並預覽每個行動的成本（類似我們的冷卻變灰）。 |
+| [arcomage/arcomage-hd](https://github.com/arcomage/arcomage-hd) | MIT | TypeScript＋React 的 3D 卡牌遊戲，支援手機、可在設定裡關閉動畫，並標榜適合容易暈動的玩家（Motion Sickness Friendly）。 |
+| [mbrinkl/santorini](https://github.com/mbrinkl/santorini) | （未查） | boardgame.io＋three.js 的桌遊，最接近我們技術組合的小型範例。 |
+| [drwhut/tabletop-club](https://github.com/drwhut/tabletop-club) | （未查） | Godot 的物理桌遊沙盒（類似 Tabletop Simulator）。偏向自由擺放，和我們「規則引擎驅動」的方向不同。 |
+
+**結論：**
+
+- **補「互動」用 bgio-effects 的思路：** 每一種公開事件都要有自己的一段演出和時間長度，不只骰值。
+  - 例如：戰利品從沉船飛到海盜的島；沒收的軍火飛到護衛的島；打撈公司的建築發亮，撈到的貨飛回那座島。
+- **補「誰打誰」用 webDiplomacy 的箭頭：** 角色揭露時，在全景上從出手者的島畫一條玩家色的箭頭指向目標船，箭頭上標角色圖示。
