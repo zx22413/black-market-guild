@@ -48,3 +48,37 @@ export function cuesStarted(cues: readonly Cue[], elapsed: number): number {
   const n = cues.findIndex((c) => c.at > elapsed);
   return n < 0 ? cues.length : n;
 }
+
+/** What the beat shows once `started` cues have begun; shared by the card, the panel and the 3D scene. */
+export interface BeatView {
+  readonly started: number;
+  readonly showStart: boolean;
+  /** Modifier steps applied so far. */
+  readonly stepsShown: number;
+  /** The die value on screen (clamped to 1–6), or null before the start cue. */
+  readonly die: number | null;
+  readonly showOutcome: boolean;
+  readonly showCargo: boolean;
+  readonly cashShown: number;
+  readonly goodsShown: number;
+  readonly done: boolean;
+}
+
+export function beatView(beat: ShipBeat, cues: readonly Cue[], started: number): BeatView {
+  const shown = cues.slice(0, started);
+  const count = (kind: CueKind) => shown.filter((c) => c.kind === kind).length;
+  const stepsShown = count('step');
+  const current = stepsShown > 0 ? beat.steps[stepsShown - 1] : undefined;
+  const showStart = count('start') > 0;
+  return {
+    started,
+    showStart,
+    stepsShown,
+    die: !showStart ? null : current ? Math.min(6, Math.max(1, current.value)) : beat.start,
+    showOutcome: count('outcome') > 0,
+    showCargo: count('cargo') > 0,
+    cashShown: count('cash'),
+    goodsShown: count('goods'),
+    done: count('done') > 0,
+  };
+}

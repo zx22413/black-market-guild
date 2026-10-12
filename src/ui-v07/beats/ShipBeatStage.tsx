@@ -1,26 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
 import { GOODS, type PlayerId } from '../../v07/game';
 import { CASH_REASON_LABELS, GOOD_LABELS, ISLAND_LABELS, ROLE_LABELS, VOYAGE_EVENT_LABELS } from '../labels';
-import { beatCues, cuesStarted } from './beatTimeline';
+import type { BeatView } from './beatTimeline';
 import type { BeatStep, ShipBeat } from './shipBeat';
+import { useBeatPlayback, type BeatPlayback } from './useBeatPlayback';
 import './beat.css';
 
-// Focus-layer prototype: one ship's resolution as a full-screen card over a dimmed table
-// (docs/ui/v07-layout-research.md §6). Plays by itself; a click anywhere jumps to the next cue.
+// Focus-layer prototype (docs/ui/v07-layout-research.md §6): one ship's resolution, one thing at a
+// time. `ShipBeatStage` is the full-screen card over the dimmed table; `BeatCard` is its content,
+// also used docked beside the 3D table while the scene plays the action.
 
 /** §9.1 step 8: 1–3 sinks, 4–6 arrives. Display only; the outcome itself comes from the event. */
-const SINK_MAX = 3;
+export const SINK_MAX = 3;
 
-export interface ShipBeatStageProps {
-  readonly beat: ShipBeat;
-  readonly names: Readonly<Record<PlayerId, string>>;
-  readonly viewer: PlayerId | null;
-  readonly onDone?: () => void;
-}
+type Names = Readonly<Record<PlayerId, string>>;
 
-const signed = (n: number): string => (n > 0 ? `+${n}` : `−${-n}`);
+export const signed = (n: number): string => (n > 0 ? `+${n}` : `−${-n}`);
 
-function stepTitle(step: BeatStep, names: Readonly<Record<PlayerId, string>>): { readonly name: string; readonly who: string } {
+export function stepTitle(step: BeatStep, names: Names): { readonly name: string; readonly who: string } {
   const who = step.actors.map((id) => names[id] ?? id).join('、');
   switch (step.kind) {
     case 'guard':
@@ -36,33 +32,9 @@ function stepTitle(step: BeatStep, names: Readonly<Record<PlayerId, string>>): {
   }
 }
 
-/** Playback clock in ms; `jump` moves it (and restarts the frame loop if it had stopped). */
-function useBeatClock(total: number, key: string): readonly [number, (ms: number) => void] {
-  const [elapsed, setElapsed] = useState(0);
-  const origin = useRef(0);
-  const frame = useRef(0);
-  const run = useRef<() => void>(() => {});
-  run.current = () => {
-    cancelAnimationFrame(frame.current);
-    const tick = (now: number) => {
-      const t = now - origin.current;
-      setElapsed(t);
-      if (t <= total) frame.current = requestAnimationFrame(tick);
-    };
-    frame.current = requestAnimationFrame(tick);
-  };
-  useEffect(() => {
-    origin.current = performance.now();
-    setElapsed(0);
-    run.current();
-    return () => cancelAnimationFrame(frame.current);
-  }, [total, key]);
-  const jump = (ms: number) => {
-    origin.current = performance.now() - ms;
-    setElapsed(ms);
-    run.current();
-  };
-  return [elapsed, jump] as const;
+/** The step on screen, or null before the first one and after the outcome. */
+export function currentStep(beat: ShipBeat, view: BeatView): BeatStep | null {
+  return view.stepsShown > 0 && !view.showOutcome ? beat.steps[view.stepsShown - 1]! : null;
 }
 
 function Ship({ sank, shown }: { readonly sank: boolean; readonly shown: boolean }) {
@@ -83,129 +55,161 @@ function Actor({ step }: { readonly step: BeatStep }) {
   return <div className={`beat-actor beat-actor-${step.kind}`}>{glyph}</div>;
 }
 
-export function ShipBeatStage({ beat, names, viewer, onDone }: ShipBeatStageProps) {
-  const cues = useMemo(() => beatCues(beat), [beat]);
-  const total = cues[cues.length - 1]!.at;
-  const [elapsed, jump] = useBeatClock(total, beat.shipId);
-  const started = cuesStarted(cues, elapsed);
-  const shown = cues.slice(0, started);
-  const has = (kind: string) => shown.some((c) => c.kind === kind);
-  const stepsShown = shown.filter((c) => c.kind === 'step').length;
-  const cashShown = shown.filter((c) => c.kind === 'cash').length;
-  const goodsShown = shown.filter((c) => c.kind === 'goods').length;
-  const current = stepsShown > 0 ? beat.steps[stepsShown - 1]! : null;
-  const die = !has('start') ? null : current ? Math.min(6, Math.max(1, current.value)) : beat.start;
-  const done = has('done');
+/** The die with the 1–6 meter beside it (1–3 sink, 4–6 arrive). */
+export function BeatDie({ value, step, stepsShown }: { readonly value: number | null; readonly step: BeatStep | null; readonly stepsShown: number }) {
+  return (
+    <div className="beat-dice">
+      <div key={`${value}-${stepsShown}`} className={`beat-die ${step ? (step.delta > 0 ? 'up' : 'down') : ''} shake-${Math.min(3, Math.abs(step?.delta ?? 0))}`}>
+        {value ?? '?'}
+      </div>
+      <ol className="beat-meter" aria-label="1～3 沉沒，4～6 抵達">
+        {[6, 5, 4, 3, 2, 1].map((v) => (
+          <li key={v} className={`${v <= SINK_MAX ? 'sink' : 'safe'} ${value === v ? 'on' : ''}`}>
+            {v}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+export interface BeatCardProps {
+  readonly beat: ShipBeat;
+  readonly playback: BeatPlayback;
+  readonly names: Names;
+  readonly viewer: PlayerId | null;
+  /** 'docked': beside the 3D table, which plays the ship and its die itself; no sea strip. */
+  readonly mode: 'overlay' | 'docked';
+  readonly onDone?: () => void;
+}
+
+export function BeatCard({ beat, playback, names, viewer, mode, onDone }: BeatCardProps) {
+  const { view, jump, next, total } = playback;
+  const current = currentStep(beat, view);
+  const lastStep = view.stepsShown > 0 ? beat.steps[view.stepsShown - 1]! : null;
   const sank = beat.outcome === 'sank';
-
-  const next = () => {
-    const upcoming = cues[started];
-    if (upcoming) jump(upcoming.at);
-    else onDone?.();
-  };
-
   const owner = names[beat.owner] ?? beat.owner;
   const cargo = GOODS.flatMap((g) => Array.from({ length: beat.cargo[g] }, () => g));
+  const advance = () => {
+    if (!next()) onDone?.();
+  };
+  const stop = (action: () => void) => (e: { stopPropagation: () => void }) => {
+    e.stopPropagation();
+    action();
+  };
 
   return (
-    <div className="beat-backdrop" onClick={next} role="dialog" aria-label={`${owner}的船：結算`}>
-      <div className="beat-card">
-        <header className="beat-head">
-          <span>第 {beat.round} 回合 · 航程結算</span>
-          <strong>
-            {beat.owner === viewer ? '你的船' : `${owner}的船`}
-            {beat.rerolled && <em className="beat-chip">情報商人重擲過</em>}
-          </strong>
-        </header>
+    <div className={`beat-card beat-${mode}`} onClick={mode === 'docked' ? advance : undefined}>
+      <header className="beat-head">
+        <span>第 {beat.round} 回合 · 航程結算</span>
+        <strong>
+          {beat.owner === viewer ? '你的船' : `${owner}的船`}
+          {beat.rerolled && <em className="beat-chip">情報商人重擲過</em>}
+        </strong>
+      </header>
 
+      {mode === 'overlay' && (
         <div className="beat-sea">
-          <div key={stepsShown} className={`beat-lane ${current && !has('outcome') ? laneHit(current) : ''}`}>
-            <Ship sank={sank} shown={has('outcome')} />
+          <div key={view.stepsShown} className={`beat-lane ${current ? laneHit(current) : ''}`}>
+            <Ship sank={sank} shown={view.showOutcome} />
             {current && <Actor step={current} />}
-            {current?.kind === 'pirate' && !has('outcome') && <span className="beat-flash" />}
+            {current?.kind === 'pirate' && <span className="beat-flash" />}
           </div>
-
-          <div className="beat-dice">
-            <div key={`${die}-${stepsShown}`} className={`beat-die ${current ? (current.delta > 0 ? 'up' : 'down') : ''} shake-${Math.min(3, Math.abs(current?.delta ?? 0))}`}>
-              {die ?? '?'}
-            </div>
-            <ol className="beat-meter" aria-label="1～3 沉沒，4～6 抵達">
-              {[6, 5, 4, 3, 2, 1].map((v) => (
-                <li key={v} className={`${v <= SINK_MAX ? 'sink' : 'safe'} ${die === v ? 'on' : ''}`}>
-                  {v}
-                </li>
-              ))}
-            </ol>
-          </div>
+          <BeatDie value={view.die} step={lastStep} stepsShown={view.stepsShown} />
         </div>
+      )}
 
-        <div className="beat-caption" aria-live="polite">
-          {!has('start') && <span className="beat-big">出航</span>}
-          {has('start') && !current && <span className="beat-big">起始骰值 {beat.start}</span>}
-          {current && !has('outcome') && (
-            <span className="beat-big">
-              {stepTitle(current, names).name} <b className={current.delta > 0 ? 'up' : 'down'}>{signed(current.delta)}</b>
-              <small>{stepTitle(current, names).who}</small>
-            </span>
-          )}
-          {has('outcome') && <span className={`beat-stamp ${sank ? 'down' : 'up'}`}>{sank ? '沉沒' : '抵達'}</span>}
-        </div>
-
-        <p className="beat-trail">
-          起始 {beat.start}
-          {beat.steps.slice(0, stepsShown).map((s, i) => (
-            <span key={i}>
-              {' → '}
-              {stepTitle(s, names).name} {signed(s.delta)}
-            </span>
-          ))}
-          {has('outcome') && <> ＝ <b>{beat.final}</b></>}
-        </p>
-
-        {has('cargo') && (
-          <div className="beat-cargo">
-            <span className="beat-label">船上的貨</span>
-            {cargo.map((g, i) => (
-              <span key={i} className={`beat-crate good-${g}`} style={{ animationDelay: `${i * 90}ms` }}>
-                {GOOD_LABELS[g].slice(0, 1)}
-              </span>
-            ))}
-            {beat.armsConfiscated > 0 && <span className="beat-note down">軍火 {beat.armsConfiscated} 被沒收</span>}
-          </div>
+      <div className="beat-caption" aria-live="polite">
+        {!view.showStart && <span className="beat-big">出航</span>}
+        {view.showStart && !lastStep && !view.showOutcome && <span className="beat-big">起始骰值 {beat.start}</span>}
+        {current && (
+          <span key={view.stepsShown} className="beat-big">
+            {stepTitle(current, names).name} <b className={current.delta > 0 ? 'up' : 'down'}>{signed(current.delta)}</b>
+            <small>{stepTitle(current, names).who}</small>
+          </span>
         )}
-
-        <ul className="beat-cash">
-          {beat.cash.slice(0, cashShown).map((c, i) => (
-            <li key={i} className={c.playerId === viewer ? 'mine' : ''}>
-              <b className={c.amount >= 0 ? 'up' : 'down'}>
-                {c.amount >= 0 ? '+' : '−'}
-                {Math.abs(c.amount)} G
-              </b>
-              <span>{c.playerId === viewer ? '你' : (names[c.playerId] ?? c.playerId)}</span>
-              <small>{CASH_REASON_LABELS[c.reason]}</small>
-            </li>
-          ))}
-          {beat.goods.slice(0, goodsShown).map((g, i) => (
-            <li key={`g${i}`} className={g.playerId === viewer ? 'mine' : ''}>
-              <b className="up">+{g.units} {GOOD_LABELS[g.good]}</b>
-              <span>{g.playerId === viewer ? '你' : (names[g.playerId] ?? g.playerId)}</span>
-              <small>{g.via === 'insurance' ? '航運保險保住' : '打撈公司撈到'}</small>
-            </li>
-          ))}
-        </ul>
-
-        <footer className="beat-foot">
-          <button type="button" onClick={(e) => (e.stopPropagation(), jump(0))}>
-            再看一次
-          </button>
-          <button type="button" onClick={(e) => (e.stopPropagation(), jump(total))}>
-            跳到結果
-          </button>
-          <button type="button" className="primary" onClick={(e) => (e.stopPropagation(), done ? onDone?.() : next())}>
-            {done ? '繼續' : '下一步 ▸'}
-          </button>
-        </footer>
+        {view.showOutcome && <span className={`beat-stamp ${sank ? 'down' : 'up'}`}>{sank ? '沉沒' : '抵達'}</span>}
       </div>
+
+      <p className="beat-trail">
+        起始 {beat.start}
+        {beat.steps.slice(0, view.stepsShown).map((s, i) => (
+          <span key={i}>
+            {' → '}
+            {stepTitle(s, names).name} {signed(s.delta)}
+          </span>
+        ))}
+        {view.showOutcome && (
+          <>
+            {' ＝ '}
+            <b>{beat.final}</b>
+          </>
+        )}
+      </p>
+
+      {view.showCargo && (
+        <div className="beat-cargo">
+          <span className="beat-label">船上的貨</span>
+          {cargo.map((g, i) => (
+            <span key={i} className={`beat-crate good-${g}`} style={{ animationDelay: `${i * 90}ms` }}>
+              {GOOD_LABELS[g].slice(0, 1)}
+            </span>
+          ))}
+          {beat.armsConfiscated > 0 && <span className="beat-note down">軍火 {beat.armsConfiscated} 被沒收</span>}
+        </div>
+      )}
+
+      <ul className="beat-cash">
+        {beat.cash.slice(0, view.cashShown).map((c, i) => (
+          <li key={i} className={c.playerId === viewer ? 'mine' : ''}>
+            <b className={c.amount >= 0 ? 'up' : 'down'}>
+              {c.amount >= 0 ? '+' : '−'}
+              {Math.abs(c.amount)} G
+            </b>
+            <span>{c.playerId === viewer ? '你' : (names[c.playerId] ?? c.playerId)}</span>
+            <small>{CASH_REASON_LABELS[c.reason]}</small>
+          </li>
+        ))}
+        {beat.goods.slice(0, view.goodsShown).map((g, i) => (
+          <li key={`g${i}`} className={g.playerId === viewer ? 'mine' : ''}>
+            <b className="up">
+              +{g.units} {GOOD_LABELS[g.good]}
+            </b>
+            <span>{g.playerId === viewer ? '你' : (names[g.playerId] ?? g.playerId)}</span>
+            <small>{g.via === 'insurance' ? '航運保險保住' : '打撈公司撈到'}</small>
+          </li>
+        ))}
+      </ul>
+
+      <footer className="beat-foot">
+        <button type="button" onClick={stop(() => jump(0))}>
+          再看一次
+        </button>
+        <button type="button" onClick={stop(() => jump(total))}>
+          跳到結果
+        </button>
+        <button type="button" className="primary" onClick={stop(() => (view.done ? onDone?.() : advance()))}>
+          {view.done ? '繼續' : '下一步 ▸'}
+        </button>
+      </footer>
+    </div>
+  );
+}
+
+export interface ShipBeatStageProps {
+  readonly beat: ShipBeat;
+  readonly names: Names;
+  readonly viewer: PlayerId | null;
+  readonly onDone?: () => void;
+}
+
+/** The beat as a full-screen card over the dimmed table; a click anywhere jumps to the next cue. */
+export function ShipBeatStage({ beat, names, viewer, onDone }: ShipBeatStageProps) {
+  const playback = useBeatPlayback(beat);
+  const owner = names[beat.owner] ?? beat.owner;
+  return (
+    <div className="beat-backdrop" onClick={() => (playback.next() ? undefined : onDone?.())} role="dialog" aria-label={`${owner}的船：結算`}>
+      <BeatCard beat={beat} playback={playback} names={names} viewer={viewer} mode="overlay" {...(onDone ? { onDone } : {})} />
     </div>
   );
 }
