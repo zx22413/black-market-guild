@@ -1,0 +1,556 @@
+/* Focus layer (docs/ui/v07-layout-research.md §6): a full-screen card over the dimmed table. */
+.beat-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(6 16 22 / 0.72);
+  backdrop-filter: blur(5px) saturate(0.7);
+  animation: beat-fade 240ms ease-out;
+  cursor: pointer;
+}
+.beat-card {
+  /* Fixed height so the card does not jump while lines appear; the footer stays at the bottom. */
+  display: flex;
+  flex-direction: column;
+  min-height: min(560px, 100%);
+  width: min(760px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  padding: 20px 24px 16px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f5ecd4, #e8d9b2);
+  color: #2b2116;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.5);
+  animation: beat-rise 320ms cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+.beat-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 14px;
+  color: #6b5537;
+}
+.beat-head strong {
+  font-size: 22px;
+  color: #2b2116;
+}
+.beat-chip {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #d9cba6;
+  color: #6b5537;
+  font-size: 12px;
+  font-style: normal;
+}
+
+/* Sea strip: the ship on the left, the die and the 1–6 meter on the right. */
+.beat-sea {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  margin: 14px 0 8px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #9fd3dc, #5fa9b8);
+}
+.beat-lane {
+  position: relative;
+  height: 150px;
+  overflow: hidden;
+}
+.beat-ship {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  width: 150px;
+  transform: translateX(-50%);
+  animation: beat-bob 2.4s ease-in-out infinite;
+}
+.beat-ship.is-sunk {
+  animation: beat-sink 1.2s ease-in forwards;
+}
+.beat-ship.is-arrived {
+  animation: beat-sail 1.2s ease-in forwards;
+}
+/* The ship reacts to each step: a hit for pirates and storms, a lift for guards. */
+.beat-lane.hit-pirate .beat-ship,
+.beat-lane.hit-down .beat-ship {
+  animation: beat-hit 520ms 260ms ease-out;
+}
+.beat-lane.hit-up .beat-ship {
+  animation: beat-lift 520ms 260ms ease-out;
+}
+.beat-flash {
+  position: absolute;
+  right: 22%;
+  top: 46px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff6c2, #ffb03a 50%, transparent 70%);
+  animation: beat-flash 420ms 300ms ease-out backwards;
+  opacity: 0;
+}
+.beat-actor {
+  position: absolute;
+  top: 34px;
+  font-size: 56px;
+  line-height: 1;
+  filter: drop-shadow(0 4px 4px rgb(0 0 0 / 0.3));
+}
+.beat-actor-guard {
+  left: 8%;
+  color: #1f5f8b;
+  animation: beat-in-left 420ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.beat-actor-pirate {
+  right: 8%;
+  color: #2b2116;
+  animation: beat-in-right 420ms cubic-bezier(0.2, 1.4, 0.4, 1), beat-recoil 200ms 420ms ease-out;
+}
+.beat-actor-event {
+  left: 50%;
+  top: 0;
+  color: #f7f7f7;
+  transform: translateX(-50%);
+  animation: beat-in-top 420ms ease-out;
+}
+.beat-actor-island,
+.beat-actor-clamp {
+  left: 8%;
+  color: #3d6b3a;
+  animation: beat-in-left 420ms ease-out;
+}
+
+.beat-dice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.beat-die {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 16px;
+  background: #fffaf0;
+  color: #2b2116;
+  font-size: 52px;
+  font-weight: 700;
+  box-shadow: inset 0 -5px 0 #d8c9a4, 0 6px 14px rgb(0 0 0 / 0.25);
+  animation: beat-roll 380ms cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+.beat-die.up {
+  color: #1d7a35;
+}
+.beat-die.down {
+  color: #b2332a;
+}
+/* Shake grows with the size of the change (Balatro: the motion carries the magnitude). */
+.beat-die.shake-1 {
+  animation: beat-roll 380ms cubic-bezier(0.2, 1.5, 0.4, 1), beat-shake 220ms 380ms;
+}
+.beat-die.shake-2,
+.beat-die.shake-3 {
+  animation: beat-roll 380ms cubic-bezier(0.2, 1.5, 0.4, 1), beat-shake-big 360ms 380ms;
+}
+.beat-meter {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+}
+.beat-meter li {
+  width: 30px;
+  text-align: center;
+  border-radius: 4px;
+  opacity: 0.55;
+  transition: transform 300ms, opacity 300ms;
+}
+.beat-meter .safe {
+  background: #bfe6c4;
+  color: #1d5f2c;
+}
+.beat-meter .sink {
+  background: #f2c2bb;
+  color: #8a241c;
+}
+.beat-meter li.on {
+  opacity: 1;
+  transform: scale(1.35);
+  font-weight: 700;
+  box-shadow: 0 0 0 2px #2b2116;
+}
+
+.beat-caption {
+  min-height: 52px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+.beat-big {
+  font-size: 30px;
+  font-weight: 700;
+  animation: beat-pop 300ms cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+.beat-big small {
+  display: block;
+  font-size: 14px;
+  font-weight: 400;
+  color: #6b5537;
+}
+.beat-stamp {
+  padding: 2px 22px;
+  border: 4px solid currentColor;
+  border-radius: 8px;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  transform: rotate(-6deg);
+  animation: beat-stamp 360ms cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.up {
+  color: #1d7a35;
+}
+.down {
+  color: #b2332a;
+}
+.beat-trail {
+  margin: 4px 0 10px;
+  text-align: center;
+  font-size: 14px;
+  color: #6b5537;
+}
+
+.beat-cargo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.beat-label,
+.beat-note {
+  font-size: 13px;
+  color: #6b5537;
+}
+.beat-crate {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  color: #fff;
+  font-weight: 700;
+  animation: beat-flip 420ms ease-out backwards;
+}
+.good-wood {
+  background: var(--wood);
+}
+.good-iron {
+  background: var(--iron);
+}
+.good-spice {
+  background: var(--spice);
+}
+.good-arms {
+  background: var(--arms);
+}
+
+.beat-cash {
+  display: grid;
+  gap: 4px;
+  margin: 0 auto 10px;
+  padding: 0;
+  max-width: 420px;
+  list-style: none;
+}
+.beat-cash li {
+  display: grid;
+  grid-template-columns: 90px 1fr auto;
+  align-items: baseline;
+  gap: 10px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  animation: beat-pop 280ms cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+.beat-cash li.mine {
+  background: #fff3c9;
+  box-shadow: 0 0 0 2px #e0a63c;
+}
+.beat-cash b {
+  text-align: right;
+  font-size: 18px;
+}
+.beat-cash small {
+  color: #6b5537;
+}
+
+.beat-foot {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.beat-foot button {
+  padding: 6px 14px;
+  border: 1px solid #b9a77d;
+  border-radius: 8px;
+  background: #efe3c4;
+  color: #2b2116;
+  cursor: pointer;
+}
+.beat-foot button.primary {
+  background: #e0a63c;
+  border-color: #b9822a;
+  font-weight: 700;
+}
+
+.receipt-lines {
+  margin: 16px 0 8px;
+  padding: 0;
+  list-style: none;
+}
+.receipt-lines li,
+.receipt-net {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 4px;
+  border-bottom: 1px dashed #c9b88e;
+  font-size: 18px;
+  animation: beat-pop 280ms cubic-bezier(0.2, 1.5, 0.4, 1) backwards;
+}
+.receipt-net {
+  margin: 0;
+  border: 0;
+  border-top: 3px double #8a7550;
+  font-size: 24px;
+  font-weight: 700;
+}
+.muted {
+  color: #6b5537;
+}
+
+@keyframes beat-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes beat-rise {
+  from {
+    transform: translateY(24px) scale(0.96);
+    opacity: 0;
+  }
+}
+@keyframes beat-bob {
+  50% {
+    transform: translateX(-50%) translateY(-4px) rotate(-1.5deg);
+  }
+}
+@keyframes beat-sink {
+  to {
+    transform: translateX(-50%) translateY(120px) rotate(24deg);
+    opacity: 0.2;
+  }
+}
+@keyframes beat-sail {
+  to {
+    transform: translateX(160%);
+  }
+}
+@keyframes beat-in-left {
+  from {
+    transform: translateX(-140px);
+    opacity: 0;
+  }
+}
+@keyframes beat-in-right {
+  from {
+    transform: translateX(140px);
+    opacity: 0;
+  }
+}
+@keyframes beat-in-top {
+  from {
+    transform: translate(-50%, -80px);
+    opacity: 0;
+  }
+}
+@keyframes beat-recoil {
+  50% {
+    transform: translateX(10px) rotate(6deg);
+  }
+}
+@keyframes beat-hit {
+  30% {
+    transform: translateX(calc(-50% - 10px)) rotate(-8deg);
+  }
+  60% {
+    transform: translateX(calc(-50% + 6px)) rotate(4deg);
+  }
+}
+@keyframes beat-lift {
+  40% {
+    transform: translateX(-50%) translateY(-12px);
+  }
+}
+@keyframes beat-flash {
+  0% {
+    opacity: 1;
+    transform: scale(0.4);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+@keyframes beat-roll {
+  from {
+    transform: translateY(-18px) rotate(-90deg) scale(0.7);
+  }
+}
+@keyframes beat-shake {
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
+}
+@keyframes beat-shake-big {
+  20% {
+    transform: translateX(-7px) rotate(-4deg);
+  }
+  40% {
+    transform: translateX(6px) rotate(3deg);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+@keyframes beat-pop {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
+@keyframes beat-stamp {
+  from {
+    transform: rotate(-6deg) scale(2.2);
+    opacity: 0;
+  }
+}
+@keyframes beat-flip {
+  from {
+    transform: rotateY(90deg);
+    background: #6b5537;
+    color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beat-backdrop *,
+  .beat-backdrop {
+    animation: none !important;
+  }
+}
+
+/* Dev preview page only (src/ui-v07/dev/BeatPreview.tsx). */
+.beat-preview-table {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.beat-preview-bar {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 60;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--panel);
+  font-size: 13px;
+}
+.beat-card.receipt {
+  min-height: 0;
+}
+
+/* Short screens (landscape phones, height about 375px): shrink the sea strip and the type so the
+   whole beat, footer included, fits without scrolling. */
+@media (max-height: 500px) {
+  .beat-backdrop {
+    padding: 8px;
+  }
+  .beat-card {
+    min-height: 100%;
+    padding: 10px 16px 8px;
+  }
+  .beat-head strong {
+    font-size: 17px;
+  }
+  .beat-sea {
+    margin: 6px 0 4px;
+    padding: 6px 12px;
+  }
+  .beat-lane {
+    height: 84px;
+  }
+  .beat-ship {
+    width: 92px;
+  }
+  .beat-actor {
+    top: 14px;
+    font-size: 38px;
+  }
+  .beat-die {
+    width: 58px;
+    height: 58px;
+    font-size: 36px;
+  }
+  .beat-meter {
+    font-size: 10px;
+    gap: 1px;
+  }
+  .beat-meter li {
+    width: 24px;
+  }
+  .beat-caption {
+    min-height: 36px;
+  }
+  .beat-big {
+    font-size: 22px;
+  }
+  .beat-stamp {
+    font-size: 22px;
+    border-width: 3px;
+  }
+  .beat-trail {
+    margin: 0 0 4px;
+    font-size: 12px;
+  }
+  .beat-crate {
+    width: 26px;
+    height: 26px;
+  }
+  .beat-cash li {
+    padding: 1px 8px;
+  }
+  .beat-cash b {
+    font-size: 15px;
+  }
+}
