@@ -37,6 +37,10 @@ export interface TableShip {
   readonly id: ShipId;
   readonly owner: PlayerId;
   readonly state: ShipState;
+  /** Can be clicked right now (a role target); shows a ring. */
+  readonly selectable?: boolean;
+  /** Picked but not yet submitted: bold ring. */
+  readonly chosen?: boolean;
 }
 
 /** A DOM label kept over a point of the table. */
@@ -64,6 +68,7 @@ export interface TableCanvasProps {
   /** Called once models are loaded and shaders compiled. */
   readonly onReady: () => void;
   readonly onClick?: () => void;
+  readonly onSelectShip?: (id: ShipId) => void;
 }
 
 export function useTableLayout(seats: readonly BeatSeat[]) {
@@ -110,7 +115,7 @@ function asSceneShip(ship: TableShip, lane: number): SceneShip {
   return { id: ship.id, kind: 'solo', owners: [ship.owner], lane, state: ship.state, roles: [], rerolled: false, smuggled: 0, caughtSmugglers: [], modifier: null };
 }
 
-export function TableCanvas({ seats, weather, ships, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick }: TableCanvasProps) {
+export function TableCanvas({ seats, weather, ships, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip }: TableCanvasProps) {
   const look = WEATHER[weather ?? 'clear'];
   const { angles, laneOf } = useTableLayout(seats);
   const shores = useMemo(() => islandShorelines(angles), [angles]);
@@ -164,7 +169,16 @@ export function TableCanvas({ seats, weather, ships, cameraPoints, safe, ringed,
             ))}
             {ships.map((ship) => {
               const lane = laneOf(ship.owner);
-              const body = <VoyageShip ship={asSceneShip(ship, lane)} angle={angles[lane]!} selectable={false} lantern={weather === 'moonless-night'} onSelect={() => {}} />;
+              const body = (
+                <VoyageShip
+                  ship={asSceneShip(ship, lane)}
+                  angle={angles[lane]!}
+                  selectable={ship.selectable ?? false}
+                  chosen={ship.chosen ?? false}
+                  lantern={weather === 'moonless-night'}
+                  onSelect={() => onSelectShip?.(ship.id)}
+                />
+              );
               return <group key={ship.id}>{wrapShip ? wrapShip(ship.id, body) : body}</group>;
             })}
             {children}

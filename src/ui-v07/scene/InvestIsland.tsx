@@ -6,6 +6,7 @@ import { Building } from '../../ui/scene/buildings/Building';
 import { playerIslandHeading } from '../../ui/scene/islandShape';
 import { ASSET_BUILDING_SCALE, ASSET_LOTS, seatPosition, type Vec3 } from '../../ui/scene/layout';
 import { shipPose } from '../../ui/scene/Ships';
+import type { ShipState } from '../../ui/scene/tableModel';
 import { ISLAND_PLATEAU } from './TableCanvas';
 
 // The investment decision played on your own island (docs/ui/v07-event-presentation.md §1.3):
@@ -128,8 +129,8 @@ export function Warehouse({ angle, stock, forBuild, onShip, canLoad, onLoad, glo
 }
 
 /** World position of cargo slot `i` of `count` on the ship docked in lane `angle`. */
-export function deckSlot(angle: number, i: number, count: number): Vec3 {
-  const pose = shipPose(angle, 'docked');
+export function deckSlot(angle: number, i: number, count: number, state: ShipState = 'docked'): Vec3 {
+  const pose = shipPose(angle, state);
   const offset = (i - (count - 1) / 2) * SLOT_GAP;
   return [pose.position.x + Math.sin(pose.heading) * offset, DECK_Y + CRATE / 2, pose.position.z + Math.cos(pose.heading) * offset];
 }
@@ -142,16 +143,18 @@ export interface ShipCargoProps {
   readonly onUnload?: (good: GoodId) => void;
   /** Hide what is on board: other players' ships show a tarp (§4). */
   readonly covered?: boolean;
+  /** Where the ship is: at the dock while deciding, out at sea once the voyage event is out. */
+  readonly state?: ShipState;
 }
 
 /** Crates on the deck of the docked ship, with empty slot frames while there is room. */
-export function ShipCargo({ angle, load, capacity, onUnload, covered = false }: ShipCargoProps) {
+export function ShipCargo({ angle, load, capacity, onUnload, covered = false, state = 'docked' }: ShipCargoProps) {
   const crates = GOODS.flatMap((g) => Array.from({ length: load[g] }, () => g));
   const slots = covered ? crates.length : capacity;
   return (
     <group>
       {Array.from({ length: slots }, (_, i) => {
-        const at = deckSlot(angle, i, slots);
+        const at = deckSlot(angle, i, slots, state);
         const good = crates[i];
         if (good !== undefined) {
           return <Crate key={i} color={GOOD_COLORS[good]} position={at} state={covered ? 'tarp' : 'normal'} {...(onUnload ? { onClick: () => onUnload(good) } : {})} />;

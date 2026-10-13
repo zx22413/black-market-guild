@@ -4,7 +4,7 @@
 
 const PREFIX = 'bmg.v07.skipReminder.';
 
-export type ReminderId = 'invest-unfinished';
+export type ReminderId = 'invest-unfinished' | 'deploy-unfinished';
 
 export function isReminderSkipped(id: ReminderId): boolean {
   try {

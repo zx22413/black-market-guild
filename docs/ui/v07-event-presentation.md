@@ -6,6 +6,7 @@
 > - 背景見 [`v07-layout-research.md`](v07-layout-research.md) 第 6～7 節。
 > - 事件名稱對應 `src/v07/game/types.ts` 的 `MatchEvent`、`PrivateEvent`。
 > - 文中的秒數都是初值，之後試玩再調。
+> - 已在 3D 桌面試做：投資、部署角色、情報重擲、角色揭露（`/v07.html?dev=round3d`），航程的一拍（`/v07.html?dev=beat3d`）。
 
 ## 0. 共同原則
 
