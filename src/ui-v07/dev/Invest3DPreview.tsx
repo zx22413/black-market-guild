@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { GOODS, type BuildingId, type GoodId, type PlayerId } from '../../v07/game';
 import type { SeatConfig } from '../../v07/match';
 import type { SafeArea } from '../../ui/scene/CameraRig';
@@ -22,6 +22,8 @@ import {
   investNotes,
   investOptions,
   investSummary,
+  investTodo,
+  todoReminders,
   loadOne,
   stockSplit,
   submitLabel,
@@ -29,6 +31,8 @@ import {
   withBuild,
   type InvestChoice,
 } from '../table/investChoice';
+import { ReminderDialog } from '../table/ReminderDialog';
+import { isReminderSkipped, setReminderSkipped } from '../table/reminderSettings';
 
 // Dev-only: the investment decision on your own island in 3D, at /v07.html?dev=invest3d (&seed=3).
 // A real local match (you against three bots); the island draft is picked for you so the page
@@ -91,6 +95,10 @@ function InvestStage({ session, onRestart }: { readonly session: GameSession; re
   const options = useMemo(() => (context ? investOptions(context) : []), [context]);
   const [choice, setChoice] = useState<InvestChoice>(EMPTY_CHOICE);
   const [picking, setPicking] = useState(false);
+  // Picking a building or "不蓋" both count as dealing with the building; until then it glows.
+  const [buildDecided, setBuildDecided] = useState(false);
+  const [reminding, setReminding] = useState<readonly string[] | null>(null);
+  const buildArea = useRef<HTMLDivElement>(null);
   const [submitted, setSubmitted] = useState<InvestChoice | null>(null);
   const [ready, setReady] = useState(false);
   const revealed = submitted !== null && board.launched;
@@ -101,12 +109,36 @@ function InvestStage({ session, onRestart }: { readonly session: GameSession; re
   const summary = context ? investSummary(context, choice) : null;
   const notes = context ? investNotes(context, choice) : [];
   const action = context ? actionFor(options, choice) : undefined;
-  const submit = () => {
+  const todo = investTodo(options, choice, buildDecided);
+  const send = () => {
     if (!investing || !action) return;
     setSubmitted(choice);
     setPicking(false);
+    setReminding(null);
     session.submit(investing.id, action);
   };
+  // Something left undone: remind once before submitting, unless the player turned it off.
+  const submit = () => {
+    const lines = todoReminders(todo);
+    if (lines.length > 0 && !isReminderSkipped('invest-unfinished')) setReminding(lines);
+    else send();
+  };
+  const pickBuild = (build: BuildingId | null) => {
+    setChoice(withBuild(options, choice, build));
+    setBuildDecided(true);
+    setPicking(false);
+  };
+
+  // The building list closes on a click anywhere outside it (the table included).
+  useEffect(() => {
+    if (!picking) return;
+    const close = (e: PointerEvent) => {
+      if (!buildArea.current?.contains(e.target as Node)) setPicking(false);
+    };
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, [picking]);
+
 
   // Camera: your island and your ship while deciding; the whole table for the reveal.
   const deciding = context !== null && submitted === null;
@@ -157,13 +189,13 @@ function InvestStage({ session, onRestart }: { readonly session: GameSession; re
       id: 'build',
       position: islandPoint(home, [0, 0, -2.5]),
       node: (
-        <div className="inv-build">
-          <button type="button" className={choice.build ? 'on' : ''} onClick={() => setPicking((v) => !v)}>
+        <div className="inv-build" ref={buildArea}>
+          <button type="button" className={`${choice.build ? 'on' : ''} ${todo.build ? 'todo' : ''}`} onClick={() => setPicking((v) => !v)}>
             {choice.build ? `預覽：${BUILDING_LABELS[choice.build]} · 換一個` : canBuildAny(options) ? `蓋建築（還能蓋 ${left} 棟）` : '這回合不能蓋建築'}
           </button>
           {picking && (
             <div className="inv-cards">
-              <button type="button" className={`inv-card ${choice.build === null ? 'sel' : ''}`} onClick={() => (setChoice(withBuild(options, choice, null)), setPicking(false))}>
+              <button type="button" className={`inv-card ${choice.build === null ? 'sel' : ''}`} onClick={() => pickBuild(null)}>
                 <b>不蓋</b>
                 <small>保留材料</small>
               </button>
@@ -174,7 +206,7 @@ function InvestStage({ session, onRestart }: { readonly session: GameSession; re
                   className={`inv-card ${b.legal ? '' : 'no'} ${choice.build === b.id ? 'sel' : ''}`}
                   disabled={!b.legal}
                   title={BUILDING_TEXT[b.id]}
-                  onClick={() => (setChoice(withBuild(options, choice, b.id as BuildingId)), setPicking(false))}
+                  onClick={() => pickBuild(b.id)}
                 >
                   <b>{BUILDING_LABELS[b.id]}</b>
                   <small>
@@ -197,7 +229,7 @@ function InvestStage({ session, onRestart }: { readonly session: GameSession; re
         position: islandPoint(home, stackTop(column, height)),
         hidden: picking,
         node: (
-          <span className={`inv-stack good-${g}`}>
+          <span className={`inv-stack good-${g} ${todo.cargo && canLoad(options, choice, g) ? 'todo' : ''}`}>
             {GOOD_LABELS[g].slice(0, 1)} {split.left[g]}
           </span>
         ),
@@ -241,6 +273,7 @@ function InvestStage({ session, onRestart }: { readonly session: GameSession; re
               forBuild={split.forBuild}
               onShip={choice.load}
               canLoad={(g: GoodId) => canLoad(options, choice, g)}
+              glow={todo.cargo}
               onLoad={(g: GoodId) => setChoice((c) => loadOne(options, c, g))}
             />
             <ShipCargo angle={home} load={choice.load} capacity={summary?.capacity ?? 3} onUnload={(g) => setChoice((c) => unloadOne(c, g))} />
@@ -254,6 +287,17 @@ function InvestStage({ session, onRestart }: { readonly session: GameSession; re
           ))}
       </TableCanvas>
       <MarketStrip board={board} />
+      {reminding && (
+        <ReminderDialog
+          title="還有沒做完的地方"
+          lines={reminding}
+          onBack={() => setReminding(null)}
+          onConfirm={(skipNext) => {
+            if (skipNext) setReminderSkipped('invest-unfinished', true);
+            send();
+          }}
+        />
+      )}
       {ready && (
         <div className="inv-bar">
           {deciding && summary && (

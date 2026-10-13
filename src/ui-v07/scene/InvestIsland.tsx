@@ -1,6 +1,6 @@
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { useRef } from 'react';
-import type { Group, MeshBasicMaterial } from 'three';
+import type { Group, MeshBasicMaterial, MeshStandardMaterial } from 'three';
 import { GOODS, type BuildingId, type GoodId, type Goods } from '../../v07/game';
 import { Building } from '../../ui/scene/buildings/Building';
 import { playerIslandHeading } from '../../ui/scene/islandShape';
@@ -34,7 +34,31 @@ function setCursor(value: string) {
   };
 }
 
-function Crate({ color, position, state, onClick }: { readonly color: string; readonly position: Vec3; readonly state: 'normal' | 'used' | 'tarp'; readonly onClick?: () => void }) {
+/** Gold breathing glow on a crate that still waits for the player (docs: unfinished actions glow). */
+function useGoldBreath(on: boolean) {
+  const material = useRef<MeshStandardMaterial>(null);
+  useFrame(({ clock }) => {
+    const m = material.current;
+    if (!m) return;
+    m.emissiveIntensity = on ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(clock.elapsedTime * 3)) : 0;
+  });
+  return material;
+}
+
+function Crate({
+  color,
+  position,
+  state,
+  glow = false,
+  onClick,
+}: {
+  readonly color: string;
+  readonly position: Vec3;
+  readonly state: 'normal' | 'used' | 'tarp';
+  readonly glow?: boolean;
+  readonly onClick?: () => void;
+}) {
+  const material = useGoldBreath(glow);
   const click = onClick
     ? (e: ThreeEvent<MouseEvent>) => {
         e.stopPropagation();
@@ -48,7 +72,15 @@ function Crate({ color, position, state, onClick }: { readonly color: string; re
       {...(click ? { onClick: click, onPointerOver: setCursor('pointer'), onPointerOut: setCursor('') } : {})}
     >
       <boxGeometry args={[CRATE, CRATE, CRATE]} />
-      <meshStandardMaterial color={state === 'tarp' ? '#8a6a45' : color} transparent={state === 'used'} opacity={state === 'used' ? 0.28 : 1} flatShading />
+      <meshStandardMaterial
+        ref={material}
+        color={state === 'tarp' ? '#8a6a45' : color}
+        emissive="#ffc23d"
+        emissiveIntensity={0}
+        transparent={state === 'used'}
+        opacity={state === 'used' ? 0.28 : 1}
+        flatShading
+      />
     </mesh>
   );
 }
@@ -62,10 +94,12 @@ export interface WarehouseProps {
   readonly onShip: Goods;
   readonly canLoad: (good: GoodId) => boolean;
   readonly onLoad: (good: GoodId) => void;
+  /** Nothing loaded yet: the crates that can go on board breathe gold. */
+  readonly glow?: boolean;
 }
 
 /** One stack of crates per good on the island; the top free crate loads onto the ship. */
-export function Warehouse({ angle, stock, forBuild, onShip, canLoad, onLoad }: WarehouseProps) {
+export function Warehouse({ angle, stock, forBuild, onShip, canLoad, onLoad, glow = false }: WarehouseProps) {
   return (
     <group position={seatPosition(angle)} rotation={[0, playerIslandHeading(angle), 0]}>
       <group position={[0, ISLAND_PLATEAU, 0]}>
@@ -75,13 +109,15 @@ export function Warehouse({ angle, stock, forBuild, onShip, canLoad, onLoad }: W
           return Array.from({ length: stock[good] - onShip[good] }, (_, k) => {
             const used = k < forBuild[good];
             const top = k === forBuild[good] + free - 1;
+            const loadable = !used && canLoad(good);
             return (
               <Crate
                 key={`${good}-${k}`}
                 color={GOOD_COLORS[good]}
                 position={[x, CRATE / 2 + k * (CRATE + 0.05), z]}
                 state={used ? 'used' : 'normal'}
-                {...(!used && top && canLoad(good) ? { onClick: () => onLoad(good) } : {})}
+                glow={glow && loadable}
+                {...(loadable && top ? { onClick: () => onLoad(good) } : {})}
               />
             );
           });

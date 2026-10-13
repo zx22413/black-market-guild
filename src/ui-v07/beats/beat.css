@@ -907,3 +907,51 @@
 .inv-stack.good-iron { border-color: var(--iron); }
 .inv-stack.good-spice { border-color: var(--spice); }
 .inv-stack.good-arms { border-color: var(--arms); }
+
+/* Unfinished actions breathe gold until the player deals with them. */
+@keyframes gold-breath {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(255 194 61 / 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgb(255 194 61 / 0.55), 0 0 18px 4px rgb(255 194 61 / 0.45);
+  }
+}
+.inv-build > button.todo,
+.inv-stack.todo {
+  animation: gold-breath 1.8s ease-in-out infinite;
+}
+.inv-stack.todo {
+  background: #fff3c9;
+}
+
+/* "Are you sure?" reminder. */
+.reminder-backdrop {
+  z-index: 60;
+  cursor: default;
+}
+.beat-card.reminder {
+  width: min(440px, 100%);
+  min-height: 0;
+}
+.reminder-lines {
+  margin: 12px 0;
+  padding-left: 20px;
+  line-height: 1.7;
+}
+.reminder-skip {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 12px;
+  color: #6b5537;
+  font-size: 14px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .inv-build > button.todo,
+  .inv-stack.todo {
+    animation: none;
+    box-shadow: 0 0 0 3px rgb(255 194 61 / 0.7);
+  }
+}

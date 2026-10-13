@@ -153,3 +153,26 @@ export function submitLabel(choice: InvestChoice, summary: InvestSummary): strin
   const parts = [choice.build ? `蓋${BUILDING_LABELS[choice.build]}` : null, summary.sails ? `裝 ${summary.loaded} 件出航` : null].filter(Boolean);
   return parts.length > 0 ? `提交：${parts.join('＋')}` : '提交：不蓋也不出航';
 }
+
+/** Parts of the decision the player has not dealt with yet: they glow gold until done. */
+export interface InvestTodo {
+  /** A building could be built and the player has neither picked one nor chosen "不蓋". */
+  readonly build: boolean;
+  /** Something could be loaded and the ship is still empty (an empty ship stays in port, §8). */
+  readonly cargo: boolean;
+}
+
+export function investTodo(options: readonly InvestAction[], choice: InvestChoice, buildDecided: boolean): InvestTodo {
+  return {
+    build: !buildDecided && choice.build === null && canBuildAny(options),
+    cargo: unitsOf(choice.load) === 0 && GOODS.some((g) => canLoad(options, choice, g)),
+  };
+}
+
+/** What the "not finished yet" reminder says before submitting; empty when there is nothing to remind. */
+export function todoReminders(todo: InvestTodo): string[] {
+  return [
+    ...(todo.build ? ['你還沒選建築：這回合會不蓋建築。'] : []),
+    ...(todo.cargo ? ['你還沒裝貨：船不裝貨就不出航（也不付出航成本）。'] : []),
+  ];
+}

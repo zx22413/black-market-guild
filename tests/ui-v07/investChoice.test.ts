@@ -9,6 +9,8 @@ import {
   investNotes,
   investOptions,
   investSummary,
+  investTodo,
+  todoReminders,
   loadOne,
   stockSplit,
   submitLabel,
@@ -96,4 +98,22 @@ describe('investment choice on the island (only legal actions)', () => {
     const { context } = scenario();
     expect(submitLabel(EMPTY_CHOICE, investSummary(context, EMPTY_CHOICE))).toBe('提交：不蓋也不出航');
   });
+
+  it('marks the building and the cargo as unfinished until the player deals with them', () => {
+    const { options } = scenario();
+    expect(investTodo(options, EMPTY_CHOICE, false)).toEqual({ build: true, cargo: true });
+    expect(todoReminders(investTodo(options, EMPTY_CHOICE, false))).toHaveLength(2);
+    // Choosing "不蓋" counts as deciding the building.
+    expect(investTodo(options, EMPTY_CHOICE, true).build).toBe(false);
+    expect(investTodo(options, withBuild(options, EMPTY_CHOICE, 'salvage'), false).build).toBe(false);
+    const loaded = loadOne(options, EMPTY_CHOICE, 'spice');
+    expect(investTodo(options, loaded, true)).toEqual({ build: false, cargo: false });
+    expect(todoReminders(investTodo(options, loaded, true))).toEqual([]);
+  });
+
+  it('does not nag about what cannot be done', () => {
+    const { options } = scenario({ stock: G(0), buildings: ['shipyard', 'insurance'] });
+    expect(investTodo(options, EMPTY_CHOICE, false)).toEqual({ build: false, cargo: false });
+  });
 });
+
