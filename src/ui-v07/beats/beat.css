@@ -1281,3 +1281,98 @@
 .flight-chip.down b {
   color: #b2332a;
 }
+
+/* Final result (src/ui-v07/table3d/ResultCard.tsx). */
+.result-backdrop {
+  z-index: 70;
+}
+.beat-card.result {
+  width: min(720px, 100%);
+  min-height: 0;
+}
+.result-rule {
+  margin: 8px 0 12px;
+  color: #6b5537;
+  font-size: 13px;
+}
+.result-rows {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+.result-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px 150px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-left: 6px solid;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.35);
+  opacity: 0.35;
+  transition: opacity 300ms;
+}
+.result-row.in {
+  opacity: 1;
+  animation: beat-pop 360ms cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+.result-row.mine {
+  background: #fff3c9;
+}
+.result-row.winner.in {
+  box-shadow: 0 0 0 2px #e0a63c, 0 0 22px 4px rgb(255 194 61 / 0.55);
+}
+.result-rank {
+  font-size: 26px;
+  font-weight: 700;
+  text-align: center;
+}
+.result-name {
+  display: grid;
+  gap: 2px;
+}
+.result-name b {
+  font-size: 17px;
+}
+.result-sum {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  color: #6b5537;
+  font-size: 13px;
+}
+.result-sum small {
+  flex-basis: 100%;
+  color: #8a4b12;
+}
+.result-wealth {
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.result-stamp {
+  position: absolute;
+  top: -10px;
+  right: -8px;
+  padding: 0 10px;
+  border: 3px solid #b9822a;
+  border-radius: 8px;
+  background: #fff3c9;
+  color: #8a5a10;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  transform: rotate(8deg);
+  animation: beat-stamp 400ms cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+@media (max-width: 640px) {
+  .result-row {
+    grid-template-columns: 28px 1fr auto;
+  }
+  .result-sum {
+    grid-column: 2 / -1;
+  }
+}

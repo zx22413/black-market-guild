@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { GOODS, type Action, type Goods, type PlayerId } from '../../v07/game';
+import { GOODS, RULES_V07, type Action, type Goods, type PlayerId } from '../../v07/game';
 import type { SeatConfig } from '../../v07/match';
 import type { SafeArea } from '../../ui/scene/CameraRig';
 import { beatSeats } from '../scene/beatStage';
@@ -10,6 +10,8 @@ import { startGameSession, type GameSession, type HumanRequest } from '../sessio
 import { useSession } from '../session/useSession';
 import { MarketStrip } from '../table3d/MarketStrip';
 import { RerollCard } from '../table3d/RerollCard';
+import { ResultCard } from '../table3d/ResultCard';
+import { resultRows } from '../table3d/resultModel';
 import { seatPlates } from '../table3d/seatPlates';
 import type { StageEnv } from '../table3d/stage';
 import { useDeployStep } from '../table3d/useDeployStep';
@@ -18,6 +20,7 @@ import { useInvestStep } from '../table3d/useInvestStep';
 import { useRoundResolution } from '../table3d/useRoundResolution';
 
 // Dev-only: whole rounds on the 3D table, at /v07.html?dev=round3d (also ?dev=invest3d), &seed=3.
+// &autoplay plays your seat with its first legal action and skips the shows (to reach the end).
 // A real local match (you against three bots) on one table that stays mounted: invest on your
 // island → deploy a role → (intel reroll) → roles revealed as arrows → one beat per ship → the
 // market at the harbor → the settlement as flights → your bill → the next round.
@@ -50,6 +53,13 @@ function RoundStage({ session, onRestart }: { readonly session: GameSession; rea
     if (request?.context.decision.phase !== 'island-choice') return;
     if (session.getSnapshot().requests.some((r) => r.id === request.id)) session.submit(request.id, request.context.legalActions[0]!);
   }, [request, session]);
+
+  // Dev shortcut: answer every decision with the first legal action and skip every resolution.
+  const autoplay = useMemo(() => new URLSearchParams(location.search).has('autoplay'), []);
+  useEffect(() => {
+    if (!autoplay || !request || request.context.decision.phase === 'island-choice') return;
+    if (session.getSnapshot().requests.some((r) => r.id === request.id)) session.submit(request.id, request.context.legalActions[0]!);
+  }, [autoplay, request, session]);
 
   // The bots answer at once, so after you deploy the whole round is already played out in the
   // events; the resolution replays it step by step and holds the table until you have seen it.
@@ -94,6 +104,9 @@ function RoundStage({ session, onRestart }: { readonly session: GameSession; rea
     onFinish: () => setDismissed(resolvingRound ?? 0),
   });
   const holding = resolvingRound !== null;
+  useEffect(() => {
+    if (autoplay && resolvingRound !== null) setDismissed(resolvingRound);
+  }, [autoplay, resolvingRound]);
   const events = useMemo(() => snap.events.slice(0, resolution.cutoff), [snap.events, resolution.cutoff]);
   const board = useMemo(() => buildBoard(ids, snap.startingCash, events), [ids, events, snap.startingCash]);
 
@@ -139,6 +152,11 @@ function RoundStage({ session, onRestart }: { readonly session: GameSession; rea
     ? snap.privateEvents.find((e) => e.type === 'intel-reroll-result' && e.playerId === VIEWER && e.shipId === rerollShown.shipId && e.round === rerollShown.request.context.view.round)
     : undefined;
   const cardRequest = rerollShown?.request ?? rerolling;
+  // The match is over once every round has been shown: the result card over the table, the
+  // winners' islands ringed.
+  const finished = !holding && snap.result !== null;
+  const rows = useMemo(() => (snap.result ? resultRows(snap.events, snap.result, snap.startingCash, RULES_V07) : []), [snap.result, snap.events, snap.startingCash]);
+  const winners = useMemo(() => new Set(snap.result?.winners ?? []), [snap.result]);
   const stateOf = (id: string) => ships.find((x) => x.id === id)?.state;
 
   return (
@@ -152,7 +170,7 @@ function RoundStage({ session, onRestart }: { readonly session: GameSession; rea
         pins={pins}
         onReady={() => setReady(true)}
         dim={step?.dim ?? false}
-        {...(resolution.ringed ? { ringed: resolution.ringed } : {})}
+        {...(finished ? { ringed: winners } : resolution.ringed ? { ringed: resolution.ringed } : {})}
         {...(resolution.wrapShip ? { wrapShip: resolution.wrapShip } : {})}
         {...(step?.onSelectShip ? { onSelectShip: step.onSelectShip } : {})}
         {...(resolution.onTableClick ? { onClick: resolution.onTableClick } : {})}
@@ -184,9 +202,9 @@ function RoundStage({ session, onRestart }: { readonly session: GameSession; rea
         <div ref={barRef} className="inv-bar">
           {step?.bar}
           {holding && !rerollShown && resolution.bar}
-          {!holding && !step && !cardRequest && (
+          {!holding && !step && !cardRequest && !finished && (
             <>
-              <span>{snap.status === 'finished' ? '對局結束。' : '準備中…'}</span>
+              <span>準備中…</span>
               <button type="button" onClick={onRestart}>
                 再試一次
               </button>
@@ -196,6 +214,9 @@ function RoundStage({ session, onRestart }: { readonly session: GameSession; rea
       )}
       {step?.overlay}
       {resolution.overlay}
+      {finished && ready && (
+        <ResultCard rows={rows} nameOf={nameOf} colorOf={(id) => seats.find((s) => s.id === id)?.color ?? '#888'} viewer={VIEWER} rounds={RULES_V07.rounds} onRestart={onRestart} />
+      )}
       {cardRequest && (
         <RerollCard
           context={cardRequest.context}

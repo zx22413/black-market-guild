@@ -15,8 +15,8 @@ V0.7 的瀏覽器介面，與 V0.6 的 `src/ui` 並存，入口是 `v07.html`（
 | `table/investChoice.ts` | 投資決定的純資料模型（建築卡與不能蓋的原因、裝卸貨、可裝貨量、提醒、摘要、還沒做完的項目），只用合法行動判斷；3D 島與之後的表單共用。 |
 | `table/ReminderDialog.tsx`、`table/reminderSettings.ts` | 提交前「還有沒做完的地方」提醒，與「不再提醒」設定（存在瀏覽器的 localStorage，無法使用時就每次提醒）。 |
 | `table/deployChoice.ts` | 部署角色的純資料模型（角色卡與不能派的原因、目標船、燈塔島多看的一艘、莊家押注、還沒做完的項目、提交按鈕文字），只用合法行動判斷。 |
-| `table3d/` | 3D 桌面上的各個決定（試驗）：每一步是一個 hook（`useInvestStep`、`useDeployStep`），回傳要加在同一張桌面上的標籤、3D 道具、底部列、彈出層與鏡頭位置（`stage.ts`），桌面本身只掛載一次。`MarketStrip`（黑市列，莊家在這裡押漲跌）、`RerollCard`（情報商人的私密重擲卡）、`revealModel`／`RoleArrows`（角色揭露的箭頭）、`seatPlates`（島名牌）、`useHudSafe`（依畫面上實際的 HUD 高度算鏡頭安全區）；部署之後的整段由 `useRoundResolution` 接手：揭露 → 航程（每艘船一拍，用 `scene/BeatScene` 的 `beatLayer`）→ 市場（`MarketCard`）→ 結帳（`settlementModel` 把每筆錢或貨變成「起點 → 終點」，`Flights` 在桌上飛）→ 帳單。 |
-| `dev/` | 只在開發模式：`/v07.html?dev=beat` 滿版卡版本、`/v07.html?dev=beat3d` 3D 桌面的結算拍、`/v07.html?dev=round3d`（或 `invest3d`）在 3D 桌面上連續玩整局：投資 → 部署 → 情報重擲 → 角色揭露 → 航程 → 市場 → 結帳 → 帳單 → 下一回合。 |
+| `table3d/` | 3D 桌面上的各個決定（試驗）：每一步是一個 hook（`useInvestStep`、`useDeployStep`），回傳要加在同一張桌面上的標籤、3D 道具、底部列、彈出層與鏡頭位置（`stage.ts`），桌面本身只掛載一次。`MarketStrip`（黑市列，莊家在這裡押漲跌）、`RerollCard`（情報商人的私密重擲卡）、`revealModel`／`RoleArrows`（角色揭露的箭頭）、`seatPlates`（島名牌）、`useHudSafe`（依畫面上實際的 HUD 高度算鏡頭安全區）；部署之後的整段由 `useRoundResolution` 接手：揭露 → 航程（每艘船一拍，用 `scene/BeatScene` 的 `beatLayer`）→ 市場（`MarketCard`）→ 結帳（`settlementModel` 把每筆錢或貨變成「起點 → 終點」，`Flights` 在桌上飛）→ 帳單；整局結束後是 `ResultCard`（資料在 `resultModel.ts`）。 |
+| `dev/` | 只在開發模式：`/v07.html?dev=beat` 滿版卡版本、`/v07.html?dev=beat3d` 3D 桌面的結算拍、`/v07.html?dev=round3d`（或 `invest3d`）在 3D 桌面上連續玩整局：投資 → 部署 → 情報重擲 → 角色揭露 → 航程 → 市場 → 結帳 → 帳單 → 下一回合，最後是結果畫面；加 `&autoplay` 會自動代打並跳過演出，直接看結局。 |
 | `online/` | 連線房間，協定版本 2；開發時 `/api-v07` 由 Vite 轉到 `npm run server:dev:v07`（8788）。 |
 | `labels.ts`、`log.ts` | 中文名稱與規則說明（只是重述 `game-design.md`，不新增規則）、航海日誌文字。 |
 
