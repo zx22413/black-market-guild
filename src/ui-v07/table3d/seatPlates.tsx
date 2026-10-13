@@ -12,6 +12,8 @@ export function seatPlates(
   status: (id: PlayerId) => string,
   /** Not what is being operated right now: fade the plates. */
   dimmed = false,
+  /** Cash shown on the plate (it ticks up as payments land during the settlement). */
+  cashOf?: (id: PlayerId) => number,
 ): TablePin[] {
   return seats.map((s, i) => {
     const p = board.players[s.id];
@@ -23,6 +25,7 @@ export function seatPlates(
         <span className={`beat3d-plate inv-plate ${dimmed ? 'dimmed' : ''} ${isFarSeat(angles[i]!) ? 'plate-left' : ''}`} style={{ borderColor: s.color }}>
           {s.isViewer ? '你' : s.name}
           {p?.island && <small> · {ISLAND_LABELS[p.island]}</small>}
+          {cashOf && <b className="plate-cash"> {cashOf(s.id)} G</b>}
           {!s.isViewer && p && (
             <span className="inv-stock">
               倉 {GOODS.filter((g) => p.stock[g] > 0).map((g) => `${GOOD_LABELS[g].slice(0, 1)}${p.stock[g]}`).join(' ') || '空'}

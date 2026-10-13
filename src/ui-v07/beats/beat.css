@@ -1214,3 +1214,70 @@
 .beat3d-pin > .inv-plate.plate-left {
   transform: translate(-100%, -50%);
 }
+
+/* Resolution on the round table (src/ui-v07/table3d/useRoundResolution.tsx). */
+.plate-cash {
+  margin-left: 4px;
+  color: #8a4b12;
+}
+.market-card {
+  min-width: 300px;
+  margin-bottom: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgb(91 70 54 / 0.95);
+  color: #f6ead0;
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.3);
+}
+.market-card header {
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+.market-card table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+}
+.market-card tr {
+  animation: beat-pop 300ms cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+.market-card th,
+.market-card td {
+  padding: 4px 8px;
+  text-align: left;
+  white-space: nowrap;
+}
+.market-card th {
+  border-left: 4px solid;
+}
+.market-card tr.mk-wood th { border-color: var(--wood); }
+.market-card tr.mk-iron th { border-color: var(--iron); }
+.market-card tr.mk-spice th { border-color: var(--spice); }
+.market-card tr.mk-arms th { border-color: var(--arms); }
+.market-card .broker {
+  color: #ffd27a;
+}
+.market-card td.up {
+  color: #9be3a8;
+}
+.market-card td.down {
+  color: #ffaa9a;
+}
+.flight-chip {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 3px 10px;
+  border: 2px solid;
+  border-radius: 999px;
+  background: rgb(245 236 212 / 0.96);
+  color: #2b2116;
+  font-size: 14px;
+  white-space: nowrap;
+  animation: beat-pop 300ms 600ms cubic-bezier(0.2, 1.5, 0.4, 1) backwards;
+}
+.flight-chip b {
+  color: #1d7a35;
+}
+.flight-chip.down b {
+  color: #b2332a;
+}

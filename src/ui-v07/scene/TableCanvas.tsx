@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Suspense, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { Suspense, useCallback, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Vector3 } from 'three';
 import type { PlayerId, ShipId, VoyageEventId } from '../../v07/game';
 import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
@@ -78,7 +78,9 @@ export interface TableCanvasProps {
 
 export function useTableLayout(seats: readonly BeatSeat[]) {
   const angles = useMemo(() => seatAngles(seats.length), [seats.length]);
-  const laneOf = (id: PlayerId) => Math.max(0, seats.findIndex((s) => s.id === id));
+  // Stable between renders (memoized work downstream depends on it).
+  const order = seats.map((s) => s.id).join('|');
+  const laneOf = useCallback((id: PlayerId) => Math.max(0, order.split('|').indexOf(id)), [order]);
   return { angles, laneOf };
 }
 

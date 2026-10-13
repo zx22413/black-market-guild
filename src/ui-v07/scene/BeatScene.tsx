@@ -2,7 +2,7 @@ import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { Vector3, type Group, type Mesh, type MeshBasicMaterial } from 'three';
 import type { PlayerId, ShipId, VoyageEventId } from '../../v07/game';
-import type { SafeArea } from '../../ui/scene/CameraRig';
+import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
 import { seatPosition } from '../../ui/scene/layout';
 import { Model, type ModelName } from '../../ui/scene/Model';
 import { SEA_LEVEL, seaSurfaceY } from '../../ui/scene/seaWave';
@@ -145,23 +145,71 @@ function Reaction({ hit, heading, children }: { readonly hit: BeatHit | null; re
   return <group ref={group}>{children}</group>;
 }
 
-export function BeatScene({ seats, ships, beat, view, weather, safe, onReady, tag, onClick }: BeatSceneProps) {
-  const { angles, laneOf } = useTableLayout(seats);
+export interface BeatLayerInput {
+  readonly beat: ShipBeat;
+  readonly view: BeatView;
+  readonly angles: readonly number[];
+  readonly laneOf: (id: PlayerId) => number;
+  readonly weather: VoyageEventId | null;
+  readonly tag: ReactNode;
+}
+
+export interface BeatLayer {
+  /** The close-up on the ship while the beat plays; the whole table before and after. */
+  readonly camera: FitPoint[] | null;
+  readonly ringed: ReadonlySet<PlayerId>;
+  readonly focusState: ShipState;
+  readonly wrapShip: (id: ShipId, ship: ReactNode) => ReactNode;
+  readonly pins: TablePin[];
+  readonly scene: ReactNode;
+}
+
+/**
+ * What one ship beat adds to the shared table: the close-up, the pirates and guards sailing in,
+ * the hit, the ship's reaction and the tag above it. Used by the beat preview and the round.
+ */
+export function beatLayer({ beat, view, angles, laneOf, weather, tag }: BeatLayerInput): BeatLayer {
   const focusLane = laneOf(beat.owner);
-  const focusPose = useMemo(() => shipPose(angles[focusLane]!, 'sailing'), [angles, focusLane]);
-  const related = useMemo(() => involved(beat), [beat]);
+  const focusPose = shipPose(angles[focusLane]!, 'sailing');
   const actors = actorsShown(beat, view);
   const hit = stepHit(beat, view, weather);
   const framing = framingOf(view);
+  const p = focusPose.position;
+  return {
+    camera: framing === 'ship' ? [...around([p.x, 0, p.z], CLOSE_UP_RADIUS), { position: [p.x, TAG_HEIGHT, p.z] as const, clearance: TAG_CLEARANCE }] : null,
+    ringed: framing === 'ship' ? involved(beat) : new Set(),
+    focusState: view.showOutcome ? (beat.outcome === 'sank' ? 'sunk' : 'arrived') : 'sailing',
+    wrapShip: (id, body) =>
+      id === beat.shipId ? (
+        <Reaction hit={hit} heading={focusPose.heading}>
+          {body}
+        </Reaction>
+      ) : (
+        body
+      ),
+    pins: [{ id: `tag-${beat.shipId}`, position: [p.x, TAG_HEIGHT, p.z], node: tag, hidden: !(framing === 'ship' && view.showStart) }],
+    scene: (
+      <>
+        {actors.map((actor) => {
+          const look = ACTOR_LOOK[actor.role];
+          const to = new Vector3(p.x + look.dx * (ACTOR_SPOT.x + ACTOR_SPOT.spread * actor.order), 0, p.z + ACTOR_SPOT.z);
+          const [hx, , hz] = seatPosition(angles[laneOf(actor.playerId)]!);
+          const away = new Vector3(hx - to.x, 0, hz - to.z).normalize().multiplyScalar(ACTOR_APPROACH);
+          return <ActorBoat key={`${beat.shipId}-${actor.role}-${actor.playerId}`} from={to.clone().add(away)} to={to} model={look.model} scale={look.scale} />;
+        })}
+        {hit && <HitFx key={`${beat.shipId}-${hit.key}`} hit={hit} at={focusPose.position} />}
+      </>
+    ),
+  };
+}
 
+export function BeatScene({ seats, ships, beat, view, weather, safe, onReady, tag, onClick }: BeatSceneProps) {
+  const { angles, laneOf } = useTableLayout(seats);
+  const layer = beatLayer({ beat, view, angles, laneOf, weather, tag });
   const overview = useMemo(() => overviewPoints(angles), [angles]);
-  const closeUp = useMemo(() => {
-    const p = focusPose.position;
-    return [...around([p.x, 0, p.z], CLOSE_UP_RADIUS), { position: [p.x, TAG_HEIGHT, p.z] as const, clearance: TAG_CLEARANCE }];
-  }, [focusPose]);
-
-  const focusState: ShipState = view.showOutcome ? (beat.outcome === 'sank' ? 'sunk' : 'arrived') : 'sailing';
-  const tableShips = ships.map((ship) => ({ ...ship, state: ship.id === beat.shipId ? focusState : ('sailing' as const) }));
+  const related = involved(beat);
+  const framing = framingOf(view);
+  const tableShips = ships.map((ship) => ({ ...ship, state: ship.id === beat.shipId ? layer.focusState : ('sailing' as const) }));
   const pins: TablePin[] = [
     ...seats.map(
       (s, i): TablePin => ({
@@ -174,7 +222,7 @@ export function BeatScene({ seats, ships, beat, view, weather, safe, onReady, ta
         ),
       }),
     ),
-    { id: 'tag', position: [focusPose.position.x, TAG_HEIGHT, focusPose.position.z], node: tag, hidden: !(framing === 'ship' && view.showStart) },
+    ...layer.pins,
   ];
 
   return (
@@ -182,31 +230,15 @@ export function BeatScene({ seats, ships, beat, view, weather, safe, onReady, ta
       seats={seats}
       weather={weather}
       ships={tableShips}
-      cameraPoints={framing === 'ship' ? closeUp : overview}
+      cameraPoints={layer.camera ?? overview}
       safe={safe}
-      ringed={framing === 'ship' ? related : new Set()}
-      wrapShip={(id, body) =>
-        id === beat.shipId ? (
-          <Reaction hit={hit} heading={focusPose.heading}>
-            {body}
-          </Reaction>
-        ) : (
-          body
-        )
-      }
+      ringed={layer.ringed}
+      wrapShip={layer.wrapShip}
       pins={pins}
       onReady={onReady}
       {...(onClick ? { onClick } : {})}
     >
-      {actors.map((actor) => {
-        const look = ACTOR_LOOK[actor.role];
-        const p = focusPose.position;
-        const to = new Vector3(p.x + look.dx * (ACTOR_SPOT.x + ACTOR_SPOT.spread * actor.order), 0, p.z + ACTOR_SPOT.z);
-        const [hx, , hz] = seatPosition(angles[laneOf(actor.playerId)]!);
-        const away = new Vector3(hx - to.x, 0, hz - to.z).normalize().multiplyScalar(ACTOR_APPROACH);
-        return <ActorBoat key={`${actor.role}-${actor.playerId}`} from={to.clone().add(away)} to={to} model={look.model} scale={look.scale} />;
-      })}
-      {hit && <HitFx key={hit.key} hit={hit} at={focusPose.position} />}
+      {layer.scene}
     </TableCanvas>
   );
 }

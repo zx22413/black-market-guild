@@ -15,8 +15,12 @@ export interface BeatPlayback {
 }
 
 /** `running` false holds the beat at its start (e.g. until the 3D table has loaded). */
-export function useBeatPlayback(beat: ShipBeat, speed = 1, running = true): BeatPlayback {
-  const cues = useMemo(() => beatCues(beat, speed), [beat, speed]);
+/** What a beat shows before anything happened; also the view when there is no beat at all. */
+const NOTHING_YET: BeatView = { started: 0, showStart: false, stepsShown: 0, die: null, showOutcome: false, showCargo: false, cashShown: 0, goodsShown: 0, done: false };
+
+/** `beat` may be null (no ship to play): the clock then stays idle. */
+export function useBeatPlayback(beat: ShipBeat | null, speed = 1, running = true, money = true): BeatPlayback {
+  const cues = useMemo(() => (beat ? beatCues(beat, speed, money) : [{ kind: 'done' as const, index: 0, at: 0 }]), [beat, speed, money]);
   const total = cues[cues.length - 1]!.at;
   // Only the number of started cues is state: the frame loop re-renders nothing between cues.
   const [started, setStarted] = useState(() => cuesStarted(cues, 0));
@@ -35,11 +39,11 @@ export function useBeatPlayback(beat: ShipBeat, speed = 1, running = true): Beat
   useEffect(() => {
     origin.current = performance.now();
     setStarted(cuesStarted(cues, 0));
-    if (running) run.current();
+    if (running && beat) run.current();
     return () => cancelAnimationFrame(frame.current);
-  }, [cues, total, running]);
+  }, [cues, total, running, beat]);
 
-  const view = useMemo(() => beatView(beat, cues, started), [beat, cues, started]);
+  const view = useMemo(() => (beat ? beatView(beat, cues, started) : NOTHING_YET), [beat, cues, started]);
   const jump = (ms: number) => {
     origin.current = performance.now() - ms;
     setStarted(cuesStarted(cues, ms));

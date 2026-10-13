@@ -25,7 +25,11 @@ export const BEAT_PACE = {
   goods: 650,
 } as const;
 
-export function beatCues(beat: ShipBeat, speed = 1): Cue[] {
+/**
+ * `money: false` leaves out the payments: in a full round they wait for the settlement, because
+ * sales and most payouts use the price after the market moves (§7.3).
+ */
+export function beatCues(beat: ShipBeat, speed = 1, money = true): Cue[] {
   const cues: Cue[] = [];
   let at = 0;
   const push = (kind: CueKind, index: number, duration: number) => {
@@ -37,8 +41,10 @@ export function beatCues(beat: ShipBeat, speed = 1): Cue[] {
   beat.steps.forEach((_, i) => push('step', i, BEAT_PACE.step));
   push('outcome', 0, BEAT_PACE.outcome);
   push('cargo', 0, BEAT_PACE.cargo);
-  beat.cash.forEach((_, i) => push('cash', i, BEAT_PACE.cash));
-  beat.goods.forEach((_, i) => push('goods', i, BEAT_PACE.goods));
+  if (money) {
+    beat.cash.forEach((_, i) => push('cash', i, BEAT_PACE.cash));
+    beat.goods.forEach((_, i) => push('goods', i, BEAT_PACE.goods));
+  }
   push('done', 0, 0);
   return cues;
 }
