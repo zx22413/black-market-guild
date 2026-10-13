@@ -1,5 +1,5 @@
 import type { Ref } from 'react';
-import { GOODS, type Bet } from '../../v07/game';
+import { GOODS, type Bet, type GoodId, type Goods } from '../../v07/game';
 import { GOOD_LABELS, stepLabel } from '../labels';
 import type { Board } from '../session/board';
 
@@ -19,20 +19,26 @@ export function MarketStrip({
   bets,
   dimmed = false,
   ref,
+  prices,
+  changed,
 }: {
   readonly board: Board;
   readonly bets?: BetControls | undefined;
   /** Not what is being operated right now. */
   readonly dimmed?: boolean;
   readonly ref?: Ref<HTMLDivElement>;
+  /** Prices to show instead of the table's (the market beat reveals the new ones row by row). */
+  readonly prices?: Goods | undefined;
+  /** Goods whose price just changed: they flash once. */
+  readonly changed?: ReadonlySet<GoodId> | undefined;
 }) {
   const same = (a: Bet | null, b: Bet) => a !== null && a.good === b.good && a.direction === b.direction;
   return (
     <div ref={ref} className={`inv-market ${bets ? 'betting' : ''} ${dimmed && !bets ? 'dimmed' : ''}`}>
       <b>黑市</b>
       {GOODS.map((g) => (
-        <span key={g} className={`inv-chip good-${g}`}>
-          {GOOD_LABELS[g]} {stepLabel(board.prices[g])} G · 需 {board.demand[g]}
+        <span key={`${g}-${changed?.has(g) ? 'new' : 'old'}`} className={`inv-chip good-${g} ${changed?.has(g) ? 'flash' : ''}`}>
+          {GOOD_LABELS[g]} {stepLabel((prices ?? board.prices)[g])} G · 需 {board.demand[g]}
           {bets &&
             ([1, -1] as const).map((direction) => {
               const bet = { good: g, direction };

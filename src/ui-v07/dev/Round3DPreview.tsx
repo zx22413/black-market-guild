@@ -8,6 +8,7 @@ import { TableCanvas, overviewPoints, useTableLayout, type TableShip } from '../
 import { buildBoard } from '../session/board';
 import { startGameSession, type GameSession, type HumanRequest } from '../session/gameSession';
 import { useSession } from '../session/useSession';
+import { IslandDraft, IslandReveal } from '../table3d/IslandDraft';
 import { MarketStrip } from '../table3d/MarketStrip';
 import { RerollCard } from '../table3d/RerollCard';
 import { ResultCard } from '../table3d/ResultCard';
@@ -47,19 +48,19 @@ function RoundStage({ session, onRestart }: { readonly session: GameSession; rea
   const request = snap.requests[0];
   const [ready, setReady] = useState(false);
 
-  // The island draft is not what this page tests: take the first offer.
+  // Dev shortcut: answer every decision with the first legal action and skip every show.
   // StrictMode runs effects twice in development, so submit only while the request is still open.
-  useEffect(() => {
-    if (request?.context.decision.phase !== 'island-choice') return;
-    if (session.getSnapshot().requests.some((r) => r.id === request.id)) session.submit(request.id, request.context.legalActions[0]!);
-  }, [request, session]);
-
-  // Dev shortcut: answer every decision with the first legal action and skip every resolution.
   const autoplay = useMemo(() => new URLSearchParams(location.search).has('autoplay'), []);
   useEffect(() => {
-    if (!autoplay || !request || request.context.decision.phase === 'island-choice') return;
+    if (!autoplay || !request) return;
     if (session.getSnapshot().requests.some((r) => r.id === request.id)) session.submit(request.id, request.context.legalActions[0]!);
   }, [autoplay, request, session]);
+
+  // The island draft, then everyone's islands revealed at once, before round 1 begins.
+  const drafting = !autoplay && request?.context.decision.phase === 'island-choice' ? request : null;
+  const chosen = snap.events.find((e) => e.type === 'islands-chosen');
+  const [islandsSeen, setIslandsSeen] = useState(false);
+  const showIslands = !autoplay && chosen?.type === 'islands-chosen' && !islandsSeen;
 
   // The bots answer at once, so after you deploy the whole round is already played out in the
   // events; the resolution replays it step by step and holds the table until you have seen it.
@@ -111,7 +112,7 @@ function RoundStage({ session, onRestart }: { readonly session: GameSession; rea
   const board = useMemo(() => buildBoard(ids, snap.startingCash, events), [ids, events, snap.startingCash]);
 
   const env: StageEnv | null =
-    request && !holding && (phase === 'invest' || phase === 'role-deployment')
+    request && !holding && !showIslands && (phase === 'invest' || phase === 'role-deployment')
       ? { request, board, seats, angles, laneOf, viewer: VIEWER, nameOf, submit: (a: Action) => session.submit(request.id, a) }
       : null;
   const invest = useInvestStep(env);
@@ -192,7 +193,7 @@ function RoundStage({ session, onRestart }: { readonly session: GameSession; rea
           ))}
         {resolution.scene}
       </TableCanvas>
-      <MarketStrip ref={marketRef} board={board} bets={step?.bets} dimmed={step?.dim ?? false} />
+      <MarketStrip ref={marketRef} board={board} bets={step?.bets} dimmed={step?.dim ?? false} prices={resolution.marketPrices} changed={resolution.changedGoods} />
       {ready && step?.dock && (
         <div ref={dockRef} className="dep-dock">
           {step.dock}
@@ -202,7 +203,7 @@ function RoundStage({ session, onRestart }: { readonly session: GameSession; rea
         <div ref={barRef} className="inv-bar">
           {step?.bar}
           {holding && !rerollShown && resolution.bar}
-          {!holding && !step && !cardRequest && !finished && (
+          {!holding && !step && !cardRequest && !finished && !drafting && !showIslands && (
             <>
               <span>準備中…</span>
               <button type="button" onClick={onRestart}>
@@ -214,6 +215,8 @@ function RoundStage({ session, onRestart }: { readonly session: GameSession; rea
       )}
       {step?.overlay}
       {resolution.overlay}
+      {ready && drafting && <IslandDraft key={drafting.id} context={drafting.context} onSubmit={(a) => session.submit(drafting.id, a)} />}
+      {ready && showIslands && chosen?.type === 'islands-chosen' && <IslandReveal islands={chosen.islands} seats={seats} onClose={() => setIslandsSeen(true)} />}
       {finished && ready && (
         <ResultCard rows={rows} nameOf={nameOf} colorOf={(id) => seats.find((s) => s.id === id)?.color ?? '#888'} viewer={VIEWER} rounds={RULES_V07.rounds} onRestart={onRestart} />
       )}

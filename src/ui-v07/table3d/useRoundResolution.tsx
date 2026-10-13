@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { MatchEvent, PlayerId, PrivateEvent, ShipId, VoyageEventId } from '../../v07/game';
+import type { GoodId, Goods, MatchEvent, PlayerId, PrivateEvent, ShipId, VoyageEventId } from '../../v07/game';
 import type { FitPoint } from '../../ui/scene/CameraRig';
 import { shipPose } from '../../ui/scene/Ships';
 import type { ShipState } from '../../ui/scene/tableModel';
@@ -61,6 +61,12 @@ export interface Resolution {
   readonly bar: ReactNode;
   readonly overlay: ReactNode;
   readonly onTableClick: (() => void) | undefined;
+  /**
+   * During the market beat, the prices for the market strip: the old price until that good's
+   * row has been revealed, then the new one (which flashes). Undefined otherwise.
+   */
+  readonly marketPrices: Goods | undefined;
+  readonly changedGoods: ReadonlySet<GoodId> | undefined;
 }
 
 /** Counts up by one every `ms` while `running`, from 0 to `max`; restarts when `reset` changes. */
@@ -167,7 +173,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   };
 
   if (!active) {
-    return { stage: null, cutoff: events.length, cashBonus: {}, shipState: () => 'docked', camera: null, ringed: undefined, wrapShip: undefined, pins: [], scene: null, bar: null, overlay: null, onTableClick: undefined };
+    return { stage: null, cutoff: events.length, cashBonus: {}, shipState: () => 'docked', camera: null, ringed: undefined, wrapShip: undefined, pins: [], scene: null, bar: null, overlay: null, onTableClick: undefined, marketPrices: undefined, changedGoods: undefined };
   }
 
   const colorOf = (id: string) => seats.find((s) => s.id === id)?.color ?? '#888';
@@ -276,6 +282,12 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     );
 
   const receipt = round !== null ? buildReceipt(events, round, viewer) : { lines: [], net: 0 };
+  const revealedRows = rows.slice(0, rowsShown);
+  const marketPrices =
+    stage === 'market' && rows.length > 0
+      ? (Object.fromEntries(rows.map((r) => [r.good, revealedRows.includes(r) ? r.after : r.before])) as Goods)
+      : undefined;
+  const changedGoods = stage === 'market' ? new Set(revealedRows.filter((r) => r.after !== r.before).map((r) => r.good)) : undefined;
   return {
     stage,
     cutoff,
@@ -295,5 +307,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     bar,
     overlay: stage === 'receipt' ? <ReceiptCard round={round!} viewer={viewer} lines={receipt.lines} net={receipt.net} onClose={onFinish} /> : null,
     onTableClick: stage === 'voyage' ? () => (playback.next() ? undefined : nextShip()) : undefined,
+    marketPrices,
+    changedGoods,
   };
 }
