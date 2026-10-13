@@ -13,7 +13,10 @@ import { Night } from '../../ui/scene/Night';
 import { Routes } from '../../ui/scene/Routes';
 import { Sea } from '../../ui/scene/Sea';
 import { SeaFog } from '../../ui/scene/SeaFog';
-import { VoyageShip } from '../../ui/scene/Ships';
+import { VoyageShip, lanePose } from '../../ui/scene/Ships';
+
+/** Where along its lane a ship rests (same as LANE_T in src/ui/scene/Ships.tsx). */
+const LANE_POINT: Readonly<Record<ShipState, number>> = { docked: 0, sailing: 0.5, sunk: 0.5, arrived: 0.86 };
 import { CrestSpray, ShoreSpray } from '../../ui/scene/Spray';
 import { Storm } from '../../ui/scene/Storm';
 import { SwellProvider } from '../../ui/scene/SwellContext';
@@ -69,6 +72,8 @@ export interface TableCanvasProps {
   readonly onReady: () => void;
   readonly onClick?: () => void;
   readonly onSelectShip?: (id: ShipId) => void;
+  /** Darken the 3D table a little; DOM labels on top keep their own brightness. */
+  readonly dim?: boolean;
 }
 
 export function useTableLayout(seats: readonly BeatSeat[]) {
@@ -82,10 +87,31 @@ export function overviewPoints(angles: readonly number[]): FitPoint[] {
   return [...around([0, 0, 0], TARGET_ISLAND_RADIUS), ...angles.flatMap((a) => around(seatPosition(a), PLAYER_ISLAND_RADIUS + 1.5))];
 }
 
-/** Where a seat's name plate hangs: on the sea in front of the island. */
+/**
+ * The far island (behind the harbor) has its dock on its front side, right where a plate in front
+ * would hang, so its plate goes to its left instead.
+ */
+export function isFarSeat(angle: number): boolean {
+  const [x, , z] = seatPosition(angle);
+  return z < 0 && Math.abs(x) <= Math.abs(z);
+}
+
+/** Where a seat's name plate hangs: on the sea in front of the island (left of the far island). */
 export function platePosition(angle: number): Vec3 {
   const [x, , z] = seatPosition(angle);
-  return [x, 1, z + PLAYER_ISLAND_RADIUS + 1];
+  return isFarSeat(angle) ? [x - PLAYER_ISLAND_RADIUS - 1, 1, z] : [x, 1, z + PLAYER_ISLAND_RADIUS + 1];
+}
+
+/**
+ * Where a ship's tag goes: beside the ship, across its lane, on the side away from the camera
+ * (or to the right when the lane runs straight up the screen), so it never sits on the island's
+ * name plate, which hangs between the island and the camera.
+ */
+export function besideShip(angle: number, state: ShipState, reach = 7, height = 2): Vec3 {
+  const a = lanePose(angle, LANE_POINT[state], reach).position;
+  const b = lanePose(angle, LANE_POINT[state], -reach).position;
+  const pick = Math.abs(a.z - b.z) < 1 ? (a.x > b.x ? a : b) : a.z < b.z ? a : b;
+  return [pick.x, height, pick.z];
 }
 
 /** A point given in island space (+z toward the dock, y from the plateau) in table space. */
@@ -115,7 +141,7 @@ function asSceneShip(ship: TableShip, lane: number): SceneShip {
   return { id: ship.id, kind: 'solo', owners: [ship.owner], lane, state: ship.state, roles: [], rerolled: false, smuggled: 0, caughtSmugglers: [], modifier: null };
 }
 
-export function TableCanvas({ seats, weather, ships, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip }: TableCanvasProps) {
+export function TableCanvas({ seats, weather, ships, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false }: TableCanvasProps) {
   const look = WEATHER[weather ?? 'clear'];
   const { angles, laneOf } = useTableLayout(seats);
   const shores = useMemo(() => islandShorelines(angles), [angles]);
@@ -127,7 +153,7 @@ export function TableCanvas({ seats, weather, ships, cameraPoints, safe, ringed,
   const [ready, setReady] = useState(false);
 
   return (
-    <div className="beat3d" onClick={onClick}>
+    <div className={`beat3d ${dim ? 'dim' : ''}`} onClick={onClick}>
       <Canvas shadows camera={{ position: [0, 82, 60], fov: 38 }} onCreated={() => setReady(true)}>
         <FocusCamera points={cameraPoints} safe={safe} />
         <color attach="background" args={[look.sky]} />

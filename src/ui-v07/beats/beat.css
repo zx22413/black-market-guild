@@ -1126,3 +1126,91 @@
   font-size: 13px;
   line-height: 1.6;
 }
+
+/* Deploying: dim what is not being operated; the ship buttons stay bright and bounce. */
+.beat3d.dim canvas {
+  filter: brightness(0.72) saturate(0.85);
+  transition: filter 300ms;
+}
+.beat3d canvas {
+  transition: filter 300ms;
+}
+.inv-plate.dimmed,
+.inv-market.dimmed {
+  opacity: 0.6;
+  transition: opacity 300ms;
+}
+.dep-hand.picked .dep-card:not(.on) {
+  opacity: 0.72;
+}
+.dep-hand.picked .dep-card:not(.on):hover {
+  opacity: 1;
+}
+@keyframes ship-bounce {
+  0%,
+  100% {
+    transform: translate(-50%, -100%);
+  }
+  40% {
+    transform: translate(-50%, calc(-100% - 10px));
+  }
+  60% {
+    transform: translate(-50%, calc(-100% - 4px));
+  }
+}
+.beat3d-pin > .dep-ship.todo {
+  animation: ship-bounce 1.1s ease-in-out infinite, gold-breath 1.8s ease-in-out infinite;
+}
+.inv-market {
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: calc(100% - 32px);
+}
+/* A smaller hand: it should not cover your island. */
+.dep-card {
+  width: 116px;
+  min-height: 0;
+  padding: 8px 9px;
+}
+.dep-card small {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.dep-card b {
+  font-size: 16px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .beat3d-pin > .dep-ship.todo {
+    animation: none;
+  }
+}
+/* The rerolled die tumbling in the intel card. */
+@keyframes die-tumble {
+  0% {
+    transform: rotate(0deg) translateY(0);
+  }
+  25% {
+    transform: rotate(90deg) translateY(-8px);
+  }
+  50% {
+    transform: rotate(180deg) translateY(0);
+  }
+  75% {
+    transform: rotate(270deg) translateY(-6px);
+  }
+  100% {
+    transform: rotate(360deg) translateY(0);
+  }
+}
+.beat-die.tumbling {
+  animation: die-tumble 360ms linear infinite;
+}
+.reroll .beat-meter li {
+  transition: transform 90ms, opacity 90ms;
+}
+/* The far island's plate hangs to its left (its dock is where the plate would be). */
+.beat3d-pin > .inv-plate.plate-left {
+  transform: translate(-100%, -50%);
+}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { GOODS, type Action, type Goods, type PlayerId } from '../../v07/game';
 import type { SeatConfig } from '../../v07/match';
 import type { SafeArea } from '../../ui/scene/CameraRig';
@@ -17,6 +17,7 @@ import { arrowPoint, revealArrows, revealGroups } from '../table3d/revealModel';
 import { seatPlates } from '../table3d/seatPlates';
 import type { StageEnv } from '../table3d/stage';
 import { useDeployStep } from '../table3d/useDeployStep';
+import { useHudSafe } from '../table3d/useHudSafe';
 import { useInvestStep } from '../table3d/useInvestStep';
 import { ROLE_LABELS } from '../labels';
 
@@ -34,7 +35,6 @@ const SEATS: SeatConfig[] = [
 const VIEWER: PlayerId = 'p1';
 /** The market strip above and the bar (with the role hand) below stay clear of the table. */
 const SAFE: SafeArea = { top: 70, bottom: 96, left: 24, right: 24 };
-const SAFE_WITH_HAND: SafeArea = { ...SAFE, bottom: 250 };
 /** One reveal group (all the pirates, say) every this many ms. */
 const REVEAL_STEP_MS = 1600;
 const NO_GOODS: Goods = { wood: 0, iron: 0, spice: 0, arms: 0 };
@@ -95,16 +95,23 @@ function RoundStage({ session, onRestart }: { readonly session: GameSession; rea
   const deploy = useDeployStep(env);
   const step = invest ?? deploy;
   const rerolling = !holding && request && phase === 'intel-reroll' ? request : null;
+  // A reroll plays in the card: keep it open after submitting until the new die has landed.
+  const [rerollShown, setRerollShown] = useState<{ readonly request: NonNullable<typeof request>; readonly shipId: string } | null>(null);
+  const rerollResult = rerollShown
+    ? snap.privateEvents.find((e) => e.type === 'intel-reroll-result' && e.playerId === VIEWER && e.shipId === rerollShown.shipId && e.round === rerollShown.request.context.view.round)
+    : undefined;
 
   // Reveal the role groups one by one.
   const groups = useMemo(() => (revealRound === null ? [] : revealGroups(snap.events, revealRound)), [snap.events, revealRound]);
   const [groupsShown, setGroupsShown] = useState(0);
+  const cardOpen = rerollShown !== null;
   useEffect(() => {
     setGroupsShown(0);
-    if (revealRound === null) return;
+    // The reveal starts once the reroll card is closed.
+    if (revealRound === null || cardOpen) return;
     const timer = setInterval(() => setGroupsShown((n) => n + 1), REVEAL_STEP_MS);
     return () => clearInterval(timer);
-  }, [revealRound]);
+  }, [revealRound, cardOpen]);
   // The timer may run past the last group; everything below counts at most all of them.
   const revealedCount = Math.min(groupsShown, groups.length);
   const shownGroups = useMemo(() => groups.slice(0, revealedCount), [groups, revealedCount]);
@@ -146,11 +153,17 @@ function RoundStage({ session, onRestart }: { readonly session: GameSession; rea
     }
   }
 
-  const plates = seatPlates(seats, angles, board, (id) => {
-    if (holding || !request) return '';
-    const kind = snap.players.find((p) => p.id === id)?.kind;
-    return kind === 'local-human' ? '決定中' : '已決定';
-  });
+  const plates = seatPlates(
+    seats,
+    angles,
+    board,
+    (id) => {
+      if (holding || !request) return '';
+      const kind = snap.players.find((p) => p.id === id)?.kind;
+      return kind === 'local-human' ? '決定中' : '已決定';
+    },
+    step?.dim ?? false,
+  );
   const arrowPins: TablePin[] = arrows
     .filter((a) => !a.faint)
     .map((a) => ({
@@ -165,6 +178,13 @@ function RoundStage({ session, onRestart }: { readonly session: GameSession; rea
   const pins = [...plates, ...(step?.pins ?? []), ...arrowPins, ...intelPins];
   const camera = step?.camera ?? overviewPoints(angles);
   const latest = groups[revealedCount - 1];
+  // The camera keeps the islands clear of the HUD actually on screen.
+  const marketRef = useRef<HTMLDivElement>(null);
+  const dockRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const topHud = useMemo(() => [marketRef], []);
+  const bottomHud = useMemo(() => [dockRef, barRef], []);
+  const safe = useHudSafe(topHud, bottomHud, SAFE);
   const allRevealed = revealedCount >= groups.length;
 
   return (
@@ -174,7 +194,8 @@ function RoundStage({ session, onRestart }: { readonly session: GameSession; rea
         weather={board.voyageEvent}
         ships={ships}
         cameraPoints={camera}
-        safe={step?.dock ? SAFE_WITH_HAND : SAFE}
+        safe={safe}
+        dim={step?.dim ?? false}
         pins={pins}
         onReady={() => setReady(true)}
         {...(step?.onSelectShip ? { onSelectShip: step.onSelectShip } : {})}
@@ -193,10 +214,14 @@ function RoundStage({ session, onRestart }: { readonly session: GameSession; rea
         ))}
         <RoleArrows arrows={arrows} colorOf={colorOf} dimmed={(a) => olderArrows.has(a.key)} />
       </TableCanvas>
-      <MarketStrip board={board} bets={step?.bets} />
-      {ready && step?.dock && <div className="dep-dock">{step.dock}</div>}
+      <MarketStrip ref={marketRef} board={board} bets={step?.bets} dimmed={step?.dim ?? false} />
+      {ready && step?.dock && (
+        <div ref={dockRef} className="dep-dock">
+          {step.dock}
+        </div>
+      )}
       {ready && (
-        <div className="inv-bar">
+        <div ref={barRef} className="inv-bar">
           {step?.bar}
           {holding && (
             <>
@@ -230,7 +255,21 @@ function RoundStage({ session, onRestart }: { readonly session: GameSession; rea
         </div>
       )}
       {step?.overlay}
-      {rerolling && <RerollCard context={rerolling.context} board={board} viewer={VIEWER} nameOf={nameOf} onSubmit={(a) => session.submit(rerolling.id, a)} />}
+      {(rerollShown ?? rerolling) && (
+        <RerollCard
+          context={(rerollShown?.request ?? rerolling)!.context}
+          board={board}
+          viewer={VIEWER}
+          nameOf={nameOf}
+          rerolled={rerollShown ? { shipId: rerollShown.shipId, value: rerollResult?.type === 'intel-reroll-result' ? rerollResult.rerolledRoll : null } : null}
+          onClose={() => setRerollShown(null)}
+          onSubmit={(a) => {
+            if (!rerolling) return;
+            if (a.type === 'intel-reroll' && a.rerollShipId !== null) setRerollShown({ request: rerolling, shipId: a.rerollShipId });
+            session.submit(rerolling.id, a);
+          }}
+        />
+      )}
     </div>
   );
 }

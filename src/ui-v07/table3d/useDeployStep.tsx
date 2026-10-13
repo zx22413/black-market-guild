@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ShipId } from '../../v07/game';
-import { shipPose } from '../../ui/scene/Ships';
 import { ROLE_LABELS, ROLE_TEXT } from '../labels';
-import type { TablePin, TableShip } from '../scene/TableCanvas';
+import { besideShip, type TablePin, type TableShip } from '../scene/TableCanvas';
 import {
   EMPTY_DEPLOY,
   betsFor,
@@ -26,7 +25,7 @@ import { shipName, type StageEnv, type StageParts } from './stage';
 // from the hand, then click the ship it goes to (or, for the broker, 漲／跌 on the market strip).
 // What is still needed breathes gold; the submit button says what is being submitted.
 
-const TAG_HEIGHT = 7;
+const TAG_HEIGHT = 3;
 
 export function useDeployStep(env: StageEnv | null): StageParts | null {
   const active = env?.request.context.decision.phase === 'role-deployment' ? env : null;
@@ -75,14 +74,13 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
 
   // A tag over every ship at sea: whose it is; while choosing a target, the ones you may pick.
   const pins: TablePin[] = board.ships.map((ship) => {
-    const pose = shipPose(angles[laneOf(ship.owner)]!, 'docked');
     const peekable = choice.target !== null && peeks.has(ship.id);
     const pickable = targets.has(ship.id) && !peekable;
     const chosen = choice.target === ship.id;
     const label = shipName(board, ship.id, viewer, nameOf);
     return {
       id: `ship-${ship.id}`,
-      position: [pose.position.x, TAG_HEIGHT, pose.position.z],
+      position: besideShip(angles[laneOf(ship.owner)]!, 'docked', 7, TAG_HEIGHT),
       node:
         pickable || peekable ? (
           <button
@@ -99,7 +97,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   });
 
   const hand = (
-    <div className={`dep-hand ${todo.role ? 'todo' : ''}`}>
+    <div className={`dep-hand ${todo.role ? 'todo' : ''} ${choice.role !== null ? 'picked' : ''}`}>
       {cards.map((c) => (
         <button
           key={c.id}
@@ -127,6 +125,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     camera: null,
     ship: (ship: TableShip): TableShip => ({ ...ship, selectable: targets.has(ship.id) || peeks.has(ship.id), chosen: choice.target === ship.id || choice.peek === ship.id }),
     onSelectShip: clickShip,
+    dim: true,
     ...(choice.role === 'broker' ? { bets: { offered: betsFor(options), chosen: choice.bet, todo: todo.bet, onBet: (bet) => setChoice({ ...choice, bet }) } } : {}),
     scene: null,
     dock: hand,

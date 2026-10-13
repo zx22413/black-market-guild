@@ -1,3 +1,4 @@
+import type { Ref } from 'react';
 import { GOODS, type Bet } from '../../v07/game';
 import { GOOD_LABELS, stepLabel } from '../labels';
 import type { Board } from '../session/board';
@@ -13,10 +14,21 @@ export interface BetControls {
   readonly onBet: (bet: Bet) => void;
 }
 
-export function MarketStrip({ board, bets }: { readonly board: Board; readonly bets?: BetControls | undefined }) {
+export function MarketStrip({
+  board,
+  bets,
+  dimmed = false,
+  ref,
+}: {
+  readonly board: Board;
+  readonly bets?: BetControls | undefined;
+  /** Not what is being operated right now. */
+  readonly dimmed?: boolean;
+  readonly ref?: Ref<HTMLDivElement>;
+}) {
   const same = (a: Bet | null, b: Bet) => a !== null && a.good === b.good && a.direction === b.direction;
   return (
-    <div className={`inv-market ${bets ? 'betting' : ''}`}>
+    <div ref={ref} className={`inv-market ${bets ? 'betting' : ''} ${dimmed && !bets ? 'dimmed' : ''}`}>
       <b>黑市</b>
       {GOODS.map((g) => (
         <span key={g} className={`inv-chip good-${g}`}>

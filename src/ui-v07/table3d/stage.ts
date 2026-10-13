@@ -36,6 +36,11 @@ export interface StageParts {
   readonly onSelectShip?: (id: ShipId) => void;
   /** Broker bet buttons on the market strip. */
   readonly bets?: BetControls;
+  /**
+   * Dim what is not being operated (the 3D table, name plates, the market strip unless betting),
+   * so the few things you can click now stand out.
+   */
+  readonly dim?: boolean;
 }
 
 /** "你的船" / "黑潮會的船". */
