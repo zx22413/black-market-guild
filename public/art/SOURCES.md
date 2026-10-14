@@ -20,6 +20,7 @@
 | icons/role-guard.svg | Role: guard | https://game-icons.net/1x1/lorc/cannon.html | https://game-icons.net/icons/ffffff/000000/1x1/lorc/cannon.svg | Lorc | CC BY 3.0 | 2026-09-28 |
 | icons/role-pirate.svg | Role: pirate | https://game-icons.net/1x1/delapouite/pirate-flag.html | https://game-icons.net/icons/ffffff/000000/1x1/delapouite/pirate-flag.svg | Delapouite | CC BY 3.0 | 2026-09-28 |
 | icons/role-smuggler.svg | Role: smuggler | https://game-icons.net/1x1/lorc/swap-bag.html | https://game-icons.net/icons/ffffff/000000/1x1/lorc/swap-bag.svg | Lorc | CC BY 3.0 | 2026-09-28 |
+| icons/role-broker.svg | Role: broker (V0.7; a rising price chart, chosen so it differs from the exchange's scales) | https://game-icons.net/1x1/delapouite/chart.html | https://game-icons.net/icons/ffffff/000000/1x1/delapouite/chart.svg | Delapouite | CC BY 3.0 | 2026-10-15 |
 | icons/asset-shipyard.svg | Asset: shipyard (substitute: harbor dock) | https://game-icons.net/1x1/delapouite/harbor-dock.html | https://game-icons.net/icons/ffffff/000000/1x1/delapouite/harbor-dock.svg | Delapouite | CC BY 3.0 | 2026-09-28 |
 | icons/asset-insurance.svg | Asset: insurance | https://game-icons.net/1x1/delapouite/scroll-quill.html | https://game-icons.net/icons/ffffff/000000/1x1/delapouite/scroll-quill.svg | Delapouite | CC BY 3.0 | 2026-09-28 |
 | icons/asset-salvage.svg | Asset: salvage company | https://game-icons.net/1x1/delapouite/diving-helmet.html | https://game-icons.net/icons/ffffff/000000/1x1/delapouite/diving-helmet.svg | Delapouite | CC BY 3.0 | 2026-09-28 |

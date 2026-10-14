@@ -6,16 +6,13 @@ import { betLabel } from '../table/deployChoice';
 // badge per deployed role, ringed in the color of the player who sent it. Icons are the
 // game-icons.net set in public/art/icons (sources in public/art/SOURCES.md).
 
-/**
- * TODO(5f art): the broker has no icon of its own yet (V0.7 adds the role); it borrows the coin
- * icon already in the repo until a dedicated one is added and recorded in SOURCES.md.
- */
+/** The broker's rising chart is its own icon, so it never looks like the exchange's scales. */
 const ICON: Readonly<Record<RoleId, string>> = {
   intel: 'role-intel',
   guard: 'role-guard',
   pirate: 'role-pirate',
   smuggler: 'role-smuggler',
-  broker: 'coin',
+  broker: 'role-broker',
 };
 
 export const roleIconUrl = (role: RoleId): string => `${import.meta.env.BASE_URL}art/icons/${ICON[role]}.svg`;
