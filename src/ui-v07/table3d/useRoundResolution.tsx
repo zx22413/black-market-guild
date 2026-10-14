@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { GoodId, Goods, MatchEvent, PlayerId, PrivateEvent, ShipId, VoyageEventId } from '../../v07/game';
+import type { Deployment, GoodId, Goods, MatchEvent, PlayerId, PrivateEvent, ShipId, VoyageEventId } from '../../v07/game';
 import type { FitPoint } from '../../ui/scene/CameraRig';
+import { TARGET_ISLAND_RADIUS } from '../../ui/scene/layout';
 import { shipPose } from '../../ui/scene/Ships';
 import type { ShipState } from '../../ui/scene/tableModel';
 import { BeatTag } from '../beats/BeatTag';
@@ -16,6 +17,7 @@ import { Flights, placePoint, type PlaceContext } from './Flights';
 import { MarketCard } from './MarketCard';
 import { arrowPoint, revealArrows, revealGroups, type RoleArrow } from './revealModel';
 import { RoleArrows } from './RoleArrows';
+import { RoleBadges } from './RoleBadges';
 import { cashSoFar, marketRows, settlementFlights } from './settlementModel';
 
 // Everything after the roles are deployed, on the same table (docs/ui/v07-event-presentation.md
@@ -27,6 +29,7 @@ export type ResolutionStage = 'reveal' | 'voyage' | 'market' | 'settle' | 'recei
 
 /** Pace of each part, in ms (initial values to tune in play). */
 const PACE = { revealGroup: 1600, nextShip: 700, marketRow: 1000, afterMarket: 1500, flight: 1100, afterSettle: 900 } as const;
+const HARBOR_BADGES = [-(TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2, 0, (TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2] as const;
 /** Ships that do not involve you play this much faster (presentation default, see the doc §4). */
 const OTHERS_SPEED = 2.5;
 
@@ -233,6 +236,29 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
         },
       ]
     : [];
+  // Role badges hang on what each role targeted, ringed in the sender's color, from its reveal
+  // until the bill (the lighthouse's extra look stays low-key: no badge).
+  const badgeGroups = stage === 'reveal' ? groups.slice(0, groupsShown) : stage === 'receipt' ? [] : groups;
+  const badgeCtx: PlaceContext = { angles, laneOf, ships: new Map([...owners].map(([id, owner]) => [id, { owner, state: shipState(id) }])) };
+  const onShips = new Map<ShipId, Deployment[]>();
+  const onHarbor: Deployment[] = [];
+  for (const g of badgeGroups) {
+    for (const d of g.deployments) {
+      if (d.role === 'broker') onHarbor.push(d);
+      else if (d.targetShipId) onShips.set(d.targetShipId, [...(onShips.get(d.targetShipId) ?? []), d]);
+    }
+  }
+  const nameOrYou = (id: PlayerId) => (id === viewer ? '你' : nameOf(id));
+  const badgePins: TablePin[] = [
+    ...[...onShips].map(([shipId, ds]): TablePin => {
+      const [x, , z] = placePoint({ kind: 'ship', shipId }, badgeCtx);
+      return { id: `badges-${shipId}`, position: [x, 0, z + 4.5], node: <RoleBadges deployments={ds} colorOf={colorOf} nameOf={nameOrYou} /> };
+    }),
+    // Brokers bet on the market: their badges hang at the harbor, on its front-left diagonal where
+    // no lane runs (so they never look like they sit on a ship).
+    ...(onHarbor.length > 0 ? [{ id: 'badges-harbor', position: HARBOR_BADGES, node: <RoleBadges deployments={onHarbor} colorOf={colorOf} nameOf={nameOrYou} /> }] : []),
+  ];
+
   const marketPins: TablePin[] =
     stage === 'market' ? [{ id: 'market-card', position: [0, 10, 0], node: <MarketCard rows={rows} shown={rowsShown} /> }] : [];
 
@@ -296,7 +322,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     camera,
     ringed: layer?.ringed,
     wrapShip: layer?.wrapShip,
-    pins: [...arrowPins, ...intelPins, ...(layer?.pins ?? []), ...marketPins, ...flightPins],
+    pins: [...arrowPins, ...badgePins, ...intelPins, ...(layer?.pins ?? []), ...marketPins, ...flightPins],
     scene: (
       <>
         {showArrows && <RoleArrows arrows={shownArrows} colorOf={colorOf} dimmed={(a) => olderArrows.has(a.key)} />}

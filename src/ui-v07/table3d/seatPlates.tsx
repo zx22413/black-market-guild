@@ -1,10 +1,10 @@
 import { GOODS, type PlayerId } from '../../v07/game';
-import { GOOD_LABELS, ISLAND_LABELS } from '../labels';
+import { GOOD_LABELS } from '../labels';
 import type { BeatSeat } from '../scene/beatStage';
 import { isFarSeat, platePosition, type TablePin } from '../scene/TableCanvas';
 import type { Board } from '../session/board';
 
-/** Name plates on the sea in front of each island: island, public warehouse, status, wanted mark. */
+/** Name plates on the sea in front of each island: cash, public warehouse, status, wanted mark (the island has its own badge). */
 export function seatPlates(
   seats: readonly BeatSeat[],
   angles: readonly number[],
@@ -24,7 +24,6 @@ export function seatPlates(
       node: (
         <span className={`beat3d-plate inv-plate ${dimmed ? 'dimmed' : ''} ${isFarSeat(angles[i]!) ? 'plate-left' : ''}`} style={{ borderColor: s.color }}>
           {s.isViewer ? '你' : s.name}
-          {p?.island && <small> · {ISLAND_LABELS[p.island]}</small>}
           {cashOf && <b className="plate-cash"> {cashOf(s.id)} G</b>}
           {!s.isViewer && p && (
             <span className="inv-stock">

@@ -8,6 +8,7 @@ import { TableCanvas, overviewPoints, useTableLayout, type TableShip } from '../
 import { buildBoard } from '../session/board';
 import { startGameSession, type GameSession, type HumanRequest } from '../session/gameSession';
 import { useSession } from '../session/useSession';
+import { islandBadgePins } from '../table3d/IslandBadge';
 import { IslandDraft, IslandReveal } from '../table3d/IslandDraft';
 import { MarketStrip } from '../table3d/MarketStrip';
 import { RerollCard } from '../table3d/RerollCard';
@@ -136,10 +137,12 @@ function RoundStage({ session, onRestart }: { readonly session: GameSession; rea
       if (holding || !request) return '';
       return snap.players.find((p) => p.id === id)?.kind === 'local-human' ? '決定中' : '已決定';
     },
-    step?.dim ?? false,
+    // Information stays readable while deciding: only the 3D table dims.
+    false,
     (id) => (board.players[id]?.cash ?? 0) + (resolution.cashBonus[id] ?? 0),
   );
-  const pins = [...plates, ...(step?.pins ?? []), ...resolution.pins];
+  const islandBadges = islandBadgePins(seats, angles, (id) => board.players[id]?.island ?? null);
+  const pins = [...plates, ...islandBadges, ...(step?.pins ?? []), ...resolution.pins];
   const camera = step?.camera ?? resolution.camera ?? overviewPoints(angles);
 
   // The camera keeps the islands clear of the HUD actually on screen.
@@ -193,7 +196,7 @@ function RoundStage({ session, onRestart }: { readonly session: GameSession; rea
           ))}
         {resolution.scene}
       </TableCanvas>
-      <MarketStrip ref={marketRef} board={board} bets={step?.bets} dimmed={step?.dim ?? false} prices={resolution.marketPrices} changed={resolution.changedGoods} />
+      <MarketStrip ref={marketRef} board={board} bets={step?.bets} prices={resolution.marketPrices} changed={resolution.changedGoods} />
       {ready && step?.dock && (
         <div ref={dockRef} className="dep-dock">
           {step.dock}
