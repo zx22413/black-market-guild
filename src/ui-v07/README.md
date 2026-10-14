@@ -2,21 +2,21 @@
 
 V0.7 的瀏覽器介面，與 V0.6 的 `src/ui` 並存，入口是 `v07.html`（開發伺服器網址 `/v07.html`；正式 `vite build` 尚未收錄，切換時才加入）。只透過 `src/v07/{game,bots,match,online}` 的公開 API 取得資料。計畫見 [`docs/v07-migration-plan.md`](../../docs/v07-migration-plan.md) 第 4 節階段 5。
 
-目前是第一版：用簡單面板玩完整局（階段 5a／5b），之後才做成桌遊場景（5c 起）。
+對局畫面是 3D 桌面（`table3d/Table3DScreen.tsx`，由 `table/MatchView.tsx` 依需要載入），單機、同機輪流（換人遮蔽）與連線都用它；網址加 `?ui=panel` 會改用第一版的純面板（`table/TableScreen.tsx`），作為手機版面完成前的備用。
 
 | 位置 | 說明 |
 | --- | --- |
 | `session/gameSession.ts` | 單機對局：Bot 座位自行決定，真人座位等 UI 提交。 |
 | `session/board.ts` | 只用公開事件重建桌面（現金、倉庫、建築、船、角色、價格）；與引擎最終狀態一致有測試（`tests/ui-v07/`）。3D 場景之後也讀這裡。 |
 | `session/usePlayback.ts` | 逐筆播放公開事件、回合間暫停、同機輪流的換人遮蔽（換人前不顯示任何私有資訊）。 |
-| `table/` | 牌桌：商會、市場、船隻面板，與選島／投資／部署／情報重擲四個決策表單（合法行動以 `legalActions` 為準）。 |
+| `table/` | `MatchView`（選 3D 或純面板）；純面板版：商會、市場、船隻面板，與選島／投資／部署／情報重擲四個決策表單（合法行動以 `legalActions` 為準）；兩版共用的選擇邏輯 `investChoice`、`deployChoice`。 |
 | `beats/` | 焦點層試驗：`shipBeat.ts` 從公開事件組出一艘船的結算拍（骰值修正、結果、貨、金流）與本回合帳單，`beatTimeline.ts` 決定每件事出現的時間（一次一件），`ShipBeatStage`、`ReceiptCard` 是滿版卡片。說明見 [`docs/ui/v07-layout-research.md`](../../docs/ui/v07-layout-research.md) 第 6 節。 |
 | `scene/` | 3D 桌面播放結算拍（試驗）：借用 V0.6 `src/ui/scene` 的海、天氣、島、船；`FocusCamera`／`focusMath` 是能左右平移的對焦鏡頭，`beatStage.ts` 是純函式（角色何時進場、船怎麼反應、哪些島相關），`TableCanvas` 是共用的 3D 桌面（海、天氣、島、船、鏡頭、DOM 標籤），`BeatScene` 與 `InvestIsland`（倉庫貨箱、船上的貨、建築預覽）在它上面加東西；說明全部在船上方的 `beats/BeatTag`（同一刻只有一個地方要看）。見研究文件第 6.4 節。 |
 | `table/investChoice.ts` | 投資決定的純資料模型（建築卡與不能蓋的原因、裝卸貨、可裝貨量、提醒、摘要、還沒做完的項目），只用合法行動判斷；3D 島與之後的表單共用。 |
 | `table/ReminderDialog.tsx`、`table/reminderSettings.ts` | 提交前「還有沒做完的地方」提醒，與「不再提醒」設定（存在瀏覽器的 localStorage，無法使用時就每次提醒）。 |
 | `table/deployChoice.ts` | 部署角色的純資料模型（角色卡與不能派的原因、目標船、燈塔島多看的一艘、莊家押注、還沒做完的項目、提交按鈕文字），只用合法行動判斷。 |
 | `table3d/` | 3D 桌面上的各個決定（試驗）：每一步是一個 hook（`useInvestStep`、`useDeployStep`），回傳要加在同一張桌面上的標籤、3D 道具、底部列、彈出層與鏡頭位置（`stage.ts`），桌面本身只掛載一次。`MarketStrip`（黑市列，莊家在這裡押漲跌）、`IslandDraft`／`IslandReveal`（滿版選島與島嶼公開）、`RerollCard`（情報商人的私密重擲卡）、`revealModel`／`RoleArrows`（角色揭露的箭頭）、`seatPlates`（商會名牌）、`IslandBadge`（島名牌，滑過或點擊看能力）、`RoleBadges`（掛在目標身上的角色圖示章）、`useHudSafe`（依畫面上實際的 HUD 高度算鏡頭安全區）；部署之後的整段由 `useRoundResolution` 接手：揭露 → 航程（每艘船一拍，用 `scene/BeatScene` 的 `beatLayer`）→ 市場（`MarketCard`）→ 結帳（`settlementModel` 把每筆錢或貨變成「起點 → 終點」，`Flights` 在桌上飛）→ 帳單；整局結束後是 `ResultCard`（資料在 `resultModel.ts`）。 |
-| `dev/` | 只在開發模式：`/v07.html?dev=beat` 滿版卡版本、`/v07.html?dev=beat3d` 3D 桌面的結算拍、`/v07.html?dev=round3d`（或 `invest3d`）在 3D 桌面上連續玩整局：選島 → 投資 → 部署 → 情報重擲 → 角色揭露 → 航程 → 市場 → 結帳 → 帳單 → 下一回合，最後是結果畫面；加 `&autoplay` 會自動代打並跳過演出，直接看結局。 |
+| `dev/` | 只在開發模式：`/v07.html?dev=beat` 滿版卡版本、`/v07.html?dev=beat3d` 3D 桌面的結算拍、`/v07.html?dev=round3d`（或 `invest3d`，直接開一局你對三個 Bot，和正式畫面同一個 `Table3DScreen`）在 3D 桌面上連續玩整局：選島 → 投資 → 部署 → 情報重擲 → 角色揭露 → 航程 → 市場 → 結帳 → 帳單 → 下一回合，最後是結果畫面；加 `&autoplay` 會自動代打並跳過演出，直接看結局。 |
 | `online/` | 連線房間，協定版本 2；開發時 `/api-v07` 由 Vite 轉到 `npm run server:dev:v07`（8788）。 |
 | `labels.ts`、`log.ts` | 中文名稱與規則說明（只是重述 `game-design.md`，不新增規則）、航海日誌文字。 |
 

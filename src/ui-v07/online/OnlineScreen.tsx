@@ -1,6 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { connectRoom, createRoom, saveHostKey, savedHostKey, savedName, type OnlineClient, type OnlineState } from './onlineClient';
-import { TableScreen } from '../table/TableScreen';
+import { MatchView } from '../table/MatchView';
 
 const CONNECTION_LABELS: Readonly<Record<OnlineState['connection'], string>> = {
   connecting: '連線中…',
@@ -145,7 +145,7 @@ function RoomView({ code, client, onLeave }: { readonly code: string; readonly c
     return (
       <>
         {state.connection !== 'open' && <div className="v7-banner">{CONNECTION_LABELS[state.connection]}</div>}
-        <TableScreen session={session} onExit={onLeave} />
+        <MatchView session={session} onExit={onLeave} />
       </>
     );
   }

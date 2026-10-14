@@ -5,7 +5,7 @@ import { shipPose } from '../../ui/scene/Ships';
 import { BUILDING_LABELS, BUILDING_TEXT, GOOD_LABELS } from '../labels';
 import { around } from '../scene/focusMath';
 import { BuildingPreview, ShipCargo, Warehouse, deckSlot, stackTop, warehouseLocal } from '../scene/InvestIsland';
-import { islandPoint, type TablePin } from '../scene/TableCanvas';
+import { ISLAND_PLATEAU, islandPoint, type TablePin } from '../scene/TableCanvas';
 import {
   EMPTY_CHOICE,
   actionFor,
@@ -63,8 +63,9 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   }, [picking]);
 
   if (!active || !context) return null;
-  const { board, seats, angles, viewer, submit: submitAction } = active;
-  const home = angles[0]!;
+  const { board, seats, angles, laneOf, viewer, submit: submitAction } = active;
+  // The deciding player's own island (on a hot-seat table it is not always the one in front).
+  const home = angles[laneOf(viewer)]!;
   const me = board.players[viewer];
   const builds = buildOptions(context, options);
   const split = stockSplit(context, choice);
@@ -107,7 +108,9 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const pins: TablePin[] = [
     {
       id: 'build',
-      position: islandPoint(home, [0, 0, -2.5]),
+      // On the island's front edge as seen on screen, whichever way the island is turned, so it
+      // never sits on the warehouse crates (side islands are turned a quarter round).
+      position: [hx, ISLAND_PLATEAU, hz + PLAYER_ISLAND_RADIUS * 0.62],
       node: (
         <div className="inv-build" ref={buildArea}>
           <button type="button" className={`${choice.build ? 'on' : ''} ${todo.build ? 'todo' : ''}`} onClick={() => setPicking((v) => !v)}>
@@ -194,7 +197,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
           onLoad={(g: GoodId) => setChoice((c) => loadOne(options, c, g))}
         />
         <ShipCargo angle={home} load={choice.load} capacity={summary.capacity} onUnload={(g) => setChoice((c) => unloadOne(c, g))} />
-        {choice.build && <BuildingPreview angle={home} building={choice.build} color={seats[0]!.color} />}
+        {choice.build && <BuildingPreview angle={home} building={choice.build} color={seats[laneOf(viewer)]!.color} />}
       </>
     ),
     bar: (

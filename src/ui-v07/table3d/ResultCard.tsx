@@ -79,7 +79,8 @@ export interface ResultCardProps {
   readonly rows: readonly ResultRow[];
   readonly nameOf: (id: PlayerId) => string;
   readonly colorOf: (id: PlayerId) => string;
-  readonly viewer: PlayerId;
+  /** Highlighted as 「你」; null on a hot-seat table (everyone is looking). */
+  readonly viewer: PlayerId | null;
   /** Rounds in the match (§3). */
   readonly rounds: number;
   readonly onRestart: () => void;

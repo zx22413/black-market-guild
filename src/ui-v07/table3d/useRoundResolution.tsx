@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Deployment, GoodId, Goods, MatchEvent, PlayerId, PrivateEvent, ShipId, VoyageEventId } from '../../v07/game';
 import type { FitPoint } from '../../ui/scene/CameraRig';
 import { TARGET_ISLAND_RADIUS } from '../../ui/scene/layout';
@@ -43,7 +43,11 @@ export interface ResolutionInput {
   readonly seats: readonly BeatSeat[];
   readonly angles: readonly number[];
   readonly laneOf: (id: PlayerId) => number;
-  readonly viewer: PlayerId;
+  /**
+   * The seat whose private view is on screen; null on a hot-seat table between turns, when no
+   * one's secrets may show (no intel notes, no "你", no personal bill).
+   */
+  readonly viewer: PlayerId | null;
   readonly nameOf: (id: PlayerId) => string;
   readonly weather: VoyageEventId | null;
   readonly onFinish: () => void;
@@ -95,6 +99,10 @@ const lastIndex = (events: readonly MatchEvent[], test: (e: MatchEvent) => boole
 export function useRoundResolution(input: ResolutionInput): Resolution {
   const { events, privateEvents, round, paused, seats, angles, laneOf, viewer, nameOf, weather, onFinish } = input;
   const [stage, setStage] = useState<ResolutionStage>('reveal');
+  // The caller passes a new function every render; timers call the latest one.
+  const finishRef = useRef(onFinish);
+  finishRef.current = onFinish;
+  const finish = () => finishRef.current();
   useEffect(() => setStage('reveal'), [round]);
   const active = round !== null;
   const roundEvents = useMemo(() => (round === null ? [] : events.filter((e) => !('round' in e) || e.round === round)), [events, round]);
@@ -116,7 +124,9 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
 
   // Voyage: one beat per ship in resolution order; yours (or ones you sent a role to) in full.
   const beats = useMemo(() => (round === null ? [] : resolvedShips(events, round).flatMap((id) => buildShipBeat(events, id) ?? [])), [events, round]);
-  const mine = (b: ShipBeat) => b.owner === viewer || groups.some((g) => g.deployments.some((d) => d.playerId === viewer && (d.targetShipId === b.shipId || d.peekShipId === b.shipId)));
+  // With no one viewing (hot-seat) every ship plays at full pace: each concerns someone at the table.
+  const mine = (b: ShipBeat) =>
+    viewer === null || b.owner === viewer || groups.some((g) => g.deployments.some((d) => d.playerId === viewer && (d.targetShipId === b.shipId || d.peekShipId === b.shipId)));
   const [voyageIndex, setVoyageIndex] = useState(0);
   useEffect(() => setVoyageIndex(0), [round]);
   const beat = stage === 'voyage' ? (beats[voyageIndex] ?? null) : null;
@@ -146,11 +156,12 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
       return () => clearTimeout(timer);
     }
     if (stage === 'settle' && flightsShown >= flights.length) {
-      const timer = setTimeout(() => setStage('receipt'), PACE.afterSettle);
+      // The bill is personal: with no one viewing (hot-seat between turns) the round just ends.
+      const timer = setTimeout(() => (viewer === null ? finish() : setStage('receipt')), PACE.afterSettle);
       return () => clearTimeout(timer);
     }
     return undefined;
-  }, [stage, rowsShown, rows.length, flightsShown, flights.length]);
+  }, [stage, rowsShown, rows.length, flightsShown, flights.length, viewer]); // finish reads a ref
 
   // How far the table is built at each stage.
   const cutoff = useMemo(() => {
@@ -301,13 +312,13 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     ) : stage === 'settle' ? (
       <>
         <span>結帳 {flightsShown}/{flights.length}{flying ? `：${flying.label}` : ''}</span>
-        {skip('跳到帳單', () => setStage('receipt'))}
+        {skip(viewer === null ? '跳過結帳' : '跳到帳單', () => (viewer === null ? finish() : setStage('receipt')))}
       </>
     ) : (
       <span>本回合帳單</span>
     );
 
-  const receipt = round !== null ? buildReceipt(events, round, viewer) : { lines: [], net: 0 };
+  const receipt = round !== null && viewer !== null ? buildReceipt(events, round, viewer) : { lines: [], net: 0 };
   const revealedRows = rows.slice(0, rowsShown);
   const marketPrices =
     stage === 'market' && rows.length > 0
@@ -331,7 +342,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
       </>
     ),
     bar,
-    overlay: stage === 'receipt' ? <ReceiptCard round={round!} viewer={viewer} lines={receipt.lines} net={receipt.net} onClose={onFinish} /> : null,
+    overlay: stage === 'receipt' && viewer !== null ? <ReceiptCard round={round!} viewer={viewer} lines={receipt.lines} net={receipt.net} onClose={finish} /> : null,
     onTableClick: stage === 'voyage' ? () => (playback.next() ? undefined : nextShip()) : undefined,
     marketPrices,
     changedGoods,

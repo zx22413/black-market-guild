@@ -3,7 +3,7 @@ import { isRoomCode } from '../v07/online';
 import { OnlineScreen } from './online/OnlineScreen';
 import { SetupScreen } from './screens/SetupScreen';
 import { startGameSession, type GameSession } from './session/gameSession';
-import { TableScreen } from './table/TableScreen';
+import { MatchView } from './table/MatchView';
 
 /** A `?room=CODE` link opens that online room directly. */
 function roomFromUrl(): string | null {
@@ -26,6 +26,6 @@ export function App() {
     case 'online':
       return <OnlineScreen initialRoom={mode.room} onExit={home} />;
     case 'local':
-      return <TableScreen session={mode.session} onExit={home} />;
+      return <MatchView session={mode.session} onExit={home} />;
   }
 }
