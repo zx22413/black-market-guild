@@ -41,7 +41,7 @@ export function actorsShown(beat: ShipBeat, view: BeatView): BeatActor[] {
   );
 }
 
-export type HitKind = 'cannon' | 'lightning' | 'push' | 'lift' | 'jolt';
+export type HitKind = 'ram' | 'shield' | 'lightning' | 'push' | 'lift' | 'jolt';
 
 export interface BeatHit {
   readonly kind: HitKind;
@@ -49,23 +49,32 @@ export interface BeatHit {
   readonly key: number;
 }
 
+/** The pirates or guards of the step on screen: the ones that strike (or shield) the ship right now. */
+export function stepActors(beat: ShipBeat, view: BeatView): BeatActor[] {
+  const step = view.stepsShown === 0 || view.showOutcome ? null : beat.steps[view.stepsShown - 1]!;
+  return step && (step.kind === 'pirate' || step.kind === 'guard') ? step.actors.map((playerId, order): BeatActor => ({ playerId, role: step.kind as 'pirate' | 'guard', order })) : [];
+}
+
 /**
- * How the ship reacts to the step on screen: pirates fire, a storm strikes with lightning, a
- * tailwind pushes it on, other help lifts it and other trouble jolts it.
+ * How the ship reacts to the step on screen: pirates ram it, guards put a shield around it, a
+ * storm strikes with lightning, a tailwind pushes it on, other help lifts it and other trouble
+ * jolts it.
  */
 export function stepHit(beat: ShipBeat, view: BeatView, weather: VoyageEventId | null): BeatHit | null {
   if (view.stepsShown === 0 || view.showOutcome) return null;
   const step = beat.steps[view.stepsShown - 1]!;
   const kind: HitKind =
     step.kind === 'pirate'
-      ? 'cannon'
-      : step.kind === 'event' && weather === 'storm'
-        ? 'lightning'
-        : step.kind === 'event' && weather === 'tailwind'
-          ? 'push'
-          : step.delta > 0
-            ? 'lift'
-            : 'jolt';
+      ? 'ram'
+      : step.kind === 'guard'
+        ? 'shield'
+        : step.kind === 'event' && weather === 'storm'
+          ? 'lightning'
+          : step.kind === 'event' && weather === 'tailwind'
+            ? 'push'
+            : step.delta > 0
+              ? 'lift'
+              : 'jolt';
   return { kind, key: view.stepsShown };
 }
 

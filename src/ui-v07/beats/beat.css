@@ -1900,3 +1900,54 @@
 .role-stamp.down {
   color: #9a2512;
 }
+
+/* The name over a pirate or guard boat in the ship close-up. */
+.actor-tag {
+  display: inline-block;
+  padding: 2px 9px;
+  border: 2px solid;
+  border-radius: 999px;
+  background: rgb(43 33 22 / 0.88);
+  color: #f6ead0;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.actor-tag.pirate {
+  background: rgb(58 22 18 / 0.9);
+}
+.actor-tag.guard {
+  background: rgb(20 38 62 / 0.9);
+}
+
+/* The word that pops over the ship when it is rammed, shielded or struck. */
+.hit-word {
+  display: inline-block;
+  padding: 2px 14px;
+  border: 3px solid currentColor;
+  border-radius: 8px;
+  background: rgb(255 248 236 / 0.95);
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  opacity: 0;
+  animation: hit-word 800ms ease-out 450ms both;
+}
+.hit-word.ram {
+  color: #b3261e;
+}
+.hit-word.shield {
+  color: #1f5fae;
+  animation-delay: 250ms;
+}
+.hit-word.lightning {
+  color: #6a4fc2;
+  animation-delay: 150ms;
+}
+@keyframes hit-word {
+  0% { opacity: 0; transform: rotate(-8deg) scale(2.4); }
+  20% { opacity: 1; transform: rotate(-8deg) scale(1); }
+  75% { opacity: 1; transform: rotate(-8deg) scale(1); }
+  100% { opacity: 0; transform: rotate(-8deg) scale(1) translateY(-14px); }
+}

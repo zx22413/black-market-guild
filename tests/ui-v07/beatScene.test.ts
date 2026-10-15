@@ -4,7 +4,7 @@ import type { MatchEvent } from '../../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../src/v07/match';
 import { beatCues, beatView } from '../../src/ui-v07/beats/beatTimeline';
 import { buildShipBeat, type ShipBeat } from '../../src/ui-v07/beats/shipBeat';
-import { actorsShown, beatSeats, framingOf, involved, stepHit } from '../../src/ui-v07/scene/beatStage';
+import { actorsShown, beatSeats, framingOf, involved, stepActors, stepHit } from '../../src/ui-v07/scene/beatStage';
 import { around, frame } from '../../src/ui-v07/scene/focusMath';
 
 const seats: SeatConfig[] = ['A', 'B', 'C', 'D'].map((name) => ({ kind: 'bot', name, strategy: 'aggressive' }));
@@ -33,12 +33,34 @@ describe('ship beat on the 3D table', () => {
     expect(actorsShown(withPirate, viewAfter(withPirate, cues.length)).length).toBeGreaterThanOrEqual(withPirate.steps[pirateStep]!.actors.length);
   });
 
-  it('fires the cannon on a pirate step and stops reacting once the outcome is out', () => {
+  it('rams the ship on a pirate step and stops reacting once the outcome is out', () => {
     const cues = beatCues(withPirate);
     const firstStepCue = cues.findIndex((c) => c.kind === 'step');
     const pirateStep = withPirate.steps.findIndex((s) => s.kind === 'pirate');
-    expect(stepHit(withPirate, viewAfter(withPirate, firstStepCue + pirateStep + 1), null)?.kind).toBe('cannon');
+    expect(stepHit(withPirate, viewAfter(withPirate, firstStepCue + pirateStep + 1), null)?.kind).toBe('ram');
     expect(stepHit(withPirate, viewAfter(withPirate, cues.findIndex((c) => c.kind === 'outcome') + 1), null)).toBeNull();
+  });
+
+  it('shields the ship on a guard step, and only the boats of the step on screen strike', () => {
+    const guarded: ShipBeat = {
+      ...withPirate,
+      steps: [
+        { kind: 'pirate', delta: -1, value: withPirate.start - 1, actors: ['p3'], source: null },
+        { kind: 'guard', delta: 1, value: withPirate.start, actors: ['p2', 'p4'], source: null },
+      ],
+    };
+    const first = beatCues(guarded).findIndex((c) => c.kind === 'step');
+    const onPirate = viewAfter(guarded, first + 1);
+    const onGuard = viewAfter(guarded, first + 2);
+    expect(stepHit(guarded, onPirate, null)?.kind).toBe('ram');
+    expect(stepActors(guarded, onPirate).map((a) => `${a.role}:${a.playerId}`)).toEqual(['pirate:p3']);
+    expect(stepHit(guarded, onGuard, null)?.kind).toBe('shield');
+    expect(stepActors(guarded, onGuard).map((a) => `${a.role}:${a.playerId}`)).toEqual(['guard:p2', 'guard:p4']);
+    // Both boats stay beside the ship, but only the guards strike during their step.
+    expect(actorsShown(guarded, onGuard)).toHaveLength(3);
+    // Nobody strikes before the first step or once the outcome is out.
+    expect(stepActors(guarded, viewAfter(guarded, first))).toEqual([]);
+    expect(stepActors(guarded, viewAfter(guarded, beatCues(guarded).findIndex((c) => c.kind === 'outcome') + 1))).toEqual([]);
   });
 
   it('lets the weather act on its own step: lightning in a storm, a push in a tailwind', () => {
