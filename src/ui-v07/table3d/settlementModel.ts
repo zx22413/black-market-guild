@@ -49,6 +49,8 @@ function cashFlight(e: Extract<MatchEvent, { type: 'cash-changed' }>, i: number)
     'escort-fee': { from: HARBOR, to: island(e.playerId) },
     'exchange-commission': { from: HARBOR, to: building(e.playerId, 'exchange'), building: 'exchange' },
     'broker-bet': { from: HARBOR, to: island(e.playerId) },
+    'broker-control': { from: fromShip, to: island(e.playerId) },
+    'broker-lift': { from: HARBOR, to: island(e.playerId) },
   };
   const route = routes[e.reason];
   if (!route) return null;

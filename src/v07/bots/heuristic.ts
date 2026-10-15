@@ -1,6 +1,7 @@
 import {
   GOODS,
   buildingCost,
+  capacityFor,
   createRng,
   roleFee,
   shipCostFor,
@@ -12,6 +13,7 @@ import { choose } from './choose';
 import {
   SMUGGLER_GUARDED_CHANCE,
   ARMS_SEIZURE_RISK,
+  OTHERS_LOAD_SHARE,
   arriveChance,
   averagePrice,
   buildingWorth,
@@ -84,7 +86,32 @@ function scoreBet(view: PlayerView, action: Deploy): number {
   const step = view.prices[bet.good];
   const room = bet.direction > 0 ? step < rules.price.steps - 1 : step > 0;
   const chance = room ? Math.min(0.95, Math.max(0.05, 0.45 + 0.25 * gap * bet.direction)) : 0;
-  return rules.roles.broker.payout * chance + shiftValue(view, bet.good, shift, mine) - roleFee(rules, me(view).island, 'broker');
+  return (
+    rules.roles.broker.payout * chance + shiftValue(view, bet.good, shift, mine) + aimValue(view, action, chance) - roleFee(rules, me(view).island, 'broker')
+  );
+}
+
+/**
+ * Experiment (targetSteps): a right bet aimed at an opponent's ship is worth the price difference on
+ * the units of that good the ship is guessed to carry (their public stock, half loaded): a bear bet
+ * pays me the difference, a bull bet hands it to them. Richer rivals are preferred.
+ */
+function aimValue(view: PlayerView, action: Deploy, chance: number): number {
+  const { rules } = view;
+  const bet = action.bet;
+  const ship = view.ships.find((s) => s.id === action.targetShipId);
+  const owner = view.players.find((p) => p.id === ship?.owner);
+  if (bet === null || ship === undefined || owner === undefined || rules.roles.broker.targetSteps === 0) {
+    return 0;
+  }
+  const own = owner.id === view.playerId;
+  const units = own ? (ship.cargo?.[bet.good] ?? 0) : Math.min(owner.stock[bet.good], capacityFor(rules, owner.buildings, owner.island)) * OTHERS_LOAD_SHARE;
+  const worth = chance * arriveChance(rules, 0) * units * rules.roles.broker.targetSteps * rules.price.step;
+  if (own) {
+    return bet.direction > 0 ? worth : 0;
+  }
+  const lead = Math.min(0.5, Math.max(-0.3, (owner.cash - me(view).cash) / 400));
+  return bet.direction < 0 ? worth * (1 + lead) : -worth * 0.5;
 }
 
 function scoreDeploy(view: PlayerView, action: Deploy, persona: Personality): number {

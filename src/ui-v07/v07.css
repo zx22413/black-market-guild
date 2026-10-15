@@ -773,3 +773,18 @@ button:disabled {
     padding: 6px 8px 8px;
   }
 }
+
+/* A plain tick box with its text: not stretched like the seed field. */
+.v7-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+.v7-option input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  accent-color: #e0a63c;
+}

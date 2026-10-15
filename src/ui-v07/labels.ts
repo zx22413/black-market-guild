@@ -93,6 +93,8 @@ export const CASH_REASON_LABELS: Readonly<Record<CashReason, string>> = {
   'escort-fee': '護航費',
   'exchange-commission': '交易所佣金',
   'broker-bet': '莊家獎金',
+  'broker-control': '莊家壓價差額',
+  'broker-lift': '莊家抬價（銀行補貼）',
 };
 
 /** Price-track step to G per unit: the display of §7.1 (base 75, step 25). */

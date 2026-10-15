@@ -1,7 +1,7 @@
 import type { Deployment, MatchEvent, PlayerId, RoleId } from '../../v07/game';
 import { seatPosition, type Vec3 } from '../../ui/scene/layout';
 import { shipPose } from '../../ui/scene/Ships';
-import { ROLE_LABELS } from '../labels';
+import { GOOD_LABELS, ROLE_LABELS } from '../labels';
 import { betLabel } from '../table/deployChoice';
 
 // The role reveal as arrows (docs/ui/v07-event-presentation.md §1.5): each deployed role is an
@@ -73,6 +73,10 @@ export function revealArrows(
     if (main) {
       const label = d.role === 'broker' && d.bet ? `${ROLE_LABELS.broker} 押${betLabel(d.bet)}` : ROLE_LABELS[d.role];
       arrows.push({ key: `${d.playerId}-${d.role}`, playerId: d.playerId, role: d.role, from, control: arc(from, main), to: main, faint: false, label, targetShipId: d.role === 'broker' ? null : d.targetShipId });
+    }
+    const aimAt = d.role === 'broker' && d.targetShipId ? shipAt(d.targetShipId) : null;
+    if (aimAt && d.bet) {
+      arrows.push({ key: `${d.playerId}-aim`, playerId: d.playerId, role: d.role, from, control: arc(from, aimAt), to: aimAt, faint: false, label: `${ROLE_LABELS.broker} ${d.bet.direction > 0 ? '抬' : '壓'}${GOOD_LABELS[d.bet.good]}`, targetShipId: d.targetShipId });
     }
     const peek = d.peekShipId ? shipAt(d.peekShipId) : null;
     if (peek) arrows.push({ key: `${d.playerId}-peek`, playerId: d.playerId, role: d.role, from, control: arc(from, peek), to: peek, faint: true, label: '', targetShipId: d.peekShipId });

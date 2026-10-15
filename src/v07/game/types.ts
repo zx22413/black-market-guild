@@ -52,7 +52,7 @@ export type Action =
       readonly type: 'deploy-role';
       readonly playerId: PlayerId;
       readonly role: RoleId | null;
-      /** Every role but the broker targets a ship. */
+      /** Every role but the broker targets a ship (the broker only with rules.roles.broker.targetSteps: an opponent's ship). */
       readonly targetShipId: ShipId | null;
       /** Broker only. */
       readonly bet: Bet | null;
@@ -171,7 +171,9 @@ export type CashReason =
   | 'pirate-loot'
   | 'escort-fee'
   | 'exchange-commission'
-  | 'broker-bet';
+  | 'broker-bet'
+  | 'broker-control'
+  | 'broker-lift';
 
 /** Public resolution summary for one ship (§4 結算起始骰值與修正, §9.1). */
 export interface VoyageModifier {

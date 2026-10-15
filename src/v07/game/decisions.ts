@@ -111,9 +111,15 @@ function deployOptions(state: MatchState, playerId: PlayerId): Action[] {
       continue;
     }
     if (role === 'broker') {
+      // Experiment (targetSteps): the bet also names an opponent's ship, whenever one is at sea.
+      const { targetSteps, targetOwnUp } = state.rules.roles.broker;
+      const aimsFor = (direction: 1 | -1): string[] =>
+        targetSteps === 0 ? [] : ships.filter((s) => (targetOwnUp === 1 && direction > 0 ? s.owner === playerId : s.owner !== playerId)).map((s) => s.id);
       GOODS.forEach((good) =>
         ([1, -1] as const).forEach((direction) =>
-          options.push({ type: 'deploy-role', playerId, role, targetShipId: null, bet: { good, direction }, peekShipId: null }),
+          (aimsFor(direction).length === 0 ? [null] : aimsFor(direction)).forEach((targetShipId) =>
+            options.push({ type: 'deploy-role', playerId, role, targetShipId, bet: { good, direction }, peekShipId: null }),
+          ),
         ),
       );
       continue;

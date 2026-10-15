@@ -54,9 +54,11 @@ export function roleCards(context: DecisionContext, options: readonly DeployActi
 }
 
 /** Ships the chosen role can target. */
-export function targetsFor(options: readonly DeployAction[], pick: RolePick): ShipId[] {
+export function targetsFor(options: readonly DeployAction[], pick: RolePick, bet: Bet | null = null): ShipId[] {
   const role = roleOf(pick);
-  return [...new Set(options.filter((a) => a.role === role && a.targetShipId !== null).map((a) => a.targetShipId!))];
+  // The broker's ships depend on the bet picked (a bull bet may only aim at one's own ship).
+  const fits = (a: DeployAction) => role !== 'broker' || bet === null || (a.bet?.good === bet.good && a.bet?.direction === bet.direction);
+  return [...new Set(options.filter((a) => a.role === role && a.targetShipId !== null && fits(a)).map((a) => a.targetShipId!))];
 }
 
 /** Lighthouse intel: ships that can be looked at besides the target. */
@@ -71,7 +73,10 @@ export function betsFor(options: readonly DeployAction[]): Bet[] {
   return options.flatMap((a) => (a.role === 'broker' && a.bet ? [a.bet] : []));
 }
 
-export const needsTarget = (pick: RolePick): boolean => pick !== null && pick !== 'none' && pick !== 'broker';
+/** Experiment (targetSteps): the broker's bet also names an opponent's ship. */
+export const brokerAims = (options: readonly DeployAction[]): boolean => options.some((a) => a.role === 'broker' && a.targetShipId !== null);
+
+export const needsTarget = (pick: RolePick, aims = false): boolean => pick !== null && pick !== 'none' && (pick !== 'broker' || aims);
 
 export function pickRole(pick: RolePick): DeployChoice {
   return { ...EMPTY_DEPLOY, role: pick };
@@ -83,7 +88,7 @@ export function deployActionFor(options: readonly DeployAction[], choice: Deploy
   return options.find(
     (a) =>
       a.role === role &&
-      a.targetShipId === (needsTarget(choice.role) ? choice.target : null) &&
+      a.targetShipId === (needsTarget(choice.role, brokerAims(options)) ? choice.target : null) &&
       a.peekShipId === choice.peek &&
       (role === 'broker' ? a.bet?.good === choice.bet?.good && a.bet?.direction === choice.bet?.direction : true),
   );
@@ -96,10 +101,10 @@ export interface DeployTodo {
   readonly bet: boolean;
 }
 
-export function deployTodo(choice: DeployChoice): DeployTodo {
+export function deployTodo(choice: DeployChoice, aims = false): DeployTodo {
   return {
     role: choice.role === null,
-    target: needsTarget(choice.role) && choice.target === null,
+    target: needsTarget(choice.role, aims) && choice.target === null,
     bet: choice.role === 'broker' && choice.bet === null,
   };
 }
@@ -107,11 +112,16 @@ export function deployTodo(choice: DeployChoice): DeployTodo {
 export const betLabel = (bet: Bet): string => `${GOOD_LABELS[bet.good]}${bet.direction === 1 ? '漲' : '跌'}`;
 
 /** The submit button says what is being submitted, e.g. 「部署：海盜 → 黑潮會的船」. */
-export function deployLabel(choice: DeployChoice, shipOwner: (id: ShipId) => PlayerId | undefined, nameOf: (id: PlayerId) => string, viewer: PlayerId): string {
+export function deployLabel(choice: DeployChoice, shipOwner: (id: ShipId) => PlayerId | undefined, nameOf: (id: PlayerId) => string, viewer: PlayerId, aims = false): string {
   if (choice.role === null) return '提交：不部署';
   if (choice.role === 'none') return '提交：不部署';
   const role = ROLE_LABELS[choice.role];
-  if (choice.role === 'broker') return choice.bet ? `部署：莊家 → 押${betLabel(choice.bet)}` : '先在黑市選商品與漲跌';
+  if (choice.role === 'broker') {
+    if (!choice.bet) return '先在黑市選商品與漲跌';
+    if (!aims) return `部署：莊家 → 押${betLabel(choice.bet)}`;
+    const owner = choice.target === null ? undefined : shipOwner(choice.target);
+    return choice.target === null ? '再點一艘對手的船' : `部署：莊家 → 押${betLabel(choice.bet)}，對象 ${owner ? nameOf(owner) : '?'}的船`;
+  }
   if (choice.target === null) return `先點${role}要去的船`;
   const owner = shipOwner(choice.target);
   const ship = owner === viewer ? '你的船' : `${owner ? nameOf(owner) : '?'}的船`;

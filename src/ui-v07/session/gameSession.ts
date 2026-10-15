@@ -1,5 +1,5 @@
 import type { DecisionContext } from '../../v07/bots';
-import { RULES_V07, type Action, type MatchEvent, type MatchResult, type PlayerId, type PrivateEvent } from '../../v07/game';
+import { RULES_V07, type Rules, type Action, type MatchEvent, type MatchResult, type PlayerId, type PrivateEvent } from '../../v07/game';
 import { botController, runMatch, setupFromSeats, type Controller, type SeatConfig } from '../../v07/match';
 
 /** A decision a local human seat still has to make. */
@@ -43,6 +43,8 @@ export interface GameSession {
 export interface SessionOptions {
   readonly seed: number;
   readonly seats: readonly SeatConfig[];
+  /** Experimental rules for this local match; the official V0.7 rules when omitted. */
+  readonly rules?: Rules;
 }
 
 /**
@@ -50,7 +52,7 @@ export interface SessionOptions {
  * for the UI through submit(). The UI never sees MatchState, only each seat's DecisionContext.
  */
 export function startGameSession(options: SessionOptions): GameSession {
-  const setup = setupFromSeats({ seed: options.seed, seats: options.seats });
+  const setup = setupFromSeats({ seed: options.seed, seats: options.seats, ...(options.rules ? { rules: options.rules } : {}) });
   const listeners = new Set<() => void>();
   const resolvers = new Map<number, (action: Action) => void>();
   let nextRequestId = 1;

@@ -5,6 +5,7 @@ import { besideShip, type TablePin, type TableShip } from '../scene/TableCanvas'
 import {
   EMPTY_DEPLOY,
   betsFor,
+  brokerAims,
   deployActionFor,
   deployLabel,
   deployOptions,
@@ -43,8 +44,9 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   if (!active || !context) return null;
   const { board, angles, laneOf, viewer, nameOf, submit: submitAction } = active;
   const cards = roleCards(context, options);
-  const todo = deployTodo(choice);
-  const targets = new Set(targetsFor(options, choice.role));
+  const aims = brokerAims(options);
+  const todo = deployTodo(choice, aims);
+  const targets = new Set(targetsFor(options, choice.role, choice.bet));
   const peeks = new Set(choice.role === 'intel' && choice.target ? peeksFor(options, choice) : []);
   const action = deployActionFor(options, choice);
   const noDeploy = options.find((a) => a.role === null);
@@ -126,7 +128,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     ship: (ship: TableShip): TableShip => ({ ...ship, selectable: targets.has(ship.id) || peeks.has(ship.id), chosen: choice.target === ship.id || choice.peek === ship.id }),
     onSelectShip: clickShip,
     dim: true,
-    ...(choice.role === 'broker' ? { bets: { offered: betsFor(options), chosen: choice.bet, todo: todo.bet, onBet: (bet) => setChoice({ ...choice, bet }) } } : {}),
+    ...(choice.role === 'broker' ? { bets: { offered: betsFor(options), chosen: choice.bet, todo: todo.bet, onBet: (bet) => setChoice({ ...choice, bet, target: choice.target !== null && targetsFor(options, 'broker', bet).includes(choice.target) ? choice.target : null }) } } : {}),
     scene: null,
     dock: hand,
     bar: (
@@ -136,10 +138,10 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
             ? '秘密選一個角色（所有人同時選，情報重擲後一起公開）'
             : choice.role === 'none'
               ? '這回合不部署。'
-              : `${ROLE_LABELS[choice.role]}：部署費 ${fee} G，角色揭露時才扣。${needsTarget(choice.role) ? '點海上的船選目標。' : '在上方黑市選商品與漲跌。'}`}
+              : `${ROLE_LABELS[choice.role]}：部署費 ${fee} G，角色揭露時才扣。${choice.role === 'broker' ? (aims ? '在上方黑市選商品與漲跌，再點一艘對手的船（押對時，那艘船賣這個商品的價格往同方向多動 2 格）。' : '在上方黑市選商品與漲跌。') : needsTarget(choice.role) ? '點海上的船選目標。' : ''}`}
         </span>
         <button type="button" className="primary" disabled={incomplete} onClick={submit}>
-          {deployLabel(choice, ownerOf, nameOf, viewer)}
+          {deployLabel(choice, ownerOf, nameOf, viewer, aims)}
         </button>
       </>
     ),

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BOT_STRATEGIES, type BotStrategy } from '../../v07/bots';
 import { RULES_V07 } from '../../v07/game';
 import type { SeatConfig } from '../../v07/match';
+import { brokerTargetRules } from '../session/experiments';
 import type { SessionOptions } from '../session/gameSession';
 
 const STRATEGY_LABELS: Readonly<Record<BotStrategy, string>> = {
@@ -45,6 +46,8 @@ interface SetupScreenProps {
 export function SetupScreen({ onStart, onOnline }: SetupScreenProps) {
   const [seats, setSeats] = useState<readonly SeatDraft[]>(PRESETS[1]!.seats);
   const [seed, setSeed] = useState(randomSeed);
+  const [brokerTarget, setBrokerTarget] = useState(false);
+  const [ownUp, setOwnUp] = useState(false);
   const { min, max } = RULES_V07.players;
   const update = (index: number, patch: Partial<SeatDraft>) => setSeats(seats.map((s, i) => (i === index ? { ...s, ...patch } : s)));
 
@@ -110,7 +113,22 @@ export function SetupScreen({ onStart, onOnline }: SetupScreenProps) {
         </button>
       </label>
 
-      <button className="v7-primary" onClick={() => onStart({ seed, seats: seats.map(toSeatConfig) })}>
+      <label className="v7-option">
+        <input type="checkbox" checked={brokerTarget} onChange={(e) => setBrokerTarget(e.target.checked)} />
+        實驗規則：莊家押漲跌時要指定一艘對手的船；押對的話，那艘船賣該商品的價格往同方向多動 2 格（每單位 50 G），押跌時差額歸莊家
+      </label>
+
+      {brokerTarget && (
+        <label className="v7-option">
+          <input type="checkbox" checked={ownUp} onChange={(e) => setOwnUp(e.target.checked)} />
+          押漲改成指定「自己」的船（押跌仍指定對手的船）：押對時自己那艘船賣該商品多拿 2 格，由銀行補貼
+        </label>
+      )}
+
+      <button
+        className="v7-primary"
+        onClick={() => onStart({ seed, seats: seats.map(toSeatConfig), ...(brokerTarget ? { rules: brokerTargetRules(ownUp) } : {}) })}
+      >
         開始對局
       </button>
       <p className="v7-muted v7-credit">規則 {RULES_V07.version}・第一版介面（面板）・桌遊場景版製作中</p>

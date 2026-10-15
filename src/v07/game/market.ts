@@ -1,7 +1,7 @@
 import { chain, changeCash, holds, payAll, playerOf, updatePlayer, type StepFn } from './cash';
 import { addGoods, mapGoods, nextPriceStep, only, priceAt, units } from './goods';
 import { traitOf } from './islands';
-import { GOODS, type Bet, type GoodId, type Goods, type MatchEvent, type MatchState, type PlayerId, type Ship, type Step } from './types';
+import { GOODS, type Bet, type GoodId, type Goods, type MatchEvent, type MatchState, type PlayerId, type Ship, type ShipId, type Step } from './types';
 
 interface Prices {
   readonly before: Goods;
@@ -10,6 +10,8 @@ interface Prices {
 
 interface PlayerBet extends Bet {
   readonly playerId: PlayerId;
+  /** Experiment: the opponent's ship this bet is aimed at. */
+  readonly targetShipId: ShipId | null;
 }
 
 /**
@@ -21,7 +23,7 @@ interface PlayerBet extends Bet {
 export function settleMarket(state: MatchState): Step {
   const { rules } = state;
   const { ships } = state.roundState;
-  const bets: PlayerBet[] = state.roundState.deployments.flatMap((d) => (d.role === 'broker' && d.bet !== null ? [{ playerId: d.playerId, ...d.bet }] : []));
+  const bets: PlayerBet[] = state.roundState.deployments.flatMap((d) => (d.role === 'broker' && d.bet !== null ? [{ playerId: d.playerId, ...d.bet, targetShipId: d.targetShipId }] : []));
   const demand = mapGoods((g) =>
     Math.max(0, state.roundState.demand[g] + bets.filter((b) => b.good === g).reduce((sum, b) => sum + b.direction * rules.roles.broker.shift, 0)),
   );
@@ -31,7 +33,7 @@ export function settleMarket(state: MatchState): Step {
   const prices: Prices = { before: state.prices, after: mapGoods((g) => nextPriceStep(rules, g, state.prices[g], arrived[g], demand[g])) };
   const settled: MatchEvent = { type: 'market-settled', round: state.round, demand, arrived, priceBefore: prices.before, priceAfter: prices.after };
   const result = chain({ ...state, prices: prices.after }, [
-    ...arrivedShips.map((ship) => settleArrival(ship, prices)),
+    ...arrivedShips.map((ship) => settleArrival(ship, prices, bets)),
     ...sunkShips.map(settleSinking),
     payEscortFees,
     payCommission,
@@ -74,11 +76,41 @@ function inspectors(state: MatchState, ship: Ship): PlayerId[] {
   return deployed(state, ship, 'guard').filter((id) => id !== ship.owner);
 }
 
-function settleArrival(ship: Ship, prices: Prices): StepFn {
+/** §9.4: a bet is right when its good's price really moved the bet's way. */
+const betWon = (bet: Bet, prices: Prices): boolean => Math.sign(prices.after[bet.good] - prices.before[bet.good]) === bet.direction;
+
+/**
+ * Experiment (rules.roles.broker.targetSteps): every right bet aimed at this ship moves the sale
+ * price of the bet's good by `targetSteps` steps (kept on the track) for this ship only. Down: the
+ * owner's lost difference goes to the broker (at most the proceeds left). Up: the bank pays the
+ * owner the difference. Returns the owner's remaining proceeds and the payments to make.
+ */
+function aimedBets(state: MatchState, ship: Ship, sold: Goods, prices: Prices, bets: readonly PlayerBet[], proceeds: number): { proceeds: number; payments: StepFn[] } {
+  const { rules } = state;
+  return bets
+    .filter((b) => b.targetShipId === ship.id && betWon(b, prices))
+    .reduce<{ proceeds: number; payments: StepFn[] }>(
+      (acc, b) => {
+        const price = salePrice(state, ship.owner, b.good, prices);
+        const room = b.direction < 0 ? price - priceAt(rules, 0) : priceAt(rules, rules.price.steps - 1) - price;
+        const gap = Math.min(rules.roles.broker.targetSteps * rules.price.step, room) * sold[b.good];
+        if (b.direction < 0) {
+          const take = Math.min(gap, acc.proceeds);
+          return { proceeds: acc.proceeds - take, payments: [...acc.payments, ...payAll([{ playerId: b.playerId, amount: take }], 'broker-control', ship.id)] };
+        }
+        return { ...acc, payments: [...acc.payments, ...payAll([{ playerId: ship.owner, amount: gap }], 'broker-lift', ship.id)] };
+      },
+      { proceeds, payments: [] },
+    );
+}
+
+function settleArrival(ship: Ship, prices: Prices, bets: readonly PlayerBet[]): StepFn {
   return (state) => {
     const confiscating = inspectors(state, ship);
     const sold = confiscating.length > 0 ? { ...ship.cargo, arms: 0 } : ship.cargo;
-    const proceeds = GOODS.reduce((sum, g) => sum + sold[g] * salePrice(state, ship.owner, g, prices), 0);
+    const gross = GOODS.reduce((sum, g) => sum + sold[g] * salePrice(state, ship.owner, g, prices), 0);
+    const aimed = aimedBets(state, ship, sold, prices, bets, gross);
+    const proceeds = aimed.proceeds;
     const guards = deployed(state, ship, 'guard');
     const smugglers = takers(state, ship);
     return chain(state, [
@@ -88,6 +120,7 @@ function settleArrival(ship: Ship, prices: Prices): StepFn {
         : guards.length > 0
           ? [...catchSmugglers(ship, smugglers, guards), ...payAll([{ playerId: ship.owner, amount: proceeds }], 'sale', ship.id)]
           : [smuggle(ship, smugglers, proceeds)]),
+      ...aimed.payments,
     ]);
   };
 }
@@ -249,7 +282,7 @@ function payBets(bets: readonly PlayerBet[], prices: Prices): StepFn {
     chain(
       state,
       bets
-        .filter((b) => Math.sign(prices.after[b.good] - prices.before[b.good]) === b.direction)
+        .filter((b) => betWon(b, prices))
         .flatMap((b) => payAll([{ playerId: b.playerId, amount: state.rules.roles.broker.payout }], 'broker-bet', null)),
     );
 }

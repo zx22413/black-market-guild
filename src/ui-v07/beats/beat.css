@@ -1689,3 +1689,76 @@
   font-weight: 700;
   cursor: pointer;
 }
+
+/* The market beat's price ruler: the marker climbs the 7-step price track one step at a time. */
+.mk-scale {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  width: 168px;
+  height: 18px;
+  margin: 8px 0 4px;
+  border-bottom: 2px solid rgb(246 234 208 / 0.5);
+}
+.mk-scale i {
+  border-left: 1px solid rgb(246 234 208 / 0.3);
+  background: transparent;
+}
+.mk-scale i:last-of-type {
+  border-right: 1px solid rgb(246 234 208 / 0.3);
+}
+.mk-scale i.on {
+  background: rgb(246 234 208 / 0.28);
+}
+.mk-scale i.gain {
+  background: transparent;
+  animation: mk-light 220ms ease-out both;
+}
+.mk-scale i.lose {
+  animation: mk-drain 220ms ease-in both;
+}
+.mk-puck {
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: calc(100% / 7);
+  height: calc(100% + 6px);
+  border: 3px solid #f6ead0;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 0.12);
+  box-sizing: border-box;
+  transform: translateX(calc(var(--from) * 100%));
+}
+.mk-scale.rise .mk-puck,
+.mk-scale.fall .mk-puck {
+  animation: mk-climb calc(var(--n) * var(--step)) steps(var(--n), end) var(--start) both;
+}
+.mk-scale.rise .mk-puck {
+  border-color: #9be3a8;
+}
+.mk-scale.fall .mk-puck {
+  border-color: #ffaa9a;
+}
+.mk-scale.still .mk-puck {
+  border-color: rgb(246 234 208 / 0.6);
+}
+.market-card td.mk-price {
+  animation: mk-reveal 240ms ease-out both;
+}
+@keyframes mk-climb {
+  from { transform: translateX(calc(var(--from) * 100%)); }
+  to { transform: translateX(calc(var(--to) * 100%)); }
+}
+@keyframes mk-light {
+  from { background: transparent; box-shadow: none; }
+  to { background: #9be3a8; box-shadow: 0 0 8px #9be3a8; }
+}
+@keyframes mk-drain {
+  from { background: rgb(246 234 208 / 0.28); }
+  60% { background: #ffaa9a; box-shadow: 0 0 8px #ffaa9a; }
+  to { background: transparent; box-shadow: none; }
+}
+@keyframes mk-reveal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
