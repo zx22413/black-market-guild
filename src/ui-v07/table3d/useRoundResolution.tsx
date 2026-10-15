@@ -8,7 +8,7 @@ import { BeatTag } from '../beats/BeatTag';
 import { ReceiptCard } from '../beats/ReceiptCard';
 import { buildReceipt, buildShipBeat, resolvedShips, type ShipBeat } from '../beats/shipBeat';
 import { useBeatPlayback } from '../beats/useBeatPlayback';
-import { ROLE_LABELS, VOYAGE_EVENT_LABELS, VOYAGE_EVENT_TEXT } from '../labels';
+import { ROLE_LABELS } from '../labels';
 import { beatLayer } from '../scene/BeatScene';
 import type { BeatSeat } from '../scene/beatStage';
 import { around } from '../scene/focusMath';
@@ -18,14 +18,16 @@ import { MarketCard } from './MarketCard';
 import { arrowPoint, revealArrows, revealGroups, type RoleArrow } from './revealModel';
 import { RoleArrows } from './RoleArrows';
 import { RoleBadges } from './RoleBadges';
+import { roleKey, roleResults } from './roleResults';
 import { cashSoFar, marketRows, settlementFlights } from './settlementModel';
+import { VoyageEventCard, VoyageEventChip } from './VoyageEventCard';
 
 // Everything after the roles are deployed, on the same table (docs/ui/v07-event-presentation.md
 // §1.5–§1.9, §2): the roles revealed as arrows, then one beat per ship (yours in full, the others
 // at a quicker pace), the market row by row at the harbor, the settlement as flights of coins and
 // crates grouped by ship, and your bill. Then the next round.
 
-export type ResolutionStage = 'reveal' | 'voyage' | 'market' | 'settle' | 'receipt';
+export type ResolutionStage = 'event' | 'reveal' | 'voyage' | 'market' | 'settle' | 'receipt';
 
 /** Pace of each part, in ms (initial values to tune in play). */
 const PACE = { revealGroup: 1600, nextShip: 700, marketRow: 1000, afterMarket: 1500, flight: 1100, afterSettle: 900 } as const;
@@ -98,12 +100,13 @@ const lastIndex = (events: readonly MatchEvent[], test: (e: MatchEvent) => boole
 
 export function useRoundResolution(input: ResolutionInput): Resolution {
   const { events, privateEvents, round, paused, seats, angles, laneOf, viewer, nameOf, weather, onFinish } = input;
-  const [stage, setStage] = useState<ResolutionStage>('reveal');
+  // The voyage event's card comes first (§5 step 5), then the roles are revealed.
+  const [stage, setStage] = useState<ResolutionStage>(weather ? 'event' : 'reveal');
   // The caller passes a new function every render; timers call the latest one.
   const finishRef = useRef(onFinish);
   finishRef.current = onFinish;
   const finish = () => finishRef.current();
-  useEffect(() => setStage('reveal'), [round]);
+  useEffect(() => setStage(weather ? 'event' : 'reveal'), [round]); // eslint-disable-line react-hooks/exhaustive-deps
   const active = round !== null;
   const roundEvents = useMemo(() => (round === null ? [] : events.filter((e) => !('round' in e) || e.round === round)), [events, round]);
 
@@ -167,7 +170,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   const cutoff = useMemo(() => {
     if (round === null) return events.length;
     const revealEnd = lastIndex(events, (e) => e.type === 'roles-revealed' && e.round === round) + 1;
-    if (stage === 'reveal' || stage === 'voyage') return revealEnd;
+    if (stage === 'event' || stage === 'reveal' || stage === 'voyage') return revealEnd;
     if (stage === 'market' || stage === 'settle') return lastIndex(events, (e) => e.type === 'market-settled' && e.round === round) + 1;
     return lastIndex(events, (e) => e.type === 'round-ended' && e.round === round) + 1;
   }, [events, round, stage]);
@@ -260,14 +263,26 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     }
   }
   const nameOrYou = (id: PlayerId) => (id === viewer ? '你' : nameOf(id));
+  // A badge is stamped once what it came to is on screen: its ship's outcome, or the market for brokers.
+  const results = round === null ? new Map() : roleResults(events, round);
+  const shipDone = (shipId: ShipId): boolean => {
+    if (stage === 'market' || stage === 'settle') return true;
+    const at = beats.findIndex((b) => b.shipId === shipId);
+    return stage === 'voyage' && at >= 0 && (at < voyageIndex || (at === voyageIndex && playback.view.showOutcome));
+  };
+  const marketDone = stage === 'settle' || (stage === 'market' && rowsShown >= rows.length);
+  const stamp = (d: Deployment) => {
+    const result = results.get(roleKey(d));
+    return result && (result.shipId === null ? marketDone : shipDone(result.shipId)) ? result : null;
+  };
   const badgePins: TablePin[] = [
     ...[...onShips].map(([shipId, ds]): TablePin => {
       const [x, , z] = placePoint({ kind: 'ship', shipId }, badgeCtx);
-      return { id: `badges-${shipId}`, position: [x, 0, z + 4.5], node: <RoleBadges deployments={ds} colorOf={colorOf} nameOf={nameOrYou} /> };
+      return { id: `badges-${shipId}`, position: [x, 0, z + 4.5], node: <RoleBadges deployments={ds} colorOf={colorOf} nameOf={nameOrYou} stamp={stamp} /> };
     }),
     // Brokers bet on the market: their badges hang at the harbor, on its front-left diagonal where
     // no lane runs (so they never look like they sit on a ship).
-    ...(onHarbor.length > 0 ? [{ id: 'badges-harbor', position: HARBOR_BADGES, node: <RoleBadges deployments={onHarbor} colorOf={colorOf} nameOf={nameOrYou} /> }] : []),
+    ...(onHarbor.length > 0 ? [{ id: 'badges-harbor', position: HARBOR_BADGES, node: <RoleBadges deployments={onHarbor} colorOf={colorOf} nameOf={nameOrYou} stamp={stamp} /> }] : []),
   ];
 
   const marketPins: TablePin[] =
@@ -284,14 +299,14 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     </button>
   );
   const bar =
-    stage === 'reveal' ? (
+    stage === 'event' ? (
+      <>
+        <span>航海事件翻開了。</span>
+        {skip('繼續', () => setStage('reveal'), true)}
+      </>
+    ) : stage === 'reveal' ? (
       <>
         <span>
-          {weather && (
-            <>
-              航海事件：<b>{VOYAGE_EVENT_LABELS[weather]}</b>（{VOYAGE_EVENT_TEXT[weather]}）
-            </>
-          )}
           {groups.length === 0 ? '這回合沒有人部署角色。' : allRevealed ? `角色全部揭露：${groups.map((g) => `${ROLE_LABELS[g.role]}${g.deployments.length > 1 ? `×${g.deployments.length}` : ''}`).join('、')}` : `角色揭露：${current ? ROLE_LABELS[current.role] : ''}（${groupsShown}/${groups.length}）`}
         </span>
         {allRevealed ? skip(beats.length > 0 ? '開始航程' : '到黑市', () => setStage(beats.length > 0 ? 'voyage' : 'market'), true) : skip('全部揭露', () => setGroupsShown(groups.length))}
@@ -342,7 +357,13 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
       </>
     ),
     bar,
-    overlay: stage === 'receipt' && viewer !== null ? <ReceiptCard round={round!} viewer={viewer} lines={receipt.lines} net={receipt.net} onClose={finish} /> : null,
+    overlay: (
+      <>
+        {weather && stage !== 'event' && stage !== 'receipt' && <VoyageEventChip event={weather} />}
+        {weather && stage === 'event' && <VoyageEventCard key={round} event={weather} round={round!} onDone={() => setStage('reveal')} />}
+        {stage === 'receipt' && viewer !== null ? <ReceiptCard round={round!} viewer={viewer} lines={receipt.lines} net={receipt.net} onClose={finish} /> : null}
+      </>
+    ),
     onTableClick: stage === 'voyage' ? () => (playback.next() ? undefined : nextShip()) : undefined,
     marketPrices,
     changedGoods,
