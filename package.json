@@ -17,6 +17,7 @@
     "match:log": "tsx scripts/print-match.ts",
     "simulate": "tsx scripts/simulate.ts",
     "art:buildings": "tsx scripts/draw-buildings.ts > docs/art/buildings-blueprint.svg",
+    "art:islands": "tsx scripts/draw-islands.ts > docs/art/islands-blueprint.svg",
     "art:ui": "tsx scripts/draw-ui-art.ts",
     "art:ui:png": "tsx scripts/raster-ui-art.ts && python3 scripts/webp-ui-art.py",
     "capture": "python3 scripts/capture-receiver.py",

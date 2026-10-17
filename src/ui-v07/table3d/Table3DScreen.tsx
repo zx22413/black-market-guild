@@ -95,7 +95,13 @@ export function Table3DScreen({ session, onExit, autoplay = false }: Table3DScre
 
   const seatsBoard = useMemo(() => buildBoard(ids, snap.startingCash, snap.events), [ids, snap.events, snap.startingCash]);
   const seats = useMemo(
-    () => beatSeats(snap.players, facing, Object.fromEntries(ids.map((id) => [id, seatsBoard.players[id]?.buildings ?? []]))),
+    () =>
+      beatSeats(
+        snap.players,
+        facing,
+        Object.fromEntries(ids.map((id) => [id, seatsBoard.players[id]?.buildings ?? []])),
+        Object.fromEntries(ids.map((id) => [id, seatsBoard.players[id]?.island ?? null])),
+      ),
     [snap.players, facing, ids, seatsBoard],
   );
   const { angles, laneOf } = useTableLayout(seats);

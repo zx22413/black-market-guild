@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { BuildingId, MatchEvent, PlayerId, VoyageEventId } from '../../v07/game';
+import type { BuildingId, IslandId, MatchEvent, PlayerId, VoyageEventId } from '../../v07/game';
 import { RULES_V07 } from '../../v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../v07/match';
 import type { SafeArea } from '../../ui/scene/CameraRig';
@@ -35,7 +35,8 @@ function roundStage(events: readonly MatchEvent[], beat: ShipBeat, playerIds: re
   const board = buildBoard(playerIds, RULES_V07.startingCash, events.slice(0, firstResolved), RULES_V07);
   const buildings: Record<PlayerId, readonly BuildingId[]> = Object.fromEntries(playerIds.map((id) => [id, board.players[id]?.buildings ?? []]));
   const launched = events.find((e): e is Extract<MatchEvent, { type: 'ships-launched' }> => e.type === 'ships-launched' && e.round === beat.round);
-  return { buildings, ships: launched?.ships.map((s) => ({ id: s.id, owner: s.owner })) ?? [], weather: board.voyageEvent };
+  const islands: Record<PlayerId, IslandId | null> = Object.fromEntries(playerIds.map((id) => [id, board.players[id]?.island ?? null]));
+  return { buildings, islands, ships: launched?.ships.map((s) => ({ id: s.id, owner: s.owner })) ?? [], weather: board.voyageEvent };
 }
 
 function Stage({ beat, events, players, weather }: { readonly beat: ShipBeat; readonly events: readonly MatchEvent[]; readonly players: readonly { id: PlayerId; name: string }[]; readonly weather: VoyageEventId | null }) {
@@ -44,7 +45,7 @@ function Stage({ beat, events, players, weather }: { readonly beat: ShipBeat; re
   const [receipt, setReceipt] = useState(false);
   const names = useMemo(() => Object.fromEntries(players.map((p) => [p.id, p.name])), [players]);
   const stage = useMemo(() => roundStage(events, beat, players.map((p) => p.id)), [events, beat, players]);
-  const seats = useMemo(() => beatSeats(players, VIEWER, stage.buildings), [players, stage]);
+  const seats = useMemo(() => beatSeats(players, VIEWER, stage.buildings, stage.islands), [players, stage]);
   return (
     <>
       <BeatScene

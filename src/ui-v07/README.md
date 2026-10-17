@@ -11,7 +11,7 @@ V0.7 的瀏覽器介面，與 V0.6 的 `src/ui` 並存，入口是 `v07.html`（
 | `session/usePlayback.ts` | 逐筆播放公開事件、回合間暫停、同機輪流的換人遮蔽（換人前不顯示任何私有資訊）。 |
 | `table/` | `MatchView`（選 3D 或純面板）；純面板版：商會、市場、船隻面板，與選島／投資／部署／情報重擲四個決策表單（合法行動以 `legalActions` 為準）；兩版共用的選擇邏輯 `investChoice`、`deployChoice`。 |
 | `beats/` | 焦點層試驗：`shipBeat.ts` 從公開事件組出一艘船的結算拍（骰值修正、結果、貨、金流）與本回合帳單，`beatTimeline.ts` 決定每件事出現的時間（一次一件），`ShipBeatStage`、`ReceiptCard` 是滿版卡片。說明見 [`docs/ui/v07-layout-research.md`](../../docs/ui/v07-layout-research.md) 第 6 節。 |
-| `scene/` | 3D 桌面播放結算拍（試驗）：借用 V0.6 `src/ui/scene` 的海、天氣、島、船；`FocusCamera`／`focusMath` 是能左右平移的對焦鏡頭，`beatStage.ts` 是純函式（角色何時進場、船怎麼反應、哪些島相關），`TableCanvas` 是共用的 3D 桌面（海、天氣、島、船、鏡頭、DOM 標籤），`BeatScene` 與 `InvestIsland`（倉庫貨箱、船上的貨、建築預覽）在它上面加東西；說明全部在船上方的 `beats/BeatTag`（同一刻只有一個地方要看）。見研究文件第 6.4 節。 |
+| `scene/` | 3D 桌面播放結算拍（試驗）：借用 V0.6 `src/ui/scene` 的海、天氣、島、船；`FocusCamera`／`focusMath` 是能左右平移的對焦鏡頭，`beatStage.ts` 是純函式（角色何時進場、船怎麼反應、哪些島相關），`TableCanvas` 是共用的 3D 桌面（海、天氣、島、船、鏡頭、DOM 標籤），`BeatScene` 與 `InvestIsland`（倉庫貨箱、船上的貨、建築預覽）在它上面加東西；`islandScenery.ts` 是選島後各島的地面色、造景擺放與延伸懸崖（目前有香料群島、礦山島，其餘維持預設草地），大標的物由 `backdropTurn` 放在離鏡頭最遠的一側（後方或左右），不會擋到任何一座島的建築，`IslandLook.tsx` 把它交給 `PlayerIsland`；說明全部在船上方的 `beats/BeatTag`（同一刻只有一個地方要看）。見研究文件第 6.4 節。 |
 | `table/investChoice.ts` | 投資決定的純資料模型（建築卡與不能蓋的原因、裝卸貨、可裝貨量、提醒、摘要、還沒做完的項目），只用合法行動判斷；3D 島與之後的表單共用。 |
 | `table/ReminderDialog.tsx`、`table/reminderSettings.ts` | 提交前「還有沒做完的地方」提醒，與「不再提醒」設定（存在瀏覽器的 localStorage，無法使用時就每次提醒）。 |
 | `table/deployChoice.ts` | 部署角色的純資料模型（角色卡與不能派的原因、目標船、燈塔島多看的一艘、莊家押注、還沒做完的項目、提交按鈕文字），只用合法行動判斷。 |

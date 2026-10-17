@@ -9,32 +9,13 @@ import { BUILDING_DESIGNS, ROOF_MATS, type BuildingDesign } from '../src/ui/scen
 import { SWATCHES, type Mat, type Swatch } from '../src/ui/scene/buildings/materials';
 import { bounds, partFaces, type Face, type Vec3 } from '../src/ui/scene/buildings/polyhedra';
 import { facesViewer, paintersOrder, project } from './iso-painter';
+import { shadedPolygon, silhouetteOf, swatchChips, type Drawn } from './iso-shade';
 
 const NAMES: Record<AssetId, string> = { shipyard: '造船廠', insurance: '航運保險', salvage: '打撈公司', exchange: '貿易交易所' };
 const ORDER: readonly AssetId[] = ['shipyard', 'insurance', 'salvage', 'exchange'];
 const SAMPLE_OWNER: Swatch = { top: '#e8645a', bottom: '#c8463f' };
 const SAND: Swatch = { top: '#f2d3a0', bottom: '#c99a62' };
 const TURF: Swatch = { top: '#8fd168', bottom: '#6aae4c' };
-
-const LIGHT: Vec3 = (() => {
-  const l: Vec3 = [0.35, 1, 0.6];
-  const n = Math.hypot(...l);
-  return [l[0] / n, l[1] / n, l[2] / n];
-})();
-const dot = (a: Vec3, b: Vec3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-
-function channels(hex: string): number[] {
-  return [0, 1, 2].map((i) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16));
-}
-
-function toHex(rgb: readonly number[]): string {
-  return `#${rgb.map((n) => Math.min(255, Math.round(n)).toString(16).padStart(2, '0')).join('')}`;
-}
-
-interface Drawn {
-  readonly face: Face;
-  readonly swatch: Swatch;
-}
 
 function flagSolids(design: BuildingDesign): Drawn[][] {
   const [x, y, z] = design.flag;
@@ -60,48 +41,6 @@ function visibleFacesOf(design: BuildingDesign): Drawn[] {
   return cached;
 }
 
-/** Swatch color at a height within the face's solid, lit by the face normal. */
-function tone({ face, swatch }: Drawn, y: number): string {
-  const [low, high] = face.span;
-  const t = high - low > 1e-6 ? (y - low) / (high - low) : 1;
-  const [top, bottom] = [channels(swatch.top), channels(swatch.bottom)];
-  const light = 0.62 + 0.45 * Math.max(0, dot(face.normal, LIGHT));
-  return toHex(top.map((c, i) => (bottom[i]! + (c - bottom[i]!) * t) * light));
-}
-
-/**
- * A face filled with its swatch's top-to-bottom gradient, laid along the direction world height
- * changes fastest on screen. Strokes match the fill so seams close without drawn outlines.
- */
-function shadedPolygon(drawn: Drawn, unit: number, defs: string[]): string {
-  const { face } = drawn;
-  const screen = face.points.map((p) => project(p, unit));
-  const d = screen.map((s) => s.map((n) => n.toFixed(1)).join(',')).join(' ');
-  const [a, b, c] = [0, 1, 2].map((i) => ({ s: screen[i]!, y: face.points[i]![1] })) as [
-    { s: [number, number]; y: number },
-    { s: [number, number]; y: number },
-    { s: [number, number]; y: number },
-  ];
-  // Height is affine on the face plane: solve height = gx * X + gy * Y + g0 from three corners.
-  const [bx, by, cx, cy] = [b.s[0] - a.s[0], b.s[1] - a.s[1], c.s[0] - a.s[0], c.s[1] - a.s[1]];
-  const det = bx * cy - cx * by;
-  const gx = det === 0 ? 0 : ((b.y - a.y) * cy - (c.y - a.y) * by) / det;
-  const gy = det === 0 ? 0 : ((c.y - a.y) * bx - (b.y - a.y) * cx) / det;
-  const g2 = gx * gx + gy * gy;
-  if (g2 < 1e-9) {
-    const fill = tone(drawn, a.y);
-    return `<polygon points="${d}" fill="${fill}" stroke="${fill}" stroke-width="0.6" stroke-linejoin="round"/>`;
-  }
-  const [low, high] = face.span;
-  const at = (y: number): string => `${(a.s[0] + (gx * (y - a.y)) / g2).toFixed(1)}`;
-  const atY = (y: number): string => `${(a.s[1] + (gy * (y - a.y)) / g2).toFixed(1)}`;
-  const id = `g${defs.length}`;
-  defs.push(
-    `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${at(high)}" y1="${atY(high)}" x2="${at(low)}" y2="${atY(low)}"><stop offset="0" stop-color="${tone(drawn, high)}"/><stop offset="1" stop-color="${tone(drawn, low)}"/></linearGradient>`,
-  );
-  return `<polygon points="${d}" fill="url(#${id})" stroke="url(#${id})" stroke-width="0.6" stroke-linejoin="round"/>`;
-}
-
 function model(design: BuildingDesign, unit: number, defs: string[]): string {
   return visibleFacesOf(design)
     .map((drawn) => shadedPolygon(drawn, unit, defs))
@@ -109,12 +48,7 @@ function model(design: BuildingDesign, unit: number, defs: string[]): string {
 }
 
 function silhouette(design: BuildingDesign, unit: number): string {
-  return visibleFacesOf(design)
-    .map(({ face }) => {
-      const d = face.points.map((p) => project(p, unit).map((n) => n.toFixed(1)).join(',')).join(' ');
-      return `<polygon points="${d}" fill="#2b3a55" stroke="#2b3a55" stroke-width="0.5"/>`;
-    })
-    .join('');
+  return silhouetteOf(visibleFacesOf(design), unit);
 }
 
 const GROUND_HALF = 1.35;
@@ -169,12 +103,7 @@ function panel(asset: AssetId, index: number, defs: string[]): string {
   const [col, row] = [index % 2, Math.floor(index / 2)];
   const [x0, y0] = [40 + col * 700, 150 + row * 560];
   const roof = SWATCHES[ROOF_MATS[asset]];
-  const swatches = [...new Set(design.parts.map((p) => p.mat))]
-    .map((mat, i) => {
-      const s = SWATCHES[mat];
-      return `<g transform="translate(${i * 30},0)"><rect width="24" height="24" rx="5" fill="${s.bottom}"/><rect width="24" height="12" rx="5" fill="${s.top}"/><rect y="6" width="24" height="6" fill="${s.top}"/></g>`;
-    })
-    .join('');
+  const swatches = swatchChips([...new Set(design.parts.map((p) => p.mat))].map((mat) => SWATCHES[mat]));
   return `
   <g transform="translate(${x0},${y0})">
     <rect width="660" height="520" rx="18" fill="#fbf3e2"/>

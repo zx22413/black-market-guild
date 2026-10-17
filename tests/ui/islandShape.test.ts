@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatAngles, seatPosition } from '../../src/ui/scene/layout';
-import { SHORE_POINTS, islandShorelines, islandWaterline } from '../../src/ui/scene/islandShape';
+import { SHORE_POINTS, annexWaterline, islandShorelines, islandWaterline } from '../../src/ui/scene/islandShape';
 
 const centroid = (points: readonly (readonly [number, number])[]) => {
   const [x, z] = points.reduce(([sx, sz], [px, pz]) => [sx + px, sz + pz], [0, 0]);
@@ -36,5 +36,20 @@ describe('table shorelines', () => {
       const [px, pz] = centroid(shores[i + 1]!);
       expect(Math.hypot(px! - sx, pz! - sz)).toBeLessThan(PLAYER_ISLAND_RADIUS * 0.3);
     });
+  });
+
+  it('adds an annex after the seats, swung to its side and stretched to its radii', () => {
+    const angles = seatAngles(4);
+    const annex = { center: [0, -12] as const, radii: [10, 5] as const, turn: Math.PI / 2, seed: 50 };
+    const shores = islandShorelines(angles, [null, null, annex, null]);
+    expect(shores).toHaveLength(6);
+    const local = annexWaterline(annex, 2.4);
+    expect(local).toHaveLength(SHORE_POINTS);
+    // Turned a quarter: the back (-z) lobe now lies along -x.
+    const [lx, lz] = centroid(local);
+    expect(lx!).toBeLessThan(-9);
+    expect(Math.abs(lz!)).toBeLessThan(2);
+    const xs = local.map(([x]) => x);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeLessThan(5 * 2.8);
   });
 });

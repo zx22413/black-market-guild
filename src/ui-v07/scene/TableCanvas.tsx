@@ -7,6 +7,8 @@ import { Clouds } from '../../ui/scene/Clouds';
 import { EffectWarmup } from '../../ui/scene/EffectWarmup';
 import { GoldRush } from '../../ui/scene/GoldRush';
 import { PlayerIsland, TargetIsland } from '../../ui/scene/Islands';
+import { islandLook } from './IslandLook';
+import { islandAnnex } from './islandScenery';
 import { islandShorelines, playerIslandHeading, playerIslandSeed } from '../../ui/scene/islandShape';
 import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatAngles, seatPosition, type Vec3 } from '../../ui/scene/layout';
 import { Night } from '../../ui/scene/Night';
@@ -146,7 +148,13 @@ function asSceneShip(ship: TableShip, lane: number): SceneShip {
 export function TableCanvas({ seats, weather, ships, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false }: TableCanvasProps) {
   const look = WEATHER[weather ?? 'clear'];
   const { angles, laneOf } = useTableLayout(seats);
-  const shores = useMemo(() => islandShorelines(angles), [angles]);
+  const islandKey = seats.map((s) => s.island ?? '').join('|');
+  const shores = useMemo(
+    () => islandShorelines(angles, seats.map((s, i) => islandAnnex(s.island, playerIslandHeading(angles[i]!), i))),
+    // Seats are a fresh array each render; the shores only change with the seats' islands.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [angles, islandKey],
+  );
   const labels = useRef(new Map<string, HTMLElement>());
   const pin = (id: string) => (el: HTMLElement | null) => {
     if (el) labels.current.set(id, el);
@@ -189,6 +197,7 @@ export function TableCanvas({ seats, weather, ships, cameraPoints, safe, ringed,
             {seats.map((seat, i) => (
               <PlayerIsland
                 key={seat.id}
+                {...islandLook(seat.island, playerIslandHeading(angles[i]!), i)}
                 seat={{ assets: seat.buildings, color: seat.color }}
                 angle={angles[i]!}
                 seed={playerIslandSeed(i)}

@@ -47,6 +47,39 @@ export function islandCliff(radius: number, height: number, seed: number): Buffe
 
 export const cliffLift = (height: number): number => (height + CLIFF_DEPTH) / 2 - CLIFF_DEPTH;
 
+/**
+ * A lobe of cliff that widens a guild island toward one side, so a big landmark (the mine's
+ * mountain) rises from the island itself instead of the open sea. `center` and `radii` describe an
+ * ellipse in island space as if on the back (-z); `turn` then swings it about the island's center
+ * (as three.js turns about +y) to the side the landmark stands on.
+ */
+export interface IslandAnnex {
+  readonly center: SeaPoint;
+  readonly radii: SeaPoint;
+  readonly turn: number;
+  readonly seed: number;
+}
+
+/** The annex's cliff, centered on its own origin; place it at `center` inside a group turned by `turn`. */
+export function annexCliff(annex: IslandAnnex, height: number): BufferGeometry {
+  return islandCliff(1, height, annex.seed).scale(annex.radii[0], 1, annex.radii[1]);
+}
+
+/** Island space to island space: turn about +y the way three.js does. */
+function turnPoints(points: readonly SeaPoint[], turn: number): SeaPoint[] {
+  const cos = Math.cos(turn);
+  const sin = Math.sin(turn);
+  return points.map(([x, z]) => [x * cos + z * sin, -x * sin + z * cos]);
+}
+
+/** Where the annex's cliff meets the sea, in island space. */
+export function annexWaterline(annex: IslandAnnex, height: number): SeaPoint[] {
+  const [rx, rz] = annex.radii;
+  const [cx, cz] = annex.center;
+  const local = islandWaterline(1, height, annex.seed).map(([x, z]): SeaPoint => [cx + x * rx, cz + z * rz]);
+  return turnPoints(local, annex.turn);
+}
+
 /** Where the island's cliff meets the sea (y = 0), in island space: one point per cliff side. */
 export function islandWaterline(radius: number, height: number, seed: number): SeaPoint[] {
   const cliff = islandCliff(radius, height, seed);
@@ -81,15 +114,23 @@ function place(points: readonly SeaPoint[], cx: number, cz: number, heading: num
   return points.map(([x, z]) => [cx + x * cos + z * sin, cz - x * sin + z * cos]);
 }
 
-/** Every island's waterline in world space: the target island first, then each seat in order. */
-export function islandShorelines(angles: readonly number[]): SeaPoint[][] {
+/**
+ * Every island's waterline in world space: the target island first, then each seat in order, then
+ * the annex of each seat that has one (`annexes[i]` belongs to seat i).
+ */
+export function islandShorelines(angles: readonly number[], annexes: readonly (IslandAnnex | null)[] = []): SeaPoint[][] {
   const target = islandWaterline(TARGET_ISLAND_RADIUS, TARGET_ISLAND_HEIGHT, TARGET_ISLAND_SEED);
-  const seats = angles.map((angle, i) => {
+  const onSeat = (i: number, line: readonly SeaPoint[]): SeaPoint[] => {
+    const angle = angles[i]!;
     const [x, , z] = seatPosition(angle);
-    const line = islandWaterline(PLAYER_ISLAND_RADIUS, PLAYER_ISLAND_HEIGHT, playerIslandSeed(i));
     return place(line, x, z, playerIslandHeading(angle));
+  };
+  const seats = angles.map((_, i) => onSeat(i, islandWaterline(PLAYER_ISLAND_RADIUS, PLAYER_ISLAND_HEIGHT, playerIslandSeed(i))));
+  const extra = angles.flatMap((_, i) => {
+    const annex = annexes[i];
+    return annex ? [onSeat(i, annexWaterline(annex, PLAYER_ISLAND_HEIGHT))] : [];
   });
-  return [target, ...seats];
+  return [target, ...seats, ...extra];
 }
 
 /** Guild islands turn their dock (+z in island space) toward the target island at the center. */

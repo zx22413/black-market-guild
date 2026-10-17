@@ -2,7 +2,10 @@ import { Canvas } from '@react-three/fiber';
 import { Suspense } from 'react';
 import { Vector3 } from 'three';
 import { ASSET_IDS, type AssetId } from '../../game';
+import { islandLook } from '../../ui-v07/scene/IslandLook';
+import type { IslandId } from '../../v07/game';
 import { PlayerIsland } from '../scene/Islands';
+import { playerIslandHeading } from '../scene/islandShape';
 import { Building } from '../scene/buildings/Building';
 import { BUILDING_DESIGNS } from '../scene/buildings/designs';
 import { bounds } from '../scene/buildings/polyhedra';
@@ -13,6 +16,7 @@ import { PLAYER_ISLAND_RADIUS, headingOf, seatPosition, type Vec3 } from '../sce
  * - `assets`: comma-separated asset ids (default: all four)
  * - `mode`: `island` (default) shows them on a guild island, `solo` shows the first one alone
  * - `view`: `dock` (default, the side facing the target island), `back`, `far` or `top`
+ * - `island`: a V0.7 island id (e.g. `spice-isles`, `mine`) to show its ground and scenery
  * - `color`: owner color for the pennants (default red)
  */
 type View = 'dock' | 'back' | 'far' | 'top';
@@ -26,7 +30,7 @@ const DIRECTIONS: Record<View, Vec3> = {
 };
 const DISTANCE: Record<View, number> = { dock: 1, back: 1, far: 2.2, top: 1.2 };
 
-function parse(search: string): { assets: AssetId[]; solo: boolean; view: View; color: string } {
+function parse(search: string): { assets: AssetId[]; solo: boolean; view: View; color: string; island: IslandId | null } {
   const q = new URLSearchParams(search);
   const asked = (q.get('assets') ?? '').split(',').filter((a): a is AssetId => (ASSET_IDS as readonly string[]).includes(a));
   const view = q.get('view');
@@ -35,22 +39,23 @@ function parse(search: string): { assets: AssetId[]; solo: boolean; view: View; 
     solo: q.get('mode') === 'solo',
     view: view === 'back' || view === 'far' || view === 'top' ? view : 'dock',
     color: q.get('color') ?? '#e0584a',
+    island: (q.get('island') as IslandId | null) ?? null,
   };
 }
 
 /** A guild island moved to the origin, dock toward -z. */
-function IslandAtOrigin({ assets, color }: { readonly assets: readonly AssetId[]; readonly color: string }) {
+function IslandAtOrigin({ assets, color, island }: { readonly assets: readonly AssetId[]; readonly color: string; readonly island: IslandId | null }) {
   const angle = Math.PI / 2;
   const home = seatPosition(angle);
   return (
     <group position={[-home[0], 0, -home[2]]}>
-      <PlayerIsland seat={{ assets, color }} angle={angle} seed={3} />
+      <PlayerIsland seat={{ assets, color }} angle={angle} seed={3} {...islandLook(island, playerIslandHeading(angle), 0)} />
     </group>
   );
 }
 
 export function ModelPreview() {
-  const { assets, solo, view, color } = parse(window.location.search);
+  const { assets, solo, view, color, island } = parse(window.location.search);
   const first = assets[0]!;
   // Frame the island by its radius, a lone building by its bounding box.
   const { min, max } = bounds(BUILDING_DESIGNS[first].parts);
@@ -74,7 +79,7 @@ export function ModelPreview() {
               <Building asset={first} color={color} />
             </group>
           ) : (
-            <IslandAtOrigin assets={assets} color={color} />
+            <IslandAtOrigin assets={assets} color={color} island={island} />
           )}
         </Suspense>
       </Canvas>

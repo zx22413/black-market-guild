@@ -2,7 +2,8 @@ import { Color, MeshStandardMaterial, Vector2 } from 'three';
 import { SHORE_POINTS, type SeaPoint } from './islandShape';
 
 /** Most islands the foam can hug: the target island plus up to five guild islands. */
-const MAX_SHORES = 6;
+/** The target island, four guild islands and an annex for each of them (`IslandAnnex`). */
+const MAX_SHORES = 9;
 
 /** Uniforms the sea updates every frame to drive the foam. */
 export interface FoamUniforms {

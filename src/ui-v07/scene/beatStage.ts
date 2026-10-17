@@ -1,4 +1,4 @@
-import type { BuildingId, PlayerId, VoyageEventId } from '../../v07/game';
+import type { BuildingId, IslandId, PlayerId, VoyageEventId } from '../../v07/game';
 import { PLAYER_COLORS, seatOrder, type TablePlayer } from '../../ui/scene/tableModel';
 import type { BeatView } from '../beats/beatTimeline';
 import type { ShipBeat } from '../beats/shipBeat';
@@ -12,6 +12,8 @@ export interface BeatSeat {
   readonly name: string;
   readonly color: string;
   readonly buildings: readonly BuildingId[];
+  /** The island picked in the draft; null until the picks are revealed. */
+  readonly island: IslandId | null;
   readonly isViewer: boolean;
 }
 
@@ -20,9 +22,10 @@ export function beatSeats(
   players: readonly TablePlayer[],
   viewer: PlayerId | null,
   buildings: Readonly<Record<PlayerId, readonly BuildingId[]>>,
+  islands: Readonly<Record<PlayerId, IslandId | null>> = {},
 ): BeatSeat[] {
   const colorOf = (id: PlayerId) => PLAYER_COLORS[players.findIndex((p) => p.id === id) % PLAYER_COLORS.length]!;
-  return seatOrder(players, viewer).map((p) => ({ id: p.id, name: p.name, color: colorOf(p.id), buildings: buildings[p.id] ?? [], isViewer: p.id === viewer }));
+  return seatOrder(players, viewer).map((p) => ({ id: p.id, name: p.name, color: colorOf(p.id), buildings: buildings[p.id] ?? [], island: islands[p.id] ?? null, isViewer: p.id === viewer }));
 }
 
 export interface BeatActor {

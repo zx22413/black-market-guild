@@ -19,7 +19,8 @@ description: Design and build hand-made low-poly 3D models for the Black Market 
 | `src/ui/scene/buildings/designs.ts` | 各建築的零件清單、`ROOF_MATS`、旗桿位置 |
 | `src/ui/scene/buildings/Building.tsx` | 3D 元件 |
 | `src/ui/scene/layout.ts` | `ASSET_LOTS`、`ASSET_BUILDING_SCALE`、島的半徑 |
-| `scripts/draw-buildings.ts`、`scripts/iso-painter.ts` | 設計圖產生器（`npm run art:buildings`） |
+| `scripts/draw-buildings.ts`、`scripts/iso-painter.ts`、`scripts/iso-shade.ts` | 設計圖產生器（`npm run art:buildings`） |
+| `src/ui/scene/buildings/landmarks.ts`、`src/ui-v07/scene/islandScenery.ts`、`scripts/draw-islands.ts` | 選島後的島嶼造景、各島擺放與設計圖（`npm run art:islands`）；測試在 `tests/ui-v07/islandScenery.test.ts` |
 | `src/ui/dev/ModelPreview.tsx`、`src/ui/dev/capture.ts` | 開發用預覽頁與高解析度擷取 |
 | `tests/ui/buildings.test.ts` | 幾何、擺放、比例的測試 |
 
@@ -86,7 +87,7 @@ npm run capture -- /path/to/scratchpad/out.jpg   # 背景執行，收到一張�
 ### 6. 測試與收尾
 
 - `tests/ui/buildings.test.ts` 已經對所有設計檢查：零件是封閉凸體、每種資產有專屬屋頂色、全部落在草地內不重疊、最高建築高過船。新增設計會自動被涵蓋；新增零件種類或 kit 部件時，補上對應的幾何測試。
-- 執行 `npm run typecheck`、`npm test`、`npm run art:buildings`，並把更新後的設計圖一起 commit。
+- 執行 `npm run typecheck`、`npm test`、`npm run art:buildings`（造景則是 `npm run art:islands`），並把更新後的設計圖一起 commit。
 - 更新 `src/ui/README.md` 裡 `buildings/` 的說明；若規則有變，更新風格指南。
 
 ## 常見問題
