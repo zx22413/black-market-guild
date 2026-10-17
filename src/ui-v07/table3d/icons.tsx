@@ -62,6 +62,25 @@ export function CloseIcon() {
   );
 }
 
+/** A little crate: the warehouse. */
+export function CrateIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+      <path d="M2.5 4.5l5.5-2 5.5 2v7l-5.5 2-5.5-2zM2.5 4.5L8 6.5l5.5-2M8 6.5v7" {...LINE} />
+    </svg>
+  );
+}
+
+/** A warning triangle: something to watch for. */
+export function AlertIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+      <path d="M8 2.5l6 10.5H2z" {...LINE} />
+      <path d="M8 6.5v3M8 11.3v.1" {...LINE} />
+    </svg>
+  );
+}
+
 /** An open book: the rules. */
 export function BookIcon() {
   return (

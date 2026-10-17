@@ -89,6 +89,14 @@ describe('investment choice on the island (only legal actions)', () => {
     expect(investNotes(context, loadOne(options, withArms, 'spice')).some((n) => n.text.includes('香料'))).toBe(false);
   });
 
+  it('gives every note icon chips so the table can show it without the sentence', () => {
+    const { context, options } = scenario();
+    const notes = investNotes(context, loadOne(options, EMPTY_CHOICE, 'arms'));
+    for (const note of notes) expect(note.chips.length, note.text).toBeGreaterThan(0);
+    expect(notes.find((n) => n.text.includes('軍火'))?.chips).toEqual([{ kind: 'good', good: 'arms' }, { kind: 'role', role: 'guard' }, { kind: 'alert' }]);
+    expect(notes.find((n) => n.text.includes('香料'))?.chips).toEqual([{ kind: 'good', good: 'spice', count: 1 }, { kind: 'alert' }]);
+  });
+
   it('does not warn about spoiling spice on the Spice Isles (§11.2)', () => {
     const state = edit(start(3, undefined, { p1: 'spice-isles' }), 'p1', { stock: G(0, 0, 2, 0) });
     expect(investNotes(contextOf(state), EMPTY_CHOICE).some((n) => n.text.includes('香料'))).toBe(false);

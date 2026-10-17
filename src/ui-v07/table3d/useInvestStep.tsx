@@ -25,8 +25,9 @@ import {
 } from '../table/investChoice';
 import { ReminderDialog } from '../table/ReminderDialog';
 import { isHintSeen, isReminderSkipped, markHintSeen, setReminderSkipped } from '../table/reminderSettings';
-import { GoodCount, GoodIcon, withGoodIcons } from './GoodIcon';
-import { CloseIcon, Flow, HouseIcon, IconDisc, artIconUrl } from './icons';
+import { GoodCount } from './GoodIcon';
+import { NoteBadge } from './NoteBadge';
+import { ArrowIcon, CloseIcon, CrateIcon, Flow, HouseIcon, IconDisc, artIconUrl } from './icons';
 import { LockHint } from './LockHint';
 import type { StageEnv, StageParts } from './stage';
 
@@ -105,7 +106,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const leftEnd = rowEnds[0][0] < rowEnds[1][0] ? rowEnds[0] : rowEnds[1];
   const maxBuilt = context.view.rules.buildings.maxPerPlayer;
   const built = me ? me.buildings.length : 0;
-  const at = (where: 'warehouse' | 'ship') => notes.filter((n) => n.at === where).map((n) => <div key={n.text}>{withGoodIcons(n.text)}</div>);
+  const at = (where: 'warehouse' | 'ship') => notes.filter((n) => n.at === where).map((n) => <NoteBadge key={n.text} chips={n.chips} text={n.text} />);
   const slot = deckSlot(home, 0, 1);
 
   const pins: TablePin[] = [
@@ -166,17 +167,13 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
         </div>
       ),
     },
-    // Each stack says what it is and how many are still free to load.
+    // Each stack says how many are still free to load (the crate lids already say which good).
     ...GOODS.map(
       (g, column): TablePin => ({
         id: `stack-${g}`,
         position: islandPoint(home, stackTop(column, context.view.myStock[g] - choice.load[g])),
-        hidden: picking,
-        node: (
-          <span className={`inv-stack good-${g} ${todo.cargo && canLoad(options, choice, g) ? 'todo' : ''}`}>
-            <GoodIcon good={g} size="sm" /> {split.left[g]}
-          </span>
-        ),
+        hidden: picking || context.view.myStock[g] - choice.load[g] <= 0,
+        node: <span className={`inv-stack good-${g} ${todo.cargo && canLoad(options, choice, g) ? 'todo' : ''}`}>{split.left[g]}</span>,
       }),
     ),
     {
@@ -185,8 +182,16 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       hidden: picking,
       node: (
         <div className="inv-note side-left">
-          <b>倉庫</b>
-          {!isHintSeen('load-cargo') && <span className="inv-hint">點貨箱裝上船</span>}
+          <span className="note-title" title="倉庫">
+            <CrateIcon />
+          </span>
+          {!isHintSeen('load-cargo') && (
+            <span className="note-hint" title="點貨箱裝上船" aria-label="點貨箱裝上船">
+              <CrateIcon />
+              <ArrowIcon />
+              <IconDisc src={artIconUrl('ship-solo')} />
+            </span>
+          )}
           {at('warehouse')}
         </div>
       ),
@@ -197,8 +202,17 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       hidden: picking,
       node: (
         <div className="inv-note side-right">
-          <b>船</b> {summary.loaded}/{summary.capacity}
-          {summary.loaded > 0 && !isHintSeen('unload-cargo') && <span className="inv-hint">點船上的貨卸下</span>}
+          <span className="note-title" title="船">
+            <IconDisc src={artIconUrl('ship-solo')} />
+            {summary.loaded}/{summary.capacity}
+          </span>
+          {summary.loaded > 0 && !isHintSeen('unload-cargo') && (
+            <span className="note-hint" title="點船上的貨卸下" aria-label="點船上的貨卸下">
+              <IconDisc src={artIconUrl('ship-solo')} />
+              <ArrowIcon />
+              <CrateIcon />
+            </span>
+          )}
           {at('ship')}
         </div>
       ),

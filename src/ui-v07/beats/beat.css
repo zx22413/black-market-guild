@@ -3012,3 +3012,61 @@
   align-items: center;
   gap: 2px;
 }
+
+/* Warehouse and ship notes as icons (NoteBadge.tsx): a row of small chips, the sentence on hover or tap. */
+.inv-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  max-width: 260px;
+}
+.note-title,
+.note-hint,
+.note-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+}
+.note-hint {
+  color: #6b5537;
+}
+.note-badge {
+  position: relative;
+  display: inline-flex;
+}
+.note-badge > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 2px 8px;
+  border: 1px solid #d9a95a;
+  border-radius: 999px;
+  background: #fff3d1;
+  color: #8a4b12;
+  font: inherit;
+  cursor: help;
+  pointer-events: auto;
+}
+.note-tip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 10;
+  width: max-content;
+  max-width: 240px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #2b2116;
+  color: #f5ecd4;
+  font-size: var(--fs-note);
+  font-weight: 400;
+  line-height: 1.5;
+  white-space: normal;
+  pointer-events: none;
+}
+.inv-note div {
+  color: inherit;
+}
