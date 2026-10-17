@@ -51,6 +51,25 @@ export function HouseIcon() {
   );
 }
 
+/** Skip ahead: two triangles. */
+export function FastForwardIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+      <path d="M2.5 3.5l5 4.5-5 4.5zM8.5 3.5l5 4.5-5 4.5z" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** A circled "i": an explanation on tap or hover. */
+export function InfoIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+      <circle cx="8" cy="8" r="6" {...LINE} />
+      <path d="M8 7.2v3.6M8 5.1v.1" {...LINE} />
+    </svg>
+  );
+}
+
 /** A round dark badge holding one of the cream art icons (coin, ship, a role). */
 export function IconDisc({ src }: { readonly src: string }) {
   return (

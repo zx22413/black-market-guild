@@ -2391,3 +2391,37 @@
     max-width: calc(100vw - 16px);
   }
 }
+
+/* The bar while a round plays out (src/ui-v07/table3d/ResolveBar.tsx). */
+.stage-steps {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.stage-steps i {
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid #8a6d55;
+  border-radius: 50%;
+}
+.stage-steps i.done {
+  background: #8a6d55;
+}
+.stage-steps i.now {
+  width: 12px;
+  height: 12px;
+  border-color: #b9822a;
+  background: #e0a63c;
+}
+.inv-bar button.skip {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  padding: 0;
+}
+.bar-chips.dim {
+  opacity: 0.6;
+}
+.bar-chips .chip b {
+  font-weight: 700;
+}

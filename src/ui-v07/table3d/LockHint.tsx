@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { LockIcon } from './icons';
 
 // A small lock next to the submit button: tap or hover to read why a submit is final. Works on
@@ -6,14 +6,16 @@ import { LockIcon } from './icons';
 
 interface LockHintProps {
   readonly text: string;
+  /** What the button shows; a lock unless told otherwise (an info mark for plain explanations). */
+  readonly icon?: ReactNode;
 }
 
-export function LockHint({ text }: LockHintProps) {
+export function LockHint({ text, icon = <LockIcon /> }: LockHintProps) {
   const [open, setOpen] = useState(false);
   return (
     <span className="bar-lock-wrap" onMouseLeave={() => setOpen(false)}>
       <button type="button" className="bar-lock" aria-label={text} aria-expanded={open} onClick={() => setOpen((v) => !v)} onMouseEnter={() => setOpen(true)}>
-        <LockIcon />
+        {icon}
       </button>
       {open && (
         <span className="bar-lock-tip" role="tooltip">

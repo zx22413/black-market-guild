@@ -16,7 +16,9 @@ import type { TablePin } from '../scene/TableCanvas';
 import { Flights, placePoint, type PlaceContext } from './Flights';
 import { MarketCard } from './MarketCard';
 import { arrowPoint, revealArrows, revealGroups, type RoleArrow } from './revealModel';
-import { Flow } from './icons';
+import { Flow, IconDisc, InfoIcon, artIconUrl } from './icons';
+import { LockHint } from './LockHint';
+import { RevealChips, SkipButton, StageSteps } from './ResolveBar';
 import { RoleArrows } from './RoleArrows';
 import { RoleBadges } from './RoleBadges';
 import { roleKey, roleResults } from './roleResults';
@@ -298,45 +300,54 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
 
   const current = groups[Math.max(0, groupsShown - 1)];
   const allRevealed = groupsShown >= groups.length;
-  const skip = (label: string, action: () => void, primary = false) => (
-    <button type="button" className={primary ? 'primary' : ''} onClick={action}>
+  const go = (label: string, action: () => void) => (
+    <button type="button" className="primary" onClick={action}>
       {label}
     </button>
   );
-  const bar =
-    stage === 'event' ? (
-      <>
-        <span>航海事件翻開了。</span>
-        {skip('繼續', () => setStage('reveal'), true)}
-      </>
-    ) : stage === 'reveal' ? (
-      <>
-        <span>
-          {groups.length === 0 ? '這回合沒有人部署角色。' : allRevealed ? `角色全部揭露：${groups.map((g) => `${ROLE_LABELS[g.role]}${g.deployments.length > 1 ? `×${g.deployments.length}` : ''}`).join('、')}` : `角色揭露：${current ? ROLE_LABELS[current.role] : ''}（${groupsShown}/${groups.length}）`}
-        </span>
-        {allRevealed ? skip(beats.length > 0 ? '開始航程' : '到黑市', () => setStage(beats.length > 0 ? 'voyage' : 'market'), true) : skip('全部揭露', () => setGroupsShown(groups.length))}
-      </>
-    ) : stage === 'voyage' ? (
-      <>
-        <span>
-          航程 {voyageIndex + 1}/{beats.length}：{beat ? (beat.owner === viewer ? '你的船' : `${nameOf(beat.owner)}的船`) : ''}
-          {beat && !mine(beat) && <small>（和你無關，快速帶過）</small>}
-        </span>
-        {skip('跳過航程', () => setStage('market'))}
-      </>
-    ) : stage === 'market' ? (
-      <>
-        <span>黑市成交：到港量和需求比，決定新價格；這回合的貨都用新價格賣（§7.3）。</span>
-        {skip('跳過', () => setStage('settle'))}
-      </>
-    ) : stage === 'settle' ? (
-      <>
-        <span>結帳 {flightsShown}/{flights.length}{flying ? `：${flying.label}` : ''}</span>
-        {skip(viewer === null ? '跳過結帳' : '跳到帳單', () => (viewer === null ? finish() : setStage('receipt')))}
-      </>
-    ) : (
-      <span>本回合帳單</span>
-    );
+  const owner = beat ? (beat.owner === viewer ? '你' : nameOf(beat.owner)) : '';
+  const bar = (
+    <>
+      <StageSteps stage={stage ?? 'event'} />
+      {stage === 'event' ? (
+        go('繼續', () => setStage('reveal'))
+      ) : stage === 'reveal' ? (
+        <>
+          {groups.length === 0 ? <span className="chip muted">沒有人部署角色</span> : <RevealChips groups={groups} shown={groupsShown} />}
+          {allRevealed ? go(beats.length > 0 ? '開始航程' : '繼續', () => setStage(beats.length > 0 ? 'voyage' : 'market')) : <SkipButton label="全部揭露" onClick={() => setGroupsShown(groups.length)} />}
+        </>
+      ) : stage === 'voyage' ? (
+        <>
+          <span className={`bar-chips ${beat && !mine(beat) ? 'dim' : ''}`} title={beat && !mine(beat) ? '和你無關，快速帶過' : undefined}>
+            <span className="chip">
+              <i className="seat-dot" style={{ background: beat ? colorOf(beat.owner) : '#888' }} />
+              {owner}
+            </span>
+            <span className="chip">
+              {voyageIndex + 1}/{beats.length}
+            </span>
+          </span>
+          <SkipButton label="跳過航程" onClick={() => setStage('market')} />
+        </>
+      ) : stage === 'market' ? (
+        <>
+          <LockHint icon={<InfoIcon />} text="到港量和需求比較，決定新價格；這回合的貨都用新價格賣。" />
+          <SkipButton label="跳過" onClick={() => setStage('settle')} />
+        </>
+      ) : stage === 'settle' ? (
+        <>
+          <span className="bar-chips">
+            <span className="chip">
+              <IconDisc src={artIconUrl('coin')} />
+              {flightsShown}/{flights.length}
+            </span>
+            {flying && <span className="chip">{flying.label}</span>}
+          </span>
+          <SkipButton label={viewer === null ? '跳過結帳' : '跳到帳單'} onClick={() => (viewer === null ? finish() : setStage('receipt'))} />
+        </>
+      ) : null}
+    </>
+  );
 
   const receipt = round !== null && viewer !== null ? buildReceipt(events, round, viewer) : { lines: [], net: 0 };
   const revealedRows = rows.slice(0, rowsShown);
