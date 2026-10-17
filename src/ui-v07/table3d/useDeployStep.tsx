@@ -7,9 +7,10 @@ import {
   betsFor,
   brokerAims,
   deployActionFor,
-  deployLabel,
   deployOptions,
+  betLabel,
   deployTodo,
+  needsTarget,
   peeksFor,
   pickRole,
   roleCards,
@@ -20,8 +21,11 @@ import {
 import { ReminderDialog } from '../table/ReminderDialog';
 import { isReminderSkipped, setReminderSkipped } from '../table/reminderSettings';
 import { roleDetail } from '../table/roleText';
+import { DeployChips } from './DeployChips';
 import { LockHint } from './LockHint';
 import { roleIconUrl } from './RoleBadges';
+import { DashedArrows } from './RoleArrows';
+import { pickArrows } from './revealModel';
 import { shipName, type StageEnv, type StageParts } from './stage';
 
 // Role deployment on the whole table (docs/ui/v07-event-presentation.md §1.4): pick a role card
@@ -47,7 +51,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   }, [requestId]);
 
   if (!active || !context) return null;
-  const { board, angles, laneOf, viewer, nameOf, submit: submitAction } = active;
+  const { board, seats, angles, laneOf, viewer, nameOf, submit: submitAction } = active;
   const cards = roleCards(context, options);
   const aims = brokerAims(options, choice.bet);
   const todo = deployTodo(choice, aims);
@@ -79,12 +83,15 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     } else send();
   };
 
-  // A tag over every ship at sea: whose it is; while choosing a target, the ones you may pick.
+  // A round button over every ship: a "+" on the ones you may pick (the owner's color on its rim),
+  // the role's badge on the one picked (click it to take the role back), a faint "+" for the
+  // lighthouse's extra look. The ship's name shows on hover and is read out for screen readers.
   const pins: TablePin[] = board.ships.map((ship) => {
     const peekable = choice.target !== null && peeks.has(ship.id);
     const pickable = targets.has(ship.id) && !peekable;
     const chosen = choice.target === ship.id;
     const label = shipName(board, ship.id, viewer, nameOf);
+    const rim = seats[laneOf(ship.owner)]?.color ?? '#e0a63c';
     return {
       id: `ship-${ship.id}`,
       position: besideShip(angles[laneOf(ship.owner)]!, 'docked', 7, TAG_HEIGHT),
@@ -92,11 +99,13 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
         pickable || peekable ? (
           <button
             type="button"
-            title={peekable ? '燈塔島：可多看一艘船，可不選' : undefined}
             className={`dep-ship ${chosen || choice.peek === ship.id ? 'on' : ''} ${(todo.target && pickable) ? 'todo' : ''} ${peekable ? 'peek' : ''}`}
+            style={{ borderColor: peekable ? undefined : rim }}
+            data-label={peekable ? `多看 ${label}（可不選）` : chosen ? `${label}・點一下取消` : `派到${label}`}
+            aria-label={peekable ? `多看 ${label}` : `派到${label}`}
             onClick={() => clickShip(ship.id)}
           >
-            {peekable ? `多看 ${label}` : chosen ? `${ROLE_LABELS[choice.role as keyof typeof ROLE_LABELS]} → ${label}` : `派到${label}`}
+            {chosen && choice.role !== null && choice.role !== 'none' ? <img src={roleIconUrl(choice.role)} alt="" /> : '＋'}
           </button>
         ) : (
           <span className="dep-ship-name">{label}</span>
@@ -168,8 +177,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   );
 
   const incomplete = choice.role !== null && !action;
-  const barText =
-    choice.role === null ? '選一個角色' : choice.role === 'none' ? '不部署' : deployLabel(choice, ownerOf, nameOf, viewer, aims).replace(/^部署：/, '');
+  const targetOwner = choice.target === null ? undefined : ownerOf(choice.target);
   return {
     pins,
     camera: null,
@@ -177,7 +185,13 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     onSelectShip: clickShip,
     dim: true,
     ...(choice.role === 'broker' ? { bets: { offered: betsFor(options), chosen: choice.bet, todo: todo.bet, onBet: (bet) => setChoice({ ...choice, bet, target: choice.target !== null && targetsFor(options, 'broker', bet).includes(choice.target) ? choice.target : null }) } } : {}),
-    scene: null,
+    scene:
+      choice.role !== null && choice.role !== 'none' ? (
+        <DashedArrows
+          arrows={pickArrows(viewer, { role: choice.role, target: choice.target, peek: choice.peek, bet: choice.bet }, angles, laneOf, ownerOf)}
+          color={seats[laneOf(viewer)]?.color ?? '#e0a63c'}
+        />
+      ) : null,
     dock: (
       <>
         {strip}
@@ -187,7 +201,12 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     bar: (
       <>
         <span className="bar-chips">
-          <span className="chip">{barText}</span>
+          <DeployChips
+            role={choice.role}
+            bet={choice.bet ? betLabel(choice.bet) : null}
+            needsShip={needsTarget(choice.role, aims)}
+            target={targetOwner === undefined ? null : { name: nameOf(targetOwner), color: seats[laneOf(targetOwner)]?.color ?? '#999' }}
+          />
         </span>
         <button type="button" className="primary" disabled={incomplete} onClick={submit}>
           提交

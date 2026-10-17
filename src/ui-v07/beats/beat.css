@@ -877,6 +877,7 @@
 }
 .bar-chips {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 6px;
   justify-content: center;
@@ -2263,5 +2264,130 @@
   }
   .rank-rail {
     width: min(250px, calc(100vw - 16px));
+  }
+}
+
+/* Drawn icons and chips in place of text arrows (src/ui-v07/table3d/icons.tsx, DeployChips.tsx). */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.chip.muted {
+  color: #6b5537;
+}
+.bar-chips .chip.empty {
+  min-width: 34px;
+  justify-content: center;
+  border: 1.5px dashed #b9a77d;
+  background: transparent;
+  color: #8a6d55;
+}
+.seat-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px rgb(43 33 22 / 0.35);
+}
+.chip-ic {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #2b2116;
+}
+.chip-ic img {
+  width: 15px;
+  height: 15px;
+}
+.ico-arrow {
+  flex: none;
+  vertical-align: middle;
+  opacity: 0.75;
+}
+.flow {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ico-trend {
+  vertical-align: middle;
+}
+.ico-trend.up {
+  color: #c0392b;
+}
+.ico-trend.down {
+  color: #1f6b3a;
+}
+.bar-lock svg {
+  display: block;
+  margin: auto;
+}
+.beat-trail .ico-arrow {
+  margin: 0 4px;
+}
+
+/* Role target on a ship: a round button, "+" until picked, then the role's badge. */
+.beat3d-pin button.dep-ship {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 3px solid #e0a63c;
+  border-radius: 50%;
+  font-size: var(--fs-title);
+  line-height: 1;
+}
+.beat3d-pin button.dep-ship.on {
+  background: #2b2116;
+  border-color: #e0a63c;
+  box-shadow: 0 0 0 3px rgb(224 166 60 / 0.55);
+}
+.beat3d-pin button.dep-ship img {
+  width: 20px;
+  height: 20px;
+}
+.beat3d-pin button.dep-ship.peek {
+  width: 24px;
+  height: 24px;
+  border: 1.5px dashed #b9a77d;
+  font-size: var(--fs-body);
+  font-weight: 400;
+  opacity: 0.8;
+}
+.beat3d-pin button.dep-ship::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #2b2116;
+  color: #f5ecd4;
+  font-size: var(--fs-note);
+  font-weight: 400;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%);
+  transition: opacity 120ms;
+}
+.beat3d-pin button.dep-ship:hover::after,
+.beat3d-pin button.dep-ship:focus-visible::after {
+  opacity: 1;
+}
+/* Leave the corner buttons their room: the market strip wraps to two rows instead of running under them. */
+@media (max-width: 1100px) {
+  .inv-market {
+    max-width: calc(100vw - 420px);
+  }
+}
+@media (max-width: 640px) {
+  .inv-market {
+    max-width: calc(100vw - 16px);
   }
 }

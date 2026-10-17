@@ -1,6 +1,7 @@
 import type React from 'react';
 import { RULES_V07 } from '../../v07/game';
 import { GOOD_LABELS, stepLabel } from '../labels';
+import { Flow, TrendIcon } from './icons';
 import type { MarketRow } from './settlementModel';
 
 // The market beat (docs/ui/v07-event-presentation.md §1.7), pinned at the harbor: one good per
@@ -53,7 +54,7 @@ export function MarketCard({ rows, shown }: { readonly rows: readonly MarketRow[
                   <PriceScale before={r.before} after={r.after} />
                 </td>
                 <td className={`mk-price ${move > 0 ? 'up' : move < 0 ? 'down' : ''}`} style={{ animationDelay: `${START_MS + Math.abs(move) * STEP_MS}ms` }}>
-                  {stepLabel(r.before)} → <b>{stepLabel(r.after)} G</b> {move > 0 ? '▲' : move < 0 ? '▼' : '＝'}
+                  <Flow from={stepLabel(r.before)} to={<b>{stepLabel(r.after)} G</b>} /> <TrendIcon dir={move > 0 ? 1 : move < 0 ? -1 : 0} />
                 </td>
               </tr>
             );

@@ -16,6 +16,7 @@ import type { TablePin } from '../scene/TableCanvas';
 import { Flights, placePoint, type PlaceContext } from './Flights';
 import { MarketCard } from './MarketCard';
 import { arrowPoint, revealArrows, revealGroups, type RoleArrow } from './revealModel';
+import { Flow } from './icons';
 import { RoleArrows } from './RoleArrows';
 import { RoleBadges } from './RoleBadges';
 import { roleKey, roleResults } from './roleResults';
@@ -229,7 +230,11 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
       intelPins.push({
         id: `intel-${shipId}`,
         position: [p.x, 0, p.z + 4],
-        node: <span className="secret-chip">只有你知道：原始骰值 {k.raw ?? '?'}{k.rerolled !== null ? ` → 重擲後 ${k.rerolled}` : ''}</span>,
+        node: (
+          <span className="secret-chip" title="只有你知道">
+            {k.rerolled !== null ? <Flow from={k.raw ?? '?'} to={<b>{k.rerolled}</b>} /> : `原始骰值 ${k.raw ?? '?'}`}
+          </span>
+        ),
       });
     }
   }

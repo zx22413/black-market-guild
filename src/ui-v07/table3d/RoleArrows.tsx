@@ -56,3 +56,63 @@ export function RoleArrows({ arrows, colorOf, dimmed }: { readonly arrows: reado
     </>
   );
 }
+
+const DOTS = 16;
+
+/** A dashed arrow for a pick not yet submitted: dots along the curve that appear one by one. */
+function DashedArrow({ arrow, color }: { readonly arrow: RoleArrow; readonly color: string }) {
+  const curve = useMemo(() => new QuadraticBezierCurve3(new Vector3(...arrow.from), new Vector3(...arrow.control), new Vector3(...arrow.to)), [arrow]);
+  // Every other dot is drawn, which reads as a dashed line; the tip is left to the arrowhead.
+  const points = useMemo(() => Array.from({ length: DOTS }, (_, i) => curve.getPoint((i + 0.5) / (DOTS + 1))), [curve]);
+  const dots = useRef<(Mesh | null)[]>([]);
+  const head = useRef<Mesh>(null);
+  const born = useRef<number | null>(null);
+  const radius = arrow.faint ? 0.35 : 0.8;
+  const opacity = arrow.faint ? 0.4 : 0.95;
+
+  useFrame(({ clock }) => {
+    born.current ??= clock.elapsedTime;
+    const k = Math.min(1, (clock.elapsedTime - born.current) / GROW_SECONDS);
+    dots.current.forEach((m, i) => {
+      if (m) m.visible = i % 2 === 0 && (i + 1) / DOTS <= k;
+    });
+    const h = head.current;
+    if (h) {
+      h.visible = !arrow.faint && k >= 1;
+      h.position.copy(curve.getPoint(1));
+      h.quaternion.copy(new Quaternion().setFromUnitVectors(UP, curve.getTangent(1).normalize()));
+    }
+  });
+
+  return (
+    <group>
+      {points.map((p, i) => (
+        <mesh
+          key={i}
+          ref={(m) => {
+            dots.current[i] = m;
+          }}
+          position={p}
+          visible={false}
+        >
+          <sphereGeometry args={[radius, 8, 8]} />
+          <meshBasicMaterial color={color} transparent opacity={opacity} depthWrite={false} />
+        </mesh>
+      ))}
+      <mesh ref={head} visible={false}>
+        <coneGeometry args={[radius * 3, radius * 7, 10]} />
+        <meshBasicMaterial color={color} transparent opacity={opacity} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+}
+
+export function DashedArrows({ arrows, color }: { readonly arrows: readonly RoleArrow[]; readonly color: string }) {
+  return (
+    <>
+      {arrows.map((a) => (
+        <DashedArrow key={`${a.key}-${a.to.join()}`} arrow={a} color={color} />
+      ))}
+    </>
+  );
+}

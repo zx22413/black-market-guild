@@ -25,6 +25,7 @@ import {
 } from '../table/investChoice';
 import { ReminderDialog } from '../table/ReminderDialog';
 import { isHintSeen, isReminderSkipped, markHintSeen, setReminderSkipped } from '../table/reminderSettings';
+import { Flow, HouseIcon, IconDisc, artIconUrl } from './icons';
 import { LockHint } from './LockHint';
 import type { StageEnv, StageParts } from './stage';
 
@@ -212,13 +213,14 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       <>
         <span className="bar-chips">
           <span className="chip" title="建築">
-            🏗 {choice.build ? `${BUILDING_LABELS[choice.build]} −${summary.buildCash}` : '不蓋'}
+            <HouseIcon /> {choice.build ? `${BUILDING_LABELS[choice.build]} −${summary.buildCash}` : '不蓋'}
           </span>
           <span className="chip" title="出航">
-            ⛵ {summary.sails ? `${summary.loaded}/${summary.capacity} −${summary.shipCost}` : '不出航'}
+            <IconDisc src={artIconUrl('ship-solo')} /> {summary.sails ? `${summary.loaded}/${summary.capacity} −${summary.shipCost}` : '不出航'}
           </span>
           <span className="chip cash" title="現金（G）">
-            💰 {summary.cashBefore} → <b>{summary.cashAfter}</b>
+            <IconDisc src={artIconUrl('coin')} />
+            <Flow from={summary.cashBefore} to={<b>{summary.cashAfter}</b>} />
           </span>
         </span>
         <button type="button" className="primary" disabled={!action} onClick={submit}>

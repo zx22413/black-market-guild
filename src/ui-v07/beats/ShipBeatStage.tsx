@@ -1,3 +1,4 @@
+import { ArrowIcon } from '../table3d/icons';
 import { GOODS, type PlayerId } from '../../v07/game';
 import { CASH_REASON_LABELS, GOOD_LABELS, ISLAND_LABELS, ROLE_LABELS, VOYAGE_EVENT_LABELS } from '../labels';
 import type { BeatView } from './beatTimeline';
@@ -131,7 +132,7 @@ export function BeatCard({ beat, playback, names, viewer, onDone }: BeatCardProp
         起始 {beat.start}
         {beat.steps.slice(0, view.stepsShown).map((s, i) => (
           <span key={i}>
-            {' → '}
+            <ArrowIcon />
             {stepTitle(s, names).name} {signed(s.delta)}
           </span>
         ))}
@@ -185,7 +186,7 @@ export function BeatCard({ beat, playback, names, viewer, onDone }: BeatCardProp
           跳到結果
         </button>
         <button type="button" className="primary" onClick={stop(() => (view.done ? onDone?.() : advance()))}>
-          {view.done ? '繼續' : '下一步 ▸'}
+          {view.done ? '繼續' : '下一步'}
         </button>
       </footer>
     </div>
