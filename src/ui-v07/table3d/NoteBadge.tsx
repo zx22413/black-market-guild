@@ -36,7 +36,7 @@ function Chip({ chip }: { readonly chip: NoteChip }) {
   }
 }
 
-export function NoteBadge({ chips, text }: { readonly chips: readonly NoteChip[]; readonly text: string }) {
+export function NoteBadge({ chips, text, label }: { readonly chips: readonly NoteChip[]; readonly text: string; readonly label: string }) {
   const [open, setOpen] = useState(false);
   return (
     <span className="note-badge" onMouseLeave={() => setOpen(false)}>
@@ -44,6 +44,7 @@ export function NoteBadge({ chips, text }: { readonly chips: readonly NoteChip[]
         {chips.map((chip, i) => (
           <Chip key={i} chip={chip} />
         ))}
+        <span className="note-label">{label}</span>
       </button>
       {open && (
         <span className="note-tip" role="tooltip">

@@ -3074,3 +3074,11 @@
 .beat3d-pin > .inv-stack {
   transform: translate(-50%, 6px);
 }
+.note-label {
+  font-size: var(--fs-note);
+  font-weight: 700;
+}
+.note-title,
+.note-hint {
+  font-size: var(--fs-note);
+}

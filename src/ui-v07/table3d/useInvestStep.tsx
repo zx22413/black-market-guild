@@ -106,7 +106,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const leftEnd = rowEnds[0][0] < rowEnds[1][0] ? rowEnds[0] : rowEnds[1];
   const maxBuilt = context.view.rules.buildings.maxPerPlayer;
   const built = me ? me.buildings.length : 0;
-  const at = (where: 'warehouse' | 'ship') => notes.filter((n) => n.at === where).map((n) => <NoteBadge key={n.text} chips={n.chips} text={n.text} />);
+  const at = (where: 'warehouse' | 'ship') => notes.filter((n) => n.at === where).map((n) => <NoteBadge key={n.text} chips={n.chips} text={n.text} label={n.label} />);
   const slot = deckSlot(home, 0, 1);
 
   const pins: TablePin[] = [
@@ -185,12 +185,14 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
         <div className="inv-note side-left">
           <span className="note-title" title="倉庫">
             <CrateIcon />
+            倉庫
           </span>
           {!isHintSeen('load-cargo') && (
             <span className="note-hint" title="點貨箱裝上船" aria-label="點貨箱裝上船">
               <CrateIcon />
               <ArrowIcon />
               <IconDisc src={artIconUrl('ship-solo')} />
+              點箱裝船
             </span>
           )}
           {at('warehouse')}
@@ -205,13 +207,14 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
         <div className="inv-note side-right">
           <span className="note-title" title="船">
             <IconDisc src={artIconUrl('ship-solo')} />
-            {summary.loaded}/{summary.capacity}
+            裝貨 {summary.loaded}/{summary.capacity}
           </span>
           {summary.loaded > 0 && !isHintSeen('unload-cargo') && (
             <span className="note-hint" title="點船上的貨卸下" aria-label="點船上的貨卸下">
               <IconDisc src={artIconUrl('ship-solo')} />
               <ArrowIcon />
               <CrateIcon />
+              點貨卸下
             </span>
           )}
           {at('ship')}

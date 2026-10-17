@@ -135,6 +135,8 @@ export type NoteChip =
 export interface InvestNote {
   readonly at: 'warehouse' | 'ship';
   readonly text: string;
+  /** A few characters said out loud next to the icons. */
+  readonly label: string;
   readonly chips: readonly NoteChip[];
 }
 
@@ -148,20 +150,20 @@ export function investNotes(context: DecisionContext, choice: InvestChoice): Inv
     const used = usedGoods.map((g) => `${split.forBuild[g]} ${GOOD_LABELS[g]}`);
     // §8: goods used for a building cannot be loaded.
     if (used.length > 0) {
-      notes.push({ at: 'warehouse', text: `蓋${BUILDING_LABELS[choice.build]}會用掉 ${used.join('、')}，不能再裝船`, chips: [{ kind: 'house' }, ...usedGoods.map((good): NoteChip => ({ kind: 'good', good, count: split.forBuild[good] }))] });
+      notes.push({ at: 'warehouse', text: `蓋${BUILDING_LABELS[choice.build]}會用掉 ${used.join('、')}，不能再裝船`, label: '建築用掉', chips: [{ kind: 'house' }, ...usedGoods.map((good): NoteChip => ({ kind: 'good', good, count: split.forBuild[good] }))] });
     }
     // §8: a shipyard built this round raises the capacity at once.
-    if (choice.build === 'shipyard') notes.push({ at: 'ship', text: '造船廠當回合生效：可裝貨量 +1', chips: [{ kind: 'ship', text: '+1' }] });
+    if (choice.build === 'shipyard') notes.push({ at: 'ship', text: '造船廠當回合生效：可裝貨量 +1', label: '裝貨量', chips: [{ kind: 'ship', text: '+1' }] });
   }
   // §9.5: another player's guard on an arriving ship confiscates its arms.
-  if (choice.load.arms > 0) notes.push({ at: 'ship', text: '軍火抵達時，若有別人的護衛守著會被沒收', chips: [{ kind: 'good', good: 'arms' }, { kind: 'role', role: 'guard' }, { kind: 'alert' }] });
+  if (choice.load.arms > 0) notes.push({ at: 'ship', text: '軍火抵達時，若有別人的護衛守著會被沒收', label: '可能被沒收', chips: [{ kind: 'good', good: 'arms' }, { kind: 'role', role: 'guard' }, { kind: 'alert' }] });
   // §9.6: sinking a ship that carries the wanted player's goods pays the pirates more.
   if (unitsOf(choice.load) > 0 && view.wanted.includes(view.playerId)) {
-    notes.push({ at: 'ship', text: '你被通緝：這艘船被擊沉時，海盜的戰利品 +100 G', chips: [{ kind: 'wanted' }, { kind: 'role', role: 'pirate' }, { kind: 'coin', text: `+${view.rules.wanted.lootBonus}` }] });
+    notes.push({ at: 'ship', text: '你被通緝：這艘船被擊沉時，海盜的戰利品 +100 G', label: '被通緝', chips: [{ kind: 'wanted' }, { kind: 'role', role: 'pirate' }, { kind: 'coin', text: `+${view.rules.wanted.lootBonus}` }] });
   }
   // §6.3: spice left in the warehouse spoils at the end of the round (Spice Isles excepted, §11.2).
   if (split.left.spice > 0 && traitOf(view.rules, player.island).keepsSpice === 0) {
-    notes.push({ at: 'warehouse', text: `${split.left.spice} 香料沒裝，回合結束會壞掉`, chips: [{ kind: 'good', good: 'spice', count: split.left.spice }, { kind: 'alert' }] });
+    notes.push({ at: 'warehouse', text: `${split.left.spice} 香料沒裝，回合結束會壞掉`, label: '會壞掉', chips: [{ kind: 'good', good: 'spice', count: split.left.spice }, { kind: 'alert' }] });
   }
   return notes;
 }
