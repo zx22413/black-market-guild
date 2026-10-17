@@ -2946,3 +2946,11 @@
 .beat3d-pin .wanted-mark {
   pointer-events: auto;
 }
+/* A row's tooltip (wanted mark, building) must open above the rows below it. */
+.rank-rail li {
+  position: relative;
+}
+.rank-rail li:hover,
+.rank-rail li:focus-within {
+  z-index: 20;
+}
