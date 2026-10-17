@@ -80,7 +80,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   const submit = () => {
     if (choice.role === null) {
       if (isReminderSkipped('deploy-unfinished')) send(noDeploy);
-      else setReminding(['你還沒選角色：這回合不部署。']);
+      else setReminding(['還沒選角色：會不部署']);
     } else send();
   };
 

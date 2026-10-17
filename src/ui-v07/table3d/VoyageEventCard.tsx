@@ -10,18 +10,17 @@ export const EVENT_CARD_MS = 3000;
 
 const iconUrl = (event: VoyageEventId): string => `${import.meta.env.BASE_URL}art/icons/voyage-${event}.svg`;
 
-export function VoyageEventCard({ event, round, onDone }: { readonly event: VoyageEventId; readonly round: number; readonly onDone: () => void }) {
+export function VoyageEventCard({ event, onDone }: { readonly event: VoyageEventId; readonly onDone: () => void }) {
   const title = VOYAGE_EVENT_LABELS[event];
   return (
     <div className="event-card-veil" style={{ animationDuration: `${EVENT_CARD_MS}ms` }} role="dialog" aria-label={`航海事件：${title}`} onClick={onDone}>
       <div className="event-card" style={{ animationDuration: `${EVENT_CARD_MS}ms` }} onAnimationEnd={onDone}>
-        <small className="event-card-kind">第 {round} 回合・航海事件</small>
+        <small className="event-card-kind">航海事件</small>
         <div className="event-card-emblem">
           <img src={iconUrl(event)} alt="" />
         </div>
         <strong>{title}</strong>
         <p>{VOYAGE_EVENT_TEXT[event]}</p>
-        <small className="event-card-hint">點一下繼續</small>
       </div>
     </div>
   );

@@ -4,6 +4,9 @@ import type { Action, PlayerId, ShipId } from '../../v07/game';
 import { SINK_MAX } from '../beats/ShipBeatStage';
 import { legalOf } from '../table/forms';
 import type { Board } from '../session/board';
+import { IconDisc, InfoIcon, artIconUrl } from './icons';
+import { LockHint } from './LockHint';
+import { roleIconUrl } from './RoleBadges';
 import { shipName } from './stage';
 
 // The intel merchant's private moment (§9.4, docs/ui/v07-event-presentation.md §1.4): a full-screen
@@ -70,7 +73,7 @@ function RollingDie({ raw, result }: { readonly raw: number; readonly result: nu
 
 export function RerollCard({ context, board, viewer, nameOf, onSubmit, rerolled, onClose }: RerollCardProps) {
   const options = legalOf(context, 'intel-reroll');
-  const name = (id: string) => shipName(board, id, viewer, nameOf);
+  const name = (id: string) => shipName(board, id, viewer, nameOf).replace(/的船$/, '');
   const [landed, setLanded] = useState(false);
   useEffect(() => {
     if (rerolled?.value == null) return;
@@ -83,17 +86,26 @@ export function RerollCard({ context, board, viewer, nameOf, onSubmit, rerolled,
       <div className="beat-card reroll">
         <header className="beat-head">
           <span>只有你看得到</span>
-          <strong>{rerolled ? `重擲${name(rerolled.shipId)}` : '情報商人：要重擲嗎？'}</strong>
+          <strong className="reroll-title">
+            <IconDisc src={roleIconUrl('intel')} />
+            {rerolled ? '重擲' : '重擲？'}
+          </strong>
         </header>
         <div className="reroll-dice">
           {context.view.intel
             .filter((k) => !rerolled || k.shipId === rerolled.shipId)
             .map((k) => (
               <div key={k.shipId} className="reroll-ship">
-                <small>
+                <span className="chip">
+                  <IconDisc src={artIconUrl('ship-solo')} />
                   {name(k.shipId)}
-                  {rerolled ? `：原始 ${k.rawRoll}` : '的原始骰值'}
-                </small>
+                  {rerolled && (
+                    <span className="chip-raw" title="原始骰值">
+                      <IconDisc src={artIconUrl('dice')} />
+                      {k.rawRoll}
+                    </span>
+                  )}
+                </span>
                 {rerolled ? (
                   <RollingDie raw={k.rawRoll} result={rerolled.value} />
                 ) : (
@@ -105,18 +117,27 @@ export function RerollCard({ context, board, viewer, nameOf, onSubmit, rerolled,
               </div>
             ))}
         </div>
-        {!rerolled && (
-          <p className="reroll-hint">1～3 沉沒、4～6 抵達，之後還會加上護衛、海盜、航海事件與島嶼的修正。重擲後必須接受新結果；現在還不知道航海事件和別人的角色。</p>
-        )}
-        {rerolled && (
-          <p className="reroll-hint">{landed ? `新的骰值是 ${rerolled.value}，必須接受。之後還會加上其他修正。` : '擲骰中…'}</p>
-        )}
         <footer className="beat-foot">
+          <LockHint
+            icon={<InfoIcon />}
+            text={
+              rerolled
+                ? '重擲後必須接受新結果。之後還會加上護衛、海盜、航海事件與島嶼的修正。'
+                : '1～3 沉沒、4～6 抵達，之後還會加上護衛、海盜、航海事件與島嶼的修正。重擲後必須接受新結果；現在還不知道航海事件和別人的角色。'
+            }
+          />
           {!rerolled &&
             options.map((a) => (
               // Same look for every choice: the card should not suggest an answer.
               <button key={a.rerollShipId ?? 'none'} type="button" onClick={() => onSubmit(a)}>
-                {a.rerollShipId === null ? '不重擲' : `重擲${name(a.rerollShipId)}`}
+                {a.rerollShipId === null ? (
+                  '不重擲'
+                ) : (
+                  <span className="reroll-pick">
+                    <IconDisc src={artIconUrl('reroll')} />
+                    {name(a.rerollShipId)}
+                  </span>
+                )}
               </button>
             ))}
           {rerolled && (

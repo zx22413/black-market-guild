@@ -1916,11 +1916,6 @@
   font-size: var(--fs-title);
   line-height: 1.5;
 }
-.event-card-hint {
-  font-size: var(--fs-note);
-  color: #7a5a3a;
-  opacity: 0.7;
-}
 @keyframes event-veil {
   0% { opacity: 0; }
   8%, 85% { opacity: 1; }
@@ -2663,4 +2658,59 @@
     color: #6b5537;
     transform: none;
   }
+}
+
+/* Intel reroll card, reminder and event card, trimmed. */
+.reroll-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.reroll-ship .chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #e8dcb9;
+  font-size: var(--fs-body);
+}
+.chip-raw {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  color: #6b5537;
+}
+.reroll-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.beat-foot .bar-lock-wrap {
+  margin-right: auto;
+}
+.beat-foot .bar-lock {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #6b5537;
+}
+.reminder-lines {
+  list-style: none;
+  padding-left: 0;
+}
+.reminder-lines li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.reminder-lines li::before {
+  content: '';
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e0a63c;
 }

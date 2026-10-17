@@ -361,7 +361,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     overlay: (
       <>
         {weather && stage !== 'event' && stage !== 'receipt' && <VoyageEventChip event={weather} />}
-        {weather && stage === 'event' && <VoyageEventCard key={round} event={weather} round={round!} onDone={() => setStage('reveal')} />}
+        {weather && stage === 'event' && <VoyageEventCard key={round} event={weather} onDone={() => setStage('reveal')} />}
         {stage === 'receipt' && viewer !== null ? <ReceiptCard round={round!} viewer={viewer} lines={receipt.lines} net={receipt.net} onClose={finish} /> : null}
       </>
     ),

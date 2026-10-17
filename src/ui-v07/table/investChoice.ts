@@ -172,7 +172,7 @@ export function investTodo(options: readonly InvestAction[], choice: InvestChoic
 /** What the "not finished yet" reminder says before submitting; empty when there is nothing to remind. */
 export function todoReminders(todo: InvestTodo): string[] {
   return [
-    ...(todo.build ? ['你還沒選建築：這回合會不蓋建築。'] : []),
-    ...(todo.cargo ? ['你還沒裝貨：船不裝貨就不出航（也不付出航成本）。'] : []),
+    ...(todo.build ? ['還沒選建築：會不蓋'] : []),
+    ...(todo.cargo ? ['船是空的：不出航，也不付出航成本'] : []),
   ];
 }

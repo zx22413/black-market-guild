@@ -250,7 +250,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     ),
     overlay: reminding && (
       <ReminderDialog
-        title="還有沒做完的地方"
+        title="還沒做完"
         lines={reminding}
         onBack={() => setReminding(null)}
         onConfirm={(skipNext) => {
