@@ -3,6 +3,7 @@ import { GOOD_LABELS } from '../labels';
 import type { BeatSeat } from '../scene/beatStage';
 import { isFarSeat, platePosition, type TablePin } from '../scene/TableCanvas';
 import type { Board } from '../session/board';
+import { GoodChips, StatusMark, WantedMark } from './icons';
 
 /** Name plates on the sea in front of each island: cash, public warehouse, status, wanted mark (the island has its own badge). */
 export function seatPlates(
@@ -26,12 +27,12 @@ export function seatPlates(
           {s.isViewer ? '你' : s.name}
           {cashOf && <b className="plate-cash"> {cashOf(s.id)} G</b>}
           {!s.isViewer && p && (
-            <span className="inv-stock">
-              倉 {GOODS.filter((g) => p.stock[g] > 0).map((g) => `${GOOD_LABELS[g].slice(0, 1)}${p.stock[g]}`).join(' ') || '空'}
+            <span className="inv-stock" title="倉庫">
+              {GOODS.some((g) => p.stock[g] > 0) ? <GoodChips goods={GOODS.filter((g) => p.stock[g] > 0).map((g) => ({ good: g, count: p.stock[g] }))} labels={GOOD_LABELS} /> : <small>空</small>}
             </span>
           )}
-          {label && <em className={label === '已決定' ? 'done' : ''}>{label}</em>}
-          {board.wanted.includes(s.id) && <em className="wanted">緝</em>}
+          <StatusMark label={label} />
+          {board.wanted.includes(s.id) && <WantedMark />}
         </span>
       ),
     };

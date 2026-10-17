@@ -166,7 +166,16 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
             <img src={roleIconUrl(c.id)} alt="" />
           </span>
           <b>{ROLE_LABELS[c.id]}</b>
-          <span className="dep-fee">{c.fee === 0 ? '免費' : `${c.fee} G`}</span>
+          <span className="dep-fee" title={c.fee === 0 ? '免費' : `部署費 ${c.fee} G`}>
+            {c.fee === 0 ? (
+              '免費'
+            ) : (
+              <>
+                <IconDisc src={artIconUrl('coin')} />
+                {c.fee}
+              </>
+            )}
+          </span>
         </button>
       ))}
       <button

@@ -1,8 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { GOODS, type BuildingId, type PlayerId, type Rules } from '../../v07/game';
-import { BUILDING_LABELS, BUILDING_TEXT, GOOD_LABELS } from '../labels';
+import { BUILDING_LABELS, BUILDING_TEXT, GOOD_LABELS, WEALTH_RULE_TEXT } from '../labels';
 import type { BeatSeat } from '../scene/beatStage';
 import type { Board } from '../session/board';
+import { CloseIcon, InfoIcon, StatusMark, WantedMark } from './icons';
+import { LockHint } from './LockHint';
 import { standingsOf, type Standing } from './standings';
 
 // The standings that stay on screen (V0.6's guild rail): richest first, in the top-right corner
@@ -122,9 +124,9 @@ export function RankRail({ seats, board, rules, cashOf, status, rankStep }: Rank
     <aside className="rank-rail" aria-label="玩家排行">
       <header>
         <b>排行</b>
-        <small>現金＋建築半價</small>
+        <LockHint icon={<InfoIcon />} text={WEALTH_RULE_TEXT} placement="down" />
         <button type="button" onClick={() => setOpen(false)} aria-label="收起排行">
-          ✕
+          <CloseIcon />
         </button>
       </header>
       <ol>
@@ -146,8 +148,8 @@ export function RankRail({ seats, board, rules, cashOf, status, rankStep }: Rank
                 <span className="rank-no">{ranks[seat.id] ?? s.rank}</span>
                 <span className="rank-name">
                   {seat.isViewer ? '你' : seat.name}
-                  {board.wanted.includes(seat.id) && <em className="wanted">緝</em>}
-                  {note && <em className={note === '已決定' ? 'done' : ''}>{note}</em>}
+                  {board.wanted.includes(seat.id) && <WantedMark />}
+                  <StatusMark label={note} />
                 </span>
                 <b className="rank-wealth" title={`現金 ${s.cash.toLocaleString()} G ＋ 建築 ${s.buildingValue} G（半價）`}>
                   {s.wealth.toLocaleString()} G
@@ -155,7 +157,7 @@ export function RankRail({ seats, board, rules, cashOf, status, rankStep }: Rank
               </div>
               <div className="rank-have">
                 <span className="rank-buildings">
-                  {(player?.buildings ?? []).length === 0 ? <small>無建築</small> : (player?.buildings ?? []).map((b) => <BuildingMark key={b} building={b} rules={rules} />)}
+                  {(player?.buildings ?? []).length === 0 ? <small title="無建築">—</small> : (player?.buildings ?? []).map((b) => <BuildingMark key={b} building={b} rules={rules} />)}
                 </span>
                 <span className="rank-stock" title="倉庫">
                   {GOODS.filter((g) => (player?.stock[g] ?? 0) > 0).map((g) => (
@@ -164,7 +166,7 @@ export function RankRail({ seats, board, rules, cashOf, status, rankStep }: Rank
                       {player?.stock[g]}
                     </i>
                   ))}
-                  {GOODS.every((g) => (player?.stock[g] ?? 0) === 0) && <small>倉庫空</small>}
+                  {GOODS.every((g) => (player?.stock[g] ?? 0) === 0) && <small title="倉庫空">—</small>}
                 </span>
               </div>
             </li>

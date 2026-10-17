@@ -135,3 +135,49 @@ export function Flow({ from, to }: { readonly from: ReactNode; readonly to: Reac
     </span>
   );
 }
+
+/** 思考中／已決定 as a mark: three pulsing dots while thinking, a check once decided. */
+export function StatusMark({ label }: { readonly label: string }) {
+  if (label === '') return null;
+  const done = label === '已決定';
+  return (
+    <span className={`status-mark ${done ? 'done' : 'thinking'}`} title={label} role="img" aria-label={label}>
+      {done ? (
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+          <path d="M3.5 8.5l3 3 6-7" {...LINE} />
+        </svg>
+      ) : (
+        <>
+          <i />
+          <i />
+          <i />
+        </>
+      )}
+    </span>
+  );
+}
+
+/** A wanted player (§9.6): a red disc with a mark. */
+export function WantedMark() {
+  return (
+    <span className="wanted-mark" title="通緝中" role="img" aria-label="通緝中">
+      <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false">
+        <path d="M8 3.5v5.5M8 12v.1" {...LINE} strokeWidth={2.2} />
+      </svg>
+    </span>
+  );
+}
+
+/** Goods in a warehouse as small colored chips with their counts. */
+export function GoodChips({ goods, labels }: { readonly goods: readonly { readonly good: string; readonly count: number }[]; readonly labels: Readonly<Record<string, string>> }) {
+  return (
+    <>
+      {goods.map(({ good, count }) => (
+        <span key={good} className="stock-chip" title={`${labels[good]} ${count}`}>
+          <span className={`glance-good good-${good}`}>{labels[good]?.slice(0, 1)}</span>
+          {count}
+        </span>
+      ))}
+    </>
+  );
+}
