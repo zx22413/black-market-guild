@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { GOODS, type BuildingId, type PlayerId, type Rules } from '../../v07/game';
-import { BUILDING_LABELS, GOOD_LABELS } from '../labels';
+import { BUILDING_LABELS, BUILDING_TEXT, GOOD_LABELS } from '../labels';
 import type { BeatSeat } from '../scene/beatStage';
 import type { Board } from '../session/board';
 import { standingsOf, type Standing } from './standings';
@@ -36,11 +36,35 @@ interface Shown {
 
 const shownOf = (standings: readonly Standing[]): Shown => ({ order: standings.map((s) => s.id), ranks: Object.fromEntries(standings.map((s) => [s.id, s.rank])) });
 
-/** A built building: its icon on a dark disc (the icons are light), named on hover. */
-function BuildingMark({ building }: { readonly building: BuildingId }) {
+/**
+ * A built building: its icon on a dark disc. Hover (desktop) or tap it to see what the building
+ * is, what it does and what it cost; tap elsewhere to close.
+ */
+function BuildingMark({ building, rules }: { readonly building: BuildingId; readonly rules: Rules }) {
+  const [open, setOpen] = useState(false);
+  const self = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: PointerEvent) => {
+      if (!self.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, [open]);
+  const { cash, wood, iron } = rules.buildings.costs[building];
+  const materials = [wood > 0 ? `${GOOD_LABELS.wood} ${wood}` : '', iron > 0 ? `${GOOD_LABELS.iron} ${iron}` : ''].filter(Boolean).join('、');
   return (
-    <span className="rank-building" title={BUILDING_LABELS[building]} aria-label={BUILDING_LABELS[building]}>
-      <img src={`${import.meta.env.BASE_URL}art/icons/asset-${building}.svg`} alt="" />
+    <span ref={self} className={`rank-building ${open ? 'open' : ''}`}>
+      <button type="button" aria-expanded={open} aria-label={BUILDING_LABELS[building]} onClick={() => setOpen((v) => !v)}>
+        <img src={`${import.meta.env.BASE_URL}art/icons/asset-${building}.svg`} alt="" />
+      </button>
+      <span className="rank-building-tip" role="tooltip">
+        <b>{BUILDING_LABELS[building]}</b>
+        <span>{BUILDING_TEXT[building]}</span>
+        <small>
+          建造費：現金 {cash} G{materials ? `、${materials}` : ''}；終局算 {Math.floor(cash * rules.buildings.valueRatio)} G
+        </small>
+      </span>
     </span>
   );
 }
@@ -131,7 +155,7 @@ export function RankRail({ seats, board, rules, cashOf, status, rankStep }: Rank
               </div>
               <div className="rank-have">
                 <span className="rank-buildings">
-                  {(player?.buildings ?? []).length === 0 ? <small>無建築</small> : (player?.buildings ?? []).map((b) => <BuildingMark key={b} building={b} />)}
+                  {(player?.buildings ?? []).length === 0 ? <small>無建築</small> : (player?.buildings ?? []).map((b) => <BuildingMark key={b} building={b} rules={rules} />)}
                 </span>
                 <span className="rank-stock" title="倉庫">
                   {GOODS.filter((g) => (player?.stock[g] ?? 0) > 0).map((g) => (

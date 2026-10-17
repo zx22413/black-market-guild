@@ -2091,6 +2091,7 @@
   font-variant-numeric: tabular-nums;
 }
 .rank-have {
+  position: relative;
   display: flex;
   gap: 8px;
   align-items: center;
@@ -2109,16 +2110,54 @@
   color: #8a7a5d;
 }
 .rank-building {
+  display: inline-block;
+}
+.rank-building > button {
   display: grid;
   place-items: center;
   width: 22px;
   height: 22px;
+  padding: 0;
+  border: 0;
   border-radius: 50%;
   background: #2b2116;
+  cursor: help;
 }
 .rank-building img {
   width: 14px;
   height: 14px;
+}
+.rank-building-tip {
+  position: absolute;
+  left: 22px;
+  right: 6px;
+  top: calc(100% + 2px);
+  z-index: 5;
+  display: none;
+  gap: 4px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: rgb(245 236 212 / 0.98);
+  color: #2b2116;
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.35);
+}
+.rank-building-tip b {
+  font-size: 14px;
+}
+.rank-building-tip small {
+  font-size: 12px;
+  color: #8a4b12;
+}
+.rank-building:hover .rank-building-tip,
+.rank-building.open .rank-building-tip {
+  display: grid;
+}
+/* An open building tip sits above the rows below it. */
+.rank-rail li:has(.rank-building:hover),
+.rank-rail li:has(.rank-building.open) {
+  z-index: 5;
 }
 .rank-stock i {
   padding: 0 5px;
