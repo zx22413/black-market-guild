@@ -18,14 +18,14 @@ import {
   investTodo,
   loadOne,
   stockSplit,
-  submitLabel,
   todoReminders,
   unloadOne,
   withBuild,
   type InvestChoice,
 } from '../table/investChoice';
 import { ReminderDialog } from '../table/ReminderDialog';
-import { isReminderSkipped, setReminderSkipped } from '../table/reminderSettings';
+import { isHintSeen, isReminderSkipped, markHintSeen, setReminderSkipped } from '../table/reminderSettings';
+import { LockHint } from './LockHint';
 import type { StageEnv, StageParts } from './stage';
 
 // The investment on your own island (docs/ui/v07-event-presentation.md §1.3): building cards,
@@ -101,7 +101,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   // the ship note beside the ship, never on top of them.
   const rowEnds = [islandPoint(home, [warehouseLocal(0)[0] - 1.6, 0, warehouseLocal(0)[2]]), islandPoint(home, [warehouseLocal(3)[0] + 1.6, 0, warehouseLocal(3)[2]])] as const;
   const leftEnd = rowEnds[0][0] < rowEnds[1][0] ? rowEnds[0] : rowEnds[1];
-  const left = me ? context.view.rules.buildings.maxPerPlayer - me.buildings.length : 0;
+  const maxBuilt = context.view.rules.buildings.maxPerPlayer;
+  const built = me ? me.buildings.length : 0;
   const at = (where: 'warehouse' | 'ship') => notes.filter((n) => n.at === where).map((n) => <div key={n.text}>{n.text}</div>);
   const slot = deckSlot(home, 0, 1);
 
@@ -113,8 +114,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       position: [hx, ISLAND_PLATEAU, hz + PLAYER_ISLAND_RADIUS * 0.62],
       node: (
         <div className="inv-build" ref={buildArea}>
-          <button type="button" className={`${choice.build ? 'on' : ''} ${todo.build ? 'todo' : ''}`} onClick={() => setPicking((v) => !v)}>
-            {choice.build ? `預覽：${BUILDING_LABELS[choice.build]} · 換一個` : canBuildAny(options) ? `蓋建築（還能蓋 ${left} 棟）` : '這回合不能蓋建築'}
+          <button type="button" className={`${choice.build ? 'on' : ''} ${todo.build ? 'todo' : ''}`} title={canBuildAny(options) ? `已蓋 ${built} 棟，最多 ${maxBuilt} 棟` : '這回合不能蓋建築'} onClick={() => setPicking((v) => !v)}>
+            {choice.build ? `${BUILDING_LABELS[choice.build]} ↻` : canBuildAny(options) ? `＋ 建築 ${built}/${maxBuilt}` : '不能蓋'}
           </button>
           {picking && (
             <div className="inv-cards">
@@ -163,7 +164,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       hidden: picking,
       node: (
         <div className="inv-note side-left">
-          <b>倉庫</b>　點貨箱裝上船
+          <b>倉庫</b>
+          {!isHintSeen('load-cargo') && <span className="inv-hint">點貨箱裝上船</span>}
           {at('warehouse')}
         </div>
       ),
@@ -174,8 +176,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       hidden: picking,
       node: (
         <div className="inv-note side-right">
-          <b>你的船</b>　{summary.loaded}/{summary.capacity}
-          {choice.build === 'shipyard' && '（造船廠 +1）'}　點船上的貨卸下
+          <b>船</b> {summary.loaded}/{summary.capacity}
+          {summary.loaded > 0 && !isHintSeen('unload-cargo') && <span className="inv-hint">點船上的貨卸下</span>}
           {at('ship')}
         </div>
       ),
@@ -194,22 +196,35 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
           onShip={choice.load}
           canLoad={(g: GoodId) => canLoad(options, choice, g)}
           glow={todo.cargo}
-          onLoad={(g: GoodId) => setChoice((c) => loadOne(options, c, g))}
+          onLoad={(g: GoodId) => {
+            markHintSeen('load-cargo');
+            setChoice((c) => loadOne(options, c, g));
+          }}
         />
-        <ShipCargo angle={home} load={choice.load} capacity={summary.capacity} onUnload={(g) => setChoice((c) => unloadOne(c, g))} />
+        <ShipCargo angle={home} load={choice.load} capacity={summary.capacity} onUnload={(g) => {
+          markHintSeen('unload-cargo');
+          setChoice((c) => unloadOne(c, g));
+        }} />
         {choice.build && <BuildingPreview angle={home} building={choice.build} color={seats[laneOf(viewer)]!.color} />}
       </>
     ),
     bar: (
       <>
-        <span>
-          {choice.build ? `蓋 ${BUILDING_LABELS[choice.build]}（−${summary.buildCash} G）` : '不蓋建築'} ·{' '}
-          {summary.sails ? `裝 ${summary.loaded}/${summary.capacity} 出航（−${summary.shipCost} G）` : '不出航'} · 現金 {summary.cashBefore} → <b>{summary.cashAfter} G</b>
+        <span className="bar-chips">
+          <span className="chip" title="建築">
+            🏗 {choice.build ? `${BUILDING_LABELS[choice.build]} −${summary.buildCash}` : '不蓋'}
+          </span>
+          <span className="chip" title="出航">
+            ⛵ {summary.sails ? `${summary.loaded}/${summary.capacity} −${summary.shipCost}` : '不出航'}
+          </span>
+          <span className="chip cash" title="現金（G）">
+            💰 {summary.cashBefore} → <b>{summary.cashAfter}</b>
+          </span>
         </span>
         <button type="button" className="primary" disabled={!action} onClick={submit}>
-          {submitLabel(choice, summary)}
+          提交
         </button>
-        <small>提交後不能更改；所有人都提交後，建築與出航同時公開，船上的貨不公開。</small>
+        <LockHint text="提交後不能更改；所有人都提交後，建築與出航同時公開，船上的貨不公開。" />
       </>
     ),
     overlay: reminding && (

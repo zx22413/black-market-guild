@@ -10,7 +10,6 @@ import {
   deployLabel,
   deployOptions,
   deployTodo,
-  needsTarget,
   peeksFor,
   pickRole,
   roleCards,
@@ -21,6 +20,7 @@ import {
 import { ReminderDialog } from '../table/ReminderDialog';
 import { isReminderSkipped, setReminderSkipped } from '../table/reminderSettings';
 import { roleDetail } from '../table/roleText';
+import { LockHint } from './LockHint';
 import { roleIconUrl } from './RoleBadges';
 import { shipName, type StageEnv, type StageParts } from './stage';
 
@@ -29,14 +29,6 @@ import { shipName, type StageEnv, type StageParts } from './stage';
 // What is still needed breathes gold; the submit button says what is being submitted.
 
 const TAG_HEIGHT = 3;
-
-/** What the bar asks for next once a role is picked. */
-function brokerOrTargetHint(choice: DeployChoice, aims: boolean, bullOwn: boolean, needsShip: boolean): string {
-  if (choice.role !== 'broker') return needsShip ? '點海上的船選目標。' : '';
-  if (!choice.bet) return '在上方黑市選商品與漲跌。';
-  if (!aims) return '直接提交（目前沒有可指定的船）。';
-  return choice.bet.direction > 0 && bullOwn ? '押漲，點你自己的船。' : '押跌，點對手的船。';
-}
 
 export function useDeployStep(env: StageEnv | null): StageParts | null {
   const active = env?.request.context.decision.phase === 'role-deployment' ? env : null;
@@ -100,10 +92,11 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
         pickable || peekable ? (
           <button
             type="button"
+            title={peekable ? '燈塔島：可多看一艘船，可不選' : undefined}
             className={`dep-ship ${chosen || choice.peek === ship.id ? 'on' : ''} ${(todo.target && pickable) ? 'todo' : ''} ${peekable ? 'peek' : ''}`}
             onClick={() => clickShip(ship.id)}
           >
-            {peekable ? `多看這艘（燈塔島，可不選）：${label}` : chosen ? `${ROLE_LABELS[choice.role as keyof typeof ROLE_LABELS]} → ${label}` : `派到${label}`}
+            {peekable ? `多看 ${label}` : chosen ? `${ROLE_LABELS[choice.role as keyof typeof ROLE_LABELS]} → ${label}` : `派到${label}`}
           </button>
         ) : (
           <span className="dep-ship-name">{label}</span>
@@ -116,7 +109,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   // The description strip keeps its height whatever it says, so the hand never jumps.
   const strip = (
     <div className={`dep-strip ${shown === null ? 'idle' : ''}`} aria-live="polite">
-      {shown === null && <p>滑過或點選一個角色，這裡會寫出完整說明。</p>}
+      {shown === null && <p>點選角色看說明</p>}
       {shown === 'none' && (
         <>
           <header>
@@ -129,8 +122,8 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
         <>
           <header>
             <b>{ROLE_LABELS[shown]}</b>
-            <span>{shownCard.fee === 0 ? '免費' : `部署費 ${shownCard.fee} G（揭露時才扣）`}</span>
-            <span>用過後冷卻 {shownCard.cooldown} 回合</span>
+            <span>{shownCard.fee === 0 ? '免費' : `部署費 ${shownCard.fee} G`}</span>
+            <span>冷卻 {shownCard.cooldown} 回合</span>
           </header>
           {shownCard.reason && <p className="why">{shownCard.reason}</p>}
           <p>{roleDetail(shown, context.view.rules)}</p>
@@ -175,6 +168,8 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   );
 
   const incomplete = choice.role !== null && !action;
+  const barText =
+    choice.role === null ? '選一個角色' : choice.role === 'none' ? '不部署' : deployLabel(choice, ownerOf, nameOf, viewer, aims).replace(/^部署：/, '');
   return {
     pins,
     camera: null,
@@ -191,16 +186,13 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     ),
     bar: (
       <>
-        <span>
-          {choice.role === null
-            ? '秘密選一個角色（所有人同時選，情報重擲後一起公開）'
-            : choice.role === 'none'
-              ? '這回合不部署。'
-              : `${ROLE_LABELS[choice.role]}：${brokerOrTargetHint(choice, aims, context.view.rules.roles.broker.targetOwnUp === 1, needsTarget(choice.role))}`}
+        <span className="bar-chips">
+          <span className="chip">{barText}</span>
         </span>
         <button type="button" className="primary" disabled={incomplete} onClick={submit}>
-          {deployLabel(choice, ownerOf, nameOf, viewer, aims)}
+          提交
         </button>
+        <LockHint text="提交後不能更改；所有人都提交後，角色一起公開（情報商人重擲後再公開）。" />
       </>
     ),
     overlay: reminding && (

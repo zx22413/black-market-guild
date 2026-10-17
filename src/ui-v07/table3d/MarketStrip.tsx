@@ -35,10 +35,13 @@ export function MarketStrip({
   const same = (a: Bet | null, b: Bet) => a !== null && a.good === b.good && a.direction === b.direction;
   return (
     <div ref={ref} className={`inv-market ${bets ? 'betting' : ''} ${dimmed && !bets ? 'dimmed' : ''}`}>
-      <b>黑市</b>
+      <b title="黑市：價格（G）與需求量">黑市</b>
       {GOODS.map((g) => (
         <span key={`${g}-${changed?.has(g) ? 'new' : 'old'}`} className={`inv-chip good-${g} ${changed?.has(g) ? 'flash' : ''}`}>
-          {GOOD_LABELS[g]} {stepLabel((prices ?? board.prices)[g])} G · 需 {board.demand[g]}
+          {GOOD_LABELS[g]} <b>{stepLabel((prices ?? board.prices)[g])}</b>{' '}
+          <span className="need" title={`需求 ${board.demand[g]}`}>
+            需{board.demand[g]}
+          </span>
           {bets &&
             ([1, -1] as const).map((direction) => {
               const bet = { good: g, direction };

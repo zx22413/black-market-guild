@@ -14,6 +14,10 @@
   --iron: #9fb0bd;
   --spice: #e2823a;
   --arms: #d35d6e;
+  /* Type scale of the table UI: note (units, tags), body (sentences, buttons), title (headings). */
+  --fs-note: 12px;
+  --fs-body: 14px;
+  --fs-title: 18px;
   font-family: 'LXGW WenKai TC', 'PingFang TC', 'Noto Sans TC', system-ui, sans-serif;
   color-scheme: dark;
 }

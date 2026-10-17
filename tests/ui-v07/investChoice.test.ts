@@ -85,7 +85,7 @@ describe('investment choice on the island (only legal actions)', () => {
     const withArms = loadOne(options, EMPTY_CHOICE, 'arms');
     const texts = investNotes(context, withArms).map((n) => n.text);
     expect(texts).toContain('軍火抵達時，若有別人的護衛守著會被沒收');
-    expect(texts).toContain('還有 1 香料沒裝，回合結束時會壞掉');
+    expect(texts).toContain('1 香料沒裝，回合結束會壞掉');
     expect(investNotes(context, loadOne(options, withArms, 'spice')).some((n) => n.text.includes('香料'))).toBe(false);
   });
 
