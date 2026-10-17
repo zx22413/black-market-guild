@@ -61,7 +61,10 @@ describe('role deployment choice (only legal actions)', () => {
     const broker = pickRole('broker');
     expect(deployTodo(broker).bet).toBe(true);
     const bet = betsFor(options)[0]!;
-    expect(deployActionFor(options, { ...broker, bet })).toMatchObject({ role: 'broker', bet });
+    // The bet also names a ship when one fits it (a bull bet: your own, a bear bet: an opponent's).
+    const target = targetsFor(options, 'broker', bet)[0] ?? null;
+    expect(deployActionFor(options, { ...broker, bet, target })).toMatchObject({ role: 'broker', bet, targetShipId: target });
+    expect(betsFor(options)).toHaveLength(new Set(betsFor(options).map((b) => `${b.good}${b.direction}`)).size);
   });
 
   it('greys out a role on cooldown with the round it comes back (§9.3)', () => {
@@ -103,7 +106,8 @@ describe('role reveal arrows', () => {
     const peek = peeksFor(deployOptions(p1), { ...pickRole('intel'), target })[0]!;
     state = apply(state, deployActionFor(deployOptions(p1), { ...pickRole('intel'), target, peek })!);
     const p2 = contextOf(state, 'p2');
-    state = apply(state, deployActionFor(deployOptions(p2), { ...pickRole('broker'), bet: betsFor(deployOptions(p2))[0]! })!);
+    const brokerBet = betsFor(deployOptions(p2))[0]!;
+    state = apply(state, deployActionFor(deployOptions(p2), { ...pickRole('broker'), bet: brokerBet, target: targetsFor(deployOptions(p2), 'broker', brokerBet)[0] ?? null })!);
     const p3 = contextOf(state, 'p3');
     const result = applyAction(state, deployActionFor(deployOptions(p3), pickRole('none'))!);
     if (!result.ok) throw new Error(result.error.message);

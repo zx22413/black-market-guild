@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyAction, getLegalActions, getPlayerView, type MatchState } from '../../../src/v07/game';
-import { G, apply, cash, edit, find, plain, playRound, withDemand, withWanted } from './helpers';
+import { G, apply, cash, edit, find, plain, playRound, withDemand, withPrices, withWanted } from './helpers';
 
 const ready = (players = 3) => withDemand(plain(players).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(players)), G(2, 2, 2, 1));
 
@@ -145,7 +145,7 @@ describe('§9.4 roles', () => {
     const state = withDemand(ready(3), G(1, 1, 1, 0));
     const { events } = playRound(state, {
       loads: { p1: G(1) },
-      bets: { p2: { good: 'wood', direction: 1 }, p3: { good: 'iron', direction: -1 } },
+      bets: { p2: { good: 'wood', direction: 1 }, p3: { good: 'iron', direction: -1, aim: 'p1' } },
     });
     const settled = find(events, 'market-settled')[0]!;
     // Wood demand 1 + 1 = 2 > 1 arrived: up. Iron demand 1 - 1 = 0 = 0 arrived: flat.
@@ -155,9 +155,67 @@ describe('§9.4 roles', () => {
     expect(cash(events, 'role-fee', 'p2')).toBe(-75);
   });
 
-  it('offers broker bets on every good in both directions', () => {
+  it('offers broker bets on every good in both directions, each with the ship it may name', () => {
     const state = rolePhase(ready(3));
-    expect(getLegalActions(state, 'p3').filter((a) => a.type === 'deploy-role' && a.role === 'broker')).toHaveLength(8);
+    const bets = (id: string) => getLegalActions(state, id).filter((a) => a.type === 'deploy-role' && a.role === 'broker');
+    // p3 has no ship: a bull bet has nothing to aim at, so it is a plain bet; a bear bet aims at p1's or p2's ship.
+    expect(bets('p3').filter((a) => a.type === 'deploy-role' && a.bet?.direction === 1).map((a) => a.type === 'deploy-role' && a.targetShipId)).toEqual([null, null, null, null]);
+    expect(bets('p3').filter((a) => a.type === 'deploy-role' && a.bet?.direction === -1)).toHaveLength(8);
+    // p1 sails: a bull bet aims only at its own ship, a bear bet only at p2's.
+    const ships = (id: string, direction: number) => new Set(bets(id).flatMap((a) => (a.type === 'deploy-role' && a.bet?.direction === direction ? [a.targetShipId] : [])));
+    expect(ships('p1', 1)).toEqual(new Set(['r1-p1']));
+    expect(ships('p1', -1)).toEqual(new Set(['r1-p2']));
     expect(applyAction(state, { type: 'deploy-role', playerId: 'p3', role: 'broker', targetShipId: null, bet: { good: 'wood', direction: 1 }, peekShipId: null }).ok).toBe(true);
+    // Naming the wrong side's ship is not on the list.
+    expect(applyAction(state, { type: 'deploy-role', playerId: 'p1', role: 'broker', targetShipId: 'r1-p1', bet: { good: 'wood', direction: -1 }, peekShipId: null }).ok).toBe(false);
+  });
+
+  describe('the ship a broker names (§9.4)', () => {
+    const paid = (events: ReturnType<typeof playRound>['events'], reason: string, id: string) => cash(events, reason, id);
+
+    it('a right bear bet cuts the opponent ship sale by 2 steps and gives the difference to the broker', () => {
+      // Wood demand 2 - 1 (the bet) = 1 against 2 landed: down to 125 G. p1 sells 2 wood: 250 G, minus 2 x 50 G.
+      const { events } = playRound(ready(3), { loads: { p1: G(2) }, bets: { p2: { good: 'wood', direction: -1, aim: 'p1' } } });
+      expect(paid(events, 'broker-bet', 'p2')).toBe(100);
+      expect(paid(events, 'broker-control', 'p2')).toBe(100);
+      expect(paid(events, 'sale', 'p1')).toBe(150);
+    });
+
+    it('a right bull bet on your own ship is topped up by the bank', () => {
+      // Wood demand 2 + 1 = 3 against 1 landed: up to 175 G, and 50 G more on the one wood.
+      const { events } = playRound(ready(3), { loads: { p1: G(1) }, bets: { p1: { good: 'wood', direction: 1, aim: 'p1' } } });
+      expect(paid(events, 'broker-bet', 'p1')).toBe(100);
+      expect(paid(events, 'broker-lift', 'p1')).toBe(50);
+      expect(paid(events, 'sale', 'p1')).toBe(175);
+    });
+
+    it('does nothing when the bet is wrong, or the ship sinks', () => {
+      // Wood demand 2 - 1 = 1 equals the 1 landed: flat, so the bear bet is wrong.
+      const wrong = playRound(ready(3), { loads: { p1: G(1) }, bets: { p2: { good: 'wood', direction: -1, aim: 'p1' } } });
+      expect(paid(wrong.events, 'broker-bet', 'p2')).toBe(0);
+      expect(paid(wrong.events, 'broker-control', 'p2')).toBe(0);
+      const sunk = playRound(ready(3), { loads: { p1: G(2) }, rolls: { p1: 3 }, bets: { p2: { good: 'wood', direction: -1, aim: 'p1' } } });
+      expect(paid(sunk.events, 'broker-control', 'p2')).toBe(0);
+    });
+
+    it('stays on the price track: no bank top-up past the top step, and never more than the sale', () => {
+      const top = playRound(withPrices(ready(3), G(5, 5, 5, 5)), { loads: { p1: G(1) }, bets: { p1: { good: 'wood', direction: 1, aim: 'p1' } } });
+      // The price rises from step 5 to the top (225 G); there is no room for two more steps.
+      expect(paid(top.events, 'broker-lift', 'p1')).toBe(0);
+      const floor = playRound(withPrices(ready(3), G(1, 1, 1, 1)), { loads: { p1: G(2) }, bets: { p2: { good: 'wood', direction: -1, aim: 'p1' } } });
+      // Down from step 1 (100 G) to step 0 (75 G): only 0 steps of room remain, so nothing is taken.
+      expect(paid(floor.events, 'broker-control', 'p2')).toBe(0);
+    });
+
+    it('adds up when two brokers name the same ship', () => {
+      const { events } = playRound(ready(4), {
+        loads: { p1: G(2) },
+        bets: { p2: { good: 'wood', direction: -1, aim: 'p1' }, p3: { good: 'wood', direction: -1, aim: 'p1' } },
+      });
+      expect(paid(events, 'broker-control', 'p2')).toBe(100);
+      expect(paid(events, 'broker-control', 'p3')).toBe(100);
+      // Wood demand 2 - 2 = 0 against 2 landed: down one step to 125 G, 250 G in all, minus 100 G each.
+      expect(paid(events, 'sale', 'p1')).toBe(50);
+    });
   });
 });

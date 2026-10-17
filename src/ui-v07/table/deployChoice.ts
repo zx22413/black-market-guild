@@ -30,6 +30,8 @@ const roleOf = (pick: RolePick): RoleId | null => (pick === 'none' || pick === n
 export interface RoleCard {
   readonly id: RoleId;
   readonly fee: number;
+  /** Rounds it rests after a deployment (§9.3). */
+  readonly cooldown: number;
   readonly legal: boolean;
   /** Why it cannot be deployed now; null when it can. */
   readonly reason: string | null;
@@ -49,7 +51,7 @@ export function roleCards(context: DecisionContext, options: readonly DeployActi
         : me.cash < fee
           ? `現金不足（部署費 ${fee} G）`
           : '沒有可選的目標';
-    return { id, fee, legal, reason };
+    return { id, fee, cooldown: cooldownFor(view.rules, me.island, id), legal, reason };
   });
 }
 
@@ -70,11 +72,14 @@ export function peeksFor(options: readonly DeployAction[], choice: DeployChoice)
 
 /** Broker bets on offer (§9.4). */
 export function betsFor(options: readonly DeployAction[]): Bet[] {
-  return options.flatMap((a) => (a.role === 'broker' && a.bet ? [a.bet] : []));
+  const bets = options.flatMap((a) => (a.role === 'broker' && a.bet ? [a.bet] : []));
+  // The same bet is offered once per ship it may name (§9.4); the market shows it once.
+  return bets.filter((b, i) => bets.findIndex((x) => x.good === b.good && x.direction === b.direction) === i);
 }
 
-/** Experiment (targetSteps): the broker's bet also names an opponent's ship. */
-export const brokerAims = (options: readonly DeployAction[]): boolean => options.some((a) => a.role === 'broker' && a.targetShipId !== null);
+/** §9.4: the broker's bet also names a ship (for the bet picked, once there is one). */
+export const brokerAims = (options: readonly DeployAction[], bet: Bet | null = null): boolean =>
+  options.some((a) => a.role === 'broker' && a.targetShipId !== null && (bet === null || (a.bet?.good === bet.good && a.bet?.direction === bet.direction)));
 
 export const needsTarget = (pick: RolePick, aims = false): boolean => pick !== null && pick !== 'none' && (pick !== 'broker' || aims);
 
@@ -88,7 +93,7 @@ export function deployActionFor(options: readonly DeployAction[], choice: Deploy
   return options.find(
     (a) =>
       a.role === role &&
-      a.targetShipId === (needsTarget(choice.role, brokerAims(options)) ? choice.target : null) &&
+      a.targetShipId === (needsTarget(choice.role, brokerAims(options, choice.bet)) ? choice.target : null) &&
       a.peekShipId === choice.peek &&
       (role === 'broker' ? a.bet?.good === choice.bet?.good && a.bet?.direction === choice.bet?.direction : true),
   );

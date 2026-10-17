@@ -92,7 +92,8 @@ export interface RoundPlan {
   readonly rolls?: Readonly<Record<string, number>>;
   /** Ship roles by owner of the target ship: [role, target owner, optional peek owner]. */
   readonly roles?: Readonly<Record<string, readonly [ShipRole, string, string?]>>;
-  readonly bets?: Readonly<Record<string, Bet>>;
+  /** Broker bets by player; `aim` is the owner of the ship the bet names (§9.4), none for a plain bet. */
+  readonly bets?: Readonly<Record<string, Bet & { readonly aim?: string }>>;
   /** Intel rerolls: player → owner of the ship to reroll. */
   readonly rerolls?: Readonly<Record<string, string>>;
   readonly voyageEvent?: VoyageEventId;
@@ -126,7 +127,14 @@ export function playRound(state: MatchState, plan: RoundPlan = {}): Played {
       const bet = plan.bets?.[p.id];
       step(
         bet !== undefined
-          ? { type: 'deploy-role', playerId: p.id, role: 'broker', targetShipId: null, bet, peekShipId: null }
+          ? {
+              type: 'deploy-role',
+              playerId: p.id,
+              role: 'broker',
+              targetShipId: bet.aim === undefined ? null : shipOf(current, bet.aim),
+              bet: { good: bet.good, direction: bet.direction },
+              peekShipId: null,
+            }
           : {
               type: 'deploy-role',
               playerId: p.id,

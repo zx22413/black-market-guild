@@ -61,14 +61,14 @@ export interface Rules {
     readonly pirate: { readonly modifier: number; readonly loot: number };
     readonly smuggler: { readonly goodsValue: number; readonly fine: number };
     /**
-     * `targetSteps` is an experiment (0 = off): the broker also names an opponent's ship; when the bet
-     * is right, that ship sells the bet's good this many price steps further in the bet's direction.
+     * §9.4: the broker also names a ship; when the bet is right, that ship sells the bet's good
+     * `targetSteps` price steps further in the bet's direction. 0 turns the ship part off.
      */
     readonly broker: {
       readonly shift: number;
       readonly payout: number;
       readonly targetSteps: number;
-      /** Experiment: 1 = a bull bet aims at the broker's own ship (bear bets still at an opponent's). */
+      /** 1 = a bull bet aims at the broker's own ship (bear bets at an opponent's); 0 = both at an opponent's. */
       readonly targetOwnUp: number;
     };
   };
@@ -138,7 +138,7 @@ export const RULES_V07: Rules = {
     guard: { modifier: 1, escortFee: 75 }, // §9.4
     pirate: { modifier: -1, loot: 150 }, // §9.4
     smuggler: { goodsValue: 100, fine: 100 }, // §9.5
-    broker: { shift: 1, payout: 100, targetSteps: 0, targetOwnUp: 0 }, // §9.4
+    broker: { shift: 1, payout: 100, targetSteps: 2, targetOwnUp: 1 }, // §9.4
   },
   wanted: { lootBonus: 100 }, // §9.6
   buildings: {

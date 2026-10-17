@@ -963,41 +963,101 @@
   bottom: 104px;
   z-index: 20;
   transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(724px, calc(100vw - 24px));
+}
+/* The description strip above the hand: a fixed height, so the hand never jumps between roles. */
+.dep-strip {
+  box-sizing: border-box;
+  min-height: 96px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  background: rgb(245 236 212 / 0.97);
+  color: #2b2116;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.25);
+}
+.dep-strip header {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.dep-strip header b {
+  font-size: 17px;
+}
+.dep-strip header span {
+  font-size: 13px;
+  font-weight: 700;
+  color: #8a4b12;
+}
+.dep-strip p {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #3d2f1d;
+}
+.dep-strip p.why {
+  color: #8a241c;
+  font-weight: 700;
+}
+.dep-strip.idle p {
+  margin: 0;
+  padding-top: 24px;
+  color: #6b5537;
+  text-align: center;
 }
 .dep-hand {
   display: flex;
   gap: 8px;
+  justify-content: center;
   padding: 6px;
   border-radius: 14px;
 }
 .dep-hand.todo {
   animation: gold-breath 1.8s ease-in-out infinite;
 }
+/* Role cards: the icon carries the card; every word about the role is in the strip above. */
 .dep-card {
-  display: grid;
-  align-content: start;
-  gap: 3px;
-  width: 128px;
-  min-height: 132px;
-  padding: 10px;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  box-sizing: border-box;
+  width: 104px;
+  height: 142px;
+  padding: 10px 6px 8px;
   border: 1px solid #b9a77d;
   border-radius: 12px;
   background: rgb(245 236 212 / 0.97);
   color: #2b2116;
-  text-align: left;
   cursor: pointer;
   transition: transform 160ms;
 }
-.dep-card:hover:not(:disabled) {
+.dep-card:hover {
   transform: translateY(-6px);
 }
-.dep-card b {
-  font-size: 17px;
+.dep-ic {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border: 3px double #c9a45a;
+  border-radius: 50%;
+  background: #2b2116;
 }
-.dep-card small {
-  font-size: 12px;
-  line-height: 1.4;
-  color: #6b5537;
+.dep-ic img {
+  width: 40px;
+  height: 40px;
+}
+.dep-ic.none {
+  color: #ecdcb0;
+  font-size: 26px;
+}
+.dep-card b {
+  font-size: 16px;
 }
 .dep-fee {
   font-size: 13px;
@@ -1009,17 +1069,14 @@
   background: #fff3c9;
   transform: translateY(-12px);
 }
-/* Roles on cooldown or out of reach: grey, with the reason in place of the effect. */
+/* Roles on cooldown or out of reach: grey (the reason is in the strip when you point at it). */
 .dep-card.off {
   filter: grayscale(1);
   opacity: 0.55;
   cursor: not-allowed;
 }
-.dep-card.off small {
-  color: #8a241c;
-}
-.dep-card.none {
-  width: 96px;
+.dep-card.off:hover {
+  transform: none;
 }
 .beat3d-pin button.dep-ship,
 .dep-ship {

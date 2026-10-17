@@ -19,7 +19,7 @@ export const ROLE_TEXT: Readonly<Record<RoleId, string>> = {
   guard: '目標船 +1。抵達時沒收別人的軍火、抓走私；守別人的船抵達可拿護航費。',
   pirate: '目標船 −1。船沉沒時，戰利品由銀行支付，鎖定該船的海盜均分。',
   smuggler: '搭別人的船夾帶私貨；平安抵達又沒有護衛時，抽走船東的賣貨收入。',
-  broker: '押一種商品的需求漲或跌；價格真的往押的方向移動，從銀行拿獎金。',
+  broker: '押一種商品的價格漲或跌，再指定一艘船：押對時從銀行拿獎金，那艘船的賣價也跟著動。',
 };
 
 export const BUILDING_LABELS: Readonly<Record<BuildingId, string>> = {
