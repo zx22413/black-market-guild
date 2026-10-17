@@ -3070,3 +3070,7 @@
 .inv-note div {
   color: inherit;
 }
+/* The stack count sits below the foot of the stack (on the grass), not over the crate lids. */
+.beat3d-pin > .inv-stack {
+  transform: translate(-50%, 6px);
+}

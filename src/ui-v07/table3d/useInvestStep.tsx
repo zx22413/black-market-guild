@@ -4,7 +4,7 @@ import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
 import { shipPose } from '../../ui/scene/Ships';
 import { BUILDING_LABELS, BUILDING_TEXT, GOOD_LABELS } from '../labels';
 import { around } from '../scene/focusMath';
-import { BuildingPreview, ShipCargo, Warehouse, deckSlot, stackTop, warehouseLocal } from '../scene/InvestIsland';
+import { BuildingPreview, ShipCargo, Warehouse, deckSlot, warehouseLocal } from '../scene/InvestIsland';
 import { ISLAND_PLATEAU, islandPoint, type TablePin } from '../scene/TableCanvas';
 import {
   EMPTY_CHOICE,
@@ -171,7 +171,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     ...GOODS.map(
       (g, column): TablePin => ({
         id: `stack-${g}`,
-        position: islandPoint(home, stackTop(column, context.view.myStock[g] - choice.load[g])),
+        // At the foot of the stack, so the count never covers the icon on the crate lid.
+        position: islandPoint(home, warehouseLocal(column)),
         hidden: picking || context.view.myStock[g] - choice.load[g] <= 0,
         node: <span className={`inv-stack good-${g} ${todo.cargo && canLoad(options, choice, g) ? 'todo' : ''}`}>{split.left[g]}</span>,
       }),
