@@ -2008,3 +2008,154 @@
   75% { opacity: 1; transform: rotate(-8deg) scale(1); }
   100% { opacity: 0; transform: rotate(-8deg) scale(1) translateY(-14px); }
 }
+
+/* The standings that stay on screen (src/ui-v07/table3d/RankRail.tsx). */
+.rank-rail,
+.rank-fold {
+  position: fixed;
+  top: 52px;
+  right: 12px;
+  z-index: 15;
+}
+.rank-fold {
+  padding: 4px 12px;
+  border: 1px solid #b9a77d;
+  border-radius: 8px;
+  background: rgb(245 236 212 / 0.95);
+  color: #2b2116;
+  font-size: 13px;
+  cursor: pointer;
+}
+.rank-rail {
+  width: 250px;
+  padding: 8px 8px 6px;
+  border-radius: 12px;
+  background: rgb(91 70 54 / 0.92);
+  color: #f6ead0;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.25);
+}
+.rank-rail header {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin: 0 4px 6px;
+}
+.rank-rail header small {
+  flex: 1;
+  font-size: 11px;
+  color: #d9c9a3;
+}
+.rank-rail header button {
+  border: 0;
+  background: none;
+  color: #d9c9a3;
+  font-size: 13px;
+  cursor: pointer;
+}
+.rank-rail ol {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rank-rail li {
+  position: relative;
+  border-left: 5px solid;
+  border-radius: 6px;
+  background: rgb(245 236 212 / 0.95);
+  color: #2b2116;
+}
+.rank-rail li.me {
+  background: #fff3c9;
+}
+.rank-top {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 4px 8px 0;
+  font-size: 13px;
+}
+.rank-no {
+  min-width: 14px;
+  font-weight: 700;
+  color: #8a4b12;
+}
+.rank-name {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.rank-wealth {
+  font-variant-numeric: tabular-nums;
+}
+.rank-have {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 8px 5px 30px;
+  min-height: 26px;
+}
+.rank-buildings,
+.rank-stock {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.rank-have small {
+  font-size: 11px;
+  color: #8a7a5d;
+}
+.rank-building {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #2b2116;
+}
+.rank-building img {
+  width: 14px;
+  height: 14px;
+}
+.rank-stock i {
+  padding: 0 5px;
+  border-radius: 4px;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+  color: #2b2116;
+}
+.rank-stock i.good-wood {
+  background: var(--wood);
+}
+.rank-stock i.good-iron {
+  background: var(--iron);
+}
+.rank-stock i.good-spice {
+  background: var(--spice);
+}
+.rank-stock i.good-arms {
+  background: var(--arms);
+}
+.rank-rail li em {
+  margin-left: 6px;
+  font-style: normal;
+  font-size: 11px;
+}
+.rank-rail li em.wanted {
+  color: #9a2512;
+  font-weight: 700;
+}
+.rank-rail li em.done {
+  color: #1f6b3a;
+}
+/* On a narrow window the market strip wraps to two rows and reaches the corner: sit below it. */
+@media (max-width: 1100px) {
+  .rank-rail,
+  .rank-fold {
+    top: 84px;
+  }
+}

@@ -11,6 +11,7 @@ import { useSession } from '../session/useSession';
 import { islandBadgePins } from './IslandBadge';
 import { IslandDraft, IslandReveal } from './IslandDraft';
 import { MarketStrip } from './MarketStrip';
+import { RankRail } from './RankRail';
 import { RerollCard } from './RerollCard';
 import { ResultCard } from './ResultCard';
 import { resultRows } from './resultModel';
@@ -214,6 +215,16 @@ export function Table3DScreen({ session, onExit, autoplay = false }: Table3DScre
       </TableCanvas>
 
       <MarketStrip ref={marketRef} board={board} bets={step?.bets} prices={resolution.marketPrices} changed={resolution.changedGoods} />
+      {ready && board.round > 0 && (
+        <RankRail
+          seats={seats}
+          board={board}
+          rules={RULES_V07}
+          cashOf={(id) => (board.players[id]?.cash ?? 0) + (resolution.cashBonus[id] ?? 0)}
+          status={(id) => (deciding ? (waiting.has(id) ? '思考中' : '已決定') : '')}
+          rankStep={events.filter((e) => e.type === 'round-ended').length}
+        />
+      )}
       <div className="t3-menu">
         <span className="t3-round">{board.round === 0 ? '選島' : `第 ${board.round}／${RULES_V07.rounds} 回合`}</span>
         <button type="button" aria-expanded={logOpen} onClick={() => setLogOpen(!logOpen)}>

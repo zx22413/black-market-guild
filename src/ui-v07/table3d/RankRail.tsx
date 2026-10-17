@@ -1,0 +1,152 @@
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { GOODS, type BuildingId, type PlayerId, type Rules } from '../../v07/game';
+import { BUILDING_LABELS, GOOD_LABELS } from '../labels';
+import type { BeatSeat } from '../scene/beatStage';
+import type { Board } from '../session/board';
+import { standingsOf, type Standing } from './standings';
+
+// The standings that stay on screen (V0.6's guild rail): richest first, in the top-right corner
+// under the menu. Each guild shows its rank, total wealth, the buildings it has built and the
+// goods in its warehouse (public, §4); hover the wealth for the cash and buildings it adds up
+// from. The order is only redone when a round ends, and guilds that change place slide to their
+// new spot (rising ones glow); the figures themselves keep up. On a narrow window it starts
+// folded to a single 「排行」 button.
+
+const SLIDE_MS = 1300;
+/** Wide enough for the rail not to crowd the islands beside it. */
+const WIDE = 1100;
+
+export interface RankRailProps {
+  readonly seats: readonly BeatSeat[];
+  readonly board: Board;
+  readonly rules: Rules;
+  /** Cash shown (it ticks up as payments land during the settlement). */
+  readonly cashOf: (id: PlayerId) => number;
+  /** 思考中／已決定, or empty. */
+  readonly status: (id: PlayerId) => string;
+  /** Bumps when a round ends: the ranking is only re-sorted then. */
+  readonly rankStep: number;
+}
+
+/** The order shown and the rank each guild had when it was set (the figures move on, these wait for the round's end). */
+interface Shown {
+  readonly order: readonly PlayerId[];
+  readonly ranks: Readonly<Record<PlayerId, number>>;
+}
+
+const shownOf = (standings: readonly Standing[]): Shown => ({ order: standings.map((s) => s.id), ranks: Object.fromEntries(standings.map((s) => [s.id, s.rank])) });
+
+/** A built building: its icon on a dark disc (the icons are light), named on hover. */
+function BuildingMark({ building }: { readonly building: BuildingId }) {
+  return (
+    <span className="rank-building" title={BUILDING_LABELS[building]} aria-label={BUILDING_LABELS[building]}>
+      <img src={`${import.meta.env.BASE_URL}art/icons/asset-${building}.svg`} alt="" />
+    </span>
+  );
+}
+
+export function RankRail({ seats, board, rules, cashOf, status, rankStep }: RankRailProps) {
+  const standings = standingsOf(
+    seats.map((s) => ({ id: s.id, cash: cashOf(s.id), buildings: board.players[s.id]?.buildings ?? [] })),
+    rules,
+  );
+  const [open, setOpen] = useState(() => window.innerWidth >= WIDE);
+  const [shown, setShown] = useState<Shown>(() => shownOf(standings));
+  const { order, ranks } = shown;
+  const lastStep = useRef(rankStep);
+  useEffect(() => {
+    if (lastStep.current === rankStep) return;
+    lastStep.current = rankStep;
+    setShown(shownOf(standings));
+  }); // reads the latest standings when the step changes
+
+  const nodes = useRef(new Map<PlayerId, HTMLLIElement>());
+  const tops = useRef(new Map<PlayerId, number>());
+  useLayoutEffect(() => {
+    nodes.current.forEach((element, id) => {
+      const before = tops.current.get(id);
+      if (before === undefined || before === element.offsetTop) return;
+      const rising = before > element.offsetTop;
+      element.animate(
+        [
+          { transform: `translateY(${before - element.offsetTop}px) scale(1.04)`, filter: rising ? 'drop-shadow(0 0 10px #ffd96a)' : 'none' },
+          { transform: 'none', filter: 'none' },
+        ],
+        { duration: SLIDE_MS, easing: 'cubic-bezier(0.3, 0.1, 0.2, 1)' },
+      );
+    });
+  }, [order]);
+  // Remember where every row sits, so only a reorder (not a row growing open) slides.
+  useLayoutEffect(() => {
+    tops.current = new Map([...nodes.current].map(([id, element]) => [id, element.offsetTop]));
+  });
+
+  if (!open) {
+    return (
+      <button type="button" className="rank-fold" onClick={() => setOpen(true)} aria-expanded={false}>
+        排行
+      </button>
+    );
+  }
+  const place = (id: PlayerId) => {
+    const at = order.indexOf(id);
+    return at === -1 ? order.length : at;
+  };
+  const byId = new Map(standings.map((s) => [s.id, s]));
+  const rows = [...seats].sort((a, b) => place(a.id) - place(b.id));
+  return (
+    <aside className="rank-rail" aria-label="玩家排行">
+      <header>
+        <b>排行</b>
+        <small>現金＋建築半價</small>
+        <button type="button" onClick={() => setOpen(false)} aria-label="收起排行">
+          ✕
+        </button>
+      </header>
+      <ol>
+        {rows.map((seat) => {
+          const s = byId.get(seat.id)!;
+          const player = board.players[seat.id];
+          const note = status(seat.id);
+          return (
+            <li
+              key={seat.id}
+              ref={(element) => {
+                if (element) nodes.current.set(seat.id, element);
+                else nodes.current.delete(seat.id);
+              }}
+              className={seat.isViewer ? 'me' : ''}
+              style={{ borderColor: seat.color }}
+            >
+              <div className="rank-top">
+                <span className="rank-no">{ranks[seat.id] ?? s.rank}</span>
+                <span className="rank-name">
+                  {seat.isViewer ? '你' : seat.name}
+                  {board.wanted.includes(seat.id) && <em className="wanted">緝</em>}
+                  {note && <em className={note === '已決定' ? 'done' : ''}>{note}</em>}
+                </span>
+                <b className="rank-wealth" title={`現金 ${s.cash.toLocaleString()} G ＋ 建築 ${s.buildingValue} G（半價）`}>
+                  {s.wealth.toLocaleString()} G
+                </b>
+              </div>
+              <div className="rank-have">
+                <span className="rank-buildings">
+                  {(player?.buildings ?? []).length === 0 ? <small>無建築</small> : (player?.buildings ?? []).map((b) => <BuildingMark key={b} building={b} />)}
+                </span>
+                <span className="rank-stock" title="倉庫">
+                  {GOODS.filter((g) => (player?.stock[g] ?? 0) > 0).map((g) => (
+                    <i key={g} className={`good-${g}`}>
+                      {GOOD_LABELS[g].slice(0, 1)}
+                      {player?.stock[g]}
+                    </i>
+                  ))}
+                  {GOODS.every((g) => (player?.stock[g] ?? 0) === 0) && <small>倉庫空</small>}
+                </span>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </aside>
+  );
+}
