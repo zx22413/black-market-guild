@@ -146,8 +146,8 @@ export function RankRail({ seats, board, rules, cashOf, status, rankStep }: Rank
             >
               <div className="rank-top">
                 <span className="rank-no">{ranks[seat.id] ?? s.rank}</span>
-                <span className="rank-name">
-                  {seat.isViewer ? '你' : seat.name}
+                <span className="rank-who">
+                  <span className="rank-name">{seat.isViewer ? '你' : seat.name}</span>
                   {board.wanted.includes(seat.id) && <WantedMark />}
                   <StatusMark label={note} />
                 </span>

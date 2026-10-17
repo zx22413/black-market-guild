@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { RULES_V07 } from '../../v07/game';
+import { wantedText } from '../labels';
 
 // Small drawn icons for the table UI, so no arrow, lock or sign is made out of text characters.
 // Line icons follow the surrounding text color; the round badges reuse the game-icons.net set in
@@ -157,14 +159,25 @@ export function StatusMark({ label }: { readonly label: string }) {
   );
 }
 
-/** A wanted player (§9.6): a red disc with a mark. */
+/** A wanted player (§9.6): a red disc with a mark; hover or tap for what it means. */
 export function WantedMark() {
+  const text = wantedText(RULES_V07.wanted.lootBonus);
   return (
-    <span className="wanted-mark" title="通緝中" role="img" aria-label="通緝中">
+    <span className="wanted-mark" data-tip={text} tabIndex={0} role="img" aria-label={text}>
       <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false">
         <path d="M8 3.5v5.5M8 12v.1" {...LINE} strokeWidth={2.2} />
       </svg>
     </span>
+  );
+}
+
+/** A flag on a pole: the wanted notice. */
+export function FlagIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" focusable="false">
+      <path d="M6 21V3" {...LINE} strokeWidth={2.2} />
+      <path d="M6 4h12l-3 4.5 3 4.5H6z" fill="currentColor" stroke="currentColor" strokeWidth={1.2} strokeLinejoin="round" />
+    </svg>
   );
 }
 

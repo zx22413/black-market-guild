@@ -18,7 +18,8 @@ import { MarketCard } from './MarketCard';
 import { revealArrows, revealGroups, type RoleArrow } from './revealModel';
 import { Flow, IconDisc, InfoIcon, artIconUrl } from './icons';
 import { LockHint } from './LockHint';
-import { RevealChips, SkipButton, StageSteps } from './ResolveBar';
+import { RevealChips, SkipButton, StageSteps, WantedBanner, WantedChips } from './ResolveBar';
+import { WantedFlag } from '../scene/WantedFlag';
 import { RoleArrows } from './RoleArrows';
 import { RoleBadges } from './RoleBadges';
 import { roleKey, roleResults } from './roleResults';
@@ -30,10 +31,10 @@ import { VoyageEventCard, VoyageEventChip } from './VoyageEventCard';
 // at a quicker pace), the market row by row at the harbor, the settlement as flights of coins and
 // crates grouped by ship, and your bill. Then the next round.
 
-export type ResolutionStage = 'event' | 'reveal' | 'voyage' | 'market' | 'settle' | 'receipt';
+export type ResolutionStage = 'wanted' | 'event' | 'reveal' | 'voyage' | 'market' | 'settle' | 'receipt';
 
 /** Pace of each part, in ms (initial values to tune in play). */
-const PACE = { revealGroup: 1600, nextShip: 700, marketRow: 1000, afterMarket: 1500, flight: 1100, afterSettle: 900 } as const;
+const PACE = { wanted: 3000, revealGroup: 1600, nextShip: 700, marketRow: 1000, afterMarket: 1500, flight: 1100, afterSettle: 900 } as const;
 const HARBOR_BADGES = [-(TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2, 0, (TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2] as const;
 /** Ships that do not involve you play this much faster (presentation default, see the doc §4). */
 const OTHERS_SPEED = 2.5;
@@ -103,13 +104,23 @@ const lastIndex = (events: readonly MatchEvent[], test: (e: MatchEvent) => boole
 
 export function useRoundResolution(input: ResolutionInput): Resolution {
   const { events, privateEvents, round, paused, seats, angles, laneOf, viewer, nameOf, weather, onFinish } = input;
-  // The voyage event's card comes first (§5 step 5), then the roles are revealed.
-  const [stage, setStage] = useState<ResolutionStage>(weather ? 'event' : 'reveal');
+  // Who is wanted this round (§9.6, marked at the round's start): a red flag goes up on their
+  // islands for a moment, then the voyage event's card (§5 step 5), then the roles are revealed.
+  const wantedIds = useMemo(() => events.flatMap((e) => (e.type === 'wanted-marked' && e.round === round ? e.players : [])), [events, round]);
+  const afterWanted: ResolutionStage = weather ? 'event' : 'reveal';
+  const firstStage: ResolutionStage = wantedIds.length > 0 ? 'wanted' : afterWanted;
+  const [stage, setStage] = useState<ResolutionStage>(firstStage);
   // The caller passes a new function every render; timers call the latest one.
   const finishRef = useRef(onFinish);
   finishRef.current = onFinish;
   const finish = () => finishRef.current();
-  useEffect(() => setStage(weather ? 'event' : 'reveal'), [round]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => setStage(firstStage), [round]); // eslint-disable-line react-hooks/exhaustive-deps
+  // The flag stays up for a few seconds (unless skipped), then the event card follows.
+  useEffect(() => {
+    if (stage !== 'wanted' || paused) return;
+    const timer = setTimeout(() => setStage(afterWanted), PACE.wanted);
+    return () => clearTimeout(timer);
+  }, [stage, paused, afterWanted]);
   const active = round !== null;
   const roundEvents = useMemo(() => (round === null ? [] : events.filter((e) => !('round' in e) || e.round === round)), [events, round]);
 
@@ -173,6 +184,9 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   const cutoff = useMemo(() => {
     if (round === null) return events.length;
     const revealEnd = lastIndex(events, (e) => e.type === 'roles-revealed' && e.round === round) + 1;
+    // Before the event is announced the table does not know it yet: stop just short of it.
+    const eventAt = lastIndex(events, (e) => e.type === 'voyage-event-revealed' && e.round === round);
+    if (stage === 'wanted') return eventAt >= 0 ? eventAt : revealEnd;
     if (stage === 'event' || stage === 'reveal' || stage === 'voyage') return revealEnd;
     if (stage === 'market' || stage === 'settle') return lastIndex(events, (e) => e.type === 'market-settled' && e.round === round) + 1;
     return lastIndex(events, (e) => e.type === 'round-ended' && e.round === round) + 1;
@@ -244,7 +258,8 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     : [];
   // Role badges hang on what each role targeted, ringed in the sender's color, from its reveal
   // until the bill (the lighthouse's extra look stays low-key: no badge).
-  const badgeGroups = stage === 'reveal' ? groups.slice(0, groupsShown) : stage === 'receipt' ? [] : groups;
+  // Roles stay secret until the reveal: no badges while the flag and the event card are up.
+  const badgeGroups = stage === 'reveal' ? groups.slice(0, groupsShown) : stage === 'receipt' || stage === 'wanted' || stage === 'event' ? [] : groups;
   const badgeCtx: PlaceContext = { angles, laneOf, ships: new Map([...owners].map(([id, owner]) => [id, { owner, state: shipState(id) }])) };
   const onShips = new Map<ShipId, Deployment[]>();
   const onHarbor: Deployment[] = [];
@@ -291,10 +306,16 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     </button>
   );
   const owner = beat ? (beat.owner === viewer ? '你' : nameOf(beat.owner)) : '';
+  const wantedSeats = wantedIds.map((id) => ({ name: id === viewer ? '你' : nameOf(id), color: colorOf(id) }));
   const bar = (
     <>
       <StageSteps stage={stage ?? 'event'} />
-      {stage === 'event' ? (
+      {stage === 'wanted' ? (
+        <>
+          <WantedChips seats={wantedSeats} />
+          <SkipButton label="跳過" onClick={() => setStage(afterWanted)} />
+        </>
+      ) : stage === 'event' ? (
         go('繼續', () => setStage('reveal'))
       ) : stage === 'reveal' ? (
         <>
@@ -352,6 +373,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     pins: [...badgePins, ...intelPins, ...(layer?.pins ?? []), ...marketPins, ...flightPins],
     scene: (
       <>
+        {stage === 'wanted' && wantedIds.map((id) => <WantedFlag key={`${round}-${id}`} angle={angles[laneOf(id)]!} />)}
         {showArrows && <RoleArrows arrows={shownArrows} colorOf={colorOf} dimmed={(a) => olderArrows.has(a.key)} />}
         {layer?.scene}
         {flying && <Flights key={flying.key} flights={[flying]} ctx={placeCtx} />}
@@ -360,7 +382,8 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     bar,
     overlay: (
       <>
-        {weather && stage !== 'event' && stage !== 'receipt' && <VoyageEventChip event={weather} />}
+        {stage === 'wanted' && <WantedBanner seats={wantedSeats} />}
+        {weather && stage !== 'wanted' && stage !== 'event' && stage !== 'receipt' && <VoyageEventChip event={weather} />}
         {weather && stage === 'event' && <VoyageEventCard key={round} event={weather} onDone={() => setStage('reveal')} />}
         {stage === 'receipt' && viewer !== null ? <ReceiptCard round={round!} viewer={viewer} lines={receipt.lines} net={receipt.net} onClose={finish} /> : null}
       </>

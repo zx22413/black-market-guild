@@ -1,12 +1,13 @@
 import type { RoleId } from '../../v07/game';
 import { ROLE_LABELS } from '../labels';
-import { FastForwardIcon, IconDisc } from './icons';
+import { FastForwardIcon, FlagIcon, IconDisc } from './icons';
 import { roleIconUrl } from './RoleBadges';
 
 // Pieces of the bottom bar while a round plays out: where in the round we are (dots), what has
 // been revealed so far (role discs), and a skip button that is only an icon.
 
 const STAGES: readonly { readonly id: string; readonly label: string }[] = [
+  { id: 'wanted', label: '通緝' },
   { id: 'event', label: '航海事件' },
   { id: 'reveal', label: '角色揭露' },
   { id: 'voyage', label: '航程' },
@@ -57,5 +58,44 @@ export function SkipButton({ label, onClick }: { readonly label: string; readonl
     <button type="button" className="skip" title={label} aria-label={label} onClick={onClick}>
       <FastForwardIcon />
     </button>
+  );
+}
+
+export interface WantedSeat {
+  readonly name: string;
+  readonly color: string;
+}
+
+/** The notice that goes up before the voyage event: a red flag and who is wanted this round (§9.6). */
+export function WantedBanner({ seats }: { readonly seats: readonly WantedSeat[] }) {
+  return (
+    <div className="wanted-banner" role="status" aria-label={`通緝：${seats.map((s) => s.name).join('、')}`}>
+      <span className="wanted-flag">
+        <FlagIcon />
+      </span>
+      <b>通緝</b>
+      <span className="bar-chips">
+        {seats.map((s) => (
+          <span key={s.name} className="chip">
+            <i className="seat-dot" style={{ background: s.color }} />
+            {s.name}
+          </span>
+        ))}
+      </span>
+    </div>
+  );
+}
+
+/** The chips for the bar while the notice is up. */
+export function WantedChips({ seats }: { readonly seats: readonly WantedSeat[] }) {
+  return (
+    <span className="bar-chips">
+      {seats.map((s) => (
+        <span key={s.name} className="chip">
+          <i className="seat-dot" style={{ background: s.color }} />
+          {s.name}
+        </span>
+      ))}
+    </span>
   );
 }

@@ -37,6 +37,9 @@ export const BUILDING_TEXT: Readonly<Record<BuildingId, string>> = {
   exchange: '別人的貨每抵達 1 單位拿 15 G 佣金，每回合最多計 4 單位。',
 };
 
+/** §9.6: what being wanted means, for the hover on the wanted mark. */
+export const wantedText = (lootBonus: number): string => `通緝中：現金最多。載有其貨物的船被擊沉時，海盜戰利品 +${lootBonus} G`;
+
 /** How the final standing is counted (§13); also what the rules panel says under 計分. */
 export const WEALTH_RULE_TEXT = '總財富 ＝ 現金 ＋ 持有建築現金成本的一半；倉庫裡的材料不計分。同分比現金，現金也相同就並列。';
 
