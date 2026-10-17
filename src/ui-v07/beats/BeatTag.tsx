@@ -1,5 +1,6 @@
 import { GOODS, type PlayerId } from '../../v07/game';
-import { CASH_REASON_LABELS, GOOD_LABELS } from '../labels';
+import { CASH_REASON_LABELS } from '../labels';
+import { GoodIcon } from '../table3d/GoodIcon';
 import type { BeatView } from './beatTimeline';
 import type { ShipBeat } from './shipBeat';
 import { BeatDie, currentStep, signed, stepTitle } from './ShipBeatStage';
@@ -52,10 +53,14 @@ export function BeatTag({ beat, view, names, viewer }: BeatTagProps) {
         <div className="beat-tag-cargo">
           {cargo.map((g, i) => (
             <span key={i} className={`beat-crate good-${g}`} style={{ animationDelay: `${i * 90}ms` }}>
-              {GOOD_LABELS[g].slice(0, 1)}
+              <GoodIcon good={g} />
             </span>
           ))}
-          {beat.armsConfiscated > 0 && <small className="down">軍火 {beat.armsConfiscated} 被沒收</small>}
+          {beat.armsConfiscated > 0 && (
+            <small className="down">
+              <GoodIcon good="arms" size="sm" /> {beat.armsConfiscated} 被沒收
+            </small>
+          )}
         </div>
       )}
       {view.cashShown + view.goodsShown > 0 && (
@@ -72,7 +77,10 @@ export function BeatTag({ beat, view, names, viewer }: BeatTagProps) {
           ))}
           {beat.goods.slice(0, view.goodsShown).map((g, i) => (
             <li key={`g${i}`} className={g.playerId === viewer ? 'mine' : ''}>
-              <b className="up">+{g.units}{GOOD_LABELS[g.good].slice(0, 1)}</b>
+              <b className="up">
+                +{g.units}
+                <GoodIcon good={g.good} size="sm" />
+              </b>
               <span>{who(g.playerId)}</span>
               <small>{g.via === 'insurance' ? '保險保住' : '打撈'}</small>
             </li>

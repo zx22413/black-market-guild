@@ -1,6 +1,8 @@
 import type { Deployment, PlayerId, RoleId } from '../../v07/game';
 import { ROLE_LABELS } from '../labels';
 import { betLabel } from '../table/deployChoice';
+import { GoodIcon } from './GoodIcon';
+import { TrendIcon } from './icons';
 import { roleKey, type RoleResult } from './roleResults';
 
 // The role icons hanging on what each role targeted (a ship, or the harbor for brokers): one round
@@ -35,7 +37,12 @@ export function RoleBadges({ deployments, colorOf, nameOf, stamp }: RoleBadgesPr
         return (
           <span key={roleKey(d)} className="role-badge" style={{ borderColor: colorOf(d.playerId) }} title={what} aria-label={what}>
             <img src={roleIconUrl(d.role)} alt="" />
-            {d.bet && <small>{betLabel(d.bet)}</small>}
+            {d.bet && (
+              <small>
+                <GoodIcon good={d.bet.good} size="sm" />
+                <TrendIcon dir={d.bet.direction} />
+              </small>
+            )}
             {result && <b className={`role-stamp ${result.tone}`}>{result.text}</b>}
           </span>
         );

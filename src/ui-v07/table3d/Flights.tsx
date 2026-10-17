@@ -5,7 +5,7 @@ import type { PlayerId, ShipId } from '../../v07/game';
 import { ASSET_LOTS, seatPosition, type Vec3 } from '../../ui/scene/layout';
 import { shipPose } from '../../ui/scene/Ships';
 import type { ShipState } from '../../ui/scene/tableModel';
-import { GOOD_COLORS } from '../scene/InvestIsland';
+import { CrateModel } from '../scene/CrateModel';
 import { islandPoint } from '../scene/TableCanvas';
 import type { Flight, Place } from './settlementModel';
 
@@ -81,10 +81,9 @@ function FlyingThing({ flight, ctx }: { readonly flight: Flight; readonly ctx: P
           <meshStandardMaterial color={flight.amount !== null && flight.amount < 0 ? '#9a8f80' : '#ffcc4d'} emissive="#ffb000" emissiveIntensity={flight.amount !== null && flight.amount < 0 ? 0 : 0.35} metalness={0.3} roughness={0.4} />
         </mesh>
       ) : (
-        <mesh>
-          <boxGeometry args={[1.9, 1.9, 1.9]} />
-          <meshStandardMaterial color={spoil ? '#4a3a2a' : GOOD_COLORS[flight.good ?? 'wood']} flatShading />
-        </mesh>
+        <group scale={1.1}>
+          <CrateModel good={flight.good ?? 'wood'} spoiled={spoil} />
+        </group>
       )}
     </group>
   );

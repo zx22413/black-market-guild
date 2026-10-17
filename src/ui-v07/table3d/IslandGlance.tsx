@@ -1,5 +1,5 @@
 import type { IslandId } from '../../v07/game';
-import { GOOD_LABELS } from '../labels';
+import { GoodIcon } from './GoodIcon';
 import { ISLAND_GLANCE, type GlanceIcon } from '../table/islandGlance';
 import { IconDisc, artIconUrl } from './icons';
 import { roleIconUrl } from './RoleBadges';
@@ -9,11 +9,7 @@ import { roleIconUrl } from './RoleBadges';
 
 function Thing({ icon }: { readonly icon: GlanceIcon }) {
   if (icon.kind === 'good') {
-    return (
-      <span className={`glance-good good-${icon.good}`} title={GOOD_LABELS[icon.good]}>
-        {GOOD_LABELS[icon.good].slice(0, 1)}
-      </span>
-    );
+    return <GoodIcon good={icon.good} />;
   }
   return <IconDisc src={icon.kind === 'role' ? roleIconUrl(icon.role) : artIconUrl('ship-solo')} />;
 }

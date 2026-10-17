@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { GOODS, type BuildingId, type PlayerId, type Rules } from '../../v07/game';
-import { BUILDING_LABELS, BUILDING_TEXT, GOOD_LABELS, WEALTH_RULE_TEXT } from '../labels';
+import { BUILDING_LABELS, BUILDING_TEXT, WEALTH_RULE_TEXT } from '../labels';
 import type { BeatSeat } from '../scene/beatStage';
 import type { Board } from '../session/board';
+import { GoodCount } from './GoodIcon';
 import { CloseIcon, InfoIcon, StatusMark, WantedMark } from './icons';
 import { LockHint } from './LockHint';
 import { standingsOf, type Standing } from './standings';
@@ -54,7 +55,6 @@ function BuildingMark({ building, rules }: { readonly building: BuildingId; read
     return () => document.removeEventListener('pointerdown', close);
   }, [open]);
   const { cash, wood, iron } = rules.buildings.costs[building];
-  const materials = [wood > 0 ? `${GOOD_LABELS.wood} ${wood}` : '', iron > 0 ? `${GOOD_LABELS.iron} ${iron}` : ''].filter(Boolean).join('、');
   return (
     <span ref={self} className={`rank-building ${open ? 'open' : ''}`}>
       <button type="button" aria-expanded={open} aria-label={BUILDING_LABELS[building]} onClick={() => setOpen((v) => !v)}>
@@ -64,7 +64,9 @@ function BuildingMark({ building, rules }: { readonly building: BuildingId; read
         <b>{BUILDING_LABELS[building]}</b>
         <span>{BUILDING_TEXT[building]}</span>
         <small>
-          建造費：現金 {cash} G{materials ? `、${materials}` : ''}；終局算 {Math.floor(cash * rules.buildings.valueRatio)} G
+          建造費：現金 {cash} G
+          {wood > 0 && <GoodCount good="wood" count={wood} size="sm" />}
+          {iron > 0 && <GoodCount good="iron" count={iron} size="sm" />}；終局算 {Math.floor(cash * rules.buildings.valueRatio)} G
         </small>
       </span>
     </span>
@@ -161,10 +163,7 @@ export function RankRail({ seats, board, rules, cashOf, status, rankStep }: Rank
                 </span>
                 <span className="rank-stock" title="倉庫">
                   {GOODS.filter((g) => (player?.stock[g] ?? 0) > 0).map((g) => (
-                    <i key={g} className={`good-${g}`}>
-                      {GOOD_LABELS[g].slice(0, 1)}
-                      {player?.stock[g]}
-                    </i>
+                    <GoodCount key={g} good={g} count={player?.stock[g] ?? 0} size="sm" />
                   ))}
                   {GOODS.every((g) => (player?.stock[g] ?? 0) === 0) && <small title="倉庫空">—</small>}
                 </span>

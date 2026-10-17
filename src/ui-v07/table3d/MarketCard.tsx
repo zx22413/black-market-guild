@@ -1,6 +1,7 @@
 import type React from 'react';
 import { RULES_V07 } from '../../v07/game';
 import { GOOD_LABELS, stepLabel } from '../labels';
+import { GoodIcon } from './GoodIcon';
 import { Flow, TrendIcon } from './icons';
 import type { MarketRow } from './settlementModel';
 
@@ -44,7 +45,9 @@ export function MarketCard({ rows, shown }: { readonly rows: readonly MarketRow[
             const move = r.after - r.before;
             return (
               <tr key={r.good} className={`mk-${r.good}`}>
-                <th>{GOOD_LABELS[r.good]}</th>
+                <th>
+                  <GoodIcon good={r.good} size="sm" /> {GOOD_LABELS[r.good]}
+                </th>
                 <td>
                   需 {r.demand}
                   {r.brokerShift !== 0 && <small className="broker">（莊家 {r.brokerShift > 0 ? `+${r.brokerShift}` : `−${-r.brokerShift}`}）</small>}

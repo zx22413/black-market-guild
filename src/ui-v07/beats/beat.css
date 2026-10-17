@@ -2954,3 +2954,61 @@
 .rank-rail li:focus-within {
   z-index: 20;
 }
+
+/* Goods as icons (src/ui-v07/table3d/GoodIcon.tsx): a dark disc ringed in the goods' color. */
+.good-ic {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  border: 2px solid;
+  border-radius: 50%;
+  background: #2b2116;
+  vertical-align: middle;
+}
+.good-ic.sm {
+  width: 20px;
+  height: 20px;
+}
+.good-ic.lg {
+  width: 32px;
+  height: 32px;
+}
+.good-ic img {
+  width: 72%;
+  height: 72%;
+}
+.good-ic.good-wood { border-color: var(--wood); background: #2b2116; }
+.good-ic.good-iron { border-color: var(--iron); background: #2b2116; }
+.good-ic.good-spice { border-color: var(--spice); background: #2b2116; }
+.good-ic.good-arms { border-color: var(--arms); background: #2b2116; }
+.good-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-right: 6px;
+  font-weight: 700;
+}
+.beat-crate[class] {
+  width: auto;
+  height: auto;
+  background: none;
+}
+.inv-stack {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.rank-stock {
+  gap: 2px;
+}
+.inv-market .inv-chip .good-ic {
+  margin-right: 2px;
+}
+.role-badge small {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}

@@ -180,17 +180,3 @@ export function FlagIcon() {
     </svg>
   );
 }
-
-/** Goods in a warehouse as small colored chips with their counts. */
-export function GoodChips({ goods, labels }: { readonly goods: readonly { readonly good: string; readonly count: number }[]; readonly labels: Readonly<Record<string, string>> }) {
-  return (
-    <>
-      {goods.map(({ good, count }) => (
-        <span key={good} className="stock-chip" title={`${labels[good]} ${count}`}>
-          <span className={`glance-good good-${good}`}>{labels[good]?.slice(0, 1)}</span>
-          {count}
-        </span>
-      ))}
-    </>
-  );
-}

@@ -25,6 +25,7 @@ import {
 } from '../table/investChoice';
 import { ReminderDialog } from '../table/ReminderDialog';
 import { isHintSeen, isReminderSkipped, markHintSeen, setReminderSkipped } from '../table/reminderSettings';
+import { GoodCount, GoodIcon, withGoodIcons } from './GoodIcon';
 import { CloseIcon, Flow, HouseIcon, IconDisc, artIconUrl } from './icons';
 import { LockHint } from './LockHint';
 import type { StageEnv, StageParts } from './stage';
@@ -104,7 +105,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const leftEnd = rowEnds[0][0] < rowEnds[1][0] ? rowEnds[0] : rowEnds[1];
   const maxBuilt = context.view.rules.buildings.maxPerPlayer;
   const built = me ? me.buildings.length : 0;
-  const at = (where: 'warehouse' | 'ship') => notes.filter((n) => n.at === where).map((n) => <div key={n.text}>{n.text}</div>);
+  const at = (where: 'warehouse' | 'ship') => notes.filter((n) => n.at === where).map((n) => <div key={n.text}>{withGoodIcons(n.text)}</div>);
   const slot = deckSlot(home, 0, 1);
 
   const pins: TablePin[] = [
@@ -149,8 +150,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
                     <IconDisc src={artIconUrl('coin')} />
                     {b.cash}
                     {GOODS.filter((g) => b.goods[g] > 0).map((g) => (
-                      <span key={g} className="inv-need" title={`${b.goods[g]} ${GOOD_LABELS[g]}`}>
-                        <span className={`glance-good good-${g}`}>{GOOD_LABELS[g].slice(0, 1)}</span>×{b.goods[g]}
+                      <span key={g} className="inv-need">
+                        <GoodCount good={g} count={b.goods[g]} size="sm" />
                       </span>
                     ))}
                   </span>
@@ -173,7 +174,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
         hidden: picking,
         node: (
           <span className={`inv-stack good-${g} ${todo.cargo && canLoad(options, choice, g) ? 'todo' : ''}`}>
-            {GOOD_LABELS[g].slice(0, 1)} {split.left[g]}
+            <GoodIcon good={g} size="sm" /> {split.left[g]}
           </span>
         ),
       }),

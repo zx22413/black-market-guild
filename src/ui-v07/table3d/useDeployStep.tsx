@@ -220,7 +220,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
         <span className="bar-chips">
           <DeployChips
             role={choice.role}
-            bet={choice.bet ? betLabel(choice.bet) : null}
+            bet={choice.bet}
             needsShip={needsTarget(choice.role, aims)}
             target={targetOwner === undefined ? null : { name: nameOf(targetOwner), color: seats[laneOf(targetOwner)]?.color ?? '#999' }}
           />

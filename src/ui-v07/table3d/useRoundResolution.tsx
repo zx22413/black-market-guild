@@ -16,6 +16,7 @@ import type { TablePin } from '../scene/TableCanvas';
 import { Flights, placePoint, type PlaceContext } from './Flights';
 import { MarketCard } from './MarketCard';
 import { revealArrows, revealGroups, type RoleArrow } from './revealModel';
+import { withGoodIcons } from './GoodIcon';
 import { Flow, IconDisc, InfoIcon, artIconUrl } from './icons';
 import { LockHint } from './LockHint';
 import { RevealChips, SkipButton, StageSteps, WantedBanner, WantedChips } from './ResolveBar';
@@ -250,7 +251,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
           position: placePoint(flying.to, placeCtx),
           node: (
             <span key={flying.key} className={`flight-chip ${flying.amount !== null && flying.amount < 0 ? 'down' : ''}`} style={{ borderColor: colorOf(flying.playerId) }}>
-              {flying.amount !== null && <b>{flying.amount >= 0 ? '+' : '−'}{Math.abs(flying.amount)} G</b>} {flying.playerId === viewer ? '你' : nameOf(flying.playerId)} · {flying.label}
+              {flying.amount !== null && <b>{flying.amount >= 0 ? '+' : '−'}{Math.abs(flying.amount)} G</b>} {flying.playerId === viewer ? '你' : nameOf(flying.playerId)} · {withGoodIcons(flying.label)}
             </span>
           ),
         },
@@ -347,7 +348,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
               <IconDisc src={artIconUrl('coin')} />
               {flightsShown}/{flights.length}
             </span>
-            {flying && <span className="chip">{flying.label}</span>}
+            {flying && <span className="chip">{withGoodIcons(flying.label)}</span>}
           </span>
           <SkipButton label={viewer === null ? '跳過結帳' : '跳到帳單'} onClick={() => (viewer === null ? finish() : setStage('receipt'))} />
         </>

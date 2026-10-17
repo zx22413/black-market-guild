@@ -1,7 +1,8 @@
-import type { RoleId } from '../../v07/game';
+import type { Bet, RoleId } from '../../v07/game';
 import { ROLE_LABELS } from '../labels';
-import type { RolePick } from '../table/deployChoice';
-import { ArrowIcon, IconDisc } from './icons';
+import { betLabel, type RolePick } from '../table/deployChoice';
+import { GoodIcon } from './GoodIcon';
+import { ArrowIcon, IconDisc, TrendIcon } from './icons';
 import { roleIconUrl } from './RoleBadges';
 
 // What is being sent where, as two chips with an arrow between: [role] ▸ [whose ship]. A slot not
@@ -10,7 +11,7 @@ import { roleIconUrl } from './RoleBadges';
 export interface DeployChipsProps {
   readonly role: RolePick;
   /** Broker only: the chosen bet, e.g. 「木材漲」. */
-  readonly bet: string | null;
+  readonly bet: Bet | null;
   /** The role goes to a ship (a broker only once it can aim at one). */
   readonly needsShip: boolean;
   readonly target: { readonly name: string; readonly color: string } | null;
@@ -31,7 +32,15 @@ export function DeployChips({ role, bet, needsShip, target }: DeployChipsProps) 
         <IconDisc src={roleIconUrl(role as RoleId)} />
         {ROLE_LABELS[role]}
       </span>
-      {role === 'broker' && (bet ? <span className="chip">{bet}</span> : EMPTY)}
+      {role === 'broker' &&
+        (bet ? (
+          <span className="chip" title={betLabel(bet)}>
+            <GoodIcon good={bet.good} />
+            <TrendIcon dir={bet.direction} />
+          </span>
+        ) : (
+          EMPTY
+        ))}
       {needsShip && (
         <>
           <ArrowIcon />

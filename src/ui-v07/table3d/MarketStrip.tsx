@@ -1,6 +1,7 @@
 import type { Ref } from 'react';
 import { GOODS, type Bet, type GoodId, type Goods } from '../../v07/game';
 import { GOOD_LABELS, stepLabel } from '../labels';
+import { GoodIcon } from './GoodIcon';
 import type { Board } from '../session/board';
 
 // The black market at the top of the table: price and demand per good (§7). While a broker is
@@ -38,7 +39,7 @@ export function MarketStrip({
       <b title="黑市：價格（G）與需求量">黑市</b>
       {GOODS.map((g) => (
         <span key={`${g}-${changed?.has(g) ? 'new' : 'old'}`} className={`inv-chip good-${g} ${changed?.has(g) ? 'flash' : ''}`}>
-          {GOOD_LABELS[g]} <b>{stepLabel((prices ?? board.prices)[g])}</b>{' '}
+          <GoodIcon good={g} size="sm" /> {GOOD_LABELS[g]} <b>{stepLabel((prices ?? board.prices)[g])}</b>{' '}
           <span className="need" title={`需求 ${board.demand[g]}`}>
             需{board.demand[g]}
           </span>

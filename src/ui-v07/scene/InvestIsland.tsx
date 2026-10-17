@@ -7,17 +7,18 @@ import { playerIslandHeading } from '../../ui/scene/islandShape';
 import { ASSET_BUILDING_SCALE, ASSET_LOTS, seatPosition, type Vec3 } from '../../ui/scene/layout';
 import { shipPose } from '../../ui/scene/Ships';
 import type { ShipState } from '../../ui/scene/tableModel';
+import { CRATE_SIZE, CrateModel, GOOD_COLORS } from './CrateModel';
 import { ISLAND_PLATEAU } from './TableCanvas';
 
 // The investment decision played on your own island (docs/ui/v07-event-presentation.md §1.3):
 // the warehouse is a stack of crates per good, a click loads one onto the ship at the dock and a
 // click on the ship unloads it; the chosen building stands as a translucent preview on its lot.
 
-export const GOOD_COLORS: Readonly<Record<GoodId, string>> = { wood: '#c08a4e', iron: '#9fb0bd', spice: '#e2823a', arms: '#d35d6e' };
-const CRATE = 1.7;
-const COLUMN_GAP = 2.6;
-/** Warehouse spot in island space: in front of the banner, toward the dock. */
-const WAREHOUSE: Vec3 = [-3.9, 0, 3.4];
+export { GOOD_COLORS };
+const CRATE = CRATE_SIZE;
+const COLUMN_GAP = 2.4;
+/** Warehouse spot in island space: on the dock side, close to the ship it loads onto. */
+const WAREHOUSE: Vec3 = [-3.6, 0, 5.8];
 /** Deck height and slot spacing of the docked ship (ship-medium at scale 0.546). */
 const DECK_Y = 1.25;
 const SLOT_GAP = 1.75;
@@ -35,31 +36,19 @@ function setCursor(value: string) {
   };
 }
 
-/** Gold breathing glow on a crate that still waits for the player (docs: unfinished actions glow). */
-function useGoldBreath(on: boolean) {
-  const material = useRef<MeshStandardMaterial>(null);
-  useFrame(({ clock }) => {
-    const m = material.current;
-    if (!m) return;
-    m.emissiveIntensity = on ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(clock.elapsedTime * 3)) : 0;
-  });
-  return material;
-}
-
 function Crate({
-  color,
+  good,
   position,
   state,
   glow = false,
   onClick,
 }: {
-  readonly color: string;
+  readonly good: GoodId;
   readonly position: Vec3;
   readonly state: 'normal' | 'used' | 'tarp';
   readonly glow?: boolean;
   readonly onClick?: () => void;
 }) {
-  const material = useGoldBreath(glow);
   const click = onClick
     ? (e: ThreeEvent<MouseEvent>) => {
         e.stopPropagation();
@@ -68,29 +57,16 @@ function Crate({
     : undefined;
   return (
     <>
-      <mesh
-        position={position}
-        castShadow
-        {...(click ? { onClick: click, onPointerOver: setCursor('pointer'), onPointerOut: setCursor('') } : {})}
-      >
-        <boxGeometry args={[CRATE, CRATE, CRATE]} />
-        <meshStandardMaterial
-          ref={material}
-          color={state === 'tarp' ? '#8a6a45' : color}
-          emissive="#ffc23d"
-          emissiveIntensity={0}
-          transparent={state === 'used'}
-          opacity={state === 'used' ? 0.28 : 1}
-          flatShading
-        />
-      </mesh>
+      <group position={position} {...(click ? { onClick: click, onPointerOver: setCursor('pointer'), onPointerOut: setCursor('') } : {})}>
+        <CrateModel good={good} tarp={state === 'tarp'} faded={state === 'used'} glow={glow} />
+      </group>
       {/* From the table camera a building in front can hide a crate behind it (the warehouse sits
           on the dock side of the lots): a faint see-through copy keeps every stack readable. It is
           never hit by the pointer, so clicks still go to the real crate. */}
       {state !== 'used' && (
         <mesh position={position} renderOrder={10} raycast={() => null}>
           <boxGeometry args={[CRATE, CRATE, CRATE]} />
-          <meshBasicMaterial color={state === 'tarp' ? '#8a6a45' : color} transparent opacity={0.65} depthTest={false} depthWrite={false} />
+          <meshBasicMaterial color={state === 'tarp' ? '#8a6a45' : GOOD_COLORS[good]} transparent opacity={0.45} depthTest={false} depthWrite={false} />
         </mesh>
       )}
     </>
@@ -125,7 +101,7 @@ export function Warehouse({ angle, stock, forBuild, onShip, canLoad, onLoad, glo
             return (
               <Crate
                 key={`${good}-${k}`}
-                color={GOOD_COLORS[good]}
+                good={good}
                 position={[x, CRATE / 2 + k * (CRATE + 0.05), z]}
                 state={used ? 'used' : 'normal'}
                 glow={glow && loadable}
@@ -168,7 +144,7 @@ export function ShipCargo({ angle, load, capacity, onUnload, covered = false, st
         const at = deckSlot(angle, i, slots, state);
         const good = crates[i];
         if (good !== undefined) {
-          return <Crate key={i} color={GOOD_COLORS[good]} position={at} state={covered ? 'tarp' : 'normal'} {...(onUnload ? { onClick: () => onUnload(good) } : {})} />;
+          return <Crate key={i} good={good} position={at} state={covered ? 'tarp' : 'normal'} {...(onUnload ? { onClick: () => onUnload(good) } : {})} />;
         }
         return (
           <mesh key={i} position={at}>

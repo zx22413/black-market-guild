@@ -43,6 +43,17 @@
 | icons/handshake.svg | Handshake (recruit) | https://game-icons.net/1x1/delapouite/shaking-hands.html | https://game-icons.net/icons/ffffff/000000/1x1/delapouite/shaking-hands.svg | Delapouite | CC BY 3.0 | 2026-09-28 |
 | icons/reroll.svg | Dice reroll | https://game-icons.net/1x1/delapouite/rolling-dices.html | https://game-icons.net/icons/ffffff/000000/1x1/delapouite/rolling-dices.svg | Delapouite | CC BY 3.0 | 2026-09-28 |
 
+## 圖示（本專案自繪，無外部來源）
+
+商品圖示是自行用 SVG 路徑畫的，沒有使用任何外部素材，授權同本專案。顏色與上方 game-icons.net 的圖示一致（羊皮紙色 `#ecdcb0`，放在深色圓盤上）。**暫代用：**之後若要換成 game-icons.net 的圖示（檔名不變直接替換即可），要先在本表登記來源與作者。
+
+| 檔案 | 用途 | 畫法 | 取得日期 |
+| --- | --- | --- | --- |
+| icons/good-wood.svg | 商品：木材 | 一根斜放 45 度的樹幹側面，一端露出年輪，另有樹皮線與一截樹枝 | 2026-10-18 |
+| icons/good-iron.svg | 商品：鐵礦 | 三塊堆疊的鐵錠（梯形，帶斜面） | 2026-10-18 |
+| icons/good-spice.svg | 商品：香料 | 一根辣椒 | 2026-10-18 |
+| icons/good-arms.svg | 商品：軍火 | 帶引信的炸彈（圓球、頸、引信與火花） | 2026-10-18 |
+
 ## 畫作（Wikimedia Commons，公有領域）
 
 皆為作者逝世逾百年的畫作，Commons 標示為 PD-Art（公有領域）。法律上不需標示，但仍建議在製作人員名單中列出作者與作品。本專案用 `sips` 重新壓縮為 JPEG（品質 72），寬度最多 1600px。
