@@ -67,22 +67,33 @@ function Crate({
       }
     : undefined;
   return (
-    <mesh
-      position={position}
-      castShadow
-      {...(click ? { onClick: click, onPointerOver: setCursor('pointer'), onPointerOut: setCursor('') } : {})}
-    >
-      <boxGeometry args={[CRATE, CRATE, CRATE]} />
-      <meshStandardMaterial
-        ref={material}
-        color={state === 'tarp' ? '#8a6a45' : color}
-        emissive="#ffc23d"
-        emissiveIntensity={0}
-        transparent={state === 'used'}
-        opacity={state === 'used' ? 0.28 : 1}
-        flatShading
-      />
-    </mesh>
+    <>
+      <mesh
+        position={position}
+        castShadow
+        {...(click ? { onClick: click, onPointerOver: setCursor('pointer'), onPointerOut: setCursor('') } : {})}
+      >
+        <boxGeometry args={[CRATE, CRATE, CRATE]} />
+        <meshStandardMaterial
+          ref={material}
+          color={state === 'tarp' ? '#8a6a45' : color}
+          emissive="#ffc23d"
+          emissiveIntensity={0}
+          transparent={state === 'used'}
+          opacity={state === 'used' ? 0.28 : 1}
+          flatShading
+        />
+      </mesh>
+      {/* From the table camera a building in front can hide a crate behind it (the warehouse sits
+          on the dock side of the lots): a faint see-through copy keeps every stack readable. It is
+          never hit by the pointer, so clicks still go to the real crate. */}
+      {state !== 'used' && (
+        <mesh position={position} renderOrder={10} raycast={() => null}>
+          <boxGeometry args={[CRATE, CRATE, CRATE]} />
+          <meshBasicMaterial color={state === 'tarp' ? '#8a6a45' : color} transparent opacity={0.65} depthTest={false} depthWrite={false} />
+        </mesh>
+      )}
+    </>
   );
 }
 
