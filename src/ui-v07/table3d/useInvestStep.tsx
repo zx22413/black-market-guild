@@ -25,7 +25,7 @@ import {
 } from '../table/investChoice';
 import { ReminderDialog } from '../table/ReminderDialog';
 import { isHintSeen, isReminderSkipped, markHintSeen, setReminderSkipped } from '../table/reminderSettings';
-import { Flow, HouseIcon, IconDisc, artIconUrl } from './icons';
+import { CloseIcon, Flow, HouseIcon, IconDisc, artIconUrl } from './icons';
 import { LockHint } from './LockHint';
 import type { StageEnv, StageParts } from './stage';
 
@@ -120,9 +120,17 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
           </button>
           {picking && (
             <div className="inv-cards">
-              <button type="button" className={`inv-card ${choice.build === null && buildDecided ? 'sel' : ''}`} onClick={() => pickBuild(null)}>
+              <button
+                type="button"
+                className={`inv-card ${choice.build === null && buildDecided ? 'sel' : ''}`}
+                title="不蓋，保留材料"
+                aria-label="不蓋，保留材料"
+                onClick={() => pickBuild(null)}
+              >
+                <span className="inv-ic none">
+                  <CloseIcon />
+                </span>
                 <b>不蓋</b>
-                <small>保留材料</small>
               </button>
               {builds.map((b) => (
                 <button
@@ -130,15 +138,26 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
                   key={b.id}
                   className={`inv-card ${b.legal ? '' : 'no'} ${choice.build === b.id ? 'sel' : ''}`}
                   disabled={!b.legal}
-                  title={BUILDING_TEXT[b.id]}
+                  aria-label={`${BUILDING_LABELS[b.id]}：${BUILDING_TEXT[b.id]}`}
                   onClick={() => pickBuild(b.id)}
                 >
+                  <span className="inv-ic">
+                    <img src={artIconUrl(`asset-${b.id}`)} alt="" />
+                  </span>
                   <b>{BUILDING_LABELS[b.id]}</b>
-                  <small>
-                    {b.cash} G{GOODS.filter((g) => b.goods[g] > 0).map((g) => `＋${b.goods[g]}${GOOD_LABELS[g]}`)}
-                  </small>
-                  <small className="inv-effect">{BUILDING_TEXT[b.id]}</small>
+                  <span className="inv-cost">
+                    <IconDisc src={artIconUrl('coin')} />
+                    {b.cash}
+                    {GOODS.filter((g) => b.goods[g] > 0).map((g) => (
+                      <span key={g} className="inv-need" title={`${b.goods[g]} ${GOOD_LABELS[g]}`}>
+                        <span className={`glance-good good-${g}`}>{GOOD_LABELS[g].slice(0, 1)}</span>×{b.goods[g]}
+                      </span>
+                    ))}
+                  </span>
                   {b.reason && <small className="inv-why">{b.reason}</small>}
+                  <span className="inv-effect" role="tooltip">
+                    {BUILDING_TEXT[b.id]}
+                  </span>
                 </button>
               ))}
             </div>

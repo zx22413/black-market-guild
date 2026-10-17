@@ -2593,3 +2593,74 @@
     margin-left: 0;
   }
 }
+
+/* Building cards: icon, name, cost; the effect sentence is a tooltip (printed inside the card on touch). */
+.inv-card {
+  position: relative;
+  justify-items: center;
+  width: 112px;
+  gap: 6px;
+  text-align: center;
+}
+.inv-ic {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 2px solid #c9a45a;
+  border-radius: 50%;
+  background: #2b2116;
+}
+.inv-ic img {
+  width: 28px;
+  height: 28px;
+}
+.inv-ic.none {
+  color: #ecdcb0;
+}
+.inv-cost {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 8px;
+  font-size: var(--fs-body);
+  font-weight: 700;
+}
+.inv-need {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.inv-card .inv-effect {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  z-index: 5;
+  display: none;
+  width: 200px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #2b2116;
+  color: #f5ecd4;
+  font-size: var(--fs-note);
+  line-height: 1.5;
+  text-align: left;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.inv-card:hover .inv-effect,
+.inv-card:focus-visible .inv-effect {
+  display: block;
+}
+@media (hover: none) {
+  .inv-card .inv-effect {
+    position: static;
+    display: block;
+    width: auto;
+    padding: 0;
+    background: none;
+    color: #6b5537;
+    transform: none;
+  }
+}
