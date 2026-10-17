@@ -8,6 +8,7 @@ import { TableCanvas, overviewPoints, useTableLayout, type TableShip } from '../
 import { buildBoard } from '../session/board';
 import type { GameSession, HumanRequest } from '../session/gameSession';
 import { useSession } from '../session/useSession';
+import { BookIcon, ExitIcon, LogIcon } from './icons';
 import { islandBadgePins } from './IslandBadge';
 import { IslandDraft, IslandReveal } from './IslandDraft';
 import { MarketStrip } from './MarketStrip';
@@ -15,6 +16,7 @@ import { RankRail } from './RankRail';
 import { RerollCard } from './RerollCard';
 import { ResultCard } from './ResultCard';
 import { resultRows } from './resultModel';
+import { RulesPanel } from './RulesPanel';
 import { seatPlates } from './seatPlates';
 import type { StageEnv } from './stage';
 import { useDeployStep } from './useDeployStep';
@@ -171,6 +173,7 @@ export function Table3DScreen({ session, onExit, autoplay = false }: Table3DScre
 
   // The voyage log, for whoever wants to read back what happened.
   const [logOpen, setLogOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
   const shipOwnerName = (id: ShipId) => {
     const owner = snap.events.flatMap((e) => (e.type === 'ships-launched' ? e.ships : [])).find((s) => s.id === id)?.owner;
     return owner ? `${nameOf(owner)}的船` : id;
@@ -227,11 +230,14 @@ export function Table3DScreen({ session, onExit, autoplay = false }: Table3DScre
       )}
       <div className="t3-menu">
         <span className="t3-round">{board.round === 0 ? '選島' : `第 ${board.round}／${RULES_V07.rounds} 回合`}</span>
-        <button type="button" aria-expanded={logOpen} onClick={() => setLogOpen(!logOpen)}>
-          航海日誌
+        <button type="button" title="規則" aria-label="規則" aria-expanded={rulesOpen} onClick={() => setRulesOpen(true)}>
+          <BookIcon />
         </button>
-        <button type="button" onClick={onExit}>
-          離開
+        <button type="button" title="航海日誌" aria-label="航海日誌" aria-expanded={logOpen} onClick={() => setLogOpen(!logOpen)}>
+          <LogIcon />
+        </button>
+        <button type="button" title="離開" aria-label="離開" onClick={onExit}>
+          <ExitIcon />
         </button>
       </div>
 
@@ -284,6 +290,7 @@ export function Table3DScreen({ session, onExit, autoplay = false }: Table3DScre
         </div>
       )}
 
+      {rulesOpen && <RulesPanel onClose={() => setRulesOpen(false)} />}
       {logOpen && (
         <aside className="v7-log t3-log" aria-label="航海日誌">
           <button className="v7-btn close" onClick={() => setLogOpen(false)}>

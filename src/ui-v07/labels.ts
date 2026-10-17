@@ -37,6 +37,9 @@ export const BUILDING_TEXT: Readonly<Record<BuildingId, string>> = {
   exchange: '別人的貨每抵達 1 單位拿 15 G 佣金，每回合最多計 4 單位。',
 };
 
+/** How the final standing is counted (§13); also what the rules panel says under 計分. */
+export const WEALTH_RULE_TEXT = '總財富 ＝ 現金 ＋ 持有建築現金成本的一半；倉庫裡的材料不計分。同分比現金，現金也相同就並列。';
+
 export const ISLAND_LABELS: Readonly<Record<IslandId, string>> = {
   'spice-isles': '香料群島',
   'pirate-cove': '海盜灣',

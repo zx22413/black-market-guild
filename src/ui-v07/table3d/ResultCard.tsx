@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { PlayerId } from '../../v07/game';
-import { BUILDING_LABELS } from '../labels';
+import { BUILDING_LABELS, WEALTH_RULE_TEXT } from '../labels';
 import type { ResultRow } from './resultModel';
 
 // The end of the match (§3, §13) as a full-screen card over the dimmed table. Places are revealed
@@ -105,7 +105,7 @@ export function ResultCard({ rows, nameOf, colorOf, viewer, rounds, onRestart }:
           <span>第 {rounds} 回合結束</span>
           <strong>{done ? `${winners.join('、')} 獲勝` : '最終結算'}</strong>
         </header>
-        <p className="result-rule">總財富 ＝ 現金 ＋ 持有建築現金成本的一半；倉庫裡的材料不計分。同分比現金，現金也相同就並列。</p>
+        <p className="result-rule">{WEALTH_RULE_TEXT}</p>
         <ol className="result-rows">
           {rows.map((row, i) => (
             <Row

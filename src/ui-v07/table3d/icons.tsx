@@ -51,6 +51,42 @@ export function HouseIcon() {
   );
 }
 
+/** A cross: close. */
+export function CloseIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+      <path d="M4 4l8 8M12 4l-8 8" {...LINE} />
+    </svg>
+  );
+}
+
+/** An open book: the rules. */
+export function BookIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+      <path d="M8 4.5C6.5 3.5 4.5 3.3 2.5 3.5v8.5c2-.2 4 0 5.5 1M8 4.5c1.5-1 3.5-1.2 5.5-1v8.5c-2-.2-4 0-5.5 1M8 4.5V13" {...LINE} />
+    </svg>
+  );
+}
+
+/** Lines of text: the voyage log. */
+export function LogIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+      <path d="M3 4h10M3 8h10M3 12h6" {...LINE} />
+    </svg>
+  );
+}
+
+/** A door with an arrow out: leave the table. */
+export function ExitIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+      <path d="M6.5 3H3.5v10h3M7 8h6M10.5 5.5L13 8l-2.5 2.5" {...LINE} />
+    </svg>
+  );
+}
+
 /** An hourglass-like clock: how long something takes or rests. */
 export function ClockIcon() {
   return (
