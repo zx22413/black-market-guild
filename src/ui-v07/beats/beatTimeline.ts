@@ -26,6 +26,14 @@ export const BEAT_PACE = {
 } as const;
 
 /**
+ * The die and what changes it (the start value, each modifier, the outcome) always stay on screen
+ * at least this long, even on a fast-forwarded ship that does not involve you: the value is what
+ * people read, and it flashed by too quickly when the pace was only divided by the speed.
+ */
+export const DIE_HOLD = 1000;
+const DIE_CUES: ReadonlySet<CueKind> = new Set(['start', 'step', 'outcome']);
+
+/**
  * `money: false` leaves out the payments: in a full round they wait for the settlement, because
  * sales and most payouts use the price after the market moves (§7.3).
  */
@@ -34,7 +42,8 @@ export function beatCues(beat: ShipBeat, speed = 1, money = true): Cue[] {
   let at = 0;
   const push = (kind: CueKind, index: number, duration: number) => {
     cues.push({ kind, index, at });
-    at += duration / speed;
+    const scaled = duration / speed;
+    at += DIE_CUES.has(kind) ? Math.max(scaled, DIE_HOLD) : scaled;
   };
   push('intro', 0, BEAT_PACE.intro);
   push('start', 0, BEAT_PACE.start);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MatchEvent } from '../../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../src/v07/match';
-import { BEAT_PACE, beatCues, cuesStarted } from '../../src/ui-v07/beats/beatTimeline';
+import { BEAT_PACE, DIE_HOLD, beatCues, cuesStarted } from '../../src/ui-v07/beats/beatTimeline';
 import { buildReceipt, buildShipBeat, resolvedShips } from '../../src/ui-v07/beats/shipBeat';
 
 const seats: SeatConfig[] = ['A', 'B', 'C', 'D'].map((name, i) => ({
@@ -99,6 +99,12 @@ describe('beat timeline', () => {
     expect(cuesStarted(cues, 0)).toBe(1);
     expect(cuesStarted(cues, BEAT_PACE.intro)).toBe(2);
     expect(cuesStarted(cues, Number.MAX_SAFE_INTEGER)).toBe(cues.length);
-    expect(beatCues(beat, 2).at(-1)!.at).toBeCloseTo(cues.at(-1)!.at / 2);
+    // Faster playback shortens the rest, but the die and its modifiers keep their full second.
+    const fast = beatCues(beat, 2.5);
+    expect(fast.at(-1)!.at).toBeLessThan(cues.at(-1)!.at);
+    fast.forEach((c, i) => {
+      const next = fast[i + 1];
+      if (next && (c.kind === 'start' || c.kind === 'step' || c.kind === 'outcome')) expect(next.at - c.at).toBeGreaterThanOrEqual(DIE_HOLD);
+    });
   });
 });

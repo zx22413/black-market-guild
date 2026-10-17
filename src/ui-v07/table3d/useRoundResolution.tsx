@@ -35,7 +35,7 @@ import { VoyageEventCard, VoyageEventChip } from './VoyageEventCard';
 export type ResolutionStage = 'wanted' | 'event' | 'reveal' | 'voyage' | 'market' | 'settle' | 'receipt';
 
 /** Pace of each part, in ms (initial values to tune in play). */
-const PACE = { wanted: 3000, revealGroup: 1600, nextShip: 700, marketRow: 1000, afterMarket: 1500, flight: 1100, afterSettle: 900 } as const;
+const PACE = { wanted: 3000, revealGroup: 1600, nextShip: 1000, marketRow: 1000, afterMarket: 1500, flight: 1100, afterSettle: 900 } as const;
 const HARBOR_BADGES = [-(TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2, 0, (TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2] as const;
 /** Ships that do not involve you play this much faster (presentation default, see the doc §4). */
 const OTHERS_SPEED = 2.5;
