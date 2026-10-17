@@ -3,6 +3,7 @@ import type { IslandId, PlayerId } from '../../v07/game';
 import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
 import { ISLAND_LABELS, ISLAND_TEXT } from '../labels';
 import type { TablePin } from '../scene/TableCanvas';
+import { IslandGlance } from './IslandGlance';
 
 // Each island's name as its own badge on the island, apart from the guild's name plate. Hover
 // (desktop) or tap it to see what the island does (§11.2); tap elsewhere to close.
@@ -33,8 +34,11 @@ function IslandBadge({ island }: { readonly island: IslandId }) {
       </button>
       <span className="island-tip" role="tooltip">
         <b>{ISLAND_LABELS[island]}</b>
-        <span className="draft-pro">＋ {text.pro}</span>
-        <span className="draft-con">－ {text.con}</span>
+        <IslandGlance island={island} />
+        <span className="draft-full">
+          <span>{text.pro}</span>
+          <span>{text.con}</span>
+        </span>
       </span>
     </span>
   );

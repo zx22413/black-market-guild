@@ -3,6 +3,7 @@ import type { DecisionContext } from '../../v07/bots';
 import type { Action, IslandId, PlayerId } from '../../v07/game';
 import { ISLAND_LABELS, ISLAND_TEXT } from '../labels';
 import { legalOf } from '../table/forms';
+import { IslandGlance } from './IslandGlance';
 
 // The island draft (§11.1, docs/ui/v07-event-presentation.md §1.1): two big island cards over the
 // dimmed table, only for you. They glow until you pick one; the pick lifts, the button names it,
@@ -33,7 +34,7 @@ export function IslandDraft({ context, onSubmit }: IslandDraftProps) {
         <header className="draft-head">
           <span>只有你看得到</span>
           <strong>選一座島，整局都用它</strong>
-          <small>每個人各拿到兩座，秘密選一座；所有人選好後同時公開。沒選的島不使用。</small>
+          <small>兩座選一座，所有人同時公開</small>
         </header>
         <div className="draft-cards">
           {options.map((a) => {
@@ -44,18 +45,24 @@ export function IslandDraft({ context, onSubmit }: IslandDraftProps) {
                 key={a.island}
                 type="button"
                 className={`draft-card ${on ? 'on' : ''} ${picked === null ? 'todo' : ''} ${flying && !on ? 'gone' : ''} ${flying && on ? 'fly' : ''}`}
+                title={`${text.pro}。${text.con}`}
                 onClick={() => !flying && setPicked(a.island)}
               >
                 <b>{ISLAND_LABELS[a.island]}</b>
-                <span className="draft-pro">＋ {text.pro}</span>
-                <span className="draft-con">－ {text.con}</span>
+                <IslandGlance island={a.island} />
+                {on && (
+                  <span className="draft-full">
+                    <span>{text.pro}</span>
+                    <span>{text.con}</span>
+                  </span>
+                )}
               </button>
             );
           })}
         </div>
         <footer className="beat-foot">
           <button type="button" className="primary" disabled={picked === null || flying} onClick={confirm}>
-            {picked ? `選定：${ISLAND_LABELS[picked]}` : '先選一座島'}
+            {picked ? '選定' : '選一座島'}
           </button>
         </footer>
       </div>
@@ -72,11 +79,12 @@ export interface IslandRevealProps {
 
 /** Everyone's island, revealed at once (§11.1), with what each one does. */
 export function IslandReveal({ islands, seats, onClose }: IslandRevealProps) {
+  // Tap a guild's island to read its full rule text.
+  const [open, setOpen] = useState<PlayerId | null>(null);
   return (
     <div className="beat-backdrop draft-backdrop" role="dialog" aria-modal="true" aria-label="島嶼公開">
       <div className="beat-card island-reveal">
         <header className="beat-head">
-          <span>所有人同時公開</span>
           <strong>各商會的島</strong>
         </header>
         <ul className="island-list">
@@ -85,18 +93,25 @@ export function IslandReveal({ islands, seats, onClose }: IslandRevealProps) {
             if (!island) return null;
             return (
               <li key={s.id} style={{ borderColor: s.color, animationDelay: `${i * 160}ms` }}>
-                <b>
-                  {s.isViewer ? '你' : s.name}：{ISLAND_LABELS[island]}
-                </b>
-                <span className="draft-pro">＋ {ISLAND_TEXT[island].pro}</span>
-                <span className="draft-con">－ {ISLAND_TEXT[island].con}</span>
+                <button type="button" className="island-item" aria-expanded={open === s.id} title={`${ISLAND_TEXT[island].pro}。${ISLAND_TEXT[island].con}`} onClick={() => setOpen(open === s.id ? null : s.id)}>
+                  <b>
+                    {s.isViewer ? '你' : s.name}：{ISLAND_LABELS[island]}
+                  </b>
+                  <IslandGlance island={island} />
+                </button>
+                {open === s.id && (
+                  <span className="draft-full">
+                    <span>{ISLAND_TEXT[island].pro}</span>
+                    <span>{ISLAND_TEXT[island].con}</span>
+                  </span>
+                )}
               </li>
             );
           })}
         </ul>
         <footer className="beat-foot">
           <button type="button" className="primary" onClick={onClose}>
-            開始第 1 回合
+            開始
           </button>
         </footer>
       </div>

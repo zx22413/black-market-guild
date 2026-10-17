@@ -15,7 +15,7 @@ import { around } from '../scene/focusMath';
 import type { TablePin } from '../scene/TableCanvas';
 import { Flights, placePoint, type PlaceContext } from './Flights';
 import { MarketCard } from './MarketCard';
-import { arrowPoint, revealArrows, revealGroups, type RoleArrow } from './revealModel';
+import { revealArrows, revealGroups, type RoleArrow } from './revealModel';
 import { Flow, IconDisc, InfoIcon, artIconUrl } from './icons';
 import { LockHint } from './LockHint';
 import { RevealChips, SkipButton, StageSteps } from './ResolveBar';
@@ -201,21 +201,6 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   const showArrows = stage === 'reveal' || stage === 'voyage';
   // During the voyage only the arrows at the ship being played stay: the rest would cross the close-up.
   const shownArrows: readonly RoleArrow[] = stage === 'voyage' ? arrows.filter((a) => beat !== null && a.targetShipId === beat.shipId) : arrows;
-  const arrowPins: TablePin[] =
-    stage === 'reveal'
-      ? arrows
-          .filter((a) => !a.faint)
-          .map((a) => ({
-            id: `arrow-${a.key}`,
-            position: arrowPoint(a, 0.5),
-            node: (
-              <span className={`arrow-chip ${olderArrows.has(a.key) ? 'dim' : ''}`} style={{ borderColor: colorOf(a.playerId) }}>
-                {a.label} · {a.playerId === viewer ? '你' : nameOf(a.playerId)}
-              </span>
-            ),
-          }))
-      : [];
-
   // Only your intel merchant's dice, low-key, while the reveal is on (§4).
   const intelPins: TablePin[] = [];
   if (stage === 'reveal') {
@@ -364,7 +349,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     camera,
     ringed: layer?.ringed,
     wrapShip: layer?.wrapShip,
-    pins: [...arrowPins, ...badgePins, ...intelPins, ...(layer?.pins ?? []), ...marketPins, ...flightPins],
+    pins: [...badgePins, ...intelPins, ...(layer?.pins ?? []), ...marketPins, ...flightPins],
     scene: (
       <>
         {showArrows && <RoleArrows arrows={shownArrows} colorOf={colorOf} dimmed={(a) => olderArrows.has(a.key)} />}

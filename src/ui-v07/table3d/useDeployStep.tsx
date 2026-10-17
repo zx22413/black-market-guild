@@ -22,6 +22,7 @@ import { ReminderDialog } from '../table/ReminderDialog';
 import { isReminderSkipped, setReminderSkipped } from '../table/reminderSettings';
 import { roleDetail } from '../table/roleText';
 import { DeployChips } from './DeployChips';
+import { ClockIcon, IconDisc, artIconUrl } from './icons';
 import { LockHint } from './LockHint';
 import { roleIconUrl } from './RoleBadges';
 import { DashedArrows } from './RoleArrows';
@@ -115,31 +116,38 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
 
   const shown = peek ?? choice.role;
   const shownCard = shown !== null && shown !== 'none' ? cards.find((c) => c.id === shown) : undefined;
-  // The description strip keeps its height whatever it says, so the hand never jumps.
-  const strip = (
-    <div className={`dep-strip ${shown === null ? 'idle' : ''}`} aria-live="polite">
-      {shown === null && <p>點選角色看說明</p>}
-      {shown === 'none' && (
-        <>
-          <header>
-            <b>不部署</b>
-          </header>
-          <p>這回合不派角色，也不付部署費。</p>
-        </>
-      )}
-      {shown !== null && shown !== 'none' && shownCard && (
-        <>
-          <header>
-            <b>{ROLE_LABELS[shown]}</b>
-            <span>{shownCard.fee === 0 ? '免費' : `部署費 ${shownCard.fee} G`}</span>
-            <span>冷卻 {shownCard.cooldown} 回合</span>
-          </header>
-          {shownCard.reason && <p className="why">{shownCard.reason}</p>}
-          <p>{roleDetail(shown, context.view.rules)}</p>
-        </>
-      )}
-    </div>
-  );
+  // The description strip is only there while a role is pointed at or picked; it sits above the
+  // hand, so the hand itself never moves.
+  const strip =
+    shown === null ? null : (
+      <div className="dep-strip" aria-live="polite">
+        {shown === 'none' && (
+          <>
+            <header>
+              <b>不部署</b>
+            </header>
+            <p>這回合不派角色，也不付部署費。</p>
+          </>
+        )}
+        {shown !== 'none' && shownCard && (
+          <>
+            <header>
+              <b>{ROLE_LABELS[shown]}</b>
+              <span className="chip" title={shownCard.fee === 0 ? '免費' : `部署費 ${shownCard.fee} G`}>
+                <IconDisc src={artIconUrl('coin')} />
+                {shownCard.fee === 0 ? '免費' : shownCard.fee}
+              </span>
+              <span className="chip" title={`用過後冷卻 ${shownCard.cooldown} 回合`}>
+                <ClockIcon />
+                {shownCard.cooldown}
+              </span>
+            </header>
+            {shownCard.reason && <p className="why">{shownCard.reason}</p>}
+            <p>{roleDetail(shown, context.view.rules)}</p>
+          </>
+        )}
+      </div>
+    );
 
   const hand = (
     <div className={`dep-hand ${todo.role ? 'todo' : ''} ${choice.role !== null ? 'picked' : ''}`} onMouseLeave={() => setPeek(null)}>

@@ -1176,23 +1176,6 @@
   opacity: 0.35;
   cursor: not-allowed;
 }
-/* Reveal: a label at the middle of each role arrow, in the player's color. */
-.arrow-chip {
-  display: inline-block;
-  padding: 2px 10px;
-  border: 2px solid;
-  border-radius: 999px;
-  background: rgb(245 236 212 / 0.95);
-  color: #2b2116;
-  font-size: var(--fs-body);
-  font-weight: 700;
-  white-space: nowrap;
-  animation: beat-pop 300ms cubic-bezier(0.2, 1.5, 0.4, 1);
-  transition: opacity 400ms;
-}
-.arrow-chip.dim {
-  opacity: 0.55;
-}
 /* Private knowledge (only you): purple, small. */
 .secret-chip {
   display: inline-block;
@@ -2424,4 +2407,99 @@
 }
 .bar-chips .chip b {
   font-weight: 700;
+}
+
+/* Island effects as icon rows (src/ui-v07/table3d/IslandGlance.tsx); the full sentence opens on tap or hover. */
+.glance {
+  display: grid;
+  gap: 8px;
+}
+.glance-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-body);
+  font-weight: 700;
+}
+.glance-row.pro {
+  color: #1d6a30;
+}
+.glance-row.con {
+  color: #9a2a22;
+}
+.glance .sign {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: var(--fs-note);
+  font-style: normal;
+  line-height: 1;
+}
+.glance-row.pro .sign {
+  background: #1d6a30;
+}
+.glance-row.con .sign {
+  background: #9a2a22;
+}
+.glance-good {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid;
+  background: rgb(245 236 212 / 0.95);
+  color: #2b2116;
+  font-size: var(--fs-note);
+}
+.glance-good.good-wood { border-color: var(--wood); }
+.glance-good.good-iron { border-color: var(--iron); }
+.glance-good.good-spice { border-color: var(--spice); }
+.glance-good.good-arms { border-color: var(--arms); }
+.draft-full {
+  display: grid;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed #b9a77d;
+  color: #3d2f1d;
+  font-size: var(--fs-body);
+  line-height: 1.5;
+}
+.draft-card {
+  min-height: 0;
+  padding: 20px;
+}
+.draft-card .glance-row {
+  font-size: var(--fs-title);
+}
+.island-item {
+  display: grid;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.island-tip .glance-row {
+  font-size: var(--fs-note);
+}
+
+/* Role strip: only when a role is pointed at or picked. */
+.dep-strip header .chip {
+  gap: 4px;
+  font-size: var(--fs-body);
+}
+.island-list {
+  align-items: start;
+}
+.island-item {
+  align-content: start;
 }
