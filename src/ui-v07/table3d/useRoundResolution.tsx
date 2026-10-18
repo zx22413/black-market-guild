@@ -40,7 +40,7 @@ export type ResolutionStage = 'wanted' | 'event' | 'reveal' | 'voyage' | 'market
 const PACE = { wanted: 3000, revealGroup: 1600, revealSpotlight: (SPOTLIGHT_HOLD.reveal + SPOT_TIME.fade) * 1000 + 400, nextShip: 1000, marketRow: 1000, afterMarket: 1500, flight: 1100, afterSettle: 900 } as const;
 const HARBOR_BADGES = [-(TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2, 0, (TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2] as const;
 /** Ships that do not involve you play this much faster (presentation default, see the doc §4). */
-const OTHERS_SPEED = 2.5;
+const OTHERS_SPEED = 1.5;
 
 export interface ResolutionInput {
   readonly events: readonly MatchEvent[];

@@ -6,6 +6,7 @@ import { Model } from '../../ui/scene/Model';
 import { SEA_LEVEL, seaSurfaceY } from '../../ui/scene/seaWave';
 import { useSwell, useWavePhase } from '../../ui/scene/SwellContext';
 import { Burst, WaterRing, fan } from './beatFx';
+import { SHOW_TEMPO } from './showTempo';
 import { BARRAGE, RAID, RAIDERS, SHOTS, flareSpot, landsAt, raiderPose, shotPose, type BarrageCue, type RaidCue } from './islandForceMath';
 
 // The pirate cove's raiders and the fortress's salute in a ship beat; where everything is comes from
@@ -13,7 +14,7 @@ import { BARRAGE, RAID, RAIDERS, SHOTS, flareSpot, landsAt, raiderPose, shotPose
 
 const RAIDER_SCALE = 0.3;
 /** How far a raider lunges in at the ram, and for how long round the moment it touches. */
-const LUNGE = { reach: 3.2, before: 0.25, after: 0.35 } as const;
+const LUNGE = { reach: 3.2, before: 0.25 * SHOW_TEMPO, after: 0.35 * SHOW_TEMPO } as const;
 const SPRAY = fan(10, Math.PI * 2, 5, 9, 3);
 /** The fort's flares: gold, and the soft sparkle where each comes to rest. */
 const FLARE = '#ffd25a';

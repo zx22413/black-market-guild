@@ -1,8 +1,10 @@
+import { SHOW_TEMPO, slowed } from './showTempo';
+
 // How an island that just counted moves (`IslandPulse`), as plain numbers: a squash, a hop with a
 // stretch, a bouncy landing, and a glowing ring that swells out from the shore and fades.
 
 /** Seconds: the squash before the hop, the hop, the settle after landing, and how long the ring glows. */
-export const PULSE = { squash: 0.18, hop: 0.42, settle: 0.6, glow: 1.6 } as const;
+export const PULSE = slowed({ squash: 0.18, hop: 0.42, settle: 0.6, glow: 1.6 });
 /** How high the island hops, and how hard it squashes and stretches. */
 const HOP = 1.6;
 const SQUASH = 0.12;
@@ -38,7 +40,7 @@ export function pulseFrame(t: number): PulseFrame {
   }
   const land = air - PULSE.hop;
   if (land < PULSE.settle) {
-    const wobble = Math.exp(-land * 7) * Math.cos(land * 24) * SQUASH;
+    const wobble = Math.exp((-land * 7) / SHOW_TEMPO) * Math.cos((land * 24) / SHOW_TEMPO) * SQUASH;
     return { hop: 0, wide: 1 + wobble, tall: 1 - wobble, ring, glow };
   }
   return { ...REST, ring, glow };

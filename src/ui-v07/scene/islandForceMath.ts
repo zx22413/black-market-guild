@@ -6,6 +6,7 @@ import type { BeatStep, ShipBeat } from '../beats/shipBeat';
 import { backdropAt, backdropTop } from './islandScenery';
 import { shipPoint, type SeatLookup } from './spotlightMath';
 import { ISLAND_PLATEAU, islandPoint } from './TableCanvas';
+import { slowed } from './showTempo';
 
 // The pirate cove and the fortress at work in a ship beat (docs/game-design.md §11.2), as plain data.
 // A pirate from the cove brings the cove along: a pack of raiders bursts out of the cove, sails round
@@ -15,7 +16,7 @@ import { ISLAND_PLATEAU, islandPoint } from './TableCanvas';
 // golden shield goes up over the guard's (+2 instead of +1).
 
 /** When the raid happens, in seconds from the start of its step. */
-export const RAID = { stagger: 0.07, arrive: 1.1, ram: 1.35 } as const;
+export const RAID = slowed({ stagger: 0.07, arrive: 1.1, ram: 1.35 });
 /** How many raiders leave the cove, and how far from the ship they stop round it. */
 export const RAIDERS = 4;
 const RAID_RING = 6.5;
@@ -25,7 +26,7 @@ const SEA_ROOM = 5;
 const MOUTH_OUT = 6;
 
 /** When the fort's guns fire, how long each shot flies, and when the second shield goes up. */
-export const BARRAGE = { first: 0.15, gap: 0.12, flight: 0.75, shield: 1.45 } as const;
+export const BARRAGE = slowed({ first: 0.15, gap: 0.12, flight: 0.75, shield: 1.45 });
 export const SHOTS = 5;
 /**
  * Where the flares come to rest: a ring on the guard's shield dome over the ship (well up off the

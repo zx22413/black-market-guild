@@ -2038,20 +2038,16 @@
   color: #6a4fc2;
   animation-delay: 150ms;
 }
-/* The pirate cove's raid and the fortress's guns land later than a plain ram or shield
-   (RAID.ram and BARRAGE.shield in scene/islandForceMath.ts). */
+/* The islands at work (the cove's raid, the fortress's salute, the lighthouse): their words get
+   their delay inline from HIT_DELAY in scene/BeatScene.tsx, slowed with SHOW_TEMPO. */
 .hit-word.raid {
   color: #b3261e;
-  animation-delay: 1300ms;
 }
 .hit-word.bastion {
   color: #9a6a00;
-  animation-delay: 1400ms;
 }
-/* The lighthouse: the word lands when the beam locks onto the ship (SPOT_TIME.lock in scene/spotlightMath.ts). */
 .hit-word.beacon {
   color: #b86a00;
-  animation-delay: 950ms;
 }
 @keyframes hit-word {
   0% { opacity: 0; transform: rotate(-8deg) scale(2.4); }

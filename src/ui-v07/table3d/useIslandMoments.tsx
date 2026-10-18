@@ -3,6 +3,7 @@ import { RULES_V07, type IslandId, type MatchEvent, type PlayerId } from '../../
 import { seatPosition } from '../../ui/scene/layout';
 import type { TablePin } from '../scene/TableCanvas';
 import type { Board } from '../session/board';
+import { slowed } from '../scene/showTempo';
 import { GoodIcon } from './GoodIcon';
 import { launchMoments, openingMoments, type IslandMoment } from './islandMoments';
 
@@ -11,7 +12,7 @@ import { launchMoments, openingMoments, type IslandMoment } from './islandMoment
 // roles are deployed. Each holds the table for a moment (the next decision waits), then lets go.
 
 /** How long each moment holds the table (ms): long enough to read the chips once. */
-export const MOMENT_MS = { opening: 2600, launch: 2200 } as const;
+export const MOMENT_MS = slowed({ opening: 2600, launch: 2200 });
 /** How high over an island its chips hang. */
 const CHIP_HEIGHT = 7;
 

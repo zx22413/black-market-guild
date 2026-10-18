@@ -16,6 +16,7 @@ import { actorsShown, framingOf, involved, stepActors, stepHit, type BeatActor, 
 import { Burst, WaterRing, fan } from './beatFx';
 import { Barrage, Raiders } from './IslandForces';
 import { BARRAGE, RAID, RAIDERS, barrageCue, raidCue, raiderSpot } from './islandForceMath';
+import { SHOW_TEMPO } from './showTempo';
 import { Spotlight } from './Spotlight';
 import { SPOT_TIME, voyageSpotlight } from './spotlightMath';
 import { TableCanvas, overviewPoints, platePosition, useTableLayout, type TablePin } from './TableCanvas';
@@ -38,6 +39,8 @@ const ACTOR_SPOT = { x: 7, z: 5, spread: 5 } as const;
 /** How long after a step begins the ship takes the hit (an actor first has to arrive). */
 const HIT_DELAY: Readonly<Record<BeatHit['kind'], number>> = { ram: 0.7, raid: RAID.ram, shield: 0.45, bastion: BARRAGE.shield, lightning: 0.2, push: 0.15, lift: 0.45, jolt: 0.15, beacon: SPOT_TIME.lock };
 const HIT_LENGTH = 0.7;
+/** Hits from an island at work: their word lands with the hit itself (the CSS delay is for the rest). */
+const ISLAND_HITS: ReadonlySet<BeatHit['kind']> = new Set(['beacon', 'raid', 'bastion']);
 const HIT_WORD: Partial<Record<BeatHit['kind'], string>> = { ram: '撞擊！', raid: '海盜灣！', shield: '護航！', bastion: '要塞！', lightning: '雷擊！', beacon: '燈塔！' };
 /** A pirate pulls back, then rams the ship: it starts moving at LUNGE_START and touches it at HIT_DELAY.ram. */
 const LUNGE_START = 0.45;
@@ -250,7 +253,7 @@ function HitFx({ hit, at, from }: { readonly hit: BeatHit; readonly at: Vector3;
     return (
       <>
         <ShieldFx at={at} delay={HIT_DELAY.bastion} />
-        <ShieldFx at={at} delay={HIT_DELAY.bastion + 0.25} color="#ffc94a" size={1.3} />
+        <ShieldFx at={at} delay={HIT_DELAY.bastion + 0.25 * SHOW_TEMPO} color="#ffc94a" size={1.3} />
       </>
     );
   if (hit.kind !== 'lightning') return null;
@@ -354,7 +357,9 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats }: B
       ...(hit && HIT_WORD[hit.kind]
         ? [{ id: `hit-${beat.shipId}-${hit.key}`, position: [p.x, 5, p.z] as const, node: (
               <span>
-                <span className={`hit-word ${hit.kind}`}>{HIT_WORD[hit.kind]}</span>
+                <span className={`hit-word ${hit.kind}`} style={ISLAND_HITS.has(hit.kind) ? { animationDelay: `${Math.round((HIT_DELAY[hit.kind] - 0.05) * 1000)}ms` } : undefined}>
+                  {HIT_WORD[hit.kind]}
+                </span>
               </span>
             ), hidden: framing !== 'ship' }]
         : []),

@@ -1,4 +1,5 @@
 import type { ShipBeat } from './shipBeat';
+import { SHOW_TEMPO, slowed } from '../scene/showTempo';
 
 // When each part of a ship beat appears. One thing happens at a time (the Balatro lesson in
 // docs/ui/v07-layout-research.md §6): the start die, then each modifier, then the outcome, the
@@ -14,8 +15,8 @@ export interface Cue {
   readonly at: number;
 }
 
-/** Durations in ms; one place to tune the pace. */
-export const BEAT_PACE = {
+/** Durations in ms, slowed with the rest of the show by `SHOW_TEMPO`; one place to tune the pace. */
+export const BEAT_PACE = slowed({
   intro: 700,
   start: 900,
   step: 1000,
@@ -28,14 +29,14 @@ export const BEAT_PACE = {
   cargo: 1000,
   cash: 650,
   goods: 650,
-} as const;
+});
 
 /**
  * The die and what changes it (the start value, each modifier, the outcome) always stay on screen
  * at least this long, even on a fast-forwarded ship that does not involve you: the value is what
  * people read, and it flashed by too quickly when the pace was only divided by the speed.
  */
-export const DIE_HOLD = 1000;
+export const DIE_HOLD = 1000 * SHOW_TEMPO;
 const DIE_CUES: ReadonlySet<CueKind> = new Set(['start', 'step', 'outcome']);
 
 /**

@@ -7,6 +7,7 @@ import type { ShipBeat } from '../beats/shipBeat';
 import { revealGroups } from '../table3d/revealModel';
 import { beaconAt } from './islandScenery';
 import { islandPoint } from './TableCanvas';
+import { SHOW_TEMPO, slowed } from './showTempo';
 
 // The lighthouse island at work (docs/game-design.md §11.2), as plain data: the table goes dark
 // and the lighthouse's beam swings onto the ship it helps. On its owner's ship that is the island
@@ -31,7 +32,7 @@ export interface SpotlightCue {
 }
 
 /** How long the dark lasts: a beat step is short, the reveal has two beams to follow and close. */
-export const SPOTLIGHT_HOLD = { voyage: 1.4, reveal: 2.6 } as const;
+export const SPOTLIGHT_HOLD = slowed({ voyage: 1.4, reveal: 2.6 });
 
 /** The island's beacon lamp on the table, for the seat at `angle`; null if its island has none. */
 export function lampPoint(island: IslandId | null, angle: number): Vec3 | null {
@@ -69,7 +70,7 @@ export function voyageSpotlight(beat: ShipBeat, view: BeatView, seats: SeatLooku
 }
 
 /** A closing private look starts this long before its beams close: dark and locked already, past the lock's flash. */
-const PEEK_LEAD = 0.2;
+const PEEK_LEAD = 0.2 * SHOW_TEMPO;
 
 /**
  * The private look of the lighthouse's intel merchant (§11.2), for its own player only: beams on
@@ -124,7 +125,7 @@ export function revealSpotlight(
 }
 
 /** When each part of the spotlight happens, in seconds from its start. */
-export const SPOT_TIME = { darkIn: 0.35, swingFrom: 0.25, lock: 1, closeFrom: 1.7, closeTo: 2.3, fade: 0.5, flare: 0.5 } as const;
+export const SPOT_TIME = slowed({ darkIn: 0.35, swingFrom: 0.25, lock: 1, closeFrom: 1.7, closeTo: 2.3, fade: 0.5, flare: 0.5 });
 /** How dark the table gets (0 clear, 1 black) away from the lit spots. */
 export const DARKNESS = 0.62;
 /** How far round (radians) each beam starts from its ship before it swings onto it; beams alternate sides. */
@@ -174,4 +175,4 @@ export function spotlightFrame(cue: SpotlightCue, elapsed: number): SpotlightFra
 }
 
 /** How long the private look plays before the reroll card comes up, and how long the closing takes before it returns (ms). */
-export const PEEK_PACE = { intro: (SPOT_TIME.lock + 0.5) * 1000, close: (SPOT_TIME.closeTo - SPOT_TIME.closeFrom + PEEK_LEAD + 0.5) * 1000 } as const;
+export const PEEK_PACE = { intro: (SPOT_TIME.lock + 0.5 * SHOW_TEMPO) * 1000, close: (SPOT_TIME.closeTo - SPOT_TIME.closeFrom + PEEK_LEAD + 0.5 * SHOW_TEMPO) * 1000 } as const;

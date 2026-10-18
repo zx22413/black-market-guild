@@ -124,8 +124,8 @@ describe('spotlight timing', () => {
     locked.beams.forEach((b, i) => b.end.forEach((v, j) => expect(v).toBeCloseTo(cue.targets[i]![j]!)));
     expect(locked.flare).toBeCloseTo(1);
     const over = spotlightFrame(cue, cue.hold + SPOT_TIME.fade);
-    expect(over.dark).toBe(0);
-    expect(over.flare).toBe(0);
+    expect(over.dark).toBeCloseTo(0);
+    expect(over.flare).toBeCloseTo(0);
   });
 
   it('closes the other beam onto the settled ship, where it goes out', () => {
