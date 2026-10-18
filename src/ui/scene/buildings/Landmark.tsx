@@ -13,6 +13,8 @@ import { LANDMARK_DESIGNS, type LandmarkId } from './landmarks';
 import { Birds } from './LandmarkBirds';
 import { Boat } from './LandmarkBoat';
 import { Salute } from './LandmarkSalute';
+import { Barges } from './LandmarkBarges';
+import { Walkers } from './LandmarkWalkers';
 import { ropeLength } from './islands/birdFlight';
 import { Train } from './LandmarkTrain';
 import { PUFF_BALL, WOOD_SMOKE, puffOpacity, puffSwell, smokeBallMaterials } from './smokeBall';
@@ -444,7 +446,7 @@ type LandmarkProps = ThreeElements['group'] & {
 /** A piece of island scenery, drawn from the same part list as `docs/art/islands-blueprint.svg`. */
 export function Landmark({ design, night = false, ...props }: LandmarkProps) {
   const { lit, glowing, flames: flameGeometries, rotor: rotorGeometry, flags: flagGeometries } = geometryOf(design);
-  const { glints, rotor, flags, smoke, lights, beacon, train, boat, birds, salute }: LandmarkDesign = LANDMARK_DESIGNS[design];
+  const { glints, rotor, flags, smoke, lights, beacon, train, boat, birds, salute, barges, walkers }: LandmarkDesign = LANDMARK_DESIGNS[design];
   return (
     <group {...props}>
       <mesh geometry={lit} castShadow receiveShadow dispose={null}>
@@ -462,6 +464,8 @@ export function Landmark({ design, night = false, ...props }: LandmarkProps) {
       {boat && <Boat boat={boat} />}
       {birds && <Birds birds={birds} />}
       {salute && <Salute salute={salute} />}
+      {barges && <Barges barges={barges} />}
+      {walkers && <Walkers walkers={walkers} />}
     </group>
   );
 }

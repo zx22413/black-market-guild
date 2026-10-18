@@ -197,3 +197,14 @@ export function mineEngine(at: Vec3): P[] {
     at,
   );
 }
+
+/**
+ * Where something `run` along a closed loop is, with its heading about +y (its +x along the loop) and
+ * its climb, both taken over `steer` ahead and behind so it turns smoothly through the loop's corners.
+ */
+export function steeredAlong(path: readonly Vec3[], run: number, steer: number): { readonly at: Vec3; readonly heading: number; readonly pitch: number } {
+  const { at } = pointAlong(path, run);
+  const [ahead, behind] = [pointAlong(path, run + steer).at, pointAlong(path, run - steer).at];
+  const [dx, dy, dz] = sub(ahead, behind);
+  return { at, heading: Math.atan2(-dz, dx), pitch: Math.atan2(dy, Math.hypot(dx, dz)) };
+}

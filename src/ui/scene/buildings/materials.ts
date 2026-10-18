@@ -50,6 +50,8 @@ export const SWATCHES = {
   // The fortress island's turf: its ground color (a blend of the default grass and slate), shaded.
   sageTurf: { top: '#7e9e7c', bottom: '#6b8a69' },
   heather: { top: '#9064d9', bottom: '#6743bf' },
+  // Canal water: the table's clear-day sea (`weather.ts`), so the free port's canal reads as the same water.
+  canal: { top: '#2fa3a8', bottom: '#25878c' },
 } as const satisfies Record<string, Swatch>;
 export type Mat = keyof typeof SWATCHES;
 

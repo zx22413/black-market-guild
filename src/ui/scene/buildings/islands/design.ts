@@ -33,6 +33,46 @@ export interface LandmarkDesign {
   /** Birds flying round loops in the air about the piece, flapping and gliding (`LandmarkBirds.tsx`); not drawn in the blueprint. */
   readonly birds?: LandmarkBirds;  /** Guns firing a salute one after another, each shot a muzzle flash and a burst of powder smoke (`LandmarkSalute.tsx`). */
   readonly salute?: LandmarkSalute;
+  /** Boats plying a canal round a closed loop at fixed water levels, through locks, past a toll gate (`LandmarkBarges.tsx`). */
+  readonly barges?: LandmarkBarges;
+  /** Townsfolk walking round their loops, legs and arms swinging (`LandmarkWalkers.tsx`). */
+  readonly walkers?: readonly Walker[];
+}
+
+/** Canal boats, in the design's coordinates. */
+export interface LandmarkBarges {
+  /** The loop the boats follow, waterline points (y = the water level there); they run from each point to the next and from the last back to the first. */
+  readonly path: readonly Vec3[];
+  /** One boat, its waterline at y = 0 and its bow toward +x. */
+  readonly hull: readonly KitPart[];
+  /** How many boats, spread evenly round the loop, and how fast they go (design units per second). */
+  readonly count: number;
+  readonly speed: number;
+  /** A toll barrier across the canal that lifts while a boat is near. */
+  readonly gate?: TollGate;
+}
+
+/** A barrier arm across a canal, lying along +x from its pivot when shut. */
+export interface TollGate {
+  readonly parts: readonly KitPart[];
+  readonly pivot: Vec3;
+  /** Where on the water it stands, how near (design units) a boat must come for it to lift, and how far it lifts (radians about +z). */
+  readonly at: Vec2;
+  readonly reach: number;
+  readonly open: number;
+}
+
+/** A townsperson walking round a loop, in the design's coordinates. */
+export interface Walker {
+  /** The figure facing +x with its feet at the origin, without its swinging limbs. */
+  readonly body: readonly KitPart[];
+  /** Legs and arms, each hinged at `hinge` and hanging down from it; `swing` 1 or -1 sets which way it swings with the stride. */
+  readonly limbs: readonly { readonly parts: readonly KitPart[]; readonly hinge: Vec3; readonly swing: number }[];
+  /** The walk, ground points (bridges and steps included); closed like the other loops. */
+  readonly path: readonly Vec3[];
+  readonly speed: number;
+  /** How far round the loop (0..1) it starts. */
+  readonly start: number;
 }
 
 /** A salute fired round a fort's guns, in the design's coordinates. */

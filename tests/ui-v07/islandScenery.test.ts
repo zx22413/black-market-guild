@@ -33,6 +33,9 @@ function expectClosedConvex(part: Part): void {
 /** Parts a backdrop stands on; its crown or peaks may overhang. */
 const FOOTING_HEIGHT = 0.6;
 
+/** Designs laid into the ground (`SceneryPiece.laidIn`), which may reach below the plateau origin and off it. */
+const laidInDesigns = new Set<string>(Object.values(ISLAND_SCENERY).flatMap((s) => s!.pieces.filter((p) => p.laidIn).map((p) => p.design)));
+
 /** The parts a piece stands on: all of them, or a backdrop's footing. */
 function footing(piece: SceneryPiece): readonly Part[] {
   const parts = landmarkParts(LANDMARK_DESIGNS[piece.design]);
@@ -41,9 +44,14 @@ function footing(piece: SceneryPiece): readonly Part[] {
 
 /** Island-space (x, z) of every vertex of a piece's footing, turned and scaled. */
 function footingPoints(piece: SceneryPiece): (readonly [number, number])[] {
+  return partsPoints(piece, footing(piece));
+}
+
+/** Island-space (x, z) of every vertex of `parts` of a piece, turned and scaled. */
+function partsPoints(piece: SceneryPiece, parts: readonly Part[]): (readonly [number, number])[] {
   const turn = piece.turn ?? 0;
   const [cos, sin] = [Math.cos(turn), Math.sin(turn)];
-  return footing(piece)
+  return parts
     .flatMap((part) => partFaces(part).flatMap((f) => f.points))
     .map(([x, , z]) => [piece.at[0] + (x * cos + z * sin) * piece.scale, piece.at[2] + (-x * sin + z * cos) * piece.scale] as const);
 }
@@ -54,11 +62,17 @@ const spin = ([x, z]: readonly [number, number], turn: number): [number, number]
  * Axis-aligned island-space box around a scenery piece (a backdrop's footing), from its turned and
  * scaled vertices, swung about the island's center by `around` (a backdrop's side).
  */
-function pieceFootprint(piece: SceneryPiece, around = 0): Footprint {
-  const points = footingPoints(piece).map((p) => spin(p, around));
+function pieceFootprint(piece: SceneryPiece, around = 0, parts?: readonly Part[], name: string = piece.design): Footprint {
+  const points = (parts ? partsPoints(piece, parts) : footingPoints(piece)).map((p) => spin(p, around));
   const xs = points.map(([x]) => x);
   const zs = points.map(([, z]) => z);
-  return { name: piece.design, x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
+  return { name, x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
+}
+
+/** A piece's footprints: one box round it, or for a piece laid into the ground one box per part. */
+function pieceFootprints(piece: SceneryPiece, around = 0): Footprint[] {
+  if (!piece.laidIn) return [pieceFootprint(piece, around)];
+  return footing(piece).map((part, i) => pieceFootprint({ ...piece, design: piece.design }, around, [part], `${piece.design} part ${i}`));
 }
 
 const assetFootprints: Footprint[] = ASSET_IDS.map((asset) => {
@@ -96,7 +110,9 @@ describe('island landmark designs', () => {
         // A pitched roof is two convex slabs; tests/ui/buildings.test.ts covers that kind.
         if (part.kind !== 'roof') expectClosedConvex(part);
       }
-      expect(bounds(landmarkParts(design)).min[1]).toBeGreaterThanOrEqual(0);
+    }
+    for (const [id, design] of Object.entries(LANDMARK_DESIGNS)) {
+      if (!laidInDesigns.has(id)) expect(bounds(landmarkParts(design)).min[1], id).toBeGreaterThanOrEqual(0);
     }
   });
 });
@@ -145,10 +161,10 @@ describe('mine scenery', () => {
 });
 
 describe.each(Object.entries(ISLAND_SCENERY))('%s scenery', (_, scenery) => {
-  const pieces = scenery!.pieces.map((p) => pieceFootprint(p));
+  const pieces = scenery!.pieces.flatMap((p) => pieceFootprints(p).map((f) => ({ ...f, owner: p.design })));
 
   it('stands every piece but the backdrop on the plateau', () => {
-    for (const piece of scenery!.pieces.filter((p) => !p.backdrop)) {
+    for (const piece of scenery!.pieces.filter((p) => !p.backdrop && !p.laidIn)) {
       for (const [x, z] of footingPoints(piece)) expect(Math.hypot(x, z), piece.design).toBeLessThan(PLAYER_ISLAND_RADIUS * PLATEAU_SAFE_RATIO);
     }
   });
@@ -167,7 +183,7 @@ describe.each(Object.entries(ISLAND_SCENERY))('%s scenery', (_, scenery) => {
       const f = pieceFootprint(backdrop, around);
       for (const lot of assetFootprints) expect(overlaps(f, lot, MIN_GAP), `${f.name} on ${lot.name} (turn ${around})`).toBe(false);
       for (const lot of keptClear) expect(overlaps(f, lot), `${f.name} on ${lot.name} (turn ${around})`).toBe(false);
-      for (const p of scenery!.pieces.filter((q) => !q.backdrop)) expect(overlaps(f, pieceFootprint(p)), `${f.name} on ${p.design}`).toBe(false);
+      for (const p of scenery!.pieces.filter((q) => !q.backdrop)) for (const g of pieceFootprints(p)) expect(overlaps(f, g), `${f.name} on ${g.name}`).toBe(false);
     }
   });
 
@@ -175,7 +191,7 @@ describe.each(Object.entries(ISLAND_SCENERY))('%s scenery', (_, scenery) => {
     pieces.forEach((a, i) => {
       for (const lot of assetFootprints) expect(overlaps(a, lot, MIN_GAP), `${a.name} on ${lot.name}`).toBe(false);
       for (const lot of keptClear) expect(overlaps(a, lot), `${a.name} on ${lot.name}`).toBe(false);
-      for (const b of pieces.slice(i + 1)) expect(overlaps(a, b), `${a.name} on ${b.name}`).toBe(false);
+      for (const b of pieces.slice(i + 1)) if (b.owner !== a.owner) expect(overlaps(a, b), `${a.name} on ${b.name}`).toBe(false);
     });
   });
 });

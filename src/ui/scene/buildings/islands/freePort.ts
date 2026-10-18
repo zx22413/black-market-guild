@@ -1,11 +1,14 @@
 import { gabledRoof, post } from '../kit';
 import type { Mat } from '../materials';
-import type { Vec3 } from '../polyhedra';
+import type { Vec2, Vec3 } from '../polyhedra';
+import { BRIDGE, CANAL, CANAL_WATER, COURSE, TOLL, bargeLoop, bridgeParts, canalParts, lockParts } from './canal';
 import { cloth } from './cloth';
-import type { LandmarkDesign, LandmarkFlag, P } from './design';
+import type { LandmarkDesign, LandmarkFlag, P, TollGate, Walker } from './design';
+import { person, type Dress } from './people';
 
 // The free port (自由港): Willemstad's row of painted merchant houses with a flag tower dressed in every
-// nation's colors, a customs booth with its barrier raised, cargo and boats.
+// nation's colors, and a canal through the town past a toll gate and down a staircase of locks to the
+// dock, with cargo boats on it and townsfolk walking its quays.
 
 /** A dark window in a white frame on the +z face at `z`. */
 function window(x: number, y: number, z: number, w = 0.14, h = 0.2): P[] {
@@ -134,41 +137,123 @@ const willemstadRow: LandmarkDesign = {
   flags: [...HOUSES.map(houseFlag), nationFlag(1.42, 4.7, 0.02, 3)],
 };
 
+/** The grass top, where the townsfolk walk. */
+const GROUND = 0.25;
+
 /**
- * Customs house of a free port, in the yard: a little booth with a hipped roof and a toll window, its
- * striped barrier raised high over the road (no duty to pay), a weighing beam and cargo passing through.
+ * A canal cargo boat (pakschuit), its waterline at y = 0 and its bow toward +x: a broad tarred hull with
+ * a rubbing strake, a little cabin at the stern, and casks and bales amidships, low enough to pass
+ * under the footbridge.
  */
-const customsBooth: LandmarkDesign = {
-  motif: '欄杆拉起的海關亭（免稅放行）',
+const PAKSCHUIT: readonly Vec2[] = [
+  [-0.46, -0.15],
+  [0.3, -0.18],
+  [0.5, 0],
+  [0.3, 0.18],
+  [-0.46, 0.15],
+];
+const cargoBoat: P[] = [
+  { kind: 'loft', base: [0, -0.06, 0], outline: PAKSCHUIT, height: 0.16, bottom: 0.72, top: 1, mat: 'woodDark' },
+  { kind: 'loft', base: [0, 0.1, 0], outline: PAKSCHUIT, height: 0.025, bottom: 1.02, top: 1.02, mat: 'wood' },
+  { kind: 'box', center: [-0.33, 0.2, 0], size: [0.2, 0.16, 0.24], bevel: 0.02, mat: 'plaster' },
+  { kind: 'box', center: [-0.33, 0.29, 0], size: [0.24, 0.03, 0.28], mat: 'slate' },
+  ...[-0.06, 0.12].map((x): P => ({ kind: 'beam', from: [x, 0.19, -0.1], to: [x, 0.19, 0.1], width: 0.15, sides: 8, mat: 'wood' })),
+  { kind: 'box', center: [0.3, 0.18, 0], size: [0.14, 0.12, 0.16], bevel: 0.03, mat: 'rope' },
+];
+
+/**
+ * The toll booth on the canal's west bank, where the free port's customs men wave the boats through:
+ * a little booth with a hipped roof and a window on the water, and the post of its barrier (`TOLL_GATE`).
+ */
+const TOLL_BOOTH: Vec2 = [TOLL[0] - 1.45, TOLL[1]];
+const tollBooth: P[] = [
+  { kind: 'box', center: [TOLL_BOOTH[0], GROUND + 0.6, TOLL_BOOTH[1]], size: [0.8, 1.2, 0.7], bevel: 0.03, mat: 'plaster' },
+  { kind: 'loft', base: [TOLL_BOOTH[0], GROUND + 1.2, TOLL_BOOTH[1]], outline: [[-0.5, -0.45], [0.5, -0.45], [0.5, 0.45], [-0.5, 0.45]], height: 0.45, bottom: 1, top: 0.12, mat: 'slate' },
+  { kind: 'box', center: [TOLL_BOOTH[0] + 0.41, GROUND + 0.75, TOLL_BOOTH[1]], size: [0.03, 0.32, 0.38], mat: 'dark' },
+  { kind: 'box', center: [TOLL_BOOTH[0] + 0.44, GROUND + 0.58, TOLL_BOOTH[1]], size: [0.1, 0.04, 0.48], mat: 'wood' },
+  { kind: 'box', center: [TOLL_BOOTH[0], GROUND + 0.28, TOLL_BOOTH[1] + 0.36], size: [0.26, 0.5, 0.03], mat: 'woodDark' },
+  // The barrier's post on the bank, and its counterweight.
+  { kind: 'beam', from: [TOLL[0] - CANAL.width / 2 - 0.12, GROUND, TOLL[1]], to: [TOLL[0] - CANAL.width / 2 - 0.12, GROUND + 0.62, TOLL[1]], width: 0.1, mat: 'woodDark' },
+];
+
+/** The barrier across the canal, shut along +x over the water from its pivot on the post; it lifts for each boat. */
+const TOLL_GATE: TollGate = {
   parts: [
-    { kind: 'box', center: [0, 0.38, 0], size: [0.5, 0.76, 0.44], bevel: 0.02, mat: 'plaster' },
-    { kind: 'loft', base: [0, 0.76, 0], outline: [[-0.32, -0.28], [0.32, -0.28], [0.32, 0.28], [-0.32, 0.28]], height: 0.3, bottom: 1, top: 0.12, mat: 'slate' },
-    ...[-1, 1].flatMap((s): P[] => [
-      { kind: 'box', center: [0, 0.48, s * 0.22], size: [0.24, 0.2, 0.03], mat: 'dark' },
-      { kind: 'box', center: [0, 0.37, s * 0.25], size: [0.32, 0.03, 0.08], mat: 'wood' },
-    ]),
-    // The barrier: a post and a long striped arm pointing up and out.
-    post(0.42, 0, 0, 0.5, 0.08, 'woodDark'),
-    ...[0, 1, 2, 3, 4, 5].map((i): P => ({
-      kind: 'beam',
-      from: [0.42 + i * 0.12, 0.48 + i * 0.16, 0],
-      to: [0.42 + (i + 1) * 0.12, 0.48 + (i + 1) * 0.16, 0],
-      width: 0.05,
-      mat: i % 2 === 0 ? 'mace' : 'marble',
-    })),
-    { kind: 'box', center: [0.33, 0.47, 0], size: [0.14, 0.1, 0.1], bevel: 0.02, mat: 'metal' },
-    // A steelyard on a frame, and bales and casks waved through.
-    ...[-0.72, -0.42].map((x) => post(x, 0, 0, 0.62, 0.05)),
-    { kind: 'beam', from: [-0.77, 0.62, 0], to: [-0.37, 0.62, 0], width: 0.05, mat: 'woodDark' },
-    { kind: 'beam', from: [-0.66, 0.55, 0], to: [-0.48, 0.58, 0], width: 0.03, mat: 'metal' },
-    { kind: 'beam', from: [-0.6, 0.55, 0], to: [-0.6, 0.35, 0], width: 0.01, mat: 'rope' },
-    { kind: 'box', center: [-0.6, 0.28, 0], size: [0.16, 0.14, 0.16], bevel: 0.02, mat: 'rope' },
-    { kind: 'box', center: [0.95, 0.12, 0.3], size: [0.22, 0.24, 0.22], bevel: 0.03, mat: 'wood' },
-    { kind: 'box', center: [0.95, 0.12, -0.3], size: [0.26, 0.2, 0.2], bevel: 0.04, mat: 'plaster' },
+    ...[0, 1, 2, 3, 4, 5].map((i): P => ({ kind: 'beam', from: [i * 0.25, 0, 0], to: [(i + 1) * 0.25, 0, 0], width: 0.06, mat: i % 2 === 0 ? 'mace' : 'marble' })),
+    { kind: 'box', center: [-0.12, 0, 0], size: [0.16, 0.12, 0.12], bevel: 0.02, mat: 'metal' },
   ],
+  pivot: [TOLL[0] - CANAL.width / 2 - 0.12, GROUND + 0.66, TOLL[1]],
+  at: TOLL,
+  reach: 1.5,
+  open: 1.35,
 };
+
+/** A walk there and back along `line` (ground points), keeping `apart` to the right of the way out and back. */
+function thereAndBack(line: readonly Vec3[], apart: number): Vec3[] {
+  const side = (a: Vec3, b: Vec3): [number, number] => {
+    const [dx, dz] = [b[0] - a[0], b[2] - a[2]];
+    const n = Math.hypot(dx, dz) || 1;
+    return [(-dz / n) * apart, (dx / n) * apart];
+  };
+  const shift = (points: readonly Vec3[]): Vec3[] =>
+    points.map((p, i) => {
+      const [sx, sz] = side(points[Math.max(0, i - 1)]!, points[Math.min(points.length - 1, Math.max(1, i))]!);
+      return [p[0] + sx / 2, p[1], p[2] + sz / 2];
+    });
+  return [...shift(line), ...shift([...line].reverse())];
+}
+
+const g = (x: number, z: number, y = GROUND): Vec3 => [x, y, z];
+/** Up the footbridge's steps and over its deck, along z at its x. */
+function overBridge(x: number): Vec3[] {
+  const [, z] = BRIDGE.at;
+  const half = BRIDGE.span / 2;
+  return [
+    g(x, z - half - 0.4),
+    g(x, z - half - 0.3, 0.5),
+    g(x, z - half - 0.16, 0.66),
+    g(x, z - half, BRIDGE.deck + 0.04),
+    g(x, z + half, BRIDGE.deck + 0.04),
+    g(x, z + half + 0.16, 0.66),
+    g(x, z + half + 0.3, 0.5),
+    g(x, z + half + 0.38),
+  ];
+}
+
+const BURGHER: Dress = { coat: 'dark', legs: 'dark', hat: 'brim', collar: true };
+const PORTER: Dress = { coat: 'woodDark', legs: 'rope', hat: 'cap', hatMat: 'slate', carry: 'sack' };
+const GOODWIFE: Dress = { coat: 'slate', legs: 'dark', hat: 'cap', skirt: 'slate', carry: 'basket' };
+const MERCHANT: Dress = { coat: 'wood', legs: 'woodDark', hat: 'brim', hatMat: 'woodDark', collar: true };
+const MAID: Dress = { coat: 'stone', legs: 'dark', hat: 'cap', skirt: 'heather' };
+
+/** Six townsfolk on their rounds: the street beside the shipyard, over the footbridge, along the quays and the town's edge. */
+const TOWNSFOLK: readonly Walker[] = [
+  { ...person(BURGHER), path: thereAndBack([g(-1.6, -1.3), g(-1.6, 4.4)], 0.25), speed: 0.55, start: 0 },
+  { ...person(PORTER), path: thereAndBack([g(-1.6, 4.4), g(-1.6, -1.3)], 0.25), speed: 0.45, start: 0.3 },
+  { ...person(GOODWIFE), path: thereAndBack([g(2.3, -1.2), ...overBridge(2.3), g(2.3, 4.6), g(4.5, 4.6)], 0.18), speed: 0.5, start: 0.15 },
+  { ...person(MERCHANT), path: thereAndBack([g(6.72, 2.7), g(6.72, 7.0)], 0.22), speed: 0.6, start: 0.6 },
+  { ...person(MAID), path: thereAndBack([g(-4.4, 7.42), g(4.55, 7.42)], 0.22), speed: 0.65, start: 0.45 },
+  { ...person(PORTER), path: thereAndBack([g(-7.4, -3.5), g(-7.4, 4.2)], 0.22), speed: 0.5, start: 0.8 },
+];
+
+/**
+ * The free port's canal, laid into the island's ground between the asset lots: stone-lined water from a
+ * turning basin in the courtyard past the toll gate, between the insurance house and the warehouse and
+ * along the front quay, then down a staircase of three locks on the cliff to the sea beside the dock
+ * (`canal.ts`), with a footbridge over it. Two cargo boats ply it in and out, the toll barrier lifting for
+ * each, and townsfolk walk its quays and the streets. Authored in island space at scale 1.
+ */
+const canal: LandmarkDesign = {
+  motif: '運河（迴船池→關卡→沿倉庫→前方碼頭→三級船閘下懸崖到碼頭）＋人行橋＋貨船＋市民',
+  parts: [...canalParts(), ...lockParts(), ...bridgeParts(), ...tollBooth],
+  barges: { path: bargeLoop(), hull: cargoBoat, count: 2, speed: 0.55, gate: TOLL_GATE },
+  walkers: TOWNSFOLK,
+};
+
+/** The course's water level, for the tests: boats on the plateau float at it. */
+export const FREE_PORT_CANAL = { course: COURSE, water: CANAL_WATER } as const;
 
 export const FREE_PORT_LANDMARKS = {
   'willemstad-row': willemstadRow,
-  'customs-booth': customsBooth,
+  canal,
 } as const satisfies Record<string, LandmarkDesign>;

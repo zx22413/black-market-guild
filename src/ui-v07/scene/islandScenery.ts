@@ -26,6 +26,12 @@ export interface SceneryPiece {
    * (`backdropTurn`), so it never hides an island's buildings, your own included.
    */
   readonly backdrop?: boolean;
+  /**
+   * Laid into the ground and threading between the lots rather than standing in one spot, and free to
+   * run off the plateau down the cliff (the free port's canal): placed in island space at scale 1, its
+   * parts each kept clear of the lots one by one rather than as one box.
+   */
+  readonly laidIn?: boolean;
 }
 
 export interface IslandScenery {
@@ -125,9 +131,9 @@ export const ISLAND_SCENERY: Readonly<Partial<Record<IslandId, IslandScenery>>> 
     ground: { top: '#fce2c4', cliff: '#ca845c' },
     annex: { center: [0, -11.6], radii: [7.4, 3.8] },
     pieces: [
-      { design: 'customs-booth', at: [0.1, TURF, 3.25], scale: 2 },
+      // The canal, its toll gate in place of the old customs booth, its boats and its townsfolk.
+      { design: 'canal', at: [0, 0, 0], scale: 1, laidIn: true },
       { design: 'willemstad-row', at: [0, RIM, -11], scale: 3, turn: 0.4, backdrop: true },
-      { design: 'rowboat', at: [5.3, TURF, 3.9], scale: 1.6, turn: 0.3 },
       { design: 'rowboat', at: [-5.6, TURF, -3.6], scale: 1.4, turn: 2 },
     ],
   },
