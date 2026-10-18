@@ -88,7 +88,9 @@ const keptClear: Footprint[] = [
   { name: 'pennant', x0: -0.1, x1: 0.1, z0: 0.4, z1: 0.6 },
 ];
 
-const overlaps = (a: Footprint, b: Footprint): boolean => a.x0 < b.x1 && b.x0 < a.x1 && a.z0 < b.z1 && b.z0 < a.z1;
+/** Pieces keep at least this much ground between them and an asset building, so neither looks jammed against the other. */
+const MIN_GAP = 0.3;
+const overlaps = (a: Footprint, b: Footprint, gap = 0): boolean => a.x0 < b.x1 + gap && b.x0 < a.x1 + gap && a.z0 < b.z1 + gap && b.z0 < a.z1 + gap;
 
 describe('island landmark designs', () => {
   it('builds every landmark from closed convex parts in shared swatches, never an asset roof color', () => {
@@ -150,14 +152,16 @@ describe.each(Object.entries(ISLAND_SCENERY))('%s scenery', (_, scenery) => {
     const backdrop = scenery!.pieces.find((p) => p.backdrop)!;
     for (const around of BACKDROP_TURNS) {
       const f = pieceFootprint(backdrop, around);
-      for (const lot of [...assetFootprints, ...keptClear]) expect(overlaps(f, lot), `${f.name} on ${lot.name} (turn ${around})`).toBe(false);
+      for (const lot of assetFootprints) expect(overlaps(f, lot, MIN_GAP), `${f.name} on ${lot.name} (turn ${around})`).toBe(false);
+      for (const lot of keptClear) expect(overlaps(f, lot), `${f.name} on ${lot.name} (turn ${around})`).toBe(false);
       for (const p of scenery!.pieces.filter((q) => !q.backdrop)) expect(overlaps(f, pieceFootprint(p)), `${f.name} on ${p.design}`).toBe(false);
     }
   });
 
   it('keeps the asset lots and the other pieces clear', () => {
     pieces.forEach((a, i) => {
-      for (const lot of [...assetFootprints, ...keptClear]) expect(overlaps(a, lot), `${a.name} on ${lot.name}`).toBe(false);
+      for (const lot of assetFootprints) expect(overlaps(a, lot, MIN_GAP), `${a.name} on ${lot.name}`).toBe(false);
+      for (const lot of keptClear) expect(overlaps(a, lot), `${a.name} on ${lot.name}`).toBe(false);
       for (const b of pieces.slice(i + 1)) expect(overlaps(a, b), `${a.name} on ${b.name}`).toBe(false);
     });
   });

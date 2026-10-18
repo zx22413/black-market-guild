@@ -23,35 +23,6 @@ function sack([x, y, z]: Vec3): P[] {
   ];
 }
 
-/** Whitewashed drying house of a Banda nutmeg perk: an open drying loft under a steep thatched hip roof. */
-const nutmegHouse: LandmarkDesign = {
-  motif: '白牆晾曬倉＋開放晾曬閣樓＋茅草四坡頂',
-  parts: [
-    { kind: 'box', center: [0, 0.08, 0], size: [1.86, 0.16, 1.16], bevel: 0.04, mat: 'stone' },
-    { kind: 'box', center: [0, 0.66, 0], size: [1.66, 1.0, 0.96], bevel: 0.03, mat: 'plaster' },
-    ...[-0.83, 0.83].flatMap((x) => [-0.48, 0.48].map((z) => post(x, z, 0.16, 1.16, 0.1))),
-    // Door and shuttered windows on the dock side, windows at the back.
-    { kind: 'box', center: [0, 0.5, 0.5], size: [0.36, 0.64, 0.05], bevel: 0.02, mat: 'woodDark' },
-    { kind: 'box', center: [0, 0.46, 0.52], size: [0.26, 0.56, 0.04], mat: 'dark' },
-    ...[-0.52, 0.52].flatMap((x) => [...framedWindow('z', 1, 0.48, x, 0.72, 0.26, 0.32), ...framedWindow('z', -1, -0.48, x, 0.72, 0.26, 0.32)]),
-    // Drying loft: a floor wider than the walls, posts and a rail, heaps of nutmeg and red mace inside.
-    { kind: 'box', center: [0, 1.2, 0], size: [1.86, 0.08, 1.14], bevel: 0.02, mat: 'wood' },
-    ...[-0.88, 0, 0.88].flatMap((x) => [-0.52, 0.52].map((z) => post(x, z, 1.24, 1.68, 0.08))),
-    ...perimeterBeams(0.88, 0.52, 1.42, 0.05, 'wood'),
-    { kind: 'box', center: [-0.42, 1.28, 0], size: [0.66, 0.08, 0.7], bevel: 0.03, mat: 'woodDark' },
-    { kind: 'box', center: [0.42, 1.28, 0], size: [0.66, 0.08, 0.7], bevel: 0.03, mat: 'mace' },
-    // Thatched hip roof with a ridge cap.
-    // Thatched hip roof in two layers (a thick eave skirt under the main slope), with a ridge cap.
-    { kind: 'loft', base: [0, 1.66, 0], outline: SQUARE.map(([x, z]) => [x * 1.03, z * 0.68] as const), height: 0.16, bottom: 1, top: 0.86, mat: 'thatch' },
-    { kind: 'loft', base: [0, 1.82, 0], outline: SQUARE.map(([x, z]) => [x * 0.94, z * 0.6] as const), height: 0.62, bottom: 1, top: 0.24, mat: 'thatch' },
-    { kind: 'box', center: [0, 2.46, 0], size: [0.5, 0.06, 0.18], bevel: 0.02, mat: 'woodDark' },
-    // Sacks by the door.
-    ...sack([-0.62, 0.16, 0.6]),
-    ...sack([-0.36, 0.16, 0.64]),
-    ...sack([-0.5, 0.46, 0.62]),
-  ],
-};
-
 /** A round woven tray of nutmeg (brown) or mace (red) on the drying floor. */
 function tray(x: number, z: number, mat: 'woodDark' | 'mace'): P[] {
   return [
@@ -94,55 +65,92 @@ const nutmegTree: LandmarkDesign = {
   ],
 };
 
-/** One pad of the shade tree's crown: a dark underside and a bright dome, with fruit on the rim. */
-function crownPad([x, y, z]: Vec3, r: number, fruit: readonly ('gold' | 'mace')[]): P[] {
+/** Square wind tower (badgir) on the roof at (x, z), its shaft from `y0` to `y1`, with vent slots on every side. */
+function windTower(x: number, z: number, y0: number, y1: number, w: number): P[] {
+  const h = w / 2;
+  const vent = y1 - 0.5;
   return [
-    { kind: 'prism', base: [x, y, z], radius: r * 0.78, top: r, height: 0.2, sides: 8, mat: 'leafDark' },
-    { kind: 'prism', base: [x, y + 0.2, z], radius: r, top: r * 0.45, height: 0.24, sides: 8, mat: 'leaf' },
-    ...fruit.map((mat, i): P => {
-      const a = (i / fruit.length) * Math.PI * 2 + 0.4;
-      return { kind: 'prism', base: [x + Math.cos(a) * r * 1.02, y + 0.08, z + Math.sin(a) * r * 1.02], radius: 0.09, top: 0.06, height: 0.13, sides: 6, mat };
-    }),
+    { kind: 'box', center: [x, (y0 + y1) / 2, z], size: [w, y1 - y0, w], bevel: 0.02, mat: 'plaster' },
+    // Three tall slots on each face catch the wind.
+    ...[-1, 0, 1].flatMap((i): P[] => [
+      { kind: 'box', center: [x + i * w * 0.28, vent, z + h + 0.01], size: [w * 0.14, 0.62, 0.04], mat: 'dark' },
+      { kind: 'box', center: [x + i * w * 0.28, vent, z - h - 0.01], size: [w * 0.14, 0.62, 0.04], mat: 'dark' },
+      { kind: 'box', center: [x + h + 0.01, vent, z + i * w * 0.28], size: [0.04, 0.62, w * 0.14], mat: 'dark' },
+      { kind: 'box', center: [x - h - 0.01, vent, z + i * w * 0.28], size: [0.04, 0.62, w * 0.14], mat: 'dark' },
+    ]),
+    { kind: 'box', center: [x, y1 + 0.06, z], size: [w + 0.12, 0.12, w + 0.12], bevel: 0.02, mat: 'sandstone' },
+    ...[-1, 1].flatMap((sx) => [-1, 1].map((sz): P => ({ kind: 'box', center: [x + sx * h, y1 + 0.19, z + sz * h], size: [0.12, 0.14, 0.12], bevel: 0.015, mat: 'sandstone' }))),
   ];
 }
 
-/** Crown pads of the shade tree: where each sits, how wide, and the fruit on it. */
-const CROWN: readonly { readonly at: Vec3; readonly r: number; readonly fruit: readonly ('gold' | 'mace')[] }[] = [
-  { at: [0.95, 1.85, 0.35], r: 0.55, fruit: ['gold', 'mace', 'gold'] },
-  { at: [-0.95, 2.0, -0.15], r: 0.6, fruit: ['mace', 'gold'] },
-  { at: [0.25, 2.3, -0.95], r: 0.55, fruit: ['gold', 'gold', 'mace'] },
-  { at: [-0.35, 2.55, 0.75], r: 0.5, fruit: ['gold', 'mace'] },
-  { at: [0.05, 2.95, 0], r: 0.62, fruit: ['mace', 'gold', 'gold'] },
-];
+/**
+ * Merchant's spice house of a Gulf spice port, the island's backdrop: a plastered hall with arched
+ * openings and protruding roof beams, two wind towers (the tall one a little above the exchange's
+ * spire, slender so it never outweighs the asset buildings) and a chhatri kiosk on the roof.
+ * Authored for about 2.3×.
+ */
+const windTowerHouse: LandmarkDesign = {
+  motif: '風塔香料商館（雙風塔＋屋頂小亭＋拱門）',
+  parts: [
+    { kind: 'box', center: [0, 0.1, 0], size: [2.4, 0.2, 1.1], bevel: 0.04, mat: 'sandstone' },
+    { kind: 'box', center: [0, 0.7, 0], size: [2.2, 1.0, 0.95], bevel: 0.03, mat: 'plaster' },
+    { kind: 'box', center: [0, 1.26, 0], size: [2.28, 0.12, 1.03], bevel: 0.02, mat: 'sandstone' },
+    // Roof beams poking out of the front wall.
+    ...[-0.9, -0.45, 0, 0.45, 0.9].map((x): P => ({ kind: 'beam', from: [x, 1.08, 0.46], to: [x, 1.08, 0.62], width: 0.06, mat: 'woodDark' })),
+    // Carved double door under a pointed arch, and arched windows.
+    { kind: 'box', center: [-0.3, 0.52, 0.49], size: [0.42, 0.66, 0.05], bevel: 0.015, mat: 'sandstone' },
+    { kind: 'box', center: [-0.3, 0.48, 0.51], size: [0.32, 0.56, 0.04], mat: 'woodDark' },
+    { kind: 'prism', base: [-0.3, 0.86, 0.5], radius: 0.18, top: 0, height: 0.16, sides: 4, turn: Math.PI / 4, mat: 'sandstone' },
+    ...[0.3, 0.75].flatMap((x): P[] => [
+      { kind: 'box', center: [x, 0.62, 0.49], size: [0.2, 0.34, 0.05], mat: 'dark' },
+      { kind: 'prism', base: [x, 0.79, 0.49], radius: 0.1, top: 0, height: 0.1, sides: 4, turn: Math.PI / 4, mat: 'dark' },
+    ]),
+    ...[-0.75, 0, 0.75].map((x): P => ({ kind: 'box', center: [x, 0.62, -0.49], size: [0.2, 0.34, 0.05], mat: 'dark' })),
+    // Wind towers: the tall one sets the island's silhouette.
+    ...windTower(-0.62, -0.05, 1.32, 4.6, 0.6),
+    ...windTower(0.78, -0.1, 1.32, 3.1, 0.48),
+    // Chhatri kiosk: four columns, an eave slab and a small white dome.
+    ...[-1, 1].flatMap((sx) => [-1, 1].map((sz) => post(0.08 + sx * 0.2, 0.2 + sz * 0.2, 1.32, 1.86, 0.06, 'sandstone'))),
+    { kind: 'prism', base: [0.08, 1.86, 0.2], radius: 0.36, top: 0.3, height: 0.07, sides: 8, turn: Math.PI / 8, mat: 'sandstone' },
+    { kind: 'prism', base: [0.08, 1.93, 0.2], radius: 0.24, top: 0.06, height: 0.26, sides: 8, turn: Math.PI / 8, mat: 'marble' },
+    { kind: 'prism', base: [0.08, 2.19, 0.2], radius: 0.035, top: 0, height: 0.14, sides: 6, mat: 'gold' },
+    // Spice sacks by the door.
+    ...sack([-0.78, 0.2, 0.62]),
+    ...sack([-0.92, 0.2, 0.44]),
+  ],
+};
+
+/** A basket heaped into a cone of one spice. */
+function spiceCone(x: number, z: number, mat: 'mace' | 'spiceYellow' | 'spiceOrange' | 'cardamom' | 'woodDark'): P[] {
+  return [
+    { kind: 'prism', base: [x, 0, z], radius: 0.2, top: 0.24, height: 0.16, sides: 8, mat: 'rope' },
+    { kind: 'prism', base: [x, 0.16, z], radius: 0.23, top: 0, height: 0.3, sides: 8, mat },
+  ];
+}
 
 /**
- * Canary-nut shade tree of a nutmeg perk, the island's backdrop. Seen from the high table camera a
- * single crown reads as a green blob, so the crown is split into pads on visible branches, with
- * the gaps showing the boughs and ground, yellow nutmeg fruit and red mace on the rims, and a
- * picking ladder and basket at the foot.
+ * Spice stall in the yard: a striped awning over a counter of sacks, with baskets heaped into cones
+ * of chili, turmeric, saffron, cardamom and nutmeg on both sides, so the cones show whichever side
+ * of the island faces the camera (your own island is seen from the back, the others from the dock).
  */
-const shadeTree: LandmarkDesign = {
-  motif: '巨大遮蔭樹（分層樹冠＋果實＋採果梯）',
+const spiceStall: LandmarkDesign = {
+  motif: '香料尖錐攤（條紋遮陽棚＋兩側五色尖錐）',
   parts: [
-    ...([
-      [1, 0],
-      [-1, 0.2],
-      [0.2, 1],
-      [-0.3, -1],
-    ] as const).map(([dx, dz]): P => ({ kind: 'beam', from: [dx * 0.45, 0.08, dz * 0.45], to: [dx * 0.08, 0.6, dz * 0.08], width: 0.16, mat: 'woodDark' })),
-    { kind: 'prism', base: [0, 0, 0], radius: 0.27, top: 0.18, height: 1.75, sides: 7, mat: 'woodDark' },
-    // A bough from the trunk head to each pad.
-    ...CROWN.map(({ at: [x, y, z] }): P => ({ kind: 'beam', from: [0, 1.55, 0], to: [x * 0.9, y + 0.05, z * 0.9], width: 0.13, mat: 'woodDark' })),
-    ...CROWN.flatMap(({ at, r, fruit }) => crownPad(at, r, fruit)),
-    // Picking ladder against the trunk and a basket of fruit.
-    ...[-0.12, 0.12].map((dx): P => ({ kind: 'beam', from: [0.7 + dx, 0.05, 0.45], to: [0.22 + dx, 1.3, 0.12], width: 0.05, mat: 'wood' })),
-    ...[0.3, 0.6, 0.9].map((y): P => {
-      const t = y / 1.3;
-      const [x, z] = [0.7 - 0.48 * t, 0.45 - 0.33 * t];
-      return { kind: 'beam', from: [x - 0.12, y, z], to: [x + 0.12, y, z], width: 0.035, mat: 'wood' };
-    }),
-    { kind: 'prism', base: [-0.55, 0, 0.45], radius: 0.16, top: 0.2, height: 0.22, sides: 8, mat: 'rope' },
-    { kind: 'prism', base: [-0.55, 0.2, 0.45], radius: 0.16, top: 0.06, height: 0.08, sides: 8, mat: 'gold' },
+    ...[-0.95, 0.95].flatMap((x) => [-0.22, 0.22].map((z) => post(x, z, 0, 1.12, 0.07, 'wood'))),
+    ...[0, 1, 2, 3, 4, 5].map((i): P => ({ kind: 'box', center: [-0.83 + i * 0.333, 1.14, 0], size: [0.333, 0.05, 0.56], mat: i % 2 === 0 ? 'mace' : 'plaster' })),
+    ...[-0.29, 0.29].flatMap((z) => [0, 1, 2, 3, 4, 5].map((i): P => ({ kind: 'box', center: [-0.83 + i * 0.333, 1.04, z], size: [0.333, 0.16, 0.03], mat: i % 2 === 0 ? 'mace' : 'plaster' }))),
+    { kind: 'box', center: [0, 0.42, 0], size: [1.7, 0.06, 0.34], bevel: 0.015, mat: 'wood' },
+    ...[-0.75, 0.75].map((x): P => ({ kind: 'box', center: [x, 0.2, 0], size: [0.08, 0.4, 0.28], mat: 'woodDark' })),
+    ...sack([-0.5, 0.45, -0.02]),
+    ...sack([0.1, 0.45, 0.02]),
+    ...sack([0.55, 0.45, -0.02]),
+    // Dock side and island side: every spice shows from both.
+    ...spiceCone(-0.62, 0.56, 'mace'),
+    ...spiceCone(0, 0.6, 'spiceYellow'),
+    ...spiceCone(0.62, 0.56, 'spiceOrange'),
+    ...spiceCone(-0.62, -0.56, 'cardamom'),
+    ...spiceCone(0, -0.6, 'woodDark'),
+    ...spiceCone(0.62, -0.56, 'mace'),
   ],
 };
 
@@ -299,10 +307,10 @@ const spoilHeap: LandmarkDesign = {
 };
 
 export const LANDMARK_DESIGNS = {
-  'nutmeg-house': nutmegHouse,
+  'windtower-house': windTowerHouse,
+  'spice-stall': spiceStall,
   'drying-floor': dryingFloor,
   'nutmeg-tree': nutmegTree,
-  'shade-tree': shadeTree,
   'shaft-house': shaftHouse,
   'ore-cart': oreCart,
   mountain,

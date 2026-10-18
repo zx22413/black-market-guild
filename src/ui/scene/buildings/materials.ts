@@ -26,10 +26,12 @@ export const SWATCHES = {
   roofBlue: { top: '#6691d7', bottom: '#5857bd' },
   roofGreen: { top: '#5dc789', bottom: '#1c856a' },
   roofGold: { top: '#ffd263', bottom: '#ff952f' },
-  // Island landmarks (landmarks.ts). Thatch and mace stay clear of the four asset roof colors.
-  thatch: { top: '#f2bf99', bottom: '#ca845c' },
+  // Island landmarks (landmarks.ts); none of them is one of the four asset roof colors.
+  sandstone: { top: '#f2bf99', bottom: '#ca845c' },
   mace: { top: '#cf534f', bottom: '#cf534f' },
+  spiceYellow: { top: '#ffc044', bottom: '#ffc044' },
+  spiceOrange: { top: '#ff7e44', bottom: '#ff7e44' },
+  cardamom: { top: '#61cb8b', bottom: '#61cb8b' },
   leaf: { top: '#5dc789', bottom: '#1c856a' },
-  leafDark: { top: '#1c856a', bottom: '#1c856a' },
 } as const satisfies Record<string, Swatch>;
 export type Mat = keyof typeof SWATCHES;

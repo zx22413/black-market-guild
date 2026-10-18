@@ -51,9 +51,9 @@ export const ISLAND_SCENERY: Readonly<Partial<Record<IslandId, IslandScenery>>> 
     name: '香料群島',
     ground: { top: '#b06041', cliff: '#e2c28a' },
     pieces: [
-      { design: 'nutmeg-house', at: [0.3, TURF, 2.4], scale: 2 },
-      { design: 'shade-tree', at: [0, RIM, -9.6], scale: 2.5, backdrop: true },
-      { design: 'drying-floor', at: [-1.05, TURF, -0.7], scale: 1.3 },
+      { design: 'spice-stall', at: [0.3, TURF, 3.25], scale: 2 },
+      { design: 'windtower-house', at: [0, RIM, -9.05], scale: 2.3, backdrop: true },
+      { design: 'drying-floor', at: [-1.0, TURF, -0.5], scale: 1.1 },
       { design: 'nutmeg-tree', at: [-5.6, TURF, -3.6], scale: 1.6 },
       { design: 'nutmeg-tree', at: [5.8, TURF, -3.4], scale: 1.6, turn: Math.PI / 2 },
       { design: 'nutmeg-tree', at: [5.6, TURF, 3.8], scale: 1.4, turn: Math.PI },
@@ -66,11 +66,11 @@ export const ISLAND_SCENERY: Readonly<Partial<Record<IslandId, IslandScenery>>> 
     pieces: [
       { design: 'shaft-house', at: [0.3, TURF, 2.42], scale: 2 },
       { design: 'mountain', at: [0, SEA_FOOT, -11.2], scale: 6, backdrop: true },
-      { design: 'ore-cart', at: [-1.0, TURF, -0.75], scale: 1.3, turn: Math.PI / 2 },
+      { design: 'ore-cart', at: [-1.0, TURF, -0.3], scale: 1.1, turn: Math.PI / 2 },
       { design: 'spoil-heap', at: [5.5, TURF, 3.7], scale: 1.4 },
-      { design: 'pine', at: [-5.2, TURF, 4.6], scale: 1.8 },
-      { design: 'crag', at: [-5.6, TURF, -3.6], scale: 1.6 },
-      { design: 'crag', at: [5.8, TURF, -3.4], scale: 1.3, turn: Math.PI },
+      { design: 'pine', at: [-5.3, TURF, 4.8], scale: 1.5 },
+      { design: 'crag', at: [-5.75, TURF, -3.55], scale: 1.4 },
+      { design: 'crag', at: [5.95, TURF, -3.4], scale: 1.3, turn: Math.PI },
     ],
   },
 };

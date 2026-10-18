@@ -83,6 +83,14 @@ function closeUp(scenery: IslandScenery, piece: SceneryPiece, defs: string[]): s
   return fitted(drawn, 400, 240, 90, defs);
 }
 
+/** Swatch chips fit the card's right column 13 to a row. */
+const CHIPS_PER_ROW = 13;
+function chipRows(chips: readonly Swatch[]): string {
+  const rows = Array.from({ length: Math.ceil(chips.length / CHIPS_PER_ROW) }, (_, i) => chips.slice(i * CHIPS_PER_ROW, (i + 1) * CHIPS_PER_ROW));
+  const top = rows.length > 1 ? 652 : 670;
+  return rows.map((row, i) => `<g transform="translate(930,${top + i * 30})">${swatchChips(row)}</g>`).join('');
+}
+
 function panel(scenery: IslandScenery, index: number, defs: string[]): string {
   const ghosts = ASSET_IDS.flatMap((asset) => partsDrawn(BUILDING_DESIGNS[asset].parts, ASSET_LOTS[asset], ASSET_BUILDING_SCALE, 0, GHOST));
   const all = [...groundDrawn(scenery, PLATEAU, PLAYER_ISLAND_RADIUS), ...ghosts, ...scenery.pieces.flatMap((p) => pieceDrawn(p))];
@@ -95,6 +103,7 @@ function panel(scenery: IslandScenery, index: number, defs: string[]): string {
   const mats = [...new Set(designs.flatMap((id) => LANDMARK_DESIGNS[id].parts.map((p) => p.mat)))];
   const y0 = 150 + index * 780;
   const head = scenery.ground.top;
+  const chips = [{ top: head, bottom: shade(head, 0.9) }, ...mats.map((m) => SWATCHES[m])];
   const list = designs
     .map((id, i) => `<text x="0" y="${i * 24}" class="note">・${LANDMARK_DESIGNS[id].motif}</text>`)
     .join('');
@@ -116,8 +125,8 @@ function panel(scenery: IslandScenery, index: number, defs: string[]): string {
     <g transform="translate(40,664)">${list}</g>
     <g transform="translate(560,640)">${fitted(island, 160, 66, 6, defs, true)}</g>
     <text x="640" y="728" class="note" text-anchor="middle">桌面距離剪影</text>
-    <g transform="translate(930,670)">${swatchChips([{ top: head, bottom: shade(head, 0.9) }, ...mats.map((m) => SWATCHES[m])])}</g>
-    <text x="930" y="722" class="note">地面色＋造景材質</text>
+    ${chipRows(chips)}
+    <text x="930" y="${chips.length > CHIPS_PER_ROW ? 732 : 722}" class="note">地面色＋造景材質</text>
   </g>`;
 }
 
