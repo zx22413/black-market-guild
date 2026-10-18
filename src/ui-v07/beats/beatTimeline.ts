@@ -54,8 +54,10 @@ export function beatCues(beat: ShipBeat, speed = 1, money = true): Cue[] {
   // A die the lighthouse's intel changed gets the beam on it too, in full like the island step.
   if (beat.rerollSpotter !== null) push('start', 0, BEAT_PACE.island, BEAT_PACE.island);
   else push('start', 0, BEAT_PACE.start);
-  // The island step plays in full even on a fast-forwarded ship: it is where the island shows it counts.
-  beat.steps.forEach((step, i) => (step.kind === 'island' ? push('step', i, BEAT_PACE.island, BEAT_PACE.island) : push('step', i, BEAT_PACE.step)));
+  // An island at work (the lighthouse's step, the cove's raiders, the fortress's guns) plays in full.
+  beat.steps.forEach((step, i) =>
+    step.kind === 'island' || step.boosted.length > 0 ? push('step', i, BEAT_PACE.island, BEAT_PACE.island) : push('step', i, BEAT_PACE.step),
+  );
   push('outcome', 0, BEAT_PACE.outcome);
   push('cargo', 0, BEAT_PACE.cargo);
   if (money) {

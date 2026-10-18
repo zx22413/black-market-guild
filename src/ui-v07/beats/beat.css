@@ -2038,6 +2038,16 @@
   color: #6a4fc2;
   animation-delay: 150ms;
 }
+/* The pirate cove's raid and the fortress's guns land later than a plain ram or shield
+   (RAID.ram and BARRAGE.shield in scene/islandForceMath.ts). */
+.hit-word.raid {
+  color: #b3261e;
+  animation-delay: 1300ms;
+}
+.hit-word.bastion {
+  color: #9a6a00;
+  animation-delay: 1400ms;
+}
 /* The lighthouse: the word lands when the beam locks onto the ship (SPOT_TIME.lock in scene/spotlightMath.ts). */
 .hit-word.beacon {
   color: #b86a00;

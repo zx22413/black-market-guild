@@ -1,4 +1,4 @@
-import type { CashReason, GoodId, Goods, IslandId, MatchEvent, PlayerId, RoleId, ShipId, VoyageEventId, VoyageOutcome } from '../../v07/game';
+import { RULES_V07, traitOf, type CashReason, type GoodId, type Goods, type IslandId, type MatchEvent, type PlayerId, type RoleId, type ShipId, type VoyageEventId, type VoyageOutcome } from '../../v07/game';
 
 // One "beat" of the round resolution: everything that happens to one ship, in the order of §9.1
 // (start die, guards, pirates, voyage event, island, clamp), then its outcome, cargo and money.
@@ -11,6 +11,11 @@ export interface BeatStep {
   readonly value: number;
   /** Players whose deployed role caused the step (guards, pirates); empty for event, island, clamp. */
   readonly actors: readonly PlayerId[];
+  /**
+   * The actors whose island makes their role stronger here (the pirate cove's pirates, the fortress's
+   * guards, §11.2): the step shows their island at work. Empty for other steps.
+   */
+  readonly boosted: readonly PlayerId[];
   /** The voyage event (kind 'event') or the owner's island (kind 'island'). */
   readonly source: VoyageEventId | IslandId | null;
 }
@@ -67,12 +72,18 @@ function modifierSteps(
   pirates: readonly PlayerId[],
   voyageEvent: VoyageEventId | null,
   island: IslandId | null,
+  islandOf: (id: PlayerId) => IslandId | null,
 ): BeatStep[] {
+  const boosted = (actors: readonly PlayerId[], role: 'guard' | 'pirate') =>
+    actors.filter((id) => {
+      const trait = traitOf(RULES_V07, islandOf(id));
+      return (role === 'guard' ? trait.guardModifier : trait.pirateModifier) !== 0;
+    });
   const parts: Omit<BeatStep, 'value'>[] = [
-    { kind: 'guard', delta: mod.guard, actors: guards, source: null },
-    { kind: 'pirate', delta: mod.pirate, actors: pirates, source: null },
-    { kind: 'event', delta: mod.event, actors: [], source: voyageEvent },
-    { kind: 'island', delta: mod.island, actors: [], source: island },
+    { kind: 'guard', delta: mod.guard, actors: guards, source: null, boosted: boosted(guards, 'guard') },
+    { kind: 'pirate', delta: mod.pirate, actors: pirates, source: null, boosted: boosted(pirates, 'pirate') },
+    { kind: 'event', delta: mod.event, actors: [], source: voyageEvent, boosted: [] },
+    { kind: 'island', delta: mod.island, actors: [], source: island, boosted: [] },
   ];
   let value = mod.base;
   const steps: BeatStep[] = [];
@@ -81,7 +92,7 @@ function modifierSteps(
     value += part.delta;
     steps.push({ ...part, value });
   }
-  if (value !== mod.final) steps.push({ kind: 'clamp', delta: mod.final - value, value: mod.final, actors: [], source: null });
+  if (value !== mod.final) steps.push({ kind: 'clamp', delta: mod.final - value, value: mod.final, actors: [], source: null, boosted: [] });
   return steps;
 }
 
@@ -119,6 +130,7 @@ export function buildShipBeat(events: readonly MatchEvent[], shipId: ShipId): Sh
       deployedOn(inRound, 'pirate', shipId),
       voyageEvent?.type === 'voyage-event-revealed' ? voyageEvent.event : null,
       islands?.type === 'islands-chosen' ? (islands.islands[owner] ?? null) : null,
+      (id) => (islands?.type === 'islands-chosen' ? (islands.islands[id] ?? null) : null),
     ),
     final: mod.final,
     outcome: resolved.outcome,

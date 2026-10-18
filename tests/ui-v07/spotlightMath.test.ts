@@ -26,8 +26,8 @@ describe('lighthouse spotlight', () => {
   const lit: ShipBeat = {
     ...base,
     steps: [
-      { kind: 'pirate', delta: -1, value: base.start - 1, actors: ['p2'], source: null },
-      { kind: 'island', delta: 1, value: base.start, actors: [], source: 'lighthouse' },
+      { kind: 'pirate', delta: -1, value: base.start - 1, actors: ['p2'], source: null, boosted: [] },
+      { kind: 'island', delta: 1, value: base.start, actors: [], source: 'lighthouse', boosted: [] },
     ],
   };
   const first = beatCues(lit).findIndex((c) => c.kind === 'step');

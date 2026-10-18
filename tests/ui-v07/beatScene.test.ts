@@ -45,8 +45,8 @@ describe('ship beat on the 3D table', () => {
     const guarded: ShipBeat = {
       ...withPirate,
       steps: [
-        { kind: 'pirate', delta: -1, value: withPirate.start - 1, actors: ['p3'], source: null },
-        { kind: 'guard', delta: 1, value: withPirate.start, actors: ['p2', 'p4'], source: null },
+        { kind: 'pirate', delta: -1, value: withPirate.start - 1, actors: ['p3'], source: null, boosted: [] },
+        { kind: 'guard', delta: 1, value: withPirate.start, actors: ['p2', 'p4'], source: null, boosted: [] },
       ],
     };
     const first = beatCues(guarded).findIndex((c) => c.kind === 'step');
@@ -64,7 +64,7 @@ describe('ship beat on the 3D table', () => {
   });
 
   it('lets the weather act on its own step: lightning in a storm, a push in a tailwind', () => {
-    const fake = (delta: number): ShipBeat => ({ ...withPirate, steps: [{ kind: 'event', delta, value: withPirate.start + delta, actors: [], source: null }] });
+    const fake = (delta: number): ShipBeat => ({ ...withPirate, steps: [{ kind: 'event', delta, value: withPirate.start + delta, actors: [], source: null, boosted: [] }] });
     const oneStep = (beat: ShipBeat) => viewAfter(beat, beatCues(beat).findIndex((c) => c.kind === 'step') + 1);
     expect(stepHit(fake(-1), oneStep(fake(-1)), 'storm')?.kind).toBe('lightning');
     expect(stepHit(fake(1), oneStep(fake(1)), 'tailwind')?.kind).toBe('push');

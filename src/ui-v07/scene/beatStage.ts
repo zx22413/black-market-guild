@@ -44,7 +44,7 @@ export function actorsShown(beat: ShipBeat, view: BeatView): BeatActor[] {
   );
 }
 
-export type HitKind = 'ram' | 'shield' | 'lightning' | 'push' | 'lift' | 'jolt' | 'beacon';
+export type HitKind = 'ram' | 'raid' | 'shield' | 'bastion' | 'lightning' | 'push' | 'lift' | 'jolt' | 'beacon';
 
 export interface BeatHit {
   readonly kind: HitKind;
@@ -59,7 +59,8 @@ export function stepActors(beat: ShipBeat, view: BeatView): BeatActor[] {
 }
 
 /**
- * How the ship reacts to the step on screen: pirates ram it, guards put a shield around it, a
+ * How the ship reacts to the step on screen: pirates ram it (with the pirate cove's raiders: a
+ * raid), guards put a shield around it (with the fortress's guns behind them: a bastion), a
  * storm strikes with lightning, a tailwind pushes it on, its own island's beacon (the lighthouse)
  * lifts it once the beam is on it, other help lifts it and other trouble jolts it.
  */
@@ -68,9 +69,13 @@ export function stepHit(beat: ShipBeat, view: BeatView, weather: VoyageEventId |
   const step = beat.steps[view.stepsShown - 1]!;
   const kind: HitKind =
     step.kind === 'pirate'
-      ? 'ram'
+      ? step.boosted.length > 0
+        ? 'raid'
+        : 'ram'
       : step.kind === 'guard'
-        ? 'shield'
+        ? step.boosted.length > 0
+          ? 'bastion'
+          : 'shield'
         : step.kind === 'island'
           ? 'beacon'
           : step.kind === 'event' && weather === 'storm'

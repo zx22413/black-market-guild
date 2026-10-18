@@ -209,3 +209,12 @@ export function beaconAt(island: IslandId | null, heading: number): Vec3 | null 
   const turn = backdropTurn(heading);
   return [x * Math.cos(turn) + z * Math.sin(turn), piece.at[1] + by * piece.scale, -x * Math.sin(turn) + z * Math.cos(turn)];
 }
+
+/** Where the chosen island's backdrop stands in island space (its footing), on the side it is turned to; null if none. */
+export function backdropAt(island: IslandId | null, heading: number): Vec3 | null {
+  const piece = island ? ISLAND_SCENERY[island]?.pieces.find((p) => p.backdrop) : undefined;
+  if (!piece) return null;
+  const turn = backdropTurn(heading);
+  const [x, y, z] = piece.at;
+  return [x * Math.cos(turn) + z * Math.sin(turn), y, -x * Math.sin(turn) + z * Math.cos(turn)];
+}

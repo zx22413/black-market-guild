@@ -13,6 +13,9 @@ import type { BeatView } from '../beats/beatTimeline';
 import type { ShipBeat } from '../beats/shipBeat';
 import { around } from './focusMath';
 import { actorsShown, framingOf, involved, stepActors, stepHit, type BeatActor, type BeatHit, type BeatSeat } from './beatStage';
+import { Burst, WaterRing, fan } from './beatFx';
+import { Barrage, Raiders } from './IslandForces';
+import { BARRAGE, RAID, RAIDERS, barrageCue, raidCue, raiderSpot } from './islandForceMath';
 import { Spotlight } from './Spotlight';
 import { SPOT_TIME, voyageSpotlight } from './spotlightMath';
 import { TableCanvas, overviewPoints, platePosition, useTableLayout, type TablePin } from './TableCanvas';
@@ -33,9 +36,9 @@ const ACTOR_LOOK: Readonly<Record<BeatActor['role'], { readonly model: ModelName
 };
 const ACTOR_SPOT = { x: 7, z: 5, spread: 5 } as const;
 /** How long after a step begins the ship takes the hit (an actor first has to arrive). */
-const HIT_DELAY: Readonly<Record<BeatHit['kind'], number>> = { ram: 0.7, shield: 0.45, lightning: 0.2, push: 0.15, lift: 0.45, jolt: 0.15, beacon: SPOT_TIME.lock };
+const HIT_DELAY: Readonly<Record<BeatHit['kind'], number>> = { ram: 0.7, raid: RAID.ram, shield: 0.45, bastion: BARRAGE.shield, lightning: 0.2, push: 0.15, lift: 0.45, jolt: 0.15, beacon: SPOT_TIME.lock };
 const HIT_LENGTH = 0.7;
-const HIT_WORD: Partial<Record<BeatHit['kind'], string>> = { ram: '撞擊！', shield: '護航！', lightning: '雷擊！', beacon: '燈塔！' };
+const HIT_WORD: Partial<Record<BeatHit['kind'], string>> = { ram: '撞擊！', raid: '海盜灣！', shield: '護航！', bastion: '要塞！', lightning: '雷擊！', beacon: '燈塔！' };
 /** A pirate pulls back, then rams the ship: it starts moving at LUNGE_START and touches it at HIT_DELAY.ram. */
 const LUNGE_START = 0.45;
 const LUNGE_END = 1.0;
@@ -86,6 +89,8 @@ interface Strike {
   readonly role: BeatActor['role'];
   /** Where the ship is. */
   readonly ship: Vector3;
+  /** Seconds into the step when the ram touches (or the shield goes up). */
+  readonly delay: number;
 }
 
 /**
@@ -112,11 +117,14 @@ function ActorBoat({ from, to, model, scale, strike }: { readonly from: Vector3;
     b.position.set(0, 0, 0);
     b.rotation.set(0, 0, 0);
     if (strike && since.current?.key !== strike.key) since.current = { key: strike.key, at: clock.elapsedTime };
+    // The lunge window, shifted with the moment of the hit (later when the cove's raiders join in).
+    const lungeStart = (strike?.delay ?? HIT_DELAY.ram) - (HIT_DELAY.ram - LUNGE_START);
+    const lungeEnd = (strike?.delay ?? HIT_DELAY.ram) + (LUNGE_END - HIT_DELAY.ram);
     const t = strike && since.current ? clock.elapsedTime - since.current.at : -1;
-    if (!strike || t < LUNGE_START || t > LUNGE_END) return;
+    if (!strike || t < lungeStart || t > lungeEnd) return;
     if (strike.role === 'pirate') {
       // Out to the hull and back: the group's own frame is turned by `heading`, so work in the world frame.
-      const k = (t - LUNGE_START) / (LUNGE_END - LUNGE_START);
+      const k = (t - lungeStart) / (lungeEnd - lungeStart);
       const reach = k < 0.45 ? 1 - (1 - k / 0.45) ** 3 : 1 - ((k - 0.45) / 0.55) ** 2;
       const dx = strike.ship.x - g.position.x;
       const dz = strike.ship.z - g.position.z;
@@ -125,7 +133,7 @@ function ActorBoat({ from, to, model, scale, strike }: { readonly from: Vector3;
       const local = new Vector3((dx / dist) * travel, 0, (dz / dist) * travel).applyAxisAngle(new Vector3(0, 1, 0), -g.rotation.y);
       b.position.copy(local);
     } else {
-      b.rotation.z = Math.sin(t * 14) * 0.12 * (1 - (t - LUNGE_START) / (LUNGE_END - LUNGE_START));
+      b.rotation.z = Math.sin(t * 14) * 0.12 * (1 - (t - lungeStart) / (lungeEnd - lungeStart));
     }
   });
   const [heading] = useState(() => Math.atan2(to.x - spawn.x, to.z - spawn.z));
@@ -138,88 +146,6 @@ function ActorBoat({ from, to, model, scale, strike }: { readonly from: Vector3;
   );
 }
 
-/** A ring on the water that grows from `radius` and fades, starting `delay` seconds into the effect. */
-function WaterRing({ at, color, delay, from, to, length }: { readonly at: Vector3; readonly color: string; readonly delay: number; readonly from: number; readonly to: number; readonly length: number }) {
-  const mesh = useRef<Mesh>(null);
-  const start = useRef<number | null>(null);
-  useFrame(({ clock }) => {
-    const m = mesh.current;
-    if (!m) return;
-    start.current ??= clock.elapsedTime;
-    const t = clock.elapsedTime - start.current - delay;
-    m.visible = t >= 0 && t <= length;
-    if (!m.visible) return;
-    const k = t / length;
-    m.scale.setScalar(from + (to - from) * (1 - (1 - k) ** 2));
-    (m.material as MeshBasicMaterial).opacity = 0.9 * (1 - k);
-  });
-  return (
-    <mesh ref={mesh} position={[at.x, 0.4, at.z]} rotation={[-Math.PI / 2, 0, 0]} visible={false}>
-      <ringGeometry args={[0.85, 1, 40]} />
-      <meshBasicMaterial color={color} transparent toneMapped={false} depthWrite={false} />
-    </mesh>
-  );
-}
-
-interface Particle {
-  /** Unit direction on the water plane. */
-  readonly dir: readonly [number, number];
-  readonly up: number;
-  readonly speed: number;
-  readonly spin: number;
-}
-
-/** Particles thrown out of `at` (sparks, splinters, glitter); a fixed fan, so the look never changes between plays. */
-function Burst({ at, particles, color, size, delay, length, gravity, box = false, facing = 0 }: {
-  readonly at: Vector3;
-  readonly particles: readonly Particle[];
-  readonly color: string;
-  readonly size: number;
-  readonly delay: number;
-  readonly length: number;
-  readonly gravity: number;
-  readonly box?: boolean;
-  /** Fan centre (radians around the vertical axis); particles spread over ±arc around it. */
-  readonly facing?: number;
-}) {
-  const group = useRef<Group>(null);
-  const start = useRef<number | null>(null);
-  useFrame(({ clock }) => {
-    const g = group.current;
-    if (!g) return;
-    start.current ??= clock.elapsedTime;
-    const t = clock.elapsedTime - start.current - delay;
-    g.visible = t >= 0 && t <= length;
-    if (!g.visible) return;
-    const k = t / length;
-    g.children.forEach((child, i) => {
-      const q = particles[i]!;
-      child.position.set(q.dir[0] * q.speed * t, Math.max(0, q.up * t - gravity * t * t), q.dir[1] * q.speed * t);
-      child.rotation.set(t * q.spin, t * q.spin * 0.7, 0);
-      child.scale.setScalar(1 - k * 0.8);
-      ((child as Mesh).material as MeshBasicMaterial).opacity = 1 - k * k;
-    });
-  });
-  return (
-    <group ref={group} position={[at.x, 2.4, at.z]} rotation={[0, facing, 0]} visible={false}>
-      {particles.map((_, i) => (
-        <mesh key={i}>
-          {box ? <boxGeometry args={[size, size * 0.6, size * 2]} /> : <sphereGeometry args={[size, 8, 6]} />}
-          <meshBasicMaterial color={color} transparent toneMapped={false} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-/** A fan of `n` particles spread over `arc` radians around +z (the group's `facing` aims it). */
-const fan = (n: number, arc: number, speed: number, up: number, spin: number): Particle[] =>
-  Array.from({ length: n }, (_, i) => {
-    const a = n === 1 ? 0 : -arc / 2 + (arc * i) / (n - 1);
-    const wobble = 0.75 + 0.25 * Math.sin(i * 12.9898);
-    return { dir: [Math.sin(a), Math.cos(a)] as const, up: up * wobble, speed: speed * wobble, spin: spin * (i % 2 === 0 ? 1 : -1) };
-  });
-
 const SPARKS = fan(18, Math.PI * 1.3, 13, 10, 9);
 const SPLINTERS = fan(10, Math.PI * 1.1, 9, 9, 14);
 const GLITTER = fan(18, Math.PI * 2, 4.5, 7, 4);
@@ -228,7 +154,7 @@ const GLITTER = fan(18, Math.PI * 2, 4.5, 7, 4);
  * The pirates' ram: where each pirate boat touches the hull a flash, sparks, splinters and a
  * ring on the water burst outward (the ship shakes at the same moment, see Reaction).
  */
-function RamFx({ ship, from }: { readonly ship: Vector3; readonly from: Vector3 }) {
+function RamFx({ ship, from, delay = HIT_DELAY.ram }: { readonly ship: Vector3; readonly from: Vector3; readonly delay?: number }) {
   const flash = useRef<Mesh>(null);
   const start = useRef<number | null>(null);
   const away = new Vector3(from.x - ship.x, 0, from.z - ship.z).normalize();
@@ -238,7 +164,7 @@ function RamFx({ ship, from }: { readonly ship: Vector3; readonly from: Vector3 
     const m = flash.current;
     if (!m) return;
     start.current ??= clock.elapsedTime;
-    const t = clock.elapsedTime - start.current - HIT_DELAY.ram;
+    const t = clock.elapsedTime - start.current - delay;
     m.visible = t >= 0 && t <= 0.25;
     if (!m.visible) return;
     m.scale.setScalar(1.2 + (t / 0.25) * 7);
@@ -250,37 +176,37 @@ function RamFx({ ship, from }: { readonly ship: Vector3; readonly from: Vector3 
         <sphereGeometry args={[1, 12, 8]} />
         <meshBasicMaterial color="#ffd27a" transparent toneMapped={false} />
       </mesh>
-      <Burst at={contact} particles={SPARKS} color="#ffb347" size={0.55} delay={HIT_DELAY.ram} length={0.8} gravity={9} facing={facing} />
-      <Burst at={contact} particles={SPLINTERS} color="#8a5a2b" size={0.75} delay={HIT_DELAY.ram} length={0.9} gravity={11} box facing={facing} />
-      <WaterRing at={contact} color="#fff2c8" delay={HIT_DELAY.ram} from={1} to={13} length={0.8} />
+      <Burst at={contact} particles={SPARKS} color="#ffb347" size={0.55} delay={delay} length={0.8} gravity={9} facing={facing} />
+      <Burst at={contact} particles={SPLINTERS} color="#8a5a2b" size={0.75} delay={delay} length={0.9} gravity={11} box facing={facing} />
+      <WaterRing at={contact} color="#fff2c8" delay={delay} from={1} to={13} length={0.8} />
     </>
   );
 }
 
 /** The guards' shield: a blue dome flares around the ship, rings run out on the water, glitter rises. */
-function ShieldFx({ at }: { readonly at: Vector3 }) {
+function ShieldFx({ at, delay = HIT_DELAY.shield, color = '#7ec8ff', size = 1 }: { readonly at: Vector3; readonly delay?: number; readonly color?: string; readonly size?: number }) {
   const dome = useRef<Mesh>(null);
   const start = useRef<number | null>(null);
   useFrame(({ clock }) => {
     const m = dome.current;
     if (!m) return;
     start.current ??= clock.elapsedTime;
-    const t = clock.elapsedTime - start.current - HIT_DELAY.shield;
+    const t = clock.elapsedTime - start.current - delay;
     m.visible = t >= 0 && t <= 1;
     if (!m.visible) return;
     const k = t / 1;
-    m.scale.setScalar(0.55 + 0.6 * Math.sin(Math.min(1, k * 1.6) * (Math.PI / 2)));
+    m.scale.setScalar(size * (0.55 + 0.6 * Math.sin(Math.min(1, k * 1.6) * (Math.PI / 2))));
     (m.material as MeshBasicMaterial).opacity = 0.8 * (1 - k) * (0.65 + 0.35 * Math.sin(k * Math.PI * 6));
   });
   return (
     <>
       <mesh ref={dome} position={[at.x, 0, at.z]} visible={false}>
         <sphereGeometry args={[7.5, 24, 14, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshBasicMaterial color="#7ec8ff" transparent toneMapped={false} depthWrite={false} side={DoubleSide} />
+        <meshBasicMaterial color={color} transparent toneMapped={false} depthWrite={false} side={DoubleSide} />
       </mesh>
-      <WaterRing at={at} color="#bfe4ff" delay={HIT_DELAY.shield} from={1.2} to={13} length={0.9} />
-      <WaterRing at={at} color="#7ec8ff" delay={HIT_DELAY.shield + 0.2} from={1.2} to={10} length={0.8} />
-      <Burst at={at} particles={GLITTER} color="#e8f6ff" size={0.5} delay={HIT_DELAY.shield} length={1} gravity={-1.5} />
+      <WaterRing at={at} color="#bfe4ff" delay={delay} from={1.2} to={13 * size} length={0.9} />
+      <WaterRing at={at} color={color} delay={delay + 0.2} from={1.2} to={10 * size} length={0.8} />
+      <Burst at={at} particles={GLITTER} color="#e8f6ff" size={0.5} delay={delay} length={1} gravity={-1.5} />
     </>
   );
 }
@@ -292,14 +218,14 @@ function HitFx({ hit, at, from }: { readonly hit: BeatHit; readonly at: Vector3;
   const canvas = useThree((state) => state.gl.domElement);
   // The whole picture jolts when a ram lands.
   useEffect(() => {
-    if (hit.kind !== 'ram') return undefined;
+    if (hit.kind !== 'ram' && hit.kind !== 'raid') return undefined;
     const timer = setTimeout(
       () =>
         canvas.animate?.(
           [{ transform: 'translate(0, 0)' }, { transform: 'translate(-9px, 5px)' }, { transform: 'translate(8px, -6px)' }, { transform: 'translate(-5px, 3px)' }, { transform: 'translate(0, 0)' }],
           { duration: 420, easing: 'ease-out' },
         ),
-      HIT_DELAY.ram * 1000,
+      HIT_DELAY[hit.kind] * 1000,
     );
     return () => clearTimeout(timer);
   }, [canvas, hit.kind, hit.key]);
@@ -317,8 +243,16 @@ function HitFx({ hit, at, from }: { readonly hit: BeatHit; readonly at: Vector3;
     // Two quick flickers.
     material.opacity = Math.sin((t / HIT_LENGTH) * Math.PI * 4) > 0 ? 1 - (t / HIT_LENGTH) * 0.6 : 0.1;
   });
-  if (hit.kind === 'ram') return <>{from.map((spot, i) => <RamFx key={i} ship={at} from={spot} />)}</>;
+  if (hit.kind === 'ram' || hit.kind === 'raid') return <>{from.map((spot, i) => <RamFx key={i} ship={at} from={spot} delay={HIT_DELAY[hit.kind]} />)}</>;
   if (hit.kind === 'shield') return <ShieldFx at={at} />;
+  // The fortress's guard: its own shield, then the fort's golden one over it (+2).
+  if (hit.kind === 'bastion')
+    return (
+      <>
+        <ShieldFx at={at} delay={HIT_DELAY.bastion} />
+        <ShieldFx at={at} delay={HIT_DELAY.bastion + 0.25} color="#ffc94a" size={1.3} />
+      </>
+    );
   if (hit.kind !== 'lightning') return null;
   return (
     <mesh ref={mesh} position={[at.x, 14, at.z]} visible={false}>
@@ -343,7 +277,7 @@ function Reaction({ hit, heading, children }: { readonly hit: BeatHit | null; re
     if (hit.kind === 'push') {
       const reach = Math.sin((t / HIT_LENGTH) * Math.PI) * 2.4;
       g.position.set(Math.sin(heading) * reach, 0, Math.cos(heading) * reach);
-    } else if (hit.kind === 'lift' || hit.kind === 'shield' || hit.kind === 'beacon') {
+    } else if (hit.kind === 'lift' || hit.kind === 'shield' || hit.kind === 'bastion' || hit.kind === 'beacon') {
       g.position.y = Math.sin((t / HIT_LENGTH) * Math.PI) * 1.2;
     } else {
       const shake = Math.sin(t * 60) * 0.9 * fade;
@@ -385,15 +319,24 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats }: B
   const hit = stepHit(beat, view, weather);
   const striking = stepActors(beat, view);
   const framing = framingOf(view);
-  // The owner's lighthouse shining on its ship: the close-up widens to take in the lamp.
-  const spotlight = framing === 'ship' ? voyageSpotlight(beat, view, { angleOf: (id) => angles[laneOf(id)]!, islandOf: (id) => seats.find((s) => s.id === id)?.island ?? null }) : null;
+  // Islands at work on the ship (the lighthouse's beam, the cove's raiders, the fortress's guns):
+  // the close-up widens to take in where they come from.
+  const lookup = { angleOf: (id: PlayerId) => angles[laneOf(id)]!, islandOf: (id: PlayerId) => seats.find((s) => s.id === id)?.island ?? null };
+  const spotlight = framing === 'ship' ? voyageSpotlight(beat, view, lookup) : null;
+  const raid = framing === 'ship' ? raidCue(beat, view, lookup) : null;
+  const barrage = framing === 'ship' ? barrageCue(beat, view, lookup) : null;
+  const sources: FitPoint[] = [
+    ...(spotlight ? [{ position: spotlight.lamp, clearance: LAMP_CLEARANCE }, ...around(spotlight.lamp, LAMP_ROOM)] : []),
+    ...(raid ? around(raid.path[0]!, LAMP_ROOM) : []),
+    ...(barrage ? [{ position: barrage.fort, clearance: LAMP_CLEARANCE }] : []),
+  ];
   const p = focusPose.position;
   const spotOf = (actor: BeatActor) => actorSpot(p, ACTOR_LOOK[actor.role], actor);
   const seatOf = (id: PlayerId) => seats.find((s) => s.id === id);
   return {
     camera:
       framing === 'ship'
-        ? [...around([p.x, 0, p.z], CLOSE_UP_RADIUS), { position: [p.x, TAG_HEIGHT, p.z - TAG_BACK] as const, clearance: TAG_CLEARANCE }, ...(spotlight ? [{ position: spotlight.lamp, clearance: LAMP_CLEARANCE }, ...around(spotlight.lamp, LAMP_ROOM)] : [])]
+        ? [...around([p.x, 0, p.z], CLOSE_UP_RADIUS), { position: [p.x, TAG_HEIGHT, p.z - TAG_BACK] as const, clearance: TAG_CLEARANCE }, ...sources]
         : null,
     ringed: framing === 'ship' ? involved(beat) : new Set(),
     focusState: view.showOutcome ? (beat.outcome === 'sank' ? 'sunk' : 'arrived') : 'sailing',
@@ -446,11 +389,20 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats }: B
               to={to}
               model={look.model}
               scale={look.scale}
-              strike={strikeNow ? { key: hit.key, role: actor.role, ship: new Vector3(p.x, 0, p.z) } : null}
+              strike={strikeNow ? { key: hit.key, role: actor.role, ship: new Vector3(p.x, 0, p.z), delay: HIT_DELAY[hit.kind] } : null}
             />
           );
         })}
-        {hit && <HitFx key={`${beat.shipId}-${hit.key}`} hit={hit} at={focusPose.position} from={striking.filter((a) => a.role === 'pirate').map(spotOf)} />}
+        {hit && (
+          <HitFx
+            key={`${beat.shipId}-${hit.key}`}
+            hit={hit}
+            at={focusPose.position}
+            from={[...striking.filter((a) => a.role === 'pirate').map(spotOf), ...(raid ? Array.from({ length: RAIDERS }, (_, i) => new Vector3(...raiderSpot(raid, i))) : [])]}
+          />
+        )}
+        {raid && <Raiders key={raid.key} cue={raid} />}
+        {barrage && <Barrage key={barrage.key} cue={barrage} />}
         {spotlight && <Spotlight key={spotlight.key} cue={spotlight} />}
       </>
     ),
