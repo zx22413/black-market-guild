@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { IslandId, PlayerId } from '../../v07/game';
 import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
+import type { Vec3 } from '../../ui/scene/buildings/polyhedra';
 import { ISLAND_LABELS, ISLAND_TEXT } from '../labels';
 import type { TablePin } from '../scene/TableCanvas';
 import { IslandGlance } from './IslandGlance';
@@ -44,7 +45,18 @@ function IslandBadge({ island }: { readonly island: IslandId }) {
   );
 }
 
-/** Badges at the back edge of each island (the top of it on screen), clear of plates and docks. */
+/**
+ * Where an island's badge goes: at the island's back edge (the top of it on screen), clear of its plate
+ * and dock; on an island at the side of the table, whose backdrop stands at that back edge, at its outer
+ * edge instead, so the badge never covers the backdrop (the mine's railway).
+ */
+export function badgePosition(angle: number): Vec3 {
+  const [x, , z] = seatPosition(angle);
+  const edge = PLAYER_ISLAND_RADIUS * 0.72;
+  return Math.abs(x) > Math.abs(z) ? [x + Math.sign(x) * edge, 4, z] : [x, 4, z - edge];
+}
+
+/** Badges on each island, clear of plates, docks and backdrops (`badgePosition`). */
 export function islandBadgePins(
   seats: readonly { readonly id: PlayerId }[],
   angles: readonly number[],
@@ -53,7 +65,6 @@ export function islandBadgePins(
   return seats.flatMap((s, i): TablePin[] => {
     const island = islandOf(s.id);
     if (!island) return [];
-    const [x, , z] = seatPosition(angles[i]!);
-    return [{ id: `island-${s.id}`, position: [x, 4, z - PLAYER_ISLAND_RADIUS * 0.72], node: <IslandBadge island={island} /> }];
+    return [{ id: `island-${s.id}`, position: badgePosition(angles[i]!), node: <IslandBadge island={island} /> }];
   });
 }
