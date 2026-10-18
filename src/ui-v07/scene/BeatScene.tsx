@@ -12,7 +12,7 @@ import type { ShipState } from '../../ui/scene/tableModel';
 import type { BeatView } from '../beats/beatTimeline';
 import type { ShipBeat } from '../beats/shipBeat';
 import { around } from './focusMath';
-import { actorsShown, framingOf, involved, stepActors, stepHit, type BeatActor, type BeatHit, type BeatSeat } from './beatStage';
+import { actorsShown, framingOf, involved, keptOffset, stepActors, stepHit, type BeatActor, type BeatHit, type BeatSeat, type ShipOffset } from './beatStage';
 import { Burst, WaterRing, fan } from './beatFx';
 import { Barrage, Raiders } from './IslandForces';
 import { BARRAGE, RAID, RAIDERS, barrageCue, raidCue, raiderSpot } from './islandForceMath';
@@ -265,30 +265,36 @@ function HitFx({ hit, at, from }: { readonly hit: BeatHit; readonly at: Vector3;
   );
 }
 
-/** Moves its children off their place for a moment when the ship is hit, pushed or lifted. */
-function Reaction({ hit, heading, children }: { readonly hit: BeatHit | null; readonly heading: number; readonly children: ReactNode }) {
+/**
+ * Moves the ship with what happens to it. A push carries it on and help raises it, and it keeps
+ * what it gained (`before` is where it rests now, `after` where the step on screen leaves it, from
+ * the moment that step lands): it never slides back or drops until the outcome lets go. Rams and
+ * other trouble shake it where it is.
+ */
+function Reaction({ hit, heading, before, after, children }: { readonly hit: BeatHit | null; readonly heading: number; readonly before: ShipOffset; readonly after: ShipOffset; readonly children: ReactNode }) {
   const group = useRef<Group>(null);
   const since = useRef<{ key: number; at: number } | null>(null);
-  useFrame(({ clock }) => {
+  const at = useRef<ShipOffset>({ forward: 0, up: 0 });
+  useFrame(({ clock }, delta) => {
     const g = group.current;
     if (!g) return;
     if (hit && since.current?.key !== hit.key) since.current = { key: hit.key, at: clock.elapsedTime };
     const t = hit && since.current ? clock.elapsedTime - since.current.at - HIT_DELAY[hit.kind] : -1;
-    g.position.set(0, 0, 0);
-    if (!hit || t < 0 || t > HIT_LENGTH) return;
-    const fade = 1 - t / HIT_LENGTH;
-    if (hit.kind === 'push') {
-      const reach = Math.sin((t / HIT_LENGTH) * Math.PI) * 2.4;
-      g.position.set(Math.sin(heading) * reach, 0, Math.cos(heading) * reach);
-    } else if (hit.kind === 'lift' || hit.kind === 'shield' || hit.kind === 'bastion' || hit.kind === 'beacon') {
-      g.position.y = Math.sin((t / HIT_LENGTH) * Math.PI) * 1.2;
-    } else {
-      const shake = Math.sin(t * 60) * 0.9 * fade;
-      g.position.set(Math.cos(heading) * shake, 0, -Math.sin(heading) * shake);
-    }
+    const target = hit && t >= 0 ? after : before;
+    // Glide there and stay: a firm ease, no spring back.
+    const ease = 1 - Math.exp(-delta * 5);
+    at.current = { forward: at.current.forward + (target.forward - at.current.forward) * ease, up: at.current.up + (target.up - at.current.up) * ease };
+    let { forward } = at.current;
+    let side = 0;
+    if (hit && !LIFT_HITS.has(hit.kind) && hit.kind !== 'push' && t >= 0 && t <= HIT_LENGTH) side = Math.sin(t * 60) * 0.9 * (1 - t / HIT_LENGTH);
+    if (hit?.kind === 'push' && t >= 0 && t <= HIT_LENGTH) forward += Math.sin((t / HIT_LENGTH) * Math.PI) * 0.4;
+    g.position.set(Math.sin(heading) * forward + Math.cos(heading) * side, at.current.up, Math.cos(heading) * forward - Math.sin(heading) * side);
   });
   return <group ref={group}>{children}</group>;
 }
+
+/** Hits that raise the ship rather than shake it. */
+const LIFT_HITS: ReadonlySet<BeatHit['kind']> = new Set(['lift', 'shield', 'bastion', 'beacon']);
 
 export interface BeatLayerInput {
   readonly beat: ShipBeat;
@@ -320,6 +326,15 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats }: B
   const focusPose = shipPose(angles[focusLane]!, 'sailing');
   const actors = actorsShown(beat, view);
   const hit = stepHit(beat, view, weather);
+  // Where the ship rests: what the steps so far gained it, kept until the outcome. Then an arriving
+  // ship lets go as it sails on into port; a sinking one goes down where it was pushed to.
+  const all = keptOffset(beat, beat.steps.length, weather);
+  const kept = view.showOutcome
+    ? (() => {
+        const rest = beat.outcome === 'sank' ? { forward: all.forward, up: 0 } : { forward: 0, up: 0 };
+        return { before: rest, after: rest };
+      })()
+    : { before: keptOffset(beat, Math.max(0, view.stepsShown - 1), weather), after: keptOffset(beat, view.stepsShown, weather) };
   const striking = stepActors(beat, view);
   const framing = framingOf(view);
   // Islands at work on the ship (the lighthouse's beam, the cove's raiders, the fortress's guns):
@@ -345,7 +360,7 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats }: B
     focusState: view.showOutcome ? (beat.outcome === 'sank' ? 'sunk' : 'arrived') : 'sailing',
     wrapShip: (id, body) =>
       id === beat.shipId ? (
-        <Reaction hit={hit} heading={focusPose.heading}>
+        <Reaction hit={hit} heading={focusPose.heading} before={kept.before} after={kept.after}>
           {body}
         </Reaction>
       ) : (

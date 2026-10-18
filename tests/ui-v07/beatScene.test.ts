@@ -4,7 +4,7 @@ import type { MatchEvent } from '../../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../src/v07/match';
 import { beatCues, beatView } from '../../src/ui-v07/beats/beatTimeline';
 import { buildShipBeat, type ShipBeat } from '../../src/ui-v07/beats/shipBeat';
-import { actorsShown, beatSeats, framingOf, involved, stepActors, stepHit } from '../../src/ui-v07/scene/beatStage';
+import { SHIP_KEEP, actorsShown, beatSeats, framingOf, involved, keptOffset, stepActors, stepHit } from '../../src/ui-v07/scene/beatStage';
 import { around, frame } from '../../src/ui-v07/scene/focusMath';
 
 const seats: SeatConfig[] = ['A', 'B', 'C', 'D'].map((name) => ({ kind: 'bot', name, strategy: 'aggressive' }));
@@ -129,5 +129,30 @@ describe('focus camera framing', () => {
     const ship = frame(camera, around([-30, 0, 2], 24), width, height, safe);
     const table = frame(camera, around([0, 0, 0], 60), width, height, safe);
     expect(ship.distance).toBeLessThan(table.distance);
+  });
+});
+
+describe('the ship keeps what it gains', () => {
+  const base = beats(1)[0]!;
+  const steps = (kinds: ('guard' | 'event' | 'pirate' | 'island')[], delta = 1): ShipBeat => ({
+    ...base,
+    steps: kinds.map((kind) => ({ kind, delta: kind === 'pirate' ? -1 : delta, value: base.start, actors: [], source: null, boosted: [] })),
+  });
+
+  it('carries a tailwind push forward and keeps it through later steps', () => {
+    const beat = steps(['event', 'pirate']);
+    expect(keptOffset(beat, 0, 'tailwind').forward).toBe(0);
+    expect(keptOffset(beat, 1, 'tailwind').forward).toBe(SHIP_KEEP.push);
+    expect(keptOffset(beat, 2, 'tailwind').forward).toBe(SHIP_KEEP.push);
+  });
+
+  it('raises the ship a little more with each bit of help, up to a cap, and never drops it on a ram', () => {
+    const beat = steps(['guard', 'island', 'pirate', 'event', 'event', 'event']);
+    expect(keptOffset(beat, 1, null).up).toBe(SHIP_KEEP.lift);
+    expect(keptOffset(beat, 2, null).up).toBe(SHIP_KEEP.lift * 2);
+    expect(keptOffset(beat, 3, null).up).toBe(SHIP_KEEP.lift * 2);
+    expect(keptOffset(beat, 6, null).up).toBe(SHIP_KEEP.maxLift);
+    // A storm or a plain setback does not lift it.
+    expect(keptOffset(steps(['event'], -1), 1, null).up).toBe(0);
   });
 });
