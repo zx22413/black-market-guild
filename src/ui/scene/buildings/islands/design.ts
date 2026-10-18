@@ -17,8 +17,8 @@ export interface LandmarkDesign {
   readonly rotor?: LandmarkRotor;
   /** Flags that wave on the table, drawn flat in the blueprint. */
   readonly flags?: readonly LandmarkFlag[];
-  /** Where smoke rises from a fire, in the design's coordinates. */
-  readonly smoke?: readonly Vec3[];
+  /** Fires that smoke: where in the design's coordinates, and how big the puffs grow (1 = a cooking fire's). */
+  readonly smoke?: readonly { readonly at: Vec3; readonly size: number }[];
 }
 
 /**

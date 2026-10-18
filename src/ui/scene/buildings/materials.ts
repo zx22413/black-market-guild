@@ -43,6 +43,8 @@ export const SWATCHES = {
   emerald: { top: '#61cb8b', bottom: '#1c856a' },
   // Embers under a fire, glowing like the treasure.
   ember: { top: '#ffc044', bottom: '#ff7344' },
+  // Tongues of flame, glowing like the embers and swaying (`Landmark`'s flame shader).
+  flame: { top: '#ffd263', bottom: '#ff7344' },
   // A Willemstad facade and the blue of the Dutch prince's flag; lighter than the insurance roof.
   pastelBlue: { top: '#bdd9f8', bottom: '#9dbfed' },
   // The fortress island's turf: its ground color (a blend of the default grass and slate), shaded.
@@ -52,4 +54,4 @@ export const SWATCHES = {
 export type Mat = keyof typeof SWATCHES;
 
 /** Materials drawn unlit and pulsing (`Landmark`), so treasure glints even in the shade or at night. */
-export const GLOWING_MATS: ReadonlySet<Mat> = new Set<Mat>(['treasure', 'silver', 'ruby', 'emerald', 'ember']);
+export const GLOWING_MATS: ReadonlySet<Mat> = new Set<Mat>(['treasure', 'silver', 'ruby', 'emerald', 'ember', 'flame']);

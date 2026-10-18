@@ -217,7 +217,7 @@ function campfire([x, y, z]: Vec3, r: number): P[] {
       [0, 0, 0.7],
       [0.3, 0.15, 0.45],
       [-0.25, -0.2, 0.5],
-    ] as const).map(([dx, dz, h]): P => ({ kind: 'prism', base: [x + dx * r, y + r * 0.1, z + dz * r], radius: r * 0.22, top: 0, height: r * h, sides: 5, mat: 'ember' })),
+    ] as const).map(([dx, dz, h]): P => ({ kind: 'prism', base: [x + dx * r, y + r * 0.1, z + dz * r], radius: r * 0.22, top: 0, height: r * h, sides: 5, mat: 'flame' })),
   ];
 }
 
@@ -242,7 +242,7 @@ const boucan: LandmarkDesign = {
     ...[0, 1, 2].map((i): P => ({ kind: 'beam', from: [0.62, 0.055 + (i === 2 ? 0.09 : 0), -0.25 + (i % 2) * 0.1 + (i === 2 ? 0.05 : 0)], to: [0.62, 0.055 + (i === 2 ? 0.09 : 0), 0.25 + (i % 2) * 0.1 + (i === 2 ? 0.05 : 0)], width: 0.09, sides: 6, mat: 'woodDark' })),
   ],
   // Smoke curling up from the fire through the grill.
-  smoke: [[0, 0.15, 0]],
+  smoke: [{ at: [0, 0.15, 0], size: 1 }],
 };
 
 /** A ship's gun on its truck carriage, muzzle toward +z. */

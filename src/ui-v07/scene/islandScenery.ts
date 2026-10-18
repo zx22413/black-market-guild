@@ -138,6 +138,16 @@ export const ISLAND_SCENERY: Readonly<Partial<Record<IslandId, IslandScenery>>> 
       { design: 'rowboat', at: [5.3, TURF, 3.9], scale: 1.6, turn: 0.3 },
     ],
   },
+  lighthouse: {
+    name: '燈塔島',
+    // Deep sea-green headland turf over white chalk cliffs, for the white tower to stand out against.
+    ground: { top: '#3ea87a', cliff: '#bebed6' },
+    pieces: [
+      { design: 'lookout', at: [0.3, TURF, 3.25], scale: 2 },
+      { design: 'coal-beacon', at: [0, RIM, -10.4], scale: 3, backdrop: true },
+      { design: 'rowboat', at: [5.3, TURF, 3.9], scale: 1.6, turn: 0.3 },
+    ],
+  },
 };
 
 /** Turns about the island's center that move a backdrop from the back to the left or right side. */
