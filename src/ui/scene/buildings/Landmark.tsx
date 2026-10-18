@@ -10,6 +10,7 @@ import { geometryFromParts } from './Building';
 import type { KitPart } from './kit';
 import type { LandmarkBeacon, LandmarkDesign, LandmarkFlag, LandmarkRotor } from './islands/design';
 import { LANDMARK_DESIGNS, type LandmarkId } from './landmarks';
+import { Boat } from './LandmarkBoat';
 import { Train } from './LandmarkTrain';
 import { PUFF_BALL, WOOD_SMOKE, puffOpacity, puffSwell, smokeBallMaterials } from './smokeBall';
 import { tiltPoint, type Vec3 } from './polyhedra';
@@ -162,11 +163,12 @@ function Glints({ at }: { readonly at: readonly (readonly [number, number, numbe
   );
 }
 
-/** The design's rotor (windmill sails) turning steadily about its pivot. */
+/** The design's rotor turning steadily about its pivot (windmill sails), or swinging to and fro on it (a hanging lantern). */
 function Rotor({ rotor, geometry }: { readonly rotor: LandmarkRotor; readonly geometry: BufferGeometry }) {
   const hub = useRef<Group>(null);
   useLiveFrame(({ clock }) => {
-    if (hub.current) hub.current.rotation[rotor.axis] = clock.elapsedTime * rotor.speed;
+    const t = clock.elapsedTime * rotor.speed;
+    if (hub.current) hub.current.rotation[rotor.axis] = rotor.swing === undefined ? t : rotor.swing * Math.sin(t);
   });
   return (
     <group position={[...rotor.pivot]} ref={hub}>
@@ -266,13 +268,35 @@ const FIRE_LIGHT = '#ff9a45';
 /** A fire's light strength per table unit of reach, like the island lanterns' (`Night`). */
 const FIRE_INTENSITY_PER_REACH = 2.6;
 
-/** Warm, flickering light from the design's fires and lamps, shown at night. */
-function FireLights({ at }: { readonly at: readonly { readonly at: Vec3; readonly reach: number }[] }) {
+/** A signal lamp's flashes over one cycle (seconds from its start, on until, off until): long, short, short, then dark. */
+const SIGNAL_FLASHES = [
+  [0.9, 1.3],
+  [1.6, 1.9],
+  [2.2, 3.4],
+] as const;
+const SIGNAL_CYCLE = 3.4;
+/** How much of its light a signal lamp shows between flashes, shuttered but not quite dark. */
+const SIGNAL_SHUTTERED = 0.08;
+
+/** A signal lamp's brightness `seconds` in: full while it flashes, shuttered between. */
+function signalLevel(seconds: number): number {
+  const t = seconds % SIGNAL_CYCLE;
+  let from = 0;
+  for (const [on, off] of SIGNAL_FLASHES) {
+    if (t >= from && t < on) return 1;
+    if (t < off) return SIGNAL_SHUTTERED;
+    from = off;
+  }
+  return SIGNAL_SHUTTERED;
+}
+
+/** Warm, flickering light from the design's fires and lamps, shown at night; signal lamps flash. */
+function FireLights({ at }: { readonly at: readonly { readonly at: Vec3; readonly reach: number; readonly signal?: boolean }[] }) {
   const lights = useRef<(PointLight | null)[]>([]);
   useLiveFrame(({ clock }) => {
     const t = clock.elapsedTime;
-    at.forEach(({ reach }, i) => {
-      const flicker = 1 - 0.18 * (0.5 + 0.5 * Math.sin(t * 9 + i * 2) * Math.sin(t * 14.3 + i));
+    at.forEach(({ reach, signal }, i) => {
+      const flicker = (1 - 0.18 * (0.5 + 0.5 * Math.sin(t * 9 + i * 2) * Math.sin(t * 14.3 + i))) * (signal ? signalLevel(t) : 1);
       const light = lights.current[i];
       if (light) light.intensity = reach * FIRE_INTENSITY_PER_REACH * flicker;
     });
@@ -383,7 +407,7 @@ type LandmarkProps = ThreeElements['group'] & {
 /** A piece of island scenery, drawn from the same part list as `docs/art/islands-blueprint.svg`. */
 export function Landmark({ design, night = false, ...props }: LandmarkProps) {
   const { lit, glowing, flames: flameGeometries, rotor: rotorGeometry, flags: flagGeometries } = geometryOf(design);
-  const { glints, rotor, flags, smoke, lights, beacon, train }: LandmarkDesign = LANDMARK_DESIGNS[design];
+  const { glints, rotor, flags, smoke, lights, beacon, train, boat }: LandmarkDesign = LANDMARK_DESIGNS[design];
   return (
     <group {...props}>
       <mesh geometry={lit} castShadow receiveShadow dispose={null}>
@@ -398,6 +422,7 @@ export function Landmark({ design, night = false, ...props }: LandmarkProps) {
       {night && lights && <FireLights at={lights} />}
       {night && beacon && <Beacon beacon={beacon} />}
       {train && <Train train={train} />}
+      {boat && <Boat boat={boat} />}
     </group>
   );
 }

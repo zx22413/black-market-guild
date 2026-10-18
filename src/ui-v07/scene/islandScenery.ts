@@ -56,7 +56,8 @@ export const ISLAND_SCENERY: Readonly<Partial<Record<IslandId, IslandScenery>>> 
       { design: 'windtower-house', at: [0, RIM, -9.05], scale: 2.3, backdrop: true },
       { design: 'drying-floor', at: [-1.0, TURF, -0.5], scale: 1.1 },
       { design: 'nutmeg-tree', at: [-5.6, TURF, -3.6], scale: 1.6 },
-      { design: 'nutmeg-tree', at: [5.8, TURF, -3.4], scale: 1.6, turn: Math.PI / 2 },
+      // Off to the side at the back, where your own island's camera sees it past the buildings.
+      { design: 'smoking-shed', at: [5.9, TURF, -3.6], scale: 1.1, turn: Math.PI / 2 },
       { design: 'nutmeg-tree', at: [5.6, TURF, 3.8], scale: 1.4, turn: Math.PI },
     ],
   },

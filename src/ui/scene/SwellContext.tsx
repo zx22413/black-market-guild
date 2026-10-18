@@ -3,7 +3,7 @@ import { createContext, useContext, useMemo, useRef, type ReactNode, type RefObj
 import { WAVE_SPEED } from './seaWave';
 import { easeSwell, type Swell } from './weather';
 
-interface SeaState {
+export interface SeaState {
   readonly swell: RefObject<Swell>;
   /** Wave phase, accumulated per frame so a change of wave speed never makes the waves jump. */
   readonly phase: RefObject<number>;
@@ -31,6 +31,11 @@ function useSeaState(): SeaState {
   const state = useContext(SwellContext);
   if (!state) throw new Error('useSwell and useWavePhase must be used inside <SwellProvider>');
   return state;
+}
+
+/** The sea's swell and wave phase, or null outside a `SwellProvider` (a dev preview with no sea). */
+export function useOptionalSea(): SeaState | null {
+  return useContext(SwellContext);
 }
 
 export function useSwell(): RefObject<Swell> {

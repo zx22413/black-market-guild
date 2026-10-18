@@ -1,5 +1,5 @@
 import type { KitPart } from '../kit';
-import type { Tilt, Vec3 } from '../polyhedra';
+import type { Tilt, Vec2, Vec3 } from '../polyhedra';
 
 /**
  * Hand-built scenery for the chosen islands (docs/game-design.md §11): a landmark building and
@@ -19,14 +19,43 @@ export interface LandmarkDesign {
   readonly flags?: readonly LandmarkFlag[];
   /** Fires that smoke: where in the design's coordinates, and how big the puffs grow (1 = a cooking fire's). */
   readonly smoke?: readonly { readonly at: Vec3; readonly size: number }[];
-  /** Fires and lamps that light their surroundings at night, flickering: where, and how far they reach in table units. */
-  readonly lights?: readonly { readonly at: Vec3; readonly reach: number }[];
+  /**
+   * Fires and lamps that light their surroundings at night, flickering: where, and how far they reach in
+   * table units. A `signal` lamp flashes long-short-short, a smuggler's signal to the boats.
+   */
+  readonly lights?: readonly { readonly at: Vec3; readonly reach: number; readonly signal?: boolean }[];
   /** A lighthouse lamp whose beam sweeps round over the sea at night (`Beacon`). */
   readonly beacon?: LandmarkBeacon;
   /** A train of cars running round a closed loop of track on the table (`railway.ts`). */
   readonly train?: LandmarkTrain;
+  /** A boat plying a loop on the sea beside the island, riding the waves (`LandmarkBoat.tsx`); not drawn in the blueprint's parts. */
+  readonly boat?: LandmarkBoat;
 }
 
+/**
+ * A small boat going round and round a closed loop on the sea, in the design's coordinates. Pure
+ * decoration: kept far smaller than the ships on the table and never in a player's color.
+ */
+export interface LandmarkBoat {
+  /** The loop, (x, z) on the sea; the boat sails from each point to the next and from the last back to the first. */
+  readonly path: readonly Vec2[];
+  /** The boat, its waterline at y = 0 and its bow toward +x. */
+  readonly hull: readonly KitPart[];
+  /** Design units per second. */
+  readonly speed: number;
+  /** Oars that row it along, the boat surging on with every stroke. */
+  readonly oars?: LandmarkOars;
+}
+
+/** A pair of oars sweeping in time. */
+export interface LandmarkOars {
+  /** One oar, its oarlock at the origin and its loom running out over the water toward +z. */
+  readonly parts: readonly KitPart[];
+  /** Where the oarlocks sit on the hull; an oar on the -z side is the same oar turned round. */
+  readonly locks: readonly Vec3[];
+  /** Strokes per second. */
+  readonly rate: number;
+}
 /** Cars running round and round a loop of track, in the design's coordinates. */
 export interface LandmarkTrain {
   /** The loop, rail tops; the cars run from each point to the next and from the last back to the first. */
@@ -68,13 +97,15 @@ export interface LandmarkFlag {
   readonly tilt?: Tilt;
 }
 
-/** Parts that turn as one about an axis through `pivot`: a windmill's sails. */
+/** Parts that turn as one about an axis through `pivot`: a windmill's sails, or a hanging lantern that swings. */
 export interface LandmarkRotor {
   readonly parts: readonly KitPart[];
   readonly pivot: Vec3;
   readonly axis: 'x' | 'y' | 'z';
   /** Radians per second; positive turns counterclockwise looking back down the axis. */
   readonly speed: number;
+  /** Swings to and fro this far each way (radians) instead of turning round, like a lantern on its hook. */
+  readonly swing?: number;
 }
 
 /** Every part of a design, its rotor's at rest included: for bounds, materials and the blueprint. */

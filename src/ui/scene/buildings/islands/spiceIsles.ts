@@ -1,8 +1,12 @@
-import { post } from '../kit';
-import type { Vec3 } from '../polyhedra';
-import type { LandmarkDesign, P } from './design';
+import { gabledRoof, post } from '../kit';
+import type { Mat } from '../materials';
+import type { Vec2, Vec3 } from '../polyhedra';
+import { cloth } from './cloth';
+import type { LandmarkDesign, LandmarkFlag, P } from './design';
+import { ellipseLoop } from './seaLoop';
 
-// The spice isles (香料群島): a Gulf merchant's wind-tower spice house, a spice stall, drying floor and nutmeg trees.
+// The spice isles (香料群島): a Gulf merchant's wind-tower spice house with a dhow plying past, a spice
+// stall, drying floor, a nutmeg smoking shed and nutmeg trees.
 
 /** Burlap sack with its tie. */
 function sack([x, y, z]: Vec3): P[] {
@@ -54,6 +58,82 @@ const nutmegTree: LandmarkDesign = {
   ],
 };
 
+/**
+ * Nutmeg smoking shed, as on the Banda perken: the nuts dry for weeks on a slatted rack over a slow,
+ * smoky fire, so smoke seeps out under the palm-thatch roof all day. Bamboo posts, a woven half wall,
+ * the rack heaped with nutmeg and a bed of embers under it.
+ */
+const smokingShed: LandmarkDesign = {
+  motif: '班達肉豆蔻燻乾棚（棕櫚茅草頂＋架上豆蔻＋下方文火）',
+  parts: [
+    ...[-0.5, 0.5].flatMap((x) => [-0.38, 0.38].map((z) => post(x, z, 0, 0.9, 0.06, 'wood'))),
+    // Woven half walls on the two long sides, open at the ends for the smoke and the tending.
+    ...[-0.38, 0.38].map((z): P => ({ kind: 'box', center: [0, 0.18, z], size: [1.0, 0.36, 0.04], mat: 'rope' })),
+    // The rack: two rails, slats across them and nutmeg spread on top.
+    ...[-0.3, 0.3].map((z): P => ({ kind: 'beam', from: [-0.5, 0.5, z], to: [0.5, 0.5, z], width: 0.04, mat: 'woodDark' })),
+    ...[-0.36, -0.18, 0, 0.18, 0.36].map((x): P => ({ kind: 'beam', from: [x, 0.53, -0.34], to: [x, 0.53, 0.34], width: 0.03, mat: 'wood' })),
+    { kind: 'box', center: [0, 0.57, 0], size: [0.8, 0.04, 0.56], bevel: 0.015, mat: 'woodDark' },
+    // Embers smoldering on a ring of stones under the rack.
+    { kind: 'prism', base: [0, 0, 0], radius: 0.24, top: 0.22, height: 0.06, sides: 8, mat: 'stone' },
+    { kind: 'prism', base: [0, 0.06, 0], radius: 0.17, top: 0.08, height: 0.06, sides: 7, mat: 'ember' },
+    // Weathered palm-thatch roof, dark so the pale smoke shows against it from the table camera above.
+    ...gabledRoof({ base: [0, 0.9, 0], size: [1.1, 0.42, 0.86], ridge: 'x', roof: 'woodDark', fill: 'rope', overhang: 0.1, thickness: 0.05 }),
+  ],
+  // The smoke seeps out along the ridge.
+  smoke: [{ at: [0, 1.34, 0], size: 0.8 }],
+};
+
+/** A merchant's pennant flying from a pole at (x, y, z): `w` long, tapering from `h` deep at the pole. */
+function pennant(x: number, y: number, z: number, w: number, h: number, mat: Mat): LandmarkFlag {
+  const strips = cloth([x + w / 2, y, z], [w, h], mat);
+  return {
+    parts: strips.map((strip, i): P => {
+      if (strip.kind !== 'box') return strip;
+      const taper = 1 - (0.75 * i) / strips.length;
+      return { ...strip, center: [strip.center[0], y + (h * (1 - taper)) / 2, z], size: [strip.size[0], h * taper, strip.size[2]] };
+    }),
+    hinge: [x, y + h / 2, z],
+  };
+}
+
+/** Dhow hull outline, bow toward +x: a long raking bow and a square transom stern. */
+const DHOW_HULL: readonly Vec2[] = [
+  [-0.4, -0.1],
+  [0.18, -0.12],
+  [0.5, 0],
+  [0.18, 0.12],
+  [-0.4, 0.1],
+];
+
+/**
+ * A baggala-style dhow of the Gulf trade, its waterline at y = 0 and its bow toward +x: a dark hull with
+ * a raised poop, a mast raked forward and a lateen sail on a long yard, the tack low at the bow and
+ * the peak high over the stern. About half a player's ship long.
+ */
+function dhow(): P[] {
+  const tack: Vec2 = [0.45, 0.2];
+  const peak: Vec2 = [-0.36, 0.95];
+  const clew: Vec2 = [-0.3, 0.17];
+  return [
+    { kind: 'loft', base: [0, -0.05, 0], outline: DHOW_HULL, height: 0.15, bottom: 0.7, top: 1, mat: 'woodDark' },
+    { kind: 'loft', base: [0, 0.1, 0], outline: DHOW_HULL, height: 0.02, bottom: 0.92, top: 0.92, mat: 'wood' },
+    { kind: 'box', center: [-0.31, 0.15, 0], size: [0.18, 0.08, 0.2], bevel: 0.015, mat: 'wood' },
+    // Mast raked forward, and the yard slung from its head.
+    { kind: 'beam', from: [0.08, 0.1, 0], to: [0.13, 0.62, 0], width: 0.025, sides: 6, mat: 'woodDark' },
+    { kind: 'beam', from: [tack[0], tack[1], 0], to: [peak[0], peak[1], 0], width: 0.018, sides: 6, mat: 'woodDark' },
+    // The lateen sail: a flat triangle stood upright just aft of the yard (laid in x-z, then tilted up).
+    {
+      kind: 'loft',
+      base: [0, 0.02, 0],
+      outline: [tack, clew, peak].map(([x, y]): Vec2 => [x, -y]),
+      height: 0.012,
+      bottom: 1,
+      mat: 'plaster',
+      tilt: { axis: 'x', angle: Math.PI / 2, pivot: [0, 0, 0] },
+    },
+  ];
+}
+
 /** Square wind tower (badgir) on the roof at (x, z), its shaft from `y0` to `y1`, with vent slots on every side. */
 function windTower(x: number, z: number, y0: number, y1: number, w: number): P[] {
   const h = w / 2;
@@ -71,6 +151,9 @@ function windTower(x: number, z: number, y0: number, y1: number, w: number): P[]
     ...[-1, 1].flatMap((sx) => [-1, 1].map((sz): P => ({ kind: 'box', center: [x + sx * h, y1 + 0.19, z + sz * h], size: [0.12, 0.14, 0.12], bevel: 0.015, mat: 'sandstone' }))),
   ];
 }
+
+/** The dhow's loop off the back shore, in the spice house's coordinates (the house stands at z = -9.05, ×2.3, on the island). */
+const DHOW_LOOP = { at: [0, -4.02] as Vec2, radii: [2.6, 0.7] as Vec2 } as const;
 
 /**
  * Merchant's spice house of a Gulf spice port, the island's backdrop: a plastered hall with arched
@@ -98,6 +181,9 @@ const windTowerHouse: LandmarkDesign = {
     // Wind towers: the tall one sets the island's silhouette.
     ...windTower(-0.62, -0.05, 1.32, 4.6, 0.6),
     ...windTower(0.78, -0.1, 1.32, 3.1, 0.48),
+    // Pennant poles on the two tower crowns.
+    { kind: 'beam', from: [-0.62, 4.86, -0.05], to: [-0.62, 5.36, -0.05], width: 0.035, mat: 'woodDark' },
+    { kind: 'beam', from: [0.78, 3.36, -0.1], to: [0.78, 3.76, -0.1], width: 0.03, mat: 'woodDark' },
     // Chhatri kiosk: four columns, an eave slab and a small white dome.
     ...[-1, 1].flatMap((sx) => [-1, 1].map((sz) => post(0.08 + sx * 0.2, 0.2 + sz * 0.2, 1.32, 1.86, 0.06, 'sandstone'))),
     { kind: 'prism', base: [0.08, 1.86, 0.2], radius: 0.36, top: 0.3, height: 0.07, sides: 8, turn: Math.PI / 8, mat: 'sandstone' },
@@ -107,6 +193,10 @@ const windTowerHouse: LandmarkDesign = {
     ...sack([-0.78, 0.2, 0.62]),
     ...sack([-0.92, 0.2, 0.44]),
   ],
+  // Red merchant's pennants streaming from the tower crowns.
+  flags: [pennant(-0.62, 5.24, -0.05, 0.62, 0.2, 'mace'), pennant(0.78, 3.66, -0.1, 0.46, 0.16, 'mace')],
+  // A dhow under sail plies to and fro off the island's back shore.
+  boat: { path: ellipseLoop(DHOW_LOOP.at, DHOW_LOOP.radii, 40), hull: dhow(), speed: 0.22 },
 };
 
 /** A basket heaped into a cone of one spice. */
@@ -127,7 +217,6 @@ const spiceStall: LandmarkDesign = {
   parts: [
     ...[-0.95, 0.95].flatMap((x) => [-0.22, 0.22].map((z) => post(x, z, 0, 1.12, 0.07, 'wood'))),
     ...[0, 1, 2, 3, 4, 5].map((i): P => ({ kind: 'box', center: [-0.83 + i * 0.333, 1.14, 0], size: [0.333, 0.05, 0.56], mat: i % 2 === 0 ? 'mace' : 'plaster' })),
-    ...[-0.29, 0.29].flatMap((z) => [0, 1, 2, 3, 4, 5].map((i): P => ({ kind: 'box', center: [-0.83 + i * 0.333, 1.04, z], size: [0.333, 0.16, 0.03], mat: i % 2 === 0 ? 'mace' : 'plaster' }))),
     { kind: 'box', center: [0, 0.42, 0], size: [1.7, 0.06, 0.34], bevel: 0.015, mat: 'wood' },
     ...[-0.75, 0.75].map((x): P => ({ kind: 'box', center: [x, 0.2, 0], size: [0.08, 0.4, 0.28], mat: 'woodDark' })),
     ...sack([-0.5, 0.45, -0.02]),
@@ -141,11 +230,16 @@ const spiceStall: LandmarkDesign = {
     ...spiceCone(0, -0.6, 'woodDark'),
     ...spiceCone(0.62, -0.56, 'mace'),
   ],
+  // The striped valance round the awning flutters, each stripe a flap of its own.
+  flags: [-0.29, 0.29].flatMap((z) =>
+    [0, 1, 2, 3, 4, 5].map((i): LandmarkFlag => ({ parts: cloth([-0.83 + i * 0.333, 1.04, z], [0.333, 0.16], i % 2 === 0 ? 'mace' : 'plaster', 0.03), hinge: [-1 + i * 0.333, 1.04, z] })),
+  ),
 };
 
 export const SPICE_ISLES_LANDMARKS = {
   'windtower-house': windTowerHouse,
   'spice-stall': spiceStall,
   'drying-floor': dryingFloor,
+  'smoking-shed': smokingShed,
   'nutmeg-tree': nutmegTree,
 } as const satisfies Record<string, LandmarkDesign>;

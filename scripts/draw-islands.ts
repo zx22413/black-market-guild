@@ -11,7 +11,9 @@ import { BUILDING_DESIGNS } from '../src/ui/scene/buildings/designs';
 import { LANDMARK_DESIGNS, landmarkParts } from '../src/ui/scene/buildings/landmarks';
 import { SWATCHES, type Mat, type Swatch } from '../src/ui/scene/buildings/materials';
 import { partFaces, type Face, type Part, type Vec3 } from '../src/ui/scene/buildings/polyhedra';
+import { boatPose } from '../src/ui/scene/buildings/islands/seaLoop';
 import { ASSET_BUILDING_SCALE, ASSET_LOTS, PLAYER_ISLAND_RADIUS } from '../src/ui/scene/layout';
+import { SEA_LEVEL } from '../src/ui/scene/seaWave';
 import { ISLAND_SCENERY, type IslandScenery, type SceneryPiece } from '../src/ui-v07/scene/islandScenery';
 import { facesViewer, paintersOrder, project } from './iso-painter';
 import { shadedPolygon, silhouetteOf, swatchChips, type Drawn } from './iso-shade';
@@ -40,8 +42,23 @@ function partsDrawn(parts: readonly (Part & { readonly mat: string })[], at: Vec
   return parts.flatMap((part) => partFaces(part).map((face) => ({ face: placeFace(face, at, scale, turn), swatch: swatch ?? SWATCHES[part.mat as Mat] })));
 }
 
-const pieceDrawn = (piece: SceneryPiece, at: Vec3 = piece.at, scale = piece.scale): Drawn[] =>
-  partsDrawn(landmarkParts(LANDMARK_DESIGNS[piece.design]), at, scale, piece.turn ?? 0);
+/** The sea at rest below the plateau origin (`PlayerIsland` lifts the plateau 2.6 above the table). */
+const SEA_BELOW_PLATEAU = SEA_LEVEL - 2.6;
+
+/** A piece's boat (`LandmarkBoat`), drawn where it sets out on its loop, afloat on the sea at rest. */
+function boatDrawn(piece: SceneryPiece, at: Vec3, scale: number): Drawn[] {
+  const { boat } = LANDMARK_DESIGNS[piece.design];
+  if (!boat) return [];
+  const { at: [x, z], heading } = boatPose(boat, 0);
+  const y = (SEA_BELOW_PLATEAU - piece.at[1]) / scale;
+  const afloat = boat.hull.flatMap((part) => partFaces(part).map((face) => ({ face: placeFace(face, [x, y, z], 1, heading), swatch: SWATCHES[part.mat] })));
+  return afloat.map((d) => ({ ...d, face: placeFace(d.face, at, scale, piece.turn ?? 0) }));
+}
+
+const pieceDrawn = (piece: SceneryPiece, at: Vec3 = piece.at, scale = piece.scale): Drawn[] => [
+  ...partsDrawn(landmarkParts(LANDMARK_DESIGNS[piece.design]), at, scale, piece.turn ?? 0),
+  ...boatDrawn(piece, at, scale),
+];
 
 /** Cliff top at -0.2 and grass top at 0.25 above the plateau origin, as `IslandBase` draws them. */
 function groundDrawn(scenery: IslandScenery, radius: number, cliffRadius: number): Drawn[] {
@@ -78,7 +95,8 @@ function closeUp(scenery: IslandScenery, piece: SceneryPiece, defs: string[]): s
   const tile = partFaces({ kind: 'box', center: [0, -0.12, 0], size: [2.7, 0.24, 2.7], bevel: 0.06, mat: 'ground' });
   const drawn = visible([
     ...tile.map((face) => ({ face, swatch: { top: scenery.ground.top, bottom: shade(scenery.ground.top, 0.8) } })),
-    ...pieceDrawn(piece, [0, 0, 0], 1),
+    // Without its boat, which sails too far off for a close-up.
+    ...partsDrawn(landmarkParts(LANDMARK_DESIGNS[piece.design]), [0, 0, 0], 1, piece.turn ?? 0),
   ]);
   return fitted(drawn, 400, 240, 90, defs);
 }
