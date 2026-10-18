@@ -31,7 +31,23 @@ export interface LandmarkDesign {
   /** A boat plying a loop on the sea beside the island, riding the waves (`LandmarkBoat.tsx`); not drawn in the blueprint's parts. */
   readonly boat?: LandmarkBoat;
   /** Birds flying round loops in the air about the piece, flapping and gliding (`LandmarkBirds.tsx`); not drawn in the blueprint. */
-  readonly birds?: LandmarkBirds;
+  readonly birds?: LandmarkBirds;  /** Guns firing a salute one after another, each shot a muzzle flash and a burst of powder smoke (`LandmarkSalute.tsx`). */
+  readonly salute?: LandmarkSalute;
+}
+
+/** A salute fired round a fort's guns, in the design's coordinates. */
+export interface LandmarkSalute {
+  /** One gun on its carriage, the carriage at the origin and the barrel along +x: beams only, so it can be turned to any bearing. */
+  readonly gun: readonly KitPart[];
+  /** The muzzle, in the gun's own frame (out along +x and up from the carriage). */
+  readonly muzzle: Vec3;
+  /** Where each gun stands, and the level way it points (a unit vector); they fire in this order. */
+  readonly guns: readonly { readonly at: Vec3; readonly toward: Vec3 }[];
+  /** Seconds from one gun to the next, and from one salute to the next. */
+  readonly gap: number;
+  readonly every: number;
+  /** How big the shots are: 1 = a bastion gun's at the fort's own scale. */
+  readonly size: number;
 }
 
 /** A kind of bird and the loops a few of them fly, in the design's coordinates. */
@@ -144,10 +160,21 @@ export interface RotorLoad {
   readonly lowered: number;
 }
 
-/** Every part of a design, its rotor's at rest included: for bounds, materials and the blueprint. */
+/** A salute's guns at rest, each turned to its bearing and moved to where it stands. */
+export function saluteGuns(salute: LandmarkSalute): KitPart[] {
+  return salute.guns.flatMap(({ at, toward: [tx, , tz] }) => {
+    const place = ([x, y, z]: Vec3): Vec3 => [at[0] + x * tx - z * tz, at[1] + y, at[2] + x * tz + z * tx];
+    return salute.gun.map((part): KitPart => {
+      if (part.kind !== 'beam') throw new Error(`a salute gun is built of beams, not ${part.kind}`);
+      return { ...part, from: place(part.from), to: place(part.to) };
+    });
+  });
+}
+
+/** Every part of a design, its rotor's and guns' at rest included: for bounds, materials and the blueprint. */
 export function landmarkParts(design: LandmarkDesign): readonly KitPart[] {
   const flagParts = (design.flags ?? []).flatMap(({ parts, tilt }) => (tilt ? parts.map((part) => ({ ...part, tilt })) : parts));
-  return [...design.parts, ...(design.rotor?.parts ?? []), ...flagParts, ...(design.train?.parked ?? [])];
+  return [...design.parts, ...(design.rotor?.parts ?? []), ...flagParts, ...(design.train?.parked ?? []), ...(design.salute ? saluteGuns(design.salute) : [])];
 }
 
 export type P = KitPart;

@@ -34,15 +34,26 @@ function rampart(center: Vec2, outline: readonly Vec2[]): P[] {
   ];
 }
 
-/** A gun on a bastion at (x, z) pointing out along `angle`, and a domed sentry box (garita) at its tip. */
+/** How far out from the fort's middle a bastion's gun stands, how far beyond that its muzzle reaches, the bore's height and the floor it stands on. */
+const GUN = { at: CURTAIN_RADIUS + 0.33, reach: 0.28, bore: 0.18, floor: TOP + 0.03 } as const;
+
+/**
+ * A bastion gun, the carriage at the origin and the barrel out along +x (`starFort.salute`, which fires
+ * and recoils it): a timber carriage on two wheels, the iron barrel and a ring at the muzzle.
+ */
+const BASTION_GUN: P[] = [
+  { kind: 'beam', from: [-0.1, 0.085, 0], to: [0.1, 0.085, 0], width: 0.17, mat: 'woodDark' },
+  ...[-1, 1].map((s): P => ({ kind: 'beam', from: [0.015, 0.063, s * 0.085], to: [0.015, 0.063, s * 0.12], width: 0.126, sides: 8, mat: 'woodDark' })),
+  { kind: 'beam', from: [-0.11, GUN.bore, 0], to: [GUN.reach, GUN.bore, 0], width: 0.1, sides: 8, mat: 'metal' },
+  { kind: 'beam', from: [GUN.reach - 0.035, GUN.bore, 0], to: [GUN.reach, GUN.bore, 0], width: 0.12, sides: 8, mat: 'metal' },
+];
+
+/** A domed sentry box (garita) at the tip of the bastion pointing out along `angle`; its gun is `BASTION_GUN`. */
 function bastionWorks(angle: number): P[] {
   const [ux, uz] = along(angle, 1);
-  const gun = CURTAIN_RADIUS + 0.35;
   const tip = CURTAIN_RADIUS + 0.12 + 0.62 * 0.9;
   const y = TOP + 0.03;
   return [
-    { kind: 'box', center: [ux * gun, y + 0.06, uz * gun], size: [0.14, 0.1, 0.14], bevel: 0.015, mat: 'woodDark' },
-    { kind: 'beam', from: [ux * (gun - 0.08), y + 0.13, uz * (gun - 0.08)], to: [ux * (gun + 0.2), y + 0.13, uz * (gun + 0.2)], width: 0.07, sides: 8, mat: 'metal' },
     { kind: 'prism', base: [ux * (tip - 0.06), y, uz * (tip - 0.06)], radius: 0.07, height: 0.16, sides: 6, mat: 'plaster' },
     { kind: 'prism', base: [ux * (tip - 0.06), y + 0.16, uz * (tip - 0.06)], radius: 0.085, top: 0, height: 0.1, sides: 6, mat: 'slate' },
   ];
@@ -112,6 +123,18 @@ const starFort: LandmarkDesign = {
     { kind: 'beam', from: [KEEP.x, KEEP_TOP + 0.06, KEEP.z], to: [KEEP.x, KEEP_TOP + 1.0, KEEP.z], width: 0.035, mat: 'woodDark' },
   ],
   flags: [garrisonFlag(KEEP.x + 0.02, KEEP_TOP + 0.98, KEEP.z)],
+  // The bastion guns fire a salute round the fort, one after another, then fall quiet for a while.
+  salute: {
+    gun: BASTION_GUN,
+    muzzle: [GUN.reach, GUN.bore, 0],
+    guns: CORNERS.map((a) => {
+      const [ux, uz] = along(a, 1);
+      return { at: [ux * GUN.at, GUN.floor, uz * GUN.at] as Vec3, toward: [ux, 0, uz] as Vec3 };
+    }),
+    gap: 1.1,
+    every: 15,
+    size: 1.4,
+  },
 };
 
 /**
