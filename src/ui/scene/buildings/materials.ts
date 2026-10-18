@@ -45,6 +45,8 @@ export const SWATCHES = {
   ember: { top: '#ffc044', bottom: '#ff7344' },
   // A Willemstad facade and the blue of the Dutch prince's flag; lighter than the insurance roof.
   pastelBlue: { top: '#bdd9f8', bottom: '#9dbfed' },
+  // The fortress island's turf: its ground color (a blend of the default grass and slate), shaded.
+  sageTurf: { top: '#7e9e7c', bottom: '#6b8a69' },
   heather: { top: '#9064d9', bottom: '#6743bf' },
 } as const satisfies Record<string, Swatch>;
 export type Mat = keyof typeof SWATCHES;

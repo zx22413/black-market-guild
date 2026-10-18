@@ -127,6 +127,17 @@ export const ISLAND_SCENERY: Readonly<Partial<Record<IslandId, IslandScenery>>> 
       { design: 'rowboat', at: [-5.6, TURF, -3.6], scale: 1.4, turn: 2 },
     ],
   },
+  fortress: {
+    name: '要塞島',
+    // A sage garrison green, an even blend of the default grass #79b35a and slate #84899f, over grey rock.
+    ground: { top: '#7e9e7c', cliff: '#797e97' },
+    annex: { center: [0, -13.8], radii: [7.6, 6.2] },
+    pieces: [
+      { design: 'guardhouse', at: [0.3, TURF, 3.25], scale: 2 },
+      { design: 'star-fort', at: [0, RIM, -13.6], scale: 3.1, backdrop: true },
+      { design: 'rowboat', at: [5.3, TURF, 3.9], scale: 1.6, turn: 0.3 },
+    ],
+  },
 };
 
 /** Turns about the island's center that move a backdrop from the back to the left or right side. */

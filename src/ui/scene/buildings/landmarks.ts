@@ -1,4 +1,5 @@
 import type { LandmarkDesign } from './islands/design';
+import { FORTRESS_LANDMARKS } from './islands/fortress';
 import { FREE_PORT_LANDMARKS } from './islands/freePort';
 import { LUMBER_LANDMARKS } from './islands/lumber';
 import { MINE_LANDMARKS } from './islands/mine';
@@ -16,5 +17,6 @@ export const LANDMARK_DESIGNS = {
   ...PIRATE_COVE_LANDMARKS,
   ...LUMBER_LANDMARKS,
   ...FREE_PORT_LANDMARKS,
+  ...FORTRESS_LANDMARKS,
 } as const satisfies Record<string, LandmarkDesign>;
 export type LandmarkId = keyof typeof LANDMARK_DESIGNS;
