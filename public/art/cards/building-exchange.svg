@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- Trade Exchange card art: an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5fb6d4"/><stop offset="0.6" stop-color="#9fd4e0"/><stop offset="1" stop-color="#e3f4ee"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fb3b3"/><stop offset="1" stop-color="#1f7f88"/></linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sky)"/>
+  <circle cx="340" cy="36" r="30" fill="#fff8d2" opacity="0.4"/><circle cx="340" cy="36" r="20" fill="#fff8d2"/>
+  <path d="M22 60 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M28 58 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee"/>
+  <rect y="186" width="400" height="114" fill="url(#sea)"/>
+  <path d="M0 186 H400" stroke="#2a2238" stroke-width="2"/>
+  <g fill="#e8fbf8" opacity="0.7"><rect x="310" y="194" width="60" height="3" rx="1.5"/><rect x="322" y="202" width="36" height="3" rx="1.5"/></g>
+  <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
+    <path d="M20 236 q8 -6 16 0 q8 6 16 0"/><path d="M110 268 q8 -6 16 0 q8 6 16 0"/><path d="M336 248 q8 -6 16 0 q8 6 16 0"/>
+  </g>
+  <rect x="20" y="236" width="10" height="64" fill="#7d573f" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="120" y="236" width="10" height="64" fill="#7d573f" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="220" y="236" width="10" height="64" fill="#7d573f" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="320" y="236" width="10" height="64" fill="#7d573f" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+  <rect x="0" y="222" width="400" height="16" fill="#a8744a" stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <g stroke="#2a2238" stroke-width="1.5"><path d="M60 222 v16 M150 222 v16 M250 222 v16 M340 222 v16"/></g>
+  <!-- the exchange hall -->
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="86" y="206" width="228" height="16" fill="#c9bda3"/>
+    <rect x="96" y="118" width="208" height="12" fill="#efe6d2"/>
+    <path d="M90 118 L200 66 L310 118 Z" fill="#efe6d2"/>
+  </g>
+  <rect x="106" y="128" width="16" height="78" fill="#fbf6ea" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="146" y="128" width="16" height="78" fill="#fbf6ea" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="186" y="128" width="16" height="78" fill="#fbf6ea" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="226" y="128" width="16" height="78" fill="#fbf6ea" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="266" y="128" width="16" height="78" fill="#fbf6ea" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M200 66 L310 118 H200 Z" fill="#2a2238" opacity="0.08"/>
+  <rect x="100" y="130" width="200" height="76" fill="#3b3646" opacity="0.25"/>
+  <!-- golden scales on the pediment -->
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M200 80 V108" fill="none"/><path d="M180 86 H220" fill="none"/>
+    <path d="M172 98 q8 8 16 0 z M212 98 q8 8 16 0 z" fill="#e0b84a"/>
+    <path d="M180 86 L174 98 M180 86 L186 98 M220 86 L214 98 M220 86 L226 98" fill="none"/>
+    <path d="M194 108 h12 l-2 -4 h-8 z" fill="#e0b84a"/>
+  </g>
+  <!-- flags on the roof -->
+  <path d="M110 118 V88 M290 118 V88" stroke="#2a2238" stroke-width="2.5"/>
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M110 88 h20 l-5 6 l5 6 h-20 z" fill="#2f6fb0"/><path d="M290 88 h20 l-5 6 l5 6 h-20 z" fill="#c8423a"/></g>
+  <!-- crates and sacks on the quay -->
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="30" y="200" width="28" height="22" fill="#a8744a"/><rect x="38" y="182" width="22" height="18" fill="#b8845a"/><path d="M336 222 q0 -22 14 -22 q14 0 14 22 z" fill="#e0cfa4"/><path d="M360 222 q0 -16 10 -16 q10 0 10 16 z" fill="#d6c08f"/></g>
+  <g fill="none" stroke="#2a2238" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M60 100 q5 -5 8 0 q3 -5 8 0"/><path d="M80 86 q5 -5 8 0 q3 -5 8 0"/></g>
+</svg>

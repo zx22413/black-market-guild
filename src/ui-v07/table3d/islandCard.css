@@ -10,7 +10,18 @@
 }
 .isle-holder:has(.small),
 .isle-card.small {
-  --w: min(210px, 42vw);
+  /* Four reveal cards in one row; two by two on a phone. */
+  --w: min(210px, calc((100vw - 110px) / 4));
+}
+@media (max-width: 640px) {
+  .isle-holder:has(.small),
+  .isle-card.small {
+    --w: min(190px, calc((100vw - 60px) / 2));
+  }
+}
+/* If the cards still do not fit (a short window), the dealt cards scroll rather than hide the button. */
+.draft-backdrop {
+  overflow-y: auto;
 }
 .isle-card {
   --paper: #f4ead2;
@@ -224,7 +235,7 @@
   animation: beat-pop 260ms cubic-bezier(0.2, 1.5, 0.4, 1) backwards;
 }
 .isle-card.small .isle-art {
-  height: 42%;
+  height: 40%;
 }
 .isle-card.small .isle-body {
   gap: 2px;
@@ -232,9 +243,20 @@
   padding: 14px 6px 6px;
 }
 .isle-card.small .glance {
-  gap: 2px;
-  font-size: 12px;
-  white-space: nowrap;
+  gap: 3px;
+}
+.isle-card.small .glance-row {
+  gap: 4px;
+  font-size: 11px;
+  line-height: 1.3;
+}
+.isle-card.small .glance .sign {
+  width: 15px;
+  height: 15px;
+}
+.isle-card.small .glance .chip-ic {
+  width: 17px;
+  height: 17px;
 }
 
 /* ---------- blind emboss ---------- */
@@ -342,7 +364,13 @@
   width: min(900px, 100%);
 }
 .isle-reveal .isle-deal {
-  gap: 18px;
+  flex-wrap: nowrap;
+  gap: 14px;
+}
+@media (max-width: 640px) {
+  .isle-reveal .isle-deal {
+    flex-wrap: wrap;
+  }
 }
 .isle-owner {
   display: grid;
@@ -365,4 +393,92 @@
   .isle-deal {
     gap: 12px;
   }
+}
+
+/* ---------- island icons (IslandIcon.tsx): the card's landmark at small sizes ---------- */
+.isle-icon {
+  --size: 22px;
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  overflow: hidden;
+  vertical-align: middle;
+  /* The card art's day sky over its sea, with the card frame's gold rim. */
+  background: linear-gradient(180deg, #5fb6d4 0%, #9fd4e0 62%, #3fb3b3 62%, #1f7f88 100%);
+  box-shadow: 0 0 0 1.5px #d9b25a, 0 0 0 2.5px #8a6420;
+}
+.isle-icon img {
+  width: 82%;
+  height: 82%;
+  margin-top: 6%;
+}
+/* Where the badge sits beside a name. */
+.island-badge > button,
+.island-tip b {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.island-badge > button {
+  padding-left: 4px;
+}
+.rank-who .isle-icon {
+  --size: 18px;
+  margin-right: 6px;
+}
+
+/* ---------- card icons on badges (cardArt.ts): the same sky-and-sea disc as the island icons ---------- */
+.chip-ic.badge,
+.role-badge,
+.rank-building > button,
+.beat3d-pin button.dep-ship.on:has(img) {
+  background: linear-gradient(180deg, #5fb6d4 0%, #9fd4e0 62%, #3fb3b3 62%, #1f7f88 100%);
+}
+.chip-ic.badge {
+  box-shadow: 0 0 0 1.5px #d9b25a, 0 0 0 2.5px #8a6420;
+}
+.chip-ic.badge img {
+  width: 82%;
+  height: 82%;
+}
+.role-badge img {
+  width: 30px;
+  height: 30px;
+}
+.rank-building > button {
+  box-shadow: 0 0 0 1.5px #d9b25a;
+}
+.beat3d-pin button.dep-ship img {
+  width: 26px;
+  height: 26px;
+}
+.rank-building img {
+  width: 18px;
+  height: 18px;
+}
+
+/* ---------- the voyage event card's picture (VoyageEventCard.tsx) ---------- */
+.event-card .event-card-emblem {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 2px solid #2a190d;
+  border-radius: 3px;
+  background: #9fd4e0;
+  box-shadow: 0 0 0 2px #d9b25a, 0 0 0 3px #8a6420, inset 0 0 14px rgb(0 0 0 / 0.3);
+}
+.event-card .event-card-emblem img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: none;
+}
+/* The event chip's icon is in colour now (it used to be tinted from the parchment placeholder). */
+.event-chip img {
+  filter: none;
 }

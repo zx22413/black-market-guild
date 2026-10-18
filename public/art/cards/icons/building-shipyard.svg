@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Shipyard icon: the card art's main object, simplified; an AI-written placeholder, see public/art/SOURCES.md. -->
+  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M4 56 L60 56 L60 61 L4 61 Z" fill="#b8845a"/>
+    <path d="M8 52 L56 52" stroke-width="5"/>
+  </g>
+  <g fill="none" stroke="#7a4a2a" stroke-width="5" stroke-linecap="round"><path d="M14 51 Q10 36 18 26"/><path d="M26 51 Q22 30 28 20"/><path d="M38 51 Q36 30 40 20"/><path d="M50 51 Q52 34 54 28"/></g>
+  <g fill="none" stroke="#2a2238" stroke-width="2" stroke-linecap="round"><path d="M14 51 Q10 36 18 26"/><path d="M26 51 Q22 30 28 20"/><path d="M38 51 Q36 30 40 20"/><path d="M50 51 Q52 34 54 28"/></g>
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M10 50 Q12 40 20 38 L44 38 L44 44 L20 44 Q14 46 13 51 Z" fill="#c48a52"/></g>
+</svg>

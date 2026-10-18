@@ -4,21 +4,15 @@ import { betLabel } from '../table/deployChoice';
 import { GoodIcon } from './GoodIcon';
 import { TrendIcon } from './icons';
 import { roleKey, type RoleResult } from './roleResults';
+import { cardIconUrl } from './cardArt';
 
 // The role icons hanging on what each role targeted (a ship, or the harbor for brokers): one round
 // badge per deployed role, ringed in the color of the player who sent it. Icons are the
 // game-icons.net set in public/art/icons (sources in public/art/SOURCES.md).
 
 /** The broker's rising chart is its own icon, so it never looks like the exchange's scales. */
-const ICON: Readonly<Record<RoleId, string>> = {
-  intel: 'role-intel',
-  guard: 'role-guard',
-  pirate: 'role-pirate',
-  smuggler: 'role-smuggler',
-  broker: 'role-broker',
-};
-
-export const roleIconUrl = (role: RoleId): string => `${import.meta.env.BASE_URL}art/icons/${ICON[role]}.svg`;
+/** A role's icon, drawn from its card's picture (cardArt.ts). */
+export const roleIconUrl = (role: RoleId): string => cardIconUrl({ kind: 'role', id: role });
 
 export interface RoleBadgesProps {
   readonly deployments: readonly Deployment[];

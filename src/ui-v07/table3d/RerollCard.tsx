@@ -87,7 +87,7 @@ export function RerollCard({ context, board, viewer, nameOf, onSubmit, rerolled,
         <header className="beat-head">
           <span>只有你看得到</span>
           <strong className="reroll-title">
-            <IconDisc src={roleIconUrl('intel')} />
+            <IconDisc src={roleIconUrl('intel')} badge />
             {rerolled ? '重擲' : '重擲？'}
           </strong>
         </header>

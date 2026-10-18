@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Pirate icon: the card art's main object, simplified; an AI-written placeholder, see public/art/SOURCES.md. -->
+  <path d="M8 4 V62" stroke="#2a2238" stroke-width="4" stroke-linecap="round"/>
+  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><path d="M10 6 H58 L52 22 L58 38 H10 Z" fill="#1f1a26"/></g>
+  <circle cx="31" cy="18" r="7" fill="#f4efe6"/>
+  <g fill="#1f1a26"><circle cx="28.5" cy="17.5" r="1.8"/><circle cx="33.5" cy="17.5" r="1.8"/></g>
+  <path d="M22 26 L40 33 M40 26 L22 33" stroke="#f4efe6" stroke-width="3.5" stroke-linecap="round"/>
+</svg>

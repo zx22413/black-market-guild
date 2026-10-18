@@ -29,7 +29,7 @@ function Entries({ tab }: { readonly tab: Tab }) {
           {keysOf<RoleId>(ROLE_LABELS).map((role) => (
             <li key={role}>
               <b>
-                <IconDisc src={roleIconUrl(role)} />
+                <IconDisc src={roleIconUrl(role)} badge />
                 {ROLE_LABELS[role]}
               </b>
               <p>{roleDetail(role, RULES_V07)}</p>

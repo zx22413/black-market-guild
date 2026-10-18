@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Storm icon: the card art's main object, simplified; an AI-written placeholder, see public/art/SOURCES.md. -->
+  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M10 36 q-8 0 -8 -9 q0 -9 10 -9 q2 -12 15 -12 q10 0 14 9 q4 -3 9 -2 q12 2 12 12 q0 11 -12 11 Z" fill="#5d6874"/>
+    <path d="M34 30 L24 46 H32 L26 62 L44 40 H36 L42 30 Z" fill="#ffe08a"/>
+  </g>
+</svg>

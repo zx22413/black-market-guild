@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- Shipping Insurance card art: an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5fb6d4"/><stop offset="0.6" stop-color="#9fd4e0"/><stop offset="1" stop-color="#e3f4ee"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fb3b3"/><stop offset="1" stop-color="#1f7f88"/></linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sky)"/>
+  <circle cx="340" cy="40" r="30" fill="#fff8d2" opacity="0.4"/><circle cx="340" cy="40" r="20" fill="#fff8d2"/>
+  <path d="M28 70 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M34 68 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee"/>
+  <rect y="186" width="400" height="114" fill="url(#sea)"/>
+  <path d="M0 186 H400" stroke="#2a2238" stroke-width="2"/>
+  <g fill="#e8fbf8" opacity="0.7"><rect x="310" y="194" width="60" height="3" rx="1.5"/><rect x="322" y="202" width="36" height="3" rx="1.5"/></g>
+  <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
+    <path d="M20 236 q8 -6 16 0 q8 6 16 0"/><path d="M110 268 q8 -6 16 0 q8 6 16 0"/><path d="M336 248 q8 -6 16 0 q8 6 16 0"/>
+  </g>
+  <g transform="translate(170 214) rotate(0) scale(0.9)">
+    <rect x="50" y="-92" width="5" height="92" fill="#5a3420" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M24 -84 Q56 -60 24 -34 H80 Q86 -60 80 -84 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M32 -30 Q56 -14 32 -2 H72 Q78 -14 72 -30 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="110" y="-92" width="5" height="92" fill="#5a3420" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M84 -84 Q116 -60 84 -34 H140 Q146 -60 140 -84 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M92 -30 Q116 -14 92 -2 H132 Q138 -14 132 -30 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M112 -92 v-14 h20 l-5 6 l5 6 h-20" fill="#2f6fb0" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M0 -14 L160 -14 L150 6 Q80 14 14 6 Z" fill="#7a4a2a" stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M0 -14 L160 -14 L158 -20 L4 -20 Z" fill="#a8744a" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <g fill="#2a2238"><circle cx="40" cy="-4" r="3"/><circle cx="70" cy="-4" r="3"/><circle cx="100" cy="-4" r="3"/><circle cx="130" cy="-4" r="3"/></g>
+  </g>
+  <rect x="20" y="222" width="10" height="78" fill="#7d573f" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="120" y="222" width="10" height="78" fill="#7d573f" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="220" y="222" width="10" height="78" fill="#7d573f" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="320" y="222" width="10" height="78" fill="#7d573f" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+  <rect x="0" y="208" width="400" height="16" fill="#a8744a" stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <g stroke="#2a2238" stroke-width="1.5"><path d="M60 208 v16 M150 208 v16 M250 208 v16 M340 208 v16"/></g>
+  <!-- the underwriters' office on the quay -->
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="20" y="96" width="130" height="112" fill="#f3e3c3"/>
+    <path d="M12 100 L85 58 L158 100 Z" fill="#5b6a8a"/>
+    <rect x="70" y="160" width="30" height="48" fill="#6b3f2a"/>
+  </g>
+  <path d="M85 58 L158 100 H150 V208 H85 Z" fill="#2a2238" opacity="0.1"/>
+  <g fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="32" y="118" width="22" height="26"/><rect x="116" y="118" width="22" height="26"/><rect x="32" y="162" width="22" height="26"/><rect x="116" y="162" width="22" height="26"/></g>
+  <!-- the hanging sign: a sealed policy and a quill -->
+  <path d="M150 112 H190" stroke="#2a2238" stroke-width="3"/>
+  <path d="M168 112 v8 M188 112 v8" stroke="#2a2238" stroke-width="2"/>
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="160" y="120" width="40" height="30" rx="3" fill="#7a4a2a"/>
+    <path d="M167 128 h26 v14 h-26 z" fill="#f4efe6"/>
+    <circle cx="190" cy="142" r="5" fill="#c8423a"/>
+    <path d="M196 124 L176 146" fill="none"/>
+  </g>
+  <!-- a big sealed policy in the foreground -->
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M250 244 h110 v40 h-110 z" fill="#f4ead2"/>
+    <rect x="240" y="238" width="16" height="52" rx="8" fill="#e0cfa4"/>
+    <rect x="354" y="238" width="16" height="52" rx="8" fill="#e0cfa4"/>
+  </g>
+  <g stroke="#2a2238" stroke-width="2" stroke-linecap="round"><path d="M268 256 h60 M268 266 h70 M268 276 h40"/></g>
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><circle cx="334" cy="278" r="10" fill="#c8423a"/><path d="M328 288 l-4 10 l8 -4 l6 6 l2 -10" fill="#c8423a"/></g>
+  <g fill="none" stroke="#2a2238" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M220 60 q5 -5 8 0 q3 -5 8 0"/><path d="M240 74 q5 -5 8 0 q3 -5 8 0"/></g>
+</svg>

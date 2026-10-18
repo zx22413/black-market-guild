@@ -121,7 +121,7 @@
 
 /* ================= layer 2: the card frame ================= */
 
-:root:not(.skin-classic) :is(.beat-card, .draft-card, .inv-card, .dep-card, .dep-strip, .market-card) {
+:root:not(.skin-classic) :is(.beat-card, .draft-card, .inv-card, .dep-card, .dep-strip, .market-card, .event-card) {
   border: 5px solid var(--c-wood);
   outline: 1px solid var(--c-gold-dark);
   outline-offset: -10px;
@@ -158,7 +158,7 @@
   background: none;
 }
 
-/* The icon on a building or role card sits in a picture window, like the island cards' art. */
+/* A building or role card's picture window, framed like the island cards' art. */
 :root:not(.skin-classic) :is(.inv-card .inv-ic, .dep-card .dep-ic) {
   width: 100%;
   border: 2px solid var(--c-wood-dark);
@@ -169,13 +169,19 @@
   box-shadow: 0 0 0 2px var(--c-gold), 0 0 0 3px var(--c-gold-dark), inset 0 0 12px rgb(0 0 0 / 0.3);
 }
 :root:not(.skin-classic) .inv-card .inv-ic {
-  height: 52px;
-}
-:root:not(.skin-classic) .dep-card .dep-ic {
   height: 66px;
 }
+:root:not(.skin-classic) .dep-card .dep-ic {
+  height: 74px;
+}
+:root:not(.skin-classic) :is(.inv-card .inv-ic, .dep-card .dep-ic) {
+  overflow: hidden;
+}
+/* The card's illustration fills its window (cardArt.ts). */
 :root:not(.skin-classic) :is(.inv-card .inv-ic, .dep-card .dep-ic) img {
-  filter: drop-shadow(0 2px 0 rgb(0 0 0 / 0.35));
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 :root:not(.skin-classic) :is(.inv-ic.none, .dep-ic.none) {
   background: linear-gradient(180deg, #7a6a58, #4a3d30);

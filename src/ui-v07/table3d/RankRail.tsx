@@ -5,6 +5,8 @@ import type { BeatSeat } from '../scene/beatStage';
 import type { Board } from '../session/board';
 import { GoodCount } from './GoodIcon';
 import { CloseIcon, InfoIcon, StatusMark, WantedMark } from './icons';
+import { IslandIcon } from './IslandIcon';
+import { cardIconUrl } from './cardArt';
 import { LockHint } from './LockHint';
 import { standingsOf, type Standing } from './standings';
 
@@ -58,7 +60,7 @@ function BuildingMark({ building, rules }: { readonly building: BuildingId; read
   return (
     <span ref={self} className={`rank-building ${open ? 'open' : ''}`}>
       <button type="button" aria-expanded={open} aria-label={BUILDING_LABELS[building]} onClick={() => setOpen((v) => !v)}>
-        <img src={`${import.meta.env.BASE_URL}art/icons/asset-${building}.svg`} alt="" />
+        <img src={cardIconUrl({ kind: 'building', id: building })} alt="" />
       </button>
       <span className="rank-building-tip" role="tooltip">
         <b>{BUILDING_LABELS[building]}</b>
@@ -149,6 +151,7 @@ export function RankRail({ seats, board, rules, cashOf, status, rankStep }: Rank
               <div className="rank-top">
                 <span className="rank-no">{ranks[seat.id] ?? s.rank}</span>
                 <span className="rank-who">
+                  {player?.island && <IslandIcon island={player.island} label />}
                   <span className="rank-name">{seat.isViewer ? '你' : seat.name}</span>
                   {board.wanted.includes(seat.id) && <WantedMark />}
                   <StatusMark label={note} />

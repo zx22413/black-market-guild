@@ -4,6 +4,7 @@ import type { Action, IslandId, PlayerId } from '../../v07/game';
 import { ISLAND_LABELS, ISLAND_TEXT } from '../labels';
 import { legalOf } from '../table/forms';
 import { IslandCard, useDealt } from './IslandCard';
+import { IslandIcon } from './IslandIcon';
 
 // The island draft (§11.1, docs/ui/v07-event-presentation.md §1.1): two island cards (`IslandCard`)
 // dealt face down over the dimmed table, only for you, then turned up. The pick lifts and glows,
@@ -148,6 +149,7 @@ function RevealSlot({ island, order, owner, color, open, onToggle }: RevealSlotP
   return (
     <span className="isle-owner">
       <span className="isle-owner-tag" style={{ '--seat': color } as CSSProperties}>
+        <IslandIcon island={island} />
         {owner}
       </span>
       <button type="button" className="isle-slot" aria-expanded={open} aria-label={`${owner}：${ISLAND_LABELS[island]}`} title={`${text.pro}。${text.con}`} onClick={onToggle}>

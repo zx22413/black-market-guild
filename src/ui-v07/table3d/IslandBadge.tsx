@@ -5,8 +5,9 @@ import type { Vec3 } from '../../ui/scene/buildings/polyhedra';
 import { ISLAND_LABELS, ISLAND_TEXT } from '../labels';
 import type { TablePin } from '../scene/TableCanvas';
 import { IslandGlance } from './IslandGlance';
+import { IslandIcon } from './IslandIcon';
 
-// Each island's name as its own badge on the island, apart from the guild's name plate. Hover
+// Each island's landmark icon and name as its own badge on the island, apart from the guild's name plate. Hover
 // (desktop) or tap it to see what the island does (§11.2); tap elsewhere to close.
 
 function IslandBadge({ island }: { readonly island: IslandId }) {
@@ -31,10 +32,14 @@ function IslandBadge({ island }: { readonly island: IslandId }) {
           setOpen((v) => !v);
         }}
       >
+        <IslandIcon island={island} />
         {ISLAND_LABELS[island]}
       </button>
       <span className="island-tip" role="tooltip">
-        <b>{ISLAND_LABELS[island]}</b>
+        <b>
+          <IslandIcon island={island} />
+          {ISLAND_LABELS[island]}
+        </b>
         <IslandGlance island={island} />
         <span className="draft-full">
           <span>{text.pro}</span>

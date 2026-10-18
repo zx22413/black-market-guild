@@ -138,9 +138,13 @@ export function InfoIcon() {
 }
 
 /** A round dark badge holding one of the cream art icons (coin, ship, a role). */
-export function IconDisc({ src }: { readonly src: string }) {
+/**
+ * A small round icon. The parchment-coloured placeholder icons (coin, dice, ship) sit on a dark disc;
+ * `badge` puts a card icon (cardArt.ts, in colour) on the card art's sky-and-sea disc instead.
+ */
+export function IconDisc({ src, badge = false }: { readonly src: string; readonly badge?: boolean }) {
   return (
-    <span className="chip-ic" aria-hidden="true">
+    <span className={`chip-ic ${badge ? 'badge' : ''}`} aria-hidden="true">
       <img src={src} alt="" />
     </span>
   );

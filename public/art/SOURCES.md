@@ -73,6 +73,43 @@ V0.7 島嶼卡（`src/ui-v07/table3d/IslandCard.tsx`）的向量插圖。
 | islands/smuggler-port.svg | 走私港：玄武岩岬角中的海蝕洞、洞口的燈籠與溜進去的小船、岩架上的貨箱、紫色石楠 | 2026-10-19 |
 | islands/spice-isles.svg | 香料群島：砂岩捕風塔屋、紅白條紋遮棚下的香料堆、肉豆蔻樹、三角帆船 | 2026-10-19 |
 
+### 島嶼圖示
+
+`islands/icons/*.svg`：每張島嶼卡插圖裡的地標單獨抽出來、加粗線條、減少細節的小圖示（64×64，無背景），生成方式與限制同上。用在桌上的島名牌、排行與島嶼公開的名牌上，放在天空與海的小圓盤裡。
+
+| 檔案 | 內容 | 取得日期 |
+| --- | --- | --- |
+| islands/icons/lighthouse.svg | 黑白條紋燈塔 | 2026-10-19 |
+| islands/icons/fortress.svg | 主堡、紅白旗與前方的星形城牆 | 2026-10-19 |
+| islands/icons/free-port.svg | 三間彩色山形牆屋 | 2026-10-19 |
+| islands/icons/lumber.svg | 風力鋸木廠與四片風帆 | 2026-10-19 |
+| islands/icons/mine.svg | 木造井架與紅色捲揚輪 | 2026-10-19 |
+| islands/icons/pirate-cove.svg | 側傾的船與骷髏旗 | 2026-10-19 |
+| islands/icons/smuggler-port.svg | 玄武岩海蝕洞、洞口的燈籠 | 2026-10-19 |
+| islands/icons/spice-isles.svg | 砂岩捕風塔屋與香料堆 | 2026-10-19 |
+
+## 建築、角色、航海事件卡插圖與圖示（AI 生成的佔位插圖）
+
+V0.7 的卡牌插圖（`cards/<種類>-<id>.svg`，400×300）與從插圖抽出的圖示（`cards/icons/<種類>-<id>.svg`，64×64，無背景）。生成方式、畫風與限制同上方島嶼卡插圖。V0.7 介面改用這些圖示取代 game-icons.net 的角色、建築、航海事件圖示；舊圖示仍由 V0.6 介面（`src/ui`）使用，所以保留。
+
+| 檔案 | 插圖內容 | 圖示 | 取得日期 |
+| --- | --- | --- | --- |
+| cards/building-shipyard.svg | 滑道上只有骨架的船身、鷹架、起重機、木料堆 | 骨架船身 | 2026-10-19 |
+| cards/building-insurance.svg | 碼頭上的保險行、掛著保單與羽毛筆的招牌、停泊的船、封蠟保單 | 封蠟保單卷軸 | 2026-10-19 |
+| cards/building-salvage.svg | 紅色打撈船、甲板上的黃銅潛水頭盔、從海底吊起的寶箱 | 黃銅潛水頭盔 | 2026-10-19 |
+| cards/building-exchange.svg | 有柱廊與金色天秤的交易所、屋頂旗幟、碼頭貨箱 | 金色天秤 | 2026-10-19 |
+| cards/role-intel.svg | 岩架上的海圖與指向遠方船隻的黃銅望遠鏡 | 望遠鏡 | 2026-10-19 |
+| cards/role-guard.svg | 護航船甲板上的火砲、盾徽、遠處的商船 | 火砲 | 2026-10-19 |
+| cards/role-pirate.svg | 黑帆骷髏海盜船、舷砲的煙、逃跑的商船 | 骷髏旗 | 2026-10-19 |
+| cards/role-smuggler.svg | 隱密海灣裡蓋著帆布的小帆船、麻袋與壓低的燈籠 | 帶金幣的麻袋 | 2026-10-19 |
+| cards/role-broker.svg | 帳房裡畫著上漲線的價格板、帳本、金幣堆、羽毛筆 | 上漲線價格板 | 2026-10-19 |
+| cards/voyage-tailwind.svg | 滿帆前進的船與風線 | 三道風線 | 2026-10-19 |
+| cards/voyage-storm.svg | 閃電、雨、大浪中傾斜的船 | 烏雲與閃電 | 2026-10-19 |
+| cards/voyage-sea-fog.svg | 霧帶與半隱的船、燈籠 | 霧帶 | 2026-10-19 |
+| cards/voyage-moonless-night.svg | 無月星空、船頭的燈籠（桌面夜晚的藍色調） | 新月與星 | 2026-10-19 |
+| cards/voyage-black-market-rush.svg | 碼頭上爆開的錢袋與飛散的金幣、紫色條紋攤位 | 錢袋與金幣 | 2026-10-19 |
+| cards/voyage-calm-seas.svg | 如鏡的海面與船的倒影 | 太陽與帆船 | 2026-10-19 |
+
 ## 畫作（Wikimedia Commons，公有領域）
 
 皆為作者逝世逾百年的畫作，Commons 標示為 PD-Art（公有領域）。法律上不需標示，但仍建議在製作人員名單中列出作者與作品。本專案用 `sips` 重新壓縮為 JPEG（品質 72），寬度最多 1600px。

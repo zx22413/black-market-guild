@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- Intel Merchant card art: an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5fb6d4"/><stop offset="0.6" stop-color="#9fd4e0"/><stop offset="1" stop-color="#e3f4ee"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fb3b3"/><stop offset="1" stop-color="#1f7f88"/></linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sky)"/>
+  <circle cx="64" cy="40" r="30" fill="#fff8d2" opacity="0.4"/><circle cx="64" cy="40" r="20" fill="#fff8d2"/>
+  <path d="M228 56 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M234 54 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee"/>
+  <rect y="186" width="400" height="114" fill="url(#sea)"/>
+  <path d="M0 186 H400" stroke="#2a2238" stroke-width="2"/>
+  <g fill="#e8fbf8" opacity="0.7"><rect x="34" y="194" width="60" height="3" rx="1.5"/><rect x="46" y="202" width="36" height="3" rx="1.5"/></g>
+  <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
+    <path d="M20 236 q8 -6 16 0 q8 6 16 0"/><path d="M110 268 q8 -6 16 0 q8 6 16 0"/><path d="M336 248 q8 -6 16 0 q8 6 16 0"/>
+  </g>
+  <g transform="translate(250 186) rotate(0) scale(0.35)">
+    <rect x="50" y="-92" width="5" height="92" fill="#5a3420" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M24 -84 Q56 -60 24 -34 H80 Q86 -60 80 -84 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M32 -30 Q56 -14 32 -2 H72 Q78 -14 72 -30 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="110" y="-92" width="5" height="92" fill="#5a3420" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M84 -84 Q116 -60 84 -34 H140 Q146 -60 140 -84 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M92 -30 Q116 -14 92 -2 H132 Q138 -14 132 -30 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M112 -92 v-14 h20 l-5 6 l5 6 h-20" fill="#2f6fb0" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M0 -14 L160 -14 L150 6 Q80 14 14 6 Z" fill="#7a4a2a" stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M0 -14 L160 -14 L158 -20 L4 -20 Z" fill="#a8744a" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <g fill="#2a2238"><circle cx="40" cy="-4" r="3"/><circle cx="70" cy="-4" r="3"/><circle cx="100" cy="-4" r="3"/><circle cx="130" cy="-4" r="3"/></g>
+  </g>
+  <g transform="translate(320 188) rotate(0) scale(0.28)">
+    <rect x="50" y="-92" width="5" height="92" fill="#5a3420" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M24 -84 Q56 -60 24 -34 H80 Q86 -60 80 -84 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M32 -30 Q56 -14 32 -2 H72 Q78 -14 72 -30 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="110" y="-92" width="5" height="92" fill="#5a3420" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M84 -84 Q116 -60 84 -34 H140 Q146 -60 140 -84 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M92 -30 Q116 -14 92 -2 H132 Q138 -14 132 -30 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M112 -92 v-14 h20 l-5 6 l5 6 h-20" fill="#c8423a" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M0 -14 L160 -14 L150 6 Q80 14 14 6 Z" fill="#7a4a2a" stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M0 -14 L160 -14 L158 -20 L4 -20 Z" fill="#a8744a" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <g fill="#2a2238"><circle cx="40" cy="-4" r="3"/><circle cx="70" cy="-4" r="3"/><circle cx="100" cy="-4" r="3"/><circle cx="130" cy="-4" r="3"/></g>
+  </g>
+  <!-- the lookout's ledge in the foreground -->
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"><path d="M0 230 Q120 214 250 226 L260 300 H0 Z" fill="#7fb069"/><path d="M0 252 Q110 240 240 250 L246 300 H0 Z" fill="#9a93ae"/></g>
+  <!-- a chart spread on the ledge -->
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"><path d="M40 238 L170 226 L186 262 L52 276 Z" fill="#f4ead2"/></g>
+  <g fill="none" stroke="#2a2238" stroke-width="1.6" stroke-linecap="round"><path d="M70 250 q20 -10 40 0 t40 -4"/><path d="M84 262 l8 -6 l8 6 l-8 6 z"/></g>
+  <path d="M120 244 l4 4 m0 -4 l-4 4" stroke="#c8423a" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- the spyglass, trained out to sea -->
+  <g transform="rotate(-16 200 210)" stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="110" y="196" width="60" height="22" rx="3" fill="#a8741f"/>
+    <rect x="168" y="192" width="70" height="30" rx="3" fill="#d9a441"/>
+    <rect x="236" y="188" width="44" height="38" rx="3" fill="#f2cf7a"/>
+    <rect x="164" y="190" width="8" height="34" fill="#7a4a2a"/><rect x="232" y="186" width="8" height="42" fill="#7a4a2a"/>
+    <ellipse cx="282" cy="207" rx="6" ry="19" fill="#9fd4e0"/>
+  </g>
+  <path d="M286 152 l10 -8 m-4 14 l12 -2" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+  <g fill="none" stroke="#2a2238" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M150 80 q5 -5 8 0 q3 -5 8 0"/><path d="M170 66 q5 -5 8 0 q3 -5 8 0"/></g>
+</svg>

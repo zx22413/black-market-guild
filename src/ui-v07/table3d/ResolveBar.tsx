@@ -40,7 +40,7 @@ export function RevealChips({ groups, shown }: { readonly groups: readonly Revea
       {groups.map((g, i) =>
         i < shown ? (
           <span key={g.role} className="chip" title={`${ROLE_LABELS[g.role]}${g.deployments.length > 1 ? ` ×${g.deployments.length}` : ''}`}>
-            <IconDisc src={roleIconUrl(g.role)} />
+            <IconDisc src={roleIconUrl(g.role)} badge />
             {g.deployments.length > 1 && <b>×{g.deployments.length}</b>}
           </span>
         ) : (

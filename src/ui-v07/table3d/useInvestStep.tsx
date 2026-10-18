@@ -30,6 +30,7 @@ import { NoteBadge } from './NoteBadge';
 import { ArrowIcon, CloseIcon, CrateIcon, Flow, HouseIcon, IconDisc, artIconUrl } from './icons';
 import { LockHint } from './LockHint';
 import type { StageEnv, StageParts } from './stage';
+import { cardArtUrl } from './cardArt';
 
 // The investment on your own island (docs/ui/v07-event-presentation.md §1.3): building cards,
 // warehouse crates onto the docked ship, gold glow on what is still undone, a reminder before
@@ -144,7 +145,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
                   onClick={() => pickBuild(b.id)}
                 >
                   <span className="inv-ic">
-                    <img src={artIconUrl(`asset-${b.id}`)} alt="" />
+                    <img src={cardArtUrl({ kind: 'building', id: b.id })} alt="" />
                   </span>
                   <b>{BUILDING_LABELS[b.id]}</b>
                   <span className="inv-cost">

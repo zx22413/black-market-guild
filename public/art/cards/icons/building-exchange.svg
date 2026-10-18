@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Trade Exchange icon: the card art's main object, simplified; an AI-written placeholder, see public/art/SOURCES.md. -->
+  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M32 8 V50" fill="none"/>
+    <path d="M10 16 H54" fill="none"/>
+    <path d="M10 16 L4 34 M10 16 L16 34 M54 16 L48 34 M54 16 L60 34" fill="none"/>
+    <path d="M2 34 q8 10 16 0 z M46 34 q8 10 16 0 z" fill="#e0b84a"/>
+    <path d="M20 58 h24 l-4 -8 h-16 z" fill="#e0b84a"/>
+  </g>
+  <circle cx="32" cy="8" r="4" fill="#e0b84a" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Broker icon: the card art's main object, simplified; an AI-written placeholder, see public/art/SOURCES.md. -->
+  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><rect x="4" y="6" width="56" height="44" rx="3" fill="#7a4a2a"/><rect x="9" y="11" width="46" height="34" fill="#2f3b3a"/></g>
+  <path d="M14 39 L24 32 L32 35 L40 24 L50 16" fill="none" stroke="#f2c94c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M42 15 L51 15 L50 24" fill="none" stroke="#f2c94c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="18" y="52" width="28" height="6" rx="2.5" fill="#e0b84a"/><rect x="18" y="57" width="28" height="6" rx="2.5" fill="#f2c94c"/></g>
+</svg>

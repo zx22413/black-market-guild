@@ -11,7 +11,7 @@ function Thing({ icon }: { readonly icon: GlanceIcon }) {
   if (icon.kind === 'good') {
     return <GoodIcon good={icon.good} />;
   }
-  return <IconDisc src={icon.kind === 'role' ? roleIconUrl(icon.role) : artIconUrl('ship-solo')} />;
+  return icon.kind === 'role' ? <IconDisc src={roleIconUrl(icon.role)} badge /> : <IconDisc src={artIconUrl('ship-solo')} />;
 }
 
 export function IslandGlance({ island }: { readonly island: IslandId }) {

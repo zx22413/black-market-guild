@@ -29,7 +29,7 @@ export function DeployChips({ role, bet, needsShip, target }: DeployChipsProps) 
   return (
     <>
       <span className="chip">
-        <IconDisc src={roleIconUrl(role as RoleId)} />
+        <IconDisc src={roleIconUrl(role as RoleId)} badge />
         {ROLE_LABELS[role]}
       </span>
       {role === 'broker' &&

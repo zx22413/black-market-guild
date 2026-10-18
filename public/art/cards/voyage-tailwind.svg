@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- Tailwind card art: an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4fb0d6"/><stop offset="0.6" stop-color="#9fd4e0"/><stop offset="1" stop-color="#e3f4ee"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fb3b3"/><stop offset="1" stop-color="#1f7f88"/></linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sky)"/>
+  <circle cx="340" cy="38" r="30" fill="#fff8d2" opacity="0.4"/><circle cx="340" cy="38" r="20" fill="#fff8d2"/>
+  <path d="M258 92 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M264 90 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee"/>
+  <rect y="186" width="400" height="114" fill="url(#sea)"/>
+  <path d="M0 186 H400" stroke="#2a2238" stroke-width="2"/>
+  <g fill="#e8fbf8" opacity="0.7"><rect x="310" y="194" width="60" height="3" rx="1.5"/><rect x="322" y="202" width="36" height="3" rx="1.5"/></g>
+  <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
+    <path d="M20 236 q8 -6 16 0 q8 6 16 0"/><path d="M110 268 q8 -6 16 0 q8 6 16 0"/><path d="M336 248 q8 -6 16 0 q8 6 16 0"/>
+  </g>
+  <g transform="translate(110 218) rotate(-3) scale(1.0)">
+    <rect x="50" y="-92" width="5" height="92" fill="#5a3420" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M24 -84 Q66 -60 24 -34 H80 Q96 -60 80 -84 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M32 -30 Q66 -14 32 -2 H72 Q88 -14 72 -30 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="110" y="-92" width="5" height="92" fill="#5a3420" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M84 -84 Q126 -60 84 -34 H140 Q156 -60 140 -84 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M92 -30 Q126 -14 92 -2 H132 Q148 -14 132 -30 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M112 -92 v-14 h20 l-5 6 l5 6 h-20" fill="#e0b84a" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M0 -14 L160 -14 L150 6 Q80 14 14 6 Z" fill="#7a4a2a" stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M0 -14 L160 -14 L158 -20 L4 -20 Z" fill="#a8744a" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <g fill="#2a2238"><circle cx="40" cy="-4" r="3"/><circle cx="70" cy="-4" r="3"/><circle cx="100" cy="-4" r="3"/><circle cx="130" cy="-4" r="3"/></g>
+  </g>
+  <g fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round">
+    <path d="M10 70 H90 q20 0 20 -14 q0 -12 -12 -12"/>
+    <path d="M0 110 H70 q16 0 16 12 q0 10 -10 10"/>
+    <path d="M30 150 H110"/>
+    <path d="M300 130 H380 q14 0 14 -12"/>
+  </g>
+  <g fill="none" stroke="#2a2238" stroke-width="1.5" stroke-linecap="round" opacity="0.5">
+    <path d="M10 74 H90"/><path d="M0 114 H70"/>
+  </g>
+  <g fill="#e8fbf8" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M110 222 q-14 -2 -20 -10 q12 0 18 -4 z"/><path d="M262 220 q20 -2 30 -12 q-10 14 -30 18 z"/></g>
+</svg>

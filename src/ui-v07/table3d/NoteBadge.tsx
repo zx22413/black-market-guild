@@ -12,7 +12,7 @@ function Chip({ chip }: { readonly chip: NoteChip }) {
     case 'good':
       return chip.count === undefined ? <GoodCount good={chip.good} count={1} size="sm" /> : <GoodCount good={chip.good} count={chip.count} size="sm" />;
     case 'role':
-      return <IconDisc src={roleIconUrl(chip.role)} />;
+      return <IconDisc src={roleIconUrl(chip.role)} badge />;
     case 'ship':
       return (
         <span className="note-chip">

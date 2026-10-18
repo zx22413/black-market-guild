@@ -1,14 +1,15 @@
 import type { VoyageEventId } from '../../v07/game';
 import { VOYAGE_EVENT_LABELS, VOYAGE_EVENT_TEXT } from '../labels';
+import { cardArtUrl, cardIconUrl } from './cardArt';
 
-// The voyage event (§5 step 5, §12) as the V0.6 event card: a parchment card flips in the middle
+// The voyage event (§5 step 5, §12) as a card with its picture (cardArt.ts): it flips in the middle
 // of a darkened table, holds for its line to be read, then shrinks off to the top-left, where a
 // small chip keeps the event in view for the rest of the round (instead of a line in the bar).
 
 /** How long the card holds the screen before it shrinks away (ms). */
 export const EVENT_CARD_MS = 3000;
 
-const iconUrl = (event: VoyageEventId): string => `${import.meta.env.BASE_URL}art/icons/voyage-${event}.svg`;
+const iconUrl = (event: VoyageEventId): string => cardIconUrl({ kind: 'voyage', id: event });
 
 export function VoyageEventCard({ event, onDone }: { readonly event: VoyageEventId; readonly onDone: () => void }) {
   const title = VOYAGE_EVENT_LABELS[event];
@@ -17,7 +18,7 @@ export function VoyageEventCard({ event, onDone }: { readonly event: VoyageEvent
       <div className="event-card" style={{ animationDuration: `${EVENT_CARD_MS}ms` }} onAnimationEnd={onDone}>
         <small className="event-card-kind">航海事件</small>
         <div className="event-card-emblem">
-          <img src={iconUrl(event)} alt="" />
+          <img src={cardArtUrl({ kind: 'voyage', id: event })} alt="" />
         </div>
         <strong>{title}</strong>
         <p>{VOYAGE_EVENT_TEXT[event]}</p>

@@ -28,6 +28,7 @@ import { roleIconUrl } from './RoleBadges';
 import { DashedArrows } from './RoleArrows';
 import { pickArrows } from './revealModel';
 import { shipName, type StageEnv, type StageParts } from './stage';
+import { cardArtUrl } from './cardArt';
 
 // Role deployment on the whole table (docs/ui/v07-event-presentation.md §1.4): pick a role card
 // from the hand, then click the ship it goes to (or, for the broker, 漲／跌 on the market strip).
@@ -163,7 +164,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
           onClick={() => c.legal && pick(c.id)}
         >
           <span className="dep-ic">
-            <img src={roleIconUrl(c.id)} alt="" />
+            <img src={cardArtUrl({ kind: 'role', id: c.id })} alt="" />
           </span>
           <b>{ROLE_LABELS[c.id]}</b>
           <span className="dep-fee" title={c.fee === 0 ? '免費' : `部署費 ${c.fee} G`}>

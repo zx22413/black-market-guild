@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Guard icon: the card art's main object, simplified; an AI-written placeholder, see public/art/SOURCES.md. -->
+  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M6 46 L40 46 L36 34 L10 34 Z" fill="#8a5a3a"/>
+    <circle cx="14" cy="50" r="8" fill="#6b3f2a"/><circle cx="34" cy="50" r="8" fill="#6b3f2a"/>
+    <path d="M8 30 L52 18 Q58 18 58 24 L58 30 Q58 34 52 34 L10 40 Q4 40 4 34 Z" fill="#3b3646"/>
+    <rect x="54" y="15" width="7" height="22" rx="3" fill="#2d2a33"/>
+  </g>
+  <path d="M12 32 L50 23" stroke="#6c6684" stroke-width="3" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Free Port icon: the card art's landmark, simplified; an AI-written placeholder, see public/art/SOURCES.md. -->
+  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M3 59 V28 H7 V24 H11 L15 19 L19 24 H22 V59 Z" fill="#f2c94c"/>
+    <path d="M22 59 V20 H25 V16 H29 L33 10 L37 16 H40 V59 Z" fill="#ef8a7a"/>
+    <path d="M40 59 V30 H43 V26 H47 L51 21 L55 26 H58 V30 H61 V59 Z" fill="#7fc8d8"/>
+  </g>
+  <g fill="#ffffff" stroke="#2a2238" stroke-width="2">
+    <rect x="9" y="33" width="6" height="8"/><rect x="28" y="25" width="6" height="8"/><rect x="48" y="35" width="6" height="8"/>
+  </g>
+  <g fill="#6b3f2a" stroke="#2a2238" stroke-width="2"><rect x="10" y="49" width="6" height="10"/><rect x="28" y="47" width="7" height="12"/><rect x="48" y="50" width="6" height="9"/></g>
+</svg>

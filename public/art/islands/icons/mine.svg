@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Mine Isle icon: the card art's landmark, simplified; an AI-written placeholder, see public/art/SOURCES.md. -->
+  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M10 59 L28 14 L33 14 L19 59 Z" fill="#a8744a"/>
+    <path d="M54 59 L36 14 L31 14 L45 59 Z" fill="#8a5a3a"/>
+    <path d="M17 42 H47 M21 32 H43"/>
+  </g>
+  <circle cx="32" cy="14" r="10" fill="none" stroke="#2a2238" stroke-width="7"/>
+  <circle cx="32" cy="14" r="10" fill="none" stroke="#c8423a" stroke-width="3.5"/>
+  <path d="M32 4 V24 M22 14 H42" stroke="#2a2238" stroke-width="2.5"/>
+  <path d="M32 24 V54" stroke="#2a2238" stroke-width="2.5"/>
+</svg>
