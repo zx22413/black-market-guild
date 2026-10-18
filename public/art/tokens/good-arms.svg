@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Arms icon in the card art's style: an AI-written placeholder, see public/art/SOURCES.md. -->
-  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-    <circle cx="28" cy="38" r="20" fill="#3b3646"/>
-    <rect x="36" y="14" width="10" height="9" rx="2" transform="rotate(40 41 18)" fill="#6c6684"/>
+  <g>
+    <circle cx="28" cy="38" r="20" fill="#3b3646" />
+    <rect x="36" y="14" width="10" height="9" rx="2" transform="rotate(40 41 18)" fill="#6c6684" />
   </g>
-  <path d="M44 14 Q50 6 56 8" fill="none" stroke="#2a2238" stroke-width="3" stroke-linecap="round"/>
-  <path d="M56 8 l4 -5 l-1 6 l5 1 l-6 2 z" fill="#f6a85c" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-  <path d="M18 30 q4 -6 10 -7" fill="none" stroke="#8f93a8" stroke-width="3" stroke-linecap="round"/>
+  <path d="M44 14 Q50 6 56 8" fill="none" stroke="#3b3646" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M56 8 l4 -5 l-1 6 l5 1 l-6 2 z" fill="#f6a85c" />
+  <path d="M18 30 q4 -6 10 -7" fill="none" stroke="#8f93a8" stroke-width="3" stroke-linecap="round" />
 </svg>

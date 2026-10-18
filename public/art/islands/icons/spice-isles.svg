@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Spice Isles icon: the card art's landmark, simplified; an AI-written placeholder, see public/art/SOURCES.md. -->
-  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-    <rect x="8" y="36" width="40" height="23" fill="#e2c28a"/>
-    <rect x="6" y="33" width="44" height="4" fill="#f2dcae"/>
-    <rect x="32" y="6" width="16" height="28" fill="#e2c28a"/>
-    <rect x="30" y="3" width="20" height="4" fill="#f2dcae"/>
-    <rect x="14" y="45" width="8" height="14" fill="#6b3f2a"/>
+  <g>
+    <rect x="8" y="36" width="40" height="23" fill="#e2c28a" />
+    <rect x="6" y="33" width="44" height="4" fill="#f2dcae" />
+    <rect x="32" y="6" width="16" height="28" fill="#e2c28a" />
+    <rect x="30" y="3" width="20" height="4" fill="#f2dcae" />
+    <rect x="14" y="45" width="8" height="14" fill="#6b3f2a" />
   </g>
-  <g fill="#2a2238"><rect x="35.5" y="10" width="3" height="11"/><rect x="41.5" y="10" width="3" height="11"/></g>
-  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
-    <path d="M52 59 L56 50 L60 59 Z" fill="#c8423a"/><path d="M54 59 L58 47 L62 59 Z" fill="#f6a85c" transform="translate(-7 0)"/>
+  <g fill="#2a2238"><rect x="35.5" y="10" width="3" height="11" /><rect x="41.5" y="10" width="3" height="11" /></g>
+  <g>
+    <path d="M52 59 L56 50 L60 59 Z" fill="#c8423a" /><path d="M54 59 L58 47 L62 59 Z" fill="#f6a85c" transform="translate(-7 0)" />
   </g>
 </svg>

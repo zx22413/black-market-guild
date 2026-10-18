@@ -1,17 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Lumber Isle icon: the card art's landmark, simplified; an AI-written placeholder, see public/art/SOURCES.md. -->
-  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M20 59 L22 34 L42 34 L44 59 Z" fill="#c48a52"/>
-    <path d="M18 35 L32 24 L46 35 Z" fill="#7a4a2a"/>
-    <rect x="28" y="47" width="8" height="12" fill="#5a3420"/>
+  <g>
+    <path d="M20 59 L22 34 L42 34 L44 59 Z" fill="#c48a52" />
+    <path d="M18 35 L32 24 L46 35 Z" fill="#7a4a2a" />
+    <rect x="28" y="47" width="8" height="12" fill="#5a3420" />
   </g>
-  <g transform="rotate(20 32 24)" stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-    <rect x="29.5" y="2" width="5" height="44" fill="#5a3420"/>
-    <rect x="10" y="21.5" width="44" height="5" fill="#5a3420"/>
-    <rect x="34.5" y="3" width="9" height="17" fill="#f3e3c3"/>
-    <rect x="20.5" y="28" width="9" height="17" fill="#f3e3c3"/>
-    <rect x="11" y="12.5" width="17" height="9" fill="#f3e3c3"/>
-    <rect x="36" y="26.5" width="17" height="9" fill="#f3e3c3"/>
+  <g transform="rotate(20 32 24)">
+    <rect x="29.5" y="2" width="5" height="44" fill="#5a3420" />
+    <rect x="10" y="21.5" width="44" height="5" fill="#5a3420" />
+    <rect x="34.5" y="3" width="9" height="17" fill="#f3e3c3" />
+    <rect x="20.5" y="28" width="9" height="17" fill="#f3e3c3" />
+    <rect x="11" y="12.5" width="17" height="9" fill="#f3e3c3" />
+    <rect x="36" y="26.5" width="17" height="9" fill="#f3e3c3" />
   </g>
-  <circle cx="32" cy="24" r="3.5" fill="#3b3646" stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="32" cy="24" r="3.5" fill="#3b3646" />
 </svg>

@@ -2,46 +2,45 @@
   <!-- Shipyard card art: an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#5fb6d4"/><stop offset="0.6" stop-color="#9fd4e0"/><stop offset="1" stop-color="#e3f4ee"/>
+      <stop offset="0" stop-color="#5fb6d4" /><stop offset="0.6" stop-color="#9fd4e0" /><stop offset="1" stop-color="#e3f4ee" />
     </linearGradient>
-    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fb3b3"/><stop offset="1" stop-color="#1f7f88"/></linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fb3b3" /><stop offset="1" stop-color="#1f7f88" /></linearGradient>
   </defs>
-  <rect width="400" height="300" fill="url(#sky)"/>
-  <circle cx="60" cy="40" r="30" fill="#fff8d2" opacity="0.4"/><circle cx="60" cy="40" r="20" fill="#fff8d2"/>
-  <path d="M248 70 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M254 68 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee"/>
-  <rect y="186" width="400" height="114" fill="url(#sea)"/>
-  <path d="M0 186 H400" stroke="#2a2238" stroke-width="2"/>
-  <g fill="#e8fbf8" opacity="0.7"><rect x="30" y="194" width="60" height="3" rx="1.5"/><rect x="42" y="202" width="36" height="3" rx="1.5"/></g>
+  <rect width="400" height="300" fill="url(#sky)" />
+  <circle cx="60" cy="40" r="30" fill="#fff8d2" opacity="0.4" /><circle cx="60" cy="40" r="20" fill="#fff8d2" />
+  <path d="M248 70 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" /><path d="M254 68 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee" />
+  <rect y="186" width="400" height="114" fill="url(#sea)" />
+  <g fill="#e8fbf8" opacity="0.7"><rect x="30" y="194" width="60" height="3" rx="1.5" /><rect x="42" y="202" width="36" height="3" rx="1.5" /></g>
   <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
-    <path d="M20 236 q8 -6 16 0 q8 6 16 0"/><path d="M110 268 q8 -6 16 0 q8 6 16 0"/><path d="M336 248 q8 -6 16 0 q8 6 16 0"/>
+    <path d="M20 236 q8 -6 16 0 q8 6 16 0" /><path d="M110 268 q8 -6 16 0 q8 6 16 0" /><path d="M336 248 q8 -6 16 0 q8 6 16 0" />
   </g>
   <!-- the slipway running into the sea -->
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"><path d="M40 300 L120 196 L400 196 L400 300 Z" fill="#b8845a"/><path d="M120 196 L400 196 L400 204 L114 204 Z" fill="#d29e64"/></g>
-  <g stroke="#2a2238" stroke-width="1.8"><path d="M96 228 H400 M74 256 H400 M52 284 H400"/></g>
+  <g><path d="M40 300 L120 196 L400 196 L400 300 Z" fill="#b8845a" /><path d="M120 196 L400 196 L400 204 L114 204 Z" fill="#d29e64" /></g>
+  <g><path d="M96 228 H400 M74 256 H400 M52 284 H400" stroke="#2a2238" stroke-width="1.8" stroke-opacity="0.28" stroke-linecap="round" stroke-linejoin="round" /></g>
   <!-- the hull being built: keel, ribs, a few planks -->
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M150 196 Q170 150 230 146 L330 146 Q352 160 356 196 Z" fill="none"/>
-    <path d="M150 196 L356 196" stroke-width="5"/>
+  <g>
+    <path d="M150 196 Q170 150 230 146 L330 146 Q352 160 356 196 Z" fill="none" stroke="#3b3646" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M150 196 L356 196" stroke-width="2.5" stroke="#3b3646" stroke-linecap="round" stroke-linejoin="round" />
   </g>
   <g fill="none" stroke="#7a4a2a" stroke-width="5" stroke-linecap="round">
-    <path d="M176 194 Q168 168 186 152"/><path d="M206 194 Q198 160 214 146"/><path d="M236 194 Q230 156 244 144"/>
-    <path d="M266 194 Q262 154 274 144"/><path d="M296 194 Q296 152 306 144"/><path d="M326 194 Q330 156 336 150"/>
+    <path d="M176 194 Q168 168 186 152" /><path d="M206 194 Q198 160 214 146" /><path d="M236 194 Q230 156 244 144" />
+    <path d="M266 194 Q262 154 274 144" /><path d="M296 194 Q296 152 306 144" /><path d="M326 194 Q330 156 336 150" />
   </g>
-  <g fill="none" stroke="#2a2238" stroke-width="1.5" stroke-linecap="round">
-    <path d="M176 194 Q168 168 186 152"/><path d="M206 194 Q198 160 214 146"/><path d="M236 194 Q230 156 244 144"/>
-    <path d="M266 194 Q262 154 274 144"/><path d="M296 194 Q296 152 306 144"/><path d="M326 194 Q330 156 336 150"/>
+  <g fill="none" stroke="#2a2238" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.28" stroke-linejoin="round">
+    <path d="M176 194 Q168 168 186 152" /><path d="M206 194 Q198 160 214 146" /><path d="M236 194 Q230 156 244 144" />
+    <path d="M266 194 Q262 154 274 144" /><path d="M296 194 Q296 152 306 144" /><path d="M326 194 Q330 156 336 150" />
   </g>
-  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M158 192 Q166 174 182 170 L250 170 L250 182 L176 182 Q166 186 162 194 Z" fill="#c48a52"/><path d="M172 178 L250 178" fill="none"/></g>
+  <g><path d="M158 192 Q166 174 182 170 L250 170 L250 182 L176 182 Q166 186 162 194 Z" fill="#c48a52" /><path d="M172 178 L250 178" fill="none" stroke="#3b3646" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
   <!-- scaffolding -->
-  <g fill="none" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M190 196 V120 M270 196 V120 M190 120 H270 M190 158 H270 M190 158 L270 120"/></g>
+  <g fill="none" stroke="#3b3646" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M190 196 V120 M270 196 V120 M190 120 H270 M190 158 H270 M190 158 L270 120" /></g>
   <!-- the crane -->
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M360 196 L366 70 L376 70 L384 196 Z" fill="#8a5a3a"/>
-    <path d="M366 74 L250 54 L250 62 L366 84 Z" fill="#a8744a"/>
+  <g>
+    <path d="M360 196 L366 70 L376 70 L384 196 Z" fill="#8a5a3a" />
+    <path d="M366 74 L250 54 L250 62 L366 84 Z" fill="#a8744a" />
   </g>
-  <path d="M256 60 V116" stroke="#2a2238" stroke-width="2"/>
-  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="240" y="116" width="34" height="10" fill="#e0b27a"/></g>
+  <path d="M256 60 V116" stroke="#3b3646" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <g><rect x="240" y="116" width="34" height="10" fill="#e0b27a" /></g>
   <!-- timber stack -->
-  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="60" y="226" width="56" height="9" fill="#e0b27a"/><rect x="66" y="217" width="48" height="9" fill="#d29e64"/><rect x="72" y="208" width="38" height="9" fill="#e0b27a"/></g>
-  <g fill="none" stroke="#2a2238" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M120 60 q5 -5 8 0 q3 -5 8 0"/><path d="M140 46 q5 -5 8 0 q3 -5 8 0"/></g>
+  <g><rect x="60" y="226" width="56" height="9" fill="#e0b27a" /><rect x="66" y="217" width="48" height="9" fill="#d29e64" /><rect x="72" y="208" width="38" height="9" fill="#e0b27a" /></g>
+  <g fill="none" stroke="#3b3646" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M120 60 q5 -5 8 0 q3 -5 8 0" /><path d="M140 46 q5 -5 8 0 q3 -5 8 0" /></g>
 </svg>

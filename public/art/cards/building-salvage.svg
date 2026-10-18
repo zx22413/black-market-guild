@@ -2,39 +2,38 @@
   <!-- Salvage Company card art: an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#5fb6d4"/><stop offset="0.6" stop-color="#9fd4e0"/><stop offset="1" stop-color="#e3f4ee"/>
+      <stop offset="0" stop-color="#5fb6d4" /><stop offset="0.6" stop-color="#9fd4e0" /><stop offset="1" stop-color="#e3f4ee" />
     </linearGradient>
-    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fb3b3"/><stop offset="1" stop-color="#1f7f88"/></linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fb3b3" /><stop offset="1" stop-color="#1f7f88" /></linearGradient>
   </defs>
-  <rect width="400" height="300" fill="url(#sky)"/>
-  <circle cx="70" cy="40" r="30" fill="#fff8d2" opacity="0.4"/><circle cx="70" cy="40" r="20" fill="#fff8d2"/>
-  <path d="M238 60 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M244 58 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee"/>
-  <rect y="150" width="400" height="150" fill="url(#sea)"/>
-  <path d="M0 150 H400" stroke="#2a2238" stroke-width="2"/>
-  <g fill="#e8fbf8" opacity="0.7"><rect x="40" y="158" width="60" height="3" rx="1.5"/><rect x="52" y="166" width="36" height="3" rx="1.5"/></g>
+  <rect width="400" height="300" fill="url(#sky)" />
+  <circle cx="70" cy="40" r="30" fill="#fff8d2" opacity="0.4" /><circle cx="70" cy="40" r="20" fill="#fff8d2" />
+  <path d="M238 60 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" /><path d="M244 58 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee" />
+  <rect y="150" width="400" height="150" fill="url(#sea)" />
+  <g fill="#e8fbf8" opacity="0.7"><rect x="40" y="158" width="60" height="3" rx="1.5" /><rect x="52" y="166" width="36" height="3" rx="1.5" /></g>
   <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
-    <path d="M20 200 q8 -6 16 0 q8 6 16 0"/><path d="M110 232 q8 -6 16 0 q8 6 16 0"/><path d="M336 212 q8 -6 16 0 q8 6 16 0"/>
+    <path d="M20 200 q8 -6 16 0 q8 6 16 0" /><path d="M110 232 q8 -6 16 0 q8 6 16 0" /><path d="M336 212 q8 -6 16 0 q8 6 16 0" />
   </g>
   <!-- under the surface: the sea bed and the chest being lifted -->
-  <rect y="200" width="400" height="100" fill="#1f6f78" opacity="0.6"/>
-  <path d="M0 290 Q80 270 160 284 T400 278 V300 H0 Z" fill="#c9a86a" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-  <g fill="#e8fbf8" stroke="#2a2238" stroke-width="1.5"><circle cx="232" cy="210" r="4"/><circle cx="240" cy="190" r="3"/><circle cx="228" cy="176" r="2.5"/><circle cx="110" cy="240" r="3"/></g>
-  <path d="M236 116 V240" stroke="#2a2238" stroke-width="2.5"/>
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"><rect x="214" y="240" width="44" height="28" fill="#8a5a3a"/><path d="M214 240 q22 -16 44 0 z" fill="#a8744a"/></g>
-  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="230" y="248" width="12" height="10" fill="#e0b84a"/></g>
-  <g fill="#f2c94c"><circle cx="208" cy="282" r="3"/><circle cx="268" cy="284" r="3"/><circle cx="276" cy="280" r="2.5"/></g>
+  <rect y="200" width="400" height="100" fill="#1f6f78" opacity="0.6" />
+  <path d="M0 290 Q80 270 160 284 T400 278 V300 H0 Z" fill="#c9a86a" />
+  <g fill="#e8fbf8"><circle cx="232" cy="210" r="4" /><circle cx="240" cy="190" r="3" /><circle cx="228" cy="176" r="2.5" /><circle cx="110" cy="240" r="3" /></g>
+  <path d="M236 116 V240" stroke="#3b3646" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+  <g><rect x="214" y="240" width="44" height="28" fill="#8a5a3a" /><path d="M214 240 q22 -16 44 0 z" fill="#a8744a" /></g>
+  <g><rect x="230" y="248" width="12" height="10" fill="#e0b84a" /></g>
+  <g fill="#f2c94c"><circle cx="208" cy="282" r="3" /><circle cx="268" cy="284" r="3" /><circle cx="276" cy="280" r="2.5" /></g>
   <!-- the salvage boat with its A-frame -->
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M80 150 L300 150 L286 176 Q190 186 96 176 Z" fill="#c8423a"/>
-    <path d="M80 150 L300 150 L298 142 L84 142 Z" fill="#e8d5b0"/>
-    <path d="M226 142 L238 96 L246 96 L258 142 Z" fill="none"/>
-    <rect x="110" y="112" width="60" height="30" fill="#f3e3c3"/><path d="M104 114 h72 l-6 -10 h-60 z" fill="#5b6a8a"/>
+  <g>
+    <path d="M80 150 L300 150 L286 176 Q190 186 96 176 Z" fill="#c8423a" />
+    <path d="M80 150 L300 150 L298 142 L84 142 Z" fill="#e8d5b0" />
+    <path d="M226 142 L238 96 L246 96 L258 142 Z" fill="none" stroke="#3b3646" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+    <rect x="110" y="112" width="60" height="30" fill="#f3e3c3" /><path d="M104 114 h72 l-6 -10 h-60 z" fill="#5b6a8a" />
   </g>
-  <path d="M238 96 L236 116" stroke="#2a2238" stroke-width="2"/>
-  <g fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="120" y="120" width="12" height="10"/><rect x="146" y="120" width="12" height="10"/></g>
+  <path d="M238 96 L236 116" stroke="#3b3646" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <g fill="#ffffff"><rect x="120" y="120" width="12" height="10" /><rect x="146" y="120" width="12" height="10" /></g>
   <!-- the brass diving helmet on deck -->
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"><circle cx="198" cy="126" r="15" fill="#d9a441"/><rect x="186" y="138" width="24" height="6" fill="#b07a2a"/></g>
-  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><circle cx="198" cy="126" r="7" fill="#9fd4e0"/><circle cx="186" cy="124" r="3.5" fill="#9fd4e0"/><circle cx="210" cy="124" r="3.5" fill="#9fd4e0"/></g>
-  <path d="M212 132 Q226 148 236 160" fill="none" stroke="#2a2238" stroke-width="2" stroke-dasharray="4 3"/>
-  <g fill="none" stroke="#2a2238" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M310 70 q5 -5 8 0 q3 -5 8 0"/><path d="M330 84 q5 -5 8 0 q3 -5 8 0"/></g>
+  <g><circle cx="198" cy="126" r="15" fill="#d9a441" /><rect x="186" y="138" width="24" height="6" fill="#b07a2a" /></g>
+  <g><circle cx="198" cy="126" r="7" fill="#9fd4e0" /><circle cx="186" cy="124" r="3.5" fill="#9fd4e0" /><circle cx="210" cy="124" r="3.5" fill="#9fd4e0" /></g>
+  <path d="M212 132 Q226 148 236 160" fill="none" stroke="#3b3646" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round" stroke-linejoin="round" />
+  <g fill="none" stroke="#3b3646" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M310 70 q5 -5 8 0 q3 -5 8 0" /><path d="M330 84 q5 -5 8 0 q3 -5 8 0" /></g>
 </svg>

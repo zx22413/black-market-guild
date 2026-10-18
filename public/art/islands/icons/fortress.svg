@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Fortress Isle icon: the card art's landmark, simplified; an AI-written placeholder, see public/art/SOURCES.md. -->
-  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M26 46 V15 H38 V46 Z" fill="#d9d1bd"/>
-    <path d="M24 15 V10 H27 V13 H30.5 V10 H33.5 V13 H37 V10 H40 V15 Z" fill="#efe8d6"/>
-    <path d="M4 52 L13 42 L51 42 L60 52 L48 59 L16 59 Z" fill="#aea38a"/>
-    <path d="M4 52 L13 42 L19 47 L16 59 Z" fill="#efe8d6"/>
-    <path d="M32 10 V2"/>
-    <path d="M32 2.5 H44 L41 5.5 L44 8.5 H32 Z" fill="#c8423a"/>
+  <g>
+    <path d="M26 46 V15 H38 V46 Z" fill="#d9d1bd" />
+    <path d="M24 15 V10 H27 V13 H30.5 V10 H33.5 V13 H37 V10 H40 V15 Z" fill="#efe8d6" />
+    <path d="M4 52 L13 42 L51 42 L60 52 L48 59 L16 59 Z" fill="#aea38a" />
+    <path d="M4 52 L13 42 L19 47 L16 59 Z" fill="#efe8d6" />
+    <path d="M32 10 V2" stroke="#3b3646" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M32 2.5 H44 L41 5.5 L44 8.5 H32 Z" fill="#c8423a" />
   </g>
 </svg>

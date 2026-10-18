@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Spice icon in the card art's style: an AI-written placeholder, see public/art/SOURCES.md. -->
-  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M36 18 Q58 18 54 38 Q48 56 14 58 Q6 58 12 52 Q30 42 32 26 Q32 18 36 18 Z" fill="#d8402e"/>
-    <path d="M34 20 Q30 8 40 4 L44 10 Q38 12 40 18 Z" fill="#4f9a5a"/>
+  <g>
+    <path d="M36 18 Q58 18 54 38 Q48 56 14 58 Q6 58 12 52 Q30 42 32 26 Q32 18 36 18 Z" fill="#d8402e" />
+    <path d="M34 20 Q30 8 40 4 L44 10 Q38 12 40 18 Z" fill="#4f9a5a" />
   </g>
-  <path d="M40 26 q8 2 8 10" fill="none" stroke="#ff9a7a" stroke-width="3" stroke-linecap="round"/>
+  <path d="M40 26 q8 2 8 10" fill="none" stroke="#ff9a7a" stroke-width="3" stroke-linecap="round" />
 </svg>

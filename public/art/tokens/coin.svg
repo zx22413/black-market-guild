@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Coins icon in the card art's style: an AI-written placeholder, see public/art/SOURCES.md. -->
-  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-    <ellipse cx="38" cy="44" rx="20" ry="9" fill="#c99a2e"/>
-    <path d="M18 38 V44 A20 9 0 0 0 58 44 V38" fill="#c99a2e"/>
-    <ellipse cx="38" cy="38" rx="20" ry="9" fill="#f2c94c"/>
-    <circle cx="24" cy="24" r="17" fill="#f2c94c"/>
+  <g>
+    <ellipse cx="38" cy="44" rx="20" ry="9" fill="#c99a2e" />
+    <path d="M18 38 V44 A20 9 0 0 0 58 44 V38" fill="#c99a2e" />
+    <ellipse cx="38" cy="38" rx="20" ry="9" fill="#f2c94c" />
+    <circle cx="24" cy="24" r="17" fill="#f2c94c" />
   </g>
-  <circle cx="24" cy="24" r="11" fill="none" stroke="#c99a2e" stroke-width="2.5"/>
-  <path d="M17 17 l5 -3" stroke="#fff8d2" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="24" cy="24" r="11" fill="none" stroke="#c99a2e" stroke-width="2.5" />
+  <path d="M17 17 l5 -3" stroke="#fff8d2" stroke-width="3" stroke-linecap="round" />
 </svg>

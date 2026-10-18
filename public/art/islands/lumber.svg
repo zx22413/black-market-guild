@@ -2,74 +2,73 @@
   <!-- Lumber Isle card art, by day: an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#5fb6d4"/><stop offset="0.6" stop-color="#9fd4e0"/><stop offset="1" stop-color="#e3f4ee"/>
+      <stop offset="0" stop-color="#5fb6d4" /><stop offset="0.6" stop-color="#9fd4e0" /><stop offset="1" stop-color="#e3f4ee" />
     </linearGradient>
     <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#3fb3b3"/><stop offset="1" stop-color="#1f7f88"/>
+      <stop offset="0" stop-color="#3fb3b3" /><stop offset="1" stop-color="#1f7f88" />
     </linearGradient>
   </defs>
-  <rect width="400" height="300" fill="url(#sky)"/>
-  <circle cx="60" cy="40" r="30" fill="#fffbe0" opacity="0.45"/>
-  <circle cx="60" cy="40" r="20" fill="#fff8d2"/>
-  <path d="M258 60 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/><path d="M264 58 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee"/>
-  <rect y="186" width="400" height="114" fill="url(#sea)"/>
-  <path d="M0 186 H400" stroke="#2a2238" stroke-width="2"/>
+  <rect width="400" height="300" fill="url(#sky)" />
+  <circle cx="60" cy="40" r="30" fill="#fffbe0" opacity="0.45" />
+  <circle cx="60" cy="40" r="20" fill="#fff8d2" />
+  <path d="M258 60 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" /><path d="M264 58 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee" />
+  <rect y="186" width="400" height="114" fill="url(#sea)" />
   <g fill="#e8fbf8" opacity="0.7">
-    <rect x="30" y="194" width="60" height="3" rx="1.5"/><rect x="42" y="202" width="36" height="3" rx="1.5"/><rect x="50" y="210" width="20" height="3" rx="1.5"/>
+    <rect x="30" y="194" width="60" height="3" rx="1.5" /><rect x="42" y="202" width="36" height="3" rx="1.5" /><rect x="50" y="210" width="20" height="3" rx="1.5" />
   </g>
   <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
-    <path d="M20 236 q8 -6 16 0 q8 6 16 0"/><path d="M110 268 q8 -6 16 0 q8 6 16 0"/><path d="M336 248 q8 -6 16 0 q8 6 16 0"/><path d="M40 286 q8 -6 16 0"/>
+    <path d="M20 236 q8 -6 16 0 q8 6 16 0" /><path d="M110 268 q8 -6 16 0 q8 6 16 0" /><path d="M336 248 q8 -6 16 0 q8 6 16 0" /><path d="M40 286 q8 -6 16 0" />
   </g>
-  <path d="M330 186 l14 -14 l10 6 l12 -4 l14 12 z" fill="#6f9aa6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/>
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
-    <path d="M64 300 L78.0 212 L120.0 184 L190.0 176 L274.0 178 L321.6 198 L344 300 Z" fill="#845442"/>
-    <path d="M78.0 212 L120.0 184 L148.0 212 L120.0 300 L64 300 Z" fill="#a9877b"/>
-    <path d="M148.0 212 L190.0 176 L226.39999999999998 202 L204.0 300 L120.0 300 Z" fill="#966e5e"/>
-    <path d="M274.0 178 L321.6 198 L344 300 L288.0 300 L296.4 226 Z" fill="#6a443b"/>
-    <path d="M106.0 190 L120.0 184 L190.0 176 L274.0 178 L304.79999999999995 190 L237.6 196 L176.0 194 L136.8 200 Z" fill="#547057"/>
+  <path d="M330 186 l14 -14 l10 6 l12 -4 l14 12 z" fill="#6f9aa6" />
+  <g>
+    <path d="M64 300 L78.0 212 L120.0 184 L190.0 176 L274.0 178 L321.6 198 L344 300 Z" fill="#845442" />
+    <path d="M78.0 212 L120.0 184 L148.0 212 L120.0 300 L64 300 Z" fill="#a9877b" />
+    <path d="M148.0 212 L190.0 176 L226.39999999999998 202 L204.0 300 L120.0 300 Z" fill="#966e5e" />
+    <path d="M274.0 178 L321.6 198 L344 300 L288.0 300 L296.4 226 Z" fill="#6a443b" />
+    <path d="M106.0 190 L120.0 184 L190.0 176 L274.0 178 L304.79999999999995 190 L237.6 196 L176.0 194 L136.8 200 Z" fill="#547057" />
   </g>
-  <path d="M176.0 194 L237.6 196 L304.79999999999995 190 L274.0 178 Z" fill="#485e4d"/>
-  <path d="M78.0 212 L120.0 184 L128.4 189 L89.2 216 L75.2 300 L64 300 Z" fill="#ffffff" opacity="0.3"/>
-  <g fill="none" stroke="#2a2238" stroke-width="1.8" stroke-linecap="round">
-    <path d="M92.0 238 l12 6 l6 14"/><path d="M170.4 234 l10 4"/><path d="M181.6 262 l-8 12"/>
-    <path d="M254.4 224 l-8 14 l4 10"/><path d="M310.4 248 l-6 10"/>
+  <path d="M176.0 194 L237.6 196 L304.79999999999995 190 L274.0 178 Z" fill="#485e4d" />
+  <path d="M78.0 212 L120.0 184 L128.4 189 L89.2 216 L75.2 300 L64 300 Z" fill="#ffffff" opacity="0.3" />
+  <g fill="none" stroke="#2a2238" stroke-width="1.8" stroke-linecap="round" stroke-opacity="0.28" stroke-linejoin="round">
+    <path d="M92.0 238 l12 6 l6 14" /><path d="M170.4 234 l10 4" /><path d="M181.6 262 l-8 12" />
+    <path d="M254.4 224 l-8 14 l4 10" /><path d="M310.4 248 l-6 10" />
   </g>
-  <g fill="#e8fbf8" stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
-    <path d="M50 300 q6 -12 16 -8 q6 -10 16 -4 q8 -6 14 4 v8 z"/>
-    <path d="M302.0 300 q4 -10 14 -8 q8 -10 18 -2 q10 -2 12 10 z"/>
+  <g fill="#e8fbf8">
+    <path d="M50 300 q6 -12 16 -8 q6 -10 16 -4 q8 -6 14 4 v8 z" />
+    <path d="M302.0 300 q4 -10 14 -8 q8 -10 18 -2 q10 -2 12 10 z" />
   </g>
-<g stroke="#2a2238" stroke-width="2" stroke-linejoin="round"><path d="M98 123.6 L117.2 162.0 L108.8 162.0 L122.0 186 L74.0 186 L87.2 162.0 L78.8 162.0 Z" fill="#2f6b4a"/><rect x="94.4" y="186" width="7.199999999999999" height="9.6" fill="#6b3f2a"/></g><path d="M98 123.6 L117.2 162.0 L108.8 162.0 L122.0 186 L98 186 Z" fill="#2a2238" opacity="0.15"/>
-<g stroke="#2a2238" stroke-width="2" stroke-linejoin="round"><path d="M126 102.0 L150.0 150.0 L139.5 150.0 L156.0 180 L96.0 180 L112.5 150.0 L102.0 150.0 Z" fill="#3a7a54"/><rect x="121.5" y="180" width="9.0" height="12.0" fill="#6b3f2a"/></g><path d="M126 102.0 L150.0 150.0 L139.5 150.0 L156.0 180 L126 180 Z" fill="#2a2238" opacity="0.15"/>
-<g stroke="#2a2238" stroke-width="2" stroke-linejoin="round"><path d="M150 136.0 L166.0 168.0 L159.0 168.0 L170.0 188 L130.0 188 L141.0 168.0 L134.0 168.0 Z" fill="#2f6b4a"/><rect x="147.0" y="188" width="6.0" height="8.0" fill="#6b3f2a"/></g><path d="M150 136.0 L166.0 168.0 L159.0 168.0 L170.0 188 L150 188 Z" fill="#2a2238" opacity="0.15"/>
+<g><path d="M98 123.6 L117.2 162.0 L108.8 162.0 L122.0 186 L74.0 186 L87.2 162.0 L78.8 162.0 Z" fill="#2f6b4a" /><rect x="94.4" y="186" width="7.199999999999999" height="9.6" fill="#6b3f2a" /></g><path d="M98 123.6 L117.2 162.0 L108.8 162.0 L122.0 186 L98 186 Z" fill="#2a2238" opacity="0.15" />
+<g><path d="M126 102.0 L150.0 150.0 L139.5 150.0 L156.0 180 L96.0 180 L112.5 150.0 L102.0 150.0 Z" fill="#3a7a54" /><rect x="121.5" y="180" width="9.0" height="12.0" fill="#6b3f2a" /></g><path d="M126 102.0 L150.0 150.0 L139.5 150.0 L156.0 180 L126 180 Z" fill="#2a2238" opacity="0.15" />
+<g><path d="M150 136.0 L166.0 168.0 L159.0 168.0 L170.0 188 L130.0 188 L141.0 168.0 L134.0 168.0 Z" fill="#2f6b4a" /><rect x="147.0" y="188" width="6.0" height="8.0" fill="#6b3f2a" /></g><path d="M150 136.0 L166.0 168.0 L159.0 168.0 L170.0 188 L150 188 Z" fill="#2a2238" opacity="0.15" />
   <!-- the paltrok: a wooden mill house with a long sawing shed, and its sails -->
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
-    <path d="M230 186 L230 150 L300 150 L300 186 Z" fill="#b07a4a"/>
-    <path d="M226 152 L265 132 L304 152 Z" fill="#7a4a2a"/>
-    <path d="M186 186 L190 102 L250 102 L254 186 Z" fill="#c48a52"/>
-    <path d="M180 106 L220 64 L260 106 Z" fill="#7a4a2a"/>
-    <rect x="212" y="150" width="16" height="36" fill="#5a3420"/>
+  <g>
+    <path d="M230 186 L230 150 L300 150 L300 186 Z" fill="#b07a4a" />
+    <path d="M226 152 L265 132 L304 152 Z" fill="#7a4a2a" />
+    <path d="M186 186 L190 102 L250 102 L254 186 Z" fill="#c48a52" />
+    <path d="M180 106 L220 64 L260 106 Z" fill="#7a4a2a" />
+    <rect x="212" y="150" width="16" height="36" fill="#5a3420" />
   </g>
-  <path d="M220 102 h30 l4 84 h-34 z" fill="#2a2238" opacity="0.15"/>
-  <g stroke="#2a2238" stroke-width="1.5"><path d="M196 120 h48 M195 136 h50 M194 152 h18"/></g>
+  <path d="M220 102 h30 l4 84 h-34 z" fill="#2a2238" opacity="0.15" />
+  <g><path d="M196 120 h48 M195 136 h50 M194 152 h18" stroke="#2a2238" stroke-width="1.5" stroke-opacity="0.28" stroke-linecap="round" stroke-linejoin="round" /></g>
   <!-- sails on a hub at the gable -->
-  <g transform="rotate(18 220 92)" stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
-    <rect x="216" y="18" width="8" height="148" fill="#5a3420"/>
-    <rect x="146" y="88" width="148" height="8" fill="#5a3420"/>
-    <rect x="224" y="22" width="22" height="64" fill="#f3e3c3"/>
-    <rect x="194" y="98" width="22" height="64" fill="#f3e3c3"/>
-    <rect x="150" y="66" width="64" height="22" fill="#f3e3c3"/>
-    <rect x="226" y="96" width="64" height="22" fill="#f3e3c3"/>
+  <g transform="rotate(18 220 92)">
+    <rect x="216" y="18" width="8" height="148" fill="#5a3420" />
+    <rect x="146" y="88" width="148" height="8" fill="#5a3420" />
+    <rect x="224" y="22" width="22" height="64" fill="#f3e3c3" />
+    <rect x="194" y="98" width="22" height="64" fill="#f3e3c3" />
+    <rect x="150" y="66" width="64" height="22" fill="#f3e3c3" />
+    <rect x="226" y="96" width="64" height="22" fill="#f3e3c3" />
   </g>
-  <g transform="rotate(18 220 92)" stroke="#2a2238" stroke-width="1.2" opacity="0.6">
-    <path d="M235 22 v64 M205 98 v64 M150 77 h64 M226 107 h64"/>
+  <g transform="rotate(18 220 92)" opacity="0.6">
+    <path d="M235 22 v64 M205 98 v64 M150 77 h64 M226 107 h64" stroke="#2a2238" stroke-width="1.2" stroke-opacity="0.28" stroke-linecap="round" stroke-linejoin="round" />
   </g>
-  <circle cx="220" cy="92" r="7" fill="#3b3646" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/>
+  <circle cx="220" cy="92" r="7" fill="#3b3646" />
   <!-- a stack of planks and a stump -->
-  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
-    <rect x="270" y="176" width="44" height="7" fill="#e0b27a"/><rect x="274" y="169" width="40" height="7" fill="#d29e64"/><rect x="278" y="162" width="32" height="7" fill="#e0b27a"/>
-    <path d="M318 186 v-10 h14 v10 z" fill="#a8744a"/><ellipse cx="325" cy="176" rx="7" ry="3" fill="#e8c08a"/>
+  <g>
+    <rect x="270" y="176" width="44" height="7" fill="#e0b27a" /><rect x="274" y="169" width="40" height="7" fill="#d29e64" /><rect x="278" y="162" width="32" height="7" fill="#e0b27a" />
+    <path d="M318 186 v-10 h14 v10 z" fill="#a8744a" /><ellipse cx="325" cy="176" rx="7" ry="3" fill="#e8c08a" />
   </g>
   <!-- logs floating toward the quay -->
-  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round"><rect x="40" y="222" width="40" height="9" rx="4.5" fill="#a8744a"/><rect x="58" y="236" width="34" height="9" rx="4.5" fill="#b8845a"/></g>
-  <g fill="none" stroke="#2a2238" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M300 40 q5 -5 8 0 q3 -5 8 0"/><path d="M322 54 q5 -5 8 0 q3 -5 8 0"/></g>
+  <g><rect x="40" y="222" width="40" height="9" rx="4.5" fill="#a8744a" /><rect x="58" y="236" width="34" height="9" rx="4.5" fill="#b8845a" /></g>
+  <g fill="none" stroke="#3b3646" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M300 40 q5 -5 8 0 q3 -5 8 0" /><path d="M322 54 q5 -5 8 0 q3 -5 8 0" /></g>
 </svg>

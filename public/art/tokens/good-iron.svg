@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Iron icon in the card art's style: an AI-written placeholder, see public/art/SOURCES.md. -->
-  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M6 54 L12 42 H34 L40 54 Z" fill="#7d8496"/>
-    <path d="M28 54 L34 42 H54 L60 54 Z" fill="#9aa1b2"/>
-    <path d="M16 40 L22 28 H44 L50 40 Z" fill="#b4bac8"/>
+  <g>
+    <path d="M6 54 L12 42 H34 L40 54 Z" fill="#7d8496" />
+    <path d="M28 54 L34 42 H54 L60 54 Z" fill="#9aa1b2" />
+    <path d="M16 40 L22 28 H44 L50 40 Z" fill="#b4bac8" />
   </g>
-  <path d="M24 30 H42 M14 44 H32 M36 44 H52" stroke="#e8ecf2" stroke-width="2" stroke-linecap="round"/>
+  <path d="M24 30 H42 M14 44 H32 M36 44 H52" stroke="#e8ecf2" stroke-width="2" stroke-linecap="round" />
 </svg>

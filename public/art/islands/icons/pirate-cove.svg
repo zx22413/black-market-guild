@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Pirate Cove icon: the card art's landmark, simplified; an AI-written placeholder, see public/art/SOURCES.md. -->
   <g transform="rotate(10 32 46)">
-    <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-      <path d="M4 44 Q8 58 26 58 L50 57 Q60 52 61 42 Z" fill="#7a4a2a"/>
-      <path d="M4 44 L61 42 L60 37 L6 39 Z" fill="#a8744a"/>
-      <path d="M30 40 V6"/>
-      <path d="M30 6 H48 L44 11 L48 16 H30 Z" fill="#1f1a26"/>
+    <g>
+      <path d="M4 44 Q8 58 26 58 L50 57 Q60 52 61 42 Z" fill="#7a4a2a" />
+      <path d="M4 44 L61 42 L60 37 L6 39 Z" fill="#a8744a" />
+      <path d="M30 40 V6" stroke="#3b3646" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M30 6 H48 L44 11 L48 16 H30 Z" fill="#1f1a26" />
     </g>
-    <circle cx="38" cy="11" r="2.4" fill="#f4efe6"/>
-    <g fill="#2a2238"><circle cx="18" cy="49" r="2"/><circle cx="29" cy="49" r="2"/><circle cx="40" cy="48.5" r="2"/></g>
+    <circle cx="38" cy="11" r="2.4" fill="#f4efe6" />
+    <g fill="#2a2238"><circle cx="18" cy="49" r="2" /><circle cx="29" cy="49" r="2" /><circle cx="40" cy="48.5" r="2" /></g>
   </g>
 </svg>

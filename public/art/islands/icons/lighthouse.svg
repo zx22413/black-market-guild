@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Lighthouse Isle icon: the card art's landmark, simplified; an AI-written placeholder, see public/art/SOURCES.md. -->
-  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M22 59 L27 21 L37 21 L42 59 Z" fill="#f4efe6"/>
-    <path d="M25.6 31 L38.4 31 L39.2 38 L24.8 38 Z M24 45 L40 45 L40.9 52 L23.1 52 Z" fill="#2a2238"/>
-    <rect x="21" y="17" width="22" height="5" fill="#3b3646"/>
-    <rect x="26" y="8" width="12" height="9" fill="#ffe08a"/>
-    <path d="M23 8 L32 1.5 L41 8 Z" fill="#c8423a"/>
+  <g>
+    <path d="M22 59 L27 21 L37 21 L42 59 Z" fill="#f4efe6" />
+    <path d="M25.6 31 L38.4 31 L39.2 38 L24.8 38 Z M24 45 L40 45 L40.9 52 L23.1 52 Z" fill="#2a2238" />
+    <rect x="21" y="17" width="22" height="5" fill="#3b3646" />
+    <rect x="26" y="8" width="12" height="9" fill="#ffe08a" />
+    <path d="M23 8 L32 1.5 L41 8 Z" fill="#c8423a" />
   </g>
 </svg>

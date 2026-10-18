@@ -2,77 +2,76 @@
   <!-- Fortress Isle card art, by day: an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#5fb6d4"/><stop offset="0.6" stop-color="#9fd4e0"/><stop offset="1" stop-color="#e3f4ee"/>
+      <stop offset="0" stop-color="#5fb6d4" /><stop offset="0.6" stop-color="#9fd4e0" /><stop offset="1" stop-color="#e3f4ee" />
     </linearGradient>
     <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#3fb3b3"/><stop offset="1" stop-color="#1f7f88"/>
+      <stop offset="0" stop-color="#3fb3b3" /><stop offset="1" stop-color="#1f7f88" />
     </linearGradient>
   </defs>
-  <rect width="400" height="300" fill="url(#sky)"/>
-  <circle cx="64" cy="44" r="30" fill="#fffbe0" opacity="0.45"/>
-  <circle cx="64" cy="44" r="20" fill="#fff8d2"/>
-  <path d="M248 70 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/><path d="M254 68 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee"/>
-  <rect y="186" width="400" height="114" fill="url(#sea)"/>
-  <path d="M0 186 H400" stroke="#2a2238" stroke-width="2"/>
+  <rect width="400" height="300" fill="url(#sky)" />
+  <circle cx="64" cy="44" r="30" fill="#fffbe0" opacity="0.45" />
+  <circle cx="64" cy="44" r="20" fill="#fff8d2" />
+  <path d="M248 70 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" /><path d="M254 68 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee" />
+  <rect y="186" width="400" height="114" fill="url(#sea)" />
   <g fill="#e8fbf8" opacity="0.7">
-    <rect x="34" y="194" width="60" height="3" rx="1.5"/><rect x="46" y="202" width="36" height="3" rx="1.5"/><rect x="54" y="210" width="20" height="3" rx="1.5"/>
+    <rect x="34" y="194" width="60" height="3" rx="1.5" /><rect x="46" y="202" width="36" height="3" rx="1.5" /><rect x="54" y="210" width="20" height="3" rx="1.5" />
   </g>
   <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
-    <path d="M20 236 q8 -6 16 0 q8 6 16 0"/><path d="M110 268 q8 -6 16 0 q8 6 16 0"/><path d="M336 248 q8 -6 16 0 q8 6 16 0"/><path d="M40 286 q8 -6 16 0"/>
+    <path d="M20 236 q8 -6 16 0 q8 6 16 0" /><path d="M110 268 q8 -6 16 0 q8 6 16 0" /><path d="M336 248 q8 -6 16 0 q8 6 16 0" /><path d="M40 286 q8 -6 16 0" />
   </g>
-  <path d="M330 186 l14 -14 l10 6 l12 -4 l14 12 z" fill="#6f9aa6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/>
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
-    <path d="M70 300 L83.5 204 L124.0 176 L191.5 168 L272.5 170 L318.4 190 L340 300 Z" fill="#797e97"/>
-    <path d="M83.5 204 L124.0 176 L151.0 204 L124.0 300 L70 300 Z" fill="#a1a5b6"/>
-    <path d="M151.0 204 L191.5 168 L226.6 194 L205.0 300 L124.0 300 Z" fill="#8d91a7"/>
-    <path d="M272.5 170 L318.4 190 L340 300 L286.0 300 L294.1 218 Z" fill="#61647b"/>
-    <path d="M110.5 182 L124.0 176 L191.5 168 L272.5 170 L302.2 182 L237.4 188 L178.0 186 L140.2 192 Z" fill="#7e9e7c"/>
+  <path d="M330 186 l14 -14 l10 6 l12 -4 l14 12 z" fill="#6f9aa6" />
+  <g>
+    <path d="M70 300 L83.5 204 L124.0 176 L191.5 168 L272.5 170 L318.4 190 L340 300 Z" fill="#797e97" />
+    <path d="M83.5 204 L124.0 176 L151.0 204 L124.0 300 L70 300 Z" fill="#a1a5b6" />
+    <path d="M151.0 204 L191.5 168 L226.6 194 L205.0 300 L124.0 300 Z" fill="#8d91a7" />
+    <path d="M272.5 170 L318.4 190 L340 300 L286.0 300 L294.1 218 Z" fill="#61647b" />
+    <path d="M110.5 182 L124.0 176 L191.5 168 L272.5 170 L302.2 182 L237.4 188 L178.0 186 L140.2 192 Z" fill="#7e9e7c" />
   </g>
-  <path d="M178.0 186 L237.4 188 L302.2 182 L272.5 170 Z" fill="#6a826b"/>
-  <path d="M83.5 204 L124.0 176 L132.1 181 L94.3 208 L80.8 300 L70 300 Z" fill="#ffffff" opacity="0.3"/>
-  <g fill="none" stroke="#2a2238" stroke-width="1.8" stroke-linecap="round">
-    <path d="M97.0 230 l12 6 l6 14"/><path d="M172.6 226 l10 4"/><path d="M183.39999999999998 254 l-8 12"/>
-    <path d="M253.60000000000002 216 l-8 14 l4 10"/><path d="M307.6 240 l-6 10"/>
+  <path d="M178.0 186 L237.4 188 L302.2 182 L272.5 170 Z" fill="#6a826b" />
+  <path d="M83.5 204 L124.0 176 L132.1 181 L94.3 208 L80.8 300 L70 300 Z" fill="#ffffff" opacity="0.3" />
+  <g fill="none" stroke="#2a2238" stroke-width="1.8" stroke-linecap="round" stroke-opacity="0.28" stroke-linejoin="round">
+    <path d="M97.0 230 l12 6 l6 14" /><path d="M172.6 226 l10 4" /><path d="M183.39999999999998 254 l-8 12" />
+    <path d="M253.60000000000002 216 l-8 14 l4 10" /><path d="M307.6 240 l-6 10" />
   </g>
-  <g fill="#e8fbf8" stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
-    <path d="M56 300 q6 -12 16 -8 q6 -10 16 -4 q8 -6 14 4 v8 z"/>
-    <path d="M299.5 300 q4 -10 14 -8 q8 -10 18 -2 q10 -2 12 10 z"/>
+  <g fill="#e8fbf8">
+    <path d="M56 300 q6 -12 16 -8 q6 -10 16 -4 q8 -6 14 4 v8 z" />
+    <path d="M299.5 300 q4 -10 14 -8 q8 -10 18 -2 q10 -2 12 10 z" />
   </g>
   <!-- the star fort: two bastions forward, curtain walls between -->
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
-    <path d="M110 176 L150 152 L250 152 L300 176 L272 188 L206 182 L140 188 Z" fill="#aea38a"/>
-    <path d="M110 176 L150 152 L168 164 L140 188 Z" fill="#efe8d6"/>
-    <path d="M300 176 L250 152 L232 164 L272 188 Z" fill="#d9d1bd"/>
-    <path d="M168 164 L232 164 L250 152 L150 152 Z" fill="#d9d1bd"/>
-    <path d="M150 152 v-10 h100 v10 Z" fill="#efe8d6"/>
+  <g>
+    <path d="M110 176 L150 152 L250 152 L300 176 L272 188 L206 182 L140 188 Z" fill="#aea38a" />
+    <path d="M110 176 L150 152 L168 164 L140 188 Z" fill="#efe8d6" />
+    <path d="M300 176 L250 152 L232 164 L272 188 Z" fill="#d9d1bd" />
+    <path d="M168 164 L232 164 L250 152 L150 152 Z" fill="#d9d1bd" />
+    <path d="M150 152 v-10 h100 v10 Z" fill="#efe8d6" />
   </g>
   <g fill="#2a2238">
-    <rect x="152" y="138" width="8" height="5"/><rect x="168" y="138" width="8" height="5"/><rect x="184" y="138" width="8" height="5"/>
-    <rect x="208" y="138" width="8" height="5"/><rect x="224" y="138" width="8" height="5"/><rect x="240" y="138" width="8" height="5"/>
+    <rect x="152" y="138" width="8" height="5" /><rect x="168" y="138" width="8" height="5" /><rect x="184" y="138" width="8" height="5" />
+    <rect x="208" y="138" width="8" height="5" /><rect x="224" y="138" width="8" height="5" /><rect x="240" y="138" width="8" height="5" />
   </g>
   <!-- the keep -->
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
-    <rect x="186" y="74" width="32" height="70" fill="#d9d1bd"/>
-    <rect x="182" y="66" width="40" height="10" fill="#efe8d6"/>
-    <rect x="196" y="122" width="12" height="22" fill="#6b3f2a"/>
+  <g>
+    <rect x="186" y="74" width="32" height="70" fill="#d9d1bd" />
+    <rect x="182" y="66" width="40" height="10" fill="#efe8d6" />
+    <rect x="196" y="122" width="12" height="22" fill="#6b3f2a" />
   </g>
-  <path d="M202 74 h16 v70 h-16 z" fill="#2a2238" opacity="0.15"/>
-  <g fill="#2a2238"><rect x="184" y="60" width="7" height="6"/><rect x="198" y="60" width="7" height="6"/><rect x="212" y="60" width="7" height="6"/></g>
-  <rect x="196" y="92" width="6" height="12" fill="#2a2238"/>
-  <path d="M202 60 v-34" stroke="#2a2238" stroke-width="2.5"/>
-  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round"><path d="M202 28 h30 l-6 7 l6 7 h-30 z" fill="#c8423a"/></g>
-  <path d="M202 35 h27" stroke="#f4efe6" stroke-width="3"/>
+  <path d="M202 74 h16 v70 h-16 z" fill="#2a2238" opacity="0.15" />
+  <g fill="#2a2238"><rect x="184" y="60" width="7" height="6" /><rect x="198" y="60" width="7" height="6" /><rect x="212" y="60" width="7" height="6" /></g>
+  <rect x="196" y="92" width="6" height="12" fill="#2a2238" />
+  <path d="M202 60 v-34" stroke="#3b3646" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+  <g><path d="M202 28 h30 l-6 7 l6 7 h-30 z" fill="#c8423a" /></g>
+  <path d="M202 35 h27" stroke="#f4efe6" stroke-width="3" />
   <!-- cannons on the bastions, a puff of smoke -->
-  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
-    <path d="M118 172 l-16 -6 l2 -5 l16 6 z" fill="#3b3646"/>
-    <path d="M292 172 l16 -6 l-2 -5 l-16 6 z" fill="#3b3646"/>
-    <path d="M226 160 l-4 -10 l5 -2 l4 10 z" fill="#3b3646"/>
+  <g>
+    <path d="M118 172 l-16 -6 l2 -5 l16 6 z" fill="#3b3646" />
+    <path d="M292 172 l16 -6 l-2 -5 l-16 6 z" fill="#3b3646" />
+    <path d="M226 160 l-4 -10 l5 -2 l4 10 z" fill="#3b3646" />
   </g>
-  <g fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"><path d="M318 158 q2 -10 12 -8 q6 -8 14 0 q10 0 8 10 q-4 6 -12 4 q-6 6 -14 2 q-10 2 -8 -8 z"/></g>
+  <g fill="#ffffff"><path d="M318 158 q2 -10 12 -8 q6 -8 14 0 q10 0 8 10 q-4 6 -12 4 q-6 6 -14 2 q-10 2 -8 -8 z" /></g>
   <!-- the guardhouse -->
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round"><rect x="250" y="160" width="26" height="18" fill="#f3e3c3"/><path d="M246 162 L263 148 L280 162 Z" fill="#5b6a8a"/></g>
-  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
-    <path d="M36 230 h34 l-6 8 h-22 z" fill="#8a5a3a"/><path d="M52 230 v-24 l14 20 z" fill="#f3e3c3"/>
+  <g><rect x="250" y="160" width="26" height="18" fill="#f3e3c3" /><path d="M246 162 L263 148 L280 162 Z" fill="#5b6a8a" /></g>
+  <g>
+    <path d="M36 230 h34 l-6 8 h-22 z" fill="#8a5a3a" /><path d="M52 230 v-24 l14 20 z" fill="#f3e3c3" />
   </g>
-  <g fill="none" stroke="#2a2238" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M300 92 q5 -5 8 0 q3 -5 8 0"/><path d="M320 108 q5 -5 8 0 q3 -5 8 0"/></g>
+  <g fill="none" stroke="#3b3646" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M300 92 q5 -5 8 0 q3 -5 8 0" /><path d="M320 108 q5 -5 8 0 q3 -5 8 0" /></g>
 </svg>

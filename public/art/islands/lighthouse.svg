@@ -1,122 +1,49 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
-  <!-- Lighthouse Isle card art, by day: an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
+  <!-- Lighthouse Isle card art (no outlines): an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
   <defs>
-    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#5fb6d4"/>
-      <stop offset="0.6" stop-color="#9fd4e0"/>
-      <stop offset="1" stop-color="#e3f4ee"/>
-    </linearGradient>
-    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#3fb3b3"/>
-      <stop offset="1" stop-color="#1f7f88"/>
-    </linearGradient>
-    <linearGradient id="beam" x1="1" y1="0" x2="0" y2="0">
-      <stop offset="0" stop-color="#fffbe0" stop-opacity="0.55"/>
-      <stop offset="1" stop-color="#fffbe0" stop-opacity="0"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#fffbe0" stop-opacity="0.7"/>
-      <stop offset="1" stop-color="#fff6c8" stop-opacity="0"/>
-    </radialGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#62b6d6"/><stop offset="1" stop-color="#dff2ef"/></linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fb0b0"/><stop offset="1" stop-color="#1d7a84"/></linearGradient>
   </defs>
-
-  <!-- sky, sun and clouds -->
   <rect width="400" height="300" fill="url(#sky)"/>
-  <circle cx="330" cy="40" r="30" fill="#fffbe0" opacity="0.45"/>
-  <circle cx="330" cy="40" r="20" fill="#fff8d2"/>
-  <g fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
-    <path d="M18 96 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z"/>
-    <path d="M250 98 q12 -14 30 -6 q12 -14 30 -2 q22 0 20 16 z"/>
-  </g>
-  <g fill="#cfe6ee">
-    <path d="M22 94 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z"/>
-    <path d="M252 110 q12 -6 26 -2 q14 -6 28 0 q12 -2 22 2 l2 2 h-80 z"/>
-  </g>
-
-  <!-- the beam sweeping out to sea -->
-  <path d="M232 51 L0 14 L0 104 Z" fill="url(#beam)"/>
-  <circle cx="232" cy="51" r="38" fill="url(#glow)"/>
-
-  <!-- sea -->
   <rect y="186" width="400" height="114" fill="url(#sea)"/>
-  <path d="M0 186 H400" stroke="#2a2238" stroke-width="2"/>
-  <g fill="#e8fbf8" opacity="0.7">
-    <rect x="300" y="194" width="60" height="3" rx="1.5"/>
-    <rect x="312" y="202" width="36" height="3" rx="1.5"/>
-    <rect x="320" y="210" width="20" height="3" rx="1.5"/>
-  </g>
-  <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
-    <path d="M20 236 q8 -6 16 0 q8 6 16 0"/>
-    <path d="M110 262 q8 -6 16 0 q8 6 16 0"/>
-    <path d="M330 244 q8 -6 16 0 q8 6 16 0"/>
-    <path d="M44 284 q8 -6 16 0"/>
-  </g>
+  <circle cx="330" cy="46" r="34" fill="#fffbe0" opacity="0.35"/><circle cx="330" cy="46" r="22" fill="#fff6cc"/>
+  <g transform="translate(26 96) scale(1.0)"><path d="M0 0 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff"/><path d="M4 0 q16 -6 30 -2 q16 -6 30 -1 q14 -2 22 3 z" fill="#d4ebf0"/></g>
+  <g transform="translate(232 108) scale(0.8)"><path d="M0 0 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff"/><path d="M4 0 q16 -6 30 -2 q16 -6 30 -1 q14 -2 22 3 z" fill="#d4ebf0"/></g>
+  <circle cx="232" cy="64" r="34" fill="#fffbe0" opacity="0.3"/>
+  <path d="M232 60 L0 22 L0 104 Z" fill="#fffbe0" opacity="0.35"/>
+  <g fill="#e8fbf8" opacity="0.75"><rect x="300" y="194" width="60" height="3" rx="1.5"/><rect x="312" y="202" width="36" height="3" rx="1.5"/></g>
+  <g fill="none" stroke="#a8e6e0" stroke-width="3" stroke-linecap="round"><path d="M20 236 q8 -5 16 0 q8 5 16 0"/><path d="M110 268 q8 -5 16 0 q8 5 16 0"/><path d="M336 248 q8 -5 16 0 q8 5 16 0"/></g>
   <!-- a far rock -->
-  <path d="M330 186 l14 -14 l10 6 l12 -4 l14 12 z" fill="#6f9aa6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/>
-
-  <!-- the cliff -->
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
-    <path d="M118 300 L130 214 L162 186 L214 178 L272 182 L306 204 L330 300 Z" fill="#9a93ae"/>
-    <path d="M130 214 L162 186 L184 214 L160 300 L118 300 Z" fill="#c9c3d6"/>
-    <path d="M272 182 L306 204 L330 300 L286 300 L292 232 Z" fill="#6c6684"/>
-    <path d="M184 214 L214 178 L240 204 L222 300 L160 300 Z" fill="#b2abc4"/>
-    <path d="M150 196 L162 186 L214 178 L272 182 L290 194 L250 200 L206 198 L178 204 Z" fill="#7fb069"/>
-  </g>
-  <path d="M206 198 L250 200 L290 194 L272 182 Z" fill="#5a8a4e"/>
-  <!-- sunset rim light on the cliff's west faces, and cracks -->
-  <path d="M130 214 L162 186 L168 192 L138 218 L126 300 L118 300 Z" fill="#ffffff" opacity="0.35"/>
-  <g fill="none" stroke="#2a2238" stroke-width="1.8" stroke-linecap="round">
-    <path d="M140 240 l12 6 l6 14"/>
-    <path d="M196 236 l10 4"/>
-    <path d="M204 262 l-8 12"/>
-    <path d="M262 226 l-8 14 l4 10"/>
-    <path d="M300 250 l-6 10"/>
-  </g>
-  <path d="M286 300 L292 232 L272 182 L280 186 L300 236 L298 300 Z" fill="#2a2238" opacity="0.18"/>
-  <!-- surf at the foot of the cliff -->
-  <g fill="#e8fbf8" stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
-    <path d="M104 300 q6 -12 16 -8 q6 -10 16 -4 q8 -6 14 4 v8 z"/>
-    <path d="M300 300 q4 -10 14 -8 q8 -10 18 -2 q10 -2 12 10 z"/>
-  </g>
-
+  <path d="M330 186 l14 -14 l10 6 l12 -4 l14 12 z" fill="#5f8f9c"/>
+  <!-- the cliff: light, mid and shadow faces, no outlines -->
+  <path d="M118 300 L130 214 L162 186 L214 178 L272 182 L306 204 L330 300 Z" fill="#a49dbc"/>
+  <path d="M130 214 L162 186 L184 214 L160 300 L118 300 Z" fill="#d5d0e2"/>
+  <path d="M184 214 L214 178 L240 204 L222 300 L160 300 Z" fill="#bcb5d0"/>
+  <path d="M272 182 L306 204 L330 300 L286 300 L292 232 Z" fill="#7a7396"/>
+  <path d="M240 204 L272 182 L292 232 L286 300 L222 300 Z" fill="#938cb0"/>
+  <path d="M150 196 L162 186 L214 178 L272 182 L290 194 L250 200 L206 198 L178 204 Z" fill="#6fb36a"/>
+  <path d="M206 198 L250 200 L290 194 L272 182 Z" fill="#4f9256"/>
+  <!-- surf at the foot -->
+  <path d="M104 300 q6 -12 16 -8 q6 -10 16 -4 q8 -6 14 4 v8 z" fill="#e8fbf8"/>
+  <path d="M300 300 q4 -10 14 -8 q8 -10 18 -2 q10 -2 12 10 z" fill="#e8fbf8"/>
   <!-- keeper's house -->
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
-    <rect x="172" y="164" width="34" height="24" fill="#f3e3c3"/>
-    <path d="M166 166 L189 146 L212 166 Z" fill="#c8423a"/>
-    <rect x="183" y="172" width="10" height="16" fill="#6b3f2a"/>
-  </g>
-  <rect x="198" y="168" width="8" height="20" fill="#d9c3a0"/>
-
+  <rect x="172" y="164" width="34" height="24" fill="#f6ead0"/><rect x="192" y="164" width="14" height="24" fill="#dccbaa"/>
+  <path d="M166 166 L189 146 L212 166 Z" fill="#d04a3e"/><path d="M189 146 L212 166 H189 Z" fill="#a8372e"/>
+  <rect x="180" y="172" width="9" height="16" fill="#6b3f2a"/>
+  <!-- the tower: a lit side and a shadow side, bands in two darks -->
   <g transform="translate(232 184) scale(1.12) translate(-232 -184)">
-  <!-- the tower -->
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
-    <path d="M214 184 L222 82 L242 82 L250 184 Z" fill="#f4efe6"/>
-    <path d="M219 140 L245 140 L246.6 158 L217.4 158 Z" fill="#2d2a33"/>
-    <path d="M221.5 104 L242.5 104 L243.8 120 L220.2 120 Z" fill="#2d2a33"/>
+    <path d="M214 184 L222 82 L232 82 L232 184 Z" fill="#f7f3ea"/>
+    <path d="M232 82 L242 82 L250 184 L232 184 Z" fill="#d6cdc0"/>
+    <path d="M219 140 L232 140 L232 158 L217.4 158 Z M221.5 104 L232 104 L232 120 L220.2 120 Z" fill="#34303c"/>
+    <path d="M232 140 L245 140 L246.6 158 L232 158 Z M232 104 L242.5 104 L243.8 120 L232 120 Z" fill="#22202a"/>
+    <rect x="212" y="75" width="40" height="9" fill="#3b3646"/>
+    <rect x="221" y="54" width="22" height="21" fill="#ffe08a"/><rect x="232" y="54" width="11" height="21" fill="#f2c95e"/>
+    <path d="M216 56 L232 36 L248 56 Z" fill="#d04a3e"/><path d="M232 36 L248 56 H232 Z" fill="#a8372e"/>
+    <rect x="231" y="28" width="2.5" height="9" fill="#3b3646"/>
   </g>
-  <path d="M232 82 L242 82 L250 184 L232 184 Z" fill="#2a2238" opacity="0.18"/>
-  <!-- gallery, lantern and roof -->
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
-    <rect x="214" y="76" width="36" height="8" fill="#3b3646"/>
-    <rect x="221" y="56" width="22" height="20" fill="#ffe08a"/>
-    <path d="M218 56 L232 38 L246 56 Z" fill="#c8423a"/>
-  </g>
-  <path d="M232 46 l5 10 h-10 z" fill="#fff6c8"/>
-  <g stroke="#2a2238" stroke-width="1.5">
-    <path d="M216 76 v-6 M222 76 v-6 M228 76 v-6 M236 76 v-6 M242 76 v-6 M248 76 v-6 M214 70 H250"/>
-    <path d="M228 56 v20 M236 56 v20"/>
-  </g>
-  <path d="M232 38 v-8" stroke="#2a2238" stroke-width="2.5"/>
-  </g>
-
   <!-- gulls and a boat -->
-  <g fill="none" stroke="#2a2238" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M286 104 q6 -6 10 0 q4 -6 10 0"/>
-    <path d="M312 122 q5 -5 8 0 q3 -5 8 0"/>
-    <path d="M170 110 q5 -5 8 0 q3 -5 8 0"/>
+  <g fill="none" stroke="#3b4a5c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M286 106 q6 -6 10 0 q4 -6 10 0"/><path d="M160 112 q5 -5 8 0 q3 -5 8 0"/>
   </g>
-  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
-    <path d="M44 226 h34 l-6 8 h-22 z" fill="#8a5a3a"/>
-    <path d="M60 226 v-24 l14 20 z" fill="#f3e3c3"/>
-  </g>
+  <path d="M44 226 h34 l-6 8 h-22 z" fill="#8a5a3a"/><path d="M60 226 v-24 l14 20 z" fill="#f6ead0"/><path d="M60 226 v-24 l-8 20 z" fill="#dccbaa"/>
 </svg>

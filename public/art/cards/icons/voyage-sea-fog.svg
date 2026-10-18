@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Sea Fog icon: the card art's main object, simplified; an AI-written placeholder, see public/art/SOURCES.md. -->
-  <g fill="none" stroke="#2a2238" stroke-width="8" stroke-linecap="round"><path d="M6 16 H44 M14 30 H58 M6 44 H40 M18 56 H50"/></g>
-  <g fill="none" stroke="#e6ecec" stroke-width="4.5" stroke-linecap="round"><path d="M6 16 H44 M14 30 H58 M6 44 H40 M18 56 H50"/></g>
+  <g fill="none" stroke="#3b3646" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16 H44 M14 30 H58 M6 44 H40 M18 56 H50" /></g>
+  <g fill="none" stroke="#e6ecec" stroke-width="4.5" stroke-linecap="round"><path d="M6 16 H44 M14 30 H58 M6 44 H40 M18 56 H50" /></g>
 </svg>

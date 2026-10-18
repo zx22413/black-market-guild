@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Wood icon in the card art's style: an AI-written placeholder, see public/art/SOURCES.md. -->
-  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M10 22 L46 8 Q58 6 60 18 Q62 30 50 34 L14 48 Z" fill="#b8845a"/>
-    <ellipse cx="13" cy="35" rx="9" ry="13" transform="rotate(-22 13 35)" fill="#e8c08a"/>
+  <g>
+    <path d="M10 22 L46 8 Q58 6 60 18 Q62 30 50 34 L14 48 Z" fill="#b8845a" />
+    <ellipse cx="13" cy="35" rx="9" ry="13" transform="rotate(-22 13 35)" fill="#e8c08a" />
   </g>
-  <ellipse cx="13" cy="35" rx="4" ry="6" transform="rotate(-22 13 35)" fill="none" stroke="#a8744a" stroke-width="2"/>
-  <path d="M26 24 L50 14 M30 34 L52 25" stroke="#8a5a3a" stroke-width="2" stroke-linecap="round"/>
-  <path d="M40 30 l6 12 l6 -2" fill="none" stroke="#2a2238" stroke-width="3" stroke-linejoin="round"/>
-  <path d="M46 42 q6 -4 8 2 q-2 6 -8 2" fill="#6fae5a" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+  <ellipse cx="13" cy="35" rx="4" ry="6" transform="rotate(-22 13 35)" fill="none" stroke="#a8744a" stroke-width="2" />
+  <path d="M26 24 L50 14 M30 34 L52 25" stroke="#8a5a3a" stroke-width="2" stroke-linecap="round" />
+  <path d="M40 30 l6 12 l6 -2" fill="none" stroke="#3b3646" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+  <path d="M46 42 q6 -4 8 2 q-2 6 -8 2" fill="#6fae5a" />
 </svg>

@@ -1,10 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Ship icon in the card art's style: an AI-written placeholder, see public/art/SOURCES.md. -->
-  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-    <rect x="30" y="4" width="4" height="42" fill="#5a3420"/>
-    <path d="M12 12 Q32 18 52 12 Q48 26 52 38 Q32 44 12 38 Q16 26 12 12 Z" fill="#f4efe6"/>
-    <path d="M4 44 H60 L54 56 Q32 62 10 56 Z" fill="#8a5a3a"/>
+  <g>
+    <rect x="30" y="4" width="4" height="42" fill="#5a3420" />
+    <path d="M12 12 Q32 18 52 12 Q48 26 52 38 Q32 44 12 38 Q16 26 12 12 Z" fill="#f4efe6" />
+  <path d="M32 15.6 Q42 15 52 12 Q48 26 52 38 Q42 41 32 41.6 Q36 28 32 15.6 Z" fill="#cdbf9f" />
+    <path d="M4 44 H60 L54 56 Q32 62 10 56 Z" fill="#8a5a3a" />
   </g>
-  <path d="M34 4 h12 l-3 4 l3 4 h-12" fill="#c8423a" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-  <path d="M6 44 H58" stroke="#a8744a" stroke-width="2"/>
+  <path d="M34 4 h12 l-3 4 l3 4 h-12" fill="#c8423a" />
+  <path d="M6 44 H58" stroke="#a8744a" stroke-width="2" />
 </svg>

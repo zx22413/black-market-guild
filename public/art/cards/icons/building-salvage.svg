@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Salvage Company icon: the card art's main object, simplified; an AI-written placeholder, see public/art/SOURCES.md. -->
-  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-    <circle cx="32" cy="28" r="22" fill="#d9a441"/>
-    <path d="M12 46 H52 L56 58 H8 Z" fill="#b07a2a"/>
+  <g>
+    <circle cx="32" cy="28" r="22" fill="#d9a441" />
+    <path d="M12 46 H52 L56 58 H8 Z" fill="#b07a2a" />
   </g>
-  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="28" r="10" fill="#9fd4e0"/><circle cx="14" cy="26" r="5" fill="#9fd4e0"/><circle cx="50" cy="26" r="5" fill="#9fd4e0"/></g>
-  <path d="M27 24 l4 -3" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
-  <g fill="#2a2238"><circle cx="16" cy="52" r="1.8"/><circle cx="32" cy="53" r="1.8"/><circle cx="48" cy="52" r="1.8"/></g>
+  <g><circle cx="32" cy="28" r="10" fill="#9fd4e0" /><circle cx="14" cy="26" r="5" fill="#9fd4e0" /><circle cx="50" cy="26" r="5" fill="#9fd4e0" /></g>
+  <path d="M27 24 l4 -3" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" />
+  <g fill="#2a2238"><circle cx="16" cy="52" r="1.8" /><circle cx="32" cy="53" r="1.8" /><circle cx="48" cy="52" r="1.8" /></g>
 </svg>

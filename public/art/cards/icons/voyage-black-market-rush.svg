@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Black-Market Rush icon: the card art's main object, simplified; an AI-written placeholder, see public/art/SOURCES.md. -->
-  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M12 60 Q2 42 16 30 L22 26 L42 26 L48 30 Q62 42 52 60 Z" fill="#5a3a7a"/>
-    <path d="M22 26 L18 16 L28 20 L32 12 L36 20 L46 16 L42 26 Z" fill="#7a5a9a"/>
+  <g>
+    <path d="M12 60 Q2 42 16 30 L22 26 L42 26 L48 30 Q62 42 52 60 Z" fill="#5a3a7a" />
+    <path d="M22 26 L18 16 L28 20 L32 12 L36 20 L46 16 L42 26 Z" fill="#7a5a9a" />
   </g>
-  <path d="M21 27 H43" stroke="#e0b84a" stroke-width="3.5" stroke-linecap="round"/>
-  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><circle cx="14" cy="10" r="6" fill="#f2c94c"/><circle cx="52" cy="8" r="6" fill="#f2c94c"/><circle cx="32" cy="44" r="8" fill="#f2c94c"/></g>
+  <path d="M21 27 H43" stroke="#e0b84a" stroke-width="3.5" stroke-linecap="round" />
+  <g><circle cx="14" cy="10" r="6" fill="#f2c94c" /><circle cx="52" cy="8" r="6" fill="#f2c94c" /><circle cx="32" cy="44" r="8" fill="#f2c94c" /></g>
 </svg>

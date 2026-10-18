@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Smuggler Port icon: the card art's landmark, simplified; an AI-written placeholder, see public/art/SOURCES.md. -->
-  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M2 61 L6 18 L22 8 L44 8 L58 18 L62 61 Z" fill="#45454f"/>
-    <path d="M6 18 L22 8 L26 14 L18 61 L2 61 Z" fill="#5f5f6c"/>
-    <path d="M5 20 L22 8 L44 8 L57 18 L42 15 L24 16 Z" fill="#625297"/>
-    <path d="M16 61 L17 42 Q32 22 47 42 L48 61 Z" fill="#14101c"/>
+  <g>
+    <path d="M2 61 L6 18 L22 8 L44 8 L58 18 L62 61 Z" fill="#45454f" />
+    <path d="M6 18 L22 8 L26 14 L18 61 L2 61 Z" fill="#5f5f6c" />
+    <path d="M5 20 L22 8 L44 8 L57 18 L42 15 L24 16 Z" fill="#625297" />
+    <path d="M16 61 L17 42 Q32 22 47 42 L48 61 Z" fill="#14101c" />
   </g>
-  <circle cx="32" cy="42" r="9" fill="#ffb35c" opacity="0.35"/>
-  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round"><rect x="28.5" y="38" width="7" height="9" fill="#ffd27a"/><path d="M27.5 38 H36.5 L32 33.5 Z" fill="#3b3646"/></g>
-  <path d="M17 53 Q32 47 48 53 V61 H16 Z" fill="#1d5f66"/>
+  <circle cx="32" cy="42" r="9" fill="#ffb35c" opacity="0.35" />
+  <g><rect x="28.5" y="38" width="7" height="9" fill="#ffd27a" /><path d="M27.5 38 H36.5 L32 33.5 Z" fill="#3b3646" /></g>
+  <path d="M17 53 Q32 47 48 53 V61 H16 Z" fill="#1d5f66" />
 </svg>
