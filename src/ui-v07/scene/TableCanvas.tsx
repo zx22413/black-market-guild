@@ -150,7 +150,7 @@ export function TableCanvas({ seats, weather, ships, cameraPoints, safe, ringed,
   const { angles, laneOf } = useTableLayout(seats);
   const islandKey = seats.map((s) => s.island ?? '').join('|');
   const shores = useMemo(
-    () => islandShorelines(angles, seats.map((s, i) => islandAnnex(s.island, playerIslandHeading(angles[i]!), i))),
+    () => islandShorelines(angles, seats.map((s, i) => islandAnnex(s.island, playerIslandHeading(angles[i]!)))),
     // Seats are a fresh array each render; the shores only change with the seats' islands.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [angles, islandKey],
@@ -197,7 +197,7 @@ export function TableCanvas({ seats, weather, ships, cameraPoints, safe, ringed,
             {seats.map((seat, i) => (
               <PlayerIsland
                 key={seat.id}
-                {...islandLook(seat.island, playerIslandHeading(angles[i]!), i)}
+                {...islandLook(seat.island, playerIslandHeading(angles[i]!))}
                 seat={{ assets: seat.buildings, color: seat.color }}
                 angle={angles[i]!}
                 seed={playerIslandSeed(i)}

@@ -20,7 +20,7 @@ description: Design and build hand-made low-poly 3D models for the Black Market 
 | `src/ui/scene/buildings/Building.tsx` | 3D 元件 |
 | `src/ui/scene/layout.ts` | `ASSET_LOTS`、`ASSET_BUILDING_SCALE`、島的半徑 |
 | `scripts/draw-buildings.ts`、`scripts/iso-painter.ts`、`scripts/iso-shade.ts` | 設計圖產生器（`npm run art:buildings`） |
-| `src/ui/scene/buildings/landmarks.ts`、`src/ui-v07/scene/islandScenery.ts`、`scripts/draw-islands.ts` | 選島後的島嶼造景、各島擺放與設計圖（`npm run art:islands`）；測試在 `tests/ui-v07/islandScenery.test.ts` |
+| `src/ui/scene/buildings/islands/*.ts`（每座島一個檔，`landmarks.ts` 合併）、`src/ui-v07/scene/islandScenery.ts`、`scripts/draw-islands.ts` | 選島後的島嶼造景、各島擺放與設計圖（`npm run art:islands`）；測試在 `tests/ui-v07/islandScenery.test.ts` |
 | `src/ui/dev/ModelPreview.tsx`、`src/ui/dev/capture.ts` | 開發用預覽頁與高解析度擷取 |
 | `tests/ui/buildings.test.ts` | 幾何、擺放、比例的測試 |
 

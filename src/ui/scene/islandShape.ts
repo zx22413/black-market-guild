@@ -23,8 +23,8 @@ function jitter(seed: number, angle: number, layer: number): number {
 }
 
 /** Irregular low-poly cylinder: flat top, craggy sides, wider at the waterline. */
-export function craggyCylinder(radius: number, height: number, seed: number, flare: number): BufferGeometry {
-  const geometry = new CylinderGeometry(radius, radius * flare, height, SHORE_POINTS, 2);
+export function craggyCylinder(radius: number, height: number, seed: number, flare: number, sides = SHORE_POINTS): BufferGeometry {
+  const geometry = new CylinderGeometry(radius, radius * flare, height, sides, 2);
   const position = geometry.attributes.position!;
   for (let i = 0; i < position.count; i++) {
     const x = position.getX(i);
@@ -48,21 +48,69 @@ export function islandCliff(radius: number, height: number, seed: number): Buffe
 export const cliffLift = (height: number): number => (height + CLIFF_DEPTH) / 2 - CLIFF_DEPTH;
 
 /**
- * A lobe of cliff that widens a guild island toward one side, so a big landmark (the mine's
- * mountain) rises from the island itself instead of the open sea. `center` and `radii` describe an
- * ellipse in island space as if on the back (-z); `turn` then swings it about the island's center
- * (as three.js turns about +y) to the side the landmark stands on.
+ * Where a guild island's coast swells out toward one side, so a big landmark (the mine's mountain)
+ * rises from the island itself instead of the open sea. `center` and `radii` describe an ellipse in
+ * island space as if on the back (-z); `turn` then swings it about the island's center (as three.js
+ * turns about +y) to the side the landmark stands on. The cliff blends it in (`annexedCliff`).
  */
 export interface IslandAnnex {
   readonly center: SeaPoint;
   readonly radii: SeaPoint;
   readonly turn: number;
-  readonly seed: number;
 }
 
-/** The annex's cliff, centered on its own origin; place it at `center` inside a group turned by `turn`. */
-export function annexCliff(annex: IslandAnnex, height: number): BufferGeometry {
-  return islandCliff(1, height, annex.seed).scale(annex.radii[0], 1, annex.radii[1]);
+/** Sides of an island cliff that takes in an annex: enough for its outline to curve round the lobe. */
+const ANNEXED_SIDES = 30;
+/** How far round the coast (radians each way) the island's circle eases into the annex, so the two read as one landmass. */
+const ANNEX_BLEND_ANGLE = 0.4;
+const ANNEX_BLEND_STEPS = 8;
+
+/** Distance from the island's center to the far edge of the annex ellipse along `angle` (island space), or 0. */
+function annexReach(annex: IslandAnnex, angle: number): number {
+  // Into the annex's own frame (before `turn`), where the ellipse is authored.
+  const [cos, sin] = [Math.cos(annex.turn), Math.sin(annex.turn)];
+  const [ix, iz] = [Math.cos(angle), Math.sin(angle)];
+  const [dx, dz] = [ix * cos - iz * sin, ix * sin + iz * cos];
+  const [cx, cz] = annex.center;
+  const [rx, rz] = annex.radii;
+  const a = (dx / rx) ** 2 + (dz / rz) ** 2;
+  const b = -2 * ((cx * dx) / rx ** 2 + (cz * dz) / rz ** 2);
+  const c = (cx / rx) ** 2 + (cz / rz) ** 2 - 1;
+  const disc = b * b - 4 * a * c;
+  return disc < 0 ? 0 : Math.max(0, (-b + Math.sqrt(disc)) / (2 * a));
+}
+
+/**
+ * The annexed island's outline radius along `angle` (island space): the larger of the circle and the
+ * ellipse, averaged over the neighboring directions so the coast swells into the lobe without the
+ * step where a ray first grazes the ellipse.
+ */
+export function annexedRadius(radius: number, annex: IslandAnnex, angle: number): number {
+  let sum = 0;
+  let weights = 0;
+  for (let k = -ANNEX_BLEND_STEPS; k <= ANNEX_BLEND_STEPS; k++) {
+    const w = ANNEX_BLEND_STEPS + 1 - Math.abs(k);
+    sum += w * Math.max(radius, annexReach(annex, angle + (k / ANNEX_BLEND_STEPS) * ANNEX_BLEND_ANGLE));
+    weights += w;
+  }
+  return sum / weights;
+}
+
+/**
+ * One craggy cliff for an island and its annex together: the island's circle swells smoothly into the
+ * annex's ellipse instead of a second cliff standing against the first. Lift it by `cliffLift` too.
+ */
+export function annexedCliff(radius: number, height: number, seed: number, annex: IslandAnnex): BufferGeometry {
+  const geometry = craggyCylinder(radius, height + CLIFF_DEPTH, seed, CLIFF_FLARE, ANNEXED_SIDES);
+  const position = geometry.attributes.position!;
+  for (let i = 0; i < position.count; i++) {
+    const [x, y, z] = [position.getX(i), position.getY(i), position.getZ(i)];
+    if (x === 0 && z === 0) continue;
+    const k = annexedRadius(radius, annex, Math.atan2(z, x)) / radius;
+    position.setXYZ(i, x * k, y, z * k);
+  }
+  geometry.computeVertexNormals();
+  return geometry;
 }
 
 /** Island space to island space: turn about +y the way three.js does. */
@@ -72,21 +120,12 @@ function turnPoints(points: readonly SeaPoint[], turn: number): SeaPoint[] {
   return points.map(([x, z]) => [x * cos + z * sin, -x * sin + z * cos]);
 }
 
-/** Where the annex's cliff meets the sea, in island space. */
-export function annexWaterline(annex: IslandAnnex, height: number): SeaPoint[] {
-  const [rx, rz] = annex.radii;
-  const [cx, cz] = annex.center;
-  const local = islandWaterline(1, height, annex.seed).map(([x, z]): SeaPoint => [cx + x * rx, cz + z * rz]);
-  return turnPoints(local, annex.turn);
-}
-
-/** Where the island's cliff meets the sea (y = 0), in island space: one point per cliff side. */
-export function islandWaterline(radius: number, height: number, seed: number): SeaPoint[] {
-  const cliff = islandCliff(radius, height, seed);
+/** Where a cliff built by `craggyCylinder` with `sides` sides meets the sea (y = 0): one point per side. */
+function waterlineOf(cliff: BufferGeometry, sides: number, height: number): SeaPoint[] {
   const position = cliff.attributes.position!;
   const lift = cliffLift(height);
-  const row = (r: number, side: number) => r * (SHORE_POINTS + 1) + side;
-  const line = Array.from({ length: SHORE_POINTS }, (_, side): SeaPoint => {
+  const row = (r: number, side: number) => r * (sides + 1) + side;
+  return Array.from({ length: sides }, (_, side): SeaPoint => {
     // Rows run top (0) to foot (2); find the cliff edge that crosses sea level, from the foot up.
     for (let r = 2; r > 0; r--) {
       const lower = row(r, side);
@@ -103,6 +142,43 @@ export function islandWaterline(radius: number, height: number, seed: number): S
     }
     return [position.getX(row(1, side)), position.getZ(row(1, side))];
   });
+}
+
+/** `count` points spaced evenly along the closed `ring` from index `from` forward to index `to`. */
+function arcPoints(ring: readonly SeaPoint[], from: number, to: number, count: number): SeaPoint[] {
+  const n = ring.length;
+  const span = (to - from + n) % n;
+  return Array.from({ length: count }, (_, i): SeaPoint => {
+    const t = from + (span * i) / (count - 1);
+    const [a, b] = [ring[Math.floor(t) % n]!, ring[(Math.floor(t) + 1) % n]!];
+    const f = t - Math.floor(t);
+    return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+  });
+}
+
+/**
+ * The annexed island's waterline for the sea foam, which takes `SHORE_POINTS` per shore: two fans from
+ * the island's center, the first over the annex and the second round the rest of the coast. Their
+ * edges back to the center lie under the cliff, where the foam never shows.
+ */
+export function annexedShores(radius: number, height: number, seed: number, annex: IslandAnnex): [SeaPoint[], SeaPoint[]] {
+  const cliff = annexedCliff(radius, height, seed, annex);
+  const ring = waterlineOf(cliff, ANNEXED_SIDES, height);
+  cliff.dispose();
+  const [cx, cz] = turnPoints([annex.center], annex.turn)[0]!;
+  const toward = Math.atan2(cz, cx);
+  const off = ([x, z]: SeaPoint): number => Math.abs(Math.atan2(Math.sin(Math.atan2(z, x) - toward), Math.cos(Math.atan2(z, x) - toward)));
+  const middle = ring.reduce((best, p, i) => (off(p) < off(ring[best]!) ? i : best), 0);
+  const quarter = Math.round(ANNEXED_SIDES / 4);
+  const [from, to] = [(middle - quarter + ANNEXED_SIDES) % ANNEXED_SIDES, (middle + quarter) % ANNEXED_SIDES];
+  const fan = (a: number, b: number): SeaPoint[] => [[0, 0], ...arcPoints(ring, a, b, SHORE_POINTS - 1)];
+  return [fan(from, to), fan(to, from)];
+}
+
+/** Where the island's cliff meets the sea (y = 0), in island space: one point per cliff side. */
+export function islandWaterline(radius: number, height: number, seed: number): SeaPoint[] {
+  const cliff = islandCliff(radius, height, seed);
+  const line = waterlineOf(cliff, SHORE_POINTS, height);
   cliff.dispose();
   return line;
 }
@@ -125,11 +201,15 @@ export function islandShorelines(angles: readonly number[], annexes: readonly (I
     const [x, , z] = seatPosition(angle);
     return place(line, x, z, playerIslandHeading(angle));
   };
-  const seats = angles.map((_, i) => onSeat(i, islandWaterline(PLAYER_ISLAND_RADIUS, PLAYER_ISLAND_HEIGHT, playerIslandSeed(i))));
-  const extra = angles.flatMap((_, i) => {
+  const shores = angles.map((_, i) => {
     const annex = annexes[i];
-    return annex ? [onSeat(i, annexWaterline(annex, PLAYER_ISLAND_HEIGHT))] : [];
+    const seed = playerIslandSeed(i);
+    return annex
+      ? annexedShores(PLAYER_ISLAND_RADIUS, PLAYER_ISLAND_HEIGHT, seed, annex).map((line) => onSeat(i, line))
+      : [onSeat(i, islandWaterline(PLAYER_ISLAND_RADIUS, PLAYER_ISLAND_HEIGHT, seed))];
   });
+  const seats = shores.map((parts) => parts[parts.length - 1]!);
+  const extra = shores.flatMap((parts) => parts.slice(0, -1));
   return [target, ...seats, ...extra];
 }
 

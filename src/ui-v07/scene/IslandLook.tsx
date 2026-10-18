@@ -7,17 +7,15 @@ import { ISLAND_SCENERY, backdropTurn, islandAnnex } from './islandScenery';
 
 /**
  * A chosen island's ground and scenery for `PlayerIsland`; empty (the default look) until it is
- * chosen or designed. `heading` is the island's turn on the table, which decides the backdrop's side; `seatIndex`
- * varies the annex's crags.
+ * chosen or designed. `heading` is the island's turn on the table, which decides the backdrop's side.
  */
 export function islandLook(
   island: IslandId | null,
   heading: number,
-  seatIndex: number,
 ): { readonly ground?: IslandGround; readonly scenery?: ReactNode; readonly annex?: IslandAnnex } {
   const look = island ? ISLAND_SCENERY[island] : undefined;
   if (!look) return {};
-  const annex = islandAnnex(island, heading, seatIndex);
+  const annex = islandAnnex(island, heading);
   return {
     ground: look.ground,
     ...(annex ? { annex } : {}),

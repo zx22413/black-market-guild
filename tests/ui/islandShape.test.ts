@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatAngles, seatPosition } from '../../src/ui/scene/layout';
-import { SHORE_POINTS, annexWaterline, islandShorelines, islandWaterline } from '../../src/ui/scene/islandShape';
+import { SHORE_POINTS, annexedCliff, annexedRadius, annexedShores, islandShorelines, islandWaterline } from '../../src/ui/scene/islandShape';
 
 const centroid = (points: readonly (readonly [number, number])[]) => {
   const [x, z] = points.reduce(([sx, sz], [px, pz]) => [sx + px, sz + pz], [0, 0]);
@@ -38,18 +38,41 @@ describe('table shorelines', () => {
     });
   });
 
-  it('adds an annex after the seats, swung to its side and stretched to its radii', () => {
+  it('adds the annexed side of an island after the seats, as fans from its center', () => {
     const angles = seatAngles(4);
-    const annex = { center: [0, -12] as const, radii: [10, 5] as const, turn: Math.PI / 2, seed: 50 };
+    const annex = { center: [0, -12] as const, radii: [10, 5] as const, turn: Math.PI / 2 };
     const shores = islandShorelines(angles, [null, null, annex, null]);
     expect(shores).toHaveLength(6);
-    const local = annexWaterline(annex, 2.4);
-    expect(local).toHaveLength(SHORE_POINTS);
-    // Turned a quarter: the back (-z) lobe now lies along -x.
-    const [lx, lz] = centroid(local);
-    expect(lx!).toBeLessThan(-9);
-    expect(Math.abs(lz!)).toBeLessThan(2);
-    const xs = local.map(([x]) => x);
-    expect(Math.max(...xs) - Math.min(...xs)).toBeLessThan(5 * 2.8);
+    const [lobe, rest] = annexedShores(PLAYER_ISLAND_RADIUS, 2.4, 3, annex);
+    [lobe, rest].forEach((fan) => {
+      expect(fan).toHaveLength(SHORE_POINTS);
+      expect(fan[0]).toEqual([0, 0]);
+    });
+    // Turned a quarter: the back (-z) lobe now lies along -x, reaching past the island's circle.
+    const far = Math.min(...lobe.slice(1).map(([x]) => x));
+    expect(far).toBeLessThan(-PLAYER_ISLAND_RADIUS * 1.2);
+    expect(Math.max(...rest.slice(1).map(([x]) => x))).toBeGreaterThan(PLAYER_ISLAND_RADIUS * 0.8);
+  });
+});
+
+describe('annexed island', () => {
+  const annex = { center: [0, -12] as const, radii: [9, 4.5] as const, turn: 0 };
+
+  it('keeps the circle away from the annex and swells smoothly into it, with no step where they meet', () => {
+    expect(annexedRadius(13, annex, Math.PI / 2)).toBeCloseTo(13);
+    expect(annexedRadius(13, annex, -Math.PI / 2)).toBeGreaterThan(15.5);
+    expect(annexedRadius(13, annex, -Math.PI / 2)).toBeLessThan(17);
+    const radii = Array.from({ length: 361 }, (_, i) => annexedRadius(13, annex, -Math.PI + (i / 180) * Math.PI));
+    // Never pinched in below the island's circle, and no step where the circle meets the ellipse.
+    radii.forEach((r) => expect(r).toBeGreaterThanOrEqual(13 - 1e-9));
+    radii.slice(1).forEach((r, i) => expect(Math.abs(r - radii[i]!)).toBeLessThan(0.4));
+  });
+
+  it('builds one cliff that reaches into the annex', () => {
+    const cliff = annexedCliff(13, 2.4, 1, annex);
+    const position = cliff.attributes.position!;
+    const zs = Array.from({ length: position.count }, (_, i) => position.getZ(i));
+    expect(Math.min(...zs)).toBeLessThan(-16);
+    expect(Math.max(...zs)).toBeLessThan(13 * 1.35);
   });
 });

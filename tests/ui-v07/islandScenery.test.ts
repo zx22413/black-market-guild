@@ -51,19 +51,13 @@ function footingPoints(piece: SceneryPiece): (readonly [number, number])[] {
 const spin = ([x, z]: readonly [number, number], turn: number): [number, number] => [x * Math.cos(turn) + z * Math.sin(turn), -x * Math.sin(turn) + z * Math.cos(turn)];
 
 /**
- * Axis-aligned island-space box around a scenery piece (a backdrop's footing), turned and scaled,
- * then swung about the island's center by `around` (a backdrop's side).
+ * Axis-aligned island-space box around a scenery piece (a backdrop's footing), from its turned and
+ * scaled vertices, swung about the island's center by `around` (a backdrop's side).
  */
 function pieceFootprint(piece: SceneryPiece, around = 0): Footprint {
-  const { min, max } = bounds(footing(piece));
-  const corners = [min[0], max[0]].flatMap((x) =>
-    [min[2], max[2]].map((z) => {
-      const [tx, tz] = spin([x, z], piece.turn ?? 0);
-      return spin([piece.at[0] + tx * piece.scale, piece.at[2] + tz * piece.scale], around);
-    }),
-  );
-  const xs = corners.map(([x]) => x);
-  const zs = corners.map(([, z]) => z);
+  const points = footingPoints(piece).map((p) => spin(p, around));
+  const xs = points.map(([x]) => x);
+  const zs = points.map(([, z]) => z);
   return { name: piece.design, x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
 }
 
@@ -118,9 +112,9 @@ describe('backdrop side', () => {
   });
 
   it('gives an annex only to islands that have one, turned with the backdrop', () => {
-    expect(islandAnnex('spice-isles', 0, 0)).toBeNull();
-    expect(islandAnnex(null, 0, 0)).toBeNull();
-    expect(islandAnnex('mine', Math.PI, 2)).toMatchObject({ turn: backdropTurn(Math.PI), seed: 52 });
+    expect(islandAnnex('spice-isles', 0)).toBeNull();
+    expect(islandAnnex(null, 0)).toBeNull();
+    expect(islandAnnex('mine', Math.PI)).toMatchObject({ turn: backdropTurn(Math.PI) });
   });
 });
 

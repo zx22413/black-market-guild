@@ -100,6 +100,21 @@ export const ISLAND_SCENERY: Readonly<Partial<Record<IslandId, IslandScenery>>> 
       { design: 'rowboat', at: [5.3, TURF, 3.9], scale: 1.6, turn: 2.8 },
     ],
   },
+  lumber: {
+    name: '林場島',
+    // A mossy forest floor: an even blend of the colormap's forest green #248d6d and dark wood #845442.
+    ground: { top: '#547057', cliff: '#845442' },
+    annex: { center: [0, -11.6], radii: [7.4, 3.8] },
+    pieces: [
+      { design: 'saw-pit', at: [0.3, TURF, 3.25], scale: 2 },
+      { design: 'paltrok', at: [0, RIM, -11.4], scale: 2.8, turn: 0.55, backdrop: true },
+      { design: 'plank-stack', at: [-1.0, TURF, -0.5], scale: 1.5 },
+      { design: 'spruce', at: [-5.5, TURF, -3.7], scale: 1.7 },
+      { design: 'spruce', at: [-6.6, TURF, -3.3], scale: 1.3, turn: 1 },
+      { design: 'spruce', at: [5.95, TURF, -3.4], scale: 1.6, turn: 2 },
+      { design: 'stump', at: [5.3, TURF, 3.9], scale: 1.6 },
+    ],
+  },
 };
 
 /** Turns about the island's center that move a backdrop from the back to the left or right side. */
@@ -116,7 +131,7 @@ export function backdropTurn(heading: number): number {
 }
 
 /** The chosen island's cliff annex on the table, turned with its backdrop; null if it has none. */
-export function islandAnnex(island: IslandId | null, heading: number, seatIndex: number): IslandAnnex | null {
+export function islandAnnex(island: IslandId | null, heading: number): IslandAnnex | null {
   const annex = island ? ISLAND_SCENERY[island]?.annex : undefined;
-  return annex ? { ...annex, turn: backdropTurn(heading), seed: 50 + seatIndex } : null;
+  return annex ? { ...annex, turn: backdropTurn(heading) } : null;
 }

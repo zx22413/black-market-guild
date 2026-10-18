@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { PLAYER_ISLAND_HEIGHT, annexCliff, cliffLift, craggyCylinder, islandCliff, type IslandAnnex } from './islandShape';
+import { PLAYER_ISLAND_HEIGHT, annexedCliff, cliffLift, craggyCylinder, islandCliff, type IslandAnnex } from './islandShape';
 
 interface IslandBaseProps {
   readonly radius: number;
@@ -21,21 +21,14 @@ const DEFAULT_GROUND: IslandGround = { top: '#79b35a', cliff: '#e2c28a' };
 
 /** Chunky diorama island: a cliff base with a plateau on top (grass on sand unless the island says otherwise). */
 export function IslandBase({ radius, seed, height = PLAYER_ISLAND_HEIGHT, ground = DEFAULT_GROUND, annex }: IslandBaseProps) {
-  const cliff = useMemo(() => islandCliff(radius, height, seed), [radius, height, seed]);
-  const lobe = useMemo(() => (annex ? annexCliff(annex, height) : null), [annex, height]);
+  // An annex swells the one cliff toward its side rather than standing a second cliff against it.
+  const cliff = useMemo(() => (annex ? annexedCliff(radius, height, seed, annex) : islandCliff(radius, height, seed)), [radius, height, seed, annex]);
   const grass = useMemo(() => craggyCylinder(radius * 0.78, 0.5, seed + 7, 1.05), [radius, seed]);
   return (
     <group>
       <mesh geometry={cliff} position={[0, cliffLift(height), 0]} castShadow receiveShadow>
         <meshStandardMaterial color={ground.cliff} flatShading roughness={0.95} />
       </mesh>
-      {annex && lobe && (
-        <group rotation={[0, annex.turn, 0]}>
-          <mesh geometry={lobe} position={[annex.center[0], cliffLift(height), annex.center[1]]} castShadow receiveShadow>
-            <meshStandardMaterial color={ground.cliff} flatShading roughness={0.95} />
-          </mesh>
-        </group>
-      )}
       <mesh geometry={grass} position={[0, height + 0.2, 0]} receiveShadow>
         <meshStandardMaterial color={ground.top} flatShading roughness={0.9} />
       </mesh>

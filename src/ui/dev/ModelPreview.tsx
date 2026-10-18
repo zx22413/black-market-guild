@@ -49,7 +49,7 @@ function IslandAtOrigin({ assets, color, island }: { readonly assets: readonly A
   const home = seatPosition(angle);
   return (
     <group position={[-home[0], 0, -home[2]]}>
-      <PlayerIsland seat={{ assets, color }} angle={angle} seed={3} {...islandLook(island, playerIslandHeading(angle), 0)} />
+      <PlayerIsland seat={{ assets, color }} angle={angle} seed={3} {...islandLook(island, playerIslandHeading(angle))} />
     </group>
   );
 }
