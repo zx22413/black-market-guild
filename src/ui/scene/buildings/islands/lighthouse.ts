@@ -84,6 +84,10 @@ const coalBeacon: LandmarkDesign = {
     { kind: 'box', center: [0.96, 0.46, 0.36], size: [0.1, 0.1, 0.03], mat: 'gold' },
     { kind: 'prism', base: [-0.72, 0.2, 0.2], radius: 0.26, top: 0.04, height: 0.24, sides: 7, mat: 'dark' },
   ],
+  lights: [{ at: [0, PLATFORM + 0.5, 0], reach: 16 }],
+  // A beam from the fire sweeping round over the sea at night. The sea lies 2.4 units under the
+  // cliff top this stands on: 0.8 design units at 3×.
+  beacon: { at: [0, PLATFORM + 0.55, 0], reach: 12, drop: PLATFORM + 0.55 + 0.8 },
 };
 
 /**

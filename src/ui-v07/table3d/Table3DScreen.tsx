@@ -159,7 +159,7 @@ export function Table3DScreen({ session, onExit, autoplay = false }: Table3DScre
   );
   const islandBadges = islandBadgePins(seats, angles, (id) => board.players[id]?.island ?? null);
   const pins = [...plates, ...islandBadges, ...(step?.pins ?? []), ...resolution.pins];
-  const camera = step?.camera ?? resolution.camera ?? overviewPoints(angles);
+  const camera = step?.camera ?? resolution.camera ?? overviewPoints(angles, seats.map((s) => s.island));
 
   const marketRef = useRef<HTMLDivElement>(null);
   const dockRef = useRef<HTMLDivElement>(null);

@@ -448,7 +448,10 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats }: B
 export function BeatScene({ seats, ships, beat, view, weather, safe, onReady, tag, onClick }: BeatSceneProps) {
   const { angles, laneOf } = useTableLayout(seats);
   const layer = beatLayer({ beat, view, angles, laneOf, weather, tag, seats });
-  const overview = useMemo(() => overviewPoints(angles), [angles]);
+  // Keyed by the islands' ids, so the framing is recomputed only when an island is chosen.
+  const islandKey = seats.map((s) => s.island).join('|');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const overview = useMemo(() => overviewPoints(angles, seats.map((s) => s.island)), [angles, islandKey]);
   const related = involved(beat);
   const framing = framingOf(view);
   const tableShips = ships.map((ship) => ({ ...ship, state: ship.id === beat.shipId ? layer.focusState : ('sailing' as const) }));

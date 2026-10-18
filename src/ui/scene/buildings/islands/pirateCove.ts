@@ -243,6 +243,7 @@ const boucan: LandmarkDesign = {
   ],
   // Smoke curling up from the fire through the grill.
   smoke: [{ at: [0, 0.15, 0], size: 1 }],
+  lights: [{ at: [0, 0.35, 0], reach: 10 }],
 };
 
 /** A ship's gun on its truck carriage, muzzle toward +z. */

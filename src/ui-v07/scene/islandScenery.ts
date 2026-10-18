@@ -1,4 +1,5 @@
-import type { LandmarkId } from '../../ui/scene/buildings/landmarks';
+import { LANDMARK_DESIGNS, landmarkParts, type LandmarkId } from '../../ui/scene/buildings/landmarks';
+import { bounds } from '../../ui/scene/buildings/polyhedra';
 import type { IslandGround } from '../../ui/scene/IslandBase';
 import type { IslandAnnex } from '../../ui/scene/islandShape';
 import type { SeaPoint } from '../../ui/scene/islandShape';
@@ -167,4 +168,18 @@ export function backdropTurn(heading: number): number {
 export function islandAnnex(island: IslandId | null, heading: number): IslandAnnex | null {
   const annex = island ? ISLAND_SCENERY[island]?.annex : undefined;
   return annex ? { ...annex, turn: backdropTurn(heading) } : null;
+}
+
+/**
+ * The top of the chosen island's backdrop in island space (+z toward the dock, y from the plateau
+ * origin), on the side it is turned to; null if the island has no scenery. The table camera keeps it
+ * in frame, so a tall landmark on the far island is not cut off by the top of the screen.
+ */
+export function backdropTop(island: IslandId | null, heading: number): Vec3 | null {
+  const piece = island ? ISLAND_SCENERY[island]?.pieces.find((p) => p.backdrop) : undefined;
+  if (!piece) return null;
+  const top = piece.at[1] + bounds(landmarkParts(LANDMARK_DESIGNS[piece.design])).max[1] * piece.scale;
+  const turn = backdropTurn(heading);
+  const [x, , z] = piece.at;
+  return [x * Math.cos(turn) + z * Math.sin(turn), top, -x * Math.sin(turn) + z * Math.cos(turn)];
 }

@@ -19,6 +19,19 @@ export interface LandmarkDesign {
   readonly flags?: readonly LandmarkFlag[];
   /** Fires that smoke: where in the design's coordinates, and how big the puffs grow (1 = a cooking fire's). */
   readonly smoke?: readonly { readonly at: Vec3; readonly size: number }[];
+  /** Fires and lamps that light their surroundings at night, flickering: where, and how far they reach in table units. */
+  readonly lights?: readonly { readonly at: Vec3; readonly reach: number }[];
+  /** A lighthouse lamp whose beam sweeps round over the sea at night (`Beacon`). */
+  readonly beacon?: LandmarkBeacon;
+}
+
+/** A lighthouse's sweeping beam, in the design's coordinates. */
+export interface LandmarkBeacon {
+  /** The lamp the beam leaves from. */
+  readonly at: Vec3;
+  /** How far the beam reaches, and how far below the lamp it meets the sea. */
+  readonly reach: number;
+  readonly drop: number;
 }
 
 /**

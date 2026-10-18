@@ -1,13 +1,14 @@
 import { useTexture } from '@react-three/drei';
 import type { ThreeElements } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
-import { CanvasTexture, Float32BufferAttribute, MeshBasicMaterial, MeshStandardMaterial, SpriteMaterial, type BufferGeometry, type Group, type Sprite } from 'three';
+import { AdditiveBlending, CanvasTexture, Color, CylinderGeometry, ShaderMaterial, DoubleSide, Float32BufferAttribute, MeshBasicMaterial, MeshStandardMaterial, SpriteMaterial, type PointLight, type BufferGeometry, type Group, type Sprite } from 'three';
 import { useLiveFrame } from '../liveFrame';
+import { glowTexture } from '../Night';
 import { SPARKLES } from '../sparkles';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { geometryFromParts } from './Building';
 import type { KitPart } from './kit';
-import type { LandmarkDesign, LandmarkFlag, LandmarkRotor } from './islands/design';
+import type { LandmarkBeacon, LandmarkDesign, LandmarkFlag, LandmarkRotor } from './islands/design';
 import { LANDMARK_DESIGNS, type LandmarkId } from './landmarks';
 import { tiltPoint, type Vec3 } from './polyhedra';
 import { GLOWING_MATS } from './materials';
@@ -288,12 +289,128 @@ function Smoke({ at }: { readonly at: readonly { readonly at: Vec3; readonly siz
   );
 }
 
-type LandmarkProps = ThreeElements['group'] & { readonly design: LandmarkId };
+const FIRE_LIGHT = '#ff9a45';
+/** A fire's light strength per table unit of reach, like the island lanterns' (`Night`). */
+const FIRE_INTENSITY_PER_REACH = 2.6;
+
+/** Warm, flickering light from the design's fires and lamps, shown at night. */
+function FireLights({ at }: { readonly at: readonly { readonly at: Vec3; readonly reach: number }[] }) {
+  const lights = useRef<(PointLight | null)[]>([]);
+  useLiveFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    at.forEach(({ reach }, i) => {
+      const flicker = 1 - 0.18 * (0.5 + 0.5 * Math.sin(t * 9 + i * 2) * Math.sin(t * 14.3 + i));
+      const light = lights.current[i];
+      if (light) light.intensity = reach * FIRE_INTENSITY_PER_REACH * flicker;
+    });
+  });
+  return (
+    <>
+      {at.map(({ at: [x, y, z], reach }, i) => (
+        <pointLight
+          key={i}
+          ref={(l) => {
+            lights.current[i] = l;
+          }}
+          position={[x, y, z]}
+          color={FIRE_LIGHT}
+          distance={reach}
+          decay={2}
+          intensity={reach * FIRE_INTENSITY_PER_REACH}
+        />
+      ))}
+    </>
+  );
+}
+
+const BEAM_COLOR = '#ffb52e';
+/** How fast the beam sweeps round (radians per second), how wide it opens at the sea, and how strong it is. */
+const BEAM = { speed: 0.55, spread: 0.16, opacity: 0.2, pool: 0.6 } as const;
+
+/**
+ * The beam's light: strongest where the cone faces the camera and fading to nothing at its grazing
+ * edges and toward the far end, so it reads as a soft, blurred shaft rather than a solid cone.
+ */
+function beamMaterial(): ShaderMaterial {
+  return new ShaderMaterial({
+    uniforms: { uColor: { value: new Color(BEAM_COLOR) }, uOpacity: { value: BEAM.opacity } },
+    vertexShader: `
+      varying vec3 vNormal;
+      varying vec3 vView;
+      varying float vAlong;
+      void main() {
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vView = -mv.xyz;
+        vNormal = normalize(normalMatrix * normal);
+        vAlong = uv.y;
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      uniform vec3 uColor;
+      uniform float uOpacity;
+      varying vec3 vNormal;
+      varying vec3 vView;
+      varying float vAlong;
+      void main() {
+        float facing = abs(dot(normalize(vNormal), normalize(vView)));
+        float edge = smoothstep(0.0, 0.85, facing);
+        float along = mix(1.0, 0.5, vAlong);
+        gl_FragColor = vec4(uColor, uOpacity * edge * edge * along);
+        #include <colorspace_fragment>
+      }`,
+    transparent: true,
+    blending: AdditiveBlending,
+    depthWrite: false,
+    side: DoubleSide,
+  });
+}
+
+/**
+ * A lighthouse's beam sweeping round at night: a warm yellow cone of light from the lamp down to the
+ * sea, ending in a bright pool on the water.
+ */
+function Beacon({ beacon }: { readonly beacon: LandmarkBeacon }) {
+  const { at, reach, drop } = beacon;
+  const turn = useRef<Group>(null);
+  const length = Math.hypot(reach, drop);
+  const dip = Math.atan2(drop, reach);
+  const cone = useMemo(() => {
+    // Narrow at the lamp, open toward the sea, lying along +x from the origin.
+    const g = new CylinderGeometry(length * BEAM.spread, 0.04, length, 16, 1, true);
+    g.translate(0, length / 2, 0);
+    g.rotateZ(-Math.PI / 2);
+    return g;
+  }, [length]);
+  useEffect(() => () => cone.dispose(), [cone]);
+  const pool = useMemo(() => glowTexture(), []);
+  const light = useMemo(beamMaterial, []);
+  useEffect(() => () => light.dispose(), [light]);
+  useLiveFrame(({ clock }) => {
+    if (turn.current) turn.current.rotation.y = clock.elapsedTime * BEAM.speed;
+  });
+  return (
+    <group position={[...at]}>
+      <group ref={turn}>
+        <mesh geometry={cone} material={light} rotation={[0, 0, -dip]} />
+        <mesh position={[reach, -drop + 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[length * BEAM.spread * 1.4, 24]} />
+          <meshBasicMaterial map={pool} color={BEAM_COLOR} transparent opacity={BEAM.pool} blending={AdditiveBlending} depthWrite={false} toneMapped={false} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+type LandmarkProps = ThreeElements['group'] & {
+  readonly design: LandmarkId;
+  /** A moonless night: fires light their surroundings and lighthouse beams sweep the sea. */
+  readonly night?: boolean;
+};
 
 /** A piece of island scenery, drawn from the same part list as `docs/art/islands-blueprint.svg`. */
-export function Landmark({ design, ...props }: LandmarkProps) {
+export function Landmark({ design, night = false, ...props }: LandmarkProps) {
   const { lit, glowing, flames: flameGeometries, rotor: rotorGeometry, flags: flagGeometries } = geometryOf(design);
-  const { glints, rotor, flags, smoke }: LandmarkDesign = LANDMARK_DESIGNS[design];
+  const { glints, rotor, flags, smoke, lights, beacon }: LandmarkDesign = LANDMARK_DESIGNS[design];
   return (
     <group {...props}>
       <mesh geometry={lit} castShadow receiveShadow dispose={null}>
@@ -305,6 +422,8 @@ export function Landmark({ design, ...props }: LandmarkProps) {
       {rotor && rotorGeometry && <Rotor rotor={rotor} geometry={rotorGeometry} />}
       {flags && <WavingFlags flags={flags} geometries={flagGeometries} />}
       {smoke && <Smoke at={smoke} />}
+      {night && lights && <FireLights at={lights} />}
+      {night && beacon && <Beacon beacon={beacon} />}
     </group>
   );
 }

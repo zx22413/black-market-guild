@@ -189,6 +189,8 @@ const smugglerCave: LandmarkDesign = {
     { kind: 'beam', from: [-0.25, 3.12, 0.1], to: [-0.25, 3.42, 0.38], width: 0.035, mat: 'woodDark' },
     ...signalLantern(-0.25, 3.44, 0.45, 0.16),
   ],
+  // The signal lantern shows its light at night.
+  lights: [{ at: [-0.25, 3.28, 0.45], reach: 12 }],
 };
 
 /** A clump of columnar basalt: hexagonal columns of a few heights. */

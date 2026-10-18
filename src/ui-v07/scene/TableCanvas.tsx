@@ -1,14 +1,14 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useCallback, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Vector3 } from 'three';
-import type { PlayerId, ShipId, VoyageEventId } from '../../v07/game';
+import type { IslandId, PlayerId, ShipId, VoyageEventId } from '../../v07/game';
 import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
 import { Clouds } from '../../ui/scene/Clouds';
 import { EffectWarmup } from '../../ui/scene/EffectWarmup';
 import { GoldRush } from '../../ui/scene/GoldRush';
 import { PlayerIsland, TargetIsland } from '../../ui/scene/Islands';
 import { islandLook } from './IslandLook';
-import { islandAnnex } from './islandScenery';
+import { backdropTop, islandAnnex } from './islandScenery';
 import { islandShorelines, playerIslandHeading, playerIslandSeed } from '../../ui/scene/islandShape';
 import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatAngles, seatPosition, type Vec3 } from '../../ui/scene/layout';
 import { Night } from '../../ui/scene/Night';
@@ -86,9 +86,13 @@ export function useTableLayout(seats: readonly BeatSeat[]) {
   return { angles, laneOf };
 }
 
-/** Every island rim: the whole table in view. */
-export function overviewPoints(angles: readonly number[]): FitPoint[] {
-  return [...around([0, 0, 0], TARGET_ISLAND_RADIUS), ...angles.flatMap((a) => around(seatPosition(a), PLAYER_ISLAND_RADIUS + 1.5))];
+/** Every island rim, and the top of each chosen island's backdrop: the whole table in view. */
+export function overviewPoints(angles: readonly number[], islands: readonly (IslandId | null)[] = []): FitPoint[] {
+  const tops = angles.flatMap((a, i): FitPoint[] => {
+    const top = backdropTop(islands[i] ?? null, playerIslandHeading(a));
+    return top ? [{ position: islandPoint(a, top) }] : [];
+  });
+  return [...around([0, 0, 0], TARGET_ISLAND_RADIUS), ...angles.flatMap((a) => around(seatPosition(a), PLAYER_ISLAND_RADIUS + 1.5)), ...tops];
 }
 
 /**
@@ -197,7 +201,7 @@ export function TableCanvas({ seats, weather, ships, cameraPoints, safe, ringed,
             {seats.map((seat, i) => (
               <PlayerIsland
                 key={seat.id}
-                {...islandLook(seat.island, playerIslandHeading(angles[i]!))}
+                {...islandLook(seat.island, playerIslandHeading(angles[i]!), weather === 'moonless-night')}
                 seat={{ assets: seat.buildings, color: seat.color }}
                 angle={angles[i]!}
                 seed={playerIslandSeed(i)}

@@ -9,7 +9,7 @@ import { playerIslandHeading } from '../../src/ui/scene/islandShape';
 import { CRATE_SIZE } from '../../src/ui-v07/scene/CrateModel';
 import { warehouseLocal } from '../../src/ui-v07/scene/InvestIsland';
 import { seatAngles } from '../../src/ui/scene/layout';
-import { BACKDROP_TURNS, ISLAND_SCENERY, backdropTurn, islandAnnex, type SceneryPiece } from '../../src/ui-v07/scene/islandScenery';
+import { BACKDROP_TURNS, ISLAND_SCENERY, backdropTop, backdropTurn, islandAnnex, type SceneryPiece } from '../../src/ui-v07/scene/islandScenery';
 
 interface Footprint {
   readonly name: string;
@@ -115,6 +115,17 @@ describe('backdrop side', () => {
     expect(islandAnnex('spice-isles', 0)).toBeNull();
     expect(islandAnnex(null, 0)).toBeNull();
     expect(islandAnnex('mine', Math.PI)).toMatchObject({ turn: backdropTurn(Math.PI) });
+  });
+});
+
+describe('backdrop top', () => {
+  it('finds the top of the backdrop on the side it is turned to, for the camera to keep in frame', () => {
+    expect(backdropTop(null, 0)).toBeNull();
+    const heading = seatAngles(4).map(playerIslandHeading)[0]!;
+    const top = backdropTop('lighthouse', heading)!;
+    expect(top[1]).toBeGreaterThan(tallestAsset);
+    // Turned aside on your own island: the top lies off to a side, not at the back.
+    expect(Math.abs(top[0])).toBeGreaterThan(Math.abs(top[2]));
   });
 });
 
