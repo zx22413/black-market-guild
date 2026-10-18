@@ -1,6 +1,7 @@
 import { gabledRoof, post } from '../kit';
 import type { Mat } from '../materials';
 import type { Vec3 } from '../polyhedra';
+import { cloth } from './cloth';
 import type { LandmarkDesign, LandmarkFlag, P } from './design';
 
 // The free port (自由港): Willemstad's row of painted merchant houses with a flag tower dressed in every
@@ -66,15 +67,6 @@ function merchantHouse({ x, width, height, facade, hoist = false }: HouseSpec): 
 
 /** Width and height of a nation's flag. */
 const FLAG_SIZE = [0.36, 0.24] as const;
-/** The flag is cut into strips this wide at most, so it can ripple. */
-const FLAG_STRIP = 0.06;
-
-/** A flat box on the flag cut into strips along x; marks a little thicker than the field show on both faces. */
-function cloth([cx, cy, cz]: Vec3, [w, h]: readonly [number, number], mat: Mat, thick = 0.012): P[] {
-  const n = Math.max(1, Math.ceil(w / FLAG_STRIP - 1e-9));
-  return Array.from({ length: n }, (_, i): P => ({ kind: 'box', center: [cx - w / 2 + (w / n) * (i + 0.5), cy, cz], size: [w / n, h, thick], mat }));
-}
-
 /** A flag in the plane z = `z`, hanging from its pole at (x, y) and flying toward +x, in one of the nations' patterns. */
 function nationFlag(x: number, y: number, z: number, pattern: number): LandmarkFlag {
   const [w, h] = FLAG_SIZE;

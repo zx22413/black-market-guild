@@ -1,6 +1,7 @@
 import { barrel, post } from '../kit';
 import { tiltPoint, type Tilt, type Vec2, type Vec3 } from '../polyhedra';
-import type { LandmarkDesign, P } from './design';
+import { cloth } from './cloth';
+import type { LandmarkDesign, LandmarkFlag, P } from './design';
 
 // The pirate cove (海盜灣): a brig hove down on a treasure beach, a plunder sale, a boucan and a beach battery.
 
@@ -13,7 +14,7 @@ const SHIP_HULL: readonly Vec2[] = [
   [-2.0, 0.42],
 ];
 
-/** Upright parts of the pirate brig, keel on y = 0: hull, sterncastle, two masts and a Jolly Roger. */
+/** Upright parts of the pirate brig, keel on y = 0: hull, sterncastle and two masts (its Jolly Roger waves, `careenedShip.flags`). */
 function brig(): P[] {
   const mast = (x: number, top: number, yards: readonly number[]): P[] => [
     { kind: 'beam', from: [x, 0.9, 0], to: [x, top, 0], width: 0.11, sides: 6, mat: 'woodDark' },
@@ -32,11 +33,6 @@ function brig(): P[] {
     { kind: 'beam', from: [1.9, 0.95, 0], to: [2.95, 1.45, 0], width: 0.08, mat: 'woodDark' },
     ...mast(0.85, 3.7, [2.3, 3.1]),
     ...mast(-0.4, 4.4, [2.5, 3.5]),
-    // Jolly Roger at the main truck: black flag, white skull over crossed bones, showing on both faces.
-    { kind: 'box', center: [-0.78, 4.12, 0], size: [0.72, 0.48, 0.03], mat: 'dark' },
-    { kind: 'box', center: [-0.8, 4.2, 0], size: [0.17, 0.15, 0.05], bevel: 0.02, mat: 'marble' },
-    { kind: 'beam', from: [-0.98, 3.94, 0], to: [-0.62, 4.06, 0], width: 0.04, mat: 'marble' },
-    { kind: 'beam', from: [-0.98, 4.06, 0], to: [-0.62, 3.94, 0], width: 0.04, mat: 'marble' },
   ];
 }
 
@@ -115,6 +111,8 @@ const careenedShip: LandmarkDesign = {
     ...goblet([-0.28, 0.06, 0.98], 0.24),
     ...barrel([1.6, 0.06, 0.2]),
   ],
+  // The Jolly Roger at the main truck, heeled over with the masts.
+  flags: [jollyRoger(-0.37, 4.36, 0, 0.72, HEEL)],
 };
 
 /** Open treasure chest heaped with gold coin on `base`, its lid thrown back toward -x. */
@@ -243,6 +241,8 @@ const boucan: LandmarkDesign = {
     // Firewood.
     ...[0, 1, 2].map((i): P => ({ kind: 'beam', from: [0.62, 0.055 + (i === 2 ? 0.09 : 0), -0.25 + (i % 2) * 0.1 + (i === 2 ? 0.05 : 0)], to: [0.62, 0.055 + (i === 2 ? 0.09 : 0), 0.25 + (i % 2) * 0.1 + (i === 2 ? 0.05 : 0)], width: 0.09, sides: 6, mat: 'woodDark' })),
   ],
+  // Smoke curling up from the fire through the grill.
+  smoke: [[0, 0.15, 0]],
 };
 
 /** A ship's gun on its truck carriage, muzzle toward +z. */
@@ -261,14 +261,27 @@ function shotPile([x, y, z]: Vec3, r: number): P[] {
   return [ball(-r, 0, -r), ball(r, 0, -r), ball(-r, 0, r), ball(r, 0, r), ball(0, r * 1.4, 0)];
 }
 
-/** Black flag with a white skull over crossed bones, at (x, y, z) on its pole's top, flying toward +x. */
-function jollyRoger(x: number, y: number, z: number, w: number): P[] {
-  return [
-    { kind: 'box', center: [x + w * 0.5, y - w * 0.33, z], size: [w, w * 0.66, 0.03], mat: 'dark' },
-    { kind: 'box', center: [x + w * 0.48, y - w * 0.22, z], size: [w * 0.24, w * 0.2, 0.05], bevel: 0.015, mat: 'marble' },
-    { kind: 'beam', from: [x + w * 0.24, y - w * 0.56, z], to: [x + w * 0.74, y - w * 0.4, z], width: w * 0.055, mat: 'marble' },
-    { kind: 'beam', from: [x + w * 0.24, y - w * 0.4, z], to: [x + w * 0.74, y - w * 0.56, z], width: w * 0.055, mat: 'marble' },
-  ];
+/**
+ * Black flag with a white skull over crossed bones, hung from its pole at (x, y, z) and flying toward +x
+ * `w` wide; the bones are laid in short steps so they bend with the cloth.
+ */
+function jollyRoger(x: number, y: number, z: number, w: number, tilt?: Tilt): LandmarkFlag {
+  const h = w * 0.66;
+  const bone = (from: readonly [number, number], to: readonly [number, number]): P[] =>
+    Array.from({ length: 5 }, (_, i) => {
+      const t = (i + 0.5) / 5;
+      return cloth([x + w * (from[0] + (to[0] - from[0]) * t), y - h * (from[1] + (to[1] - from[1]) * t), z], [w * 0.11, w * 0.06], 'marble', 0.02);
+    }).flat();
+  return {
+    parts: [
+      ...cloth([x + w / 2, y - h / 2, z], [w, h], 'dark'),
+      ...cloth([x + w * 0.48, y - h * 0.34, z], [w * 0.24, w * 0.2], 'marble', 0.02),
+      ...bone([0.24, 0.86], [0.74, 0.6]),
+      ...bone([0.24, 0.6], [0.74, 0.86]),
+    ],
+    hinge: [x, y, z],
+    ...(tilt ? { tilt } : {}),
+  };
 }
 
 /**
@@ -285,8 +298,8 @@ const beachBattery: LandmarkDesign = {
     ...[0.08, 0.22].map((y): P => ({ kind: 'beam', from: [-0.6, y, 0.5], to: [0.6, y, 0.5], width: 0.14, sides: 7, mat: 'wood' })),
     ...shotPile([0, 0.05, -0.32], 0.05),
     post(-0.6, -0.35, 0, 1.25, 0.05),
-    ...jollyRoger(-0.6, 1.24, -0.35, 0.42),
   ],
+  flags: [jollyRoger(-0.58, 1.24, -0.35, 0.42)],
 };
 
 export const PIRATE_COVE_LANDMARKS = {

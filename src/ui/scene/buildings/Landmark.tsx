@@ -1,12 +1,13 @@
 import { useTexture } from '@react-three/drei';
 import type { ThreeElements } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
-import { MeshStandardMaterial, SpriteMaterial, type BufferGeometry, type Group, type MeshBasicMaterial, type Sprite } from 'three';
+import { CanvasTexture, MeshStandardMaterial, SpriteMaterial, type BufferGeometry, type Group, type MeshBasicMaterial, type Sprite } from 'three';
 import { useLiveFrame } from '../liveFrame';
 import { SPARKLES } from '../sparkles';
 import { geometryFromParts } from './Building';
 import type { LandmarkDesign, LandmarkFlag, LandmarkRotor } from './islands/design';
 import { LANDMARK_DESIGNS, type LandmarkId } from './landmarks';
+import { tiltPoint, type Vec3 } from './polyhedra';
 import { GLOWING_MATS } from './materials';
 
 interface LandmarkGeometry {
@@ -141,8 +142,79 @@ function WavingFlags({ flags, geometries }: { readonly flags: readonly LandmarkF
   });
   return (
     <>
-      {flags.map(({ hinge }, i) => (
-        <mesh key={i} position={[...hinge]} geometry={geometries[i]!} material={materials[i]!} castShadow dispose={null} />
+      {flags.map(({ hinge, tilt }, i) => (
+        <mesh
+          key={i}
+          // A tilted flag leans with its pole: its hinge moves with the tilt and the cloth turns by it.
+          position={[...(tilt ? tiltPoint(hinge, tilt) : hinge)]}
+          rotation={tilt ? (tilt.axis === 'x' ? [tilt.angle, 0, 0] : [0, 0, tilt.angle]) : [0, 0, 0]}
+          geometry={geometries[i]!}
+          material={materials[i]!}
+          castShadow
+          dispose={null}
+        />
+      ))}
+    </>
+  );
+}
+
+const SMOKE_COLOR = '#f2efea';
+/** Puffs in flight above each fire, how long each takes to rise and fade, and how high it climbs (design units). */
+const SMOKE = { puffs: 13, life: 5, rise: 2.2, drift: 2.6 } as const;
+
+let puff: CanvasTexture | null = null;
+
+/** A round puff, dense in the middle and soft at the edge, drawn once on a canvas. */
+function puffTexture(): CanvasTexture {
+  if (puff) return puff;
+  const size = 64;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.55, 'rgba(255,255,255,0.75)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, size, size);
+  }
+  puff = new CanvasTexture(canvas);
+  return puff;
+}
+
+/** Soft grey puffs rising from each fire, swelling, drifting downwind and fading. */
+function Smoke({ at }: { readonly at: readonly Vec3[] }) {
+  const count = at.length * SMOKE.puffs;
+  const materials = useMemo(
+    () => Array.from({ length: count }, () => new SpriteMaterial({ color: SMOKE_COLOR, map: puffTexture(), transparent: true, opacity: 0, depthWrite: false })),
+    [count],
+  );
+  useEffect(() => () => materials.forEach((m) => m.dispose()), [materials]);
+  const sprites = useRef<(Sprite | null)[]>([]);
+  useLiveFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    materials.forEach((material, i) => {
+      const [x, y, z] = at[Math.floor(i / SMOKE.puffs)]!;
+      const k = ((t / SMOKE.life + (i % SMOKE.puffs) / SMOKE.puffs) % 1 + 1) % 1;
+      material.opacity = 0.9 * Math.min(1, k / 0.1) * (1 - k);
+      material.rotation = i + k * 1.5;
+      const sprite = sprites.current[i];
+      sprite?.position.set(x + k * k * SMOKE.drift + Math.sin(k * 6 + i) * 0.04, y + k * SMOKE.rise, z + Math.cos(k * 5 + i) * 0.04);
+      sprite?.scale.setScalar(0.8 + k * 2.8);
+    });
+  });
+  return (
+    <>
+      {materials.map((material, i) => (
+        <sprite
+          key={i}
+          ref={(s) => {
+            sprites.current[i] = s;
+          }}
+          material={material}
+        />
       ))}
     </>
   );
@@ -153,7 +225,7 @@ type LandmarkProps = ThreeElements['group'] & { readonly design: LandmarkId };
 /** A piece of island scenery, drawn from the same part list as `docs/art/islands-blueprint.svg`. */
 export function Landmark({ design, ...props }: LandmarkProps) {
   const { lit, glowing, rotor: rotorGeometry, flags: flagGeometries } = geometryOf(design);
-  const { glints, rotor, flags }: LandmarkDesign = LANDMARK_DESIGNS[design];
+  const { glints, rotor, flags, smoke }: LandmarkDesign = LANDMARK_DESIGNS[design];
   return (
     <group {...props}>
       <mesh geometry={lit} castShadow receiveShadow dispose={null}>
@@ -163,6 +235,7 @@ export function Landmark({ design, ...props }: LandmarkProps) {
       {glints && <Glints at={glints} />}
       {rotor && rotorGeometry && <Rotor rotor={rotor} geometry={rotorGeometry} />}
       {flags && <WavingFlags flags={flags} geometries={flagGeometries} />}
+      {smoke && <Smoke at={smoke} />}
     </group>
   );
 }

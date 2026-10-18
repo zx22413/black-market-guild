@@ -1,5 +1,5 @@
 import type { KitPart } from '../kit';
-import type { Vec3 } from '../polyhedra';
+import type { Tilt, Vec3 } from '../polyhedra';
 
 /**
  * Hand-built scenery for the chosen islands (docs/game-design.md §11): a landmark building and
@@ -17,6 +17,8 @@ export interface LandmarkDesign {
   readonly rotor?: LandmarkRotor;
   /** Flags that wave on the table, drawn flat in the blueprint. */
   readonly flags?: readonly LandmarkFlag[];
+  /** Where smoke rises from a fire, in the design's coordinates. */
+  readonly smoke?: readonly Vec3[];
 }
 
 /**
@@ -26,6 +28,8 @@ export interface LandmarkDesign {
 export interface LandmarkFlag {
   readonly parts: readonly KitPart[];
   readonly hinge: Vec3;
+  /** Tilts the whole flag with its pole, as on a heeled ship. */
+  readonly tilt?: Tilt;
 }
 
 /** Parts that turn as one about an axis through `pivot`: a windmill's sails. */
@@ -39,7 +43,8 @@ export interface LandmarkRotor {
 
 /** Every part of a design, its rotor's at rest included: for bounds, materials and the blueprint. */
 export function landmarkParts(design: LandmarkDesign): readonly KitPart[] {
-  return [...design.parts, ...(design.rotor?.parts ?? []), ...(design.flags ?? []).flatMap((flag) => flag.parts)];
+  const flagParts = (design.flags ?? []).flatMap(({ parts, tilt }) => (tilt ? parts.map((part) => ({ ...part, tilt })) : parts));
+  return [...design.parts, ...(design.rotor?.parts ?? []), ...flagParts];
 }
 
 export type P = KitPart;
