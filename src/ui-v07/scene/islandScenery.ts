@@ -1,4 +1,4 @@
-import { LANDMARK_DESIGNS, landmarkParts, type LandmarkId } from '../../ui/scene/buildings/landmarks';
+import { LANDMARK_DESIGNS, landmarkParts, type LandmarkDesign, type LandmarkId } from '../../ui/scene/buildings/landmarks';
 import { bounds } from '../../ui/scene/buildings/polyhedra';
 import type { IslandGround } from '../../ui/scene/IslandBase';
 import type { IslandAnnex } from '../../ui/scene/islandShape';
@@ -191,4 +191,21 @@ export function backdropTop(island: IslandId | null, heading: number): Vec3 | nu
   const turn = backdropTurn(heading);
   const [x, , z] = piece.at;
   return [x * Math.cos(turn) + z * Math.sin(turn), top, -x * Math.sin(turn) + z * Math.cos(turn)];
+}
+
+/**
+ * The lamp of the chosen island's backdrop beacon (the lighthouse's fire basket) in island space,
+ * on the side the backdrop is turned to; null if the island's backdrop has no beacon.
+ */
+export function beaconAt(island: IslandId | null, heading: number): Vec3 | null {
+  const piece = island ? ISLAND_SCENERY[island]?.pieces.find((p) => p.backdrop) : undefined;
+  const design: LandmarkDesign | undefined = piece ? LANDMARK_DESIGNS[piece.design] : undefined;
+  if (!piece || !design?.beacon) return null;
+  const spin = piece.turn ?? 0;
+  const [bx, by, bz] = design.beacon.at;
+  // The piece's own turn, then its scale and place, then the backdrop's turn round the island.
+  const x = piece.at[0] + (bx * Math.cos(spin) + bz * Math.sin(spin)) * piece.scale;
+  const z = piece.at[2] + (-bx * Math.sin(spin) + bz * Math.cos(spin)) * piece.scale;
+  const turn = backdropTurn(heading);
+  return [x * Math.cos(turn) + z * Math.sin(turn), piece.at[1] + by * piece.scale, -x * Math.sin(turn) + z * Math.cos(turn)];
 }

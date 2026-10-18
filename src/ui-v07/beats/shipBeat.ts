@@ -35,6 +35,11 @@ export interface ShipBeat {
   /** Starting die value of the resolution (§4): already the rerolled value when `rerolled`. */
   readonly start: number;
   readonly rerolled: boolean;
+  /**
+   * The intel merchant that looked at two ships (the lighthouse's second look, §11.2) with this one
+   * among them, when this ship was rerolled: its beam shows the die was changed. Null otherwise.
+   */
+  readonly rerollSpotter: PlayerId | null;
   readonly steps: readonly BeatStep[];
   readonly final: number;
   readonly outcome: VoyageOutcome;
@@ -96,12 +101,18 @@ export function buildShipBeat(events: readonly MatchEvent[], shipId: ShipId): Sh
   const smuggling = inRound.find((e): e is Extract<MatchEvent, { type: 'smuggling-settled' }> => e.type === 'smuggling-settled' && e.shipId === shipId);
   const confiscated = inRound.find((e): e is Extract<MatchEvent, { type: 'arms-confiscated' }> => e.type === 'arms-confiscated' && e.shipId === shipId);
 
+  const rerolled = inRound.some((e) => e.type === 'roles-revealed' && e.rerolledShipIds.includes(shipId));
+  const spotter = inRound
+    .flatMap((e) => (e.type === 'roles-revealed' && e.role === 'intel' ? e.deployments : []))
+    .find((d) => d.peekShipId !== null && (d.targetShipId === shipId || d.peekShipId === shipId));
+
   return {
     round,
     shipId,
     owner,
     start: mod.base,
-    rerolled: inRound.some((e) => e.type === 'roles-revealed' && e.rerolledShipIds.includes(shipId)),
+    rerolled,
+    rerollSpotter: rerolled && spotter ? spotter.playerId : null,
     steps: modifierSteps(
       mod,
       deployedOn(inRound, 'guard', shipId),

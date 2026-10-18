@@ -22,6 +22,8 @@ import { LockHint } from './LockHint';
 import { RevealChips, SkipButton, StageSteps, WantedBanner, WantedChips } from './ResolveBar';
 import { WantedFlag } from '../scene/WantedFlag';
 import { RoleArrows } from './RoleArrows';
+import { Spotlight } from '../scene/Spotlight';
+import { SPOTLIGHT_HOLD, SPOT_TIME, revealSpotlight } from '../scene/spotlightMath';
 import { RoleBadges } from './RoleBadges';
 import { roleKey, roleResults } from './roleResults';
 import { cashSoFar, marketRows, settlementFlights } from './settlementModel';
@@ -35,7 +37,7 @@ import { VoyageEventCard, VoyageEventChip } from './VoyageEventCard';
 export type ResolutionStage = 'wanted' | 'event' | 'reveal' | 'voyage' | 'market' | 'settle' | 'receipt';
 
 /** Pace of each part, in ms (initial values to tune in play). */
-const PACE = { wanted: 3000, revealGroup: 1600, nextShip: 1000, marketRow: 1000, afterMarket: 1500, flight: 1100, afterSettle: 900 } as const;
+const PACE = { wanted: 3000, revealGroup: 1600, revealSpotlight: (SPOTLIGHT_HOLD.reveal + SPOT_TIME.fade) * 1000 + 400, nextShip: 1000, marketRow: 1000, afterMarket: 1500, flight: 1100, afterSettle: 900 } as const;
 const HARBOR_BADGES = [-(TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2, 0, (TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2] as const;
 /** Ships that do not involve you play this much faster (presentation default, see the doc §4). */
 const OTHERS_SPEED = 2.5;
@@ -84,14 +86,16 @@ export interface Resolution {
 }
 
 /** Counts up by one every `ms` while `running`, from 0 to `max`; restarts when `reset` changes. */
-function useTicker(max: number, ms: number, running: boolean, reset: unknown): readonly [number, (n: number) => void] {
+/** Counts up to `max`, waiting `ms` before each step (or `ms(shown)`, given how many are shown). */
+function useTicker(max: number, ms: number | ((shown: number) => number), running: boolean, reset: unknown): readonly [number, (n: number) => void] {
   const [n, setN] = useState(0);
   useEffect(() => setN(0), [reset]);
+  const wait = typeof ms === 'number' ? ms : ms(n);
   useEffect(() => {
     if (!running || n >= max) return;
-    const timer = setTimeout(() => setN((v) => v + 1), ms);
+    const timer = setTimeout(() => setN((v) => v + 1), wait);
     return () => clearTimeout(timer);
-  }, [running, n, max, ms]);
+  }, [running, n, max, wait]);
   return [Math.min(n, max), setN] as const;
 }
 
@@ -132,9 +136,15 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   }, [roundEvents]);
   const outcomes = useMemo(() => new Map(roundEvents.flatMap((e) => (e.type === 'ship-resolved' ? [[e.shipId, e.outcome] as const] : []))), [roundEvents]);
 
-  // Reveal: role groups one by one.
+  // Reveal: role groups one by one; the group with the lighthouse intel waits for its beams.
   const groups = useMemo(() => (round === null ? [] : revealGroups(events, round)), [events, round]);
-  const [groupsShown, setGroupsShown] = useTicker(groups.length, PACE.revealGroup, active && stage === 'reveal' && !paused, round);
+  const spotlight = useMemo(() => (round === null ? null : revealSpotlight(events, round, angles, laneOf, (id) => owners.get(id))), [events, round, angles, laneOf, owners]);
+  const [groupsShown, setGroupsShown] = useTicker(
+    groups.length,
+    (shown) => (spotlight && shown - 1 === spotlight.group ? PACE.revealSpotlight : PACE.revealGroup),
+    active && stage === 'reveal' && !paused,
+    round,
+  );
   const arrows = useMemo(
     () => groups.slice(0, groupsShown).flatMap((g, gi) => revealArrows(g, angles, laneOf, (id) => owners.get(id)).map((a) => ({ ...a, group: gi }))),
     [groups, groupsShown, angles, laneOf, owners],
@@ -376,6 +386,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
       <>
         {stage === 'wanted' && wantedIds.map((id) => <WantedFlag key={`${round}-${id}`} angle={angles[laneOf(id)]!} />)}
         {showArrows && <RoleArrows arrows={shownArrows} colorOf={colorOf} dimmed={(a) => olderArrows.has(a.key)} />}
+        {stage === 'reveal' && spotlight && groupsShown - 1 === spotlight.group && <Spotlight key={spotlight.cue.key} cue={spotlight.cue} />}
         {layer?.scene}
         {flying && <Flights key={flying.key} flights={[flying]} ctx={placeCtx} />}
       </>

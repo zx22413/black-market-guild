@@ -18,6 +18,24 @@ function play(seed: number) {
 const SEEDS = [1, 2, 3, 7, 11];
 
 describe('ship beat built from public events', () => {
+  it('names the lighthouse intel that rerolled a ship it looked at, and only then', () => {
+    let spotted = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const events = play(seed).log.events as MatchEvent[];
+      for (const id of events.flatMap((e) => (e.type === 'ship-resolved' ? [e.shipId] : []))) {
+        const beat = buildShipBeat(events, id)!;
+        if (beat.rerollSpotter === null) continue;
+        spotted++;
+        expect(beat.rerolled).toBe(true);
+        const intel = events.find((e) => e.type === 'roles-revealed' && e.round === beat.round && e.role === 'intel');
+        const d = intel?.type === 'roles-revealed' ? intel.deployments.find((x) => x.playerId === beat.rerollSpotter) : undefined;
+        expect(d?.peekShipId).not.toBeNull();
+        expect([d?.targetShipId, d?.peekShipId]).toContain(id);
+      }
+    }
+    expect(spotted).toBeGreaterThan(0);
+  });
+
   it.each(SEEDS)('replays every ship exactly as the engine resolved it (seed %i)', (seed) => {
     const { log } = play(seed);
     const events = log.events as MatchEvent[];

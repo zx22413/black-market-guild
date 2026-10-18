@@ -359,7 +359,7 @@ function FireLights({ at }: { readonly at: readonly { readonly at: Vec3; readonl
   );
 }
 
-const BEAM_COLOR = '#ffb52e';
+export const BEAM_COLOR = '#ffb52e';
 /** How fast the beam sweeps round (radians per second), how wide it opens at the sea, and how strong it is. */
 const BEAM = { speed: 0.55, spread: 0.16, opacity: 0.2, pool: 0.6 } as const;
 
@@ -367,7 +367,7 @@ const BEAM = { speed: 0.55, spread: 0.16, opacity: 0.2, pool: 0.6 } as const;
  * The beam's light: strongest where the cone faces the camera and fading to nothing at its grazing
  * edges and toward the far end, so it reads as a soft, blurred shaft rather than a solid cone.
  */
-function beamMaterial(): ShaderMaterial {
+export function beamMaterial(): ShaderMaterial {
   return new ShaderMaterial({
     uniforms: { uColor: { value: new Color(BEAM_COLOR) }, uOpacity: { value: BEAM.opacity } },
     vertexShader: `

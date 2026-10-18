@@ -2038,6 +2038,11 @@
   color: #6a4fc2;
   animation-delay: 150ms;
 }
+/* The lighthouse: the word lands when the beam locks onto the ship (SPOT_TIME.lock in scene/spotlightMath.ts). */
+.hit-word.beacon {
+  color: #b86a00;
+  animation-delay: 950ms;
+}
 @keyframes hit-word {
   0% { opacity: 0; transform: rotate(-8deg) scale(2.4); }
   20% { opacity: 1; transform: rotate(-8deg) scale(1); }

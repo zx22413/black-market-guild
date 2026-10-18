@@ -13,6 +13,8 @@ import type { BeatView } from '../beats/beatTimeline';
 import type { ShipBeat } from '../beats/shipBeat';
 import { around } from './focusMath';
 import { actorsShown, framingOf, involved, stepActors, stepHit, type BeatActor, type BeatHit, type BeatSeat } from './beatStage';
+import { Spotlight } from './Spotlight';
+import { SPOT_TIME, voyageSpotlight } from './spotlightMath';
 import { TableCanvas, overviewPoints, platePosition, useTableLayout, type TablePin } from './TableCanvas';
 
 // The V0.6 table (sea, weather, islands, ships) playing one V0.7 ship beat: the camera closes in
@@ -31,9 +33,9 @@ const ACTOR_LOOK: Readonly<Record<BeatActor['role'], { readonly model: ModelName
 };
 const ACTOR_SPOT = { x: 7, z: 5, spread: 5 } as const;
 /** How long after a step begins the ship takes the hit (an actor first has to arrive). */
-const HIT_DELAY: Readonly<Record<BeatHit['kind'], number>> = { ram: 0.7, shield: 0.45, lightning: 0.2, push: 0.15, lift: 0.45, jolt: 0.15 };
+const HIT_DELAY: Readonly<Record<BeatHit['kind'], number>> = { ram: 0.7, shield: 0.45, lightning: 0.2, push: 0.15, lift: 0.45, jolt: 0.15, beacon: SPOT_TIME.lock };
 const HIT_LENGTH = 0.7;
-const HIT_WORD: Partial<Record<BeatHit['kind'], string>> = { ram: '撞擊！', shield: '護航！', lightning: '雷擊！' };
+const HIT_WORD: Partial<Record<BeatHit['kind'], string>> = { ram: '撞擊！', shield: '護航！', lightning: '雷擊！', beacon: '燈塔！' };
 /** A pirate pulls back, then rams the ship: it starts moving at LUNGE_START and touches it at HIT_DELAY.ram. */
 const LUNGE_START = 0.45;
 const LUNGE_END = 1.0;
@@ -49,6 +51,10 @@ const TAG_BACK = 2;
 const ACTOR_TAG_HEIGHT = 3.2;
 /** The close-up shows this much sea around the ship: room for the pirates and guards beside it. */
 const CLOSE_UP_RADIUS = 15;
+/** Room kept round the lighthouse's lamp while its beam is on the ship, so its glow is not cut off. */
+const LAMP_ROOM = 4;
+/** Pixels kept above the lamp for its glow. */
+const LAMP_CLEARANCE = 80;
 /** Room above the ship for its tag, so the close-up keeps the whole tag on screen. */
 const TAG_CLEARANCE = 300;
 
@@ -337,7 +343,7 @@ function Reaction({ hit, heading, children }: { readonly hit: BeatHit | null; re
     if (hit.kind === 'push') {
       const reach = Math.sin((t / HIT_LENGTH) * Math.PI) * 2.4;
       g.position.set(Math.sin(heading) * reach, 0, Math.cos(heading) * reach);
-    } else if (hit.kind === 'lift' || hit.kind === 'shield') {
+    } else if (hit.kind === 'lift' || hit.kind === 'shield' || hit.kind === 'beacon') {
       g.position.y = Math.sin((t / HIT_LENGTH) * Math.PI) * 1.2;
     } else {
       const shake = Math.sin(t * 60) * 0.9 * fade;
@@ -379,11 +385,16 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats }: B
   const hit = stepHit(beat, view, weather);
   const striking = stepActors(beat, view);
   const framing = framingOf(view);
+  // The owner's lighthouse shining on its ship: the close-up widens to take in the lamp.
+  const spotlight = framing === 'ship' ? voyageSpotlight(beat, view, { angleOf: (id) => angles[laneOf(id)]!, islandOf: (id) => seats.find((s) => s.id === id)?.island ?? null }) : null;
   const p = focusPose.position;
   const spotOf = (actor: BeatActor) => actorSpot(p, ACTOR_LOOK[actor.role], actor);
   const seatOf = (id: PlayerId) => seats.find((s) => s.id === id);
   return {
-    camera: framing === 'ship' ? [...around([p.x, 0, p.z], CLOSE_UP_RADIUS), { position: [p.x, TAG_HEIGHT, p.z - TAG_BACK] as const, clearance: TAG_CLEARANCE }] : null,
+    camera:
+      framing === 'ship'
+        ? [...around([p.x, 0, p.z], CLOSE_UP_RADIUS), { position: [p.x, TAG_HEIGHT, p.z - TAG_BACK] as const, clearance: TAG_CLEARANCE }, ...(spotlight ? [{ position: spotlight.lamp, clearance: LAMP_CLEARANCE }, ...around(spotlight.lamp, LAMP_ROOM)] : [])]
+        : null,
     ringed: framing === 'ship' ? involved(beat) : new Set(),
     focusState: view.showOutcome ? (beat.outcome === 'sank' ? 'sunk' : 'arrived') : 'sailing',
     wrapShip: (id, body) =>
@@ -440,6 +451,7 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats }: B
           );
         })}
         {hit && <HitFx key={`${beat.shipId}-${hit.key}`} hit={hit} at={focusPose.position} from={striking.filter((a) => a.role === 'pirate').map(spotOf)} />}
+        {spotlight && <Spotlight key={spotlight.key} cue={spotlight} />}
       </>
     ),
   };

@@ -44,7 +44,7 @@ export function actorsShown(beat: ShipBeat, view: BeatView): BeatActor[] {
   );
 }
 
-export type HitKind = 'ram' | 'shield' | 'lightning' | 'push' | 'lift' | 'jolt';
+export type HitKind = 'ram' | 'shield' | 'lightning' | 'push' | 'lift' | 'jolt' | 'beacon';
 
 export interface BeatHit {
   readonly kind: HitKind;
@@ -60,8 +60,8 @@ export function stepActors(beat: ShipBeat, view: BeatView): BeatActor[] {
 
 /**
  * How the ship reacts to the step on screen: pirates ram it, guards put a shield around it, a
- * storm strikes with lightning, a tailwind pushes it on, other help lifts it and other trouble
- * jolts it.
+ * storm strikes with lightning, a tailwind pushes it on, its own island's beacon (the lighthouse)
+ * lifts it once the beam is on it, other help lifts it and other trouble jolts it.
  */
 export function stepHit(beat: ShipBeat, view: BeatView, weather: VoyageEventId | null): BeatHit | null {
   if (view.stepsShown === 0 || view.showOutcome) return null;
@@ -71,7 +71,9 @@ export function stepHit(beat: ShipBeat, view: BeatView, weather: VoyageEventId |
       ? 'ram'
       : step.kind === 'guard'
         ? 'shield'
-        : step.kind === 'event' && weather === 'storm'
+        : step.kind === 'island'
+          ? 'beacon'
+          : step.kind === 'event' && weather === 'storm'
           ? 'lightning'
           : step.kind === 'event' && weather === 'tailwind'
             ? 'push'
