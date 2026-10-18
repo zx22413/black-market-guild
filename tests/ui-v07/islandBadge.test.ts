@@ -8,8 +8,8 @@ describe('island badge', () => {
       const [sx, , sz] = seatPosition(angle);
       const [x, , z] = badgePosition(angle);
       if (Math.abs(sx) > Math.abs(sz)) {
-        // Outward from the table's middle, level with the island, off the backdrop at its back.
-        expect(Math.abs(x)).toBeGreaterThan(Math.abs(sx) + PLAYER_ISLAND_RADIUS / 2);
+        // Past the rim, outward from the table's middle, off the backdrop and the buildings.
+        expect(Math.abs(x)).toBeGreaterThan(Math.abs(sx) + PLAYER_ISLAND_RADIUS);
         expect(z).toBeCloseTo(sz);
       } else {
         expect(x).toBeCloseTo(sx);

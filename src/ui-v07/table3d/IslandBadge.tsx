@@ -47,13 +47,15 @@ function IslandBadge({ island }: { readonly island: IslandId }) {
 
 /**
  * Where an island's badge goes: at the island's back edge (the top of it on screen), clear of its plate
- * and dock; on an island at the side of the table, whose backdrop stands at that back edge, at its outer
- * edge instead, so the badge never covers the backdrop (the mine's railway).
+ * and dock; on an island at the side of the table, whose backdrop stands at that back edge, just past
+ * its outer rim instead, clear of its buildings, so the badge never covers the backdrop (the mine's railway).
  */
 export function badgePosition(angle: number): Vec3 {
   const [x, , z] = seatPosition(angle);
   const edge = PLAYER_ISLAND_RADIUS * 0.72;
-  return Math.abs(x) > Math.abs(z) ? [x + Math.sign(x) * edge, 4, z] : [x, 4, z - edge];
+  // Past the rim of a side island, over the sea, clear of the buildings near its edge.
+  const outside = PLAYER_ISLAND_RADIUS * 1.1;
+  return Math.abs(x) > Math.abs(z) ? [x + Math.sign(x) * outside, 4, z] : [x, 4, z - edge];
 }
 
 /** Badges on each island, clear of plates, docks and backdrops (`badgePosition`). */
