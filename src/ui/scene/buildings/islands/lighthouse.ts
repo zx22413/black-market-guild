@@ -44,7 +44,7 @@ const radiusAt = (y: number): number => FOOT + ((y - 0.22) / (PLATFORM - 0.22)) 
  * Coal beacon, the island's backdrop, after Hook Head in Ireland, where a fire was kept burning on a
  * round tower for centuries before lamps: a whitewashed round tower tapering on a rock, girdled with
  * two black bands, slit windows climbing it, a railed gallery round the top and an iron basket of
- * burning coal whose fire glows and smokes, with a hoist for the coal, the keeper's cottage at its foot
+ * burning coal whose fire glows and flickers, with a hoist for the coal, the keeper's cottage at its foot
  * and a coal heap. Authored for about 3×, on the cliff top.
  */
 const coalBeacon: LandmarkDesign = {
@@ -84,8 +84,6 @@ const coalBeacon: LandmarkDesign = {
     { kind: 'box', center: [0.96, 0.46, 0.36], size: [0.1, 0.1, 0.03], mat: 'gold' },
     { kind: 'prism', base: [-0.72, 0.2, 0.2], radius: 0.26, top: 0.04, height: 0.24, sides: 7, mat: 'dark' },
   ],
-  // Authored at 3×: small puffs here still read as a coal fire's smoke on the table.
-  smoke: [{ at: [0, PLATFORM + 1.0, 0], size: 0.3 }],
 };
 
 /**
