@@ -1,6 +1,7 @@
 import { perimeterBeams, post, gabledRoof } from '../kit';
 import type { Vec2, Vec3 } from '../polyhedra';
 import type { LandmarkDesign, P } from './design';
+import { ENGINE_CHIMNEY, mineCar, mineEngine, portalParts, trackParts } from './railway';
 
 // The mine (礦山島): Agricola's shaft house, an ore cart, the mountain and its crags, pines and spoil.
 
@@ -72,6 +73,69 @@ const MOUNTAIN: readonly Vec2[] = [
   [-1.4, 0.55],
 ];
 
+/** The mountain's three peaks, as cones standing on the foothills' foot. */
+const PEAKS = [
+  { base: [-0.85, 0.62, -0.15], radius: 0.62, height: 1.9, sides: 7, turn: 0.3, mat: 'slate' },
+  { base: [0.15, 0.62, -0.22], radius: 0.82, height: 2.9, sides: 7, turn: 0.1, mat: 'stone' },
+  { base: [0.9, 0.62, -0.12], radius: 0.4, height: 1.6, sides: 6, turn: 0.5, mat: 'slate' },
+] as const;
+
+/** How far a peak's polygon reaches from its axis at height `y` (its corners). */
+const peakReach = ({ base, radius, height }: (typeof PEAKS)[number], y: number): number => radius * (1 - (y - base[1]) / height);
+
+/**
+ * Whether a car on the track at `p` would touch one of the side peaks the tunnels run into: it must
+ * clear the peak's corners by half a car and a bit. (The arc keeps clear of the big peak by its shape.)
+ */
+function nearRock([x, y, z]: Vec3): boolean {
+  return [PEAKS[0], PEAKS[2]].some((peak) => Math.hypot(x - peak.base[0], z - peak.base[2]) < peakReach(peak, y) + 0.13);
+}
+
+/**
+ * The railway's loop: an arc round the front of the big peak, climbing a little to its middle, from a
+ * tunnel in the right-hand peak to one in the left-hand peak. Each tunnel runs on straight into its
+ * peak under a spur of rock, and the cars run back to the start through the mountain, out of sight.
+ */
+const RAILWAY = { center: [0.15, -0.2], right: 0.75, left: 0.95, depth: 0.68, foot: 0.7, rise: 0.7, samples: 36 } as const;
+const ARC: readonly Vec3[] = Array.from({ length: RAILWAY.samples + 1 }, (_, i): Vec3 => {
+  const t = i / RAILWAY.samples;
+  const angle = t * Math.PI;
+  const reach = RAILWAY.right + (RAILWAY.left - RAILWAY.right) * t;
+  return [RAILWAY.center[0] + Math.cos(angle) * reach, RAILWAY.foot + RAILWAY.rise * Math.sin(angle), RAILWAY.center[1] + Math.sin(angle) * RAILWAY.depth];
+});
+/** The open stretch of the arc, from mouth to mouth. */
+const OPEN = ARC.slice(ARC.findIndex((p) => !nearRock(p)), ARC.length - [...ARC].reverse().findIndex((p) => !nearRock(p)));
+const [RIGHT_MOUTH, LEFT_MOUTH] = [OPEN[0]!, OPEN[OPEN.length - 1]!];
+
+/**
+ * A tunnel on the open track's end `mouth` (`beside` is the open track's next point), running on
+ * straight ahead into `peak` so the cars never turn in the mouth: the way in, where the cars run to
+ * level, and the point in the heart of the peak they then drop to.
+ */
+function tunnel(mouth: Vec3, beside: Vec3, peak: (typeof PEAKS)[number]) {
+  const [ax, az] = [mouth[0] - beside[0], mouth[2] - beside[2]];
+  const m = Math.hypot(ax, az);
+  const inward: Vec3 = [ax / m, 0, az / m];
+  const level = 0.3;
+  return {
+    inward,
+    inside: [mouth[0] + inward[0] * level, mouth[1], mouth[2] + inward[2] * level] as Vec3,
+    core: [peak.base[0], RAILWAY.foot, peak.base[2]] as Vec3,
+  };
+}
+const [LEFT_PEAK, , RIGHT_PEAK] = PEAKS;
+const RIGHT_TUNNEL = tunnel(RIGHT_MOUTH, OPEN[1]!, RIGHT_PEAK);
+const LEFT_TUNNEL = tunnel(LEFT_MOUTH, OPEN[OPEN.length - 2]!, LEFT_PEAK);
+/** The whole loop: out of the right-hand peak, round the front, into the left-hand peak and back through the rock. */
+const RAIL_LOOP: readonly Vec3[] = [
+  RIGHT_TUNNEL.core,
+  RIGHT_TUNNEL.inside,
+  ...OPEN,
+  LEFT_TUNNEL.inside,
+  LEFT_TUNNEL.core,
+];
+const SHOWN: readonly [number, number] = [2, 2 + OPEN.length - 1];
+
 /** Pine of the mountain slopes, standing on `base`. */
 function slopePine([x, y, z]: Vec3, size: number): P[] {
   return [
@@ -84,19 +148,22 @@ function slopePine([x, y, z]: Vec3, size: number): P[] {
  * The mine's mountain: a landmass rising out of the sea behind the island, about twice as tall as
  * the exchange tower. Authored to be placed at about 6× (not the buildings' 2×), so the workings on
  * it are drawn at a third of the usual size to stay building-sized: a timbered adit at the foot,
- * a windlass headframe on the shoulder, pines on the slopes. The peaks are cones so the mass reads
+ * a windlass headframe on the shoulder, pines on the slopes, and a little engine
+ * hauling ore cars round the big peak's waist on a railway that tunnels through the two smaller peaks. The peaks are cones so the mass reads
  * from every side it may be turned to. Its foot (y < 0.5) is under the sea
  * and inside the cliff.
  */
 const mountain: LandmarkDesign = {
-  motif: '超大鋸齒礦山＋坑道口＋山腰井架',
+  motif: '超大鋸齒礦山＋坑道口＋山腰井架＋繞峰礦車軌道',
   parts: [
     { kind: 'loft', base: [0, 0, 0], outline: MOUNTAIN, height: 0.62, bottom: 1, top: 0.88, mat: 'slate' },
     // Foothills: a low ridge sloping down toward the island, so the peaks grow out of it gradually.
     { kind: 'loft', base: [0, 0.62, -0.05], outline: MOUNTAIN, height: 0.32, bottom: 0.78, top: 0.5, mat: 'slate' },
-    { kind: 'prism', base: [-0.85, 0.62, -0.15], radius: 0.62, top: 0.03, height: 1.9, sides: 7, turn: 0.3, mat: 'slate' },
-    { kind: 'prism', base: [0.15, 0.62, -0.22], radius: 0.82, top: 0.03, height: 2.9, sides: 7, turn: 0.1, mat: 'stone' },
-    { kind: 'prism', base: [0.9, 0.62, -0.12], radius: 0.4, top: 0.03, height: 1.6, sides: 6, turn: 0.5, mat: 'slate' },
+    ...PEAKS.map((peak): P => ({ kind: 'prism', top: 0.03, ...peak })),
+    // The mine railway round the big peak's waist, between its two tunnel mouths.
+    ...trackParts(OPEN, 0, OPEN.length - 1),
+    ...portalParts(RIGHT_MOUTH, RIGHT_TUNNEL.inward),
+    ...portalParts(LEFT_MOUTH, LEFT_TUNNEL.inward),
     // Timbered adit at the foot, facing the island.
     { kind: 'box', center: [-0.5, 0.62, 0.43], size: [0.15, 0.22, 0.06], mat: 'dark' },
     post(-0.59, 0.46, 0.5, 0.74, 0.035),
@@ -120,6 +187,18 @@ const mountain: LandmarkDesign = {
       [1.25, -0.2],
     ] as const).flatMap(([x, z], i) => slopePine([x, 0.6, z], 0.35 + (i % 2) * 0.08)),
   ],
+  train: {
+    path: RAIL_LOOP,
+    car: mineCar([0, 0, 0]),
+    engine: mineEngine([0, 0, 0]),
+    chimney: ENGINE_CHIMNEY,
+    parked: mineEngine(ARC[RAILWAY.samples / 2]!),
+    cars: 5,
+    spacing: 0.34,
+    speed: 0.13,
+    shown: SHOWN,
+    rush: 4,
+  },
 };
 
 /** Grey crag breaking through the ground at the island's rim. */

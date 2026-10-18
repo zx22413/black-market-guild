@@ -10,6 +10,7 @@ import { geometryFromParts } from './Building';
 import type { KitPart } from './kit';
 import type { LandmarkBeacon, LandmarkDesign, LandmarkFlag, LandmarkRotor } from './islands/design';
 import { LANDMARK_DESIGNS, type LandmarkId } from './landmarks';
+import { Train } from './LandmarkTrain';
 import { tiltPoint, type Vec3 } from './polyhedra';
 import { GLOWING_MATS } from './materials';
 
@@ -410,7 +411,7 @@ type LandmarkProps = ThreeElements['group'] & {
 /** A piece of island scenery, drawn from the same part list as `docs/art/islands-blueprint.svg`. */
 export function Landmark({ design, night = false, ...props }: LandmarkProps) {
   const { lit, glowing, flames: flameGeometries, rotor: rotorGeometry, flags: flagGeometries } = geometryOf(design);
-  const { glints, rotor, flags, smoke, lights, beacon }: LandmarkDesign = LANDMARK_DESIGNS[design];
+  const { glints, rotor, flags, smoke, lights, beacon, train }: LandmarkDesign = LANDMARK_DESIGNS[design];
   return (
     <group {...props}>
       <mesh geometry={lit} castShadow receiveShadow dispose={null}>
@@ -424,6 +425,7 @@ export function Landmark({ design, night = false, ...props }: LandmarkProps) {
       {smoke && <Smoke at={smoke} />}
       {night && lights && <FireLights at={lights} />}
       {night && beacon && <Beacon beacon={beacon} />}
+      {train && <Train train={train} />}
     </group>
   );
 }

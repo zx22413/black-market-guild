@@ -23,6 +23,29 @@ export interface LandmarkDesign {
   readonly lights?: readonly { readonly at: Vec3; readonly reach: number }[];
   /** A lighthouse lamp whose beam sweeps round over the sea at night (`Beacon`). */
   readonly beacon?: LandmarkBeacon;
+  /** A train of cars running round a closed loop of track on the table (`railway.ts`). */
+  readonly train?: LandmarkTrain;
+}
+
+/** Cars running round and round a loop of track, in the design's coordinates. */
+export interface LandmarkTrain {
+  /** The loop, rail tops; the cars run from each point to the next and from the last back to the first. */
+  readonly path: readonly Vec3[];
+  /** One car, its wheels on the rails at the origin, running along +x. */
+  readonly car: readonly KitPart[];
+  /** The engine at the head of the train, like a car; `cars` counts it. */
+  readonly engine: readonly KitPart[];
+  /** Where the engine's chimney smokes, ahead of its middle and up from the rails. */
+  readonly chimney: { readonly ahead: number; readonly up: number };
+  /** The engine standing on the track, for the blueprint, which draws no motion. */
+  readonly parked: readonly KitPart[];
+  readonly cars: number;
+  /** Distance between cars along the track, and how fast they run, in design units (per second). */
+  readonly spacing: number;
+  readonly speed: number;
+  /** The stretch of the loop (point indices) out in the open; elsewhere the cars rush through the rock `rush` times faster. */
+  readonly shown: readonly [number, number];
+  readonly rush: number;
 }
 
 /** A lighthouse's sweeping beam, in the design's coordinates. */
@@ -57,7 +80,7 @@ export interface LandmarkRotor {
 /** Every part of a design, its rotor's at rest included: for bounds, materials and the blueprint. */
 export function landmarkParts(design: LandmarkDesign): readonly KitPart[] {
   const flagParts = (design.flags ?? []).flatMap(({ parts, tilt }) => (tilt ? parts.map((part) => ({ ...part, tilt })) : parts));
-  return [...design.parts, ...(design.rotor?.parts ?? []), ...flagParts];
+  return [...design.parts, ...(design.rotor?.parts ?? []), ...flagParts, ...(design.train?.parked ?? [])];
 }
 
 export type P = KitPart;
