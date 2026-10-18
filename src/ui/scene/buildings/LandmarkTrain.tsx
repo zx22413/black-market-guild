@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { IcosahedronGeometry, MeshStandardMaterial, type Group, type Mesh } from 'three';
+import type { Group, Mesh } from 'three';
 import { useLiveFrame } from '../liveFrame';
 import { geometryFromParts } from './Building';
 import type { LandmarkTrain } from './islands/design';
+import { PUFF_BALL, STEAM_SMOKE, puffOpacity, puffSwell, smokeBallMaterials } from './smokeBall';
 import { distanceTo, pointAlong, rushedDistance, type TrackPoint } from './islands/railway';
 
 /** Where the train's car `i` is at `seconds` on the table clock. */
@@ -37,7 +38,6 @@ export function Train({ train }: { readonly train: LandmarkTrain }) {
   );
 }
 
-const SMOKE_COLOR = '#ece8e1';
 /**
  * Balls of smoke in the air at once, how long each lasts, how high it climbs and how far it streams back
  * behind the engine, its radius as it leaves the chimney (design units) and how many times bigger it grows
@@ -45,8 +45,6 @@ const SMOKE_COLOR = '#ece8e1';
  * mouth the engine stops puffing.
  */
 const SMOKE = { puffs: 16, life: 3.6, rise: 0.6, back: 0.95, radius: 0.045, grow: 3.2, mouth: 0.12 } as const;
-/** A low-poly ball, shared by every puff. */
-const PUFF_BALL = new IcosahedronGeometry(1, 1);
 
 /**
  * Smoke from the engine's chimney, puffed out ball by ball: each round puff leaves the chimney where
@@ -55,10 +53,7 @@ const PUFF_BALL = new IcosahedronGeometry(1, 1);
  */
 function EngineSmoke({ train }: { readonly train: LandmarkTrain }) {
   const balls = useRef<(Mesh | null)[]>([]);
-  const materials = useMemo(
-    () => Array.from({ length: SMOKE.puffs }, () => new MeshStandardMaterial({ color: SMOKE_COLOR, roughness: 1, flatShading: true, transparent: true, depthWrite: false })),
-    [],
-  );
+  const materials = useMemo(() => smokeBallMaterials(SMOKE.puffs, STEAM_SMOKE), []);
   useEffect(() => () => materials.forEach((m) => m.dispose()), [materials]);
   const [open0, open1] = useMemo(() => [distanceTo(train.path, train.shown[0]) + SMOKE.mouth, distanceTo(train.path, train.shown[1]) - SMOKE.mouth], [train]);
   useLiveFrame(({ clock }) => {
@@ -74,8 +69,8 @@ function EngineSmoke({ train }: { readonly train: LandmarkTrain }) {
       const back = train.chimney.ahead - SMOKE.back * Math.pow(k, 0.7);
       ball.position.set(at[0] + toward[0] * back, at[1] + train.chimney.up + SMOKE.radius * 0.6 + k * SMOKE.rise, at[2] + toward[2] * back);
       // Pops out of the chimney, then swells as it drifts off and thins away to nothing.
-      ball.scale.setScalar(SMOKE.radius * Math.min(1, k / 0.06) * (1 + k * (SMOKE.grow - 1)));
-      materials[i]!.opacity = 0.95 * Math.pow(1 - k, 1.3);
+      ball.scale.setScalar(SMOKE.radius * puffSwell(k, SMOKE.grow));
+      materials[i]!.opacity = puffOpacity(k);
       ball.rotation.set(i, i * 2, 0);
     });
   });

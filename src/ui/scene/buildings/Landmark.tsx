@@ -1,7 +1,7 @@
 import { useTexture } from '@react-three/drei';
 import type { ThreeElements } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
-import { AdditiveBlending, CanvasTexture, Color, CylinderGeometry, ShaderMaterial, DoubleSide, Float32BufferAttribute, MeshBasicMaterial, MeshStandardMaterial, SpriteMaterial, type PointLight, type BufferGeometry, type Group, type Sprite } from 'three';
+import { AdditiveBlending, Color, CylinderGeometry, ShaderMaterial, DoubleSide, Float32BufferAttribute, MeshBasicMaterial, MeshStandardMaterial, SpriteMaterial, type PointLight, type BufferGeometry, type Group, type Mesh, type Sprite } from 'three';
 import { useLiveFrame } from '../liveFrame';
 import { glowTexture } from '../Night';
 import { SPARKLES } from '../sparkles';
@@ -11,6 +11,7 @@ import type { KitPart } from './kit';
 import type { LandmarkBeacon, LandmarkDesign, LandmarkFlag, LandmarkRotor } from './islands/design';
 import { LANDMARK_DESIGNS, type LandmarkId } from './landmarks';
 import { Train } from './LandmarkTrain';
+import { PUFF_BALL, WOOD_SMOKE, puffOpacity, puffSwell, smokeBallMaterials } from './smokeBall';
 import { tiltPoint, type Vec3 } from './polyhedra';
 import { GLOWING_MATS } from './materials';
 
@@ -227,64 +228,35 @@ function WavingFlags({ flags, geometries }: { readonly flags: readonly LandmarkF
   );
 }
 
-const SMOKE_COLOR = '#f2efea';
-/** Puffs in flight above each fire, how long each takes to rise and fade, and how high it climbs (design units). */
-const SMOKE = { puffs: 13, life: 5, rise: 2.2, drift: 2.6 } as const;
+/**
+ * Balls of smoke above each fire, how long each lasts, how high it climbs and how far it drifts downwind,
+ * its radius as it leaves the fire and how many times bigger it grows before it is gone (design units, for
+ * a fire of size 1). A puff every 0.7 s: a third as often as the mine engine puffs.
+ */
+const SMOKE = { puffs: 7, life: 4.9, rise: 2.2, drift: 2.6, radius: 0.22, grow: 3.2 } as const;
 
-let puff: CanvasTexture | null = null;
-
-/** A round puff, dense in the middle and soft at the edge, drawn once on a canvas. */
-function puffTexture(): CanvasTexture {
-  if (puff) return puff;
-  const size = 64;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  if (ctx) {
-    const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-    g.addColorStop(0, 'rgba(255,255,255,1)');
-    g.addColorStop(0.55, 'rgba(255,255,255,0.75)');
-    g.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, size, size);
-  }
-  puff = new CanvasTexture(canvas);
-  return puff;
-}
-
-/** Soft grey puffs rising from each fire, swelling, drifting downwind and fading. */
+/** Round puffs of smoke rising from each fire one after another, drifting downwind, swelling and thinning away. */
 function Smoke({ at }: { readonly at: readonly { readonly at: Vec3; readonly size: number }[] }) {
   const count = at.length * SMOKE.puffs;
-  const materials = useMemo(
-    () => Array.from({ length: count }, () => new SpriteMaterial({ color: SMOKE_COLOR, map: puffTexture(), transparent: true, opacity: 0, depthWrite: false })),
-    [count],
-  );
+  const materials = useMemo(() => smokeBallMaterials(count, WOOD_SMOKE), [count]);
   useEffect(() => () => materials.forEach((m) => m.dispose()), [materials]);
-  const sprites = useRef<(Sprite | null)[]>([]);
+  const balls = useRef<(Mesh | null)[]>([]);
   useLiveFrame(({ clock }) => {
     const t = clock.elapsedTime;
     materials.forEach((material, i) => {
       const { at: [x, y, z], size } = at[Math.floor(i / SMOKE.puffs)]!;
       const k = ((t / SMOKE.life + (i % SMOKE.puffs) / SMOKE.puffs) % 1 + 1) % 1;
-      // Fades in as it leaves the fire, so the flames underneath stay clear.
-      material.opacity = 0.9 * Math.min(1, k / 0.3) * (1 - k);
-      material.rotation = i + k * 1.5;
-      const sprite = sprites.current[i];
-      sprite?.position.set(x + k * k * SMOKE.drift * size + Math.sin(k * 6 + i) * 0.04 * size, y + k * SMOKE.rise * size, z + Math.cos(k * 5 + i) * 0.04 * size);
-      sprite?.scale.setScalar((0.8 + k * 2.8) * size);
+      material.opacity = puffOpacity(k, 0.7);
+      const ball = balls.current[i];
+      ball?.position.set(x + k * k * SMOKE.drift * size + Math.sin(k * 6 + i) * 0.04 * size, y + SMOKE.radius * size + k * SMOKE.rise * size, z + Math.cos(k * 5 + i) * 0.04 * size);
+      ball?.scale.setScalar(SMOKE.radius * size * puffSwell(k, SMOKE.grow));
+      ball?.rotation.set(i, i * 2, 0);
     });
   });
   return (
     <>
       {materials.map((material, i) => (
-        <sprite
-          key={i}
-          ref={(s) => {
-            sprites.current[i] = s;
-          }}
-          material={material}
-        />
+        <mesh key={i} geometry={PUFF_BALL} material={material} ref={(b) => void (balls.current[i] = b)} dispose={null} />
       ))}
     </>
   );
