@@ -5,7 +5,7 @@ import { PIRATE_COVE_LANDMARKS } from './islands/pirateCove';
 import { SMUGGLER_PORT_LANDMARKS } from './islands/smugglerPort';
 import { SPICE_ISLES_LANDMARKS } from './islands/spiceIsles';
 
-export type { LandmarkDesign } from './islands/design';
+export { landmarkParts, type LandmarkDesign } from './islands/design';
 
 /** Every island's scenery designs (one file per island in `islands/`), by the id `islandScenery.ts` places them with. */
 export const LANDMARK_DESIGNS = {

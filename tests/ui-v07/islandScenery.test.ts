@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ASSET_IDS } from '../../src/game';
 import { BUILDING_DESIGNS, ROOF_MATS } from '../../src/ui/scene/buildings/designs';
-import { LANDMARK_DESIGNS } from '../../src/ui/scene/buildings/landmarks';
+import { LANDMARK_DESIGNS, landmarkParts, type LandmarkDesign } from '../../src/ui/scene/buildings/landmarks';
 import { SWATCHES } from '../../src/ui/scene/buildings/materials';
 import { bounds, partFaces, type Part, type Vec3 } from '../../src/ui/scene/buildings/polyhedra';
 import { ASSET_BUILDING_SCALE, ASSET_LOTS, PLATEAU_SAFE_RATIO, PLAYER_ISLAND_RADIUS } from '../../src/ui/scene/layout';
@@ -35,7 +35,7 @@ const FOOTING_HEIGHT = 0.6;
 
 /** The parts a piece stands on: all of them, or a backdrop's footing. */
 function footing(piece: SceneryPiece): readonly Part[] {
-  const parts = LANDMARK_DESIGNS[piece.design].parts;
+  const parts = landmarkParts(LANDMARK_DESIGNS[piece.design]);
   return piece.backdrop ? parts.filter((p) => bounds([p]).min[1] < FOOTING_HEIGHT) : parts;
 }
 
@@ -69,7 +69,7 @@ const assetFootprints: Footprint[] = ASSET_IDS.map((asset) => {
 });
 
 /** Height above the plateau. */
-const topOf = (piece: SceneryPiece): number => piece.at[1] + bounds(LANDMARK_DESIGNS[piece.design].parts).max[1] * piece.scale;
+const topOf = (piece: SceneryPiece): number => piece.at[1] + bounds(landmarkParts(LANDMARK_DESIGNS[piece.design])).max[1] * piece.scale;
 const tallestAsset = Math.max(...ASSET_IDS.map((asset) => bounds(BUILDING_DESIGNS[asset].parts).max[1] * ASSET_BUILDING_SCALE));
 
 /** The warehouse's four crate stacks on the dock side (`InvestIsland`) and the pennant by the yard. */
@@ -90,13 +90,13 @@ describe('island landmark designs', () => {
   it('builds every landmark from closed convex parts in shared swatches, never an asset roof color', () => {
     const assetRoofs = new Set<string>(Object.values(ROOF_MATS));
     for (const design of Object.values(LANDMARK_DESIGNS)) {
-      for (const part of design.parts) {
+      for (const part of landmarkParts(design)) {
         expect(SWATCHES).toHaveProperty(part.mat);
         expect(assetRoofs.has(part.mat)).toBe(false);
         // A pitched roof is two convex slabs; tests/ui/buildings.test.ts covers that kind.
         if (part.kind !== 'roof') expectClosedConvex(part);
       }
-      expect(bounds(design.parts).min[1]).toBeGreaterThanOrEqual(0);
+      expect(bounds(landmarkParts(design)).min[1]).toBeGreaterThanOrEqual(0);
     }
   });
 });
@@ -115,6 +115,14 @@ describe('backdrop side', () => {
     expect(islandAnnex('spice-isles', 0)).toBeNull();
     expect(islandAnnex(null, 0)).toBeNull();
     expect(islandAnnex('mine', Math.PI)).toMatchObject({ turn: backdropTurn(Math.PI) });
+  });
+});
+
+describe('lumber scenery', () => {
+  it('turns the paltrok sails about the windshaft hub, clear of the ground', () => {
+    const rotor = (LANDMARK_DESIGNS.paltrok as LandmarkDesign).rotor!;
+    const reach = Math.max(...rotor.parts.flatMap((part) => partFaces(part).flatMap((f) => f.points)).map((p) => Math.hypot(p[0] - rotor.pivot[0], p[1] - rotor.pivot[1])));
+    expect(reach).toBeLessThan(rotor.pivot[1]);
   });
 });
 

@@ -13,6 +13,22 @@ export interface LandmarkDesign {
   readonly parts: readonly KitPart[];
   /** Where star glints twinkle over treasure, in the design's coordinates. */
   readonly glints?: readonly Vec3[];
+  /** Parts that turn on the table, drawn at rest in the blueprint. */
+  readonly rotor?: LandmarkRotor;
+}
+
+/** Parts that turn as one about an axis through `pivot`: a windmill's sails. */
+export interface LandmarkRotor {
+  readonly parts: readonly KitPart[];
+  readonly pivot: Vec3;
+  readonly axis: 'x' | 'y' | 'z';
+  /** Radians per second; positive turns counterclockwise looking back down the axis. */
+  readonly speed: number;
+}
+
+/** Every part of a design, its rotor's at rest included: for bounds, materials and the blueprint. */
+export function landmarkParts(design: LandmarkDesign): readonly KitPart[] {
+  return design.rotor ? [...design.parts, ...design.rotor.parts] : design.parts;
 }
 
 export type P = KitPart;

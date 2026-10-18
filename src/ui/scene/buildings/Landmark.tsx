@@ -1,10 +1,11 @@
 import { useTexture } from '@react-three/drei';
 import type { ThreeElements } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
-import { SpriteMaterial, type BufferGeometry, type MeshBasicMaterial, type Sprite } from 'three';
+import { SpriteMaterial, type BufferGeometry, type Group, type MeshBasicMaterial, type Sprite } from 'three';
 import { useLiveFrame } from '../liveFrame';
 import { SPARKLES } from '../sparkles';
 import { geometryFromParts } from './Building';
+import type { LandmarkDesign, LandmarkRotor } from './islands/design';
 import { LANDMARK_DESIGNS, type LandmarkId } from './landmarks';
 import { GLOWING_MATS } from './materials';
 
@@ -12,6 +13,8 @@ interface LandmarkGeometry {
   readonly lit: BufferGeometry;
   /** Treasure parts, drawn unlit and pulsing; null when the design has none. */
   readonly glowing: BufferGeometry | null;
+  /** The rotor's parts, moved so its pivot is the origin; null when the design has none. */
+  readonly rotor: BufferGeometry | null;
 }
 
 /** Built once per design and shared by every island that shows it. */
@@ -22,9 +25,11 @@ function geometryOf(design: LandmarkId): LandmarkGeometry {
   if (cached) return cached;
   const { parts } = LANDMARK_DESIGNS[design];
   const glowing = parts.filter((part) => GLOWING_MATS.has(part.mat));
+  const { rotor }: LandmarkDesign = LANDMARK_DESIGNS[design];
   const geometry = {
     lit: geometryFromParts(parts.filter((part) => !GLOWING_MATS.has(part.mat))),
     glowing: glowing.length > 0 ? geometryFromParts(glowing) : null,
+    rotor: rotor ? geometryFromParts(rotor.parts).translate(-rotor.pivot[0], -rotor.pivot[1], -rotor.pivot[2]) : null,
   };
   geometryCache.set(design, geometry);
   return geometry;
@@ -83,12 +88,27 @@ function Glints({ at }: { readonly at: readonly (readonly [number, number, numbe
   );
 }
 
+/** The design's rotor (windmill sails) turning steadily about its pivot. */
+function Rotor({ rotor, geometry }: { readonly rotor: LandmarkRotor; readonly geometry: BufferGeometry }) {
+  const hub = useRef<Group>(null);
+  useLiveFrame(({ clock }) => {
+    if (hub.current) hub.current.rotation[rotor.axis] = clock.elapsedTime * rotor.speed;
+  });
+  return (
+    <group position={[...rotor.pivot]} ref={hub}>
+      <mesh geometry={geometry} castShadow receiveShadow dispose={null}>
+        <meshStandardMaterial vertexColors roughness={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
 type LandmarkProps = ThreeElements['group'] & { readonly design: LandmarkId };
 
 /** A piece of island scenery, drawn from the same part list as `docs/art/islands-blueprint.svg`. */
 export function Landmark({ design, ...props }: LandmarkProps) {
-  const { lit, glowing } = geometryOf(design);
-  const glints = LANDMARK_DESIGNS[design].glints;
+  const { lit, glowing, rotor: rotorGeometry } = geometryOf(design);
+  const { glints, rotor }: LandmarkDesign = LANDMARK_DESIGNS[design];
   return (
     <group {...props}>
       <mesh geometry={lit} castShadow receiveShadow dispose={null}>
@@ -96,6 +116,7 @@ export function Landmark({ design, ...props }: LandmarkProps) {
       </mesh>
       {glowing && <TreasurePulse geometry={glowing} />}
       {glints && <Glints at={glints} />}
+      {rotor && rotorGeometry && <Rotor rotor={rotor} geometry={rotorGeometry} />}
     </group>
   );
 }

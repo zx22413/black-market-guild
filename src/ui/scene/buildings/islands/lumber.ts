@@ -88,10 +88,9 @@ const paltrok: LandmarkDesign = {
     // Curved cap: an eave course, then a steep upper roof.
     { kind: 'loft', base: [0, 1.62, 0], outline: MILL_BODY, height: 0.2, bottom: 1.08, top: 0.86, mat: 'slate' },
     { kind: 'loft', base: [0, 1.82, 0], outline: MILL_BODY, height: 0.42, bottom: 0.86, top: 0.22, mat: 'slate' },
-    // Windshaft and hub, then the sails, turned a little off the cross.
+    // Windshaft and hub; the sails turn on it (`rotor`).
     { kind: 'beam', from: [0, 2.12, 0.2], to: [HUB[0], HUB[1], HUB[2] + 0.05], width: 0.12, sides: 8, mat: 'woodDark' },
     { kind: 'prism', base: [0, HUB[1] - 0.09, HUB[2] - 0.02], radius: 0.1, height: 0.18, sides: 8, mat: 'metal' },
-    ...[0, 1, 2, 3].flatMap((k) => sail(0.26 + (k * Math.PI) / 2)),
     ...gallery(1),
     ...gallery(-1),
     // Tail pole down to a capstan on the brick ring.
@@ -102,6 +101,8 @@ const paltrok: LandmarkDesign = {
     { kind: 'beam', from: [0.8, 0.04, 0.85], to: [0.8, 0.5, 0.45], width: 0.05, mat: 'wood' },
     ...logPile([-1.25, 0, 0.62], 'x', 0.8, 0.07),
   ],
+  // Four sails, at rest a little off the cross, turning slowly counterclockwise as Dutch mills do.
+  rotor: { parts: [0, 1, 2, 3].flatMap((k) => sail(0.26 + (k * Math.PI) / 2)), pivot: HUB, axis: 'z', speed: 0.5 },
 };
 
 /**

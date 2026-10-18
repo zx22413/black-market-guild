@@ -8,7 +8,7 @@
  */
 import { ASSET_IDS } from '../src/game';
 import { BUILDING_DESIGNS } from '../src/ui/scene/buildings/designs';
-import { LANDMARK_DESIGNS } from '../src/ui/scene/buildings/landmarks';
+import { LANDMARK_DESIGNS, landmarkParts } from '../src/ui/scene/buildings/landmarks';
 import { SWATCHES, type Mat, type Swatch } from '../src/ui/scene/buildings/materials';
 import { partFaces, type Face, type Part, type Vec3 } from '../src/ui/scene/buildings/polyhedra';
 import { ASSET_BUILDING_SCALE, ASSET_LOTS, PLAYER_ISLAND_RADIUS } from '../src/ui/scene/layout';
@@ -41,7 +41,7 @@ function partsDrawn(parts: readonly (Part & { readonly mat: string })[], at: Vec
 }
 
 const pieceDrawn = (piece: SceneryPiece, at: Vec3 = piece.at, scale = piece.scale): Drawn[] =>
-  partsDrawn(LANDMARK_DESIGNS[piece.design].parts, at, scale, piece.turn ?? 0);
+  partsDrawn(landmarkParts(LANDMARK_DESIGNS[piece.design]), at, scale, piece.turn ?? 0);
 
 /** Cliff top at -0.2 and grass top at 0.25 above the plateau origin, as `IslandBase` draws them. */
 function groundDrawn(scenery: IslandScenery, radius: number, cliffRadius: number): Drawn[] {
@@ -100,7 +100,7 @@ function panel(scenery: IslandScenery, index: number, defs: string[]): string {
   const main = scenery.pieces.find((p) => !p.backdrop)!;
   const second = scenery.pieces.find((p) => p.backdrop) ?? scenery.pieces[1]!;
   const designs = [...new Set(scenery.pieces.map((p) => p.design))];
-  const mats = [...new Set(designs.flatMap((id) => LANDMARK_DESIGNS[id].parts.map((p) => p.mat)))];
+  const mats = [...new Set(designs.flatMap((id) => landmarkParts(LANDMARK_DESIGNS[id]).map((p) => p.mat)))];
   const y0 = 150 + index * 780;
   const head = scenery.ground.top;
   const chips = [{ top: head, bottom: shade(head, 0.9) }, ...mats.map((m) => SWATCHES[m])];
