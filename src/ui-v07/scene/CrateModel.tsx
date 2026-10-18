@@ -74,7 +74,7 @@ export function CrateModel({ good, tarp = false, faded = false, glow = false, sp
         <group position={[0, half + 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <mesh>
             <circleGeometry args={[0.62, 20]} />
-            <meshBasicMaterial color="#2b2116" transparent={faded} opacity={opacity} />
+            <meshBasicMaterial color="#fbf3dc" transparent={faded} opacity={opacity} />
           </mesh>
           <mesh position={[0, 0, 0.005]}>
             <ringGeometry args={[0.58, 0.7, 20]} />

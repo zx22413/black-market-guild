@@ -22,7 +22,7 @@ import { ReminderDialog } from '../table/ReminderDialog';
 import { isReminderSkipped, setReminderSkipped } from '../table/reminderSettings';
 import { roleDetail } from '../table/roleText';
 import { DeployChips } from './DeployChips';
-import { ClockIcon, IconDisc, artIconUrl } from './icons';
+import { ClockIcon, IconDisc, tokenIconUrl } from './icons';
 import { LockHint } from './LockHint';
 import { roleIconUrl } from './RoleBadges';
 import { DashedArrows } from './RoleArrows';
@@ -135,7 +135,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
             <header>
               <b>{ROLE_LABELS[shown]}</b>
               <span className="chip" title={shownCard.fee === 0 ? '免費' : `部署費 ${shownCard.fee} G`}>
-                <IconDisc src={artIconUrl('coin')} />
+                <IconDisc src={tokenIconUrl('coin')} />
                 {shownCard.fee === 0 ? '免費' : shownCard.fee}
               </span>
               <span className="chip" title={`用過後冷卻 ${shownCard.cooldown} 回合`}>
@@ -172,7 +172,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
               '免費'
             ) : (
               <>
-                <IconDisc src={artIconUrl('coin')} />
+                <IconDisc src={tokenIconUrl('coin')} />
                 {c.fee}
               </>
             )}

@@ -4,7 +4,7 @@ import type { Action, PlayerId, ShipId } from '../../v07/game';
 import { SINK_MAX } from '../beats/ShipBeatStage';
 import { legalOf } from '../table/forms';
 import type { Board } from '../session/board';
-import { IconDisc, InfoIcon, artIconUrl } from './icons';
+import { IconDisc, InfoIcon, tokenIconUrl } from './icons';
 import { LockHint } from './LockHint';
 import { roleIconUrl } from './RoleBadges';
 import { shipName } from './stage';
@@ -97,11 +97,11 @@ export function RerollCard({ context, board, viewer, nameOf, onSubmit, rerolled,
             .map((k) => (
               <div key={k.shipId} className="reroll-ship">
                 <span className="chip">
-                  <IconDisc src={artIconUrl('ship-solo')} />
+                  <IconDisc src={tokenIconUrl('ship')} />
                   {name(k.shipId)}
                   {rerolled && (
                     <span className="chip-raw" title="原始骰值">
-                      <IconDisc src={artIconUrl('dice')} />
+                      <IconDisc src={tokenIconUrl('dice')} />
                       {k.rawRoll}
                     </span>
                   )}
@@ -134,7 +134,7 @@ export function RerollCard({ context, board, viewer, nameOf, onSubmit, rerolled,
                   '不重擲'
                 ) : (
                   <span className="reroll-pick">
-                    <IconDisc src={artIconUrl('reroll')} />
+                    <IconDisc src={tokenIconUrl('reroll')} />
                     {name(a.rerollShipId)}
                   </span>
                 )}

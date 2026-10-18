@@ -17,7 +17,7 @@ import { Flights, placePoint, type PlaceContext } from './Flights';
 import { MarketCard } from './MarketCard';
 import { revealArrows, revealGroups, type RoleArrow } from './revealModel';
 import { withGoodIcons } from './GoodIcon';
-import { Flow, IconDisc, InfoIcon, artIconUrl } from './icons';
+import { Flow, IconDisc, InfoIcon, tokenIconUrl } from './icons';
 import { LockHint } from './LockHint';
 import { RevealChips, SkipButton, StageSteps, WantedBanner, WantedChips } from './ResolveBar';
 import { WantedFlag } from '../scene/WantedFlag';
@@ -355,7 +355,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
         <>
           <span className="bar-chips">
             <span className="chip">
-              <IconDisc src={artIconUrl('coin')} />
+              <IconDisc src={tokenIconUrl('coin')} />
               {flightsShown}/{flights.length}
             </span>
             {flying && <span className="chip">{withGoodIcons(flying.label)}</span>}

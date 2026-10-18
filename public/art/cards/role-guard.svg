@@ -1,42 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
-  <!-- Guard card art: an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
+  <!-- Guard card art: a backlit silhouette, an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
   <defs>
-    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#5fb6d4"/><stop offset="0.6" stop-color="#9fd4e0"/><stop offset="1" stop-color="#e3f4ee"/>
-    </linearGradient>
-    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fb3b3"/><stop offset="1" stop-color="#1f7f88"/></linearGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f74a2"/><stop offset="1" stop-color="#f0d49a"/></linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a7a88"/><stop offset="1" stop-color="#1a4250"/></linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5"><stop offset="0.55" stop-color="#fff3cf" stop-opacity="0.55"/><stop offset="1" stop-color="#fff3cf" stop-opacity="0"/></radialGradient>
   </defs>
   <rect width="400" height="300" fill="url(#sky)"/>
-  <circle cx="340" cy="40" r="30" fill="#fff8d2" opacity="0.4"/><circle cx="340" cy="40" r="20" fill="#fff8d2"/>
-  <path d="M18 70 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M24 68 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee"/>
-  <rect y="186" width="400" height="114" fill="url(#sea)"/>
-  <path d="M0 186 H400" stroke="#2a2238" stroke-width="2"/>
-  <g fill="#e8fbf8" opacity="0.7"><rect x="310" y="194" width="60" height="3" rx="1.5"/><rect x="322" y="202" width="36" height="3" rx="1.5"/></g>
-  <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
-    <path d="M20 236 q8 -6 16 0 q8 6 16 0"/><path d="M110 268 q8 -6 16 0 q8 6 16 0"/><path d="M336 248 q8 -6 16 0 q8 6 16 0"/>
+  <circle cx="196" cy="118" r="128" fill="url(#halo)"/>
+  <circle cx="196" cy="118" r="78" fill="#fff3cf"/>
+  <rect y="214" width="400" height="86" fill="url(#sea)"/>
+  <g fill="#4a5f7a">
+    <path d="M24 210 L120 210 L112 220 Q72 224 30 220 Z"/>
+    <rect x="58" y="150" width="3" height="60"/><rect x="88" y="160" width="3" height="50"/>
+    <path d="M40 154 Q60 166 42 184 H76 Q88 166 76 154 Z"/><path d="M72 166 Q88 176 74 192 H100 Q110 176 100 166 Z"/>
   </g>
-  <g transform="translate(150 188) rotate(0) scale(0.55)">
-    <rect x="50" y="-92" width="5" height="92" fill="#5a3420" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M24 -84 Q56 -60 24 -34 H80 Q86 -60 80 -84 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M32 -30 Q56 -14 32 -2 H72 Q78 -14 72 -30 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="110" y="-92" width="5" height="92" fill="#5a3420" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M84 -84 Q116 -60 84 -34 H140 Q146 -60 140 -84 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M92 -30 Q116 -14 92 -2 H132 Q138 -14 132 -30 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <path d="M112 -92 v-14 h20 l-5 6 l5 6 h-20" fill="#e0b84a" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <path d="M0 -14 L160 -14 L150 6 Q80 14 14 6 Z" fill="#7a4a2a" stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-    <path d="M0 -14 L160 -14 L158 -20 L4 -20 Z" fill="#a8744a" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <g fill="#2a2238"><circle cx="40" cy="-4" r="3"/><circle cx="70" cy="-4" r="3"/><circle cx="100" cy="-4" r="3"/><circle cx="130" cy="-4" r="3"/></g>
-  </g>
-  <!-- the escort's deck and rail -->
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"><path d="M0 238 H400 V300 H0 Z" fill="#a8744a"/><rect x="0" y="222" width="400" height="16" fill="#7a4a2a"/></g>
-  <g stroke="#2a2238" stroke-width="1.6"><path d="M0 262 H400 M0 284 H400 M80 238 v62 M200 238 v62 M320 238 v62"/></g>
-  <!-- the cannon on its carriage, run out over the rail -->
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M110 266 L230 266 L224 236 L118 236 Z" fill="#8a5a3a"/>
-    <circle cx="136" cy="270" r="16" fill="#6b3f2a"/><circle cx="208" cy="270" r="16" fill="#6b3f2a"/>
-    <path d="M120 222 L300 196 Q312 196 312 208 L314 222 Q312 232 300 232 L124 246 Q110 246 110 234 Z" fill="#3b3646"/>
-    <rect x="296" y="192" width="20" height="44" rx="5" fill="#2d2a33"/>
-  </g>
-  <path d="M130 228 L296 204" stroke="#6c6684" stroke-width="4" stroke-linecap="round"/>
-  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><circle cx="136" cy="270" r="5" fill="#3b3646"/><circle cx="208" cy="270" r="5" fill="#3b3646"/></g>
-  <!-- the guild's shield painted on the rail -->
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"><path d="M40 196 h40 v20 q0 18 -20 26 q-20 -8 -20 -26 z" fill="#2f6fb0"/></g>
-  <path d="M60 200 v38 M44 214 h32" stroke="#e0b84a" stroke-width="4"/>
-  <!-- a stack of shot -->
-  <g fill="#2d2a33" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><circle cx="340" cy="270" r="9"/><circle cx="360" cy="270" r="9"/><circle cx="350" cy="255" r="9"/></g>
+  <rect x="0" y="226" width="400" height="10" fill="#3a2a22"/>
+  <g fill="#3a2a22"><rect x="40" y="226" width="8" height="74"/><rect x="330" y="226" width="8" height="74"/></g>
+  <path d="M182 70 L184 28 L216 28 L218 70 Z M174 72 Q200 64 226 72 L224 80 Q200 72 176 80 Z M186 72 Q186 98 200 102 Q214 98 214 72 Z M200 102 Q170 104 160 112 L156 124 L160 178 L166 186 L168 232 L172 290 L194 290 L198 238 L202 238 L206 290 L228 290 L232 232 L234 186 L240 178 L244 124 L240 112 Q230 104 200 102 Z M150 110 L172 106 L170 124 L148 124 Z M250 110 L228 106 L230 124 L252 124 Z M156 120 L146 172 L156 180 L166 128 Z M244 122 L252 178 L242 182 L236 128 Z M134 232 L150 230 L150 292 L132 292 Z M143 232 L144 26 L149 26 L150 232 Z" fill="#ffe2a8" transform="translate(-3 -2)"/>
+  <path d="M182 70 L184 28 L216 28 L218 70 Z M174 72 Q200 64 226 72 L224 80 Q200 72 176 80 Z M186 72 Q186 98 200 102 Q214 98 214 72 Z M200 102 Q170 104 160 112 L156 124 L160 178 L166 186 L168 232 L172 290 L194 290 L198 238 L202 238 L206 290 L228 290 L232 232 L234 186 L240 178 L244 124 L240 112 Q230 104 200 102 Z M150 110 L172 106 L170 124 L148 124 Z M250 110 L228 106 L230 124 L252 124 Z M156 120 L146 172 L156 180 L166 128 Z M244 122 L252 178 L242 182 L236 128 Z M134 232 L150 230 L150 292 L132 292 Z M143 232 L144 26 L149 26 L150 232 Z" fill="#ffe2a8" transform="translate(3 -2)" opacity="0.6"/>
+  <path d="M182 70 L184 28 L216 28 L218 70 Z M174 72 Q200 64 226 72 L224 80 Q200 72 176 80 Z M186 72 Q186 98 200 102 Q214 98 214 72 Z M200 102 Q170 104 160 112 L156 124 L160 178 L166 186 L168 232 L172 290 L194 290 L198 238 L202 238 L206 290 L228 290 L232 232 L234 186 L240 178 L244 124 L240 112 Q230 104 200 102 Z M150 110 L172 106 L170 124 L148 124 Z M250 110 L228 106 L230 124 L252 124 Z M156 120 L146 172 L156 180 L166 128 Z M244 122 L252 178 L242 182 L236 128 Z M134 232 L150 230 L150 292 L132 292 Z M143 232 L144 26 L149 26 L150 232 Z" fill="#231c2b"/>
+  <!-- accents: the red plume, white crossbelts, gold badge and epaulettes, the bayonet, eyes under the peak -->
+  <path d="M196 30 Q188 10 200 0 Q210 14 204 30 Z" fill="#c8423a"/>
+  <path d="M164 118 L236 186 M236 118 L164 186" stroke="#e8e0d0" stroke-width="5" stroke-linecap="round"/>
+  <path d="M200 38 L208 48 L200 58 L192 48 Z" fill="#e8b84a"/>
+  <path d="M150 124 h20 M230 124 h20" stroke="#e8b84a" stroke-width="3"/>
+  <path d="M144 26 L146.5 4 L149 26 Z" fill="#eef3f7"/>
+  <g fill="#e8e0d0"><circle cx="194" cy="86" r="1.8"/><circle cx="206" cy="86" r="1.8"/></g>
 </svg>

@@ -1,12 +1,14 @@
 import type { ReactNode } from 'react';
-import { RULES_V07 } from '../../v07/game';
+import { RULES_V07, type GoodId } from '../../v07/game';
 import { wantedText } from '../labels';
 
 // Small drawn icons for the table UI, so no arrow, lock or sign is made out of text characters.
-// Line icons follow the surrounding text color; the round badges reuse the game-icons.net set in
-// public/art/icons (sources in public/art/SOURCES.md), whose cream glyphs sit on a dark disc.
+// Line icons follow the surrounding text color; the picture icons are drawn in the card art's style
+// (public/art/tokens and public/art/cards, sources in public/art/SOURCES.md).
 
-export const artIconUrl = (name: string): string => `${import.meta.env.BASE_URL}art/icons/${name}.svg`;
+/** The small token icons (public/art/tokens), drawn in the card art's style: colour, ink outline, no background. */
+export type TokenIcon = 'coin' | 'dice' | 'reroll' | 'ship' | `good-${GoodId}`;
+export const tokenIconUrl = (name: TokenIcon): string => `${import.meta.env.BASE_URL}art/tokens/${name}.svg`;
 
 const LINE = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 
@@ -139,8 +141,8 @@ export function InfoIcon() {
 
 /** A round dark badge holding one of the cream art icons (coin, ship, a role). */
 /**
- * A small round icon. The parchment-coloured placeholder icons (coin, dice, ship) sit on a dark disc;
- * `badge` puts a card icon (cardArt.ts, in colour) on the card art's sky-and-sea disc instead.
+ * A small icon in a line of text. A token icon (coin, dice, ship) stands on its own; `badge` puts a
+ * card icon (cardArt.ts) on the card art's sky-and-sea disc, as the island icons are.
  */
 export function IconDisc({ src, badge = false }: { readonly src: string; readonly badge?: boolean }) {
   return (

@@ -270,3 +270,9 @@
 :root:not(.skin-classic) .wanted-banner .wanted-flag {
   color: #e2584a;
 }
+
+/* Role cards: the silhouette is full length; in the hand's small window, zoom in on head and shoulders. */
+:root:not(.skin-classic) .dep-card .dep-ic img {
+  transform: scale(1.5);
+  transform-origin: 50% 28%;
+}

@@ -1,10 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Guard icon: the card art's main object, simplified; an AI-written placeholder, see public/art/SOURCES.md. -->
-  <g stroke="#2a2238" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M6 46 L40 46 L36 34 L10 34 Z" fill="#8a5a3a"/>
-    <circle cx="14" cy="50" r="8" fill="#6b3f2a"/><circle cx="34" cy="50" r="8" fill="#6b3f2a"/>
-    <path d="M8 30 L52 18 Q58 18 58 24 L58 30 Q58 34 52 34 L10 40 Q4 40 4 34 Z" fill="#3b3646"/>
-    <rect x="54" y="15" width="7" height="22" rx="3" fill="#2d2a33"/>
-  </g>
-  <path d="M12 32 L50 23" stroke="#6c6684" stroke-width="3" stroke-linecap="round"/>
+  <!-- Guard icon: the card's silhouette head, rim-lit; an AI-written placeholder, see public/art/SOURCES.md. -->
+  <path d="M21 32 L22 8 L42 8 L43 32 Z M16 34 Q32 29 48 34 L47 38 Q32 33 17 38 Z M22 36 Q22 58 32 62 Q42 58 42 36 Z" fill="#ffe2a8" transform="translate(-1.5 -1)"/>
+  <path d="M21 32 L22 8 L42 8 L43 32 Z M16 34 Q32 29 48 34 L47 38 Q32 33 17 38 Z M22 36 Q22 58 32 62 Q42 58 42 36 Z" fill="#ffe2a8" transform="translate(1.5 -1)" opacity="0.6"/>
+  <path d="M21 32 L22 8 L42 8 L43 32 Z M16 34 Q32 29 48 34 L47 38 Q32 33 17 38 Z M22 36 Q22 58 32 62 Q42 58 42 36 Z" fill="#231c2b"/>
+  <path d="M30 9 Q26 -2 33 -4 Q38 2 35 9 Z" fill="#c8423a"/><path d="M32 14 L37 19 L32 25 L27 19 Z" fill="#e8b84a"/><g fill="#e8e0d0"><circle cx="28" cy="45" r="1.6"/><circle cx="36" cy="45" r="1.6"/></g>
 </svg>

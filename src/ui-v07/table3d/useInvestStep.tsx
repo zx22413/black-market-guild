@@ -27,7 +27,7 @@ import { ReminderDialog } from '../table/ReminderDialog';
 import { isHintSeen, isReminderSkipped, markHintSeen, setReminderSkipped } from '../table/reminderSettings';
 import { GoodCount } from './GoodIcon';
 import { NoteBadge } from './NoteBadge';
-import { ArrowIcon, CloseIcon, CrateIcon, Flow, HouseIcon, IconDisc, artIconUrl } from './icons';
+import { ArrowIcon, CloseIcon, CrateIcon, Flow, HouseIcon, IconDisc, tokenIconUrl } from './icons';
 import { LockHint } from './LockHint';
 import type { StageEnv, StageParts } from './stage';
 import { cardArtUrl } from './cardArt';
@@ -149,7 +149,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
                   </span>
                   <b>{BUILDING_LABELS[b.id]}</b>
                   <span className="inv-cost">
-                    <IconDisc src={artIconUrl('coin')} />
+                    <IconDisc src={tokenIconUrl('coin')} />
                     {b.cash}
                     {GOODS.filter((g) => b.goods[g] > 0).map((g) => (
                       <span key={g} className="inv-need">
@@ -192,7 +192,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
             <span className="note-hint" title="點貨箱裝上船" aria-label="點貨箱裝上船">
               <CrateIcon />
               <ArrowIcon />
-              <IconDisc src={artIconUrl('ship-solo')} />
+              <IconDisc src={tokenIconUrl('ship')} />
               點箱裝船
             </span>
           )}
@@ -207,12 +207,12 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       node: (
         <div className="inv-note side-right">
           <span className="note-title" title="船">
-            <IconDisc src={artIconUrl('ship-solo')} />
+            <IconDisc src={tokenIconUrl('ship')} />
             裝貨 {summary.loaded}/{summary.capacity}
           </span>
           {summary.loaded > 0 && !isHintSeen('unload-cargo') && (
             <span className="note-hint" title="點船上的貨卸下" aria-label="點船上的貨卸下">
-              <IconDisc src={artIconUrl('ship-solo')} />
+              <IconDisc src={tokenIconUrl('ship')} />
               <ArrowIcon />
               <CrateIcon />
               點貨卸下
@@ -255,10 +255,10 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
             <HouseIcon /> {choice.build ? `${BUILDING_LABELS[choice.build]} −${summary.buildCash}` : '不蓋'}
           </span>
           <span className="chip" title="出航">
-            <IconDisc src={artIconUrl('ship-solo')} /> {summary.sails ? `${summary.loaded}/${summary.capacity} −${summary.shipCost}` : '不出航'}
+            <IconDisc src={tokenIconUrl('ship')} /> {summary.sails ? `${summary.loaded}/${summary.capacity} −${summary.shipCost}` : '不出航'}
           </span>
           <span className="chip cash" title="現金（G）">
-            <IconDisc src={artIconUrl('coin')} />
+            <IconDisc src={tokenIconUrl('coin')} />
             <Flow from={summary.cashBefore} to={<b>{summary.cashAfter}</b>} />
           </span>
         </span>

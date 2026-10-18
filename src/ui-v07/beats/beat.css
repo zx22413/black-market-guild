@@ -2286,11 +2286,10 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #2b2116;
 }
 .chip-ic img {
-  width: 15px;
-  height: 15px;
+  width: 20px;
+  height: 20px;
 }
 .ico-arrow {
   flex: none;
@@ -2976,7 +2975,7 @@
   height: 24px;
   border: 2px solid;
   border-radius: 50%;
-  background: #2b2116;
+  background: #fbf3dc;
   vertical-align: middle;
 }
 .good-ic.sm {
@@ -2988,13 +2987,13 @@
   height: 32px;
 }
 .good-ic img {
-  width: 72%;
-  height: 72%;
+  width: 84%;
+  height: 84%;
 }
-.good-ic.good-wood { border-color: var(--wood); background: #2b2116; }
-.good-ic.good-iron { border-color: var(--iron); background: #2b2116; }
-.good-ic.good-spice { border-color: var(--spice); background: #2b2116; }
-.good-ic.good-arms { border-color: var(--arms); background: #2b2116; }
+.good-ic.good-wood { border-color: var(--wood); }
+.good-ic.good-iron { border-color: var(--iron); }
+.good-ic.good-spice { border-color: var(--spice); }
+.good-ic.good-arms { border-color: var(--arms); }
 .good-count {
   display: inline-flex;
   align-items: center;

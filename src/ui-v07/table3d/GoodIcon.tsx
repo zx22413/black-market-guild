@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react';
 import { GOODS, type GoodId } from '../../v07/game';
 import { GOOD_LABELS } from '../labels';
-import { artIconUrl } from './icons';
+import { tokenIconUrl } from './icons';
 
 // Goods are shown as icons everywhere on the table except the price boards (market strip and the
-// market settlement card, which pair the icon with the name). The icon is a cream glyph on a dark
+// market settlement card, which pair the icon with the name). The icon is drawn in colour on a light
 // disc ringed in the goods' color; the name is its tooltip and its screen-reader label.
 
-export const goodIconUrl = (good: GoodId): string => artIconUrl(`good-${good}`);
+export const goodIconUrl = (good: GoodId): string => tokenIconUrl(`good-${good}`);
 
 export function GoodIcon({ good, size = 'md' }: { readonly good: GoodId; readonly size?: 'sm' | 'md' | 'lg' }) {
   return (

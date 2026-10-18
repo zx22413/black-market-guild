@@ -1,44 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
-  <!-- Pirate card art: an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
+  <!-- Pirate card art: a backlit silhouette, an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
   <defs>
-    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#5fb6d4"/><stop offset="0.6" stop-color="#9fd4e0"/><stop offset="1" stop-color="#e3f4ee"/>
-    </linearGradient>
-    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fb3b3"/><stop offset="1" stop-color="#1f7f88"/></linearGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3f6e86"/><stop offset="1" stop-color="#f2b98a"/></linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f6a74"/><stop offset="1" stop-color="#173a44"/></linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5"><stop offset="0.55" stop-color="#fbe7b8" stop-opacity="0.55"/><stop offset="1" stop-color="#fbe7b8" stop-opacity="0"/></radialGradient>
   </defs>
   <rect width="400" height="300" fill="url(#sky)"/>
-  <circle cx="60" cy="44" r="30" fill="#fff8d2" opacity="0.4"/><circle cx="60" cy="44" r="20" fill="#fff8d2"/>
-  <path d="M248 64 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M254 62 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee"/>
-  <rect y="186" width="400" height="114" fill="url(#sea)"/>
-  <path d="M0 186 H400" stroke="#2a2238" stroke-width="2"/>
-  <g fill="#e8fbf8" opacity="0.7"><rect x="30" y="194" width="60" height="3" rx="1.5"/><rect x="42" y="202" width="36" height="3" rx="1.5"/></g>
-  <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
-    <path d="M20 236 q8 -6 16 0 q8 6 16 0"/><path d="M110 268 q8 -6 16 0 q8 6 16 0"/><path d="M336 248 q8 -6 16 0 q8 6 16 0"/>
+  <circle cx="196" cy="118" r="128" fill="url(#halo)"/>
+  <circle cx="196" cy="118" r="78" fill="#fbe7b8"/>
+  <rect y="214" width="400" height="86" fill="url(#sea)"/>
+  <g fill="#41566a">
+    <path d="M300 212 L384 212 L378 222 Q342 226 306 222 Z"/>
+    <rect x="330" y="150" width="3" height="62"/><rect x="356" y="160" width="3" height="52"/>
+    <path d="M314 156 Q334 168 316 186 H350 Q362 168 350 156 Z"/><path d="M344 166 Q360 176 346 192 H372 Q382 176 372 166 Z"/>
   </g>
-  <g transform="translate(186 200) rotate(-4) scale(1.05)">
-    <rect x="50" y="-92" width="5" height="92" fill="#5a3420" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M24 -84 Q66 -60 24 -34 H80 Q96 -60 80 -84 Z" fill="#3b3646" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M32 -30 Q66 -14 32 -2 H72 Q88 -14 72 -30 Z" fill="#3b3646" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="110" y="-92" width="5" height="92" fill="#5a3420" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M84 -84 Q126 -60 84 -34 H140 Q156 -60 140 -84 Z" fill="#3b3646" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M92 -30 Q126 -14 92 -2 H132 Q148 -14 132 -30 Z" fill="#3b3646" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <path d="M112 -92 v-14 h20 l-5 6 l5 6 h-20" fill="#1f1a26" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <path d="M0 -14 L160 -14 L150 6 Q80 14 14 6 Z" fill="#2d2a33" stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-    <path d="M0 -14 L160 -14 L158 -20 L4 -20 Z" fill="#4a4458" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <g fill="#2a2238"><circle cx="40" cy="-4" r="3"/><circle cx="70" cy="-4" r="3"/><circle cx="100" cy="-4" r="3"/><circle cx="130" cy="-4" r="3"/></g>
-  </g>
-  <!-- the skull on the main sail -->
-  <g transform="translate(186 200) rotate(-4) scale(1.05)">
-    <circle cx="108" cy="-62" r="10" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <g fill="#2a2238"><circle cx="104" cy="-63" r="2.4"/><circle cx="112" cy="-63" r="2.4"/></g>
-    <path d="M96 -46 L120 -38 M120 -46 L96 -38" stroke="#f4efe6" stroke-width="4" stroke-linecap="round"/>
-  </g>
-  <!-- broadside smoke, a merchant fleeing -->
-  <g fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M150 196 q-4 -14 10 -16 q4 -12 18 -6 q12 -2 10 12 q8 8 -4 14 q-10 6 -20 2 q-14 4 -14 -6 z"/>
-    <path d="M118 206 q-2 -10 8 -12 q6 -8 14 -2 q8 4 2 12 q-10 6 -24 2 z"/>
-  </g>
-  <g transform="translate(20 220) rotate(4) scale(0.45)">
-    <rect x="50" y="-92" width="5" height="92" fill="#5a3420" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M24 -84 Q56 -60 24 -34 H80 Q86 -60 80 -84 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M32 -30 Q56 -14 32 -2 H72 Q78 -14 72 -30 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="110" y="-92" width="5" height="92" fill="#5a3420" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M84 -84 Q116 -60 84 -34 H140 Q146 -60 140 -84 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M92 -30 Q116 -14 92 -2 H132 Q138 -14 132 -30 Z" fill="#f4efe6" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <path d="M112 -92 v-14 h20 l-5 6 l5 6 h-20" fill="#2f6fb0" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <path d="M0 -14 L160 -14 L150 6 Q80 14 14 6 Z" fill="#7a4a2a" stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-    <path d="M0 -14 L160 -14 L158 -20 L4 -20 Z" fill="#a8744a" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <g fill="#2a2238"><circle cx="40" cy="-4" r="3"/><circle cx="70" cy="-4" r="3"/><circle cx="100" cy="-4" r="3"/><circle cx="130" cy="-4" r="3"/></g>
-  </g>
-  <g fill="#ffffff" opacity="0.85"><circle cx="70" cy="226" r="3"/><circle cx="90" cy="232" r="4"/></g>
+  <g fill="none" stroke="#8fc0c4" stroke-width="2" stroke-linecap="round" opacity="0.7"><path d="M30 246 q8 -4 16 0 q8 4 16 0"/><path d="M320 262 q8 -4 16 0 q8 4 16 0"/></g>
+  <path d="M144 60 Q168 62 180 48 Q190 30 206 30 Q222 30 232 46 Q244 60 264 56 Q252 72 230 72 Q206 64 182 70 Q160 74 144 60 Z M186 66 Q184 92 200 100 Q214 92 214 66 Z M186 86 Q200 98 214 86 L206 120 L200 126 L194 120 Z M200 104 Q172 106 160 116 Q150 126 152 140 L166 184 L162 210 L144 262 L170 266 L180 238 L176 290 L196 290 L201 248 L206 290 L226 290 L222 238 L232 266 L258 262 L240 210 L234 184 L246 140 Q248 126 240 116 Q228 106 200 104 Z M160 116 Q136 128 126 160 Q126 172 138 172 L166 192 L172 182 L144 160 Q150 142 166 132 Z M238 118 Q258 116 266 98 L278 72 L290 76 L280 104 Q270 134 244 142 Z" fill="#ffd59a" transform="translate(-3 -2)"/>
+  <path d="M144 60 Q168 62 180 48 Q190 30 206 30 Q222 30 232 46 Q244 60 264 56 Q252 72 230 72 Q206 64 182 70 Q160 74 144 60 Z M186 66 Q184 92 200 100 Q214 92 214 66 Z M186 86 Q200 98 214 86 L206 120 L200 126 L194 120 Z M200 104 Q172 106 160 116 Q150 126 152 140 L166 184 L162 210 L144 262 L170 266 L180 238 L176 290 L196 290 L201 248 L206 290 L226 290 L222 238 L232 266 L258 262 L240 210 L234 184 L246 140 Q248 126 240 116 Q228 106 200 104 Z M160 116 Q136 128 126 160 Q126 172 138 172 L166 192 L172 182 L144 160 Q150 142 166 132 Z M238 118 Q258 116 266 98 L278 72 L290 76 L280 104 Q270 134 244 142 Z" fill="#ffd59a" transform="translate(3 -2)" opacity="0.6"/>
+  <path d="M144 60 Q168 62 180 48 Q190 30 206 30 Q222 30 232 46 Q244 60 264 56 Q252 72 230 72 Q206 64 182 70 Q160 74 144 60 Z M186 66 Q184 92 200 100 Q214 92 214 66 Z M186 86 Q200 98 214 86 L206 120 L200 126 L194 120 Z M200 104 Q172 106 160 116 Q150 126 152 140 L166 184 L162 210 L144 262 L170 266 L180 238 L176 290 L196 290 L201 248 L206 290 L226 290 L222 238 L232 266 L258 262 L240 210 L234 184 L246 140 Q248 126 240 116 Q228 106 200 104 Z M160 116 Q136 128 126 160 Q126 172 138 172 L166 192 L172 182 L144 160 Q150 142 166 132 Z M238 118 Q258 116 266 98 L278 72 L290 76 L280 104 Q270 134 244 142 Z" fill="#231c2b"/>
+  <!-- accents: a red sash, gold buttons and hat trim, one glowing eye, the blade -->
+  <path d="M166 186 Q200 198 234 186 L232 198 Q200 210 168 198 Z" fill="#b2392f"/>
+  <path d="M226 196 L240 226 L230 228 Z" fill="#b2392f"/>
+  <g fill="#e8b84a"><circle cx="190" cy="132" r="2"/><circle cx="190" cy="150" r="2"/><circle cx="190" cy="168" r="2"/><circle cx="210" cy="132" r="2"/><circle cx="210" cy="150" r="2"/><circle cx="210" cy="168" r="2"/></g>
+  <path d="M150 62 Q170 62 182 52 M232 52 Q244 60 258 58" fill="none" stroke="#e8b84a" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="206" cy="42" r="4" fill="#efe6d0"/>
+  <ellipse cx="206" cy="80" rx="3.2" ry="2.4" fill="#ffd27a"/>
+  <circle cx="206" cy="80" r="7" fill="#ffd27a" opacity="0.25"/>
+  <path d="M280 72 Q292 30 326 2 Q314 40 290 80 Z" fill="#eef3f7"/>
+  <path d="M286 66 Q298 30 320 8" fill="none" stroke="#ffffff" stroke-width="1.6"/>
+  <path d="M270 74 L298 86" stroke="#e8b84a" stroke-width="4" stroke-linecap="round"/>
 </svg>

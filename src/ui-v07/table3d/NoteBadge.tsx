@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { NoteChip } from '../table/investChoice';
 import { GoodCount } from './GoodIcon';
-import { AlertIcon, HouseIcon, IconDisc, WantedMark, artIconUrl } from './icons';
+import { AlertIcon, HouseIcon, IconDisc, WantedMark, tokenIconUrl } from './icons';
 import { roleIconUrl } from './RoleBadges';
 
 // A reminder beside the warehouse or the ship, as icons only: what it is about, then a mark.
@@ -16,14 +16,14 @@ function Chip({ chip }: { readonly chip: NoteChip }) {
     case 'ship':
       return (
         <span className="note-chip">
-          <IconDisc src={artIconUrl('ship-solo')} />
+          <IconDisc src={tokenIconUrl('ship')} />
           {chip.text}
         </span>
       );
     case 'coin':
       return (
         <span className="note-chip">
-          <IconDisc src={artIconUrl('coin')} />
+          <IconDisc src={tokenIconUrl('coin')} />
           {chip.text}
         </span>
       );

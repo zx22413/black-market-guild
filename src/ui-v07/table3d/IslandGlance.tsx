@@ -1,7 +1,7 @@
 import type { IslandId } from '../../v07/game';
 import { GoodIcon } from './GoodIcon';
 import { ISLAND_GLANCE, type GlanceIcon } from '../table/islandGlance';
-import { IconDisc, artIconUrl } from './icons';
+import { IconDisc, tokenIconUrl } from './icons';
 import { roleIconUrl } from './RoleBadges';
 
 // An island's effects as small rows: a +/− disc, the thing it touches (a goods chip, a role or the
@@ -11,7 +11,7 @@ function Thing({ icon }: { readonly icon: GlanceIcon }) {
   if (icon.kind === 'good') {
     return <GoodIcon good={icon.good} />;
   }
-  return icon.kind === 'role' ? <IconDisc src={roleIconUrl(icon.role)} badge /> : <IconDisc src={artIconUrl('ship-solo')} />;
+  return icon.kind === 'role' ? <IconDisc src={roleIconUrl(icon.role)} badge /> : <IconDisc src={tokenIconUrl('ship')} />;
 }
 
 export function IslandGlance({ island }: { readonly island: IslandId }) {

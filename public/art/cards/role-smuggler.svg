@@ -1,41 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
-  <!-- Smuggler card art: an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
+  <!-- Smuggler card art: a backlit silhouette, an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
   <defs>
-    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#4f8fb8"/><stop offset="0.6" stop-color="#8fbfd0"/><stop offset="1" stop-color="#d8eae6"/>
-    </linearGradient>
-    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fb3b3"/><stop offset="1" stop-color="#1f7f88"/></linearGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1f2a44"/><stop offset="1" stop-color="#5f6f92"/></linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a3e58"/><stop offset="1" stop-color="#121c2c"/></linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5"><stop offset="0.55" stop-color="#dfe6f0" stop-opacity="0.55"/><stop offset="1" stop-color="#dfe6f0" stop-opacity="0"/></radialGradient>
   </defs>
   <rect width="400" height="300" fill="url(#sky)"/>
-  <circle cx="330" cy="40" r="30" fill="#fff8d2" opacity="0.4"/><circle cx="330" cy="40" r="20" fill="#fff8d2"/>
-  <path d="M38 80 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M44 78 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee"/><path d="M178 54 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M184 52 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee"/>
-  <rect y="186" width="400" height="114" fill="url(#sea)"/>
-  <path d="M0 186 H400" stroke="#2a2238" stroke-width="2"/>
-  <g fill="#e8fbf8" opacity="0.7"><rect x="300" y="194" width="60" height="3" rx="1.5"/><rect x="312" y="202" width="36" height="3" rx="1.5"/></g>
-  <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
-    <path d="M20 236 q8 -6 16 0 q8 6 16 0"/><path d="M110 268 q8 -6 16 0 q8 6 16 0"/><path d="M336 248 q8 -6 16 0 q8 6 16 0"/>
+  <circle cx="196" cy="118" r="128" fill="url(#halo)"/>
+  <circle cx="196" cy="118" r="78" fill="#dfe6f0"/>
+  <rect y="214" width="400" height="86" fill="url(#sea)"/>
+  <g fill="#2f3a52">
+    <path d="M0 300 V170 L30 150 L64 176 L86 300 Z"/><path d="M400 300 V176 L370 154 L336 182 L320 300 Z"/>
   </g>
-  <!-- rocks of a hidden cove -->
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M250 300 L270 150 L320 120 L380 140 L400 160 V300 Z" fill="#5f6178"/>
-    <path d="M270 150 L320 120 L330 160 L300 300 L250 300 Z" fill="#7d7f96"/>
-    <path d="M0 300 V150 L40 130 L90 156 L110 300 Z" fill="#5f6178"/>
-    <path d="M40 130 L90 156 L70 190 L30 300 H0 V150 Z" fill="#7d7f96"/>
-  </g>
-  <g fill="#7fb069" stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M268 152 L320 122 L360 132 L330 144 L300 146 Z"/><path d="M2 150 L40 132 L80 150 L50 152 Z"/></g>
-  <!-- the sloop with its cargo under a tarpaulin -->
-  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M110 230 L250 230 L236 254 Q180 262 124 254 Z" fill="#6b3f2a"/>
-    <rect x="176" y="120" width="5" height="110" fill="#5a3420"/>
-    <path d="M181 126 L232 222 L181 222 Z" fill="#c9b892"/>
-    <path d="M126 230 Q132 204 160 202 Q190 200 196 230 Z" fill="#8a7a5a"/>
-  </g>
-  <g fill="none" stroke="#2a2238" stroke-width="1.6"><path d="M140 222 Q160 208 186 220"/><path d="M150 230 V206"/></g>
-  <!-- sacks and a lantern hooded low -->
-  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M206 230 q0 -18 10 -20 q-4 -6 4 -8 q6 2 2 8 q10 2 10 20 z" fill="#e0cfa4"/>
-    <rect x="128" y="196" width="10" height="12" fill="#ffd27a"/><path d="M126 196 h14 l-7 -6 z" fill="#3b3646"/>
-  </g>
-  <path d="M216 210 l8 0" stroke="#2a2238" stroke-width="2"/>
-  <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round"><path d="M100 262 q10 -6 20 0 q10 6 20 0"/></g>
+  <g fill="none" stroke="#6a80a8" stroke-width="2" stroke-linecap="round" opacity="0.7"><path d="M110 250 q8 -4 16 0 q8 4 16 0"/><path d="M270 268 q8 -4 16 0 q8 4 16 0"/></g>
+  <path d="M146 104 Q126 70 156 52 Q182 42 196 66 Q204 94 180 108 Q162 116 146 104 Z" fill="#c8d6ec" transform="translate(-3 -2)"/>
+  <path d="M146 104 Q126 70 156 52 Q182 42 196 66 Q204 94 180 108 Q162 116 146 104 Z" fill="#6e5e48"/>
+  <path d="M150 96 Q140 76 156 60" fill="none" stroke="#8a7a5e" stroke-width="3" stroke-linecap="round"/>
+  <path d="M186 56 Q194 30 214 38 Q232 52 232 84 L228 102 Q212 94 196 98 Q182 88 186 56 Z M196 94 Q170 98 158 122 Q146 152 148 200 L142 272 L156 266 L166 274 L180 266 L194 274 L208 266 L222 274 L236 266 L250 274 L262 268 L256 210 Q254 150 240 114 Q228 94 212 94 Z M170 270 L174 292 L192 292 L190 270 Z M210 270 L210 292 L228 292 L226 270 Z M168 100 L186 74 L194 80 L178 108 Z M238 122 Q260 152 262 192 L250 194 Q246 162 230 138 Z" fill="#c8d6ec" transform="translate(-3 -2)"/>
+  <path d="M186 56 Q194 30 214 38 Q232 52 232 84 L228 102 Q212 94 196 98 Q182 88 186 56 Z M196 94 Q170 98 158 122 Q146 152 148 200 L142 272 L156 266 L166 274 L180 266 L194 274 L208 266 L222 274 L236 266 L250 274 L262 268 L256 210 Q254 150 240 114 Q228 94 212 94 Z M170 270 L174 292 L192 292 L190 270 Z M210 270 L210 292 L228 292 L226 270 Z M168 100 L186 74 L194 80 L178 108 Z M238 122 Q260 152 262 192 L250 194 Q246 162 230 138 Z" fill="#c8d6ec" transform="translate(3 -2)" opacity="0.6"/>
+  <path d="M186 56 Q194 30 214 38 Q232 52 232 84 L228 102 Q212 94 196 98 Q182 88 186 56 Z M196 94 Q170 98 158 122 Q146 152 148 200 L142 272 L156 266 L166 274 L180 266 L194 274 L208 266 L222 274 L236 266 L250 274 L262 268 L256 210 Q254 150 240 114 Q228 94 212 94 Z M170 270 L174 292 L192 292 L190 270 Z M210 270 L210 292 L228 292 L226 270 Z M168 100 L186 74 L194 80 L178 108 Z M238 122 Q260 152 262 192 L250 194 Q246 162 230 138 Z" fill="#1c1824"/>
+  <!-- accents: the rope round the sack, eyes in the hood, the lantern and its glow -->
+  <path d="M176 60 Q184 52 192 60" fill="none" stroke="#a8844a" stroke-width="3" stroke-linecap="round"/>
+  <g fill="#ffcf7a"><ellipse cx="212" cy="70" rx="2.6" ry="2"/><ellipse cx="222" cy="70" rx="2.6" ry="2"/></g>
+  <circle cx="256" cy="214" r="34" fill="#ffb35c" opacity="0.22"/>
+  <path d="M256 192 v6" stroke="#1c1824" stroke-width="2.5"/>
+  <rect x="246" y="198" width="20" height="26" rx="3" fill="#ffd27a"/>
+  <path d="M244 198 h24 l-12 -8 z M246 224 h20 v4 h-20 z" fill="#1c1824"/>
+  <path d="M252 202 v18 M260 202 v18" stroke="#c99a2e" stroke-width="1.5"/>
 </svg>
