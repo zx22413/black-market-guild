@@ -33,5 +33,19 @@ export const SWATCHES = {
   spiceOrange: { top: '#ff7e44', bottom: '#ff7e44' },
   cardamom: { top: '#61cb8b', bottom: '#61cb8b' },
   leaf: { top: '#5dc789', bottom: '#1c856a' },
+  basalt: { top: '#65657a', bottom: '#41414a' },
+  // The islands' sand (IslandBase's default cliff), so a beach on a landmark meets the ground it lies on.
+  sand: { top: '#e2c28a', bottom: '#e2c28a' },
+  // Treasure that glows on the table (`GLOWING_MATS`): gold coin and silver plate.
+  treasure: { top: '#ffd263', bottom: '#ffc044' },
+  silver: { top: '#fbfbfd', bottom: '#bebed6' },
+  ruby: { top: '#fc6c41', bottom: '#cf534f' },
+  emerald: { top: '#61cb8b', bottom: '#1c856a' },
+  // Embers under a fire, glowing like the treasure.
+  ember: { top: '#ffc044', bottom: '#ff7344' },
+  heather: { top: '#9064d9', bottom: '#6743bf' },
 } as const satisfies Record<string, Swatch>;
 export type Mat = keyof typeof SWATCHES;
+
+/** Materials drawn unlit and pulsing (`Landmark`), so treasure glints even in the shade or at night. */
+export const GLOWING_MATS: ReadonlySet<Mat> = new Set<Mat>(['treasure', 'silver', 'ruby', 'emerald', 'ember']);

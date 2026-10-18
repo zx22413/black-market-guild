@@ -6,8 +6,15 @@
 export type Vec3 = readonly [number, number, number];
 export type Vec2 = readonly [number, number];
 
+/** Turn of a whole part by `angle` radians about a horizontal axis through `pivot`: a heeled hull, a leaning mast. */
+export interface Tilt {
+  readonly axis: 'x' | 'z';
+  readonly angle: number;
+  readonly pivot: Vec3;
+}
+
 /** Every part is convex (each roof slab is), so faces never overlap within one solid. */
-export type Part = { readonly mat: string } & (
+export type Part = { readonly mat: string; readonly tilt?: Tilt } & (
   | {
       /** Axis-aligned box around `center`; `bevel` chamfers every edge so it catches light. */
       readonly kind: 'box';
@@ -216,21 +223,34 @@ function beam(from: Vec3, to: Vec3, width: number, sides: number): Polygon[] {
   return band(ring(from), ring(to));
 }
 
-export function partFaces(part: Part): Face[] {
+/** The part's solids before any tilt: one, or a roof's two slabs. */
+function partSolids(part: Part): Polygon[][] {
   switch (part.kind) {
     case 'box':
-      return solid(box(part.center, part.size, part.bevel ?? 0), part.mat);
+      return [box(part.center, part.size, part.bevel ?? 0)];
     case 'gable':
-      return solid(gable(part.base, part.size, part.ridge), part.mat);
+      return [gable(part.base, part.size, part.ridge)];
     case 'roof':
-      return roofSlabs(part.base, part.size, part.ridge, part.overhang, part.thickness).flatMap((slab) => solid(slab, part.mat));
+      return roofSlabs(part.base, part.size, part.ridge, part.overhang, part.thickness);
     case 'loft':
-      return solid(loft(part.base, part.outline, part.height, part.bottom, part.top ?? 1), part.mat);
+      return [loft(part.base, part.outline, part.height, part.bottom, part.top ?? 1)];
     case 'prism':
-      return solid(prism(part.base, part.radius, part.top ?? part.radius, part.height, part.sides, part.turn ?? Math.PI / part.sides), part.mat);
+      return [prism(part.base, part.radius, part.top ?? part.radius, part.height, part.sides, part.turn ?? Math.PI / part.sides)];
     case 'beam':
-      return solid(beam(part.from, part.to, part.width, part.sides ?? 4), part.mat);
+      return [beam(part.from, part.to, part.width, part.sides ?? 4)];
   }
+}
+
+/** Positive angles roll +y toward +z about x, and toward -x about z (right-handed). */
+export function tiltPoint(p: Vec3, { axis, angle, pivot }: Tilt): Vec3 {
+  const [cos, sin] = [Math.cos(angle), Math.sin(angle)];
+  const [x, y, z] = sub(p, pivot);
+  return add(pivot, axis === 'x' ? [x, y * cos - z * sin, y * sin + z * cos] : [x * cos - y * sin, x * sin + y * cos, z]);
+}
+
+export function partFaces(part: Part): Face[] {
+  const { tilt } = part;
+  return partSolids(part).flatMap((polygons) => solid(tilt ? polygons.map((polygon) => polygon.map((p) => tiltPoint(p, tilt))) : polygons, part.mat));
 }
 
 /** Axis-aligned bounds of a set of parts, for placing a building on its lot. */

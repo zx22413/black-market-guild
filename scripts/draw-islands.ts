@@ -105,7 +105,7 @@ function panel(scenery: IslandScenery, index: number, defs: string[]): string {
   const head = scenery.ground.top;
   const chips = [{ top: head, bottom: shade(head, 0.9) }, ...mats.map((m) => SWATCHES[m])];
   const list = designs
-    .map((id, i) => `<text x="0" y="${i * 24}" class="note">・${LANDMARK_DESIGNS[id].motif}</text>`)
+    .map((id, i) => `<text x="0" y="${i * (designs.length > 4 ? 21 : 24)}" class="note">・${LANDMARK_DESIGNS[id].motif}</text>`)
     .join('');
   return `
   <g transform="translate(40,${y0})">
@@ -122,7 +122,7 @@ function panel(scenery: IslandScenery, index: number, defs: string[]): string {
     <text x="1135" y="350" class="note" text-anchor="middle">${LANDMARK_DESIGNS[main.design].motif}</text>
     <g transform="translate(930,370)"><rect width="410" height="250" rx="12" fill="#f3e8d2"/><g transform="translate(5,5)">${closeUp(scenery, second, defs)}</g></g>
     <text x="1135" y="640" class="note" text-anchor="middle">${LANDMARK_DESIGNS[second.design].motif}</text>
-    <g transform="translate(40,664)">${list}</g>
+    <g transform="translate(40,${designs.length > 4 ? 642 : 664})">${list}</g>
     <g transform="translate(560,640)">${fitted(island, 160, 66, 6, defs, true)}</g>
     <text x="640" y="728" class="note" text-anchor="middle">桌面距離剪影</text>
     ${chipRows(chips)}

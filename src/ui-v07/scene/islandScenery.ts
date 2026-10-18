@@ -73,6 +73,33 @@ export const ISLAND_SCENERY: Readonly<Partial<Record<IslandId, IslandScenery>>> 
       { design: 'crag', at: [5.95, TURF, -3.4], scale: 1.3, turn: Math.PI },
     ],
   },
+  'smuggler-port': {
+    name: '走私港',
+    // The colormap's purples are all saturated, so the heath is an even blend of its #5a38b7 and grey-violet #68687d.
+    ground: { top: '#625297', cliff: '#45454f' },
+    annex: { center: [-2.7, -11.6], radii: [5.8, 3.8] },
+    pieces: [
+      { design: 'arms-cache', at: [0.3, TURF, 3.25], scale: 2 },
+      { design: 'smuggler-cave', at: [0, SEA_FOOT, -11], scale: 4, backdrop: true },
+      { design: 'rowboat', at: [5.3, TURF, 3.9], scale: 1.6, turn: 0.3 },
+      { design: 'heather', at: [-1.0, TURF, -0.6], scale: 1.1 },
+      { design: 'heather', at: [-5.3, TURF, 5.0], scale: 0.8, turn: 1 },
+      { design: 'basalt-columns', at: [-5.75, TURF, -3.55], scale: 1.4 },
+      { design: 'basalt-columns', at: [5.95, TURF, -3.4], scale: 1.2, turn: 2 },
+    ],
+  },
+  'pirate-cove': {
+    name: '海盜灣',
+    ground: { top: '#e2c28a', cliff: '#e0a57e' },
+    annex: { center: [0, -14.2], radii: [8.6, 4.6] },
+    pieces: [
+      { design: 'plunder-sale', at: [0.3, TURF, 3.25], scale: 2 },
+      { design: 'careened-ship', at: [0, RIM, -13.75], scale: 3, turn: -0.45, backdrop: true },
+      { design: 'beach-battery', at: [-5.6, TURF, -3.8], scale: 1.5, turn: -Math.PI / 2 },
+      { design: 'boucan', at: [-1.0, TURF, -0.5], scale: 1.5 },
+      { design: 'rowboat', at: [5.3, TURF, 3.9], scale: 1.6, turn: 2.8 },
+    ],
+  },
 };
 
 /** Turns about the island's center that move a backdrop from the back to the left or right side. */

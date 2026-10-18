@@ -56,6 +56,16 @@ describe('building polyhedra', () => {
     faces.forEach((face) => expect(face.span).toEqual([0, 2]));
   });
 
+  it('tilts a whole part about its pivot and shades it over its tilted height', () => {
+    const lying: Part = { kind: 'box', center: [0, 1, 0], size: [2, 2, 4], mat: 'm', tilt: { axis: 'x', angle: Math.PI / 2, pivot: [0, 0, 0] } };
+    const { min, max } = bounds([lying]);
+    [min, max].forEach((v, i) => v.forEach((n, j) => expect(n).toBeCloseTo([[-1, -2, 0], [1, 2, 2]][i]![j]!)));
+    expectClosedConvex(lying);
+    partFaces(lying).forEach((face) => face.span.forEach((n, i) => expect(n).toBeCloseTo([-2, 2][i]!)));
+    const leaning = bounds([{ kind: 'beam', from: [0, 0, 0], to: [0, 2, 0], width: 0.1, mat: 'm', tilt: { axis: 'z', angle: Math.PI / 2, pivot: [0, 0, 0] } }]);
+    expect(leaning.min[0]).toBeCloseTo(-2);
+  });
+
   it('measures part bounds', () => {
     expect(bounds([{ kind: 'box', center: [0, 1, 0], size: [2, 2, 4], mat: 'm' }])).toEqual({ min: [-1, 0, -2], max: [1, 2, 2] });
   });

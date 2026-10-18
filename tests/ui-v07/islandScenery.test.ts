@@ -25,9 +25,9 @@ const dot = (a: readonly number[], b: readonly number[]): number => a.reduce((s,
 function expectClosedConvex(part: Part): void {
   const faces = partFaces(part);
   const points = faces.flatMap((f) => f.points);
-  for (const face of faces) {
-    for (const p of points) expect(dot(sub(p, face.points[0]!), face.normal)).toBeLessThan(1e-6);
-  }
+  // One expect per part: an expect per point and face is too slow for the hundreds of landmark parts.
+  const worst = Math.max(...faces.flatMap((face) => points.map((p) => dot(sub(p, face.points[0]!), face.normal))));
+  expect(worst).toBeLessThan(1e-6);
 }
 
 /** Parts a backdrop stands on; its crown or peaks may overhang. */
