@@ -29,6 +29,7 @@ import { Wind } from '../../ui/scene/Wind';
 import { FocusCamera } from './FocusCamera';
 import { IslandPulse } from './IslandPulse';
 import '../beats/beat.css';
+import '../skin/layers.css';
 import { around } from './focusMath';
 import type { BeatSeat } from './beatStage';
 

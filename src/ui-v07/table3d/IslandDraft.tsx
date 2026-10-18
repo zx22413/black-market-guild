@@ -1,17 +1,20 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import type { DecisionContext } from '../../v07/bots';
 import type { Action, IslandId, PlayerId } from '../../v07/game';
 import { ISLAND_LABELS, ISLAND_TEXT } from '../labels';
 import { legalOf } from '../table/forms';
-import { IslandGlance } from './IslandGlance';
+import { IslandCard, useDealt } from './IslandCard';
 
-// The island draft (§11.1, docs/ui/v07-event-presentation.md §1.1): two big island cards over the
-// dimmed table, only for you. They glow until you pick one; the pick lifts, the button names it,
-// and on confirm the card shrinks away toward your seat. Then everyone's islands are revealed at
-// once (`IslandReveal`).
+// The island draft (§11.1, docs/ui/v07-event-presentation.md §1.1): two island cards (`IslandCard`)
+// dealt face down over the dimmed table, only for you, then turned up. The pick lifts and glows,
+// the button names it, and on confirm the card shrinks away toward your seat. Then everyone's
+// islands are dealt and turned up one after another (`IslandReveal`).
 
 /** How long the chosen card takes to fly to your seat before the choice is submitted. */
 const FLY_MS = 650;
+/** When the first card turns up, and the gap before each next one. */
+const DEAL_MS = 350;
+const DEAL_GAP_MS = 220;
 
 export interface IslandDraftProps {
   readonly context: DecisionContext;
@@ -36,29 +39,17 @@ export function IslandDraft({ context, onSubmit }: IslandDraftProps) {
           <strong>選一座島，整局都用它</strong>
           <small>兩座選一座，所有人同時公開</small>
         </header>
-        <div className="draft-cards">
-          {options.map((a) => {
-            const text = ISLAND_TEXT[a.island];
-            const on = picked === a.island;
-            return (
-              <button
-                key={a.island}
-                type="button"
-                className={`draft-card ${on ? 'on' : ''} ${picked === null ? 'todo' : ''} ${flying && !on ? 'gone' : ''} ${flying && on ? 'fly' : ''}`}
-                title={`${text.pro}。${text.con}`}
-                onClick={() => !flying && setPicked(a.island)}
-              >
-                <b>{ISLAND_LABELS[a.island]}</b>
-                <IslandGlance island={a.island} />
-                {on && (
-                  <span className="draft-full">
-                    <span>{text.pro}</span>
-                    <span>{text.con}</span>
-                  </span>
-                )}
-              </button>
-            );
-          })}
+        <div className="isle-deal">
+          {options.map((a, i) => (
+            <DraftSlot
+              key={a.island}
+              island={a.island}
+              order={i}
+              picked={picked}
+              flying={flying}
+              onPick={() => !flying && setPicked(a.island)}
+            />
+          ))}
         </div>
         <footer className="beat-foot">
           <button type="button" className="primary" disabled={picked === null || flying} onClick={confirm}>
@@ -77,38 +68,34 @@ export interface IslandRevealProps {
   readonly onClose: () => void;
 }
 
-/** Everyone's island, revealed at once (§11.1), with what each one does. */
+/** Everyone's island, dealt and turned up one by one (§11.1), with what each one does. */
 export function IslandReveal({ islands, seats, onClose }: IslandRevealProps) {
   // Tap a guild's island to read its full rule text.
   const [open, setOpen] = useState<PlayerId | null>(null);
   return (
     <div className="beat-backdrop draft-backdrop" role="dialog" aria-modal="true" aria-label="島嶼公開">
-      <div className="beat-card island-reveal">
-        <header className="beat-head">
+      <div className="isle-reveal">
+        <header className="draft-head">
           <strong>各商會的島</strong>
+          <small>點一張卡看完整說明</small>
         </header>
-        <ul className="island-list">
+        <div className="isle-deal">
           {seats.map((s, i) => {
             const island = islands[s.id];
             if (!island) return null;
             return (
-              <li key={s.id} style={{ borderColor: s.color, animationDelay: `${i * 160}ms` }}>
-                <button type="button" className="island-item" aria-expanded={open === s.id} title={`${ISLAND_TEXT[island].pro}。${ISLAND_TEXT[island].con}`} onClick={() => setOpen(open === s.id ? null : s.id)}>
-                  <b>
-                    {s.isViewer ? '你' : s.name}：{ISLAND_LABELS[island]}
-                  </b>
-                  <IslandGlance island={island} />
-                </button>
-                {open === s.id && (
-                  <span className="draft-full">
-                    <span>{ISLAND_TEXT[island].pro}</span>
-                    <span>{ISLAND_TEXT[island].con}</span>
-                  </span>
-                )}
-              </li>
+              <RevealSlot
+                key={s.id}
+                island={island}
+                order={i}
+                owner={s.isViewer ? '你' : s.name}
+                color={s.color}
+                open={open === s.id}
+                onToggle={() => setOpen(open === s.id ? null : s.id)}
+              />
             );
           })}
-        </ul>
+        </div>
         <footer className="beat-foot">
           <button type="button" className="primary" onClick={onClose}>
             開始
@@ -116,5 +103,56 @@ export function IslandReveal({ islands, seats, onClose }: IslandRevealProps) {
         </footer>
       </div>
     </div>
+  );
+}
+
+interface DraftSlotProps {
+  readonly island: IslandId;
+  readonly order: number;
+  readonly picked: IslandId | null;
+  readonly flying: boolean;
+  readonly onPick: () => void;
+}
+
+function DraftSlot({ island, order, picked, flying, onPick }: DraftSlotProps) {
+  const up = useDealt(DEAL_MS + order * DEAL_GAP_MS);
+  const on = picked === island;
+  const text = ISLAND_TEXT[island];
+  return (
+    <button
+      type="button"
+      className={`isle-slot ${on ? 'on' : ''} ${flying && !on ? 'gone' : ''} ${flying && on ? 'fly' : ''}`}
+      title={`${text.pro}。${text.con}`}
+      aria-label={ISLAND_LABELS[island]}
+      aria-pressed={on}
+      disabled={!up}
+      onClick={onPick}
+    >
+      <IslandCard island={island} faceUp={up} selected={on} showFull={on} />
+    </button>
+  );
+}
+
+interface RevealSlotProps {
+  readonly island: IslandId;
+  readonly order: number;
+  readonly owner: string;
+  readonly color: string;
+  readonly open: boolean;
+  readonly onToggle: () => void;
+}
+
+function RevealSlot({ island, order, owner, color, open, onToggle }: RevealSlotProps) {
+  const up = useDealt(DEAL_MS + order * DEAL_GAP_MS * 2);
+  const text = ISLAND_TEXT[island];
+  return (
+    <span className="isle-owner">
+      <span className="isle-owner-tag" style={{ '--seat': color } as CSSProperties}>
+        {owner}
+      </span>
+      <button type="button" className="isle-slot" aria-expanded={open} aria-label={`${owner}：${ISLAND_LABELS[island]}`} title={`${text.pro}。${text.con}`} onClick={onToggle}>
+        <IslandCard island={island} faceUp={up} showFull={open} size="small" />
+      </button>
+    </span>
   );
 }

@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- Spice Isles card art, by day: an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5fb6d4"/><stop offset="0.6" stop-color="#9fd4e0"/><stop offset="1" stop-color="#e3f4ee"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3fb3b3"/><stop offset="1" stop-color="#1f7f88"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sky)"/>
+  <circle cx="340" cy="38" r="30" fill="#fffbe0" opacity="0.45"/>
+  <circle cx="340" cy="38" r="20" fill="#fff8d2"/>
+  <path d="M28 60 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/><path d="M34 58 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee"/>
+  <rect y="186" width="400" height="114" fill="url(#sea)"/>
+  <path d="M0 186 H400" stroke="#2a2238" stroke-width="2"/>
+  <g fill="#e8fbf8" opacity="0.7">
+    <rect x="310" y="194" width="60" height="3" rx="1.5"/><rect x="322" y="202" width="36" height="3" rx="1.5"/><rect x="330" y="210" width="20" height="3" rx="1.5"/>
+  </g>
+  <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
+    <path d="M20 236 q8 -6 16 0 q8 6 16 0"/><path d="M110 268 q8 -6 16 0 q8 6 16 0"/><path d="M336 248 q8 -6 16 0 q8 6 16 0"/><path d="M40 286 q8 -6 16 0"/>
+  </g>
+  
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M56 300 L70.8 218 L115.2 190 L189.20000000000002 182 L278.0 184 L328.32 204 L352 300 Z" fill="#e2c28a"/>
+    <path d="M70.8 218 L115.2 190 L144.8 218 L115.2 300 L56 300 Z" fill="#ebd4ad"/>
+    <path d="M144.8 218 L189.20000000000002 182 L227.67999999999998 208 L204.0 300 L115.2 300 Z" fill="#e6cb9c"/>
+    <path d="M278.0 184 L328.32 204 L352 300 L292.8 300 L301.67999999999995 232 Z" fill="#b09671"/>
+    <path d="M100.4 196 L115.2 190 L189.20000000000002 182 L278.0 184 L310.56 196 L239.52 202 L174.4 200 L132.96 206 Z" fill="#b06041"/>
+  </g>
+  <path d="M174.4 200 L239.52 202 L310.56 196 L278.0 184 Z" fill="#92513c"/>
+  <path d="M70.8 218 L115.2 190 L124.08 195 L82.64 222 L67.84 300 L56 300 Z" fill="#ffffff" opacity="0.3"/>
+  <g fill="none" stroke="#2a2238" stroke-width="1.8" stroke-linecap="round">
+    <path d="M85.6 244 l12 6 l6 14"/><path d="M168.48000000000002 240 l10 4"/><path d="M180.32 268 l-8 12"/>
+    <path d="M257.28 230 l-8 14 l4 10"/><path d="M316.48 254 l-6 10"/>
+  </g>
+  <g fill="#e8fbf8" stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
+    <path d="M42 300 q6 -12 16 -8 q6 -10 16 -4 q8 -6 14 4 v8 z"/>
+    <path d="M307.6 300 q4 -10 14 -8 q8 -10 18 -2 q10 -2 12 10 z"/>
+  </g>
+  <!-- the wind tower house: a sandstone house and its tall slotted wind catcher -->
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
+    <rect x="180" y="132" width="78" height="56" fill="#e2c28a"/>
+    <rect x="176" y="126" width="86" height="8" fill="#f2dcae"/>
+    <rect x="226" y="40" width="30" height="92" fill="#e2c28a"/>
+    <rect x="222" y="34" width="38" height="8" fill="#f2dcae"/>
+    <rect x="196" y="156" width="14" height="32" fill="#6b3f2a"/>
+  </g>
+  <path d="M244 40 h12 v92 h-12 z M222 132 h40 v56 h-40 z" fill="#2a2238" opacity="0.13"/>
+  <g fill="#2a2238"><rect x="232" y="48" width="5" height="22"/><rect x="241" y="48" width="5" height="22"/><rect x="232" y="78" width="5" height="10"/><rect x="241" y="78" width="5" height="10"/></g>
+  <g fill="#2a2238"><rect x="218" y="146" width="8" height="10"/><rect x="236" y="146" width="8" height="10"/></g>
+  <!-- the spice stall: striped awning over cones of red, orange and yellow -->
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M100 190 v-24 M150 190 v-24" fill="none"/>
+    <path d="M94 168 L104 148 L148 148 L158 168 Z" fill="#f4efe6"/>
+  </g>
+  <g fill="#c8423a"><path d="M104 148 L112 148 L106 168 L98 168 Z"/><path d="M122 148 L130 148 L130 168 L120 168 Z"/><path d="M140 148 L148 148 L152 168 L144 168 Z"/></g>
+  <path d="M94 168 L104 148 L148 148 L158 168 Z" fill="none" stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round"/>
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
+    <rect x="102" y="176" width="48" height="14" fill="#8a5a3a"/>
+    <path d="M106 176 l7 -12 l7 12 z" fill="#c8423a"/><path d="M120 176 l7 -14 l7 14 z" fill="#f6a85c"/><path d="M134 176 l7 -11 l7 11 z" fill="#f2c94c"/>
+  </g>
+  <!-- nutmeg trees -->
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
+    <rect x="78" y="166" width="5" height="22" fill="#6b3f2a"/><circle cx="80" cy="158" r="16" fill="#3f7f4a"/>
+    <rect x="296" y="164" width="5" height="24" fill="#6b3f2a"/><circle cx="298" cy="154" r="18" fill="#4f9a5a"/>
+  </g>
+  <g fill="#e0b84a"><circle cx="74" cy="154" r="2.5"/><circle cx="86" cy="162" r="2.5"/><circle cx="292" cy="150" r="2.5"/><circle cx="304" cy="158" r="2.5"/></g>
+  <!-- a dhow with its lateen sail -->
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round"><path d="M20 232 h46 l-8 9 h-32 z" fill="#8a5a3a"/><path d="M46 232 L44 196 L18 226 Z" fill="#f4efe6"/><path d="M44 196 L30 214" stroke="#2a2238" stroke-width="2"/></g>
+  <g fill="none" stroke="#2a2238" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M150 60 q5 -5 8 0 q3 -5 8 0"/><path d="M170 46 q5 -5 8 0 q3 -5 8 0"/></g>
+</svg>

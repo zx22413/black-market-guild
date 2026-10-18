@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- Free Port card art, by day: an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5fb6d4"/><stop offset="0.6" stop-color="#9fd4e0"/><stop offset="1" stop-color="#e3f4ee"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3fb3b3"/><stop offset="1" stop-color="#1f7f88"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sky)"/>
+  <circle cx="344" cy="36" r="30" fill="#fffbe0" opacity="0.45"/>
+  <circle cx="344" cy="36" r="20" fill="#fff8d2"/>
+  <path d="M20 70 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/><path d="M26 68 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee"/><path d="M178 52 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/><path d="M184 50 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee"/>
+  <rect y="186" width="400" height="114" fill="url(#sea)"/>
+  <path d="M0 186 H400" stroke="#2a2238" stroke-width="2"/>
+  <g fill="#e8fbf8" opacity="0.7">
+    <rect x="314" y="194" width="60" height="3" rx="1.5"/><rect x="326" y="202" width="36" height="3" rx="1.5"/><rect x="334" y="210" width="20" height="3" rx="1.5"/>
+  </g>
+  <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
+    <path d="M20 236 q8 -6 16 0 q8 6 16 0"/><path d="M110 268 q8 -6 16 0 q8 6 16 0"/><path d="M336 248 q8 -6 16 0 q8 6 16 0"/><path d="M40 286 q8 -6 16 0"/>
+  </g>
+  
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M56 300 L70.8 222 L115.2 194 L189.20000000000002 186 L278.0 188 L328.32 208 L352 300 Z" fill="#ca845c"/>
+    <path d="M70.8 222 L115.2 194 L144.8 222 L115.2 300 L56 300 Z" fill="#daa98d"/>
+    <path d="M144.8 222 L189.20000000000002 186 L227.67999999999998 212 L204.0 300 L115.2 300 Z" fill="#d29674"/>
+    <path d="M278.0 188 L328.32 208 L352 300 L292.8 300 L301.67999999999995 236 Z" fill="#9e684e"/>
+    <path d="M100.4 200 L115.2 194 L189.20000000000002 186 L278.0 188 L310.56 200 L239.52 206 L174.4 204 L132.96 210 Z" fill="#fce2c4"/>
+  </g>
+  <path d="M174.4 204 L239.52 206 L310.56 200 L278.0 188 Z" fill="#cfb9a4"/>
+  <path d="M70.8 222 L115.2 194 L124.08 199 L82.64 226 L67.84 300 L56 300 Z" fill="#ffffff" opacity="0.3"/>
+  <g fill="none" stroke="#2a2238" stroke-width="1.8" stroke-linecap="round">
+    <path d="M85.6 248 l12 6 l6 14"/><path d="M168.48000000000002 244 l10 4"/><path d="M180.32 272 l-8 12"/>
+    <path d="M257.28 234 l-8 14 l4 10"/><path d="M316.48 258 l-6 10"/>
+  </g>
+  <g fill="#e8fbf8" stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
+    <path d="M42 300 q6 -12 16 -8 q6 -10 16 -4 q8 -6 14 4 v8 z"/>
+    <path d="M307.6 300 q4 -10 14 -8 q8 -10 18 -2 q10 -2 12 10 z"/>
+  </g>
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M80 192 V116 L88 116 L88 108 L96.0 108 L102.0 100 L108.0 108 L116 108 L116 116 L124 116 V192 Z" fill="#f2c94c"/>
+  </g>
+  <path d="M102.0 100 L116 108 L116 116 L124 116 V192 H106.0 Z" fill="#2a2238" opacity="0.12"/>
+  <g fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
+    <rect x="87" y="126" width="10" height="14"/><rect x="107" y="126" width="10" height="14"/>
+    <rect x="87" y="150" width="10" height="14"/><rect x="107" y="150" width="10" height="14"/>
+  </g>
+  <rect x="96.0" y="176" width="12" height="16" fill="#6b3f2a" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/>
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M124 192 V128 L132 128 L132 120 L138.0 120 L144.0 112 L150.0 120 L156 120 L156 128 L164 128 V192 Z" fill="#7fc8d8"/>
+  </g>
+  <path d="M144.0 112 L156 120 L156 128 L164 128 V192 H148.0 Z" fill="#2a2238" opacity="0.12"/>
+  <g fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
+    <rect x="131" y="138" width="10" height="14"/><rect x="147" y="138" width="10" height="14"/>
+    <rect x="131" y="162" width="10" height="14"/><rect x="147" y="162" width="10" height="14"/>
+  </g>
+  <rect x="138.0" y="176" width="12" height="16" fill="#6b3f2a" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/>
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M164 192 V108 L172 108 L172 100 L180.0 100 L186.0 92 L192.0 100 L200 100 L200 108 L208 108 V192 Z" fill="#ef8a7a"/>
+  </g>
+  <path d="M186.0 92 L200 100 L200 108 L208 108 V192 H190.0 Z" fill="#2a2238" opacity="0.12"/>
+  <g fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
+    <rect x="171" y="118" width="10" height="14"/><rect x="191" y="118" width="10" height="14"/>
+    <rect x="171" y="142" width="10" height="14"/><rect x="191" y="142" width="10" height="14"/>
+  </g>
+  <rect x="180.0" y="176" width="12" height="16" fill="#6b3f2a" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/>
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M208 192 V124 L216 124 L216 116 L221.0 116 L227.0 108 L233.0 116 L238 116 L238 124 L246 124 V192 Z" fill="#9bd18b"/>
+  </g>
+  <path d="M227.0 108 L238 116 L238 124 L246 124 V192 H231.0 Z" fill="#2a2238" opacity="0.12"/>
+  <g fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
+    <rect x="215" y="134" width="10" height="14"/><rect x="229" y="134" width="10" height="14"/>
+    <rect x="215" y="158" width="10" height="14"/><rect x="229" y="158" width="10" height="14"/>
+  </g>
+  <rect x="221.0" y="176" width="12" height="16" fill="#6b3f2a" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/>
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M246 192 V112 L254 112 L254 104 L261.0 104 L267.0 96 L273.0 104 L280 104 L280 112 L288 112 V192 Z" fill="#f6a85c"/>
+  </g>
+  <path d="M267.0 96 L280 104 L280 112 L288 112 V192 H271.0 Z" fill="#2a2238" opacity="0.12"/>
+  <g fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
+    <rect x="253" y="122" width="10" height="14"/><rect x="271" y="122" width="10" height="14"/>
+    <rect x="253" y="146" width="10" height="14"/><rect x="271" y="146" width="10" height="14"/>
+  </g>
+  <rect x="261.0" y="176" width="12" height="16" fill="#6b3f2a" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/>
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M288 192 V130 L296 130 L296 122 L302.0 122 L308.0 114 L314.0 122 L320 122 L320 130 L328 130 V192 Z" fill="#c79be0"/>
+  </g>
+  <path d="M308.0 114 L320 122 L320 130 L328 130 V192 H312.0 Z" fill="#2a2238" opacity="0.12"/>
+  <g fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
+    <rect x="295" y="140" width="10" height="14"/><rect x="311" y="140" width="10" height="14"/>
+    <rect x="295" y="164" width="10" height="14"/><rect x="311" y="164" width="10" height="14"/>
+  </g>
+  <rect x="302.0" y="176" width="12" height="16" fill="#6b3f2a" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/>
+  <!-- the quay's white tower with the free port's flag -->
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round"><rect x="326" y="92" width="22" height="100" fill="#f4efe6"/><path d="M322 92 L337 72 L352 92 Z" fill="#c8423a"/></g>
+  <path d="M337 72 v-22" stroke="#2a2238" stroke-width="2.5"/>
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round"><path d="M337 52 h24 v14 h-24 z" fill="#2f6fb0"/></g>
+  <path d="M337 59 h24" stroke="#f2c94c" stroke-width="3"/>
+  <!-- the canal running out under an arch -->
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round"><path d="M176 300 L184 214 Q200 200 216 214 L224 300 Z" fill="#3fb3b3"/></g>
+  <path d="M188 240 q6 -4 12 0 q6 4 12 0" fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round"/>
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
+    <path d="M20 224 h34 l-6 8 h-22 z" fill="#8a5a3a"/><path d="M36 224 v-24 l14 20 z" fill="#ef8a7a"/>
+  </g>
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
+    <path d="M250 250 h34 l-6 8 h-22 z" fill="#6b3f2a"/><path d="M266 250 v-24 l14 20 z" fill="#f2c94c"/>
+  </g>
+  <g fill="none" stroke="#2a2238" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M120 40 q5 -5 8 0 q3 -5 8 0"/><path d="M140 30 q5 -5 8 0 q3 -5 8 0"/></g>
+</svg>

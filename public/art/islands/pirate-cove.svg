@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- Pirate Cove card art, by day: an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5fb6d4"/><stop offset="0.6" stop-color="#9fd4e0"/><stop offset="1" stop-color="#e3f4ee"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3fb3b3"/><stop offset="1" stop-color="#1f7f88"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sky)"/>
+  <circle cx="60" cy="38" r="30" fill="#fffbe0" opacity="0.45"/>
+  <circle cx="60" cy="38" r="20" fill="#fff8d2"/>
+  <path d="M228 56 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/><path d="M234 54 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee"/>
+  <rect y="186" width="400" height="114" fill="url(#sea)"/>
+  <path d="M0 186 H400" stroke="#2a2238" stroke-width="2"/>
+  <g fill="#e8fbf8" opacity="0.7">
+    <rect x="30" y="194" width="60" height="3" rx="1.5"/><rect x="42" y="202" width="36" height="3" rx="1.5"/><rect x="50" y="210" width="20" height="3" rx="1.5"/>
+  </g>
+  <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
+    <path d="M20 236 q8 -6 16 0 q8 6 16 0"/><path d="M110 268 q8 -6 16 0 q8 6 16 0"/><path d="M336 248 q8 -6 16 0 q8 6 16 0"/><path d="M40 286 q8 -6 16 0"/>
+  </g>
+  
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M40 300 L53.0 226 L92.0 198 L157.0 190 L235.0 192 L279.20000000000005 212 L300 300 Z" fill="#e0a57e"/>
+    <path d="M53.0 226 L92.0 198 L118.0 226 L92.0 300 L40 300 Z" fill="#e9c0a5"/>
+    <path d="M118.0 226 L157.0 190 L190.79999999999998 216 L170.0 300 L92.0 300 Z" fill="#e5b291"/>
+    <path d="M235.0 192 L279.20000000000005 212 L300 300 L248.0 300 L255.79999999999998 240 Z" fill="#ae8168"/>
+    <path d="M79.0 204 L92.0 198 L157.0 190 L235.0 192 L263.6 204 L201.2 210 L144.0 208 L107.60000000000001 214 Z" fill="#e2c28a"/>
+  </g>
+  <path d="M144.0 208 L201.2 210 L263.6 204 L235.0 192 Z" fill="#ba9f76"/>
+  <path d="M53.0 226 L92.0 198 L99.80000000000001 203 L63.4 230 L50.4 300 L40 300 Z" fill="#ffffff" opacity="0.3"/>
+  <g fill="none" stroke="#2a2238" stroke-width="1.8" stroke-linecap="round">
+    <path d="M66.0 252 l12 6 l6 14"/><path d="M138.8 248 l10 4"/><path d="M149.2 276 l-8 12"/>
+    <path d="M216.8 238 l-8 14 l4 10"/><path d="M268.8 262 l-6 10"/>
+  </g>
+  <g fill="#e8fbf8" stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
+    <path d="M26 300 q6 -12 16 -8 q6 -10 16 -4 q8 -6 14 4 v8 z"/>
+    <path d="M261.0 300 q4 -10 14 -8 q8 -10 18 -2 q10 -2 12 10 z"/>
+  </g>
+  <!-- the careened ship, heeled over on the sand -->
+  <g transform="translate(-34 -4) rotate(9 270 190)">
+    <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
+      <path d="M190 190 Q196 214 240 216 L322 214 Q350 204 356 182 Z" fill="#7a4a2a"/>
+      <path d="M190 190 L356 182 L352 172 L196 178 Z" fill="#a8744a"/>
+      <rect x="252" y="64" width="7" height="118" fill="#5a3420"/>
+      <rect x="306" y="96" width="6" height="84" fill="#5a3420"/>
+      <path d="M232 84 h46 v6 h-46 z M234 120 h42 v6 h-42 z" fill="#5a3420"/>
+    </g>
+    <g fill="none" stroke="#2a2238" stroke-width="1.6"><path d="M196 196 L350 190 M200 204 L344 198"/></g>
+    <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round"><path d="M259 66 h28 l-6 8 l6 8 h-28 z" fill="#1f1a26"/></g>
+    <g fill="#f4efe6"><circle cx="271" cy="72" r="3.2"/><path d="M266 78 l10 -4 M266 74 l10 4" stroke="#f4efe6" stroke-width="1.6"/></g>
+    <g fill="#2a2238"><circle cx="222" cy="198" r="3"/><circle cx="244" cy="197" r="3"/><circle cx="266" cy="196" r="3"/><circle cx="288" cy="195" r="3"/></g>
+  </g>
+  <!-- palms -->
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
+    <path d="M86 192 q6 -40 22 -70 l5 2 q-14 30 -19 68 z" fill="#a8744a"/>
+    <path d="M110 122 q-30 -10 -44 8 q22 -6 44 -8 z M110 122 q24 -16 44 -4 q-22 0 -44 4 z M110 122 q-12 -22 -2 -40 q2 22 2 40 z M110 122 q22 4 30 24 q-16 -14 -30 -24 z" fill="#4f9a5a"/>
+  </g>
+  <!-- the plunder for sale: chest, barrels and a campfire's smoke -->
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
+    <rect x="132" y="176" width="26" height="16" fill="#8a5a3a"/><path d="M132 176 q13 -12 26 0 z" fill="#a8744a"/><rect x="142" y="180" width="6" height="6" fill="#e0b84a"/>
+    <rect x="164" y="174" width="14" height="18" rx="3" fill="#b8845a"/><rect x="178" y="178" width="12" height="14" rx="3" fill="#a8744a"/>
+  </g>
+  <g fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"><path d="M60 170 q-6 -12 4 -16 q-2 -12 10 -12 q10 -4 12 8 q8 4 2 12 q-8 6 -14 2 q-8 8 -14 6 z"/></g>
+  <path d="M70 190 l4 -14 l4 14 z" fill="#f6a85c" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/>
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
+    <path d="M320 238 h34 l-6 8 h-22 z" fill="#5a3420"/><path d="M336 238 v-24 l14 20 z" fill="#1f1a26"/>
+  </g>
+  <g fill="none" stroke="#2a2238" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M180 40 q5 -5 8 0 q3 -5 8 0"/><path d="M200 54 q5 -5 8 0 q3 -5 8 0"/></g>
+</svg>

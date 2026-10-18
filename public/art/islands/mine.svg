@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- Mine Isle card art, by day: an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5fb6d4"/><stop offset="0.6" stop-color="#9fd4e0"/><stop offset="1" stop-color="#e3f4ee"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3fb3b3"/><stop offset="1" stop-color="#1f7f88"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sky)"/>
+  <circle cx="52" cy="40" r="30" fill="#fffbe0" opacity="0.45"/>
+  <circle cx="52" cy="40" r="20" fill="#fff8d2"/>
+  <path d="M22 92 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/><path d="M28 90 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee"/>
+  <rect y="186" width="400" height="114" fill="url(#sea)"/>
+  <path d="M0 186 H400" stroke="#2a2238" stroke-width="2"/>
+  <g fill="#e8fbf8" opacity="0.7">
+    <rect x="22" y="194" width="60" height="3" rx="1.5"/><rect x="34" y="202" width="36" height="3" rx="1.5"/><rect x="42" y="210" width="20" height="3" rx="1.5"/>
+  </g>
+  <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
+    <path d="M20 236 q8 -6 16 0 q8 6 16 0"/><path d="M110 268 q8 -6 16 0 q8 6 16 0"/><path d="M336 248 q8 -6 16 0 q8 6 16 0"/><path d="M40 286 q8 -6 16 0"/>
+  </g>
+  
+  <!-- the mountain behind -->
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M150 186 L250 24 L300 90 L330 70 L392 186 Z" fill="#7d7f96"/>
+    <path d="M250 24 L230 120 L190 186 L150 186 Z" fill="#a3a6bc"/>
+    <path d="M300 90 L280 186 L392 186 L330 70 Z" fill="#5f6178"/>
+  </g>
+  <path d="M250 24 L274 56 L262 52 L252 64 L240 50 L228 58 Z" fill="#f4f6fa" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M330 70 L344 92 L334 88 L324 98 L318 86 Z" fill="#f4f6fa" stroke="#2a2238" stroke-width="2" stroke-linejoin="round"/>
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M40 300 L53.0 218 L92.0 190 L157.0 182 L235.0 184 L279.20000000000005 204 L300 300 Z" fill="#636378"/>
+    <path d="M53.0 218 L92.0 190 L118.0 218 L92.0 300 L40 300 Z" fill="#9292a0"/>
+    <path d="M118.0 218 L157.0 182 L190.79999999999998 208 L170.0 300 L92.0 300 Z" fill="#7a7a8c"/>
+    <path d="M235.0 184 L279.20000000000005 204 L300 300 L248.0 300 L255.79999999999998 232 Z" fill="#514f64"/>
+    <path d="M79.0 196 L92.0 190 L157.0 182 L235.0 184 L263.6 196 L201.2 202 L144.0 200 L107.60000000000001 206 Z" fill="#868ba1"/>
+  </g>
+  <path d="M144.0 200 L201.2 202 L263.6 196 L235.0 184 Z" fill="#707388"/>
+  <path d="M53.0 218 L92.0 190 L99.80000000000001 195 L63.4 222 L50.4 300 L40 300 Z" fill="#ffffff" opacity="0.3"/>
+  <g fill="none" stroke="#2a2238" stroke-width="1.8" stroke-linecap="round">
+    <path d="M66.0 244 l12 6 l6 14"/><path d="M138.8 240 l10 4"/><path d="M149.2 268 l-8 12"/>
+    <path d="M216.8 230 l-8 14 l4 10"/><path d="M268.8 254 l-6 10"/>
+  </g>
+  <g fill="#e8fbf8" stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
+    <path d="M26 300 q6 -12 16 -8 q6 -10 16 -4 q8 -6 14 4 v8 z"/>
+    <path d="M261.0 300 q4 -10 14 -8 q8 -10 18 -2 q10 -2 12 10 z"/>
+  </g>
+  <!-- the headframe: a timber A-frame with its winding wheel -->
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M122 190 L146 80 L156 80 L140 190 Z" fill="#a8744a"/>
+    <path d="M196 190 L162 80 L172 80 L214 190 Z" fill="#8a5a3a"/>
+    <path d="M136 140 h66 v7 h-66 z M144 110 h48 v6 h-48 z" fill="#b8845a"/>
+  </g>
+  <circle cx="159" cy="78" r="18" fill="none" stroke="#2a2238" stroke-width="7"/>
+  <circle cx="159" cy="78" r="18" fill="none" stroke="#c8423a" stroke-width="3.5"/>
+  <path d="M159 60 v36 M141 78 h36 M146 65 l26 26 M172 65 l-26 26" stroke="#2a2238" stroke-width="2"/>
+  <path d="M159 96 v80" stroke="#2a2238" stroke-width="2"/>
+  <!-- the shaft house -->
+  <g stroke="#2a2238" stroke-width="2.5" stroke-linejoin="round"><rect x="96" y="160" width="48" height="30" fill="#f3e3c3"/><path d="M90 162 L120 140 L150 162 Z" fill="#5b6a8a"/><rect x="112" y="172" width="14" height="18" fill="#2a2238"/></g>
+  <!-- rails and an ore cart full of ore -->
+  <path d="M150 196 H262" stroke="#2a2238" stroke-width="3"/>
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round"><path d="M206 192 L210 172 H246 L250 192 Z" fill="#6c6684"/><circle cx="216" cy="194" r="4" fill="#3b3646"/><circle cx="240" cy="194" r="4" fill="#3b3646"/></g>
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round"><path d="M212 172 l6 -8 l8 4 l8 -6 l8 6 l4 4 z" fill="#9aa6b8"/></g>
+  <!-- a spoil heap and a pine -->
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round"><path d="M256 196 q14 -26 34 0 z" fill="#8e8a7c"/></g>
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round"><path d="M70 190 L82 150 L94 190 Z" fill="#2f6b4a"/></g>
+  <g stroke="#2a2238" stroke-width="2" stroke-linejoin="round">
+    <path d="M320 232 h34 l-6 8 h-22 z" fill="#6b3f2a"/><path d="M336 232 v-24 l14 20 z" fill="#f3e3c3"/>
+  </g>
+</svg>

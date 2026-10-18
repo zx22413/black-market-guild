@@ -1,0 +1,266 @@
+/*
+ * Trial skin: one card-game look for the table UI (docs/ui/v07-style-layers.md). Loaded after
+ * beat.css and only swaps the look; layout and behavior stay as they are. `?skin=classic` turns it
+ * off to compare. Everything is "parchment set in a dark wood frame with a gold hairline", the same
+ * family as the island cards (table3d/islandCard.css), with decoration rising by layer:
+ *   Layer 1, always on screen (market strip, ranking, bottom bar, seat plates, menu): plain wood
+ *     strips with a gold hairline; the chips and buttons on them are parchment tokens.
+ *   Layer 2, cards (building and role hands, beat cards, market card, prompts): the card frame —
+ *     a wood border, parchment inside, a gold rule; the icon sits in a picture window.
+ *   Layer 3, secret moments (the intel reroll card, the wanted notice): dark lacquer, brass
+ *     hairline, lantern glow, a red seal.
+ */
+:root:not(.skin-classic) {
+  --c-wood: #4a2f1b;
+  --c-wood-dark: #2a190d;
+  --c-gold: #d9b25a;
+  --c-gold-dark: #8a6420;
+  --c-parch: #f4ead2;
+  --c-parch-sunk: #e8dab8;
+  --c-parch-on: #fff4d4;
+  --c-ink: #2a1d10;
+  --c-soft: #6b5537;
+  --c-cream: #f6ead0;
+  --c-cream-soft: #d9c9a3;
+  --c-rule: rgb(42 29 16 / 0.35);
+  --c-button: #e8b931;
+  --c-button-edge: #a9831a;
+  --c-art-sky: #5fb6d4;
+  --c-art-sea: #1f7f88;
+  --c-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.36 0 0 0 0 0.25 0 0 0 0 0.1 0 0 0 0.16 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* layer 3: secrets */
+  --l3-lacquer: #161b2c;
+  --l3-lacquer-2: #232b44;
+  --l3-brass: #d7a64a;
+  --l3-lamp: #ffb35c;
+  --l3-wax: #a3262f;
+  --l3-cream: #f3e6c8;
+  --l3-soft: #b8ad95;
+}
+
+/* ================= layer 1: wood strips with parchment tokens ================= */
+
+:root:not(.skin-classic) :is(.inv-market, .rank-rail, .inv-bar, .island-badge > button, .t3-menu .t3-round) {
+  border: 1px solid var(--c-wood-dark);
+  background:
+    repeating-linear-gradient(92deg, rgb(255 255 255 / 0.035) 0 3px, transparent 3px 11px),
+    var(--c-grain),
+    linear-gradient(180deg, #5a3a22, var(--c-wood));
+  background-size: auto, 160px 160px, auto;
+  color: var(--c-cream);
+  box-shadow: inset 0 0 0 1px var(--c-gold-dark), inset 0 0 0 2px rgb(217 178 90 / 0.35), 0 4px 0 var(--c-wood-dark), 0 10px 18px rgb(10 30 30 / 0.25);
+}
+:root:not(.skin-classic) :is(.inv-market, .rank-rail, .inv-bar) {
+  border-radius: 8px;
+}
+:root:not(.skin-classic) :is(.island-badge > button, .t3-menu .t3-round) {
+  border-radius: 999px;
+}
+
+/* parchment tokens on the wood */
+:root:not(.skin-classic) :is(.inv-chip, .bar-chips .chip, .rank-rail li, .beat3d-plate, .isle-chip, .inv-market .bet, .inv-note, .rank-fold, .note-badge > button) {
+  border: 0;
+  border-radius: 999px;
+  background: var(--c-grain), var(--c-parch);
+  background-size: 160px 160px, auto;
+  color: var(--c-ink);
+  box-shadow: 0 2px 0 var(--c-wood-dark);
+}
+:root:not(.skin-classic) :is(.rank-rail li, .inv-note, .rank-fold) {
+  border-radius: 8px;
+}
+:root:not(.skin-classic) .rank-rail li.me {
+  background: var(--c-grain), var(--c-parch-on);
+  background-size: 160px 160px, auto;
+  box-shadow: 0 2px 0 var(--c-wood-dark), 0 0 0 1.5px var(--c-gold);
+}
+/* The goods' colour stays as a stripe on the chip's left end. */
+:root:not(.skin-classic) .inv-chip.good-wood { box-shadow: inset 5px 0 0 var(--wood), 0 2px 0 var(--c-wood-dark); }
+:root:not(.skin-classic) .inv-chip.good-iron { box-shadow: inset 5px 0 0 var(--iron), 0 2px 0 var(--c-wood-dark); }
+:root:not(.skin-classic) .inv-chip.good-spice { box-shadow: inset 5px 0 0 var(--spice), 0 2px 0 var(--c-wood-dark); }
+:root:not(.skin-classic) .inv-chip.good-arms { box-shadow: inset 5px 0 0 var(--arms), 0 2px 0 var(--c-wood-dark); }
+:root:not(.skin-classic) .inv-chip.wanted {
+  color: #9a2a22;
+  box-shadow: inset 5px 0 0 #c0392b, 0 2px 0 var(--c-wood-dark);
+}
+:root:not(.skin-classic) .inv-market .need {
+  color: var(--c-soft);
+}
+:root:not(.skin-classic) .inv-market .bet.on {
+  background: var(--c-button);
+  box-shadow: 0 2px 0 var(--c-button-edge);
+}
+:root:not(.skin-classic) .rank-rail :is(header small, header button) {
+  color: var(--c-cream-soft);
+}
+
+/* buttons: parchment tokens; the main one is gold */
+:root:not(.skin-classic) :is(.inv-bar, .beat-foot) button:not(.bar-lock),
+:root:not(.skin-classic) .t3-menu button,
+:root:not(.skin-classic) .inv-build > button {
+  border: 0;
+  border-radius: 999px;
+  background: var(--c-grain), var(--c-parch);
+  background-size: 160px 160px, auto;
+  color: var(--c-ink);
+  box-shadow: 0 3px 0 var(--c-wood-dark);
+  transition: transform 120ms, box-shadow 120ms;
+}
+:root:not(.skin-classic) :is(.inv-bar, .beat-foot) button.primary,
+:root:not(.skin-classic) .inv-build > button.on {
+  background: linear-gradient(180deg, #f3cf6b, var(--c-button));
+  color: var(--c-ink);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 3px 0 var(--c-button-edge), 0 0 0 1px var(--c-gold-dark);
+  font-weight: 700;
+}
+:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .t3-menu) button:not(.bar-lock, :disabled):active,
+:root:not(.skin-classic) .inv-build > button:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--c-wood-dark);
+}
+
+/* ================= layer 2: the card frame ================= */
+
+:root:not(.skin-classic) :is(.beat-card, .draft-card, .inv-card, .dep-card, .dep-strip, .market-card) {
+  border: 5px solid var(--c-wood);
+  outline: 1px solid var(--c-gold-dark);
+  outline-offset: -10px;
+  border-radius: 7px;
+  background:
+    radial-gradient(ellipse at 50% 40%, transparent 55%, rgb(120 85 30 / 0.2) 100%),
+    var(--c-grain),
+    var(--c-parch);
+  background-size: auto, 160px 160px, auto;
+  color: var(--c-ink);
+  box-shadow: 0 0 0 1px var(--c-gold-dark), inset 0 0 0 1px var(--c-gold), 0 5px 0 var(--c-wood-dark), 0 18px 30px rgb(0 0 0 / 0.3);
+}
+:root:not(.skin-classic) :is(.draft-card.on, .inv-card.sel, .dep-card.on) {
+  border: 5px solid var(--c-wood);
+  outline: 2px solid var(--c-gold);
+  outline-offset: -11px;
+  background:
+    radial-gradient(ellipse at 50% 40%, transparent 55%, rgb(120 85 30 / 0.15) 100%),
+    var(--c-grain),
+    var(--c-parch-on);
+  background-size: auto, 160px 160px, auto;
+  box-shadow: 0 0 0 1px var(--c-gold-dark), 0 0 18px rgb(255 194 61 / 0.75), 0 5px 0 var(--c-wood-dark), 0 18px 30px rgb(0 0 0 / 0.3);
+}
+:root:not(.skin-classic) .beat-head strong {
+  color: var(--c-ink);
+}
+:root:not(.skin-classic) .beat-head {
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--c-rule);
+  color: var(--c-soft);
+}
+/* The role hand's tray: no glowing box around the cards. */
+:root:not(.skin-classic) .dep-hand {
+  background: none;
+}
+
+/* The icon on a building or role card sits in a picture window, like the island cards' art. */
+:root:not(.skin-classic) :is(.inv-card .inv-ic, .dep-card .dep-ic) {
+  width: 100%;
+  border: 2px solid var(--c-wood-dark);
+  border-radius: 3px;
+  background:
+    radial-gradient(ellipse at 50% 120%, rgb(255 255 255 / 0.25), transparent 60%),
+    linear-gradient(180deg, var(--c-art-sky), var(--c-art-sea));
+  box-shadow: 0 0 0 2px var(--c-gold), 0 0 0 3px var(--c-gold-dark), inset 0 0 12px rgb(0 0 0 / 0.3);
+}
+:root:not(.skin-classic) .inv-card .inv-ic {
+  height: 52px;
+}
+:root:not(.skin-classic) .dep-card .dep-ic {
+  height: 66px;
+}
+:root:not(.skin-classic) :is(.inv-card .inv-ic, .dep-card .dep-ic) img {
+  filter: drop-shadow(0 2px 0 rgb(0 0 0 / 0.35));
+}
+:root:not(.skin-classic) :is(.inv-ic.none, .dep-ic.none) {
+  background: linear-gradient(180deg, #7a6a58, #4a3d30);
+}
+
+/* The market card was dark; on parchment its scale and trends need ink colors. */
+:root:not(.skin-classic) .market-card .broker { color: #8a5a12; }
+:root:not(.skin-classic) .market-card td.up { color: #1d6a30; }
+:root:not(.skin-classic) .market-card td.down { color: #9a2a22; }
+:root:not(.skin-classic) .mk-scale { border-bottom-color: var(--c-rule); }
+:root:not(.skin-classic) .mk-scale i { border-left-color: var(--c-rule); }
+:root:not(.skin-classic) .mk-scale i:last-of-type { border-right-color: var(--c-rule); }
+:root:not(.skin-classic) .mk-scale i.on { background: rgb(42 29 16 / 0.1); }
+:root:not(.skin-classic) .mk-puck { border-color: var(--c-ink); background: var(--c-parch-on); }
+:root:not(.skin-classic) .mk-scale.rise .mk-puck { border-color: #1d6a30; }
+:root:not(.skin-classic) .mk-scale.fall .mk-puck { border-color: #9a2a22; }
+:root:not(.skin-classic) .mk-scale.still .mk-puck { border-color: var(--c-soft); }
+
+/* ================= layer 3: secrets ================= */
+
+:root:not(.skin-classic) .beat-card.reroll {
+  position: relative;
+  border: 1px solid var(--l3-brass);
+  outline: 1px solid rgb(215 166 74 / 0.35);
+  outline-offset: -7px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--l3-lacquer-2), var(--l3-lacquer));
+  color: var(--l3-cream);
+  box-shadow: 0 0 0 5px rgb(22 27 44 / 0.7), 0 0 60px rgb(255 179 92 / 0.35), 0 24px 60px rgb(0 0 0 / 0.5);
+}
+/* The red seal that marks "only you see this", left of the header (the card scrolls, so it stays inside). */
+:root:not(.skin-classic) .beat-card.reroll::before {
+  content: '密';
+  position: absolute;
+  top: 14px;
+  left: 20px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #c9434b, var(--l3-wax));
+  color: var(--l3-cream);
+  font-weight: 700;
+  box-shadow: 0 2px 0 #5d1218;
+  rotate: 8deg;
+}
+:root:not(.skin-classic) .beat-card.reroll .beat-head {
+  min-height: 44px;
+  padding-left: 54px;
+  align-items: center;
+  border-bottom-color: rgb(215 166 74 / 0.35);
+  color: var(--l3-brass);
+}
+:root:not(.skin-classic) .beat-card.reroll :is(.beat-head strong, .reroll-hint) {
+  color: var(--l3-cream);
+}
+:root:not(.skin-classic) .beat-card.reroll .reroll-ship .chip {
+  background: rgb(255 255 255 / 0.1);
+  color: var(--l3-cream);
+}
+:root:not(.skin-classic) .beat-card.reroll .chip-raw,
+:root:not(.skin-classic) .beat-card.reroll .beat-foot .bar-lock {
+  color: var(--l3-soft);
+}
+:root:not(.skin-classic) .beat-card.reroll .beat-foot button:not(.bar-lock) {
+  background: var(--l3-lacquer-2);
+  color: var(--l3-cream);
+  box-shadow: 0 0 0 1px var(--l3-brass), 0 3px 0 #0b0e18;
+}
+:root:not(.skin-classic) .beat-card.reroll .beat-foot button:not(.bar-lock):hover {
+  box-shadow: 0 0 0 1px var(--l3-lamp), 0 3px 0 #0b0e18, 0 0 16px rgb(255 179 92 / 0.5);
+}
+:root:not(.skin-classic) .beat-card.reroll .beat-meter li.on {
+  box-shadow: 0 0 0 2px var(--l3-cream);
+}
+
+:root:not(.skin-classic) .wanted-banner {
+  border-left: 0;
+  border: 1px solid var(--l3-brass);
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--l3-lacquer-2), var(--l3-lacquer));
+  color: var(--l3-cream);
+  box-shadow: 0 0 0 4px rgb(22 27 44 / 0.7), 0 0 30px rgb(192 57 43 / 0.45);
+}
+:root:not(.skin-classic) .wanted-banner .wanted-flag {
+  color: #e2584a;
+}
