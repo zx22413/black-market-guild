@@ -15,6 +15,17 @@ export interface LandmarkDesign {
   readonly glints?: readonly Vec3[];
   /** Parts that turn on the table, drawn at rest in the blueprint. */
   readonly rotor?: LandmarkRotor;
+  /** Flags that wave on the table, drawn flat in the blueprint. */
+  readonly flags?: readonly LandmarkFlag[];
+}
+
+/**
+ * A flag that waves from its pole: its parts lie flat in the plane z = hinge's z and fly toward +x
+ * from the hinge, cut into narrow strips so the cloth can ripple.
+ */
+export interface LandmarkFlag {
+  readonly parts: readonly KitPart[];
+  readonly hinge: Vec3;
 }
 
 /** Parts that turn as one about an axis through `pivot`: a windmill's sails. */
@@ -28,7 +39,7 @@ export interface LandmarkRotor {
 
 /** Every part of a design, its rotor's at rest included: for bounds, materials and the blueprint. */
 export function landmarkParts(design: LandmarkDesign): readonly KitPart[] {
-  return design.rotor ? [...design.parts, ...design.rotor.parts] : design.parts;
+  return [...design.parts, ...(design.rotor?.parts ?? []), ...(design.flags ?? []).flatMap((flag) => flag.parts)];
 }
 
 export type P = KitPart;

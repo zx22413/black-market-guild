@@ -115,6 +115,18 @@ export const ISLAND_SCENERY: Readonly<Partial<Record<IslandId, IslandScenery>>> 
       { design: 'stump', at: [5.3, TURF, 3.9], scale: 1.6 },
     ],
   },
+  'free-port': {
+    name: '自由港',
+    // A cream-paved quay over warm ochre rock, so the painted houses stand out.
+    ground: { top: '#fce2c4', cliff: '#ca845c' },
+    annex: { center: [0, -11.6], radii: [7.4, 3.8] },
+    pieces: [
+      { design: 'customs-booth', at: [0.1, TURF, 3.25], scale: 2 },
+      { design: 'willemstad-row', at: [0, RIM, -11], scale: 3, turn: 0.4, backdrop: true },
+      { design: 'rowboat', at: [5.3, TURF, 3.9], scale: 1.6, turn: 0.3 },
+      { design: 'rowboat', at: [-5.6, TURF, -3.6], scale: 1.4, turn: 2 },
+    ],
+  },
 };
 
 /** Turns about the island's center that move a backdrop from the back to the left or right side. */

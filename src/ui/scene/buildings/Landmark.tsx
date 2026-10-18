@@ -1,11 +1,11 @@
 import { useTexture } from '@react-three/drei';
 import type { ThreeElements } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
-import { SpriteMaterial, type BufferGeometry, type Group, type MeshBasicMaterial, type Sprite } from 'three';
+import { MeshStandardMaterial, SpriteMaterial, type BufferGeometry, type Group, type MeshBasicMaterial, type Sprite } from 'three';
 import { useLiveFrame } from '../liveFrame';
 import { SPARKLES } from '../sparkles';
 import { geometryFromParts } from './Building';
-import type { LandmarkDesign, LandmarkRotor } from './islands/design';
+import type { LandmarkDesign, LandmarkFlag, LandmarkRotor } from './islands/design';
 import { LANDMARK_DESIGNS, type LandmarkId } from './landmarks';
 import { GLOWING_MATS } from './materials';
 
@@ -15,6 +15,8 @@ interface LandmarkGeometry {
   readonly glowing: BufferGeometry | null;
   /** The rotor's parts, moved so its pivot is the origin; null when the design has none. */
   readonly rotor: BufferGeometry | null;
+  /** Each flag's parts, moved so its hinge on the pole is the origin. */
+  readonly flags: readonly BufferGeometry[];
 }
 
 /** Built once per design and shared by every island that shows it. */
@@ -25,11 +27,12 @@ function geometryOf(design: LandmarkId): LandmarkGeometry {
   if (cached) return cached;
   const { parts } = LANDMARK_DESIGNS[design];
   const glowing = parts.filter((part) => GLOWING_MATS.has(part.mat));
-  const { rotor }: LandmarkDesign = LANDMARK_DESIGNS[design];
+  const { rotor, flags = [] }: LandmarkDesign = LANDMARK_DESIGNS[design];
   const geometry = {
     lit: geometryFromParts(parts.filter((part) => !GLOWING_MATS.has(part.mat))),
     glowing: glowing.length > 0 ? geometryFromParts(glowing) : null,
     rotor: rotor ? geometryFromParts(rotor.parts).translate(-rotor.pivot[0], -rotor.pivot[1], -rotor.pivot[2]) : null,
+    flags: flags.map(({ parts: cloth, hinge }) => geometryFromParts(cloth).translate(-hinge[0], -hinge[1], -hinge[2])),
   };
   geometryCache.set(design, geometry);
   return geometry;
@@ -103,12 +106,54 @@ function Rotor({ rotor, geometry }: { readonly rotor: LandmarkRotor; readonly ge
   );
 }
 
+/** Seconds on the table clock, shared by every waving flag's shader. */
+const flagTime = { value: 0 };
+/** How the cloth waves: sideways sway at the fly end, the waves along it, and how fast they run. */
+const FLAG_WAVE = { amplitude: 0.22, wavenumber: 18, speed: 5 } as const;
+
+/**
+ * A flag's material: vertex colors like the rest of the model, with the cloth pushed sideways in waves
+ * that grow from nothing at the pole (x = 0) to the fly end and run outward over time.
+ */
+function flagMaterial(phase: number): MeshStandardMaterial {
+  const material = new MeshStandardMaterial({ vertexColors: true, roughness: 0.8 });
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uFlagTime = flagTime;
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>\nuniform float uFlagTime;`)
+      .replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+        float flagFly = max(transformed.x, 0.0);
+        transformed.z += ${FLAG_WAVE.amplitude.toFixed(3)} * flagFly * sin(flagFly * ${FLAG_WAVE.wavenumber.toFixed(1)} - uFlagTime * ${FLAG_WAVE.speed.toFixed(1)} + ${phase.toFixed(3)});`,
+      );
+  };
+  material.customProgramCacheKey = () => `landmark-flag-${phase.toFixed(3)}`;
+  return material;
+}
+
+/** The design's flags, waving from their poles. */
+function WavingFlags({ flags, geometries }: { readonly flags: readonly LandmarkFlag[]; readonly geometries: readonly BufferGeometry[] }) {
+  const materials = useMemo(() => flags.map((_, i) => flagMaterial(i * 1.7)), [flags]);
+  useEffect(() => () => materials.forEach((m) => m.dispose()), [materials]);
+  useLiveFrame(({ clock }) => {
+    flagTime.value = clock.elapsedTime;
+  });
+  return (
+    <>
+      {flags.map(({ hinge }, i) => (
+        <mesh key={i} position={[...hinge]} geometry={geometries[i]!} material={materials[i]!} castShadow dispose={null} />
+      ))}
+    </>
+  );
+}
+
 type LandmarkProps = ThreeElements['group'] & { readonly design: LandmarkId };
 
 /** A piece of island scenery, drawn from the same part list as `docs/art/islands-blueprint.svg`. */
 export function Landmark({ design, ...props }: LandmarkProps) {
-  const { lit, glowing, rotor: rotorGeometry } = geometryOf(design);
-  const { glints, rotor }: LandmarkDesign = LANDMARK_DESIGNS[design];
+  const { lit, glowing, rotor: rotorGeometry, flags: flagGeometries } = geometryOf(design);
+  const { glints, rotor, flags }: LandmarkDesign = LANDMARK_DESIGNS[design];
   return (
     <group {...props}>
       <mesh geometry={lit} castShadow receiveShadow dispose={null}>
@@ -117,6 +162,7 @@ export function Landmark({ design, ...props }: LandmarkProps) {
       {glowing && <TreasurePulse geometry={glowing} />}
       {glints && <Glints at={glints} />}
       {rotor && rotorGeometry && <Rotor rotor={rotor} geometry={rotorGeometry} />}
+      {flags && <WavingFlags flags={flags} geometries={flagGeometries} />}
     </group>
   );
 }

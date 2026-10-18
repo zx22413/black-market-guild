@@ -43,6 +43,8 @@ export const SWATCHES = {
   emerald: { top: '#61cb8b', bottom: '#1c856a' },
   // Embers under a fire, glowing like the treasure.
   ember: { top: '#ffc044', bottom: '#ff7344' },
+  // A Willemstad facade and the blue of the Dutch prince's flag; lighter than the insurance roof.
+  pastelBlue: { top: '#bdd9f8', bottom: '#9dbfed' },
   heather: { top: '#9064d9', bottom: '#6743bf' },
 } as const satisfies Record<string, Swatch>;
 export type Mat = keyof typeof SWATCHES;
