@@ -27,6 +27,7 @@ import { WEATHER, fillOf } from '../../ui/scene/weather';
 import { WeatherFog } from '../../ui/scene/WeatherFog';
 import { Wind } from '../../ui/scene/Wind';
 import { FocusCamera } from './FocusCamera';
+import { IslandPulse } from './IslandPulse';
 import '../beats/beat.css';
 import { around } from './focusMath';
 import type { BeatSeat } from './beatStage';
@@ -76,6 +77,8 @@ export interface TableCanvasProps {
   readonly onSelectShip?: (id: ShipId) => void;
   /** Darken the 3D table a little; DOM labels on top keep their own brightness. */
   readonly dim?: boolean;
+  /** Islands that just counted: each hops with a glowing shore ring (a new key replays it). */
+  readonly pulses?: ReadonlyMap<PlayerId, { readonly key: string; readonly tone: 'gain' | 'loss' }>;
 }
 
 export function useTableLayout(seats: readonly BeatSeat[]) {
@@ -149,7 +152,7 @@ function asSceneShip(ship: TableShip, lane: number): SceneShip {
   return { id: ship.id, kind: 'solo', owners: [ship.owner], lane, state: ship.state, roles: [], rerolled: false, smuggled: 0, caughtSmugglers: [], modifier: null };
 }
 
-export function TableCanvas({ seats, weather, ships, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false }: TableCanvasProps) {
+export function TableCanvas({ seats, weather, ships, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, pulses }: TableCanvasProps) {
   const look = WEATHER[weather ?? 'clear'];
   const { angles, laneOf } = useTableLayout(seats);
   const islandKey = seats.map((s) => s.island ?? '').join('|');
@@ -199,14 +202,15 @@ export function TableCanvas({ seats, weather, ships, cameraPoints, safe, ringed,
             <Routes angles={angles} colors={seats.map((s) => s.color)} />
             <TargetIsland />
             {seats.map((seat, i) => (
-              <PlayerIsland
-                key={seat.id}
-                {...islandLook(seat.island, playerIslandHeading(angles[i]!), weather === 'moonless-night')}
-                seat={{ assets: seat.buildings, color: seat.color }}
-                angle={angles[i]!}
-                seed={playerIslandSeed(i)}
-                selectable={ringed?.has(seat.id) ?? false}
-              />
+              <IslandPulse key={seat.id} angle={angles[i]!} pulseKey={pulses?.get(seat.id)?.key ?? null} tone={pulses?.get(seat.id)?.tone ?? 'gain'}>
+                <PlayerIsland
+                  {...islandLook(seat.island, playerIslandHeading(angles[i]!), weather === 'moonless-night')}
+                  seat={{ assets: seat.buildings, color: seat.color }}
+                  angle={angles[i]!}
+                  seed={playerIslandSeed(i)}
+                  selectable={ringed?.has(seat.id) ?? false}
+                />
+              </IslandPulse>
             ))}
             {ships.map((ship) => {
               const lane = laneOf(ship.owner);

@@ -10,7 +10,8 @@ import { ISLAND_PLATEAU, islandPoint } from './TableCanvas';
 // The pirate cove and the fortress at work in a ship beat (docs/game-design.md §11.2), as plain data.
 // A pirate from the cove brings the cove along: a pack of raiders bursts out of the cove, sails round
 // the island and rams the ship with it (−2 instead of −1). A guard from the fortress has the fort's
-// guns behind it: shots arc from the star fort and splash in a ring round the ship, then a second,
+// guns behind it: they fire golden flares (a salute, never at the ship) that arc over and come to
+// rest in a ring on the guard's shield over the ship, then a second,
 // golden shield goes up over the guard's (+2 instead of +1).
 
 /** When the raid happens, in seconds from the start of its step. */
@@ -26,9 +27,13 @@ const MOUTH_OUT = 6;
 /** When the fort's guns fire, how long each shot flies, and when the second shield goes up. */
 export const BARRAGE = { first: 0.15, gap: 0.12, flight: 0.75, shield: 1.45 } as const;
 export const SHOTS = 5;
-/** Where the shots splash round the ship, and how high they arc. */
-const SPLASH_RING = 8;
-const ARC = 14;
+/**
+ * Where the flares come to rest: a ring on the guard's shield dome over the ship (well up off the
+ * water, so they never read as shots landing round it), and how high they arc on the way.
+ */
+const FLARE_RING = 5.5;
+const FLARE_HEIGHT = 5;
+const ARC = 16;
 
 export interface RaidCue {
   readonly key: string;
@@ -137,19 +142,20 @@ export function raiderPose(cue: RaidCue, i: number, t: number): { readonly at: V
   return { at, heading: Math.atan2(ahead[0] - at[0], ahead[2] - at[2]), out: t >= start };
 }
 
-/** Where shot `i` lands: a ring round the ship. */
-export function splashSpot(cue: BarrageCue, i: number): Vec3 {
-  return around(cue.ship, SPLASH_RING, (i / SHOTS) * Math.PI * 2 + 0.3);
+/** Where flare `i` comes to rest: a ring on the shield over the ship. */
+export function flareSpot(cue: BarrageCue, i: number): Vec3 {
+  const [x, , z] = around(cue.ship, FLARE_RING, (i / SHOTS) * Math.PI * 2 + 0.3);
+  return [x, FLARE_HEIGHT, z];
 }
 
-/** Shot `i` at `t` seconds into the step: null before it is fired and after it lands, else where it is in the air. */
+/** Flare `i` at `t` seconds into the step: null before it is fired and after it rests, else where it is in the air. */
 export function shotPose(cue: BarrageCue, i: number, t: number): Vec3 | null {
   const k = (t - BARRAGE.first - i * BARRAGE.gap) / BARRAGE.flight;
   if (k < 0 || k > 1) return null;
-  const to = splashSpot(cue, i);
+  const to = flareSpot(cue, i);
   const [fx, fy, fz] = cue.fort;
-  return [fx + (to[0] - fx) * k, fy * (1 - k) + ARC * 4 * k * (1 - k), fz + (to[2] - fz) * k];
+  return [fx + (to[0] - fx) * k, fy * (1 - k) + to[1] * k + ARC * 4 * k * (1 - k), fz + (to[2] - fz) * k];
 }
 
-/** When shot `i` splashes down, in seconds into the step. */
+/** When flare `i` comes to rest on the shield, in seconds into the step. */
 export const landsAt = (i: number): number => BARRAGE.first + i * BARRAGE.gap + BARRAGE.flight;

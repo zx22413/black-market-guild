@@ -37,7 +37,7 @@ export interface Particle {
 }
 
 /** Particles thrown out of `at` (sparks, splinters, glitter); a fixed fan, so the look never changes between plays. */
-export function Burst({ at, particles, color, size, delay, length, gravity, box = false, facing = 0 }: {
+export function Burst({ at, particles, color, size, delay, length, gravity, box = false, facing = 0, height = 2.4 }: {
   readonly at: Vector3;
   readonly particles: readonly Particle[];
   readonly color: string;
@@ -48,6 +48,8 @@ export function Burst({ at, particles, color, size, delay, length, gravity, box 
   readonly box?: boolean;
   /** Fan centre (radians around the vertical axis); particles spread over ±arc around it. */
   readonly facing?: number;
+  /** How high above the sea it bursts (just above the deck by default). */
+  readonly height?: number;
 }) {
   const group = useRef<Group>(null);
   const start = useRef<number | null>(null);
@@ -68,7 +70,7 @@ export function Burst({ at, particles, color, size, delay, length, gravity, box 
     });
   });
   return (
-    <group ref={group} position={[at.x, 2.4, at.z]} rotation={[0, facing, 0]} visible={false}>
+    <group ref={group} position={[at.x, height, at.z]} rotation={[0, facing, 0]} visible={false}>
       {particles.map((_, i) => (
         <mesh key={i}>
           {box ? <boxGeometry args={[size, size * 0.6, size * 2]} /> : <sphereGeometry args={[size, 8, 6]} />}

@@ -22,6 +22,7 @@ import type { StageEnv } from './stage';
 import { useDeployStep } from './useDeployStep';
 import { useHudSafe } from './useHudSafe';
 import { useInvestStep } from './useInvestStep';
+import { useIslandMoments } from './useIslandMoments';
 import { useRoundResolution } from './useRoundResolution';
 import { lanePoint, usePeekSpotlight } from './usePeekSpotlight';
 import { Spotlight } from '../scene/Spotlight';
@@ -130,8 +131,15 @@ export function Table3DScreen({ session, onExit, autoplay = false }: Table3DScre
   const events = useMemo(() => snap.events.slice(0, resolution.cutoff), [snap.events, resolution.cutoff]);
   const board = useMemo(() => buildBoard(ids, snap.startingCash, events), [ids, events, snap.startingCash]);
 
+  // The islands that change production or costs get their moment first: at the round's start and at the launch.
+  const moments = useIslandMoments({
+    events: snap.events,
+    board,
+    free: ready && !holding && !showIslands && !autoplay && rerollShown === null,
+    angleOf: (id) => angles[laneOf(id)]!,
+  });
   const env: StageEnv | null =
-    free && request && viewer && (phase === 'invest' || phase === 'role-deployment')
+    free && !moments.blocking && request && viewer && (phase === 'invest' || phase === 'role-deployment')
       ? { request, board, seats, angles, laneOf, viewer, nameOf, submit: (a: Action) => session.submit(request.id, a) }
       : null;
   const invest = useInvestStep(env);
@@ -161,7 +169,7 @@ export function Table3DScreen({ session, onExit, autoplay = false }: Table3DScre
     (id) => (board.players[id]?.cash ?? 0) + (resolution.cashBonus[id] ?? 0),
   );
   const islandBadges = islandBadgePins(seats, angles, (id) => board.players[id]?.island ?? null);
-  const pins = [...plates, ...islandBadges, ...(step?.pins ?? []), ...resolution.pins];
+  const pins = [...plates, ...islandBadges, ...moments.pins, ...(step?.pins ?? []), ...resolution.pins];
   const camera = step?.camera ?? resolution.camera ?? overviewPoints(angles, seats.map((s) => s.island));
 
   const marketRef = useRef<HTMLDivElement>(null);
@@ -201,7 +209,7 @@ export function Table3DScreen({ session, onExit, autoplay = false }: Table3DScre
   const logLines = events.flatMap((e) => eventLine(e, { nameOf, shipOf: shipOwnerName })?.split('\n') ?? []);
 
   const waitingNames = snap.waitingOn.filter((id) => id !== seatOnScreen).map(nameOf);
-  const idle = !holding && !step && !cardRequest && !finished && !drafting && !showIslands && !handoffTo;
+  const idle = !holding && !step && !cardRequest && !finished && !drafting && !showIslands && !handoffTo && !moments.blocking;
 
   return (
     <div className="beat-preview">
@@ -214,6 +222,7 @@ export function Table3DScreen({ session, onExit, autoplay = false }: Table3DScre
         pins={pins}
         onReady={() => setReady(true)}
         dim={step?.dim ?? false}
+        pulses={moments.pulses}
         {...(finished ? { ringed: winners } : resolution.ringed ? { ringed: resolution.ringed } : {})}
         {...(resolution.wrapShip ? { wrapShip: resolution.wrapShip } : {})}
         {...(step?.onSelectShip ? { onSelectShip: step.onSelectShip } : {})}

@@ -1,19 +1,23 @@
 import { useFrame } from '@react-three/fiber';
-import { useRef } from 'react';
-import { Vector3, type Group, type Mesh, type MeshBasicMaterial } from 'three';
+import { useMemo, useRef } from 'react';
+import { AdditiveBlending, Vector3, type Group, type Mesh, type MeshBasicMaterial } from 'three';
+import { glowTexture } from '../../ui/scene/Night';
 import { Model } from '../../ui/scene/Model';
 import { SEA_LEVEL, seaSurfaceY } from '../../ui/scene/seaWave';
 import { useSwell, useWavePhase } from '../../ui/scene/SwellContext';
 import { Burst, WaterRing, fan } from './beatFx';
-import { BARRAGE, RAID, RAIDERS, SHOTS, landsAt, raiderPose, shotPose, splashSpot, type BarrageCue, type RaidCue } from './islandForceMath';
+import { BARRAGE, RAID, RAIDERS, SHOTS, flareSpot, landsAt, raiderPose, shotPose, type BarrageCue, type RaidCue } from './islandForceMath';
 
-// The pirate cove's raiders and the fortress's guns in a ship beat; where everything is comes from
+// The pirate cove's raiders and the fortress's salute in a ship beat; where everything is comes from
 // `islandForceMath`, this only draws it. Both start counting when they mount (keyed per step).
 
 const RAIDER_SCALE = 0.3;
 /** How far a raider lunges in at the ram, and for how long round the moment it touches. */
 const LUNGE = { reach: 3.2, before: 0.25, after: 0.35 } as const;
 const SPRAY = fan(10, Math.PI * 2, 5, 9, 3);
+/** The fort's flares: gold, and the soft sparkle where each comes to rest. */
+const FLARE = '#ffd25a';
+const SPARKLE = fan(8, Math.PI * 2, 2.5, 2, 6);
 
 /** One raider: out of the cove, round the island, alongside the ship, then in for the ram. */
 function Raider({ cue, index }: { readonly cue: RaidCue; readonly index: number }) {
@@ -61,23 +65,32 @@ export function Raiders({ cue }: { readonly cue: RaidCue }) {
   );
 }
 
-/** One shot from the fort: a dark ball arcing over to its splash. */
-function Shot({ cue, index }: { readonly cue: BarrageCue; readonly index: number }) {
-  const mesh = useRef<Mesh>(null);
+/** One flare from the fort: a glowing gold star arcing over to its place on the shield. */
+function Flare({ cue, index }: { readonly cue: BarrageCue; readonly index: number }) {
+  const group = useRef<Group>(null);
   const start = useRef<number | null>(null);
+  const glow = useMemo(() => glowTexture(), []);
   useFrame(({ clock }) => {
-    const m = mesh.current;
-    if (!m) return;
+    const g = group.current;
+    if (!g) return;
     start.current ??= clock.elapsedTime;
-    const at = shotPose(cue, index, clock.elapsedTime - start.current);
-    m.visible = at !== null;
-    if (at) m.position.set(...at);
+    const t = clock.elapsedTime - start.current;
+    const at = shotPose(cue, index, t);
+    g.visible = at !== null;
+    if (!at) return;
+    g.position.set(...at);
+    g.rotation.set(t * 5, t * 7, 0);
   });
   return (
-    <mesh ref={mesh} visible={false}>
-      <sphereGeometry args={[0.55, 10, 8]} />
-      <meshStandardMaterial color="#2b2b30" roughness={0.5} />
-    </mesh>
+    <group ref={group} visible={false}>
+      <mesh>
+        <octahedronGeometry args={[0.45, 0]} />
+        <meshBasicMaterial color={FLARE} toneMapped={false} />
+      </mesh>
+      <sprite scale={[2.6, 2.6, 1]}>
+        <spriteMaterial map={glow} color={FLARE} transparent blending={AdditiveBlending} depthWrite={false} toneMapped={false} />
+      </sprite>
+    </group>
   );
 }
 
@@ -104,18 +117,20 @@ function MuzzleFlash({ at }: { readonly at: Vector3 }) {
   );
 }
 
-/** The fortress's guns: shots from the star fort splashing in a ring round the ship. */
+/**
+ * The fortress's guns: a salute of golden flares from the star fort that come to rest in a ring on
+ * the guard's shield, each with a sparkle, before the fort's own golden shield goes up over it.
+ */
 export function Barrage({ cue }: { readonly cue: BarrageCue }) {
   return (
     <>
       <MuzzleFlash at={new Vector3(...cue.fort)} />
       {Array.from({ length: SHOTS }, (_, i) => {
-        const splash = new Vector3(...splashSpot(cue, i));
+        const spot = flareSpot(cue, i);
         return (
           <group key={i}>
-            <Shot cue={cue} index={i} />
-            <WaterRing at={splash} color="#e8f6ff" delay={landsAt(i)} from={0.8} to={5} length={0.6} />
-            <Burst at={splash} particles={SPRAY} color="#ffffff" size={0.4} delay={landsAt(i)} length={0.7} gravity={16} />
+            <Flare cue={cue} index={i} />
+            <Burst at={new Vector3(...spot)} height={spot[1]} particles={SPARKLE} color={FLARE} size={0.32} delay={landsAt(i)} length={0.9} gravity={-2} />
           </group>
         );
       })}

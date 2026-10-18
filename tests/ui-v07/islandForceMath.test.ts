@@ -4,7 +4,7 @@ import { runMatchSync, setupFromSeats, type SeatConfig } from '../../src/v07/mat
 import { BEAT_PACE, beatCues, beatView } from '../../src/ui-v07/beats/beatTimeline';
 import { buildShipBeat, type ShipBeat } from '../../src/ui-v07/beats/shipBeat';
 import { stepHit } from '../../src/ui-v07/scene/beatStage';
-import { BARRAGE, RAID, RAIDERS, SHOTS, barrageCue, landsAt, raidCue, raiderPose, raiderSpot, shotPose, splashSpot } from '../../src/ui-v07/scene/islandForceMath';
+import { BARRAGE, RAID, RAIDERS, SHOTS, barrageCue, landsAt, raidCue, raiderPose, raiderSpot, shotPose, flareSpot } from '../../src/ui-v07/scene/islandForceMath';
 import { PLAYER_ISLAND_RADIUS, seatAngles, seatPosition } from '../../src/ui/scene/layout';
 
 const seats: SeatConfig[] = ['A', 'B', 'C', 'D'].map((name) => ({ kind: 'bot', name, strategy: 'aggressive' }));
@@ -80,14 +80,16 @@ describe('islands at work in a ship beat', () => {
     expect(RAID.arrive).toBeLessThan(RAID.ram);
   });
 
-  it('arcs every shot from the fort into a splash round the ship before the golden shield', () => {
+  it('arcs every flare from the fort to rest on the shield, up off the water, before the golden shield', () => {
     const barrage = barrageCue(beat, at(0), lookup)!;
     for (let i = 0; i < SHOTS; i++) {
       expect(shotPose(barrage, i, 0)).toBeNull();
       const mid = shotPose(barrage, i, landsAt(i) - BARRAGE.flight / 2)!;
       expect(mid[1]).toBeGreaterThan(barrage.fort[1] / 2);
       const end = shotPose(barrage, i, landsAt(i) - 1e-6)!;
-      splashSpot(barrage, i).forEach((v, j) => expect(end[j]).toBeCloseTo(v, 3));
+      flareSpot(barrage, i).forEach((v, j) => expect(end[j]).toBeCloseTo(v, 3));
+      // Never down at the waterline round the ship: a salute, not shots at it.
+      expect(flareSpot(barrage, i)[1]).toBeGreaterThan(3);
       expect(shotPose(barrage, i, landsAt(i) + 0.01)).toBeNull();
     }
     expect(landsAt(SHOTS - 1)).toBeLessThanOrEqual(BARRAGE.shield);
