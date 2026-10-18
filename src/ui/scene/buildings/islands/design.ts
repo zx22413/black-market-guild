@@ -30,6 +30,29 @@ export interface LandmarkDesign {
   readonly train?: LandmarkTrain;
   /** A boat plying a loop on the sea beside the island, riding the waves (`LandmarkBoat.tsx`); not drawn in the blueprint's parts. */
   readonly boat?: LandmarkBoat;
+  /** Birds flying round loops in the air about the piece, flapping and gliding (`LandmarkBirds.tsx`); not drawn in the blueprint. */
+  readonly birds?: LandmarkBirds;
+}
+
+/** A kind of bird and the loops a few of them fly, in the design's coordinates. */
+export interface LandmarkBirds {
+  /** One bird facing +x, its belly at the origin, without its wings; `size` scales it into the design. */
+  readonly body: readonly KitPart[];
+  /** Its two wings, each hinged at `hinge` on the body and reaching out toward `side` (+z or -z). */
+  readonly wings: readonly { readonly parts: readonly KitPart[]; readonly hinge: Vec3; readonly side: 1 | -1 }[];
+  readonly size: number;
+  /** Wingbeats per second, how far each beat swings (radians), and the share of the time spent gliding on still wings. */
+  readonly flap: { readonly rate: number; readonly beat: number; readonly glide: number };
+  /** One loop per bird. */
+  readonly flights: readonly BirdFlight[];
+}
+
+/** A bird's loop in the air: it flies from each point to the next and from the last back to the first. */
+export interface BirdFlight {
+  readonly path: readonly Vec3[];
+  /** Design units per second, and how far round the loop (0..1) it starts, so a flock is spread out. */
+  readonly speed: number;
+  readonly start: number;
 }
 
 /**
@@ -106,6 +129,19 @@ export interface LandmarkRotor {
   readonly speed: number;
   /** Swings to and fro this far each way (radians) instead of turning round, like a lantern on its hook. */
   readonly swing?: number;
+  /** A load hung on a rope from the swinging rotor (a derrick's sling): lowered at either end of the swing, hoisted between. */
+  readonly load?: RotorLoad;
+}
+
+/** A load on a rope from a point of a swinging rotor, in the design's coordinates. */
+export interface RotorLoad {
+  /** The load, hanging from the origin (its rope's lower end). */
+  readonly parts: readonly KitPart[];
+  /** Where its rope hangs from, on the rotor. */
+  readonly from: Vec3;
+  /** The rope's length hoisted (mid-swing) and lowered (at either end of the swing). */
+  readonly hoisted: number;
+  readonly lowered: number;
 }
 
 /** Every part of a design, its rotor's at rest included: for bounds, materials and the blueprint. */

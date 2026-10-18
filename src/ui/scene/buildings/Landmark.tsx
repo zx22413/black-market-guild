@@ -10,7 +10,9 @@ import { geometryFromParts } from './Building';
 import type { KitPart } from './kit';
 import type { LandmarkBeacon, LandmarkDesign, LandmarkFlag, LandmarkRotor } from './islands/design';
 import { LANDMARK_DESIGNS, type LandmarkId } from './landmarks';
+import { Birds } from './LandmarkBirds';
 import { Boat } from './LandmarkBoat';
+import { ropeLength } from './islands/birdFlight';
 import { Train } from './LandmarkTrain';
 import { PUFF_BALL, WOOD_SMOKE, puffOpacity, puffSwell, smokeBallMaterials } from './smokeBall';
 import { tiltPoint, type Vec3 } from './polyhedra';
@@ -163,21 +165,55 @@ function Glints({ at }: { readonly at: readonly (readonly [number, number, numbe
   );
 }
 
-/** The design's rotor turning steadily about its pivot (windmill sails), or swinging to and fro on it (a hanging lantern). */
+/**
+ * The design's rotor turning steadily about its pivot (windmill sails), or swinging to and fro on it
+ * (a hanging lantern, a derrick's boom), its load let down at either end of the swing and hoisted between.
+ */
 function Rotor({ rotor, geometry }: { readonly rotor: LandmarkRotor; readonly geometry: BufferGeometry }) {
   const hub = useRef<Group>(null);
+  const rope = useRef<Mesh>(null);
+  const load = useRef<Group>(null);
+  const { load: sling } = rotor;
+  const [ropeGeometry, loadGeometry] = useMemo(
+    () =>
+      sling
+        ? [geometryFromParts([{ kind: 'box', center: [0, -0.5, 0], size: [ROPE_WIDTH, 1, ROPE_WIDTH], mat: 'rope' }]), geometryFromParts(sling.parts)]
+        : [null, null],
+    [sling],
+  );
   useLiveFrame(({ clock }) => {
     const t = clock.elapsedTime * rotor.speed;
-    if (hub.current) hub.current.rotation[rotor.axis] = rotor.swing === undefined ? t : rotor.swing * Math.sin(t);
+    const angle = rotor.swing === undefined ? t : rotor.swing * Math.sin(t);
+    if (hub.current) hub.current.rotation[rotor.axis] = angle;
+    if (sling && rotor.swing !== undefined) {
+      const length = ropeLength(sling, angle, rotor.swing);
+      rope.current?.scale.set(1, length, 1);
+      load.current?.position.set(sling.from[0] - rotor.pivot[0], sling.from[1] - rotor.pivot[1] - length, sling.from[2] - rotor.pivot[2]);
+    }
   });
   return (
     <group position={[...rotor.pivot]} ref={hub}>
       <mesh geometry={geometry} castShadow receiveShadow dispose={null}>
         <meshStandardMaterial vertexColors roughness={0.8} />
       </mesh>
+      {sling && ropeGeometry && loadGeometry && (
+        <>
+          <mesh ref={rope} geometry={ropeGeometry} position={[sling.from[0] - rotor.pivot[0], sling.from[1] - rotor.pivot[1], sling.from[2] - rotor.pivot[2]]} dispose={null}>
+            <meshStandardMaterial vertexColors roughness={0.9} />
+          </mesh>
+          <group ref={load}>
+            <mesh geometry={loadGeometry} castShadow dispose={null}>
+              <meshStandardMaterial vertexColors roughness={0.8} />
+            </mesh>
+          </group>
+        </>
+      )}
     </group>
   );
 }
+
+/** A rotor load's rope, in the design's units. */
+const ROPE_WIDTH = 0.018;
 
 /** Seconds on the table clock, shared by every waving flag's shader. */
 const flagTime = { value: 0 };
@@ -407,7 +443,7 @@ type LandmarkProps = ThreeElements['group'] & {
 /** A piece of island scenery, drawn from the same part list as `docs/art/islands-blueprint.svg`. */
 export function Landmark({ design, night = false, ...props }: LandmarkProps) {
   const { lit, glowing, flames: flameGeometries, rotor: rotorGeometry, flags: flagGeometries } = geometryOf(design);
-  const { glints, rotor, flags, smoke, lights, beacon, train, boat }: LandmarkDesign = LANDMARK_DESIGNS[design];
+  const { glints, rotor, flags, smoke, lights, beacon, train, boat, birds }: LandmarkDesign = LANDMARK_DESIGNS[design];
   return (
     <group {...props}>
       <mesh geometry={lit} castShadow receiveShadow dispose={null}>
@@ -423,6 +459,7 @@ export function Landmark({ design, night = false, ...props }: LandmarkProps) {
       {night && beacon && <Beacon beacon={beacon} />}
       {train && <Train train={train} />}
       {boat && <Boat boat={boat} />}
+      {birds && <Birds birds={birds} />}
     </group>
   );
 }

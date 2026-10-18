@@ -59,6 +59,8 @@ export const ISLAND_SCENERY: Readonly<Partial<Record<IslandId, IslandScenery>>> 
       // Off to the side at the back, where your own island's camera sees it past the buildings.
       { design: 'smoking-shed', at: [5.9, TURF, -3.6], scale: 1.1, turn: Math.PI / 2 },
       { design: 'nutmeg-tree', at: [5.6, TURF, 3.8], scale: 1.4, turn: Math.PI },
+      // On the quay side, its boom swinging out over the cliff edge toward the dock.
+      { design: 'cargo-derrick', at: [-5.3, TURF, 4.6], scale: 1.1, turn: -Math.PI / 2 },
     ],
   },
   mine: {

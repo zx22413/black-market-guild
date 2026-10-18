@@ -1,6 +1,8 @@
 import { gabledRoof, post } from '../kit';
 import type { Vec2 } from '../polyhedra';
-import type { LandmarkDesign, P } from './design';
+import { GULL } from './birds';
+import { ringLoop } from './birdFlight';
+import type { BirdFlight, LandmarkDesign, P } from './design';
 
 // The lighthouse island (燈塔島): a coal-fired beacon tower, its keeper's cottage, and a lookout's telescope.
 
@@ -39,6 +41,14 @@ function brazier(y: number): P[] {
 const FOOT = 0.5;
 const HEAD = 0.38;
 const radiusAt = (y: number): number => FOOT + ((y - 0.22) / (PLATFORM - 0.22)) * (HEAD - FOOT);
+
+/** Four gulls round the top of the tower at different heights and widths, one of them the other way round. */
+const GULL_FLIGHTS: readonly BirdFlight[] = [
+  { path: ringLoop([0, PLATFORM + 0.55, 0], 1.05, 0.18, 1), speed: 0.42, start: 0 },
+  { path: ringLoop([0.1, PLATFORM + 0.8, -0.05], 1.35, 0.25, 2), speed: 0.38, start: 0.4 },
+  { path: ringLoop([-0.05, PLATFORM + 0.35, 0.05], 1.6, 0.2, 1), speed: 0.45, start: 0.7 },
+  { path: [...ringLoop([0, PLATFORM + 0.95, 0], 1.2, 0.15, 3)].reverse(), speed: 0.36, start: 0.2 },
+];
 
 /**
  * Coal beacon, the island's backdrop, after Hook Head in Ireland, where a fire was kept burning on a
@@ -88,6 +98,8 @@ const coalBeacon: LandmarkDesign = {
   // A beam from the fire sweeping round over the sea at night. The sea lies 2.4 units under the
   // cliff top this stands on: 0.8 design units at 3×.
   beacon: { at: [0, PLATFORM + 0.55, 0], reach: 12, drop: PLATFORM + 0.55 + 0.8 },
+  // Gulls wheeling round the lantern gallery by day and night, wide of the coal hoist.
+  birds: { ...GULL, size: 0.45, flap: { rate: 2.2, beat: 0.55, glide: 0.65 }, flights: GULL_FLIGHTS },
 };
 
 /**

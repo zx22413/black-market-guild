@@ -2,6 +2,8 @@ import { gabledRoof, post } from '../kit';
 import type { Mat } from '../materials';
 import type { Vec2, Vec3 } from '../polyhedra';
 import { cloth } from './cloth';
+import { LORY } from './birds';
+import { ringLoop } from './birdFlight';
 import type { LandmarkDesign, LandmarkFlag, P } from './design';
 import { ellipseLoop } from './seaLoop';
 
@@ -42,9 +44,9 @@ const dryingFloor: LandmarkDesign = {
   ],
 };
 
-/** Nutmeg tree: a short trunk under a dense glossy crown hung with yellow fruit. */
+/** Nutmeg tree: a short trunk under a dense glossy crown hung with yellow fruit, two red lories flitting round it. */
 const nutmegTree: LandmarkDesign = {
-  motif: '肉豆蔻樹',
+  motif: '肉豆蔻樹＋紅綠吸蜜鸚鵡',
   parts: [
     { kind: 'beam', from: [0, 0, 0], to: [0, 0.5, 0], width: 0.12, sides: 6, mat: 'woodDark' },
     { kind: 'prism', base: [0, 0.35, 0], radius: 0.36, top: 0.48, height: 0.32, sides: 7, mat: 'leaf' },
@@ -56,6 +58,57 @@ const nutmegTree: LandmarkDesign = {
       [0.08, 0.9, -0.42],
     ] as const).map(([x, y, z]): P => ({ kind: 'prism', base: [x, y, z], radius: 0.06, top: 0.04, height: 0.1, sides: 6, mat: 'gold' })),
   ],
+  // Chattering lories of the Moluccas after the blossom, darting round the crown on quick wingbeats.
+  birds: {
+    ...LORY,
+    size: 0.9,
+    flap: { rate: 5, beat: 0.75, glide: 0.25 },
+    flights: [
+      { path: ringLoop([0, 1.2, 0], 1.15, 0.35, 2), speed: 0.8, start: 0 },
+      { path: [...ringLoop([0, 1.55, 0], 1.0, 0.25, 3)].reverse(), speed: 0.7, start: 0.5 },
+    ],
+  },
+};
+
+/**
+ * Cargo derrick on the quay, swinging sacks of spice aboard: a mast stayed with ropes on a timber
+ * stage, its boom (`rotor`) swinging out over the water and back, the sack let down at either end
+ * and hoisted between, with more sacks waiting on the stage.
+ */
+const cargoDerrick: LandmarkDesign = {
+  motif: '碼頭吊桿（旋臂把香料袋吊上吊下）',
+  parts: [
+    { kind: 'box', center: [0, 0.04, 0], size: [0.7, 0.08, 0.7], bevel: 0.015, mat: 'woodDark' },
+    post(0, 0, 0.08, 1.62, 0.12, 'woodDark'),
+    ...([
+      [-0.32, -0.32],
+      [-0.32, 0.32],
+      [0.32, -0.32],
+    ] as const).map(([x, z]): P => ({ kind: 'beam', from: [0, 1.55, 0], to: [x, 0.08, z], width: 0.016, mat: 'rope' })),
+    ...sack([-0.2, 0.08, 0.2]),
+    ...sack([-0.05, 0.08, 0.26]),
+    ...sack([-0.14, 0.38, 0.22]),
+  ],
+  rotor: {
+    parts: [
+      { kind: 'beam', from: [0.04, 0.32, 0], to: [1.02, 1.32, 0], width: 0.1, mat: 'woodDark' },
+      { kind: 'beam', from: [0, 1.58, 0], to: [1.0, 1.34, 0], width: 0.016, mat: 'rope' },
+      { kind: 'box', center: [1.02, 1.3, 0], size: [0.07, 0.08, 0.06], bevel: 0.01, mat: 'woodDark' },
+    ],
+    pivot: [0, 0.3, 0],
+    axis: 'y',
+    speed: 0.55,
+    swing: 0.6,
+    load: {
+      parts: [
+        { kind: 'box', center: [0, -0.13, 0], size: [0.2, 0.22, 0.17], bevel: 0.05, mat: 'plaster' },
+        { kind: 'box', center: [0, -0.02, 0], size: [0.07, 0.04, 0.06], mat: 'rope' },
+      ],
+      from: [1.02, 1.26, 0],
+      hoisted: 0.3,
+      lowered: 1.0,
+    },
+  },
 };
 
 /**
@@ -241,5 +294,6 @@ export const SPICE_ISLES_LANDMARKS = {
   'spice-stall': spiceStall,
   'drying-floor': dryingFloor,
   'smoking-shed': smokingShed,
+  'cargo-derrick': cargoDerrick,
   'nutmeg-tree': nutmegTree,
 } as const satisfies Record<string, LandmarkDesign>;
