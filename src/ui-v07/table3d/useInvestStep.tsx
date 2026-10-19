@@ -97,6 +97,11 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     if (lines.length > 0 && !isReminderSkipped('invest-unfinished')) setReminding(lines);
     else send();
   };
+  // Load one crate of a good onto the ship: from a click on its stack or on the stack's label.
+  const loadGood = (g: GoodId) => {
+    markHintSeen('load-cargo');
+    setChoice((c) => loadOne(options, c, g));
+  };
   const pickBuild = (build: BuildingId | null) => {
     setChoice(withBuild(options, choice, build));
     setBuildDecided(true);
@@ -199,21 +204,32 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       ),
     },
     // Each stack says which good it is and how many are still free to load (the crate lids are too
-    // small to tell the goods apart from the table camera).
-    ...GOODS.map(
-      (g, column): TablePin => ({
+    // small to tell the goods apart from the table camera). The label is part of the stack: a click on
+    // it loads a crate like a click on the stack, never opens a tip (the glowing icon invites a click).
+    ...GOODS.map((g, column): TablePin => {
+      const loadable = canLoad(options, choice, g);
+      const label = (
+        <>
+          <GoodIcon good={g} size="sm" tip={false} />
+          {split.left[g]}
+        </>
+      );
+      return {
         id: `stack-${g}`,
         // At the foot of the stack, so the count never covers the icon on the crate lid.
         position: islandPoint(home, warehouseLocal(column)),
         hidden: picking || context.view.myStock[g] - choice.load[g] <= 0,
-        node: (
-          <span className={`inv-stack good-${g} ${todo.cargo && canLoad(options, choice, g) ? 'todo' : ''}`}>
-            <GoodIcon good={g} size="sm" />
-            {split.left[g]}
+        node: loadable ? (
+          <button type="button" className={`inv-stack good-${g} ${todo.cargo ? 'todo' : ''}`} title={`裝一箱${GOOD_LABELS[g]}上船`} onClick={() => loadGood(g)}>
+            {label}
+          </button>
+        ) : (
+          <span className={`inv-stack good-${g}`} title={GOOD_LABELS[g]}>
+            {label}
           </span>
         ),
-      }),
-    ),
+      };
+    }),
     {
       id: 'warehouse-note',
       position: leftEnd,
@@ -273,10 +289,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
           canLoad={(g: GoodId) => canLoad(options, choice, g)}
           glow={todo.cargo}
           fresh={fresh}
-          onLoad={(g: GoodId) => {
-            markHintSeen('load-cargo');
-            setChoice((c) => loadOne(options, c, g));
-          }}
+          onLoad={loadGood}
         />
         <ShipCargo angle={home} load={choice.load} capacity={summary.capacity} onUnload={(g) => {
           markHintSeen('unload-cargo');

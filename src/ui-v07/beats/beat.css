@@ -984,6 +984,20 @@
   width: 18px;
   height: 18px;
 }
+/* A stack that can still go on board: its label loads a crate too. */
+button.inv-stack {
+  border-top: 0;
+  border-right: 0;
+  border-left: 0;
+  font: inherit;
+  font-size: var(--fs-note);
+  font-weight: 700;
+  cursor: pointer;
+  pointer-events: auto;
+}
+button.inv-stack:hover {
+  background: #fff3c9;
+}
 
 /* Unfinished actions breathe gold until the player deals with them. */
 @keyframes gold-breath {
