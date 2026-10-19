@@ -489,6 +489,31 @@
 .beat-card.receipt {
   min-height: 0;
 }
+/* Under a card that closes on any click (the bill): how to go on, breathing softly. */
+.beat-backdrop:has(.tap-hint) {
+  grid-auto-flow: row;
+  align-content: center;
+  gap: 14px;
+}
+.tap-hint {
+  margin: 0;
+  color: #f6ead0;
+  font-size: var(--fs-body);
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.6);
+  animation: tap-hint-in 400ms ease-out backwards, tap-hint-breathe 2.2s ease-in-out 400ms infinite;
+}
+@keyframes tap-hint-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes tap-hint-breathe {
+  50% {
+    opacity: 0.55;
+  }
+}
 
 /* Short screens (landscape phones, height about 375px): shrink the sea strip and the type so the
    whole beat, footer included, fits without scrolling. */
@@ -3170,4 +3195,9 @@
   white-space: nowrap;
   box-shadow: 0 2px 0 #9a6a10, 0 0 16px rgb(255 201 74 / 0.9);
   animation: isle-rise 1100ms cubic-bezier(0.2, 1.4, 0.4, 1) backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tap-hint {
+    animation: none;
+  }
 }

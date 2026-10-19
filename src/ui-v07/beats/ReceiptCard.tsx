@@ -41,6 +41,12 @@ export function ReceiptCard({ round, lines, net, onClose }: ReceiptCardProps) {
           <b className={net >= 0 ? 'up' : 'down'}>{money(net)}</b>
         </p>
       </div>
+      {/* The card has no button: say how to go on, once the total is in. */}
+      {onClose && (
+        <p className="tap-hint" style={{ animationDelay: `${lines.length * 120 + 700}ms` }}>
+          點任意處繼續
+        </p>
+      )}
     </div>
   );
 }
