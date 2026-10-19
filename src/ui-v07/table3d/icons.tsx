@@ -65,6 +65,16 @@ export function CloseIcon() {
   );
 }
 
+/** A "no entry" sign: a circle with a slash, where something cannot be chosen. */
+export function ForbidIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+      <circle cx="8" cy="8" r="6" {...LINE} strokeWidth={2} />
+      <path d="M3.8 12.2l8.4-8.4" {...LINE} strokeWidth={2} />
+    </svg>
+  );
+}
+
 /** A little crate: the warehouse. */
 export function CrateIcon() {
   return (

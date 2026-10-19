@@ -1,5 +1,5 @@
 import type { DecisionContext } from '../../v07/bots';
-import { GOODS, ROLE_IDS, cooldownFor, roleFee, type Bet, type PlayerId, type RoleId, type ShipId } from '../../v07/game';
+import { GOODS, ROLE_IDS, cooldownFor, roleFee, traitOf, type Bet, type PlayerId, type RoleId, type ShipId } from '../../v07/game';
 import { GOOD_LABELS, ROLE_LABELS } from '../labels';
 import { legalOf, type ActionOf } from './forms';
 
@@ -61,6 +61,31 @@ export function targetsFor(options: readonly DeployAction[], pick: RolePick, bet
   // The broker's ships depend on the bet picked (a bull bet may only aim at one's own ship).
   const fits = (a: DeployAction) => role !== 'broker' || bet === null || (a.bet?.good === bet.good && a.bet?.direction === bet.direction);
   return [...new Set(options.filter((a) => a.role === role && a.targetShipId !== null && fits(a)).map((a) => a.targetShipId!))];
+}
+
+/**
+ * Why the role picked cannot be sent to `shipId` (§9.4, §9.5, §11.2), for the ships that are not on
+ * the list of targets; null when it can, or when no role needing a ship is picked. What can be
+ * picked still comes only from the legal actions: this only explains the ships left out.
+ */
+export function blockedReason(context: DecisionContext, options: readonly DeployAction[], choice: DeployChoice, shipId: ShipId): string | null {
+  const role = roleOf(choice.role);
+  if (role === null || targetsFor(options, choice.role, choice.bet).includes(shipId)) return null;
+  const { view } = context;
+  const ship = view.ships.find((s) => s.id === shipId);
+  const mine = ship?.owner === view.playerId;
+  const me = view.players.find((p) => p.id === view.playerId);
+  if (role === 'smuggler' && mine) {
+    if (me && traitOf(view.rules, me.island).armsUncoverable === 1) return '走私港的軍火不能被掩護，派走私商人上自己的船沒有作用。';
+    return '走私商人只能上別人的船；上自己的船只為掩護軍火，這艘船沒有載軍火。';
+  }
+  // Before a bet is picked every ship some bet could name is still offered, so a broker ship is only
+  // ever left out once the bet decides the side.
+  if (role === 'broker' && choice.bet !== null) {
+    if (!brokerAims(options, choice.bet)) return choice.bet.direction > 0 ? '押漲要指定自己的船，你這回合沒有出航：只押商品，不指定船。' : '押跌要指定對手的船，這回合沒有對手出航：只押商品，不指定船。';
+    return choice.bet.direction > 0 ? '押漲只能指定自己的船。' : '押跌只能指定對手的船。';
+  }
+  return `${ROLE_LABELS[role]}不能派到這艘船。`;
 }
 
 /** Lighthouse intel: ships that can be looked at besides the target. */

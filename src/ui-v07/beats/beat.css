@@ -2397,6 +2397,36 @@ button.inv-stack:hover {
 .beat3d-pin button.dep-ship:focus-visible::after {
   opacity: 1;
 }
+/* Where the picked role cannot go: a grey "no entry" sign in the "+"'s place; why is its tip. */
+.dep-ship.off {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid #8d94a5;
+  border-radius: 50%;
+  background: rgb(222 224 230 / 0.92);
+  color: #9b3b32;
+  cursor: help;
+}
+/* A greyed role card wears the same sign in its corner. */
+.dep-card {
+  position: relative;
+}
+.dep-card-off {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgb(245 236 212 / 0.95);
+  color: #9b3b32;
+}
 /* Leave the corner buttons their room: the market strip wraps to two rows instead of running under them. */
 @media (max-width: 1100px) {
   .inv-market {

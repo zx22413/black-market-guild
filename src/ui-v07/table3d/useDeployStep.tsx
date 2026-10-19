@@ -3,13 +3,14 @@ import type { ShipId } from '../../v07/game';
 import { ROLE_LABELS } from '../labels';
 import { besideShip, type TablePin, type TableShip } from '../scene/TableCanvas';
 import {
-  EMPTY_DEPLOY,
+  betLabel,
   betsFor,
+  blockedReason,
   brokerAims,
   deployActionFor,
   deployOptions,
-  betLabel,
   deployTodo,
+  EMPTY_DEPLOY,
   needsTarget,
   peeksFor,
   pickRole,
@@ -22,7 +23,8 @@ import { ReminderDialog } from '../table/ReminderDialog';
 import { isReminderSkipped, setReminderSkipped } from '../table/reminderSettings';
 import { roleDetail } from '../table/roleText';
 import { DeployChips } from './DeployChips';
-import { ClockIcon, IconDisc, tokenIconUrl } from './icons';
+import { ClockIcon, IconDisc, tokenIconUrl, ForbidIcon } from './icons';
+import { InfoTip } from './InfoTip';
 import { LockHint } from './LockHint';
 import { roleIconUrl } from './RoleBadges';
 import { DashedArrows } from './RoleArrows';
@@ -87,8 +89,10 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
 
   // A round button over every ship: a "+" on the ones you may pick (the owner's color on its rim),
   // the role's badge on the one picked (click it to take the role back), a faint "+" for the
-  // lighthouse's extra look. The ship's name shows on hover and is read out for screen readers.
+  // lighthouse's extra look, and a "no entry" sign on the ones the role cannot go to, saying why on
+  // hover or tap. The ship's name shows on hover and is read out for screen readers.
   const pins: TablePin[] = board.ships.map((ship) => {
+    const blocked = blockedReason(context, options, choice, ship.id);
     const peekable = choice.target !== null && peeks.has(ship.id);
     const pickable = targets.has(ship.id) && !peekable;
     const chosen = choice.target === ship.id;
@@ -109,6 +113,12 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
           >
             {chosen && choice.role !== null && choice.role !== 'none' ? <img src={roleIconUrl(choice.role)} alt="" /> : '＋'}
           </button>
+        ) : blocked ? (
+          <InfoTip title={`不能派到${label}`} text={blocked}>
+            <span className="dep-ship off" role="img" aria-label={`不能派到${label}：${blocked}`}>
+              <ForbidIcon />
+            </span>
+          </InfoTip>
         ) : (
           <span className="dep-ship-name">{label}</span>
         ),
@@ -161,8 +171,14 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
           onFocus={() => setPeek(c.id)}
           onBlur={() => setPeek(null)}
           aria-disabled={!c.legal}
-          onClick={() => c.legal && pick(c.id)}
+          // A greyed card says why on a tap too (touch browsers do not always focus a tapped button).
+          onClick={() => (c.legal ? pick(c.id) : setPeek(c.id))}
         >
+          {!c.legal && (
+            <span className="dep-card-off" aria-hidden="true">
+              <ForbidIcon />
+            </span>
+          )}
           <span className="dep-ic">
             <img src={cardArtUrl({ kind: 'role', id: c.id })} alt="" />
           </span>

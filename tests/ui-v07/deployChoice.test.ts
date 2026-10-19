@@ -4,6 +4,7 @@ import { applyAction, getLegalActions, getPendingDecisions, getPlayerView, type 
 import {
   EMPTY_DEPLOY,
   betsFor,
+  blockedReason,
   deployActionFor,
   deployLabel,
   deployOptions,
@@ -88,6 +89,36 @@ describe('role deployment choice (only legal actions)', () => {
     expect(peeks).not.toContain(target);
     expect(deployActionFor(options, choice)).toBeDefined();
     expect(deployActionFor(options, { ...choice, peek: peeks[0]! })).toMatchObject({ peekShipId: peeks[0] });
+  });
+
+  it('says why a ship cannot be picked for the role, and nothing for the ships that can be', () => {
+    const context = contextOf(deploying());
+    const options = deployOptions(context);
+    const own = 'r1-p1';
+    const other = 'r1-p2';
+    // Guards and pirates may go anywhere: no reason anywhere.
+    expect(blockedReason(context, options, pickRole('pirate'), own)).toBeNull();
+    // A smuggler only boards its own ship to cover arms, and this one carries none.
+    expect(blockedReason(context, options, pickRole('smuggler'), own)).toContain('沒有載軍火');
+    expect(blockedReason(context, options, pickRole('smuggler'), other)).toBeNull();
+    // A broker's bet decides which side's ship it may name (before a bet, any ship some bet could name is offered).
+    expect(blockedReason(context, options, pickRole('broker'), own)).toBeNull();
+    const bull = betsFor(options).find((b) => b.direction === 1)!;
+    const bear = betsFor(options).find((b) => b.direction === -1)!;
+    expect(blockedReason(context, options, { ...pickRole('broker'), bet: bull }, other)).toBe('押漲只能指定自己的船。');
+    expect(blockedReason(context, options, { ...pickRole('broker'), bet: bear }, own)).toBe('押跌只能指定對手的船。');
+    // No role, or "不部署": nothing to explain.
+    expect(blockedReason(context, options, EMPTY_DEPLOY, own)).toBeNull();
+    expect(blockedReason(context, options, pickRole('none'), own)).toBeNull();
+  });
+
+  it('tells the smuggler port why its own arms ship is off the list (§11.2)', () => {
+    let state = start(3, undefined, { p1: 'smuggler-port' });
+    for (const id of ['p1', 'p2', 'p3']) state = edit(state, id, { stock: G(1, 1, 1, 1) });
+    state = apply(state, { type: 'invest', playerId: 'p1', build: null, load: G(0, 0, 0, 1) });
+    for (const id of ['p2', 'p3']) state = apply(state, { type: 'invest', playerId: id, build: null, load: G(1) });
+    const context = contextOf(state);
+    expect(blockedReason(context, deployOptions(context), pickRole('smuggler'), 'r1-p1')).toContain('走私港的軍火不能被掩護');
   });
 
   it('the button says what is submitted', () => {
