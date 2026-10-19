@@ -10,9 +10,25 @@ import { IslandIcon } from './IslandIcon';
 // Each island's landmark icon and name as its own badge on the island, apart from the guild's name plate. Hover
 // (desktop) or tap it to see what the island does (§11.2); tap elsewhere to close.
 
+/** About how tall the tip is: it opens below the badge when there is not this much room above it. */
+const TIP_ROOM = 230;
+
+/**
+ * Whether the tip should open below the badge: above it would run under the market strip at the top
+ * of the screen (or off it), as it does for the islands at the back of the table.
+ */
+function opensBelow(badge: HTMLElement | null): boolean {
+  if (!badge) return false;
+  const top = badge.getBoundingClientRect().top;
+  const hud = document.querySelector('.inv-market')?.getBoundingClientRect().bottom ?? 0;
+  return top - TIP_ROOM < hud + 8;
+}
+
 export function IslandBadge({ island }: { readonly island: IslandId }) {
   const [open, setOpen] = useState(false);
+  const [below, setBelow] = useState(false);
   const self = useRef<HTMLSpanElement>(null);
+  const place = () => setBelow(opensBelow(self.current));
   useEffect(() => {
     if (!open) return;
     const close = (e: PointerEvent) => {
@@ -23,12 +39,13 @@ export function IslandBadge({ island }: { readonly island: IslandId }) {
   }, [open]);
   const text = ISLAND_TEXT[island];
   return (
-    <span ref={self} className={`island-badge ${open ? 'open' : ''}`}>
+    <span ref={self} className={`island-badge ${open ? 'open' : ''} ${below ? 'below' : ''}`} onPointerEnter={place}>
       <button
         type="button"
         aria-expanded={open}
         onClick={(e) => {
           e.stopPropagation();
+          place();
           setOpen((v) => !v);
         }}
       >

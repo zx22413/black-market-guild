@@ -1676,6 +1676,11 @@
 .island-badge.open .island-tip {
   display: grid;
 }
+/* No room above (an island at the back of the table, under the market strip): open below instead. */
+.island-badge.below .island-tip {
+  top: calc(100% + 8px);
+  bottom: auto;
+}
 
 /* Role icons hanging on their target, ringed in the sender's color. */
 .beat3d-pin > .role-badges {
