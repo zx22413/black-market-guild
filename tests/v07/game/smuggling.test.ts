@@ -50,6 +50,16 @@ describe('§9.5 arms confiscation', () => {
     expect(targets('p1')).toEqual(['r1-p1', 'r1-p2']);
     expect(targets('p2')).toEqual(['r1-p1']);
   });
+
+  it('never lets the smuggler port board its own ship: its arms cannot be covered anyway (§11.2)', () => {
+    let state: MatchState = edit(ready(3), 'p1', { island: 'smuggler-port' });
+    state = apply(state, { type: 'invest', playerId: 'p1', build: null, load: G(1, 0, 0, 1) }).state;
+    state = apply(state, { type: 'invest', playerId: 'p2', build: null, load: G(1) }).state;
+    state = apply(state, { type: 'invest', playerId: 'p3', build: null, load: G(0) }).state;
+    const targets = (id: string) => getLegalActions(state, id).flatMap((a) => (a.type === 'deploy-role' && a.role === 'smuggler' ? [a.targetShipId] : []));
+    // Its own arms ship is off the list; smuggling aboard someone else's ship still is.
+    expect(targets('p1')).toEqual(['r1-p2']);
+  });
 });
 
 describe('§9.5 smuggling', () => {

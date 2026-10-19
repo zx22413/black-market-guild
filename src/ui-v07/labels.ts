@@ -60,7 +60,7 @@ export const ISLAND_TEXT: Readonly<Record<IslandId, { readonly pro: string; read
   'pirate-cove': { pro: '自己部署的海盜 −2（一般 −1）', con: '部署護衛 +25 G' },
   lumber: { pro: '木材第 1～5 回合每回合生產', con: '鐵礦只在第 1、4 回合生產' },
   mine: { pro: '鐵礦第 1～5 回合每回合生產', con: '木材只在第 1、4 回合生產' },
-  'smuggler-port': { pro: '軍火每回合生產', con: '自己的軍火不能被走私商人掩護；部署護衛 +50 G' },
+  'smuggler-port': { pro: '軍火每回合生產', con: '自己的軍火不能被走私商人掩護（也不能派自己的走私商人上自己的船）；部署護衛 +50 G' },
   'free-port': { pro: '出航成本 50 G', con: '可裝貨量 −1' },
   fortress: { pro: '自己部署的護衛 +2（一般 +1）；護衛只冷卻 1 回合', con: '部署海盜 +25 G' },
   lighthouse: { pro: '自己的船出航 +1；情報商人免部署費，且可多看一艘船、從兩艘中選一艘重擲', con: '出航成本 +50 G' },

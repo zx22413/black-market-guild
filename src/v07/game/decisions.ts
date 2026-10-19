@@ -95,9 +95,12 @@ export function roleAvailable(state: MatchState, player: PlayerState, role: Role
   return last === undefined || state.round - last > cooldownFor(state.rules, player.island, role);
 }
 
-/** §9.4: smugglers board other players' ships, or their own ship only to cover their arms. */
-export function smugglerMayTarget(ship: Ship, playerId: PlayerId): boolean {
-  return ship.owner !== playerId || ship.cargo.arms > 0;
+/**
+ * §9.4, §9.5: smugglers board other players' ships, or their own ship only to cover their arms;
+ * never their own ship when their arms cannot be covered at all (the smuggler port, §11.2).
+ */
+export function smugglerMayTarget(ship: Ship, playerId: PlayerId, armsUncoverable: boolean): boolean {
+  return ship.owner !== playerId || (ship.cargo.arms > 0 && !armsUncoverable);
 }
 
 /** §9.2-9.4: no role, or any affordable, available role with a valid target. */
@@ -124,7 +127,8 @@ function deployOptions(state: MatchState, playerId: PlayerId): Action[] {
       );
       continue;
     }
-    const targets = role === 'smuggler' ? ships.filter((s) => smugglerMayTarget(s, playerId)) : ships;
+    const uncoverable = traitOf(state.rules, player.island).armsUncoverable === 1;
+    const targets = role === 'smuggler' ? ships.filter((s) => smugglerMayTarget(s, playerId, uncoverable)) : ships;
     const peeks = role === 'intel' && traitOf(state.rules, player.island).intelPeeks > 0;
     targets.forEach((ship) => {
       options.push({ type: 'deploy-role', playerId, role, targetShipId: ship.id, bet: null, peekShipId: null });
