@@ -25,7 +25,7 @@ import {
 } from '../table/investChoice';
 import { ReminderDialog } from '../table/ReminderDialog';
 import { isHintSeen, isReminderSkipped, markHintSeen, setReminderSkipped } from '../table/reminderSettings';
-import { GoodCount } from './GoodIcon';
+import { GoodCount, GoodIcon } from './GoodIcon';
 import { CRATE_SIZE } from '../scene/CrateModel';
 import { MINT_SECONDS } from '../scene/mintMath';
 import { NoteBadge } from './NoteBadge';
@@ -198,14 +198,20 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
         </div>
       ),
     },
-    // Each stack says how many are still free to load (the crate lids already say which good).
+    // Each stack says which good it is and how many are still free to load (the crate lids are too
+    // small to tell the goods apart from the table camera).
     ...GOODS.map(
       (g, column): TablePin => ({
         id: `stack-${g}`,
         // At the foot of the stack, so the count never covers the icon on the crate lid.
         position: islandPoint(home, warehouseLocal(column)),
         hidden: picking || context.view.myStock[g] - choice.load[g] <= 0,
-        node: <span className={`inv-stack good-${g} ${todo.cargo && canLoad(options, choice, g) ? 'todo' : ''}`}>{split.left[g]}</span>,
+        node: (
+          <span className={`inv-stack good-${g} ${todo.cargo && canLoad(options, choice, g) ? 'todo' : ''}`}>
+            <GoodIcon good={g} size="sm" />
+            {split.left[g]}
+          </span>
+        ),
       }),
     ),
     {

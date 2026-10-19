@@ -963,8 +963,12 @@
   font-size: var(--fs-note);
 }
 .inv-stack {
-  display: inline-block;
-  padding: 1px 6px;
+  /* The good's icon over the count, narrow enough for the stacks standing side by side. */
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 2px 3px 1px;
   border-radius: 6px;
   background: rgb(245 236 212 / 0.9);
   border-bottom: 3px solid;
@@ -976,6 +980,10 @@
 .inv-stack.good-iron { border-color: var(--iron); }
 .inv-stack.good-spice { border-color: var(--spice); }
 .inv-stack.good-arms { border-color: var(--arms); }
+.inv-stack .good-ic {
+  width: 18px;
+  height: 18px;
+}
 
 /* Unfinished actions breathe gold until the player deals with them. */
 @keyframes gold-breath {
