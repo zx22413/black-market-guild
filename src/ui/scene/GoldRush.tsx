@@ -5,7 +5,7 @@ import { spawnMote, type Mote } from './goldMath';
 import { useLiveFrame } from './liveFrame';
 
 /** Kenney Particle Pack sparkles (CC0; see public/art/SOURCES.md), in `MOTE_KINDS` order. */
-const SPARKLES = ['star_05', 'star_06', 'star_07'].map((name) => `${import.meta.env.BASE_URL}art/particles/${name}.png`);
+export const SPARKLES = ['star_05', 'star_06', 'star_07'].map((name) => `${import.meta.env.BASE_URL}art/particles/${name}.png`);
 const MOTES = 80;
 const GOLD = '#ffd25c';
 const OPACITY = 1;

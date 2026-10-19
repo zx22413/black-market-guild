@@ -8,6 +8,7 @@ import { ASSET_BUILDING_SCALE, ASSET_LOTS, seatPosition, type Vec3 } from '../..
 import { shipPose } from '../../ui/scene/Ships';
 import type { ShipState } from '../../ui/scene/tableModel';
 import { CRATE_SIZE, CrateModel, GOOD_COLORS } from './CrateModel';
+import { isFresh } from './mintMath';
 import { ISLAND_PLATEAU } from './TableCanvas';
 
 // The investment decision played on your own island (docs/ui/v07-event-presentation.md §1.3):
@@ -41,12 +42,14 @@ function Crate({
   position,
   state,
   glow = false,
+  minted = false,
   onClick,
 }: {
   readonly good: GoodId;
   readonly position: Vec3;
   readonly state: 'normal' | 'used' | 'tarp';
   readonly glow?: boolean;
+  readonly minted?: boolean;
   readonly onClick?: () => void;
 }) {
   const click = onClick
@@ -58,7 +61,7 @@ function Crate({
   return (
     <>
       <group position={position} {...(click ? { onClick: click, onPointerOver: setCursor('pointer'), onPointerOut: setCursor('') } : {})}>
-        <CrateModel good={good} tarp={state === 'tarp'} faded={state === 'used'} glow={glow} />
+        <CrateModel good={good} tarp={state === 'tarp'} faded={state === 'used'} glow={glow} minted={minted} />
       </group>
       {/* From the table camera a building in front can hide a crate behind it (the warehouse sits
           on the dock side of the lots): a faint see-through copy keeps every stack readable. It is
@@ -84,10 +87,12 @@ export interface WarehouseProps {
   readonly onLoad: (good: GoodId) => void;
   /** Nothing loaded yet: the crates that can go on board breathe gold. */
   readonly glow?: boolean;
+  /** This round's production, while it is being shown: those crates (the top of each stack) arrive in gold. */
+  readonly fresh?: Goods | null;
 }
 
 /** One stack of crates per good on the island; the top free crate loads onto the ship. */
-export function Warehouse({ angle, stock, forBuild, onShip, canLoad, onLoad, glow = false }: WarehouseProps) {
+export function Warehouse({ angle, stock, forBuild, onShip, canLoad, onLoad, glow = false, fresh = null }: WarehouseProps) {
   return (
     <group position={seatPosition(angle)} rotation={[0, playerIslandHeading(angle), 0]}>
       <group position={[0, ISLAND_PLATEAU, 0]}>
@@ -105,6 +110,7 @@ export function Warehouse({ angle, stock, forBuild, onShip, canLoad, onLoad, glo
                 position={[x, CRATE / 2 + k * (CRATE + 0.05), z]}
                 state={used ? 'used' : 'normal'}
                 glow={glow && loadable}
+                minted={fresh !== null && isFresh(k, stock[good], fresh[good])}
                 {...(loadable && top ? { onClick: () => onLoad(good) } : {})}
               />
             );

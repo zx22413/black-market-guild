@@ -45,3 +45,47 @@ export function pulseFrame(t: number): PulseFrame {
   }
   return { ...REST, ring, glow };
 }
+
+/** The gold dust over an island that just counted: how many motes, and how they rise and live. */
+export const DUST = { motes: 46, spread: 1.1, rise: [2.5, 5.5], life: slowed({ min: 0.9, max: 1.5 }), size: [0.7, 1.4] } as const;
+/** How strong the light over the whole island is at its peak. */
+export const DOME = 0.32;
+
+export interface DustMote {
+  /** Where it is, relative to the island's centre on the sea. */
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+  readonly size: number;
+  readonly opacity: number;
+  /** Which sparkle sprite it uses. */
+  readonly kind: number;
+}
+
+/** A fixed jumble in 0…1 for mote `i` and slot `j`, so the dust looks the same every time it plays. */
+const jumble = (i: number, j: number) => {
+  const v = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453;
+  return v - Math.floor(v);
+};
+
+/**
+ * Mote `i` of an island's gold dust `t` seconds into its pulse (`radius`: the island's), or null
+ * before it is born and after it fades: the motes rise from all over the island through the glow.
+ */
+export function dustMote(i: number, t: number, radius: number): DustMote | null {
+  const born = jumble(i, 1) * (PULSE.glow * 0.6);
+  const life = DUST.life.min + jumble(i, 2) * (DUST.life.max - DUST.life.min);
+  const age = t - born;
+  if (age < 0 || age > life) return null;
+  const a = jumble(i, 3) * Math.PI * 2;
+  const r = Math.sqrt(jumble(i, 4)) * radius * DUST.spread;
+  const k = age / life;
+  return {
+    x: Math.cos(a) * r,
+    y: 2.6 + age * (DUST.rise[0] + jumble(i, 5) * (DUST.rise[1] - DUST.rise[0])),
+    z: Math.sin(a) * r,
+    size: DUST.size[0] + jumble(i, 6) * (DUST.size[1] - DUST.size[0]),
+    opacity: Math.min(1, k / 0.15, (1 - k) / 0.4),
+    kind: i % 3,
+  };
+}

@@ -83,7 +83,7 @@ export function useIslandMoments({ events, board, free, angleOf }: MomentsInput)
           <span className={`isle-moment ${m.tone}`}>
             {m.chips.map((c, i) => (
               <span key={i} className={`isle-chip ${c.tone}`} title={c.title} style={{ animationDelay: `${300 + i * 160}ms` }}>
-                {c.good && <GoodIcon good={c.good} size="sm" />}
+                {c.good && <GoodIcon good={c.good} size="md" />}
                 {c.text}
               </span>
             ))}

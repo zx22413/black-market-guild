@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PLAYER_ISLAND_RADIUS, seatAngles, seatPosition } from '../../src/ui/scene/layout';
-import { badgePosition } from '../../src/ui-v07/table3d/IslandBadge';
+import { badgePosition, islandBadgePins, isSideSeat } from '../../src/ui-v07/table3d/IslandBadge';
 
 describe('island badge', () => {
   it('sits at the back edge of the near and far islands, and at the outer edge of the side islands', () => {
@@ -16,5 +16,16 @@ describe('island badge', () => {
         expect(z).toBeLessThan(sz - PLAYER_ISLAND_RADIUS / 2);
       }
     }
+  });
+});
+
+describe('side island badges', () => {
+  it('ride on the side islands\' plates instead of standing on their own', () => {
+    const angles = seatAngles(4);
+    const seats = ['a', 'b', 'c', 'd'].map((id) => ({ id }));
+    const pins = islandBadgePins(seats, angles, () => 'mine');
+    const sides = angles.filter(isSideSeat).length;
+    expect(sides).toBe(2);
+    expect(pins).toHaveLength(angles.length - sides);
   });
 });

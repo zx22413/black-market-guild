@@ -21,6 +21,10 @@ interface SeaProps {
   readonly glow?: number;
 }
 
+/** The flat open water round the moving sea: wide enough to fill any window, just below the troughs. */
+const SKIRT_SIZE = 4000;
+const SKIRT_DROP = 0.6;
+
 export function Sea({ color, shores, vignette = 0, lines = 0, glow = 0 }: SeaProps) {
   const swell = useSwell();
   const phase = useWavePhase();
@@ -31,6 +35,12 @@ export function Sea({ color, shores, vignette = 0, lines = 0, glow = 0 }: SeaPro
     return g;
   }, []);
   const sea = useMemo(() => createSeaMaterial(), []);
+  const skirt = useMemo(() => {
+    const g = new PlaneGeometry(SKIRT_SIZE, SKIRT_SIZE, 1, 1);
+    g.rotateX(-Math.PI / 2);
+    return g;
+  }, []);
+  useEffect(() => () => skirt.dispose(), [skirt]);
   useEffect(() => {
     sea.material.color.set(color);
   }, [sea, color]);
@@ -60,6 +70,11 @@ export function Sea({ color, shores, vignette = 0, lines = 0, glow = 0 }: SeaPro
   });
 
   return (
-    <mesh ref={mesh} geometry={geometry} material={sea.material} position={[0, SEA_LEVEL, 0]} receiveShadow />
+    <>
+      <mesh ref={mesh} geometry={geometry} material={sea.material} position={[0, SEA_LEVEL, 0]} receiveShadow />
+      {/* Open water past the moving sea, out to the horizon in every direction: a wide window (or a
+          far camera) never sees the edge of the table. Same material, flat, a little below the waves. */}
+      <mesh geometry={skirt} material={sea.material} position={[0, SEA_LEVEL - SKIRT_DROP, 0]} />
+    </>
   );
 }

@@ -167,6 +167,7 @@ export function Table3DScreen({ session, onExit, autoplay = false }: Table3DScre
     (id) => (deciding ? (waiting.has(id) ? '思考中' : '已決定') : ''),
     false,
     (id) => (board.players[id]?.cash ?? 0) + (resolution.cashBonus[id] ?? 0),
+    (id) => board.players[id]?.island ?? null,
   );
   const islandBadges = islandBadgePins(seats, angles, (id) => board.players[id]?.island ?? null);
   const pins = [...plates, ...islandBadges, ...moments.pins, ...(step?.pins ?? []), ...resolution.pins];

@@ -10,7 +10,7 @@ import { IslandIcon } from './IslandIcon';
 // Each island's landmark icon and name as its own badge on the island, apart from the guild's name plate. Hover
 // (desktop) or tap it to see what the island does (§11.2); tap elsewhere to close.
 
-function IslandBadge({ island }: { readonly island: IslandId }) {
+export function IslandBadge({ island }: { readonly island: IslandId }) {
   const [open, setOpen] = useState(false);
   const self = useRef<HTMLSpanElement>(null);
   useEffect(() => {
@@ -63,7 +63,16 @@ export function badgePosition(angle: number): Vec3 {
   return Math.abs(x) > Math.abs(z) ? [x + Math.sign(x) * outside, 4, z] : [x, 4, z - edge];
 }
 
-/** Badges on each island, clear of plates, docks and backdrops (`badgePosition`). */
+/**
+ * An island at the side of the table: its badge would land on its own name plate (the plate hangs in
+ * front of it and reaches up the screen), so the badge rides on top of the plate instead (`seatPlates`).
+ */
+export function isSideSeat(angle: number): boolean {
+  const [x, , z] = seatPosition(angle);
+  return Math.abs(x) > Math.abs(z);
+}
+
+/** Badges on the near and far islands, clear of plates, docks and backdrops (`badgePosition`); side islands' ride on their plates. */
 export function islandBadgePins(
   seats: readonly { readonly id: PlayerId }[],
   angles: readonly number[],
@@ -71,7 +80,7 @@ export function islandBadgePins(
 ): TablePin[] {
   return seats.flatMap((s, i): TablePin[] => {
     const island = islandOf(s.id);
-    if (!island) return [];
+    if (!island || isSideSeat(angles[i]!)) return [];
     return [{ id: `island-${s.id}`, position: badgePosition(angles[i]!), node: <IslandBadge island={island} /> }];
   });
 }

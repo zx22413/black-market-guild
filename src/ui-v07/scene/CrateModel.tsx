@@ -1,8 +1,10 @@
 import { useFrame, useLoader } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { SRGBColorSpace, TextureLoader, type MeshStandardMaterial } from 'three';
 import type { GoodId } from '../../v07/game';
+import { createGoldGlow, goldGlowPatch } from '../../ui/scene/goldGlow';
 import { goodIconUrl } from '../table3d/GoodIcon';
+import { mintGlow } from './mintMath';
 
 // One crate of goods, low-poly like the rest of the table: a plank body, darker corner posts and
 // two straps, and on the lid a dark disc ringed in the goods' color with the goods' icon (the same
@@ -36,10 +38,30 @@ export interface CrateModelProps {
   readonly glow?: boolean;
   /** Darkened (spoiled spice). */
   readonly spoiled?: boolean;
+  /** Made this round: turns to molten gold when it appears, then cools to wood (`mintMath`). */
+  readonly minted?: boolean;
 }
 
-export function CrateModel({ good, tarp = false, faded = false, glow = false, spoiled = false }: CrateModelProps) {
+/** The gold of a new crate, driven from the moment it appears; null for an ordinary crate. */
+function useMint(minted: boolean) {
+  // Decided once: a crate that was new when it appeared keeps its gold shader (cooled to 0 later).
+  const [on] = useState(minted);
+  const gold = useMemo(() => (on ? createGoldGlow() : null), [on]);
+  const patch = useMemo(() => (gold ? goldGlowPatch(gold) : null), [gold]);
+  const born = useRef<number | null>(null);
+  useFrame(({ clock }) => {
+    if (!gold) return;
+    born.current ??= clock.elapsedTime;
+    const t = clock.elapsedTime - born.current;
+    gold.uGlow.value = mintGlow(t);
+    gold.uTime.value = t;
+  });
+  return patch ? { onBeforeCompile: patch, customProgramCacheKey: () => 'gold-glow' } : {};
+}
+
+export function CrateModel({ good, tarp = false, faded = false, glow = false, spoiled = false, minted = false }: CrateModelProps) {
   const body = useGoldBreath(glow);
+  const mint = useMint(minted);
   const icon = useLoader(TextureLoader, goodIconUrl(good));
   useMemo(() => {
     icon.colorSpace = SRGBColorSpace;
@@ -54,20 +76,20 @@ export function CrateModel({ good, tarp = false, faded = false, glow = false, sp
     <group>
       <mesh castShadow>
         <boxGeometry args={[CRATE_SIZE, CRATE_SIZE, CRATE_SIZE]} />
-        <meshStandardMaterial ref={body} color={plank} emissive="#ffc23d" emissiveIntensity={0} {...props} />
+        <meshStandardMaterial ref={body} color={plank} emissive="#ffc23d" emissiveIntensity={0} {...props} {...mint} />
       </mesh>
       {([-1, 1] as const).flatMap((x) =>
         ([-1, 1] as const).map((z) => (
           <mesh key={`${x}${z}`} position={[x * edge, 0, z * edge]} castShadow>
             <boxGeometry args={[0.22, CRATE_SIZE + 0.04, 0.22]} />
-            <meshStandardMaterial color={timber} {...props} />
+            <meshStandardMaterial color={timber} {...props} {...mint} />
           </mesh>
         )),
       )}
       {([-0.46, 0.46] as const).map((y) => (
         <mesh key={y} position={[0, y, 0]}>
           <boxGeometry args={[CRATE_SIZE + 0.06, 0.18, CRATE_SIZE + 0.06]} />
-          <meshStandardMaterial color={timber} {...props} />
+          <meshStandardMaterial color={timber} {...props} {...mint} />
         </mesh>
       ))}
       {!tarp && !spoiled && (

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { GOODS, type BuildingId, type GoodId } from '../../v07/game';
+import { GOODS, producedFor, type BuildingId, type GoodId } from '../../v07/game';
 import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
 import { shipPose } from '../../ui/scene/Ships';
 import { BUILDING_LABELS, BUILDING_TEXT, GOOD_LABELS } from '../labels';
@@ -26,6 +26,8 @@ import {
 import { ReminderDialog } from '../table/ReminderDialog';
 import { isHintSeen, isReminderSkipped, markHintSeen, setReminderSkipped } from '../table/reminderSettings';
 import { GoodCount } from './GoodIcon';
+import { CRATE_SIZE } from '../scene/CrateModel';
+import { MINT_SECONDS } from '../scene/mintMath';
 import { NoteBadge } from './NoteBadge';
 import { ArrowIcon, CloseIcon, CrateIcon, Flow, HouseIcon, IconDisc, tokenIconUrl } from './icons';
 import { LockHint } from './LockHint';
@@ -46,6 +48,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   // Picking a building or "不蓋" both count as dealing with the building; until then it glows.
   const [buildDecided, setBuildDecided] = useState(false);
   const [reminding, setReminding] = useState<readonly string[] | null>(null);
+  // This round's production arriving in the warehouse: shown in gold for a moment, then plain.
+  const [minting, setMinting] = useState(true);
   const buildArea = useRef<HTMLDivElement>(null);
 
   // A new investment (next round) starts from scratch.
@@ -54,6 +58,9 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     setPicking(false);
     setBuildDecided(false);
     setReminding(null);
+    setMinting(true);
+    const timer = setTimeout(() => setMinting(false), MINT_SECONDS * 1000);
+    return () => clearTimeout(timer);
   }, [requestId]);
 
   // The building list closes on a click anywhere outside it (the table included).
@@ -109,8 +116,31 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const built = me ? me.buildings.length : 0;
   const at = (where: 'warehouse' | 'ship') => notes.filter((n) => n.at === where).map((n) => <NoteBadge key={n.text} chips={n.chips} text={n.text} label={n.label} />);
   const slot = deckSlot(home, 0, 1);
+  // What the island made this round (§6.2 with its island's trait): those crates arrive in gold
+  // and the count pops over each stack, the same for every island.
+  const fresh = minting && me ? producedFor(context.view.rules, me.island, board.round) : null;
+  const freshPins: TablePin[] = fresh
+    ? GOODS.flatMap((good, column): TablePin[] => {
+        const made = fresh[good];
+        const shown = context.view.myStock[good] - choice.load[good];
+        if (made <= 0 || shown <= 0) return [];
+        const [x, , z] = warehouseLocal(column);
+        return [
+          {
+            id: `fresh-${good}`,
+            position: islandPoint(home, [x, shown * (CRATE_SIZE + 0.05) + 0.4, z]),
+            node: (
+              <span className="mint-chip" title={`這回合生產 ${made} ${GOOD_LABELS[good]}`} style={{ animationDelay: `${150 + column * 120}ms` }}>
+                +{made}
+              </span>
+            ),
+          },
+        ];
+      })
+    : [];
 
   const pins: TablePin[] = [
+    ...freshPins,
     {
       id: 'build',
       // On the island's front edge as seen on screen, whichever way the island is turned, so it
@@ -236,6 +266,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
           onShip={choice.load}
           canLoad={(g: GoodId) => canLoad(options, choice, g)}
           glow={todo.cargo}
+          fresh={fresh}
           onLoad={(g: GoodId) => {
             markHintSeen('load-cargo');
             setChoice((c) => loadOne(options, c, g));

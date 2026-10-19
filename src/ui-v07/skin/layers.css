@@ -66,6 +66,14 @@
   color: var(--c-ink);
   box-shadow: 0 2px 0 var(--c-wood-dark);
 }
+/* An island's moment keeps its gold (or grey) on the parchment chips. */
+:root:not(.skin-classic) .isle-chip.gain {
+  box-shadow: 0 2px 0 var(--c-wood-dark), 0 0 0 2px #e0a91f, 0 0 18px rgb(255 201 74 / 0.9);
+}
+:root:not(.skin-classic) .isle-chip.loss {
+  box-shadow: 0 2px 0 var(--c-wood-dark), 0 0 0 2px #8d94a5;
+  filter: grayscale(0.6);
+}
 :root:not(.skin-classic) :is(.rank-rail li, .inv-note, .rank-fold) {
   border-radius: 8px;
 }

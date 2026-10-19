@@ -444,7 +444,7 @@
   width: 82%;
   height: 82%;
 }
-.role-badge img {
+.role-badge > img {
   width: 30px;
   height: 30px;
 }

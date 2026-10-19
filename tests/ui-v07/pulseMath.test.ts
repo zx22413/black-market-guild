@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PULSE, pulseFrame } from '../../src/ui-v07/scene/pulseMath';
+import { DUST, PULSE, dustMote, pulseFrame } from '../../src/ui-v07/scene/pulseMath';
 
 describe('island pulse', () => {
   it('rests before and after, squashes, hops and lands back on its spot', () => {
@@ -16,5 +16,24 @@ describe('island pulse', () => {
   it('glows from the start and fades by the end', () => {
     expect(pulseFrame(PULSE.glow * 0.15).glow).toBeCloseTo(1);
     expect(pulseFrame(PULSE.glow * 0.9).glow).toBeLessThan(0.2);
+  });
+});
+
+describe('gold dust over an island', () => {
+  it('rises from all over the island while the glow lasts, the same way every time', () => {
+    const r = 13;
+    let seen = 0;
+    for (let i = 0; i < DUST.motes; i++) {
+      expect(dustMote(i, -0.01, r)).toBeNull();
+      const m = dustMote(i, PULSE.glow * 0.6, r);
+      if (m) {
+        seen++;
+        expect(Math.hypot(m.x, m.z)).toBeLessThanOrEqual(r * DUST.spread);
+        expect(m.opacity).toBeGreaterThanOrEqual(0);
+        expect(dustMote(i, PULSE.glow * 0.6, r)).toEqual(m);
+      }
+      expect(dustMote(i, PULSE.glow * 0.6 + DUST.life.max + 0.01, r)).toBeNull();
+    }
+    expect(seen).toBeGreaterThan(DUST.motes / 4);
   });
 });

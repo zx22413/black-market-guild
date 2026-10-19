@@ -1312,6 +1312,13 @@
 .beat3d-pin > .inv-plate.plate-left {
   transform: translate(-100%, -50%);
 }
+/* A side island's badge rides on top of its plate, so the two never cover each other. */
+.plate-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
 
 /* Resolution on the round table (src/ui-v07/table3d/useRoundResolution.tsx). */
 .plate-cash {
@@ -1691,7 +1698,8 @@
   animation: beat-pop 320ms cubic-bezier(0.2, 1.5, 0.4, 1);
   pointer-events: auto;
 }
-.role-badge img {
+/* Only the role's own icon: the bet chip's goods icon under it keeps its own size. */
+.role-badge > img {
   width: 24px;
   height: 24px;
 }
@@ -3101,16 +3109,31 @@
 .isle-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 10px 3px 4px;
+  gap: 6px;
+  padding: 4px 14px 4px 5px;
   border: 2px solid;
   border-radius: 999px;
   background: rgb(245 236 212 / 0.96);
   color: #2b2116;
-  font-size: var(--fs-body);
-  font-weight: 700;
+  /* The moment's one big word: what the island just made or missed. */
+  font-size: var(--fs-title);
+  font-weight: 800;
   white-space: nowrap;
-  animation: beat-pop 320ms cubic-bezier(0.2, 1.5, 0.4, 1) backwards;
+  /* Pops up off the island and floats a little higher, then stays to be read. */
+  animation: isle-rise 1100ms cubic-bezier(0.2, 1.4, 0.4, 1) backwards;
+}
+@keyframes isle-rise {
+  0% {
+    transform: translateY(26px) scale(0.5);
+    opacity: 0;
+  }
+  35% {
+    transform: translateY(-6px) scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-14px) scale(1);
+  }
 }
 .isle-chip:not(:has(.good-ic)) {
   padding-left: 10px;
@@ -3126,4 +3149,20 @@
 }
 .isle-chip.loss .good-ic {
   filter: grayscale(1) opacity(0.7);
+}
+
+/* This round's production over each warehouse stack (src/ui-v07/table3d/useInvestStep.tsx): a
+   small gold "+1" (the crate under it shows which good), so neighbouring stacks never overlap. */
+.mint-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: linear-gradient(#ffe08a, #f0b43a);
+  color: #4a2c05;
+  font-size: var(--fs-body);
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 2px 0 #9a6a10, 0 0 16px rgb(255 201 74 / 0.9);
+  animation: isle-rise 1100ms cubic-bezier(0.2, 1.4, 0.4, 1) backwards;
 }
