@@ -24,7 +24,21 @@ export function loopLength(path: readonly Vec3[]): number {
   return legs(path).reduce((sum, leg) => sum + leg, 0);
 }
 
-/** Where on a closed loop a car `distance` along it from the first point is, wrapping round. */
+/** The unit direction of leg `i` of a closed loop. */
+function legDirection(path: readonly Vec3[], lengths: readonly number[], i: number): Vec3 {
+  const n = path.length;
+  const k = ((i % n) + n) % n;
+  const [dx, dy, dz] = sub(path[(k + 1) % n]!, path[k]!);
+  const leg = lengths[k]! || 1;
+  return [dx / leg, dy / leg, dz / leg];
+}
+
+/**
+ * Where on a closed loop a car `distance` along it from the first point is, wrapping round. The way
+ * it faces turns smoothly from one leg to the next (blended from the middle of one leg to the middle
+ * of the next) rather than snapping round at each point of the track, so a car on a curve made of
+ * short straight legs swings round it instead of jerking at every joint.
+ */
 export function pointAlong(path: readonly Vec3[], distance: number): TrackPoint {
   const lengths = legs(path);
   const total = lengths.reduce((sum, leg) => sum + leg, 0);
@@ -33,9 +47,13 @@ export function pointAlong(path: readonly Vec3[], distance: number): TrackPoint 
     const leg = lengths[i]!;
     if (left <= leg || i === path.length - 1) {
       const [from, to] = [path[i]!, path[(i + 1) % path.length]!];
-      const [dx, dy, dz] = sub(to, from);
-      const n = leg || 1;
-      return { at: lerp(from, to, leg > 0 ? Math.min(1, left / leg) : 0), toward: [dx / n, dy / n, dz / n] };
+      const f = leg > 0 ? Math.min(1, left / leg) : 0;
+      const here = legDirection(path, lengths, i);
+      // Before the middle of this leg it is still turning in from the last one; after it, toward the next.
+      const [other, weight] = f < 0.5 ? [legDirection(path, lengths, i - 1), 0.5 - f] : [legDirection(path, lengths, i + 1), f - 0.5];
+      const mix = lerp(here, other, weight);
+      const n = length(mix) || 1;
+      return { at: lerp(from, to, f), toward: [mix[0] / n, mix[1] / n, mix[2] / n] };
     }
     left -= leg;
   }

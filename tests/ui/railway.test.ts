@@ -46,3 +46,30 @@ describe('mine railway', () => {
     expect(train.rush).toBeGreaterThan(1);
   });
 });
+
+describe('a car turning round the mine railway', () => {
+  const train = (LANDMARK_DESIGNS.mountain as LandmarkDesign).train!;
+  const angle = (a: Vec3, b: Vec3) => Math.acos(Math.max(-1, Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2])));
+
+  it('swings round smoothly instead of snapping at each joint of the track', () => {
+    const total = loopLength(train.path);
+    const step = total / 4000;
+    let worst = 0;
+    for (let d = 0; d < total; d += step) worst = Math.max(worst, angle(pointAlong(train.path, d).toward, pointAlong(train.path, d + step).toward));
+    // A snap at a joint turns the car by a whole leg's bend (about 10°) in one step; smooth turning is a sliver of that.
+    expect(worst).toBeLessThan(0.06);
+  });
+
+  it('faces along the track in the middle of each leg', () => {
+    const p = train.path;
+    const legMid = (i: number) => {
+      let at = 0;
+      for (let k = 0; k < i; k++) at += Math.hypot(p[k + 1]![0] - p[k]![0], p[k + 1]![1] - p[k]![1], p[k + 1]![2] - p[k]![2]);
+      return at + Math.hypot(p[i + 1]![0] - p[i]![0], p[i + 1]![1] - p[i]![1], p[i + 1]![2] - p[i]![2]) / 2;
+    };
+    const i = 5;
+    const dir: Vec3 = [p[i + 1]![0] - p[i]![0], p[i + 1]![1] - p[i]![1], p[i + 1]![2] - p[i]![2]];
+    const n = Math.hypot(...dir);
+    expect(angle(pointAlong(p, legMid(i)).toward, [dir[0] / n, dir[1] / n, dir[2] / n])).toBeLessThan(1e-6);
+  });
+});
