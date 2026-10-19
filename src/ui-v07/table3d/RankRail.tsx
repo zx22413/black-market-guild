@@ -1,10 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { GOODS, type BuildingId, type PlayerId, type Rules } from '../../v07/game';
-import { BUILDING_LABELS, BUILDING_TEXT, WEALTH_RULE_TEXT } from '../labels';
+import { BUILDING_LABELS, BUILDING_TEXT, ISLAND_LABELS, ISLAND_TEXT, WEALTH_RULE_TEXT } from '../labels';
 import type { BeatSeat } from '../scene/beatStage';
 import type { Board } from '../session/board';
 import { GoodCount } from './GoodIcon';
 import { CloseIcon, InfoIcon, StatusMark, WantedMark } from './icons';
+import { InfoTip } from './InfoTip';
 import { IslandIcon } from './IslandIcon';
 import { cardIconUrl } from './cardArt';
 import { LockHint } from './LockHint';
@@ -46,32 +47,26 @@ const shownOf = (standings: readonly Standing[]): Shown => ({ order: standings.m
  * is, what it does and what it cost; tap elsewhere to close.
  */
 function BuildingMark({ building, rules }: { readonly building: BuildingId; readonly rules: Rules }) {
-  const [open, setOpen] = useState(false);
-  const self = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: PointerEvent) => {
-      if (!self.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('pointerdown', close);
-    return () => document.removeEventListener('pointerdown', close);
-  }, [open]);
   const { cash, wood, iron } = rules.buildings.costs[building];
   return (
-    <span ref={self} className={`rank-building ${open ? 'open' : ''}`}>
-      <button type="button" aria-expanded={open} aria-label={BUILDING_LABELS[building]} onClick={() => setOpen((v) => !v)}>
-        <img src={cardIconUrl({ kind: 'building', id: building })} alt="" />
-      </button>
-      <span className="rank-building-tip" role="tooltip">
-        <b>{BUILDING_LABELS[building]}</b>
-        <span>{BUILDING_TEXT[building]}</span>
-        <small>
+    <InfoTip
+      title={BUILDING_LABELS[building]}
+      text={
+        <>
+          {BUILDING_TEXT[building]}
+          <br />
           建造費：現金 {cash} G
-          {wood > 0 && <GoodCount good="wood" count={wood} size="sm" />}
-          {iron > 0 && <GoodCount good="iron" count={iron} size="sm" />}；終局算 {Math.floor(cash * rules.buildings.valueRatio)} G
-        </small>
+          {wood > 0 && ` ＋ ${wood} 木材`}
+          {iron > 0 && ` ＋ ${iron} 鐵礦`}；終局算 {Math.floor(cash * rules.buildings.valueRatio)} G
+        </>
+      }
+    >
+      <span className="rank-building">
+        <button type="button" aria-label={BUILDING_LABELS[building]}>
+          <img src={cardIconUrl({ kind: 'building', id: building })} alt="" />
+        </button>
       </span>
-    </span>
+    </InfoTip>
   );
 }
 
@@ -151,7 +146,11 @@ export function RankRail({ seats, board, rules, cashOf, status, rankStep }: Rank
               <div className="rank-top">
                 <span className="rank-no">{ranks[seat.id] ?? s.rank}</span>
                 <span className="rank-who">
-                  {player?.island && <IslandIcon island={player.island} label />}
+                  {player?.island && (
+                    <InfoTip title={ISLAND_LABELS[player.island]} text={`${ISLAND_TEXT[player.island].pro}。${ISLAND_TEXT[player.island].con}。`}>
+                      <IslandIcon island={player.island} />
+                    </InfoTip>
+                  )}
                   <span className="rank-name">{seat.isViewer ? '你' : seat.name}</span>
                   {board.wanted.includes(seat.id) && <WantedMark />}
                   <StatusMark label={note} />

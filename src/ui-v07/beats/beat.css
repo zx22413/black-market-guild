@@ -2212,38 +2212,6 @@
   width: 14px;
   height: 14px;
 }
-.rank-building-tip {
-  position: absolute;
-  left: 22px;
-  right: 6px;
-  top: calc(100% + 2px);
-  z-index: 5;
-  display: none;
-  gap: 4px;
-  padding: 9px 11px;
-  border-radius: 10px;
-  background: rgb(245 236 212 / 0.98);
-  color: #2b2116;
-  font-size: var(--fs-body);
-  line-height: 1.5;
-  box-shadow: 0 6px 16px rgb(0 0 0 / 0.35);
-}
-.rank-building-tip b {
-  font-size: var(--fs-body);
-}
-.rank-building-tip small {
-  font-size: var(--fs-note);
-  color: #8a4b12;
-}
-.rank-building:hover .rank-building-tip,
-.rank-building.open .rank-building-tip {
-  display: grid;
-}
-/* An open building tip sits above the rows below it. */
-.rank-rail li:has(.rank-building:hover),
-.rank-rail li:has(.rank-building.open) {
-  z-index: 5;
-}
 .rank-stock i {
   padding: 0 5px;
   border-radius: 4px;
@@ -2881,7 +2849,7 @@
   }
 }
 
-/* Wanted mark: it lifts on hover and says what it means; the notice and flag before the voyage event. */
+/* Wanted mark: it lifts on hover; what it means is its InfoTip. The notice and flag before the voyage event. */
 .wanted-mark {
   position: relative;
   cursor: help;
@@ -2892,34 +2860,6 @@
   transform: scale(1.25);
   box-shadow: 0 0 0 3px rgb(178 51 42 / 0.35);
   outline: none;
-}
-.wanted-mark::after {
-  content: attr(data-tip);
-  position: absolute;
-  top: calc(100% + 8px);
-  right: -8px;
-  z-index: 40;
-  width: max-content;
-  max-width: 220px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: #2b2116;
-  color: #f5ecd4;
-  font-size: var(--fs-note);
-  font-weight: 400;
-  line-height: 1.5;
-  text-align: left;
-  white-space: normal;
-  opacity: 0;
-  pointer-events: none;
-  transform: scale(0.8);
-  transform-origin: top right;
-  transition: opacity 120ms, transform 120ms;
-}
-.wanted-mark:hover::after,
-.wanted-mark:focus-visible::after {
-  opacity: 1;
-  transform: scale(1);
 }
 .rank-who {
   display: flex;

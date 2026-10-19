@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { RULES_V07, type GoodId } from '../../v07/game';
 import { wantedText } from '../labels';
+import { InfoTip } from './InfoTip';
 
 // Small drawn icons for the table UI, so no arrow, lock or sign is made out of text characters.
 // Line icons follow the surrounding text color; the picture icons are drawn in the card art's style
@@ -168,7 +169,8 @@ export function StatusMark({ label }: { readonly label: string }) {
   if (label === '') return null;
   const done = label === '已決定';
   return (
-    <span className={`status-mark ${done ? 'done' : 'thinking'}`} title={label} role="img" aria-label={label}>
+    <InfoTip title={label} text={done ? '這回合的決定已經提交，等其他人。' : '還在做這回合的決定。'}>
+    <span className={`status-mark ${done ? 'done' : 'thinking'}`} role="img" aria-label={label}>
       {done ? (
         <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
           <path d="M3.5 8.5l3 3 6-7" {...LINE} />
@@ -181,6 +183,7 @@ export function StatusMark({ label }: { readonly label: string }) {
         </>
       )}
     </span>
+    </InfoTip>
   );
 }
 
@@ -188,11 +191,13 @@ export function StatusMark({ label }: { readonly label: string }) {
 export function WantedMark() {
   const text = wantedText(RULES_V07.wanted.lootBonus);
   return (
-    <span className="wanted-mark" data-tip={text} tabIndex={0} role="img" aria-label={text}>
-      <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false">
-        <path d="M8 3.5v5.5M8 12v.1" {...LINE} strokeWidth={2.2} />
-      </svg>
-    </span>
+    <InfoTip title="通緝中" text={text}>
+      <span className="wanted-mark" role="img" aria-label={text}>
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false">
+          <path d="M8 3.5v5.5M8 12v.1" {...LINE} strokeWidth={2.2} />
+        </svg>
+      </span>
+    </InfoTip>
   );
 }
 
