@@ -107,6 +107,23 @@ const lastIndex = (events: readonly MatchEvent[], test: (e: MatchEvent) => boole
   return last;
 };
 
+/**
+ * Where a ship is at each stage of the round's show. It only ever moves on: at the dock while the
+ * wanted flag is up (the voyage event is not out yet), at sea from the event card through the role
+ * reveal, then each ship to its outcome as its beat plays (`beatIndex` is its place in the voyage,
+ * `focus` the state of the beat on screen); from the market on, every ship rests at its outcome.
+ */
+export function stageShipState(stage: ResolutionStage, beatIndex: number, voyageIndex: number, resting: ShipState, focus: ShipState | null): ShipState {
+  if (stage === 'wanted') return 'docked';
+  if (stage === 'event' || stage === 'reveal') return 'sailing';
+  if (stage === 'voyage') {
+    if (beatIndex >= 0 && beatIndex < voyageIndex) return resting;
+    if (beatIndex === voyageIndex && focus) return focus;
+    return 'sailing';
+  }
+  return resting;
+}
+
 export function useRoundResolution(input: ResolutionInput): Resolution {
   const { events, privateEvents, round, paused, seats, angles, laneOf, viewer, nameOf, weather, onFinish } = input;
   // Who is wanted this round (§9.6, marked at the round's start): a red flag goes up on their
@@ -206,16 +223,8 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   const restingState = (id: ShipId): ShipState => (outcomes.get(id) === 'sank' ? 'sunk' : outcomes.get(id) === 'arrived' ? 'arrived' : 'sailing');
   const tag = beat ? <BeatTag beat={beat} view={playback.view} names={Object.fromEntries(seats.map((s) => [s.id, s.name]))} viewer={viewer} /> : null;
   const layer = beat ? beatLayer({ beat, view: playback.view, angles, laneOf, weather, tag, seats }) : null;
-  const shipState = (id: ShipId): ShipState => {
-    if (stage === 'reveal') return 'sailing';
-    if (stage === 'voyage') {
-      const at = beats.findIndex((b) => b.shipId === id);
-      if (at < voyageIndex) return restingState(id);
-      if (at === voyageIndex && layer) return layer.focusState;
-      return 'sailing';
-    }
-    return restingState(id);
-  };
+  const shipState = (id: ShipId): ShipState =>
+    stageShipState(stage, beats.findIndex((b) => b.shipId === id), voyageIndex, restingState(id), layer?.focusState ?? null);
 
   if (!active) {
     return { stage: null, cutoff: events.length, cashBonus: {}, shipState: () => 'docked', camera: null, ringed: undefined, wrapShip: undefined, pins: [], scene: null, bar: null, overlay: null, onTableClick: undefined, marketPrices: undefined, changedGoods: undefined };
