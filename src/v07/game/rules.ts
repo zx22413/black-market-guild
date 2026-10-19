@@ -37,6 +37,13 @@ export interface IslandTrait {
   readonly intelPeeks: number;
 }
 
+/** One good's price track (§7.1): the price of its first cell, how much each cell adds, and the cell it starts on. */
+export interface PriceTrack {
+  readonly base: number;
+  readonly step: number;
+  readonly start: number;
+}
+
 export interface Rules {
   readonly version: string;
   readonly players: { readonly min: number; readonly max: number };
@@ -46,8 +53,11 @@ export interface Rules {
   /** Units produced per production round, and every how many rounds starting from round 1 (§6.2). */
   readonly production: Goods;
   readonly productionEvery: Goods;
-  /** Price of step k is base + k * step (§7.1). */
-  readonly price: { readonly base: number; readonly step: number; readonly steps: number; readonly start: number; readonly volatility: Goods };
+  /**
+   * The price tracks (§7.1): `steps` cells each; good g's cell k sells for tracks[g].base + k * tracks[g].step,
+   * and it starts the match at cell tracks[g].start. `volatility` is how many cells a good moves at once (§7.3).
+   */
+  readonly price: { readonly steps: number; readonly tracks: Readonly<Record<GoodId, PriceTrack>>; readonly volatility: Goods };
   /** Demand card value ranges per good, by player count (§7.2). */
   readonly demand: Readonly<Record<number, { readonly min: Goods; readonly max: Goods }>>;
   readonly capacity: { readonly base: number; readonly shipyardBonus: number };
@@ -123,7 +133,16 @@ export const RULES_V07: Rules = {
   startingStock: goods({ wood: 1, iron: 1 }), // §3
   production: goods({ wood: 1, iron: 1, spice: 1, arms: 1 }), // §6.2
   productionEvery: goods({ wood: 2, iron: 2, spice: 1, arms: 2 }), // §6.2: rounds 1, 3, 5 / every round
-  price: { base: 75, step: 25, steps: 7, start: 3, volatility: goods({ wood: 1, iron: 1, spice: 2, arms: 1 }) }, // §7.1, §7.3
+  price: {
+    steps: 7, // §7.1
+    tracks: {
+      wood: { base: 75, step: 25, start: 2 },
+      iron: { base: 75, step: 25, start: 2 },
+      spice: { base: 75, step: 25, start: 3 },
+      arms: { base: 95, step: 35, start: 3 },
+    },
+    volatility: goods({ wood: 1, iron: 1, spice: 2, arms: 1 }), // §7.3
+  },
   demand: {
     // §7.2
     3: { min: goods({ wood: 1, iron: 1, spice: 1, arms: 0 }), max: goods({ wood: 2, iron: 2, spice: 2, arms: 1 }) },

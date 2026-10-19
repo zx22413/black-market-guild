@@ -21,8 +21,11 @@ describe('goods text', () => {
     expect(goodDetail('iron', RULES_V07)).toContain('蓋建築');
   });
 
-  it('describes the price track from the rules (§7.1)', () => {
-    expect(marketRule(RULES_V07)).toContain('75～225 G');
-    expect(marketRule(RULES_V07)).toContain('150 G');
+  it('describes each price track from the rules (§7.1)', () => {
+    expect(marketRule(RULES_V07)).toContain('木材、鐵礦、香料 75～225 G');
+    expect(marketRule(RULES_V07)).toContain('軍火 95～305 G');
+    expect(goodDetail('arms', RULES_V07)).toContain('價格 95～305 G，一格 35 G，開局 200 G');
+    expect(goodDetail('wood', RULES_V07)).toContain('開局 125 G');
+    expect(goodDetail('spice', RULES_V07)).toContain('開局 150 G');
   });
 });

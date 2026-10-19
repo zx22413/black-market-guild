@@ -57,7 +57,7 @@ export function MarketCard({ rows, shown }: { readonly rows: readonly MarketRow[
                   <PriceScale before={r.before} after={r.after} />
                 </td>
                 <td className={`mk-price ${move > 0 ? 'up' : move < 0 ? 'down' : ''}`} style={{ animationDelay: `${START_MS + Math.abs(move) * STEP_MS}ms` }}>
-                  <Flow from={stepLabel(r.before)} to={<b>{stepLabel(r.after)} G</b>} /> <TrendIcon dir={move > 0 ? 1 : move < 0 ? -1 : 0} />
+                  <Flow from={stepLabel(r.good, r.before)} to={<b>{stepLabel(r.good, r.after)} G</b>} /> <TrendIcon dir={move > 0 ? 1 : move < 0 ? -1 : 0} />
                 </td>
               </tr>
             );

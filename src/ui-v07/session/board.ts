@@ -77,7 +77,7 @@ export interface Board {
 export function initialBoard(playerIds: readonly PlayerId[], startingCash: number, rules: Rules = RULES_V07): Board {
   return {
     round: 0,
-    prices: Object.fromEntries(GOODS.map((g) => [g, rules.price.start])) as unknown as Goods,
+    prices: Object.fromEntries(GOODS.map((g) => [g, rules.price.tracks[g].start])) as unknown as Goods,
     demand: NONE,
     wanted: [],
     voyageEvent: null,

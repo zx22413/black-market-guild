@@ -32,10 +32,10 @@ describe('ui-v07 board rebuilt from public events', () => {
     expect(board.round).toBe(RULES_V07.rounds);
   });
 
-  it('starts from the rule book: 1000 G, 1 wood, 1 iron, every price on the starting step', () => {
+  it('starts from the rule book: 1000 G, 1 wood, 1 iron, every price on its track\'s starting cell', () => {
     const board = initialBoard(['p1', 'p2', 'p3'], RULES_V07.startingCash);
     expect(board.players.p1).toMatchObject({ cash: 1000, stock: { wood: 1, iron: 1, spice: 0, arms: 0 } });
-    expect(board.prices).toEqual({ wood: 3, iron: 3, spice: 3, arms: 3 });
+    expect(board.prices).toEqual({ wood: 2, iron: 2, spice: 3, arms: 3 });
   });
 
   it('hides cargo until a ship is resolved', () => {

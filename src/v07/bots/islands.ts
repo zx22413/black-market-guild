@@ -49,7 +49,7 @@ function halfRiseCost(rules: Rules, island: IslandId): number {
       return sum;
     }
     const rise = rules.price.volatility[g];
-    const lost = (rise - Math.floor(rise / 2)) * rules.price.step;
+    const lost = (rise - Math.floor(rise / 2)) * rules.price.tracks[g].step;
     return sum + rules.rounds * perRound(rules, island, g) * lost * RISE_CHANCE;
   }, 0);
 }

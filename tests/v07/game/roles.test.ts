@@ -172,10 +172,12 @@ describe('§9.4 roles', () => {
 
   describe('the ship a broker names (§9.4)', () => {
     const paid = (events: ReturnType<typeof playRound>['events'], reason: string, id: string) => cash(events, reason, id);
+    // Wood on cell 3 (150 G) as the arithmetic below assumes; the match itself starts wood on cell 2 (§7.1).
+    const mid = (players = 3) => withPrices(ready(players), G(3, 3, 3, 3));
 
     it('a right bear bet cuts the opponent ship sale by 2 steps and gives the difference to the broker', () => {
       // Wood demand 2 - 1 (the bet) = 1 against 2 landed: down to 125 G. p1 sells 2 wood: 250 G, minus 2 x 50 G.
-      const { events } = playRound(ready(3), { loads: { p1: G(2) }, bets: { p2: { good: 'wood', direction: -1, aim: 'p1' } } });
+      const { events } = playRound(mid(), { loads: { p1: G(2) }, bets: { p2: { good: 'wood', direction: -1, aim: 'p1' } } });
       expect(paid(events, 'broker-bet', 'p2')).toBe(100);
       expect(paid(events, 'broker-control', 'p2')).toBe(100);
       expect(paid(events, 'sale', 'p1')).toBe(150);
@@ -183,10 +185,17 @@ describe('§9.4 roles', () => {
 
     it('a right bull bet on your own ship is topped up by the bank', () => {
       // Wood demand 2 + 1 = 3 against 1 landed: up to 175 G, and 50 G more on the one wood.
-      const { events } = playRound(ready(3), { loads: { p1: G(1) }, bets: { p1: { good: 'wood', direction: 1, aim: 'p1' } } });
+      const { events } = playRound(mid(), { loads: { p1: G(1) }, bets: { p1: { good: 'wood', direction: 1, aim: 'p1' } } });
       expect(paid(events, 'broker-bet', 'p1')).toBe(100);
       expect(paid(events, 'broker-lift', 'p1')).toBe(50);
       expect(paid(events, 'sale', 'p1')).toBe(175);
+    });
+
+    it('moves the named ship by two cells of that good\'s own track: 70 G a unit for arms', () => {
+      // Arms demand 1 + 1 = 2 against 1 landed: up from cell 3 (200 G) to cell 4 (235 G), and two arms cells (2 x 35 G) more.
+      const { events } = playRound(ready(3), { loads: { p1: G(0, 0, 0, 1) }, bets: { p1: { good: 'arms', direction: 1, aim: 'p1' } } });
+      expect(paid(events, 'sale', 'p1')).toBe(235);
+      expect(paid(events, 'broker-lift', 'p1')).toBe(70);
     });
 
     it('does nothing when the bet is wrong, or the ship sinks', () => {
@@ -208,7 +217,7 @@ describe('§9.4 roles', () => {
     });
 
     it('adds up when two brokers name the same ship', () => {
-      const { events } = playRound(ready(4), {
+      const { events } = playRound(mid(4), {
         loads: { p1: G(2) },
         bets: { p2: { good: 'wood', direction: -1, aim: 'p1' }, p3: { good: 'wood', direction: -1, aim: 'p1' } },
       });

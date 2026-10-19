@@ -4,6 +4,7 @@ import { emptyRound, submitDecision } from './flow';
 import { dealIslandOffers } from './islands';
 import { seedToRngState, shuffle } from './rng';
 import { RULES_V07, type Rules } from './rules';
+import { GOODS } from './types';
 import { PHASE_ACTION_TYPE, type Action, type MatchState, type PrivateEvent, type Result, type RuleErrorCode, type Transition } from './types';
 
 export interface MatchConfig {
@@ -34,8 +35,8 @@ function validateConfig(config: MatchConfig, rules: Rules): string | null {
   if (new Set(players.map((p) => p.id)).size !== players.length) {
     return 'player ids must be unique';
   }
-  if (rules.price.start < 0 || rules.price.start >= rules.price.steps) {
-    return `price.start must be within 0-${rules.price.steps - 1}`;
+  if (GOODS.some((g) => rules.price.tracks[g].start < 0 || rules.price.tracks[g].start >= rules.price.steps)) {
+    return `every price track's start must be within 0-${rules.price.steps - 1}`;
   }
   if (buildDemandDeck(rules, players.length).length < rules.rounds || buildVoyageDeck(rules).length < rules.rounds) {
     return `decks must hold at least ${rules.rounds} cards for ${players.length} players`;
@@ -53,7 +54,6 @@ export function createMatch(config: MatchConfig): Result<Transition> {
   const demand = shuffle(buildDemandDeck(rules, config.players.length), seedToRngState(config.seed));
   const voyage = shuffle(buildVoyageDeck(rules), demand.state);
   const draft = dealIslandOffers(config.players.map((p) => p.id), rules.islands.offered, voyage.state);
-  const start = rules.price.start;
   const state: MatchState = {
     rules,
     seed: config.seed,
@@ -71,7 +71,7 @@ export function createMatch(config: MatchConfig): Result<Transition> {
     rng: draft.state,
     demandDeck: demand.items,
     voyageDeck: voyage.items,
-    prices: { wood: start, iron: start, spice: start, arms: start },
+    prices: { wood: rules.price.tracks.wood.start, iron: rules.price.tracks.iron.start, spice: rules.price.tracks.spice.start, arms: rules.price.tracks.arms.start },
     islandOffers: draft.offers,
     roundState: emptyRound(),
     result: null,

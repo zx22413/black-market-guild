@@ -13,7 +13,8 @@ describe('§3 match setup and §11.1 island draft', () => {
       expect(p.stock).toEqual(G(1, 1));
       expect(p.island).toBeNull();
     });
-    expect(state.prices).toEqual(G(3, 3, 3, 3));
+    // §7.1: wood and iron start one cell lower (125 G), spice and arms on cell 3 (150 G, 200 G).
+    expect(state.prices).toEqual(G(2, 2, 3, 3));
     expect(events).toEqual([{ type: 'phase-started', round: 0, phase: 'island-choice' }]);
   });
 
@@ -61,7 +62,7 @@ describe('§3 match setup and §11.1 island draft', () => {
     expect(createMatch({ seed: 1, players: [...players(2), { id: 'p0', name: 'x' }] }).ok).toBe(false);
     expect(createMatch({ seed: 1, players: [...players(2), { id: ' ', name: 'x' }] }).ok).toBe(false);
     expect(createMatch({ seed: 1, players: players(3), rules: { ...RULES_V07, rounds: 0 } }).ok).toBe(false);
-    expect(createMatch({ seed: 1, players: players(3), rules: { ...RULES_V07, price: { ...RULES_V07.price, start: 9 } } }).ok).toBe(false);
+    expect(createMatch({ seed: 1, players: players(3), rules: { ...RULES_V07, price: { ...RULES_V07.price, tracks: { ...RULES_V07.price.tracks, arms: { ...RULES_V07.price.tracks.arms, start: 9 } } } } }).ok).toBe(false);
     expect(createMatch({ seed: 1, players: players(3), rules: { ...RULES_V07, rounds: 40 } }).ok).toBe(false);
   });
 });
@@ -87,7 +88,7 @@ describe('§7.2 demand deck', () => {
       state = r.state;
       events = [...events, ...r.events];
     }
-    expect(find(events, 'demand-revealed')).toEqual([{ type: 'demand-revealed', round: 1, demand: top, prices: G(3, 3, 3, 3) }]);
+    expect(find(events, 'demand-revealed')).toEqual([{ type: 'demand-revealed', round: 1, demand: top, prices: G(2, 2, 3, 3) }]);
     expect(state.roundState.demand).toEqual(top);
   });
 });

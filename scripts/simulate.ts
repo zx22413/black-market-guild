@@ -157,14 +157,14 @@ function marketSection(options: Options, s: SimStats): string[] {
     )}。`,
     `- 終局每名玩家平均剩下 ${per(s.unsoldUnits, s.seats)} 單位材料（不計分）：${GOODS.map((g) => `${GOOD_LABELS[g]} ${per(s.unsoldByGood[g] ?? 0, s.seats)}`).join('、')}。`,
     '',
-    '回合結束時的價格分布：',
+    '回合結束時的價格分布（每種商品的價格軌不同，格內是該格的價格）：',
     '',
     ...table(
-      ['商品', ...Array.from({ length: rules.price.steps }, (_, k) => `${priceAt(rules, k)} G`)],
+      ['商品', ...Array.from({ length: rules.price.steps }, (_, k) => `第 ${k} 格`)],
       GOODS.map((g) => {
         const counts = s.priceSteps[g]!;
         const total = counts.reduce((a, b) => a + b, 0);
-        return [GOOD_LABELS[g]!, ...counts.map((c) => pct(c, total))];
+        return [GOOD_LABELS[g]!, ...counts.map((c, k) => `${pct(c, total)}（${priceAt(rules, g, k)} G）`)];
       }),
     ),
   ];

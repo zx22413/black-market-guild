@@ -23,12 +23,12 @@ export function arriveChance(rules: Rules, modifier: number): number {
 }
 
 /** Price of a fractional step, interpolated along the track (§7.1). */
-function priceOfStep(rules: Rules, step: number): number {
-  return priceAt(rules, Math.min(rules.price.steps - 1, Math.max(0, step)));
+function priceOfStep(rules: Rules, good: GoodId, step: number): number {
+  return priceAt(rules, good, Math.min(rules.price.steps - 1, Math.max(0, step)));
 }
 
 export function currentPrice(view: PlayerView, good: GoodId): number {
-  return priceAt(view.rules, view.prices[good]);
+  return priceAt(view.rules, good, view.prices[good]);
 }
 
 export function averagePrice(view: PlayerView): number {
@@ -66,7 +66,7 @@ export function othersExpectedArrivals(view: PlayerView, good: GoodId): number {
  * opponent counts at 1 / opponents).
  */
 export function shiftValue(view: PlayerView, good: GoodId, delta: number, mine: number): number {
-  const step = view.rules.price.step * view.rules.price.volatility[good];
+  const step = view.rules.price.tracks[good].step * view.rules.price.volatility[good];
   const opponents = Math.max(1, view.players.length - 1);
   return delta * step * (mine * arriveChance(view.rules, 0) - othersExpectedArrivals(view, good) / opponents);
 }
@@ -75,7 +75,7 @@ export function shiftValue(view: PlayerView, good: GoodId, delta: number, mine: 
 export function expectedPrice(view: PlayerView, good: GoodId, mine: number): number {
   const arrivals = (othersExpectedLoad(view, good) + mine) * arriveChance(view.rules, 0);
   const delta = Math.max(-1, Math.min(1, view.demand[good] - arrivals)) * view.rules.price.volatility[good];
-  return priceOfStep(view.rules, view.prices[good] + delta);
+  return priceOfStep(view.rules, good, view.prices[good] + delta);
 }
 
 /** Shipping cost of one more unit: the ship cost spread over a full load. */

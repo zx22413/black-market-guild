@@ -39,7 +39,7 @@ export function MarketStrip({
       <b title="黑市：價格（G）與需求量">黑市</b>
       {GOODS.map((g) => (
         <span key={`${g}-${changed?.has(g) ? 'new' : 'old'}`} className={`inv-chip good-${g} ${changed?.has(g) ? 'flash' : ''}`}>
-          <GoodIcon good={g} size="sm" /> {GOOD_LABELS[g]} <b>{stepLabel((prices ?? board.prices)[g])}</b>{' '}
+          <GoodIcon good={g} size="sm" /> {GOOD_LABELS[g]} <b>{stepLabel(g, (prices ?? board.prices)[g])}</b>{' '}
           <span className="need" title={`需求 ${board.demand[g]}`}>
             需{board.demand[g]}
           </span>

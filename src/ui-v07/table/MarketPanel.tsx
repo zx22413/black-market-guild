@@ -21,16 +21,16 @@ export function MarketPanel({ prices, demand, settlement, compact = false }: Mar
         return (
           <div key={good} className="v7-market-row">
             <GoodTag good={good} />
-            <div className="v7-track" role="img" aria-label={`${priceAt(RULES_V07, prices[good])} G`}>
+            <div className="v7-track" role="img" aria-label={`${priceAt(RULES_V07, good, prices[good])} G`}>
               {STEPS.map((step) => (
                 <span
                   key={step}
                   className={`${step === prices[good] ? 'now' : ''}${moved && step === before ? ' was' : ''}`}
-                  title={`${priceAt(RULES_V07, step)} G`}
+                  title={`${priceAt(RULES_V07, good, step)} G`}
                 />
               ))}
             </div>
-            <b className="v7-price">{priceAt(RULES_V07, prices[good])} G</b>
+            <b className="v7-price">{priceAt(RULES_V07, good, prices[good])} G</b>
             <span className="v7-demand" title="本回合需求">
               需 {demand[good]}
             </span>

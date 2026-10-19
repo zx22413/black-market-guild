@@ -1,4 +1,4 @@
-import type { BuildingId, CashReason, GoodId, IslandId, RoleId, VoyageEventId } from '../v07/game';
+import { RULES_V07, priceAt, type BuildingId, type CashReason, type GoodId, type IslandId, type RoleId, type VoyageEventId } from '../v07/game';
 
 // Names and short texts below restate docs/game-design.md (V0.7): §6.1, §9.4, §10.2, §11.2, §12.
 // Do not add rules here; change the design document first.
@@ -103,5 +103,5 @@ export const CASH_REASON_LABELS: Readonly<Record<CashReason, string>> = {
   'broker-lift': '莊家抬價（銀行補貼）',
 };
 
-/** Price-track step to G per unit: the display of §7.1 (base 75, step 25). */
-export const stepLabel = (step: number): string => String(75 + 25 * step);
+/** A good's price-track cell to G per unit: the display of §7.1 (each good has its own track). */
+export const stepLabel = (good: GoodId, step: number): string => String(priceAt(RULES_V07, good, step));

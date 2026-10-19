@@ -1,4 +1,5 @@
-import { producedFor, type GoodId, type Rules } from '../../v07/game';
+import { GOODS, priceAt, producedFor, type GoodId, type Rules } from '../../v07/game';
+import { GOOD_LABELS } from '../labels';
 
 // What each good is for and how it behaves (docs/game-design.md §6.1–§6.3, §7.3, §9.5), for the
 // rules panel and the goods icons' tips. The numbers come from the rules, so the words never drift
@@ -30,9 +31,11 @@ export function productionRounds(good: GoodId, rules: Rules): string {
 export function goodDetail(good: GoodId, rules: Rules): string {
   const made = rules.production[good];
   const moves = rules.price.volatility[good];
+  const track = rules.price.tracks[good];
   const lines = [
     `${USE[good]}。`,
     `一般的島${productionRounds(good, rules)}生產 ${made}（島嶼特色可以改變）。`,
+    `價格 ${priceAt(rules, good, 0)}～${priceAt(rules, good, rules.price.steps - 1)} G，一格 ${track.step} G，開局 ${priceAt(rules, good, track.start)} G。`,
     `到港量少於需求就漲、多於需求就跌，一次 ${moves} 格。`,
   ];
   const trait = TRAIT[good];
@@ -41,6 +44,13 @@ export function goodDetail(good: GoodId, rules: Rules): string {
 
 /** How the black market prices every good (§7.1, §7.3), for the top of the goods list. */
 export function marketRule(rules: Rules): string {
-  const { base, step, steps, start } = rules.price;
-  return `每種商品一條價格軌，${base}～${base + step * (steps - 1)} G，一格 ${step} G，開局都在 ${base + step * start} G。航程結算後比較本回合到港量和需求，當回合的貨就用新價格賣。倉庫沒有容量上限，材料可以跨回合保留（香料除外）；玩家之間不能交易材料。`;
+  return `每種商品一條 ${rules.price.steps} 格的價格軌（${priceSpreads(rules)}）。航程結算後比較本回合到港量和需求，當回合的貨就用新價格賣。倉庫沒有容量上限，材料可以跨回合保留（香料除外）；玩家之間不能交易材料。`;
+}
+
+/** The goods grouped by the price range of their tracks: 「木材、鐵礦、香料 75～225 G，軍火 95～305 G」. */
+export function priceSpreads(rules: Rules): string {
+  const range = (g: GoodId) => `${priceAt(rules, g, 0)}～${priceAt(rules, g, rules.price.steps - 1)} G`;
+  const groups = new Map<string, GoodId[]>();
+  for (const g of GOODS) groups.set(range(g), [...(groups.get(range(g)) ?? []), g]);
+  return [...groups].map(([r, goods]) => `${goods.map((g) => GOOD_LABELS[g]).join('、')} ${r}`).join('，');
 }

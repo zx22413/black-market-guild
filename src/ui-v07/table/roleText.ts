@@ -1,4 +1,18 @@
-import type { RoleId, Rules } from '../../v07/game';
+import { GOODS, type GoodId, type RoleId, type Rules } from '../../v07/game';
+import { GOOD_LABELS } from '../labels';
+
+/**
+ * What `steps` cells of price are worth per unit, by good: 「50 G」 when every track agrees, else the
+ * most common value and the goods that differ: 「50 G，軍火 70 G」.
+ */
+function brokerGap(rules: Rules, steps: number): string {
+  const gap = (g: GoodId) => steps * rules.price.tracks[g].step;
+  const counts = new Map<number, number>();
+  for (const g of GOODS) counts.set(gap(g), (counts.get(gap(g)) ?? 0) + 1);
+  const main = [...counts].sort((a, b) => b[1] - a[1])[0]![0];
+  const others = GOODS.filter((g) => gap(g) !== main).map((g) => `${GOOD_LABELS[g]} ${gap(g)} G`);
+  return [`${main} G`, ...others].join('，');
+}
 
 // What each role says about itself in the description strip above the hand (§9.4). Built from the
 // rule numbers, so the words never drift from the engine.
@@ -19,9 +33,9 @@ export function roleDetail(role: RoleId, rules: Rules): string {
       const bet = `押一種商品的價格漲或跌，押對拿銀行 ${broker.payout} G。`;
       if (broker.targetSteps === 0) return bet;
       const steps = broker.targetSteps;
-      const each = steps * rules.price.step;
+      const each = brokerGap(rules, steps);
       const up = broker.targetOwnUp === 1 ? '自己的船' : '對手的船';
-      return `${bet}再指定一艘船：押漲指定${up}，押對時它賣這個商品多 ${steps} 格（每單位 ${each} G，銀行補貼）；押跌指定對手的船，少賣 ${steps} 格，差額歸你。`;
+      return `${bet}再指定一艘船：押漲指定${up}，押對時它賣這個商品多 ${steps} 格（每單位 ${each}，銀行補貼）；押跌指定對手的船，少賣 ${steps} 格，差額歸你。`;
     }
   }
 }

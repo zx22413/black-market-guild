@@ -10,12 +10,12 @@ describe('§9.5 arms confiscation', () => {
       loads: { p1: G(1, 0, 0, 1) },
       roles: { p1: ['guard', 'p1'], p2: ['guard', 'p1'], p3: ['guard', 'p1'] },
     });
-    // Arms arrived 1 = demand 1: 150 G, split between p2 and p3.
+    // Arms arrived 1 = demand 1: holds at 200 G (its own track, §7.1), split between p2 and p3.
     expect(find(events, 'arms-confiscated')).toEqual([{ type: 'arms-confiscated', round: 1, shipId: 'r1-p1', units: 1, guards: ['p2', 'p3'] }]);
-    expect(cash(events, 'arms-confiscated', 'p2')).toBe(75);
+    expect(cash(events, 'arms-confiscated', 'p2')).toBe(100);
     expect(cash(events, 'arms-confiscated', 'p1')).toBe(0);
-    // p1 only sells the wood (1 arrived < demand 2: up to 175 G).
-    expect(cash(events, 'sale', 'p1')).toBe(175);
+    // p1 only sells the wood (1 arrived < demand 2: up from 125 G to 150 G).
+    expect(cash(events, 'sale', 'p1')).toBe(150);
     expect(find(events, 'market-settled')[0]!.arrived.arms).toBe(1);
     // Confiscating forfeits the escort fee.
     expect(cash(events, 'escort-fee')).toBe(0);
@@ -29,7 +29,7 @@ describe('§9.5 arms confiscation', () => {
       loads: { p1: G(0, 0, 0, 1) },
       roles: { p2: ['guard', 'p1'], p3: ['smuggler', 'p1'] },
     });
-    expect(cash(port.events, 'arms-confiscated', 'p2')).toBe(150);
+    expect(cash(port.events, 'arms-confiscated', 'p2')).toBe(200);
   });
 
   it('lets a smuggler cover their own arms: no take, no fine', () => {
@@ -38,7 +38,7 @@ describe('§9.5 arms confiscation', () => {
     expect(cash(events, 'smuggling-fine')).toBe(0);
     expect(cash(events, 'smuggling')).toBe(0);
     expect(find(events, 'smuggling-settled')).toEqual([]);
-    expect(cash(events, 'sale', 'p1')).toBe(175 + 150);
+    expect(cash(events, 'sale', 'p1')).toBe(150 + 200);
   });
 
   it('only lets smugglers board their own ship when it carries their arms', () => {
@@ -55,7 +55,8 @@ describe('§9.5 arms confiscation', () => {
 describe('§9.5 smuggling', () => {
   it('takes 100 G from the owner sales when no guard is aboard', () => {
     const { events } = playRound(ready(3), { loads: { p1: G(2) }, roles: { p2: ['smuggler', 'p1'] } });
-    expect(cash(events, 'sale', 'p1')).toBe(200);
+    // 2 wood at 125 G (demand 2 met: the price holds), less the 100 G take.
+    expect(cash(events, 'sale', 'p1')).toBe(150);
     expect(cash(events, 'smuggling', 'p2')).toBe(100);
     expect(find(events, 'smuggling-settled')[0]).toMatchObject({ smugglers: ['p2'], result: 'taken' });
   });
@@ -63,8 +64,9 @@ describe('§9.5 smuggling', () => {
   it('caps the take at the sales and splits it among smugglers', () => {
     const state = withDemand(ready(4), G(1, 2, 2, 1));
     const { events } = playRound(state, { loads: { p1: G(1) }, roles: { p2: ['smuggler', 'p1'], p3: ['smuggler', 'p1'] } });
+    // 1 wood at 125 G is all there is to take: 62 G each (rounded down).
     expect(cash(events, 'sale', 'p1')).toBe(0);
-    expect(cash(events, 'smuggling', 'p2')).toBe(75);
+    expect(cash(events, 'smuggling', 'p2')).toBe(62);
   });
 
   it('fines caught smugglers and pays the guards; the owner keeps the sales', () => {
@@ -72,7 +74,7 @@ describe('§9.5 smuggling', () => {
     const { events } = playRound(state, { loads: { p1: G(2) }, roles: { p1: ['guard', 'p1'], p2: ['smuggler', 'p1'] }, voyageEvent: 'black-market-rush' });
     expect(cash(events, 'smuggling-fine', 'p2')).toBe(-40);
     expect(cash(events, 'smuggling-confiscated', 'p1')).toBe(150);
-    expect(cash(events, 'sale', 'p1')).toBe(300);
+    expect(cash(events, 'sale', 'p1')).toBe(250);
     expect(find(events, 'smuggling-settled')[0]!.result).toBe('caught');
   });
 

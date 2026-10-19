@@ -59,7 +59,7 @@ export function salePrice(state: MatchState, playerId: PlayerId, good: GoodId, p
   const before = prices.before[good];
   const rise = prices.after[good] - before;
   const halved = rise > 0 && traitOf(state.rules, playerOf(state, playerId).island).halfRise[good] === 1;
-  return priceAt(state.rules, halved ? before + Math.floor(rise / 2) : prices.after[good]);
+  return priceAt(state.rules, good, halved ? before + Math.floor(rise / 2) : prices.after[good]);
 }
 
 /** Smugglers taking goods from someone else's ship. */
@@ -92,8 +92,8 @@ function aimedBets(state: MatchState, ship: Ship, sold: Goods, prices: Prices, b
     .reduce<{ proceeds: number; payments: StepFn[] }>(
       (acc, b) => {
         const price = salePrice(state, ship.owner, b.good, prices);
-        const room = b.direction < 0 ? price - priceAt(rules, 0) : priceAt(rules, rules.price.steps - 1) - price;
-        const gap = Math.min(rules.roles.broker.targetSteps * rules.price.step, room) * sold[b.good];
+        const room = b.direction < 0 ? price - priceAt(rules, b.good, 0) : priceAt(rules, b.good, rules.price.steps - 1) - price;
+        const gap = Math.min(rules.roles.broker.targetSteps * rules.price.tracks[b.good].step, room) * sold[b.good];
         if (b.direction < 0) {
           const take = Math.min(gap, acc.proceeds);
           return { proceeds: acc.proceeds - take, payments: [...acc.payments, ...payAll([{ playerId: b.playerId, amount: take }], 'broker-control', ship.id)] };
@@ -131,7 +131,7 @@ function confiscateArms(ship: Ship, guards: readonly PlayerId[], prices: Prices)
   }
   return [
     (state) => {
-      const each = Math.floor((ship.cargo.arms * priceAt(state.rules, prices.after.arms)) / guards.length);
+      const each = Math.floor((ship.cargo.arms * priceAt(state.rules, 'arms', prices.after.arms)) / guards.length);
       const paid = chain(state, payAll(guards.map((playerId) => ({ playerId, amount: each })), 'arms-confiscated', ship.id));
       return { state: paid.state, events: [{ type: 'arms-confiscated', round: state.round, shipId: ship.id, units: ship.cargo.arms, guards }, ...paid.events] };
     },
@@ -253,7 +253,7 @@ function salvage(sunk: readonly Ship[], after: Goods): StepFn {
     const { maxHoldersPerShip, maxPerRound } = state.rules.buildings.salvage;
     const offers = sunk.map((ship, order) => {
       const good = GOODS.reduce<GoodId>((best, g) => (ship.cargo[g] > ship.cargo[best] ? g : best), 'wood');
-      return { ship, good, order, value: priceAt(state.rules, after[good]) };
+      return { ship, good, order, value: priceAt(state.rules, good, after[good]) };
     });
     const taken = new Map<string, number>();
     const claims = state.players

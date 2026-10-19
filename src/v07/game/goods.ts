@@ -43,9 +43,10 @@ export function enumerateGoods(limit: Goods, total: number): Goods[] {
   return walk(0, total, NO_GOODS);
 }
 
-/** Price of one unit at a price-track step (§7.1). */
-export function priceAt(rules: Rules, step: number): number {
-  return rules.price.base + rules.price.step * step;
+/** Price of one unit of `good` at a cell of its price track (§7.1). */
+export function priceAt(rules: Rules, good: GoodId, step: number): number {
+  const track = rules.price.tracks[good];
+  return track.base + track.step * step;
 }
 
 /** §7.3: below demand rises, above falls, by the good's volatility; clamped to the track. */

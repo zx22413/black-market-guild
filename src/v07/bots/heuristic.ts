@@ -106,7 +106,7 @@ function aimValue(view: PlayerView, action: Deploy, chance: number): number {
   }
   const own = owner.id === view.playerId;
   const units = own ? (ship.cargo?.[bet.good] ?? 0) : Math.min(owner.stock[bet.good], capacityFor(rules, owner.buildings, owner.island)) * OTHERS_LOAD_SHARE;
-  const worth = chance * arriveChance(rules, 0) * units * rules.roles.broker.targetSteps * rules.price.step;
+  const worth = chance * arriveChance(rules, 0) * units * rules.roles.broker.targetSteps * rules.price.tracks[bet.good].step;
   if (own) {
     return bet.direction > 0 ? worth : 0;
   }

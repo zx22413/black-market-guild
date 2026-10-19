@@ -45,11 +45,12 @@ describe('§7 black market prices', () => {
     const { state: next, events } = playRound(state, { loads: { p1: G(2), p2: G(1) } });
     const settled = find(events, 'market-settled')[0]!;
     expect(settled.arrived).toEqual(G(3));
-    // Wood 3 > 1 falls; iron 0 < 1 rises; spice 0 < 1 rises two steps; arms 0 = 0 holds.
-    expect(settled.priceAfter).toEqual(G(2, 4, 5, 3));
-    expect(cash(events, 'sale', 'p1')).toBe(250);
-    expect(cash(events, 'sale', 'p2')).toBe(125);
-    expect(next.prices).toEqual(G(2, 4, 5, 3));
+    // Wood 3 > 1 falls (from cell 2 to 1, 100 G); iron 0 < 1 rises (cell 2 to 3); spice 0 < 1 rises two
+    // cells; arms 0 = 0 holds.
+    expect(settled.priceAfter).toEqual(G(1, 3, 5, 3));
+    expect(cash(events, 'sale', 'p1')).toBe(200);
+    expect(cash(events, 'sale', 'p2')).toBe(100);
+    expect(next.prices).toEqual(G(1, 3, 5, 3));
   });
 
   it('moves spice two steps and clamps prices to the track', () => {
