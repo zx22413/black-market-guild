@@ -3201,3 +3201,35 @@
     animation: none;
   }
 }
+
+/* An icon's explanation (src/ui-v07/table3d/InfoTip.tsx): floats on top of everything, on hover or tap. */
+.info-tip-anchor {
+  display: inline-flex;
+  cursor: help;
+  pointer-events: auto;
+}
+button .info-tip-anchor {
+  cursor: inherit;
+}
+.info-tip {
+  position: fixed;
+  z-index: 60;
+  display: grid;
+  gap: 4px;
+  width: max-content;
+  max-width: min(280px, calc(100vw - 16px));
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgb(245 236 212 / 0.98);
+  color: #2b2116;
+  font-size: var(--fs-note);
+  line-height: 1.5;
+  text-align: left;
+  white-space: normal;
+  box-shadow: 0 8px 20px rgb(0 0 0 / 0.3);
+  pointer-events: none;
+  animation: tap-hint-in 160ms ease-out;
+}
+.info-tip b {
+  font-size: var(--fs-body);
+}

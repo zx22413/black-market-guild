@@ -1,20 +1,23 @@
 import { useEffect, useState } from 'react';
-import { RULES_V07, type BuildingId, type IslandId, type RoleId, type VoyageEventId } from '../../v07/game';
-import { BUILDING_LABELS, BUILDING_TEXT, ISLAND_LABELS, ISLAND_TEXT, ROLE_LABELS, VOYAGE_EVENT_LABELS, VOYAGE_EVENT_TEXT, WEALTH_RULE_TEXT } from '../labels';
+import { GOODS, RULES_V07, type BuildingId, type IslandId, type RoleId, type VoyageEventId } from '../../v07/game';
+import { BUILDING_LABELS, BUILDING_TEXT, GOOD_LABELS, ISLAND_LABELS, ISLAND_TEXT, ROLE_LABELS, VOYAGE_EVENT_LABELS, VOYAGE_EVENT_TEXT, WEALTH_RULE_TEXT } from '../labels';
+import { goodDetail, marketRule } from '../table/goodText';
 import { roleDetail } from '../table/roleText';
+import { GoodIcon } from './GoodIcon';
 import { CloseIcon, IconDisc } from './icons';
 import { IslandGlance } from './IslandGlance';
 import { roleIconUrl } from './RoleBadges';
 
 // The rules, for looking things up: one tab per kind of thing. Every sentence comes from the texts
-// the table already uses (labels.ts, roleText.ts), so the panel can never say something else.
+// the table already uses (labels.ts, roleText.ts, goodText.ts), so the panel can never say something else.
 
-type Tab = 'roles' | 'islands' | 'buildings' | 'events' | 'score';
+type Tab = 'roles' | 'islands' | 'buildings' | 'goods' | 'events' | 'score';
 
 const TABS: readonly { readonly id: Tab; readonly label: string }[] = [
   { id: 'roles', label: '角色' },
   { id: 'islands', label: '島嶼' },
   { id: 'buildings', label: '建築' },
+  { id: 'goods', label: '貨品' },
   { id: 'events', label: '事件' },
   { id: 'score', label: '計分' },
 ];
@@ -58,6 +61,24 @@ function Entries({ tab }: { readonly tab: Tab }) {
             <li key={building}>
               <b>{BUILDING_LABELS[building]}</b>
               <p>{BUILDING_TEXT[building]}</p>
+            </li>
+          ))}
+        </>
+      );
+    case 'goods':
+      return (
+        <>
+          <li>
+            <b>黑市價格</b>
+            <p>{marketRule(RULES_V07)}</p>
+          </li>
+          {GOODS.map((good) => (
+            <li key={good}>
+              <b>
+                <GoodIcon good={good} size="lg" tip={false} />
+                {GOOD_LABELS[good]}
+              </b>
+              <p>{goodDetail(good, RULES_V07)}</p>
             </li>
           ))}
         </>

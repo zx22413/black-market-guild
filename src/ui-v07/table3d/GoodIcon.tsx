@@ -1,19 +1,33 @@
 import type { ReactNode } from 'react';
-import { GOODS, type GoodId } from '../../v07/game';
+import { GOODS, RULES_V07, type GoodId } from '../../v07/game';
 import { GOOD_LABELS } from '../labels';
+import { goodDetail } from '../table/goodText';
 import { tokenIconUrl } from './icons';
+import { InfoTip } from './InfoTip';
 
 // Goods are shown as icons everywhere on the table except the price boards (market strip and the
 // market settlement card, which pair the icon with the name). The icon is drawn in colour on a light
-// disc ringed in the goods' color; the name is its tooltip and its screen-reader label.
+// disc ringed in the goods' color; the name is its screen-reader label, and hovering or tapping it
+// explains the good.
 
 export const goodIconUrl = (good: GoodId): string => tokenIconUrl(`good-${good}`);
 
-export function GoodIcon({ good, size = 'md' }: { readonly good: GoodId; readonly size?: 'sm' | 'md' | 'lg' }) {
-  return (
-    <span className={`good-ic good-${good} ${size}`} title={GOOD_LABELS[good]} role="img" aria-label={GOOD_LABELS[good]}>
+/**
+ * A good's icon. Hover or tap it to see what the good is for and how it behaves (`goodDetail`);
+ * `tip={false}` where the same text is already beside it (the rules panel).
+ */
+export function GoodIcon({ good, size = 'md', tip = true }: { readonly good: GoodId; readonly size?: 'sm' | 'md' | 'lg'; readonly tip?: boolean }) {
+  const icon = (
+    <span className={`good-ic good-${good} ${size}`} role="img" aria-label={GOOD_LABELS[good]}>
       <img src={goodIconUrl(good)} alt="" />
     </span>
+  );
+  return tip ? (
+    <InfoTip title={GOOD_LABELS[good]} text={goodDetail(good, RULES_V07)}>
+      {icon}
+    </InfoTip>
+  ) : (
+    icon
   );
 }
 
