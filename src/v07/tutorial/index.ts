@@ -6,7 +6,7 @@ import type { TutorialId, TutorialScript } from './types';
 
 export { coachView } from './coach';
 export type { CoachMoment, CoachView } from './coach';
-export { allowedFor, playTutorial, scriptedAction, tutorialSetup, youChoose } from './play';
+export { allowedFor, isReady, playTutorial, scriptedAction, tutorialSetup, youChoose } from './play';
 export { tutorialStage } from './stage';
 export { BASICS } from './basics';
 export { ISLANDS } from './islandsLesson';

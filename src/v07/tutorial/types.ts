@@ -26,6 +26,8 @@ export interface YouPhase {
   /** You make this decision on the table, among the actions `allow` keeps. */
   readonly choose: boolean;
   readonly allow?: (action: Action, context: DecisionContext) => boolean;
+  /** The choice is complete: 「提交」 lights up. Choosing what the demo does, when left out. */
+  readonly ready?: (action: Action, context: DecisionContext) => boolean;
 }
 
 export interface RoundScript {
@@ -77,6 +79,8 @@ export type FocusTarget =
   /** The role cards. */
   | { readonly kind: 'hand' }
   | { readonly kind: 'reroll' }
+  /** The decision's submit button, lit once your choice is complete. */
+  | { readonly kind: 'submit' }
   /** The island draft's two cards, and the reveal of everyone's islands. */
   | { readonly kind: 'draft' }
   | { readonly kind: 'reveal' }

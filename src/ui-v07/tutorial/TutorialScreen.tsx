@@ -54,12 +54,13 @@ export function TutorialScreen({ script, next, onReplay, onNext, onExit }: Tutor
           skipIslandReveal={!script.showIslandReveal}
           islandMarks
           onReady={() => setReady(true)}
+          onDraft={session.setDraft}
         />
       </Suspense>
       {ready && (
         <>
           {blocking && <div className="coach-block" aria-hidden="true" />}
-          <FocusMask targets={coach.focus} />
+          <FocusMask targets={coach.focus} pulse={coach.ready} />
           <CoachCard view={coach} onRead={session.read} onSkip={onExit} endActions={endActions} />
         </>
       )}

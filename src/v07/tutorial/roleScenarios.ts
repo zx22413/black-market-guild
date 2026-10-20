@@ -167,7 +167,12 @@ export const SMUGGLER: TutorialScript = scenario({
       bots: { [BOT.vande]: { load: { wood: 2 } }, [BOT.tide]: { load: { iron: 1 }, role: ['guard', BOT.tide] } },
       you: {
         invest: { demo: {}, choose: false },
-        'role-deployment': { demo: { role: ['smuggler', BOT.vande] }, choose: true, allow: roleOn('smuggler', [BOT.vande, BOT.tide]) },
+        'role-deployment': {
+          demo: { role: ['smuggler', BOT.vande] },
+          choose: true,
+          allow: roleOn('smuggler', [BOT.vande, BOT.tide]),
+          ready: roleOn('smuggler', [BOT.vande, BOT.tide]),
+        },
       },
     },
   ],
@@ -206,7 +211,7 @@ export const ARMS_COVER: TutorialScript = scenario({
       bots: { [BOT.vande]: { role: ['guard', 'p1'] } },
       you: {
         invest: { demo: { load: { wood: 1, arms: 1 } }, choose: false },
-        'role-deployment': { demo: { role: ['smuggler', 'p1'] }, choose: true, allow: roleOn('smuggler', ['p1'], true) },
+        'role-deployment': { demo: { role: ['smuggler', 'p1'] }, choose: true, allow: roleOn('smuggler', ['p1'], true), ready: roleOn('smuggler', ['p1']) },
       },
     },
   ],

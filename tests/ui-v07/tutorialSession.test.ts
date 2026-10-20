@@ -17,6 +17,20 @@ describe('tutorial session', () => {
     expect(session.getCoach().focus).toEqual(BASICS.coach[before - 1]!.focus);
   });
 
+  it('lights 「提交」 once the choice on the table matches the lesson', async () => {
+    const session = startTutorialSession(BASICS);
+    await settle();
+    BASICS.coach.slice(0, 4).forEach(() => session.read());
+    const request = session.getSnapshot().requests[0]!;
+    const woodOnly = request.context.legalActions.find((a) => a.type === 'invest' && a.load.spice === 0)!;
+    session.setDraft(woodOnly);
+    expect(session.getCoach()).toMatchObject({ ready: false });
+    session.setDraft(scriptedAction(BASICS, request.context));
+    expect(session.getCoach()).toMatchObject({ ready: true, focus: [{ kind: 'submit' }] });
+    session.setDraft(null);
+    expect(session.getCoach().ready).toBe(false);
+  });
+
   it('offers only the loads the lesson allows', async () => {
     const session = startTutorialSession(BASICS);
     await settle();

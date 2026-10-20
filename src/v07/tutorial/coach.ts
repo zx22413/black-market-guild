@@ -13,6 +13,8 @@ export interface CoachMoment {
   readonly resolvingRound: number;
   /** The match is over and its last resolution has played. */
   readonly ended: boolean;
+  /** Your choice on the table already answers the decision (see `isReady`). */
+  readonly draftReady?: boolean;
 }
 
 export interface CoachView {
@@ -25,6 +27,8 @@ export interface CoachView {
   readonly holdsDecision: boolean;
   /** What to do for the decision on screen, once its steps are read. */
   readonly todo: string | null;
+  /** Your choice is complete: only 「提交」 is lit, to press it. */
+  readonly ready: boolean;
   /** What is lit: the step being read, or while you decide, the last step before the decision. */
   readonly focus: readonly FocusTarget[];
 }
@@ -51,6 +55,7 @@ export function coachView(steps: readonly CoachStep[], read: number, moment: Coa
   const holdsDecision = steps.slice(read).some((s) => isDecision(s.trigger, moment.decision));
   const last = read > 0 ? steps[read - 1] : undefined;
   const todo = !holdsDecision && last?.todo !== undefined && isDecision(last.trigger, moment.decision) ? last.todo : null;
-  const focus = step?.focus ?? (todo !== null ? (last?.focus ?? []) : []);
-  return { step, number: Math.min(read + 1, steps.length), total: steps.length, holdsDecision, todo, focus };
+  const ready = step === null && todo !== null && moment.draftReady === true;
+  const focus: readonly FocusTarget[] = ready ? [{ kind: 'submit' }] : (step?.focus ?? (todo !== null ? (last?.focus ?? []) : []));
+  return { step, number: Math.min(read + 1, steps.length), total: steps.length, holdsDecision, todo, ready, focus };
 }

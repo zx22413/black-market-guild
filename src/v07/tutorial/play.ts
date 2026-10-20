@@ -74,6 +74,14 @@ export function allowedFor(script: TutorialScript, context: DecisionContext): Ac
   return context.legalActions.filter((a) => (step.allow ? step.allow(a, context) : fitsPlan(context, step.demo, a)));
 }
 
+/** Is `draft` a complete answer to your decision, so 「提交」 should light up? */
+export function isReady(script: TutorialScript, context: DecisionContext, draft: Action): boolean {
+  if (!allowedFor(script, context).includes(draft)) return false;
+  if (context.decision.phase === 'island-choice') return true;
+  const step = youPhase(script, context);
+  return step.ready ? step.ready(draft, context) : fitsPlan(context, step.demo, draft);
+}
+
 /** A bot seat's (or, played for you, your) scripted action. */
 export function scriptedAction(script: TutorialScript, context: DecisionContext): Action {
   if (context.decision.phase === 'island-choice') return islandAction(script, context);

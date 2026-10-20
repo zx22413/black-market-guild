@@ -18,7 +18,7 @@ export const ISLANDS: TutorialScript = {
       demand: goods({ wood: 2, iron: 1, spice: 2, arms: 1 }),
       event: 'calm-seas',
       // The lesson ends at round 1's investment: it is offered so the last step can wait on it.
-      you: { invest: { demo: {}, choose: true, allow: () => true } },
+      you: { invest: { demo: {}, choose: true, allow: () => true, ready: () => false } },
     },
   ],
   coach: [

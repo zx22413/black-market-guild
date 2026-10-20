@@ -48,6 +48,12 @@ describe('coachView', () => {
     expect(coachView(STEPS, 3, at({ resolvingRound: 1 })).focus).toEqual([]);
   });
 
+  it('lights only 「提交」 once your choice is complete, and not before the steps are read', () => {
+    expect(coachView(STEPS, 2, at({ decision: R1, draftReady: true }))).toMatchObject({ ready: true, focus: [{ kind: 'submit' }] });
+    expect(coachView(STEPS, 2, at({ decision: R1, draftReady: false }))).toMatchObject({ ready: false, focus: [{ kind: 'bar' }] });
+    expect(coachView(STEPS, 1, at({ decision: R1, draftReady: true }))).toMatchObject({ ready: false, focus: [{ kind: 'bar' }] });
+  });
+
   it('shows nothing once every step is read', () => {
     expect(coachView(STEPS, 5, at({ ended: true }))).toMatchObject({ step: null, number: 5, holdsDecision: false, todo: null });
   });

@@ -77,6 +77,11 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     return () => document.removeEventListener('pointerdown', close);
   }, [picking]);
 
+  // What the choice would submit, for whoever follows along (the tutorial lights 「提交」 when it fits).
+  const draft = active ? (actionFor(options, choice) ?? null) : null;
+  const onDraft = active?.onDraft;
+  useEffect(() => onDraft?.(draft), [onDraft, draft]);
+
   if (!active || !context) return null;
   const { board, seats, angles, laneOf, viewer, submit: submitAction } = active;
   // The deciding player's own island (on a hot-seat table it is not always the one in front).
@@ -244,7 +249,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       position: leftEnd,
       hidden: picking,
       node: (
-        <div className="inv-note side-left">
+        <div className="inv-note side-left" data-focus={`island-${viewer}`}>
           <span className="note-title" title="倉庫">
             <CrateIcon />
             倉庫
@@ -266,7 +271,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       position: [slot[0] + 5, slot[1], slot[2]],
       hidden: picking,
       node: (
-        <div className="inv-note side-right">
+        <div className="inv-note side-right" data-focus={`island-${viewer}`}>
           <span className="note-title" title="船">
             <IconDisc src={tokenIconUrl('ship')} />
             裝貨 {summary.loaded}/{summary.capacity}
@@ -323,7 +328,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
             <Flow from={summary.cashBefore} to={<b>{summary.cashAfter}</b>} />
           </span>
         </span>
-        <button type="button" className="primary" disabled={!action} onClick={submit}>
+        <button type="button" className="primary" data-focus="submit" disabled={!action} onClick={submit}>
           提交
         </button>
         <LockHint text="提交後不能更改；所有人都提交後，建築與出航同時公開，船上的貨不公開。" />

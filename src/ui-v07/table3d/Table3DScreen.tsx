@@ -55,9 +55,11 @@ export interface Table3DScreenProps {
   readonly islandMarks?: boolean;
   /** Called once the table has loaded and is on screen. */
   readonly onReady?: () => void;
+  /** Told what your decision on screen would submit as you make it (null until it is a legal one). */
+  readonly onDraft?: (action: Action | null) => void;
 }
 
-export function Table3DScreen({ session, onExit, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, islandMarks = false, onReady }: Table3DScreenProps) {
+export function Table3DScreen({ session, onExit, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, islandMarks = false, onReady, onDraft }: Table3DScreenProps) {
   const snap = useSession(session);
   const [ready, setReady] = useState(false);
 
@@ -153,7 +155,7 @@ export function Table3DScreen({ session, onExit, autoplay = false, showResult = 
   });
   const env: StageEnv | null =
     free && !moments.blocking && request && viewer && (phase === 'invest' || phase === 'role-deployment')
-      ? { request, board, seats, angles, laneOf, viewer, nameOf, submit: (a: Action) => session.submit(request.id, a) }
+      ? { request, board, seats, angles, laneOf, viewer, nameOf, submit: (a: Action) => session.submit(request.id, a), ...(onDraft ? { onDraft } : {}) }
       : null;
   const invest = useInvestStep(env);
   const deploy = useDeployStep(env);

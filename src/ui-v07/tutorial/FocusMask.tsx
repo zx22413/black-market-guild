@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FocusTarget } from '../../v07/tutorial';
-import { easeHole, focusSelector, holeAround, type Hole } from './focus';
+import { easeHole, focusSelector, holeAround, mergeHoles, type Hole } from './focus';
 
 // The tutorial's spotlight: the screen goes dark except for what the host is talking about. It
 // follows its targets every frame (islands move with the camera), never takes clicks, and shows
@@ -15,14 +15,18 @@ const near = (a: Hole, b: Hole): boolean =>
 
 function measure(targets: readonly FocusTarget[]): Hole[] {
   const view = { width: window.innerWidth, height: window.innerHeight };
-  return targets.flatMap((t) => {
-    const boxes = [...document.querySelectorAll(focusSelector(t))].map((el) => el.getBoundingClientRect());
-    const hole = holeAround(boxes, view, PAD);
-    return hole ? [hole] : [];
-  });
+  // Holes that touch become one, so a ring never runs across what the other one lights.
+  return mergeHoles(
+    targets.flatMap((t) => {
+      const boxes = [...document.querySelectorAll(focusSelector(t))].map((el) => el.getBoundingClientRect());
+      const hole = holeAround(boxes, view, PAD);
+      return hole ? [hole] : [];
+    }),
+  );
 }
 
-export function FocusMask({ targets }: { readonly targets: readonly FocusTarget[] }) {
+/** `pulse`: the lit part is what to press now (「提交」), so its ring breathes. */
+export function FocusMask({ targets, pulse = false }: { readonly targets: readonly FocusTarget[]; readonly pulse?: boolean }) {
   const [holes, setHoles] = useState<readonly Hole[]>([]);
   const shown = useRef<readonly Hole[]>([]);
 
@@ -43,7 +47,7 @@ export function FocusMask({ targets }: { readonly targets: readonly FocusTarget[
 
   if (holes.length === 0) return null;
   return (
-    <svg className="focus-mask" aria-hidden="true">
+    <svg className={`focus-mask ${pulse ? 'pulse' : ''}`} aria-hidden="true">
       <defs>
         <mask id="focus-holes">
           <rect width="100%" height="100%" fill="white" />

@@ -13,6 +13,7 @@ import {
   SMUGGLER,
   TUTORIALS,
   allowedFor,
+  isReady,
   playTutorial,
   scriptedAction,
   tutorialById,
@@ -63,6 +64,24 @@ describe('every tutorial', () => {
       if (steps.at(-1) !== script.coach.at(-1)) expect(steps.at(-1)?.todo).toBeDefined();
       return demo;
     });
+  });
+
+  it('counts the demo as a complete choice, and an allowed but unfinished one as not yet', () => {
+    for (const script of TUTORIALS) {
+      playTutorial(script, (c) => {
+        const demo = scriptedAction(script, c);
+        if (!(script.id === 'islands' && c.decision.phase === 'invest')) expect(isReady(script, c, demo), `${script.id} ${c.view.round} ${c.decision.phase}`).toBe(true);
+        return demo;
+      });
+    }
+    const first = playTutorial(BASICS, (c) => {
+      if (c.view.round === 1 && c.decision.phase === 'invest') {
+        const woodOnly = c.legalActions.find((a) => a.type === 'invest' && a.load.wood === 1 && a.load.spice === 0)!;
+        expect(isReady(BASICS, c, woodOnly)).toBe(false);
+      }
+      return scriptedAction(BASICS, c);
+    });
+    expect(first.finalState.phase).toBe('game-over');
   });
 
   it('only lists decisions you make yourself in the host steps', () => {

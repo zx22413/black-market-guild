@@ -68,7 +68,12 @@ export const BASICS: TutorialScript = {
       rolls: { p1: 3, [BOT.vande]: 3 },
       bots: { [BOT.vande]: { load: { iron: 1 } }, [BOT.anchor]: { load: { arms: 2 } } },
       you: {
-        invest: { demo: { build: 'shipyard', load: { iron: 2, spice: 1, arms: 1 } }, choose: true, allow: buildThen('shipyard') },
+        invest: {
+          demo: { build: 'shipyard', load: { iron: 2, spice: 1, arms: 1 } },
+          choose: true,
+          allow: buildThen('shipyard'),
+          ready: (a) => a.type === 'invest' && unitsOf(a.load) > 0,
+        },
         'role-deployment': { demo: { role: ['pirate', BOT.vande] }, choose: true, allow: roleOn('pirate', [BOT.vande]) },
       },
     },
@@ -81,7 +86,7 @@ export const BASICS: TutorialScript = {
       rerolls: { p1: 5 },
       bots: { [BOT.vande]: { load: { wood: 1, iron: 1 } } },
       you: {
-        invest: { demo: { load: { iron: 1, spice: 1 } }, choose: true, allow: noWood },
+        invest: { demo: { load: { iron: 1, spice: 1 } }, choose: true, allow: noWood, ready: noWood },
         'role-deployment': { demo: { role: ['intel', 'p1'] }, choose: true, allow: roleOn('intel', ['p1']) },
         'intel-reroll': { demo: { reroll: 'p1' }, choose: true, allow: rerollOrKeep },
       },
@@ -97,8 +102,13 @@ export const BASICS: TutorialScript = {
         [BOT.tide]: { load: { wood: 2, arms: 1 }, role: ['smuggler', BOT.tide] },
       },
       you: {
-        invest: { demo: { load: { spice: 1, arms: 1 } }, choose: true, allow: noWoodOrStay },
-        'role-deployment': { demo: { role: ['smuggler', BOT.vande] }, choose: true, allow: roleOn('smuggler', [BOT.vande, BOT.tide]) },
+        invest: { demo: { load: { spice: 1, arms: 1 } }, choose: true, allow: noWoodOrStay, ready: noWoodOrStay },
+        'role-deployment': {
+          demo: { role: ['smuggler', BOT.vande] },
+          choose: true,
+          allow: roleOn('smuggler', [BOT.vande, BOT.tide]),
+          ready: roleOn('smuggler', [BOT.vande, BOT.tide]),
+        },
       },
     },
     {
@@ -108,7 +118,7 @@ export const BASICS: TutorialScript = {
       rolls: { p1: 5 },
       bots: { [BOT.vande]: { load: { iron: 1 } } },
       you: {
-        invest: { demo: { load: { wood: 1, spice: 1 } }, choose: true, allow: oneWood },
+        invest: { demo: { load: { wood: 1, spice: 1 } }, choose: true, allow: oneWood, ready: oneWood },
         'role-deployment': {
           demo: { bet: { good: 'wood', direction: 1, aim: 'p1' } },
           choose: true,

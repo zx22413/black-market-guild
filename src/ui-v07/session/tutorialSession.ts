@@ -5,6 +5,7 @@ import {
   YOU,
   allowedFor,
   coachView,
+  isReady,
   scriptedAction,
   tutorialSetup,
   tutorialStage,
@@ -26,6 +27,8 @@ export interface TutorialSession extends GameSession {
   read(): void;
   /** What the table has finished playing: the last round shown, and whether the end was shown. */
   setShown(shownRound: number, ended: boolean): void;
+  /** What your choice on the table would submit right now (null until it is a legal one). */
+  setDraft(action: Action | null): void;
 }
 
 /** Your seat: the script plays the decisions you do not make, the rest wait for you with fewer options. */
@@ -39,7 +42,7 @@ function yourSeat(script: TutorialScript, human: Controller): Controller {
 
 const scriptedSeat = (script: TutorialScript): Controller => ({ decide: async (context) => scriptedAction(script, context) });
 
-function momentOf(raw: SessionSnapshot, shownRound: number, ended: boolean): CoachMoment {
+function momentOf(script: TutorialScript, raw: SessionSnapshot, shownRound: number, ended: boolean, draft: Action | null): CoachMoment {
   const request = raw.requests[0];
   const resolving = raw.events.reduce((n, e) => (e.type === 'roles-revealed' ? Math.max(n, e.round) : n), 0);
   return {
@@ -47,6 +50,7 @@ function momentOf(raw: SessionSnapshot, shownRound: number, ended: boolean): Coa
     shownRound,
     resolvingRound: resolving,
     ended,
+    draftReady: request !== undefined && draft !== null && isReady(script, request.context, draft),
   };
 }
 
@@ -62,10 +66,11 @@ export function startTutorialSession(script: TutorialScript): TutorialSession {
   const listeners = new Set<() => void>();
   let read = 0;
   let shown = { round: 0, ended: false };
-  let coach = coachView(script.coach, read, momentOf(inner.getSnapshot(), 0, false));
+  let draft: Action | null = null;
+  let coach = coachView(script.coach, read, momentOf(script, inner.getSnapshot(), 0, false, null));
 
   const refresh = (): void => {
-    coach = coachView(script.coach, read, momentOf(inner.getSnapshot(), shown.round, shown.ended));
+    coach = coachView(script.coach, read, momentOf(script, inner.getSnapshot(), shown.round, shown.ended, draft));
     listeners.forEach((l) => l());
   };
   inner.subscribe(refresh);
@@ -82,6 +87,11 @@ export function startTutorialSession(script: TutorialScript): TutorialSession {
     read: () => {
       if (coach.step === null) return;
       read += 1;
+      refresh();
+    },
+    setDraft: (action) => {
+      if (action === draft) return;
+      draft = action;
       refresh();
     },
     setShown: (round, ended) => {

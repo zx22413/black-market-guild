@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { easeHole, focusSelector, holeAround } from '../../src/ui-v07/tutorial/focus';
+import { easeHole, focusSelector, holeAround, mergeHoles } from '../../src/ui-v07/tutorial/focus';
 import { islandMarkPoints } from '../../src/ui-v07/table3d/islandMarks';
 
 const VIEW = { width: 800, height: 600 };
@@ -27,6 +27,14 @@ describe('tutorial focus', () => {
     const to = { x: 100, y: 100, width: 50, height: 50 };
     expect(easeHole(undefined, to, 0.3)).toBe(to);
     expect(easeHole({ x: 0, y: 0, width: 50, height: 50 }, to, 0.5)).toEqual({ x: 50, y: 50, width: 50, height: 50 });
+  });
+
+  it('joins lit rectangles that overlap, so no ring crosses the other', () => {
+    const island = { x: 100, y: 100, width: 300, height: 400 };
+    const bar = { x: 120, y: 480, width: 280, height: 60 };
+    const far = { x: 600, y: 10, width: 50, height: 20 };
+    expect(mergeHoles([island, far, bar])).toEqual([far, { x: 100, y: 100, width: 300, height: 440 }]);
+    expect(mergeHoles([island, far])).toEqual([island, far]);
   });
 
   it('frames an island with marks on its shore and over its buildings', () => {

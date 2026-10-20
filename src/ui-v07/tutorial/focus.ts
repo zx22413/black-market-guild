@@ -50,3 +50,27 @@ export function easeHole(from: Hole | undefined, to: Hole, t: number): Hole {
   const mix = (a: number, b: number) => a + (b - a) * t;
   return { x: mix(from.x, to.x), y: mix(from.y, to.y), width: mix(from.width, to.width), height: mix(from.height, to.height) };
 }
+
+const overlaps = (a: Hole, b: Hole): boolean => a.x <= b.x + b.width && b.x <= a.x + a.width && a.y <= b.y + b.height && b.y <= a.y + a.height;
+
+const union = (a: Hole, b: Hole): Hole => {
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  return { x, y, width: Math.max(a.x + a.width, b.x + b.width) - x, height: Math.max(a.y + a.height, b.y + b.height) - y };
+};
+
+/** Joins holes that overlap or touch (a joined hole may now reach another, so it repeats). */
+export function mergeHoles(holes: readonly Hole[]): Hole[] {
+  const merged: Hole[] = [];
+  for (const hole of holes) {
+    let current = hole;
+    for (let i = merged.length - 1; i >= 0; i -= 1) {
+      if (overlaps(merged[i]!, current)) {
+        current = union(merged[i]!, current);
+        merged.splice(i, 1);
+      }
+    }
+    merged.push(current);
+  }
+  return merged.length === holes.length ? merged : mergeHoles(merged);
+}

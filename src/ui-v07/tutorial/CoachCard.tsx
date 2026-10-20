@@ -18,12 +18,12 @@ interface CoachCardProps {
 }
 
 export function CoachCard({ view, onRead, onSkip, endActions }: CoachCardProps) {
-  const { step, todo } = view;
+  const { step, todo, ready } = view;
   if (step === null) {
     return todo ? (
-      <aside className="coach coach-todo" aria-live="polite">
+      <aside className={`coach coach-todo ${ready ? 'ready' : ''}`} aria-live="polite">
         <span className="coach-todo-mark" aria-hidden="true" />
-        {todo}
+        {ready ? '好了，按「提交」。' : todo}
       </aside>
     ) : null;
   }

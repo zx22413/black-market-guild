@@ -54,6 +54,11 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     setPeek(null);
   }, [requestId]);
 
+  // What the choice would submit, for whoever follows along (the tutorial lights 「提交」 when it fits).
+  const draft = active ? (deployActionFor(options, choice) ?? null) : null;
+  const onDraft = active?.onDraft;
+  useEffect(() => onDraft?.(draft), [onDraft, draft]);
+
   if (!active || !context) return null;
   const { board, seats, angles, laneOf, viewer, nameOf, submit: submitAction } = active;
   const cards = roleCards(context, options);
@@ -242,7 +247,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
             target={targetOwner === undefined ? null : { name: nameOf(targetOwner), color: seats[laneOf(targetOwner)]?.color ?? '#999' }}
           />
         </span>
-        <button type="button" className="primary" disabled={incomplete} onClick={submit}>
+        <button type="button" className="primary" data-focus="submit" disabled={incomplete} onClick={submit}>
           提交
         </button>
         <LockHint text="提交後不能更改；所有人都提交後，角色一起公開（情報商人重擲後再公開）。" />
