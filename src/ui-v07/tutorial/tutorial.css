@@ -17,6 +17,10 @@
   font-size: var(--fs-body);
   line-height: 1.6;
   animation: coach-in 240ms ease-out;
+  /* It moves to another corner when it would cover what is lit. */
+  transition:
+    left 260ms ease,
+    top 260ms ease;
 }
 .coach p {
   margin: 8px 0 0;
@@ -215,4 +219,28 @@
 .coach.coach-todo.ready {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent), 0 16px 40px rgb(0 0 0 / 0.45);
+}
+/* 「下一步」 is what to press while a step is read. */
+.coach-foot .coach-next-btn {
+  animation: coach-next-breathe 1.4s ease-in-out infinite;
+}
+.coach-foot .coach-next-btn.nudged {
+  animation:
+    coach-next-wave 420ms ease-in-out,
+    coach-next-breathe 1.4s ease-in-out 420ms infinite;
+}
+@keyframes coach-next-breathe {
+  50% {
+    box-shadow: 0 0 0 4px rgb(224 166 60 / 0.45), 0 0 16px rgb(224 166 60 / 0.8);
+  }
+}
+@keyframes coach-next-wave {
+  20%,
+  60% {
+    transform: translateX(-4px) scale(1.06);
+  }
+  40%,
+  80% {
+    transform: translateX(4px) scale(1.06);
+  }
 }

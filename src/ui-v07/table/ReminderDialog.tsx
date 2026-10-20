@@ -15,7 +15,7 @@ export function ReminderDialog({ title, lines, onBack, onConfirm }: ReminderDial
   const [skip, setSkip] = useState(false);
   return (
     <div className="beat-backdrop reminder-backdrop" onClick={onBack} role="dialog" aria-modal="true" aria-label={title}>
-      <div className="beat-card reminder" onClick={(e) => e.stopPropagation()}>
+      <div className="beat-card reminder" data-focus="dialog" onClick={(e) => e.stopPropagation()}>
         <header className="beat-head">
           <strong>{title}</strong>
         </header>

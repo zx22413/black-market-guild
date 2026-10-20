@@ -167,7 +167,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       position: [hx, ISLAND_PLATEAU, hz + PLAYER_ISLAND_RADIUS * 0.62],
       node: (
         <div className="inv-build" ref={buildArea}>
-          <button type="button" className={`${choice.build ? 'on' : ''} ${todo.build ? 'todo' : ''}`} title={canBuildAny(options) ? `已蓋 ${built} 棟，最多 ${maxBuilt} 棟` : '這回合不能蓋建築'} onClick={() => setPicking((v) => !v)}>
+          <button type="button" data-focus="build-open" className={`${choice.build ? 'on' : ''} ${todo.build ? 'todo' : ''}`} title={canBuildAny(options) ? `已蓋 ${built} 棟，最多 ${maxBuilt} 棟` : '這回合不能蓋建築'} onClick={() => setPicking((v) => !v)}>
             {choice.build ? `${BUILDING_LABELS[choice.build]} ↻` : canBuildAny(options) ? `＋ 建築 ${built}/${maxBuilt}` : '不能蓋'}
           </button>
           {picking && (
@@ -189,6 +189,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
                   type="button"
                   key={b.id}
                   className={`inv-card ${b.legal ? '' : 'no'} ${choice.build === b.id ? 'sel' : ''}`}
+                  data-focus={`build-${b.id}`}
+                  data-done={choice.build === b.id}
                   disabled={!b.legal}
                   aria-label={`${BUILDING_LABELS[b.id]}：${BUILDING_TEXT[b.id]}`}
                   onClick={() => pickBuild(b.id)}
@@ -234,7 +236,14 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
         position: islandPoint(home, warehouseLocal(column)),
         hidden: picking || context.view.myStock[g] - choice.load[g] <= 0,
         node: loadable ? (
-          <button type="button" className={`inv-stack good-${g} ${todo.cargo ? 'todo' : ''}`} title={`裝一箱${GOOD_LABELS[g]}上船`} onClick={() => loadGood(g)}>
+          <button
+            type="button"
+            className={`inv-stack good-${g} ${todo.cargo ? 'todo' : ''}`}
+            title={`裝一箱${GOOD_LABELS[g]}上船`}
+            data-crate={g}
+            data-loaded={choice.load[g]}
+            onClick={() => loadGood(g)}
+          >
             {label}
           </button>
         ) : (

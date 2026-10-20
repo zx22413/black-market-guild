@@ -103,6 +103,19 @@ describe('every tutorial', () => {
     }
   });
 
+  it('guides every investment and role decision you make: what to click first', () => {
+    for (const script of TUTORIALS) {
+      playTutorial(script, (c) => {
+        const steps = script.coach.filter((s) => s.trigger.kind === 'decision' && s.trigger.round === c.view.round && s.trigger.phase === c.decision.phase);
+        const last = steps.at(-1);
+        const free = isReady(script, c, c.legalActions[0]!) && c.legalActions.length > 1 && c.decision.phase === 'invest';
+        const guided = (c.decision.phase === 'invest' || c.decision.phase === 'role-deployment') && last !== script.coach.at(-1) && !free;
+        if (guided) expect(last?.guide?.length, `${script.id} ${c.view.round} ${c.decision.phase}`).toBeGreaterThan(0);
+        return scriptedAction(script, c);
+      });
+    }
+  });
+
   it('lights something on every host step', () => {
     for (const script of TUTORIALS) {
       script.coach.forEach((s) => expect(s.focus.length, `${script.id}: ${s.title}`).toBeGreaterThan(0));

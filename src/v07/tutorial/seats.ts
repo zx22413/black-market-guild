@@ -1,4 +1,4 @@
-import { RULES_V07, type GoodId, type Goods, type PlayerId, type Rules } from '../game';
+import { RULES_V07, type BuildingId, type GoodId, type Goods, type PlayerId, type RoleId, type Rules } from '../game';
 import type { FocusTarget, TutorialSeat } from './types';
 
 // The table every tutorial uses: you on the Lumber island (docs/tutorial-outline.md §4), three
@@ -29,6 +29,11 @@ export const F = {
   price: (good: GoodId): FocusTarget => ({ kind: 'price', good }),
   island: (player: PlayerId): FocusTarget => ({ kind: 'island', player }),
   plate: (player: PlayerId): FocusTarget => ({ kind: 'plate', player }),
+  build: (building: BuildingId): FocusTarget => ({ kind: 'build', building }),
+  role: (role: RoleId | 'none'): FocusTarget => ({ kind: 'role', role }),
+  target: (player: PlayerId): FocusTarget => ({ kind: 'target', player }),
+  bet: (good: GoodId, direction: 1 | -1): FocusTarget => ({ kind: 'bet', good, direction }),
+  crate: (good: GoodId, count = 1): FocusTarget => ({ kind: 'crate', good, count }),
   rank: { kind: 'rank' },
   log: { kind: 'log' },
   round: { kind: 'round' },
@@ -40,5 +45,6 @@ export const F = {
   rules: { kind: 'rules' },
   submit: { kind: 'submit' },
   event: { kind: 'event' },
+  marketCard: { kind: 'market-card' },
   advance: { kind: 'advance' },
 } as const satisfies Record<string, FocusTarget | ((...args: never[]) => FocusTarget)>;

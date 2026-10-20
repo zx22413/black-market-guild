@@ -95,7 +95,8 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   // A round button over every ship: a "+" on the ones you may pick (the owner's color on its rim),
   // the role's badge on the one picked (click it to take the role back), a faint "+" for the
   // lighthouse's extra look, and a "no entry" sign on the ones the role cannot go to, saying why on
-  // hover or tap. The ship's name shows on hover and is read out for screen readers.
+  // hover or tap. The ship's name shows on hover and is read out for screen readers. Each counts as
+  // part of its owner's island for a highlight (the tutorial's focus).
   const pins: TablePin[] = board.ships.map((ship) => {
     const blocked = blockedReason(context, options, choice, ship.id);
     const peekable = choice.target !== null && peeks.has(ship.id);
@@ -114,18 +115,23 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
             style={{ borderColor: peekable ? undefined : rim }}
             data-label={peekable ? `多看 ${label}（可不選）` : chosen ? `${label}・點一下取消` : `派到${label}`}
             aria-label={peekable ? `多看 ${label}` : `派到${label}`}
+            data-focus={`island-${ship.owner}`}
+            data-target={ship.owner}
+            data-done={chosen}
             onClick={() => clickShip(ship.id)}
           >
             {chosen && choice.role !== null && choice.role !== 'none' ? <img src={roleIconUrl(choice.role)} alt="" /> : '＋'}
           </button>
         ) : blocked ? (
           <InfoTip title={`不能派到${label}`} text={blocked}>
-            <span className="dep-ship off" role="img" aria-label={`不能派到${label}：${blocked}`}>
+            <span className="dep-ship off" role="img" aria-label={`不能派到${label}：${blocked}`} data-focus={`island-${ship.owner}`}>
               <ForbidIcon />
             </span>
           </InfoTip>
         ) : (
-          <span className="dep-ship-name">{label}</span>
+          <span className="dep-ship-name" data-focus={`island-${ship.owner}`}>
+            {label}
+          </span>
         ),
     };
   });
@@ -172,6 +178,8 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
           key={c.id}
           type="button"
           className={`dep-card ${choice.role === c.id ? 'on' : ''} ${c.legal ? '' : 'off'}`}
+          data-role-card={c.id}
+          data-done={choice.role === c.id}
           onMouseEnter={() => setPeek(c.id)}
           onFocus={() => setPeek(c.id)}
           onBlur={() => setPeek(null)}
@@ -203,6 +211,8 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
       <button
         type="button"
         className={`dep-card none ${choice.role === 'none' ? 'on' : ''}`}
+        data-role-card="none"
+        data-done={choice.role === 'none'}
         onMouseEnter={() => setPeek('none')}
         onFocus={() => setPeek('none')}
         onBlur={() => setPeek(null)}

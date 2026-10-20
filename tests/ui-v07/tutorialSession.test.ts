@@ -31,6 +31,23 @@ describe('tutorial session', () => {
     expect(session.getCoach().ready).toBe(false);
   });
 
+  it('explains round 1\'s prices on the market card, holding the card until read', async () => {
+    const session = startTutorialSession(BASICS);
+    await settle();
+    for (let guard = 0; guard < 10 && session.getSnapshot().requests[0]?.context.decision.phase !== 'invest'; guard += 1) await settle();
+    BASICS.coach.slice(0, 4).forEach(() => session.read());
+    const request = session.getSnapshot().requests[0]!;
+    session.submit(request.id, scriptedAction(BASICS, request.context));
+    await settle();
+    session.read();
+    session.read();
+    expect(session.getCoach().step).toBeNull();
+    session.setMarket(1);
+    expect(session.getCoach()).toMatchObject({ step: { trigger: { kind: 'market', round: 1 } }, holdsMarket: true, focus: [{ kind: 'market-card' }] });
+    session.read();
+    expect(session.getCoach().holdsMarket).toBe(false);
+  });
+
   it('offers only the loads the lesson allows', async () => {
     const session = startTutorialSession(BASICS);
     await settle();

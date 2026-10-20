@@ -49,6 +49,8 @@ export interface ResolutionInput {
   readonly round: number | null;
   /** Hold everything (the reroll card is still open). */
   readonly paused: boolean;
+  /** Stay on the market card once its rows are in (the tutorial explains the prices there). */
+  readonly holdMarket?: boolean;
   readonly seats: readonly BeatSeat[];
   readonly angles: readonly number[];
   readonly laneOf: (id: PlayerId) => number;
@@ -125,7 +127,7 @@ export function stageShipState(stage: ResolutionStage, beatIndex: number, voyage
 }
 
 export function useRoundResolution(input: ResolutionInput): Resolution {
-  const { events, privateEvents, round, paused, seats, angles, laneOf, viewer, nameOf, weather, onFinish } = input;
+  const { events, privateEvents, round, paused, seats, angles, laneOf, viewer, nameOf, weather, onFinish, holdMarket = false } = input;
   // Who is wanted this round (§9.6, marked at the round's start): a red flag goes up on their
   // islands for a moment, then the voyage event's card (§5 step 5), then the roles are revealed.
   const wantedIds = useMemo(() => events.flatMap((e) => (e.type === 'wanted-marked' && e.round === round ? e.players : [])), [events, round]);
@@ -197,6 +199,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   const [flightsShown, setFlightsShown] = useTicker(flights.length, PACE.flight, stage === 'settle', `${round}-settle`);
   useEffect(() => {
     if (stage === 'market' && rowsShown >= rows.length) {
+      if (holdMarket) return undefined;
       const timer = setTimeout(() => setStage('settle'), PACE.afterMarket);
       return () => clearTimeout(timer);
     }
@@ -206,7 +209,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
       return () => clearTimeout(timer);
     }
     return undefined;
-  }, [stage, rowsShown, rows.length, flightsShown, flights.length, viewer]); // finish reads a ref
+  }, [stage, rowsShown, rows.length, flightsShown, flights.length, viewer, holdMarket]); // finish reads a ref
 
   // How far the table is built at each stage.
   const cutoff = useMemo(() => {

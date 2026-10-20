@@ -59,6 +59,8 @@ export type CoachTrigger =
   | { readonly kind: 'decision'; readonly round: number; readonly phase: DecisionPhase }
   /** While that round's resolution plays. */
   | { readonly kind: 'resolution'; readonly round: number }
+  /** When that round's resolution reaches the market card (it waits there until the step is read). */
+  | { readonly kind: 'market'; readonly round: number }
   /** After the last resolution has played. */
   | { readonly kind: 'end' };
 
@@ -81,6 +83,18 @@ export type FocusTarget =
   | { readonly kind: 'reroll' }
   /** The decision's submit button, lit once your choice is complete. */
   | { readonly kind: 'submit' }
+  /** A role card in the hand ('none' is 「不部署」). */
+  | { readonly kind: 'role'; readonly role: RoleId | 'none' }
+  /** The 「＋」 over a player's ship, to send the picked role there. */
+  | { readonly kind: 'target'; readonly player: PlayerId }
+  /** A broker's 漲／跌 button on the market strip. */
+  | { readonly kind: 'bet'; readonly good: GoodId; readonly direction: 1 | -1 }
+  /** A warehouse stack, until `count` of its crates are on the ship. */
+  | { readonly kind: 'crate'; readonly good: GoodId; readonly count: number }
+  /** A building's card in the building list, or the button that opens the list while it is closed. */
+  | { readonly kind: 'build'; readonly building: BuildingId }
+  /** The market card of a resolution: how each price moved. */
+  | { readonly kind: 'market-card' }
   /** The voyage event card, while it is shown at the start of a resolution. */
   | { readonly kind: 'event' }
   /** What moves the resolution on (「繼續」「開始航程」, the receipt's 「點任意處繼續」). */
@@ -89,7 +103,12 @@ export type FocusTarget =
   | { readonly kind: 'draft' }
   | { readonly kind: 'reveal' }
   /** The rules book button. */
-  | { readonly kind: 'rules' };
+  | { readonly kind: 'rules' }
+  /** A question the table asks before going on (「還沒做完」, submit anyway?). */
+  | { readonly kind: 'dialog' };
+
+/** Some targets lit together: done once any of them is (a choice between ships, say). */
+export type GuideStep = FocusTarget | readonly FocusTarget[];
 
 /** One thing the host explains; `todo` is what to do next, kept on screen while you do it. */
 export interface CoachStep {
@@ -99,6 +118,11 @@ export interface CoachStep {
   readonly title: string;
   readonly lines: readonly string[];
   readonly todo?: string;
+  /**
+   * While you carry out `todo`: what to click, in order. Only the first one not done yet is lit
+   * (then 「提交」 once the choice is complete); without it the step's `focus` stays lit.
+   */
+  readonly guide?: readonly GuideStep[];
 }
 
 export interface TutorialScript {

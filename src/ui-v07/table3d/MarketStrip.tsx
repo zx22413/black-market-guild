@@ -53,6 +53,8 @@ export function MarketStrip({
                   type="button"
                   className={`bet ${same(bets.chosen, bet) ? 'on' : ''} ${bets.todo && offered ? 'todo' : ''}`}
                   disabled={!offered}
+                  data-bet={`${g}${direction === 1 ? '+' : '-'}`}
+                  data-done={same(bets.chosen, bet)}
                   onClick={() => bets.onBet(bet)}
                   aria-label={`押${GOOD_LABELS[g]}${direction === 1 ? '漲' : '跌'}`}
                 >

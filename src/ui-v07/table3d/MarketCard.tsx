@@ -37,7 +37,7 @@ function PriceScale({ before, after }: { readonly before: number; readonly after
 
 export function MarketCard({ rows, shown }: { readonly rows: readonly MarketRow[]; readonly shown: number }) {
   return (
-    <div className="market-card">
+    <div className="market-card" data-focus="market-card">
       <header>黑市成交</header>
       <table>
         <tbody>

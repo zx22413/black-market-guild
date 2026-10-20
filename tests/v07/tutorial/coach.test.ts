@@ -63,4 +63,15 @@ describe('coachView', () => {
     expect(coachView(STEPS, 2, at({ decision: R1 })).pulse).toBe(false);
     expect(coachView(STEPS, 2, at({ decision: R1, draftReady: true })).pulse).toBe(true);
   });
+
+  it('shows a market step when that round reaches its market card, and holds the card until it is read', () => {
+    const steps: readonly CoachStep[] = [
+      { trigger: { kind: 'resolution', round: 1 }, title: 'r', lines: [], focus: [{ kind: 'event' }] },
+      { trigger: { kind: 'market', round: 1 }, title: 'm', lines: [], focus: [{ kind: 'market-card' }] },
+    ];
+    expect(coachView(steps, 1, at({ resolvingRound: 1 }))).toMatchObject({ step: null, holdsMarket: false });
+    expect(coachView(steps, 1, at({ resolvingRound: 1, marketRound: 1 }))).toMatchObject({ step: steps[1], holdsMarket: true });
+    expect(coachView(steps, 0, at({ resolvingRound: 1, marketRound: 1 }))).toMatchObject({ step: steps[0], holdsMarket: true });
+    expect(coachView(steps, 2, at({ resolvingRound: 1, marketRound: 1 })).holdsMarket).toBe(false);
+  });
 });

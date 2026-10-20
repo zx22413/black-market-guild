@@ -1,6 +1,6 @@
 import { betOn, roleOn, rerollOrKeep } from './allow';
 import { BOT, F, R, SEATS, fee, goods, nameOf, shortRules } from './seats';
-import type { CoachStep, CoachTrigger, FocusTarget, TutorialScript } from './types';
+import type { CoachStep, CoachTrigger, FocusTarget, GuideStep, TutorialScript } from './types';
 
 // The role lessons (docs/tutorial-outline.md §5): each is one round in which your investment is
 // played for you and you make one role decision, then see it resolve.
@@ -14,12 +14,20 @@ const DEPLOY: CoachTrigger = { kind: 'decision', round: 1, phase: 'role-deployme
 const RESOLVING: CoachTrigger = { kind: 'resolution', round: 1 };
 const END: CoachTrigger = { kind: 'end' };
 
-const step = (trigger: CoachTrigger, title: string, focus: readonly FocusTarget[], lines: readonly string[], todo?: string): CoachStep => ({
+const step = (
+  trigger: CoachTrigger,
+  title: string,
+  focus: readonly FocusTarget[],
+  lines: readonly string[],
+  todo?: string,
+  guide?: readonly GuideStep[],
+): CoachStep => ({
   trigger,
   title,
   focus,
   lines,
   ...(todo === undefined ? {} : { todo }),
+  ...(guide === undefined ? {} : { guide }),
 });
 
 /** Said before the first role a lesson asks for. */
@@ -32,7 +40,7 @@ const deployIntro = step(DEPLOY, '部署角色', [F.hand], [
  * While the round resolves: what to watch, never the result (the explanation comes at the end).
  * The voyage event card opens the resolution, so it is lit with what moves the show on.
  */
-const watch = (focus: readonly FocusTarget[], line: string): CoachStep => step(RESOLVING, '看結算', [...focus, F.event, F.advance], [line]);
+const watch = (focus: readonly FocusTarget[], line: string): CoachStep => step(RESOLVING, '看結算', [...focus, F.event], [line]);
 const done = (next: string): CoachStep => step(END, '情境完成', [F.rank], [next]);
 
 const scenario = (script: Omit<TutorialScript, 'rules' | 'seats'>): TutorialScript => ({ ...script, rules: shortRules(1), seats: SEATS });
@@ -66,6 +74,7 @@ export const GUARD: TutorialScript = scenario({
         `守別人的船、而那艘船抵達時，還能從銀行拿 ${guard.escortFee} G 護航費。`,
       ],
       `派護衛守自己的船（部署費 ${fee('guard')} G）。`,
+      [F.role('guard'), F.target('p1')],
     ),
     watch([], '角色一次全部揭露，接著看你的船：起始骰值、護衛的加成，再判定抵達或沉沒。'),
     step(END, '差一點就沉了', [F.island('p1'), F.plate('p1')], [
@@ -105,6 +114,7 @@ export const PIRATE: TutorialScript = scenario({
         `船上載著通緝者的貨時，戰利品再多 ${R.wanted.lootBonus} G。`,
       ],
       `派海盜鎖定${vande}的船（部署費 ${fee('pirate')} G）。`,
+      [F.role('pirate'), F.target(BOT.vande)],
     ),
     watch([], `看${vande}的船：海盜的 ${pirate.modifier} 會不會讓它沉下去。`),
     step(END, '擊沉', [F.island(BOT.vande), F.plate('p1')], [
@@ -143,6 +153,7 @@ export const INTEL: TutorialScript = scenario({
       [F.hand, F.island('p1')],
       ['情報商人鎖定一艘船，看它的原始骰值，再決定要不要重擲；重擲就必須接受新結果。', '做決定時，你還不知道航海事件，也不知道別人派了什麼角色。'],
       `派情報商人看自己的船（部署費 ${fee('intel')} G）。`,
+      [F.role('intel'), F.target('p1')],
     ),
     step(
       { kind: 'decision', round: 1, phase: 'intel-reroll' },
@@ -191,6 +202,7 @@ export const SMUGGLER: TutorialScript = scenario({
         `船上有任何人的護衛，你就被抓，罰款 ${smuggler.fine} G；船沉了又遇到海盜，私貨被搶走。`,
       ],
       '選一艘對手的船夾帶私貨。',
+      [F.role('smuggler'), [F.target(BOT.vande), F.target(BOT.tide)]],
     ),
     watch([], '角色揭露時，看看你搭的那艘船上有沒有護衛。'),
     step(END, '揭曉', [F.island(BOT.vande), F.island(BOT.tide), F.plate('p1')], [
@@ -230,6 +242,7 @@ export const ARMS_COVER: TutorialScript = scenario({
       [F.hand, F.island('p1')],
       ['把自己的走私商人派上自己載著軍火的船，軍火就不會被沒收。他不賺錢，被護衛撞見也不罰款。', '走私港的玩家不能這樣做：他的軍火不能被掩護。'],
       '派走私商人上自己的船掩護軍火，或不派，看看會怎樣。',
+      [F.role('smuggler'), F.target('p1')],
     ),
     watch([], '角色揭露時，看看有沒有人派護衛守你的船。'),
     step(END, '揭曉', [F.island('p1'), F.plate(BOT.vande)], [
@@ -280,6 +293,7 @@ export const BROKER: TutorialScript = scenario({
         '這回合木材的需求只有 1，你的船上有 1 木材。',
       ],
       `在黑市列押木材會漲，並指定自己的船（部署費 ${fee('broker')} G）。`,
+      [F.role('broker'), F.bet('wood', 1), F.target('p1')],
     ),
     watch([F.price('wood')], '看木材：需求加上你押的 +1 之後，到港量夠不夠。'),
     step(END, '押對了', [F.price('wood'), F.plate('p1')], [

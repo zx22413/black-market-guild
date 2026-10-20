@@ -29,6 +29,8 @@ export interface TutorialSession extends GameSession {
   setShown(shownRound: number, ended: boolean): void;
   /** What your choice on the table would submit right now (null until it is a legal one). */
   setDraft(action: Action | null): void;
+  /** A round's resolution has reached its market card. */
+  setMarket(round: number): void;
 }
 
 /** Your seat: the script plays the decisions you do not make, the rest wait for you with fewer options. */
@@ -42,7 +44,7 @@ function yourSeat(script: TutorialScript, human: Controller): Controller {
 
 const scriptedSeat = (script: TutorialScript): Controller => ({ decide: async (context) => scriptedAction(script, context) });
 
-function momentOf(script: TutorialScript, raw: SessionSnapshot, shownRound: number, ended: boolean, draft: Action | null): CoachMoment {
+function momentOf(script: TutorialScript, raw: SessionSnapshot, shownRound: number, ended: boolean, draft: Action | null, marketRound: number): CoachMoment {
   const request = raw.requests[0];
   const resolving = raw.events.reduce((n, e) => (e.type === 'roles-revealed' ? Math.max(n, e.round) : n), 0);
   return {
@@ -50,6 +52,7 @@ function momentOf(script: TutorialScript, raw: SessionSnapshot, shownRound: numb
     shownRound,
     resolvingRound: resolving,
     ended,
+    marketRound,
     draftReady: request !== undefined && draft !== null && isReady(script, request.context, draft),
   };
 }
@@ -67,10 +70,11 @@ export function startTutorialSession(script: TutorialScript): TutorialSession {
   let read = 0;
   let shown = { round: 0, ended: false };
   let draft: Action | null = null;
-  let coach = coachView(script.coach, read, momentOf(script, inner.getSnapshot(), 0, false, null));
+  let market = 0;
+  let coach = coachView(script.coach, read, momentOf(script, inner.getSnapshot(), 0, false, null, 0));
 
   const refresh = (): void => {
-    coach = coachView(script.coach, read, momentOf(script, inner.getSnapshot(), shown.round, shown.ended, draft));
+    coach = coachView(script.coach, read, momentOf(script, inner.getSnapshot(), shown.round, shown.ended, draft, market));
     listeners.forEach((l) => l());
   };
   inner.subscribe(refresh);
@@ -87,6 +91,11 @@ export function startTutorialSession(script: TutorialScript): TutorialSession {
     read: () => {
       if (coach.step === null) return;
       read += 1;
+      refresh();
+    },
+    setMarket: (round) => {
+      if (round <= market) return;
+      market = round;
       refresh();
     },
     setDraft: (action) => {
