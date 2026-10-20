@@ -151,11 +151,11 @@ export const BASICS: TutorialScript = {
       ],
       '把 1 木材、1 香料裝上船，然後提交。',
     ),
-    step(resolving(1), '航行骰', [F.island('p1'), F.bar], [
+    step(resolving(1), '航行骰', [F.event, F.advance], [
       `每艘出航的船擲一顆 1d6，結算時才公開，連船東自己都不知道。最終值 ${successMin}～${dieMax} 抵達，1～${successMin - 1} 沉沒。`,
       '每回合還會翻開一張航海事件，在大家決定之後才公開。這回合是「風平浪靜」，沒有效果。',
     ]),
-    step(resolving(1), '看結算', [F.log, F.rank], [
+    step(resolving(1), '看結算', [F.log, F.rank, F.advance], [
       '接下來每艘船依序揭曉骰值與結果，抵達的船再到黑市賣貨。',
       '頂部的日誌鈕可以回看每一筆收支；右上角的排行是目前的總財富。',
     ]),
@@ -189,7 +189,7 @@ export const BASICS: TutorialScript = {
       ],
       `派護衛守自己的船（部署費 ${fee('guard')} G）。`,
     ),
-    step(resolving(2), '暴風雨', [F.island('p1'), F.bar], [
+    step(resolving(2), '暴風雨', [F.event, F.advance], [
       `這回合翻到暴風雨：所有船 ${R.voyageEvents.storm}。航海事件在大家決定之後才公開，誰都來不及調整。`,
       '看看你的船，和其他人的船撐不撐得住。',
     ]),
@@ -225,7 +225,7 @@ export const BASICS: TutorialScript = {
       ],
       `派海盜鎖定${vande}的船（部署費 ${fee('pirate')} G）。`,
     ),
-    step(resolving(3), '順風', [F.island(BOT.vande), F.bar], [
+    step(resolving(3), '順風', [F.event, F.advance], [
       `這回合是順風：所有船 +${R.voyageEvents.tailwind}。看看海盜的 ${pirate.modifier} 抵不抵得過順風。`,
     ]),
 
@@ -255,7 +255,7 @@ export const BASICS: TutorialScript = {
       ['你的船原始骰值是 2，照這樣會沉。要不要重擲，由你決定。'],
       '選擇重擲，或維持原本的骰值。',
     ),
-    step(resolving(4), '看結算', [F.island('p1'), F.bar], ['角色揭露時，大家都看得到哪艘船被重擲，但原本的骰值永遠只有你知道。']),
+    step(resolving(4), '看結算', [F.event, F.advance], ['角色揭露時，大家都看得到哪艘船被重擲，但原本的骰值永遠只有你知道。']),
 
     // ── Round 5: the smuggler, and arms ──
     step(
@@ -275,7 +275,7 @@ export const BASICS: TutorialScript = {
       ],
       '選一艘對手的船夾帶私貨。',
     ),
-    step(resolving(5), '看結算', [F.island(BOT.vande), F.island(BOT.tide), F.bar], ['角色揭露時，看看誰的船上有護衛、誰的船上有走私商人。']),
+    step(resolving(5), '看結算', [F.event, F.advance], ['角色揭露時，看看誰的船上有護衛、誰的船上有走私商人。']),
 
     // ── Round 6: the broker ──
     step(invest(6), '上回合：走私', [F.island(BOT.vande), F.plate('p1')], [
@@ -301,7 +301,7 @@ export const BASICS: TutorialScript = {
       ],
       `在黑市列押木材會漲，並指定自己的船（部署費 ${fee('broker')} G）。`,
     ),
-    step(resolving(6), '看結算', [F.price('wood'), F.island('p1'), F.bar], ['看木材：需求加上你押的 +1 之後，到港量夠不夠。']),
+    step(resolving(6), '看結算', [F.price('wood'), F.event, F.advance], ['看木材：需求加上你押的 +1 之後，到港量夠不夠。']),
     step({ kind: 'end' }, '押對了', [F.price('wood'), F.plate('p1')], [
       '你押漲讓木材需求從 1 變 2，只到港 1 木材，價格上漲：你拿到獎金，你的船賣木材時再多漲 2 格。',
     ]),

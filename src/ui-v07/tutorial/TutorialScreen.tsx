@@ -60,7 +60,7 @@ export function TutorialScreen({ script, next, onReplay, onNext, onExit }: Tutor
       {ready && (
         <>
           {blocking && <div className="coach-block" aria-hidden="true" />}
-          <FocusMask targets={coach.focus} pulse={coach.ready} />
+          <FocusMask targets={coach.focus} pulse={coach.pulse} />
           <CoachCard view={coach} onRead={session.read} onSkip={onExit} endActions={endActions} />
         </>
       )}

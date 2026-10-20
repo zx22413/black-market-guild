@@ -29,6 +29,8 @@ export interface CoachView {
   readonly todo: string | null;
   /** Your choice is complete: only 「提交」 is lit, to press it. */
   readonly ready: boolean;
+  /** What is lit is to be pressed now (「提交」, or 「繼續」「開始航程」 between steps): its ring breathes. */
+  readonly pulse: boolean;
   /** What is lit: the step being read, or while you decide, the last step before the decision. */
   readonly focus: readonly FocusTarget[];
 }
@@ -56,6 +58,12 @@ export function coachView(steps: readonly CoachStep[], read: number, moment: Coa
   const last = read > 0 ? steps[read - 1] : undefined;
   const todo = !holdsDecision && last?.todo !== undefined && isDecision(last.trigger, moment.decision) ? last.todo : null;
   const ready = step === null && todo !== null && moment.draftReady === true;
-  const focus: readonly FocusTarget[] = ready ? [{ kind: 'submit' }] : (step?.focus ?? (todo !== null ? (last?.focus ?? []) : []));
-  return { step, number: Math.min(read + 1, steps.length), total: steps.length, holdsDecision, todo, ready, focus };
+  // Nothing to read or do: whatever moves the resolution on is what to press (lit only while shown).
+  const idle = step === null && todo === null;
+  const focus: readonly FocusTarget[] = ready
+    ? [{ kind: 'submit' }]
+    : idle
+      ? [{ kind: 'advance' }]
+      : (step?.focus ?? (last?.focus ?? []));
+  return { step, number: Math.min(read + 1, steps.length), total: steps.length, holdsDecision, todo, ready, pulse: ready || idle, focus };
 }

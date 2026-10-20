@@ -15,7 +15,7 @@ export function VoyageEventCard({ event, onDone }: { readonly event: VoyageEvent
   const title = VOYAGE_EVENT_LABELS[event];
   return (
     <div className="event-card-veil" style={{ animationDuration: `${EVENT_CARD_MS}ms` }} role="dialog" aria-label={`航海事件：${title}`} onClick={onDone}>
-      <div className="event-card" style={{ animationDuration: `${EVENT_CARD_MS}ms` }} onAnimationEnd={onDone}>
+      <div className="event-card" data-focus="event" style={{ animationDuration: `${EVENT_CARD_MS}ms` }} onAnimationEnd={onDone}>
         <small className="event-card-kind">航海事件</small>
         <div className="event-card-emblem">
           <img src={cardArtUrl({ kind: 'voyage', id: event })} alt="" />

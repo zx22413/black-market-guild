@@ -39,4 +39,6 @@ export const F = {
   reveal: { kind: 'reveal' },
   rules: { kind: 'rules' },
   submit: { kind: 'submit' },
+  event: { kind: 'event' },
+  advance: { kind: 'advance' },
 } as const satisfies Record<string, FocusTarget | ((...args: never[]) => FocusTarget)>;

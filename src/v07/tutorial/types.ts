@@ -81,6 +81,10 @@ export type FocusTarget =
   | { readonly kind: 'reroll' }
   /** The decision's submit button, lit once your choice is complete. */
   | { readonly kind: 'submit' }
+  /** The voyage event card, while it is shown at the start of a resolution. */
+  | { readonly kind: 'event' }
+  /** What moves the resolution on (「繼續」「開始航程」, the receipt's 「點任意處繼續」). */
+  | { readonly kind: 'advance' }
   /** The island draft's two cards, and the reveal of everyone's islands. */
   | { readonly kind: 'draft' }
   | { readonly kind: 'reveal' }

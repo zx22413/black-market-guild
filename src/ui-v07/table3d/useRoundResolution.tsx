@@ -321,7 +321,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   const current = groups[Math.max(0, groupsShown - 1)];
   const allRevealed = groupsShown >= groups.length;
   const go = (label: string, action: () => void) => (
-    <button type="button" className="primary" onClick={action}>
+    <button type="button" className="primary" data-focus="advance" onClick={action}>
       {label}
     </button>
   );
