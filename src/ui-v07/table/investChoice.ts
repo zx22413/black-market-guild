@@ -37,27 +37,36 @@ export interface BuildOption {
   readonly reason: string | null;
 }
 
-/** Every building, offered or not, with the reason it is not (§10.1, §10.2). */
-export function buildOptions(context: DecisionContext, options: readonly InvestAction[]): BuildOption[] {
+/**
+ * Every building, offered or not, with the reason it is not (§10.1, §10.2). `load` is the cargo
+ * already on the ship: crates loaded cannot also go into a building (§8), so a building the
+ * remaining stock cannot pay for is greyed out and says which goods are on the ship.
+ */
+export function buildOptions(context: DecisionContext, options: readonly InvestAction[], load: Goods = NO_LOAD): BuildOption[] {
   const { rules, myStock } = context.view;
   const player = me(context);
   const offered = new Set(options.map((a) => a.build));
   return BUILDING_IDS.map((id): BuildOption => {
     const goods = buildingCost(rules, id);
     const cash = rules.buildings.costs[id].cash;
-    const legal = offered.has(id);
+    const legal = offered.has(id) && options.some((a) => a.build === id && sameGoods(a.load, load));
     const lacking = GOODS.filter((g) => myStock[g] < goods[g]).map((g) => GOOD_LABELS[g]);
+    const onShip = GOODS.filter((g) => myStock[g] >= goods[g] && myStock[g] - load[g] < goods[g]).map((g) => GOOD_LABELS[g]);
     const reason = legal
       ? null
-      : player.buildings.includes(id)
-        ? '已經有了'
-        : player.buildings.length >= rules.buildings.maxPerPlayer
-          ? `最多 ${rules.buildings.maxPerPlayer} 棟`
-          : lacking.length > 0
-            ? `材料不足：${lacking.join('、')}`
-            : player.cash < cash
-              ? `現金不足（${cash} G）`
-              : '這回合不能蓋';
+      : offered.has(id)
+        ? onShip.length > 0
+          ? `${onShip.join('、')}已裝船`
+          : '現金不足（還要付出航成本）'
+        : player.buildings.includes(id)
+          ? '已經有了'
+          : player.buildings.length >= rules.buildings.maxPerPlayer
+            ? `最多 ${rules.buildings.maxPerPlayer} 棟`
+            : lacking.length > 0
+              ? `材料不足：${lacking.join('、')}`
+              : player.cash < cash
+                ? `現金不足（${cash} G）`
+                : '這回合不能蓋';
     return { id, cash, goods, legal, reason };
   });
 }
@@ -69,10 +78,22 @@ export function actionFor(options: readonly InvestAction[], choice: InvestChoice
   return options.find((a) => a.build === choice.build && sameGoods(a.load, choice.load));
 }
 
-/** Choose a building; keeps the cargo when it is still legal with it, otherwise empties the ship. */
+/**
+ * Choose a building. The cargo stays when it is still legal with it; otherwise only the crates
+ * that no longer fit come off (the largest legal part of the cargo stays), never the whole ship.
+ */
 export function withBuild(options: readonly InvestAction[], choice: InvestChoice, build: BuildingId | null): InvestChoice {
   const kept = { build, load: choice.load };
-  return actionFor(options, kept) ? kept : { build, load: NO_LOAD };
+  if (actionFor(options, kept)) return kept;
+  const fits = options
+    .filter((a) => a.build === build && GOODS.every((g) => a.load[g] <= choice.load[g]))
+    .reduce<Goods>((best, a) => (unitsOf(a.load) > unitsOf(best) ? a.load : best), NO_LOAD);
+  return { build, load: fits };
+}
+
+/** The crates `after` no longer carries compared with `before` (what a change of building took off). */
+export function unloadedBy(before: Goods, after: Goods): Goods {
+  return Object.fromEntries(GOODS.map((g) => [g, Math.max(0, before[g] - after[g])])) as Goods;
 }
 
 /** One more unit of `good` on the ship, if that is still a legal action. */

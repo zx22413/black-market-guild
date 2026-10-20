@@ -20,6 +20,7 @@ import {
   stockSplit,
   todoReminders,
   unloadOne,
+  unloadedBy,
   withBuild,
   type InvestChoice,
 } from '../table/investChoice';
@@ -48,6 +49,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   // Picking a building or "不蓋" both count as dealing with the building; until then it glows.
   const [buildDecided, setBuildDecided] = useState(false);
   const [reminding, setReminding] = useState<readonly string[] | null>(null);
+  // Crates a change of building took off the ship, said beside the ship until the next change.
+  const [unloaded, setUnloaded] = useState<string | null>(null);
   // This round's production arriving in the warehouse: shown in gold for a moment, then plain.
   const [minting, setMinting] = useState(true);
   const buildArea = useRef<HTMLDivElement>(null);
@@ -58,6 +61,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     setPicking(false);
     setBuildDecided(false);
     setReminding(null);
+    setUnloaded(null);
     setMinting(true);
     const timer = setTimeout(() => setMinting(false), MINT_SECONDS * 1000);
     return () => clearTimeout(timer);
@@ -78,7 +82,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   // The deciding player's own island (on a hot-seat table it is not always the one in front).
   const home = angles[laneOf(viewer)]!;
   const me = board.players[viewer];
-  const builds = buildOptions(context, options);
+  const builds = buildOptions(context, options, choice.load);
   const split = stockSplit(context, choice);
   const summary = investSummary(context, choice);
   const notes = investNotes(context, choice);
@@ -100,10 +104,15 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   // Load one crate of a good onto the ship: from a click on its stack or on the stack's label.
   const loadGood = (g: GoodId) => {
     markHintSeen('load-cargo');
+    setUnloaded(null);
     setChoice((c) => loadOne(options, c, g));
   };
   const pickBuild = (build: BuildingId | null) => {
-    setChoice(withBuild(options, choice, build));
+    const next = withBuild(options, choice, build);
+    const off = unloadedBy(choice.load, next.load);
+    const names = GOODS.filter((g) => off[g] > 0).map((g) => `${off[g]} ${GOOD_LABELS[g]}`);
+    setUnloaded(names.length > 0 ? `可裝貨量變少，已卸下 ${names.join('、')}` : null);
+    setChoice(next);
     setBuildDecided(true);
     setPicking(false);
   };
@@ -270,6 +279,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
               點貨卸下
             </span>
           )}
+          {unloaded && <span className="note-hint">{unloaded}</span>}
           {at('ship')}
         </div>
       ),
@@ -293,6 +303,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
         />
         <ShipCargo angle={home} load={choice.load} capacity={summary.capacity} onUnload={(g) => {
           markHintSeen('unload-cargo');
+          setUnloaded(null);
           setChoice((c) => unloadOne(c, g));
         }} />
         {choice.build && <BuildingPreview angle={home} building={choice.build} color={seats[laneOf(viewer)]!.color} />}

@@ -15,7 +15,9 @@ import {
   stockSplit,
   submitLabel,
   unloadOne,
+  unloadedBy,
   withBuild,
+  unitsOf,
 } from '../../src/ui-v07/table/investChoice';
 import { G, edit, start } from '../v07/game/helpers';
 
@@ -78,6 +80,43 @@ describe('investment choice on the island (only legal actions)', () => {
     const broke = scenario({ cash: 50 });
     expect(buildOptions(broke.context, broke.options).find((c) => c.id === 'shipyard')!.reason).toBe('現金不足（100 G）');
     for (const card of buildOptions(broke.context, broke.options)) expect(card.legal).toBe(broke.options.some((a) => a.build === card.id));
+  });
+
+  it('greys out a building whose materials are already on the ship, and frees it when they come off', () => {
+    const { context, options } = scenario();
+    const loaded = loadOne(options, EMPTY_CHOICE, 'wood');
+    const shipyard = (c: typeof loaded) => buildOptions(context, options, c.load).find((card) => card.id === 'shipyard')!;
+    expect(shipyard(loaded)).toMatchObject({ legal: false, reason: '木材已裝船' });
+    expect(shipyard(unloadOne(loaded, 'wood'))).toMatchObject({ legal: true, reason: null });
+    // The card the player already chose stays selectable.
+    const chosen = withBuild(options, EMPTY_CHOICE, 'shipyard');
+    expect(shipyard(chosen).legal).toBe(true);
+  });
+
+  it('says so when the ship cost, not the materials, rules a building out after loading', () => {
+    const { context, options } = scenario({ cash: 150 });
+    const loaded = loadOne(options, EMPTY_CHOICE, 'spice');
+    expect(buildOptions(context, options, loaded.load).find((c) => c.id === 'shipyard')).toMatchObject({ legal: false, reason: '現金不足（還要付出航成本）' });
+  });
+
+  it('reaches the same legal action whether the building or the cargo is chosen first', () => {
+    const { options } = scenario();
+    const buildFirst = loadOne(options, loadOne(options, withBuild(options, EMPTY_CHOICE, 'shipyard'), 'iron'), 'spice');
+    const loadFirst = withBuild(options, loadOne(options, loadOne(options, EMPTY_CHOICE, 'iron'), 'spice'), 'shipyard');
+    expect(loadFirst).toEqual(buildFirst);
+    expect(actionFor(options, loadFirst)).toBeDefined();
+  });
+
+  it('takes only the crates that no longer fit off the ship when the shipyard is dropped', () => {
+    const { options } = scenario();
+    let choice = withBuild(options, EMPTY_CHOICE, 'shipyard');
+    for (const good of ['iron', 'iron', 'spice', 'arms'] as const) choice = loadOne(options, choice, good);
+    expect(unitsOf(choice.load)).toBe(4);
+    const dropped = withBuild(options, choice, null);
+    // §8: capacity falls back to 3, so exactly one crate comes off and the rest stays.
+    expect(unitsOf(dropped.load)).toBe(3);
+    expect(unitsOf(unloadedBy(choice.load, dropped.load))).toBe(1);
+    expect(actionFor(options, dropped)).toBeDefined();
   });
 
   it('reminds about arms, the wanted mark and spice left behind', () => {
