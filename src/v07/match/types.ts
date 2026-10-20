@@ -7,6 +7,7 @@ import type {
   PlayerId,
   PrivateEvent,
   Rules,
+  Transition,
 } from '../game';
 
 /** Who sits in a seat (docs/architecture.md §5.1). */
@@ -59,4 +60,13 @@ export interface MatchLog {
   readonly privateEvents: readonly PrivateEvent[];
   readonly finalState: MatchState;
   readonly result: MatchResult;
+}
+
+export interface RunOptions {
+  /**
+   * Rewrites each transition (the match's opening one included) before any seat sees it. Only the
+   * beginner tutorial uses it, to fix what is still hidden — deck order, dice, island offers — so
+   * its scripted rounds play out as written; everything public must still come from real actions.
+   */
+  readonly stage?: (transition: Transition) => Transition;
 }

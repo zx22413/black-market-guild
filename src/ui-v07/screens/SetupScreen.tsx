@@ -40,9 +40,10 @@ function toSeatConfig(seat: SeatDraft, i: number): SeatConfig {
 interface SetupScreenProps {
   readonly onStart: (options: SessionOptions) => void;
   readonly onOnline: () => void;
+  readonly onTutorial: () => void;
 }
 
-export function SetupScreen({ onStart, onOnline }: SetupScreenProps) {
+export function SetupScreen({ onStart, onOnline, onTutorial }: SetupScreenProps) {
   const [seats, setSeats] = useState<readonly SeatDraft[]>(PRESETS[1]!.seats);
   const [seed, setSeed] = useState(randomSeed);
   const { min, max } = RULES_V07.players;
@@ -61,6 +62,9 @@ export function SetupScreen({ onStart, onOnline }: SetupScreenProps) {
         ))}
         <button className="v7-btn" onClick={onOnline}>
           線上房間
+        </button>
+        <button className="v7-btn" onClick={onTutorial}>
+          新手教學
         </button>
       </div>
 

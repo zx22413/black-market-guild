@@ -7,6 +7,7 @@ export type {
   EventListener,
   MatchLog,
   MatchSetup,
+  RunOptions,
   SeatConfig,
   SeatSetupInput,
   SyncController,

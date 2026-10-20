@@ -7,6 +7,8 @@ V0.7 的瀏覽器介面，與 V0.6 的 `src/ui` 並存，入口是 `v07.html`（
 | 位置 | 說明 |
 | --- | --- |
 | `session/gameSession.ts` | 單機對局：Bot 座位自行決定，真人座位等 UI 提交。 |
+| `session/tutorialSession.ts` | 新手教學的 session：Bot 照腳本、你的決定只留這一課允許的行動、講解步驟讀完前不把你的決定交給桌面；`gameSession.ts` 的 `startSession` 是兩者共用的部分。 |
+| `tutorial/` | 新手教學畫面：`TutorialMenu`（課程列表與完成記號，完成記號存本機 `progress.ts`）、`TutorialScreen`（一般的 3D 桌面＋講解卡，不顯示結果卡；講解讀完前用透明擋板擋住你的決定）、`CoachCard`（桌面旁的講解卡；讀完後縮成待辦，最後一步有再玩一次／下一課／回選單）、`FocusMask`／`focus.ts`（聚焦框：SVG 遮罩挖洞，每格畫面跟著目標更新，不吃點擊；目標用 `data-focus` 標記找元素，島嶼用 `table3d/islandMarks.tsx` 在島四周放的隱形標籤框出）。入口在開始畫面的「新手教學」。腳本在 `src/v07/tutorial`。 |
 | `session/board.ts` | 只用公開事件重建桌面（現金、倉庫、建築、船、角色、價格）；與引擎最終狀態一致有測試（`tests/ui-v07/`）。3D 場景之後也讀這裡。 |
 | `session/usePlayback.ts` | 逐筆播放公開事件、回合間暫停、同機輪流的換人遮蔽（換人前不顯示任何私有資訊）。 |
 | `table/` | `MatchView`（選 3D 或純面板）；純面板版：商會、市場、船隻面板，與選島／投資／部署／情報重擲四個決策表單（合法行動以 `legalActions` 為準）；兩版共用的選擇邏輯 `investChoice`、`deployChoice`。 |

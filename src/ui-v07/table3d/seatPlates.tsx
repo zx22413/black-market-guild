@@ -24,7 +24,7 @@ export function seatPlates(
     const label = status(s.id);
     const island = islandOf && isSideSeat(angles[i]!) ? islandOf(s.id) : null;
     const plate = (
-        <span className={`beat3d-plate inv-plate ${dimmed ? 'dimmed' : ''} ${isFarSeat(angles[i]!) ? 'plate-left' : ''}`} style={{ borderColor: s.color }}>
+        <span data-focus={`plate-${s.id}`} className={`beat3d-plate inv-plate ${dimmed ? 'dimmed' : ''} ${isFarSeat(angles[i]!) ? 'plate-left' : ''}`} style={{ borderColor: s.color }}>
           {s.isViewer ? '你' : s.name}
           {cashOf && <b className="plate-cash"> {cashOf(s.id)} G</b>}
           {!s.isViewer && p && (

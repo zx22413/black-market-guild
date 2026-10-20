@@ -13,18 +13,18 @@ import {
   type PrivateEvent,
   type Transition,
 } from '../game';
-import type { Controller, EventListener, MatchLog, MatchSetup, SyncController } from './types';
+import type { Controller, EventListener, MatchLog, MatchSetup, RunOptions, SyncController } from './types';
 
 function toConfig(setup: MatchSetup): MatchConfig {
   return { seed: setup.seed, players: setup.players, ...(setup.rules ? { rules: setup.rules } : {}) };
 }
 
-function start(setup: MatchSetup): Transition {
+function start(setup: MatchSetup, options: RunOptions): Transition {
   const created = createMatch(toConfig(setup));
   if (!created.ok) {
     throw new Error(`cannot start match: ${created.error.code}: ${created.error.message}`);
   }
-  return created.value;
+  return options.stage ? options.stage(created.value) : created.value;
 }
 
 /** Every seat still to decide in the current phase, with what each may see. */
@@ -42,7 +42,7 @@ function nextDecision(state: MatchState): DecisionContext | null {
 }
 
 /** Applies an action from a seat's controller, refusing actions made for another seat. */
-function apply(state: MatchState, seat: PlayerId, action: Action): Transition {
+function apply(state: MatchState, seat: PlayerId, action: Action, options: RunOptions = {}): Transition {
   if (action.playerId !== seat) {
     throw new Error(`controller for ${seat} returned an action for ${action.playerId}`);
   }
@@ -50,7 +50,7 @@ function apply(state: MatchState, seat: PlayerId, action: Action): Transition {
   if (!result.ok) {
     throw new Error(`${seat} submitted an illegal action: ${result.error.code}: ${result.error.message}`);
   }
-  return result.value;
+  return options.stage ? options.stage(result.value) : result.value;
 }
 
 /** Recursively freezes a value so no controller can alter what other seats receive. */
@@ -117,14 +117,18 @@ class Recorder {
 }
 
 /** Plays a whole match with synchronous controllers; used for bot simulations. */
-export function runMatchSync(setup: MatchSetup, controllers: Readonly<Record<PlayerId, SyncController>>): MatchLog {
-  const initial = start(setup);
+export function runMatchSync(
+  setup: MatchSetup,
+  controllers: Readonly<Record<PlayerId, SyncController>>,
+  options: RunOptions = {},
+): MatchLog {
+  const initial = start(setup, options);
   deliver(controllers, initial);
   const recorder = new Recorder(initial);
   for (let ctx = nextDecision(recorder.state); ctx !== null; ctx = nextDecision(recorder.state)) {
     const seat = ctx.decision.playerId;
     const action = requireController(controllers, seat).decide(ctx);
-    const transition = apply(recorder.state, seat, action);
+    const transition = apply(recorder.state, seat, action, options);
     deliver(controllers, transition);
     recorder.record(transition, action);
   }
@@ -136,8 +140,12 @@ export function runMatchSync(setup: MatchSetup, controllers: Readonly<Record<Pla
  * simultaneous phase are asked at once; their secret answers are then applied in seat order,
  * so results do not depend on who answers first.
  */
-export async function runMatch(setup: MatchSetup, controllers: Readonly<Record<PlayerId, Controller>>): Promise<MatchLog> {
-  const initial = start(setup);
+export async function runMatch(
+  setup: MatchSetup,
+  controllers: Readonly<Record<PlayerId, Controller>>,
+  options: RunOptions = {},
+): Promise<MatchLog> {
+  const initial = start(setup, options);
   deliver(controllers, initial);
   const recorder = new Recorder(initial);
   for (let batch = pendingContexts(recorder.state); batch.length > 0; batch = pendingContexts(recorder.state)) {
@@ -146,7 +154,7 @@ export async function runMatch(setup: MatchSetup, controllers: Readonly<Record<P
     );
     batch.forEach((ctx, i) => {
       const action = answers[i]!;
-      const transition = apply(recorder.state, ctx.decision.playerId, action);
+      const transition = apply(recorder.state, ctx.decision.playerId, action, options);
       deliver(controllers, transition);
       recorder.record(transition, action);
     });
@@ -159,7 +167,7 @@ export function replayMatch(
   setup: MatchSetup,
   actions: readonly Action[],
 ): Omit<MatchLog, 'result' | 'actions' | 'actionRounds'> {
-  const recorder = new Recorder(start(setup));
+  const recorder = new Recorder(start(setup, {}));
   actions.forEach((action) => recorder.record(apply(recorder.state, action.playerId, action), action));
   return { events: recorder.events, privateEvents: recorder.privateEvents, finalState: recorder.state };
 }

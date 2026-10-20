@@ -83,7 +83,7 @@ export function RerollCard({ context, board, viewer, nameOf, onSubmit, rerolled,
 
   return (
     <div className="beat-backdrop reroll-backdrop" role="dialog" aria-modal="true" aria-label="情報重擲">
-      <div className="beat-card reroll">
+      <div data-focus="reroll" className="beat-card reroll">
         <header className="beat-head">
           <span>只有你看得到</span>
           <strong className="reroll-title">

@@ -1,0 +1,203 @@
+/* Beginner tutorial (docs/tutorial-outline.md): the host's card beside the table, and the lesson menu. */
+
+.coach {
+  position: fixed;
+  top: 64px;
+  left: 16px;
+  z-index: 90;
+  width: min(340px, calc(100vw - 32px));
+  max-height: calc(100vh - 200px);
+  overflow: auto;
+  padding: 14px 16px 12px;
+  border: 1px solid #b9a77d;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f5ecd4, #e8d9b2);
+  color: #2b2116;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.45);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  animation: coach-in 240ms ease-out;
+}
+.coach p {
+  margin: 8px 0 0;
+}
+.coach-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.coach-head strong {
+  font-size: var(--fs-title);
+}
+.coach-count {
+  font-size: var(--fs-note);
+  color: #6b5537;
+  white-space: nowrap;
+}
+.coach-next {
+  padding: 6px 10px;
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  background: rgb(224 166 60 / 0.18);
+  font-weight: 700;
+}
+.coach-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+.coach-foot button {
+  padding: 6px 14px;
+  border: 1px solid #b9a77d;
+  border-radius: 8px;
+  background: #efe3c4;
+  color: #2b2116;
+  cursor: pointer;
+}
+.coach-foot button.primary {
+  background: var(--accent);
+  border-color: #b9822a;
+  font-weight: 700;
+}
+/* While you carry out a step: only what to do, small, so the table stays clear. */
+.coach.coach-todo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: auto;
+  max-width: min(340px, calc(100vw - 32px));
+  padding: 8px 14px;
+  font-weight: 700;
+}
+.coach-todo-mark {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgb(224 166 60 / 0.3);
+  animation: coach-pulse 1.4s ease-in-out infinite;
+}
+@keyframes coach-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+@keyframes coach-pulse {
+  50% {
+    box-shadow: 0 0 0 7px rgb(224 166 60 / 0.1);
+  }
+}
+@media (max-width: 720px) {
+  .coach {
+    top: 56px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    max-height: 45vh;
+  }
+}
+
+/* ---------- lesson menu ---------- */
+.tut-menu h2 {
+  margin: 8px 0 0;
+  font-size: var(--fs-title);
+}
+.tut-lessons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tut-lesson {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.tut-lesson:hover {
+  border-color: var(--accent);
+}
+.tut-lesson-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tut-lesson-text small {
+  color: var(--muted);
+  font-size: var(--fs-note);
+}
+.tut-done {
+  position: relative;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+}
+.tut-done.on {
+  border-color: var(--good);
+  background: var(--good);
+}
+.tut-done.on::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid var(--bg);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* ---------- spotlight ---------- */
+.focus-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  animation: focus-in 260ms ease-out;
+}
+.focus-dark {
+  fill: rgb(4 10 14 / 0.72);
+}
+.focus-ring {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 6px rgb(224 166 60 / 0.8));
+}
+@keyframes focus-in {
+  from {
+    opacity: 0;
+  }
+}
+/* The marks that frame an island: a point each, never seen. */
+.focus-mark {
+  display: block;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+/* While the host's steps before your decision are read: the table is shown but cannot be clicked. */
+.coach-block {
+  position: fixed;
+  inset: 0;
+  z-index: 84;
+}

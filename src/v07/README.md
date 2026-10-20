@@ -46,6 +46,26 @@ V0.7 的 Bot，由原型 `src/proto/economy/bots` 移植。介面與 V0.6 相同
 
 V0.7 的 Match Runner，程式與 `src/match` 相同（說明見 [`src/match/README.md`](../match/README.md)），只改接 `src/v07/game` 與 `src/v07/bots`，預設規則是 `RULES_V07`：`setupFromSeats`、`runMatchSync`、`runMatch`、`replayMatch`、`botController`。V0.6 的 UI 與連線層仍使用 `src/match`，搬遷到第 4、5 階段時改接這裡。測試在 `tests/v07/match/`。
 
+Runner 的可選參數 `RunOptions.stage`：每個轉換（含開局）交給各座位之前先改寫一次，只給新手教學固定還沒公開的隨機結果用；不傳時行為不變。
+
+## `tutorial/`
+
+新手教學（[`docs/tutorial-outline.md`](../../docs/tutorial-outline.md)）：腳本化的對局，純邏輯、不接 UI。只改還沒公開的隨機結果（需求卡與航海事件的牌序、航行骰、情報重擲的新骰值、選島發牌），其他都由真的行動經過引擎產生，所以由公開事件重建的桌面一定和引擎一致。
+
+| 檔案 | 說明 |
+| --- | --- |
+| `types.ts` | 腳本型別：每回合的需求卡、事件、骰值、Bot 的計畫、你的決定（`choose` 由你在桌上選，否則照 `demo` 代打）、講解步驟（`CoachStep`，觸發點是你的某個決定之前、某回合結算中、或結束後；`focus` 是這一步要亮起的地方，只寫意義，畫面位置由 UI 決定）。 |
+| `stage.ts` | `tutorialStage(script)`：Runner 的 `stage` 掛勾。 |
+| `play.ts` | 把計畫變成合法行動（找不到就丟錯，規則變了腳本會先壞）；`allowedFor` 過濾你這一步能選的行動；`playTutorial` 無頭跑完整個腳本（測試用）。 |
+| `allow.ts` | 過濾條件：裝貨上限（保留所有較小的裝法，桌上才能一箱一箱加）、先選建築、指定角色與目標船、重擲與否。 |
+| `coach.ts` | `coachView`：目前該顯示哪個講解步驟、是否擋住你的決定、做決定時要顯示的待辦。 |
+| `seats.ts` | 共用座位（你在林場島）、只減少回合數的規則、講解文字引用的規則數字。 |
+| `basics.ts` | 完整教學：6 回合引導對局，五個角色依序在局內教。 |
+| `roleScenarios.ts` | 單課重玩（各 1 回合）：護衛、海盜、情報商人、走私商人、軍火掩護、莊家。 |
+| `islandsLesson.ts` | 開局選島：你自己 2 選 1，看完同時公開就結束。 |
+
+測試在 `tests/v07/tutorial/`（每一課照腳本演出、你所有能選的裝貨組合都不會破壞後面的劇情）與 `tests/ui-v07/tutorialChoices.test.ts`（桌上的選擇邏輯點得出每個示範動作）。
+
 ## `online/`
 
 V0.7 的連線房間，程式與 `src/online` 相同（說明見 [`src/online/README.md`](../online/README.md)），改接 V0.7 的 Runner 與 Bot：`PROTOCOL_VERSION` 為 2、座位數與起始現金取自 `RULES_V07`、空位由 V0.7 個性的 Bot 補上。伺服器入口是 `server/worker-v07.ts`（共用的 Worker／Durable Object 程式在 `server/rooms.ts`），只在本機以 `npm run server:dev:v07`（`wrangler.v07.jsonc`，port 8788）執行，不部署；`npm run online:smoke` 對它跑一局無頭連線測試。測試在 `tests/v07/online/`。

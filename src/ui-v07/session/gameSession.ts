@@ -1,6 +1,6 @@
 import type { DecisionContext } from '../../v07/bots';
 import { RULES_V07, type Rules, type Action, type MatchEvent, type MatchResult, type PlayerId, type PrivateEvent } from '../../v07/game';
-import { botController, runMatch, setupFromSeats, type Controller, type SeatConfig } from '../../v07/match';
+import { botController, runMatch, setupFromSeats, type Controller, type MatchSetup, type RunOptions, type SeatConfig } from '../../v07/match';
 
 /** A decision a local human seat still has to make. */
 export interface HumanRequest {
@@ -53,12 +53,32 @@ export interface SessionOptions {
  */
 export function startGameSession(options: SessionOptions): GameSession {
   const setup = setupFromSeats({ seed: options.seed, seats: options.seats, ...(options.rules ? { rules: options.rules } : {}) });
+  return startSession(
+    setup,
+    options.seats.map((s) => s.kind),
+    (id, human) => {
+      const bot = setup.bots[id];
+      return bot ? botController(bot) : human();
+    },
+  );
+}
+
+/**
+ * The session for any runner setup: `controllerFor` connects each seat, given a factory for a
+ * seat that waits for the UI. The tutorial uses it with scripted seats and a `stage` hook.
+ */
+export function startSession(
+  setup: MatchSetup,
+  kinds: readonly SeatConfig['kind'][],
+  controllerFor: (id: PlayerId, human: () => Controller) => Controller,
+  run: RunOptions = {},
+): GameSession {
   const listeners = new Set<() => void>();
   const resolvers = new Map<number, (action: Action) => void>();
   let nextRequestId = 1;
   let snapshot: SessionSnapshot = {
     status: 'running',
-    players: setup.players.map((p, i) => ({ ...p, kind: options.seats[i]!.kind })),
+    players: setup.players.map((p, i) => ({ ...p, kind: kinds[i] ?? 'remote' })),
     events: [],
     privateEvents: [],
     requests: [],
@@ -90,8 +110,7 @@ export function startGameSession(options: SessionOptions): GameSession {
 
   const controllers: Record<PlayerId, Controller> = {};
   setup.players.forEach(({ id }) => {
-    const bot = setup.bots[id];
-    controllers[id] = bot ? botController(bot) : humanController();
+    controllers[id] = controllerFor(id, humanController);
   });
   // Public events reach every seat; record them once, through the first seat.
   const firstSeat = setup.players[0]!.id;
@@ -104,7 +123,7 @@ export function startGameSession(options: SessionOptions): GameSession {
     },
   };
 
-  runMatch(setup, controllers).then(
+  runMatch(setup, controllers, run).then(
     (log) => update({ status: 'finished', result: log.result }),
     (error: unknown) => update({ status: 'error', error: error instanceof Error ? error.message : String(error) }),
   );

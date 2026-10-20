@@ -108,7 +108,7 @@ export function RankRail({ seats, board, rules, cashOf, status, rankStep }: Rank
 
   if (!open) {
     return (
-      <button type="button" className="rank-fold" onClick={() => setOpen(true)} aria-expanded={false}>
+      <button type="button" data-focus="rank" className="rank-fold" onClick={() => setOpen(true)} aria-expanded={false}>
         排行
       </button>
     );
@@ -120,7 +120,7 @@ export function RankRail({ seats, board, rules, cashOf, status, rankStep }: Rank
   const byId = new Map(standings.map((s) => [s.id, s]));
   const rows = [...seats].sort((a, b) => place(a.id) - place(b.id));
   return (
-    <aside className="rank-rail" aria-label="玩家排行">
+    <aside data-focus="rank" className="rank-rail" aria-label="玩家排行">
       <header>
         <b>排行</b>
         <LockHint icon={<InfoIcon />} text={WEALTH_RULE_TEXT} placement="down" />

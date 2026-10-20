@@ -34,7 +34,7 @@ export function IslandDraft({ context, onSubmit }: IslandDraftProps) {
   };
   return (
     <div className="beat-backdrop draft-backdrop" role="dialog" aria-modal="true" aria-label="選島">
-      <div className={`draft ${flying ? 'flying' : ''}`}>
+      <div data-focus="draft" className={`draft ${flying ? 'flying' : ''}`}>
         <header className="draft-head">
           <span>只有你看得到</span>
           <strong>選一座島，整局都用它</strong>
@@ -75,7 +75,7 @@ export function IslandReveal({ islands, seats, onClose }: IslandRevealProps) {
   const [open, setOpen] = useState<PlayerId | null>(null);
   return (
     <div className="beat-backdrop draft-backdrop" role="dialog" aria-modal="true" aria-label="島嶼公開">
-      <div className="isle-reveal">
+      <div data-focus="reveal" className="isle-reveal">
         <header className="draft-head">
           <strong>各商會的島</strong>
           <small>點一張卡看完整說明</small>

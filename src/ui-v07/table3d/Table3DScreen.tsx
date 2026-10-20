@@ -10,6 +10,7 @@ import type { GameSession, HumanRequest } from '../session/gameSession';
 import { useSession } from '../session/useSession';
 import { BookIcon, ExitIcon, LogIcon } from './icons';
 import { islandBadgePins } from './IslandBadge';
+import { islandMarkPins } from './islandMarks';
 import { IslandDraft, IslandReveal } from './IslandDraft';
 import { MarketStrip } from './MarketStrip';
 import { RankRail } from './RankRail';
@@ -42,9 +43,21 @@ export interface Table3DScreenProps {
   readonly onExit: () => void;
   /** Dev only: answer every decision with its first legal action and skip every show. */
   readonly autoplay?: boolean;
+  /** The result card at the end; the tutorial ends with its host instead. */
+  readonly showResult?: boolean;
+  /** Told what has finished playing: the last round whose resolution was seen, and the match's end. */
+  readonly onShown?: (shownRound: number, ended: boolean) => void;
+  /** Rounds in this match (the tutorial plays fewer than the official count). */
+  readonly rounds?: number;
+  /** Skip the reveal of everyone's islands before round 1. */
+  readonly skipIslandReveal?: boolean;
+  /** Invisible marks around each island, so a highlight can frame it (the tutorial's focus). */
+  readonly islandMarks?: boolean;
+  /** Called once the table has loaded and is on screen. */
+  readonly onReady?: () => void;
 }
 
-export function Table3DScreen({ session, onExit, autoplay = false }: Table3DScreenProps) {
+export function Table3DScreen({ session, onExit, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, islandMarks = false, onReady }: Table3DScreenProps) {
   const snap = useSession(session);
   const [ready, setReady] = useState(false);
 
@@ -69,7 +82,7 @@ export function Table3DScreen({ session, onExit, autoplay = false }: Table3DScre
 
   // Island draft, then everyone's islands revealed at once, before round 1.
   const chosen = snap.events.find((e) => e.type === 'islands-chosen');
-  const [islandsSeen, setIslandsSeen] = useState(false);
+  const [islandsSeen, setIslandsSeen] = useState(skipIslandReveal);
   const showIslands = !autoplay && chosen?.type === 'islands-chosen' && !islandsSeen;
 
   // A round is resolved in one go once the last decision is in; replay it step by step and hold
@@ -170,7 +183,8 @@ export function Table3DScreen({ session, onExit, autoplay = false }: Table3DScre
     (id) => board.players[id]?.island ?? null,
   );
   const islandBadges = islandBadgePins(seats, angles, (id) => board.players[id]?.island ?? null);
-  const pins = [...plates, ...islandBadges, ...moments.pins, ...(step?.pins ?? []), ...resolution.pins];
+  const marks = useMemo(() => (islandMarks ? islandMarkPins(seats.map((s) => ({ id: s.id, angle: angles[laneOf(s.id)]! }))) : []), [islandMarks, seats, angles, laneOf]);
+  const pins = [...plates, ...islandBadges, ...moments.pins, ...(step?.pins ?? []), ...resolution.pins, ...marks];
   const camera = step?.camera ?? resolution.camera ?? overviewPoints(angles, seats.map((s) => s.island));
 
   const marketRef = useRef<HTMLDivElement>(null);
@@ -197,6 +211,7 @@ export function Table3DScreen({ session, onExit, autoplay = false }: Table3DScre
   });
 
   const finished = !holding && snap.result !== null;
+  useEffect(() => onShown?.(dismissed, finished), [onShown, dismissed, finished]);
   const rows = useMemo(() => (snap.result ? resultRows(snap.events, snap.result, snap.startingCash, RULES_V07) : []), [snap.result, snap.events, snap.startingCash]);
   const winners = useMemo(() => new Set(snap.result?.winners ?? []), [snap.result]);
 
@@ -221,7 +236,10 @@ export function Table3DScreen({ session, onExit, autoplay = false }: Table3DScre
         cameraPoints={camera}
         safe={safe}
         pins={pins}
-        onReady={() => setReady(true)}
+        onReady={() => {
+          setReady(true);
+          onReady?.();
+        }}
         dim={step?.dim ?? false}
         pulses={moments.pulses}
         {...(finished ? { ringed: winners } : resolution.ringed ? { ringed: resolution.ringed } : {})}
@@ -260,11 +278,11 @@ export function Table3DScreen({ session, onExit, autoplay = false }: Table3DScre
         />
       )}
       <div className="t3-menu">
-        <span className="t3-round">{board.round === 0 ? '選島' : `第 ${board.round}／${RULES_V07.rounds} 回合`}</span>
-        <button type="button" title="規則" aria-label="規則" aria-expanded={rulesOpen} onClick={() => setRulesOpen(true)}>
+        <span data-focus="round" className="t3-round">{board.round === 0 ? '選島' : `第 ${board.round}／${rounds} 回合`}</span>
+        <button type="button" data-focus="rules" title="規則" aria-label="規則" aria-expanded={rulesOpen} onClick={() => setRulesOpen(true)}>
           <BookIcon />
         </button>
-        <button type="button" title="航海日誌" aria-label="航海日誌" aria-expanded={logOpen} onClick={() => setLogOpen(!logOpen)}>
+        <button type="button" data-focus="log" title="航海日誌" aria-label="航海日誌" aria-expanded={logOpen} onClick={() => setLogOpen(!logOpen)}>
           <LogIcon />
         </button>
         <button type="button" title="離開" aria-label="離開" onClick={onExit}>
@@ -274,12 +292,12 @@ export function Table3DScreen({ session, onExit, autoplay = false }: Table3DScre
 
       {!ready && <div className="t3-loading">整理港口中…</div>}
       {ready && step?.dock && (
-        <div ref={dockRef} className="dep-dock">
+        <div ref={dockRef} data-focus="hand" className="dep-dock">
           {step.dock}
         </div>
       )}
       {ready && (
-        <div ref={barRef} className="inv-bar">
+        <div ref={barRef} data-focus="bar" className="inv-bar">
           {step?.bar}
           {holding && !rerollShown && resolution.bar}
           {idle && <span>{snap.status === 'running' ? (waitingNames.length > 0 ? `等待 ${waitingNames.join('、')} 決定…` : '結算中…') : ''}</span>}
@@ -307,7 +325,7 @@ export function Table3DScreen({ session, onExit, autoplay = false }: Table3DScre
           }}
         />
       )}
-      {ready && finished && <ResultCard rows={rows} nameOf={nameOf} colorOf={colorOf} viewer={hotSeat ? null : viewer} rounds={RULES_V07.rounds} onRestart={onExit} />}
+      {ready && finished && showResult && <ResultCard rows={rows} nameOf={nameOf} colorOf={colorOf} viewer={hotSeat ? null : viewer} rounds={rounds} onRestart={onExit} />}
 
       {ready && handoffTo && (
         <div className="beat-backdrop handoff-backdrop" role="dialog" aria-modal="true" aria-label="換人">
