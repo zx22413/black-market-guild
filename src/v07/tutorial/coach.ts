@@ -97,7 +97,7 @@ export function coachView(steps: readonly CoachStep[], read: number, moment: Coa
   const focus: readonly FocusTarget[] = ready
     ? [{ kind: 'submit' }]
     : idle
-      ? [{ kind: 'advance' }]
+      ? [{ kind: 'advance' }, { kind: 'tap' }]
       : (step?.focus ?? (last?.focus ?? []));
   const guide = step === null && todo !== null && !ready && last?.guide ? last.guide.map(asGroup) : null;
   return { step, number: Math.min(read + 1, steps.length), total: steps.length, holdsDecision, holdsMarket, holdsEvent, holdsShow, holdsVoyage, todo, ready, pulse: ready || idle || guide !== null, focus, guide };

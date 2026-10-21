@@ -43,7 +43,9 @@ function measure(targets: readonly FocusTarget[]): Hole[] {
   return mergeHoles(
     targets.flatMap((t) => {
       for (const selector of focusSelectors(t)) {
-        const boxes = [...document.querySelectorAll(selector)].map((el) => el.getBoundingClientRect());
+        // A hint that fades in is framed once it has shown, not while it is still invisible.
+        const els = [...document.querySelectorAll(selector)].filter((el) => t.kind !== 'tap' || Number(getComputedStyle(el).opacity) > 0.4);
+        const boxes = els.map((el) => el.getBoundingClientRect());
         const hole = holeAround(boxes, view, PAD);
         if (hole) return [hole];
       }
@@ -70,12 +72,17 @@ export function FocusMask({
   readonly onHoles?: (holes: readonly Hole[]) => void;
 }) {
   const [holes, setHoles] = useState<readonly Hole[]>([]);
+  // Only a tap hint is lit: it is ringed without dimming the table.
+  const [ringOnly, setRingOnly] = useState(false);
   const shown = useRef<readonly Hole[]>([]);
 
   useEffect(() => {
     let frame = 0;
     const tick = () => {
-      const goal = measure(lit(targets, guide));
+      const litNow = lit(targets, guide);
+      const goal = measure(litNow);
+      const ring = goal.length > 0 && litNow.every((t) => t.kind === 'tap' || measure([t]).length === 0);
+      setRingOnly((was) => (was === ring ? was : ring));
       const next = goal.length === shown.current.length ? goal.map((h, i) => easeHole(shown.current[i], h, GLIDE)) : goal;
       if (next.length !== shown.current.length || next.some((h, i) => !near(h, shown.current[i]!))) {
         shown.current = next;
@@ -100,7 +107,7 @@ export function FocusMask({
           ))}
         </mask>
       </defs>
-      <rect className="focus-dark" width="100%" height="100%" mask="url(#focus-holes)" />
+      {!ringOnly && <rect className="focus-dark" width="100%" height="100%" mask="url(#focus-holes)" />}
       {holes.map((h, i) => (
         <rect key={i} className="focus-ring" x={h.x} y={h.y} width={h.width} height={h.height} rx={12} />
       ))}

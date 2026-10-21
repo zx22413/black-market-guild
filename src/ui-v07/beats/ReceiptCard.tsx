@@ -43,7 +43,7 @@ export function ReceiptCard({ round, lines, net, onClose }: ReceiptCardProps) {
       </div>
       {/* The card has no button: say how to go on, once the total is in. */}
       {onClose && (
-        <p className="tap-hint" data-focus="advance" style={{ animationDelay: `${lines.length * 120 + 700}ms` }}>
+        <p className="tap-hint" data-focus="tap" style={{ animationDelay: `${lines.length * 120 + 700}ms` }}>
           點任意處繼續
         </p>
       )}
