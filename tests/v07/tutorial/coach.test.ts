@@ -45,7 +45,7 @@ describe('coachView', () => {
   it('lights the step being read, then the last step\'s targets while you decide, then nothing', () => {
     expect(coachView(STEPS, 0, at({ decision: R1 })).focus).toEqual([{ kind: 'market' }]);
     expect(coachView(STEPS, 2, at({ decision: R1 })).focus).toEqual([{ kind: 'bar' }]);
-    expect(coachView(STEPS, 3, at({ resolvingRound: 1 }))).toMatchObject({ focus: [{ kind: 'advance' }], pulse: true });
+    expect(coachView(STEPS, 3, at({ resolvingRound: 1 }))).toMatchObject({ focus: [{ kind: 'advance' }, { kind: 'tap' }], pulse: true });
   });
 
   it('lights only 「提交」 once your choice is complete, and not before the steps are read', () => {
