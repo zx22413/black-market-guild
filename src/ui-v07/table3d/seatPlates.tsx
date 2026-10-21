@@ -25,15 +25,17 @@ export function seatPlates(
     const island = islandOf && isSideSeat(angles[i]!) ? islandOf(s.id) : null;
     const plate = (
         <span data-focus={`plate-${s.id}`} className={`beat3d-plate inv-plate ${dimmed ? 'dimmed' : ''} ${isFarSeat(angles[i]!) ? 'plate-left' : ''}`} style={{ borderColor: s.color }}>
-          {s.isViewer ? '你' : s.name}
-          {cashOf && <b className="plate-cash"> {cashOf(s.id)} G</b>}
+          <span className="plate-head">
+            {s.isViewer ? '你' : s.name}
+            {cashOf && <b className="plate-cash"> {cashOf(s.id)} G</b>}
+            <StatusMark label={label} />
+            {board.wanted.includes(s.id) && <WantedMark />}
+          </span>
           {!s.isViewer && p && (
             <span className="inv-stock" title="倉庫">
               {GOODS.some((g) => p.stock[g] > 0) ? <GoodChips goods={GOODS.filter((g) => p.stock[g] > 0).map((g) => ({ good: g, count: p.stock[g] }))} /> : <small>空</small>}
             </span>
           )}
-          <StatusMark label={label} />
-          {board.wanted.includes(s.id) && <WantedMark />}
         </span>
     );
     return {

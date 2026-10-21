@@ -1433,6 +1433,10 @@ button.inv-stack:hover {
 }
 
 /* Resolution on the round table (src/ui-v07/table3d/useRoundResolution.tsx). */
+.plate-head {
+  display: flex;
+  align-items: center;
+}
 .plate-cash {
   margin-left: 4px;
   color: #8a4b12;
