@@ -46,6 +46,18 @@ export function TutorialScreen({ script, next, onReplay, onNext, onExit }: Tutor
     const at = placeCard(holes, { width: window.innerWidth, height: window.innerHeight }, { width: el.offsetWidth, height: el.offsetHeight }, CARD_MARGIN);
     setSpot((s) => (s.left === at.left && s.top === at.top ? s : { left: at.left, top: at.top }));
   }, []);
+  // A picture in the middle of the table is what is lit: the card keeps clear of it too.
+  const diagramShown = coach.step?.diagram !== undefined;
+  useEffect(() => {
+    if (!diagramShown || !ready) return undefined;
+    const place = () => {
+      const r = document.querySelector('.die-diagram')?.getBoundingClientRect();
+      if (r) onHoles([{ x: r.left, y: r.top, width: r.width, height: r.height }]);
+    };
+    place();
+    window.addEventListener('resize', place);
+    return () => window.removeEventListener('resize', place);
+  }, [diagramShown, ready, onHoles]);
   // The last step ends the lesson, whatever moment it belongs to.
   const ended = coach.step !== null && coach.number === coach.total;
 

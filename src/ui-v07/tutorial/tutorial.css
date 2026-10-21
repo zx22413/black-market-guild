@@ -181,9 +181,6 @@
 .focus-dark {
   fill: rgb(4 10 14 / 0.72);
 }
-.focus-black {
-  fill: rgb(0 0 0 / 0.94);
-}
 .focus-ring {
   fill: none;
   stroke: var(--accent);
