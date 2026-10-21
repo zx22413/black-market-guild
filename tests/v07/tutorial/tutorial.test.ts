@@ -118,7 +118,7 @@ describe('every tutorial', () => {
 
   it('lights something on every host step', () => {
     for (const script of TUTORIALS) {
-      script.coach.forEach((s) => expect(s.focus.length, `${script.id}: ${s.title}`).toBeGreaterThan(0));
+      script.coach.filter((s) => s.diagram === undefined).forEach((s) => expect(s.focus.length, `${script.id}: ${s.title}`).toBeGreaterThan(0));
     }
   });
 

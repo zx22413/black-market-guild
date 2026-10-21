@@ -101,7 +101,7 @@ export const BASICS: TutorialScript = {
       [F.crate('wood'), F.crate('spice')],
     ),
     {
-      ...step(resolving(1), '航行骰', [F.bar], [
+      ...step(resolving(1), '航行骰', [], [
         '每艘出航的船擲一顆 1d6，結算時才公開，連船東自己都不知道。',
         '骰值會被航海事件、角色加減，加減完的最終值決定船的生死。',
       ]),

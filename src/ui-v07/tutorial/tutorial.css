@@ -181,6 +181,9 @@
 .focus-dark {
   fill: rgb(4 10 14 / 0.72);
 }
+.focus-black {
+  fill: rgb(0 0 0 / 0.94);
+}
 .focus-ring {
   fill: none;
   stroke: var(--accent);
@@ -318,6 +321,8 @@
   font-weight: 700;
 }
 .die-group small {
+  color: inherit;
+  opacity: 1;
   font-size: var(--fs-title);
   font-weight: 700;
   letter-spacing: 0.2em;

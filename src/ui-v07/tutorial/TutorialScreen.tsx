@@ -86,7 +86,7 @@ export function TutorialScreen({ script, next, onReplay, onNext, onExit }: Tutor
       {ready && (
         <>
           {blocking && <div className="coach-block" aria-hidden="true" onPointerDown={() => setNudge((n) => n + 1)} />}
-          <FocusMask targets={coach.focus} guide={coach.guide} pulse={coach.pulse} onHoles={onHoles} />
+          <FocusMask solid={coach.step?.diagram !== undefined} targets={coach.focus} guide={coach.guide} pulse={coach.pulse} onHoles={onHoles} />
           {coach.step?.diagram && <DieDiagram successMin={coach.step.diagram.successMin} dieMax={coach.step.diagram.dieMax} />}
           <CoachCard ref={card} style={spot} view={coach} onRead={session.read} onSkip={onExit} endActions={endActions} nudge={nudge} />
         </>

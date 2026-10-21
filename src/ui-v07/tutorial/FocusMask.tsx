@@ -57,12 +57,15 @@ export function FocusMask({
   targets,
   guide = null,
   pulse = false,
+  solid = false,
   onHoles,
 }: {
   readonly targets: readonly FocusTarget[];
   /** While you carry out a step: what to click, in order (see coachView); lights the first not done. */
   readonly guide?: readonly (readonly FocusTarget[])[] | null;
   readonly pulse?: boolean;
+  /** Black out the whole table (a picture is up in the middle), lighting nothing. */
+  readonly solid?: boolean;
   /** Told where the lit rectangles are whenever they move (the host's card keeps clear of them). */
   readonly onHoles?: (holes: readonly Hole[]) => void;
 }) {
@@ -85,6 +88,7 @@ export function FocusMask({
     return () => cancelAnimationFrame(frame);
   }, [targets, guide, onHoles]);
 
+  if (solid) return <svg className="focus-mask" aria-hidden="true"><rect className="focus-black" width="100%" height="100%" /></svg>;
   if (holes.length === 0) return null;
   return (
     <svg className={`focus-mask ${pulse ? 'pulse' : ''}`} aria-hidden="true">
