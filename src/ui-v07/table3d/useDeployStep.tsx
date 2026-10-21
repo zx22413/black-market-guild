@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { ShipId } from '../../v07/game';
+import type { Bet, ShipId } from '../../v07/game';
 import { ROLE_LABELS } from '../labels';
 import { besideShip, type TablePin, type TableShip } from '../scene/TableCanvas';
 import {
-  betLabel,
-  betsFor,
+  betsAtShip,
   blockedReason,
   brokerAims,
   deployActionFor,
   deployOptions,
   deployTodo,
   EMPTY_DEPLOY,
+  looseBets,
   needsTarget,
   peeksFor,
   pickRole,
@@ -27,6 +27,7 @@ import { ClockIcon, IconDisc, tokenIconUrl, ForbidIcon } from './icons';
 import { InfoTip } from './InfoTip';
 import { LockHint } from './LockHint';
 import { roleIconUrl } from './RoleBadges';
+import { ShipBets } from './ShipBets';
 import { DashedArrows } from './RoleArrows';
 import { pickArrows } from './revealModel';
 import { shipName, type StageEnv, type StageParts } from './stage';
@@ -64,7 +65,9 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   const cards = roleCards(context, options);
   const aims = brokerAims(options, choice.bet);
   const todo = deployTodo(choice, aims);
-  const targets = new Set(targetsFor(options, choice.role, choice.bet));
+  // The broker picks the ship first and the bet at that ship, so every ship some bet may name stays on offer.
+  const targets = new Set(targetsFor(options, choice.role));
+  const loose = looseBets(options);
   const peeks = new Set(choice.role === 'intel' && choice.target ? peeksFor(options, choice) : []);
   const action = deployActionFor(options, choice);
   const noDeploy = options.find((a) => a.role === null);
@@ -74,10 +77,14 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   // Click a ship to send the role there; click it again to take the role back. A lighthouse intel
   // merchant's next click on another ship is the optional second look (§11.2).
   const clickShip = (id: ShipId) => {
-    if (id === choice.target) setChoice({ ...choice, target: null, peek: null });
+    if (id === choice.target) setChoice({ ...choice, target: null, peek: null, bet: null });
     else if (choice.target !== null && peeks.has(id)) setChoice({ ...choice, peek: choice.peek === id ? null : id });
-    else if (targets.has(id)) setChoice({ ...choice, target: id, peek: null });
+    else if (targets.has(id)) setChoice({ ...choice, target: id, peek: null, bet: keepBet(id) });
   };
+  // A bet picked on another ship stays only when this ship may name it too.
+  const keepBet = (id: ShipId): Bet | null => (choice.bet !== null && betsAtShip(options, id).some((b) => b.good === choice.bet!.good && b.direction === choice.bet!.direction) ? choice.bet : null);
+  const broker = choice.role === 'broker';
+  const pickBet = (bet: Bet, id: ShipId | null) => setChoice({ ...choice, bet: choice.bet?.good === bet.good && choice.bet.direction === bet.direction ? null : bet, target: id });
 
   const send = (a = action) => {
     if (!a) return;
@@ -98,7 +105,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   // hover or tap. The ship's name shows on hover and is read out for screen readers. Each counts as
   // part of its owner's island for a highlight (the tutorial's focus).
   const pins: TablePin[] = board.ships.map((ship) => {
-    const blocked = blockedReason(context, options, choice, ship.id);
+    const blocked = blockedReason(context, options, { ...choice, bet: null }, ship.id);
     const peekable = choice.target !== null && peeks.has(ship.id);
     const pickable = targets.has(ship.id) && !peekable;
     const chosen = choice.target === ship.id;
@@ -108,7 +115,20 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
       id: `ship-${ship.id}`,
       position: besideShip(angles[laneOf(ship.owner)]!, 'docked', 7, TAG_HEIGHT),
       node:
-        pickable || peekable ? (
+        broker && chosen ? (
+          <ShipBets
+            label={label}
+            owner={ship.owner}
+            rim={rim}
+            badge={roleIconUrl('broker')}
+            offered={betsAtShip(options, ship.id)}
+            side={ship.owner === viewer ? 1 : -1}
+            chosen={choice.bet}
+            todo={todo.bet}
+            onBet={(bet) => pickBet(bet, ship.id)}
+            onBack={() => clickShip(ship.id)}
+          />
+        ) : pickable || peekable ? (
           <button
             type="button"
             className={`dep-ship ${chosen || choice.peek === ship.id ? 'on' : ''} ${(todo.target && pickable) ? 'todo' : ''} ${peekable ? 'peek' : ''}`}
@@ -233,7 +253,8 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     ship: (ship: TableShip): TableShip => ({ ...ship, selectable: targets.has(ship.id) || peeks.has(ship.id), chosen: choice.target === ship.id || choice.peek === ship.id }),
     onSelectShip: clickShip,
     dim: true,
-    ...(choice.role === 'broker' ? { bets: { offered: betsFor(options), chosen: choice.bet, todo: todo.bet, onBet: (bet) => setChoice({ ...choice, bet, target: choice.target !== null && targetsFor(options, 'broker', bet).includes(choice.target) ? choice.target : null }) } } : {}),
+    // Bets that name no ship (nobody to name) are the only ones left on the market strip.
+    ...(broker && loose.length > 0 ? { bets: { offered: loose, chosen: choice.bet, todo: todo.bet && choice.target === null, onBet: (bet: Bet) => pickBet(bet, null) } } : {}),
     scene:
       choice.role !== null && choice.role !== 'none' ? (
         <DashedArrows

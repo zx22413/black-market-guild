@@ -1195,6 +1195,54 @@ button.inv-stack:hover {
   font-weight: 400;
   opacity: 0.8;
 }
+.beat3d-pin:has(.dep-bets) {
+  z-index: 30;
+}
+.dep-bets {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.dep-bets ul {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.beat3d-pin button.dep-bet {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 3px 10px;
+  border: 2px solid #e0a63c;
+  border-radius: 999px;
+  background: rgb(245 236 212 / 0.95);
+  color: #2b2116;
+  font-size: var(--fs-note);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.dep-bet b {
+  margin-left: auto;
+  padding-left: 6px;
+}
+.dep-bet.on {
+  background: #ffe3a3;
+}
+.dep-bet.todo {
+  animation: gold-breath 1.8s ease-in-out infinite;
+}
+.beat3d-pin button.dep-bet:disabled {
+  border-color: #b9a77d;
+  background: #d9d0bb;
+  color: #8a7d62;
+  filter: grayscale(0.7);
+  cursor: not-allowed;
+}
 .dep-ship-name {
   display: inline-block;
   padding: 2px 8px;

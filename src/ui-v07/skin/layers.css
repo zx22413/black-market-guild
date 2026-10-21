@@ -58,7 +58,7 @@
 }
 
 /* parchment tokens on the wood */
-:root:not(.skin-classic) :is(.inv-chip, .bar-chips .chip, .rank-rail li, .beat3d-plate, .isle-chip, .inv-market .bet, .inv-note, .rank-fold, .note-badge > button) {
+:root:not(.skin-classic) :is(.inv-chip, .bar-chips .chip, .rank-rail li, .beat3d-plate, .isle-chip, .inv-market .bet, .beat3d-pin button.dep-bet, .inv-note, .rank-fold, .note-badge > button) {
   border: 0;
   border-radius: 999px;
   background: var(--c-grain), var(--c-parch);
@@ -94,9 +94,13 @@
 :root:not(.skin-classic) .inv-market .need {
   color: var(--c-soft);
 }
-:root:not(.skin-classic) .inv-market .bet.on {
+:root:not(.skin-classic) :is(.inv-market .bet, .beat3d-pin button.dep-bet).on {
   background: var(--c-button);
   box-shadow: 0 2px 0 var(--c-button-edge);
+}
+:root:not(.skin-classic) .beat3d-pin button.dep-bet:disabled {
+  background: #d9d0bb;
+  color: #8a7d62;
 }
 :root:not(.skin-classic) .rank-rail :is(header small, header button) {
   color: var(--c-cream-soft);

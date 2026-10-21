@@ -122,11 +122,13 @@ describe('every tutorial', () => {
     }
   });
 
-  it('keeps the official rule numbers, only fewer rounds', () => {
+  it('keeps the official rule numbers, only fewer rounds (and the broker lesson without cooldown, to play both bets)', () => {
     const created = createMatch({ seed: 1, players: [{ id: 'a', name: 'a' }, { id: 'b', name: 'b' }, { id: 'c', name: 'c' }] });
     expect(created.ok).toBe(true);
     for (const script of TUTORIALS) {
-      expect({ ...script.rules, rounds: 6 }).toEqual(created.ok ? created.value.state.rules : null);
+      const official = created.ok ? created.value.state.rules : null;
+      const rules = script.id === 'broker' ? { ...script.rules, roles: { ...script.rules.roles, cooldown: official?.roles.cooldown } } : script.rules;
+      expect({ ...rules, rounds: 6 }).toEqual(official);
     }
   });
 });
@@ -247,8 +249,19 @@ describe('role scenarios', () => {
     const market = events.find((e) => e.type === 'market-settled');
     expect(market).toMatchObject({ demand: { wood: 2 }, arrived: { wood: 1 } });
     expect(market?.type === 'market-settled' && market.priceAfter.wood).toBe(market?.type === 'market-settled' ? market.priceBefore.wood + 1 : -1);
-    expect(cashFor(events, 'broker-bet', 'p1')).toBe(BROKER.rules.roles.broker.payout);
+    // Both rounds' bets pay (the bear bet in round 2 is checked below).
+    expect(cashFor(events, 'broker-bet', 'p1')).toBe(BROKER.rules.roles.broker.payout * 2);
     expect(cashFor(events, 'broker-lift', 'p1')).toBeGreaterThan(0);
+  });
+
+  it('broker round 2: the bear bet on the rival ship drops iron demand to 0, the crate arrives and you take the difference', () => {
+    const { events } = playTutorial(BROKER);
+    const markets = events.filter((e) => e.type === 'market-settled');
+    expect(markets).toHaveLength(2);
+    const second = markets[1];
+    expect(second).toMatchObject({ demand: { iron: 0 }, arrived: { iron: 1 } });
+    expect(second?.type === 'market-settled' && second.priceAfter.iron).toBeLessThan(second?.type === 'market-settled' ? second.priceBefore.iron : 0);
+    expect(cashFor(events, 'broker-control', 'p1')).toBeGreaterThan(0);
   });
 
   it('lets you make only the role decision; the investment is played for you', () => {

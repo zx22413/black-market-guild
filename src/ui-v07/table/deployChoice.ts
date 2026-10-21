@@ -102,6 +102,16 @@ export function betsFor(options: readonly DeployAction[]): Bet[] {
   return bets.filter((b, i) => bets.findIndex((x) => x.good === b.good && x.direction === b.direction) === i);
 }
 
+/** The bets that may name this ship (§9.4): the list that opens where the ship was clicked. */
+export function betsAtShip(options: readonly DeployAction[], shipId: ShipId): Bet[] {
+  return options.flatMap((a) => (a.role === 'broker' && a.bet && a.targetShipId === shipId ? [a.bet] : []));
+}
+
+/** Bets that name no ship (§9.4: nobody to name): they stay on the market strip. */
+export function looseBets(options: readonly DeployAction[]): Bet[] {
+  return options.flatMap((a) => (a.role === 'broker' && a.bet && a.targetShipId === null ? [a.bet] : []));
+}
+
 /** §9.4: the broker's bet also names a ship (for the bet picked, once there is one). */
 export const brokerAims = (options: readonly DeployAction[], bet: Bet | null = null): boolean =>
   options.some((a) => a.role === 'broker' && a.targetShipId !== null && (bet === null || (a.bet?.good === bet.good && a.bet?.direction === bet.direction)));

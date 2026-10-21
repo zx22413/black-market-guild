@@ -3,12 +3,14 @@ import type { DecisionContext } from '../../src/v07/bots';
 import { applyAction, getLegalActions, getPendingDecisions, getPlayerView, type Action, type MatchState } from '../../src/v07/game';
 import {
   EMPTY_DEPLOY,
+  betsAtShip,
   betsFor,
   blockedReason,
   deployActionFor,
   deployLabel,
   deployOptions,
   deployTodo,
+  looseBets,
   peeksFor,
   pickRole,
   roleCards,
@@ -66,6 +68,33 @@ describe('role deployment choice (only legal actions)', () => {
     const target = targetsFor(options, 'broker', bet)[0] ?? null;
     expect(deployActionFor(options, { ...broker, bet, target })).toMatchObject({ role: 'broker', bet, targetShipId: target });
     expect(betsFor(options)).toHaveLength(new Set(betsFor(options).map((b) => `${b.good}${b.direction}`)).size);
+  });
+
+  it('lists the bets at the ship picked first, and the ones that name no ship apart (§9.4)', () => {
+    const options = deployOptions(contextOf(deploying()));
+    const own = 'r1-p1';
+    const other = 'r1-p2';
+    // Your own ship takes bull bets only, an opponent's takes bear bets only; each good once.
+    const atOwn = betsAtShip(options, own);
+    const atOther = betsAtShip(options, other);
+    expect(atOwn.length).toBeGreaterThan(0);
+    expect(atOwn.every((b) => b.direction === 1)).toBe(true);
+    expect(atOther.every((b) => b.direction === -1)).toBe(true);
+    // Every ship offered is a target before any bet is picked, and each bet picked there is a legal action.
+    const broker = { ...pickRole('broker'), target: own, bet: atOwn[0]! };
+    expect(deployActionFor(options, broker)).toMatchObject({ role: 'broker', bet: atOwn[0], targetShipId: own });
+    // With ships to name, no bet is left without one.
+    expect(looseBets(options)).toEqual([]);
+  });
+
+  it('a bet that names no ship stays a plain market bet when nobody sails', () => {
+    let state = start(3);
+    for (const id of ['p1', 'p2', 'p3']) state = apply(state, { type: 'invest', playerId: id, build: null, load: G(0) });
+    const options = deployOptions(contextOf(state));
+    expect(looseBets(options).length).toBeGreaterThan(0);
+    const bet = looseBets(options)[0]!;
+    expect(betsAtShip(options, 'r1-p1')).toEqual([]);
+    expect(deployActionFor(options, { ...pickRole('broker'), bet })).toMatchObject({ role: 'broker', bet, targetShipId: null });
   });
 
   it('greys out a role on cooldown with the round it comes back (§9.3)', () => {

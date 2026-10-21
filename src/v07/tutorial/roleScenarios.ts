@@ -255,53 +255,90 @@ export const ARMS_COVER: TutorialScript = scenario({
 
 /** Wood: the broker's bull bet raises its demand, so the one crate that arrives is below it. */
 const BROKER_DEMAND = goods({ wood: 1, iron: 1, spice: 2, arms: 1 });
+/** Round 2, iron: the bear bet takes its demand from 1 to 0, so the one crate that arrives is above it. */
+const BROKER_BEAR_DEMAND = goods({ wood: 2, iron: 1, spice: 2, arms: 1 });
 
-export const BROKER: TutorialScript = scenario({
-  id: 'broker',
-  title: '莊家',
-  summary: '押一種貨的漲跌；押對了拿獎金，指定的船還能多賣。',
-  seed: 70206,
-  rounds: [
-    {
-      demand: BROKER_DEMAND,
-      event: 'calm-seas',
-      rolls: { p1: 5, [BOT.vande]: 5 },
-      bots: { [BOT.vande]: { load: { iron: 1 } } },
-      you: {
-        invest: { demo: { load: { wood: 1, spice: 1 } }, choose: false },
-        'role-deployment': {
-          demo: { bet: { good: 'wood', direction: 1, aim: 'p1' } },
-          choose: true,
-          allow: betOn({ good: 'wood', direction: 1 }, 'p1'),
+const DEPLOY2: CoachTrigger = { kind: 'decision', round: 2, phase: 'role-deployment' };
+const RESOLVING2: CoachTrigger = { kind: 'resolution', round: 2 };
+const MARKET1: CoachTrigger = { kind: 'market', round: 1 };
+
+export const BROKER: TutorialScript = {
+  ...scenario({
+    id: 'broker',
+    title: '莊家',
+    summary: '押一種貨的漲或跌；押對了拿獎金，指定的船還能多賣或少賣。',
+    seed: 70206,
+    rounds: [
+      {
+        demand: BROKER_DEMAND,
+        event: 'calm-seas',
+        rolls: { p1: 5, [BOT.vande]: 5 },
+        bots: { [BOT.vande]: { load: { iron: 1 } } },
+        you: {
+          invest: { demo: { load: { wood: 1, spice: 1 } }, choose: false },
+          'role-deployment': {
+            demo: { bet: { good: 'wood', direction: 1, aim: 'p1' } },
+            choose: true,
+            allow: betOn({ good: 'wood', direction: 1 }, 'p1'),
+          },
         },
       },
-    },
-  ],
-  coach: [
-    step(DEPLOY, '你的船已經出航', [F.island('p1')], ['這一課你的船裝著 1 木材、1 香料出航。']),
-    deployIntro,
-    step(DEPLOY, '莊家', [F.hand, F.market], [
-      `莊家押一種貨會漲或會跌，部署費 ${fee('broker')} G。押下去之後，這回合那種貨的需求就往你押的方向調 ${broker.shift}。`,
-      `結算時價格真的往你押的方向動，銀行付你 ${broker.payout} G；不動或反向就沒有獎金。`,
-    ]),
-    step(
-      DEPLOY,
-      '指定一艘船',
-      [F.hand, F.market, F.island('p1')],
-      [
-        '押漲要指定自己的船，押跌要指定對手的船。押對時，那艘船賣這種貨的單價再往押的方向多動 2 格：押漲多賣的錢由銀行補給你，押跌少賣的錢歸你。',
-        '這回合木材的需求只有 1，你的船上有 1 木材。',
+      {
+        demand: BROKER_BEAR_DEMAND,
+        event: 'calm-seas',
+        rolls: { p1: 5, [BOT.vande]: 5 },
+        bots: { [BOT.vande]: { load: { iron: 1 } } },
+        you: {
+          invest: { demo: { load: { wood: 1 } }, choose: false },
+          'role-deployment': {
+            demo: { bet: { good: 'iron', direction: -1, aim: BOT.vande } },
+            choose: true,
+            allow: betOn({ good: 'iron', direction: -1 }, BOT.vande),
+          },
+        },
+      },
+    ],
+    coach: [
+      step(DEPLOY, '你的船已經出航', [F.island('p1')], ['這一課你的船裝著 1 木材、1 香料出航。']),
+      step(DEPLOY, '部署角色', [F.hand], [
+        '投資之後，所有人同時、秘密選一個角色派出去，也可以不派。角色在大家都決定後一次揭露。',
+        `每個角色有部署費，用過之後要冷卻 ${R.roles.cooldown} 回合才能再派；這一課為了讓你連續練兩種押法，莊家不用冷卻。`,
+      ]),
+      step(DEPLOY, '莊家', [F.hand], [
+        `莊家押一種貨會漲或會跌，部署費 ${fee('broker')} G。押下去之後，這回合那種貨的需求就往你押的方向調 ${broker.shift}。`,
+        `結算時價格真的往你押的方向動，銀行付你 ${broker.payout} G；不動或反向就沒有獎金。`,
+      ]),
+      step(
+        DEPLOY,
+        '押漲：指定自己的船',
+        [F.hand, F.island('p1')],
+        [
+          '押漲要指定自己的船。押對時，那艘船賣這種貨的單價再往上多動 2 格，多賣的錢由銀行補給你。',
+          '這回合木材的需求只有 1，你的船上有 1 木材。',
+        ],
+        `選莊家，點自己的船，再在船旁的清單押木材會漲（部署費 ${fee('broker')} G）。`,
+        [F.role('broker'), F.target('p1'), F.bet('wood', 1)],
+      ),
+      watch([F.price('wood')], '看木材：需求加上你押的 +1 之後，到港量夠不夠。'),
+      step(MARKET1, '押對了', [F.marketCard], [
+        '你押漲讓木材需求從 1 變 2，只到港 1 木材，價格上漲：你拿到獎金。',
+        '你的船賣木材時再多漲 2 格，多賣的錢由銀行補給你。',
+      ]),
+      step(DEPLOY2, '押跌：指定對手的船', [F.hand, F.island(BOT.vande)], [
+        `押跌要指定對手出航的船。這回合 ${vande}的船載著 1 鐵礦，鐵礦的需求也只有 1。`,
+        '押跌讓需求從 1 變 0；他的鐵礦到港就比需求多，價格會跌。',
       ],
-      `在黑市列押木材會漲，並指定自己的船（部署費 ${fee('broker')} G）。`,
-      [F.role('broker'), F.bet('wood', 1), F.target('p1')],
-    ),
-    watch([F.price('wood')], '看木材：需求加上你押的 +1 之後，到港量夠不夠。'),
-    step(END, '押對了', [F.price('wood'), F.plate('p1')], [
-      '你押漲讓木材需求從 1 變 2，只到港 1 木材，價格上漲：你拿到獎金。',
-      '你的船賣木材時再多漲 2 格，多賣的錢由銀行補給你。',
-    ]),
-    done('角色教學到這裡結束。'),
-  ],
-});
+      `選莊家，點${vande}的船，再在船旁的清單押鐵礦會跌（莊家這課不用冷卻）。`,
+      [F.role('broker'), F.target(BOT.vande), F.bet('iron', -1)]),
+      watch([F.price('iron')], '看鐵礦：需求減掉你押的 1 之後，到港的 1 鐵礦夠不夠賣。'),
+      step(END, '押跌也賺錢', [F.price('iron'), F.plate('p1')], [
+        '押跌讓鐵礦需求變 0，到港 1 鐵礦比需求多，價格下跌：銀行付你獎金。',
+        `押跌時，${vande}的船賣鐵礦的單價再往下多動 2 格，少賣的差額由你拿走（最多拿到他的賣貨收入）。`,
+      ]),
+      done('角色教學到這裡結束。'),
+    ],
+  }),
+  rules: { ...shortRules(2), roles: { ...R.roles, cooldown: 0 } },
+};
 
 export const ROLE_SCENARIOS: readonly TutorialScript[] = [GUARD, PIRATE, INTEL, SMUGGLER, ARMS_COVER, BROKER];
