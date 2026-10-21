@@ -244,3 +244,69 @@
     transform: translateX(4px) scale(1.06);
   }
 }
+
+/* The 航行骰 step's picture: formula, then the faces split at the arrival line. */
+.die-diagram {
+  margin: 10px 0 0;
+  padding: 10px;
+  border: 1px solid #b9a77d;
+  border-radius: 10px;
+  background: rgb(255 250 235 / 0.7);
+}
+.die-formula {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: var(--fs-note);
+}
+.die-formula span {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e8d9b2;
+}
+.die-formula .die-final {
+  background: #2b2116;
+  color: #f6ead0;
+}
+.die-strip {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.die-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-basis: 0;
+  padding: 6px 4px;
+  border-radius: 8px;
+}
+.die-group.sink {
+  background: rgb(176 60 50 / 0.16);
+  color: #8a2a20;
+}
+.die-group.arrive {
+  background: rgb(60 140 80 / 0.18);
+  color: #25693a;
+}
+.die-faces {
+  display: flex;
+  gap: 4px;
+}
+.die-faces i {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 2px solid currentColor;
+  border-radius: 6px;
+  background: #fffaf0;
+  font-style: normal;
+  font-weight: 700;
+}
+.die-group small {
+  font-weight: 700;
+}

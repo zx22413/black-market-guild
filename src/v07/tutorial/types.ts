@@ -125,6 +125,8 @@ export interface CoachStep {
   readonly title: string;
   readonly lines: readonly string[];
   readonly todo?: string;
+  /** A picture under the lines: the die's final value against where a ship arrives or sinks. */
+  readonly diagram?: { readonly kind: 'die'; readonly successMin: number; readonly dieMax: number };
   /**
    * While you carry out `todo`: what to click, in order. Only the first one not done yet is lit
    * (then 「提交」 once the choice is complete); without it the step's `focus` stays lit.

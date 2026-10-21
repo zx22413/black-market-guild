@@ -100,9 +100,16 @@ export const BASICS: TutorialScript = {
       '把 1 木材、1 香料裝上船，然後提交。',
       [F.crate('wood'), F.crate('spice')],
     ),
-    step(resolving(1), '航行骰', [F.event], [
-      `每艘出航的船擲一顆 1d6，結算時才公開，連船東自己都不知道。最終值 ${successMin}～${dieMax} 抵達，1～${successMin - 1} 沉沒。`,
-      '每回合還會翻開一張航海事件，在大家決定之後才公開。這回合是「風平浪靜」，沒有效果。',
+    {
+      ...step(resolving(1), '航行骰', [F.bar], [
+        '每艘出航的船擲一顆 1d6，結算時才公開，連船東自己都不知道。',
+        '骰值會被航海事件、角色加減，加減完的最終值決定船的生死。',
+      ]),
+      diagram: { kind: 'die', successMin, dieMax },
+    },
+    step(resolving(1), '航海事件', [F.event], [
+      '每回合還會翻開一張航海事件，在大家決定之後才公開，影響所有船的最終值。',
+      '這回合是「風平浪靜」，沒有效果。',
     ]),
     step(resolving(1), '看結算', [F.log, F.rank], [
       '接下來每艘船依序揭曉骰值與結果，抵達的船再到黑市賣貨。',

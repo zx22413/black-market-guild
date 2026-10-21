@@ -92,6 +92,10 @@ describe('coachView', () => {
     expect(coachView(steps, 0, at({ resolvingRound: 1 })).holdsEvent).toBe(true);
     expect(coachView(steps, 1, at({ resolvingRound: 1 })).holdsEvent).toBe(false);
     expect(coachView(steps, 0, at({ resolvingRound: 0 })).holdsEvent).toBe(false);
+    // The card stays up through an earlier step about the die, until the event step is read.
+    const two: readonly CoachStep[] = [{ ...steps[1]!, focus: [] }, steps[0]!, steps[1]!];
+    expect(coachView(two, 0, at({ resolvingRound: 1 })).holdsEvent).toBe(true);
+    expect(coachView(two, 2, at({ resolvingRound: 1 })).holdsEvent).toBe(false);
   });
 
   it('shows a market step when that round reaches its market card, and holds the card until it is read', () => {

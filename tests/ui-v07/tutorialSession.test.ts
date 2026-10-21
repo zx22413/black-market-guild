@@ -53,6 +53,7 @@ describe('tutorial session', () => {
     session.setStarted(1);
     session.read();
     session.read();
+    session.read();
     expect(session.getCoach().step).toBeNull();
     session.setMarket(1);
     expect(session.getCoach()).toMatchObject({ step: { trigger: { kind: 'market', round: 1 } }, holdsMarket: true, focus: [{ kind: 'market-card' }] });

@@ -81,7 +81,12 @@ export function coachView(steps: readonly CoachStep[], read: number, moment: Coa
   const holdsDecision = steps.slice(read).some((s) => isDecision(s.trigger, moment.decision));
   const holdsMarket = steps.slice(read).some((s) => s.trigger.kind === 'market' && s.trigger.round === (moment.marketRound ?? 0));
   // Held from the moment the round's resolution exists, so the card never plays a bit before the step shows.
-  const holdsEvent = next !== undefined && next.trigger.kind === 'resolution' && moment.resolvingRound >= next.trigger.round && next.focus.some((f) => f.kind === 'event');
+  const nextTrigger = next?.trigger;
+  const holdsEvent =
+    nextTrigger !== undefined &&
+    nextTrigger.kind === 'resolution' &&
+    moment.resolvingRound >= nextTrigger.round &&
+    steps.slice(read).some((s) => s.trigger.kind === 'resolution' && s.trigger.round === nextTrigger.round && s.focus.some((f) => f.kind === 'event'));
   const holdsShow = step !== null && step.trigger.kind === 'resolution';
   const holdsVoyage = step !== null && step.trigger.kind === 'voyage';
   const last = read > 0 ? steps[read - 1] : undefined;
