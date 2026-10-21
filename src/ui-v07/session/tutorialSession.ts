@@ -29,8 +29,12 @@ export interface TutorialSession extends GameSession {
   setShown(shownRound: number, ended: boolean): void;
   /** What your choice on the table would submit right now (null until it is a legal one). */
   setDraft(action: Action | null): void;
-  /** A round's resolution has reached its market card. */
+  /** A round's market card has played all its rows. */
   setMarket(round: number): void;
+  /** A round's resolution has got past the wanted flag, to its voyage event card or the role reveal. */
+  setStarted(round: number): void;
+  /** Your decision is up on the table with nothing still playing in front of it. */
+  setCalm(calm: boolean): void;
 }
 
 /** Your seat: the script plays the decisions you do not make, the rest wait for you with fewer options. */
@@ -44,7 +48,7 @@ function yourSeat(script: TutorialScript, human: Controller): Controller {
 
 const scriptedSeat = (script: TutorialScript): Controller => ({ decide: async (context) => scriptedAction(script, context) });
 
-function momentOf(script: TutorialScript, raw: SessionSnapshot, shownRound: number, ended: boolean, draft: Action | null, marketRound: number): CoachMoment {
+function momentOf(script: TutorialScript, raw: SessionSnapshot, shownRound: number, ended: boolean, draft: Action | null, marketRound: number, startedRound: number, calm: boolean): CoachMoment {
   const request = raw.requests[0];
   const resolving = raw.events.reduce((n, e) => (e.type === 'roles-revealed' ? Math.max(n, e.round) : n), 0);
   return {
@@ -53,6 +57,8 @@ function momentOf(script: TutorialScript, raw: SessionSnapshot, shownRound: numb
     resolvingRound: resolving,
     ended,
     marketRound,
+    startedRound,
+    calm,
     draftReady: request !== undefined && draft !== null && isReady(script, request.context, draft),
   };
 }
@@ -71,10 +77,12 @@ export function startTutorialSession(script: TutorialScript): TutorialSession {
   let shown = { round: 0, ended: false };
   let draft: Action | null = null;
   let market = 0;
-  let coach = coachView(script.coach, read, momentOf(script, inner.getSnapshot(), 0, false, null, 0));
+  let started = 0;
+  let calm = false;
+  let coach = coachView(script.coach, read, momentOf(script, inner.getSnapshot(), 0, false, null, 0, 0, false));
 
   const refresh = (): void => {
-    coach = coachView(script.coach, read, momentOf(script, inner.getSnapshot(), shown.round, shown.ended, draft, market));
+    coach = coachView(script.coach, read, momentOf(script, inner.getSnapshot(), shown.round, shown.ended, draft, market, started, calm));
     listeners.forEach((l) => l());
   };
   inner.subscribe(refresh);
@@ -96,6 +104,16 @@ export function startTutorialSession(script: TutorialScript): TutorialSession {
     setMarket: (round) => {
       if (round <= market) return;
       market = round;
+      refresh();
+    },
+    setStarted: (round) => {
+      if (round <= started) return;
+      started = round;
+      refresh();
+    },
+    setCalm: (value) => {
+      if (value === calm) return;
+      calm = value;
       refresh();
     },
     setDraft: (action) => {

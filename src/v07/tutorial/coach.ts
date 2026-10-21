@@ -13,6 +13,10 @@ export interface CoachMoment {
   readonly resolvingRound: number;
   /** The last round whose resolution has reached its market card (0 before any). */
   readonly marketRound?: number;
+  /** The last round whose resolution has got past the wanted flag, to its voyage event card or the role reveal (0 before any). */
+  readonly startedRound?: number;
+  /** Your decision is up on the table, nothing is still playing in front of it (islands' moments, the reroll's beams). */
+  readonly calm?: boolean;
   /** The match is over and its last resolution has played. */
   readonly ended: boolean;
   /** Your choice on the table already answers the decision (see `isReady`). */
@@ -27,6 +31,8 @@ export interface CoachView {
   readonly total: number;
   /** Your decision is held back until the steps before it are read. */
   readonly holdsDecision: boolean;
+  /** The resolution waits (does not play on) while a step about it is on screen. */
+  readonly holdsShow: boolean;
   /** The resolution stays on its market card until the step about it is read. */
   readonly holdsMarket: boolean;
   /** The voyage event card stays up, un-shrunk, until the step about it is read. */
@@ -52,9 +58,9 @@ function reached(trigger: CoachTrigger, moment: CoachMoment): boolean {
   switch (trigger.kind) {
     case 'decision':
       // A new round's lesson waits for the previous round's show to end.
-      return isDecision(trigger, moment.decision) && moment.shownRound >= trigger.round - 1;
+      return isDecision(trigger, moment.decision) && moment.shownRound >= trigger.round - 1 && moment.calm !== false;
     case 'resolution':
-      return moment.resolvingRound >= trigger.round;
+      return (moment.startedRound ?? moment.resolvingRound) >= trigger.round;
     case 'market':
       return (moment.marketRound ?? 0) >= trigger.round;
     case 'end':
@@ -68,7 +74,9 @@ export function coachView(steps: readonly CoachStep[], read: number, moment: Coa
   const step = next !== undefined && reached(next.trigger, moment) ? next : null;
   const holdsDecision = steps.slice(read).some((s) => isDecision(s.trigger, moment.decision));
   const holdsMarket = steps.slice(read).some((s) => s.trigger.kind === 'market' && s.trigger.round === (moment.marketRound ?? 0));
-  const holdsEvent = step !== null && (step.focus ?? []).some((f) => f.kind === 'event');
+  // Held from the moment the round's resolution exists, so the card never plays a bit before the step shows.
+  const holdsEvent = next !== undefined && next.trigger.kind === 'resolution' && moment.resolvingRound >= next.trigger.round && next.focus.some((f) => f.kind === 'event');
+  const holdsShow = step !== null && step.trigger.kind === 'resolution';
   const last = read > 0 ? steps[read - 1] : undefined;
   const todo = !holdsDecision && last?.todo !== undefined && isDecision(last.trigger, moment.decision) ? last.todo : null;
   const ready = step === null && todo !== null && moment.draftReady === true;
@@ -80,5 +88,5 @@ export function coachView(steps: readonly CoachStep[], read: number, moment: Coa
       ? [{ kind: 'advance' }]
       : (step?.focus ?? (last?.focus ?? []));
   const guide = step === null && todo !== null && !ready && last?.guide ? last.guide.map(asGroup) : null;
-  return { step, number: Math.min(read + 1, steps.length), total: steps.length, holdsDecision, holdsMarket, holdsEvent, todo, ready, pulse: ready || idle || guide !== null, focus, guide };
+  return { step, number: Math.min(read + 1, steps.length), total: steps.length, holdsDecision, holdsMarket, holdsEvent, holdsShow, todo, ready, pulse: ready || idle || guide !== null, focus, guide };
 }

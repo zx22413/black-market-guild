@@ -72,6 +72,9 @@ export function TutorialScreen({ script, next, onReplay, onNext, onExit }: Tutor
           onReady={() => setReady(true)}
           onDraft={session.setDraft}
           onMarket={session.setMarket}
+          onStarted={session.setStarted}
+          onCalm={session.setCalm}
+          holdShow={coach.holdsShow}
           holdMarket={coach.holdsMarket}
           holdEvent={coach.holdsEvent}
         />

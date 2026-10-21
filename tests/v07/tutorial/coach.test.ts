@@ -64,6 +64,17 @@ describe('coachView', () => {
     expect(coachView(STEPS, 2, at({ decision: R1, draftReady: true })).pulse).toBe(true);
   });
 
+  it('shows a resolution step only once the round is past its wanted flag, and holds the show while it is read', () => {
+    expect(coachView(STEPS, 2, at({ resolvingRound: 1, startedRound: 0 })).step).toBeNull();
+    expect(coachView(STEPS, 2, at({ resolvingRound: 1, startedRound: 1 }))).toMatchObject({ step: STEPS[2], holdsShow: true });
+    expect(coachView(STEPS, 3, at({ resolvingRound: 1, startedRound: 1 })).holdsShow).toBe(false);
+  });
+
+  it('waits for a calm table before a decision step', () => {
+    expect(coachView(STEPS, 0, at({ decision: R1, calm: false })).step).toBeNull();
+    expect(coachView(STEPS, 0, at({ decision: R1, calm: true })).step).toBe(STEPS[0]);
+  });
+
   it('holds the voyage event card open while the step about it is on screen', () => {
     const steps: readonly CoachStep[] = [
       { trigger: { kind: 'resolution', round: 1 }, title: 'r', lines: [], focus: [{ kind: 'event' }] },

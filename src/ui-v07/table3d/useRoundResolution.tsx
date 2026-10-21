@@ -75,6 +75,8 @@ export interface Resolution {
   readonly shipState: (id: ShipId) => ShipState;
   readonly camera: readonly FitPoint[] | null;
   readonly ringed: ReadonlySet<PlayerId> | undefined;
+  /** The market card is up and every row of it has played. */
+  readonly marketDone: boolean;
   readonly wrapShip: ((id: ShipId, ship: ReactNode) => ReactNode) | undefined;
   readonly pins: readonly TablePin[];
   readonly scene: ReactNode;
@@ -232,7 +234,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     stageShipState(stage, beats.findIndex((b) => b.shipId === id), voyageIndex, restingState(id), layer?.focusState ?? null);
 
   if (!active) {
-    return { stage: null, cutoff: events.length, cashBonus: {}, shipState: () => 'docked', camera: null, ringed: undefined, wrapShip: undefined, pins: [], scene: null, bar: null, overlay: null, onTableClick: undefined, marketPrices: undefined, changedGoods: undefined };
+    return { stage: null, cutoff: events.length, cashBonus: {}, shipState: () => 'docked', camera: null, ringed: undefined, marketDone: false, wrapShip: undefined, pins: [], scene: null, bar: null, overlay: null, onTableClick: undefined, marketPrices: undefined, changedGoods: undefined };
   }
 
   const colorOf = (id: string) => seats.find((s) => s.id === id)?.color ?? '#888';
@@ -417,5 +419,6 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     onTableClick: stage === 'voyage' ? () => (playback.next() ? undefined : nextShip()) : undefined,
     marketPrices,
     changedGoods,
+    marketDone: stage === 'market' && rowsShown >= rows.length,
   };
 }

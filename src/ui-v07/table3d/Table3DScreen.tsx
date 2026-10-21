@@ -57,15 +57,21 @@ export interface Table3DScreenProps {
   readonly onReady?: () => void;
   /** Told what your decision on screen would submit as you make it (null until it is a legal one). */
   readonly onDraft?: (action: Action | null) => void;
-  /** Told when a round's resolution reaches its market card. */
+  /** Told when a round's market card has played all its rows. */
   readonly onMarket?: (round: number) => void;
   /** Keep the resolution on its market card (once the rows are in) until released. */
   readonly holdMarket?: boolean;
+  /** Told when a round's resolution gets past the wanted flag, to its event card or the role reveal. */
+  readonly onStarted?: (round: number) => void;
+  /** Told whether your decision is up with nothing still playing in front of it. */
+  readonly onCalm?: (calm: boolean) => void;
+  /** Hold the resolution where it is (the tutorial host is talking about it). */
+  readonly holdShow?: boolean;
   /** Keep the voyage event card on screen, un-shrunk, until released. */
   readonly holdEvent?: boolean;
 }
 
-export function Table3DScreen({ session, onExit, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false }: Table3DScreenProps) {
+export function Table3DScreen({ session, onExit, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, holdShow = false, onStarted, onCalm }: Table3DScreenProps) {
   const snap = useSession(session);
   const [ready, setReady] = useState(false);
 
@@ -139,7 +145,7 @@ export function Table3DScreen({ session, onExit, autoplay = false, showResult = 
     events: snap.events,
     privateEvents: snap.privateEvents,
     round: autoplay ? null : resolvingRound,
-    paused: rerollShown !== null,
+    paused: rerollShown !== null || holdShow,
     holdMarket,
     holdEvent,
     seats,
@@ -153,8 +159,11 @@ export function Table3DScreen({ session, onExit, autoplay = false, showResult = 
   });
   const events = useMemo(() => snap.events.slice(0, resolution.cutoff), [snap.events, resolution.cutoff]);
   useEffect(() => {
-    if (resolution.stage === 'market' && resolvingRound !== null) onMarket?.(resolvingRound);
-  }, [resolution.stage, resolvingRound, onMarket]);
+    if (resolution.marketDone && resolvingRound !== null) onMarket?.(resolvingRound);
+  }, [resolution.marketDone, resolvingRound, onMarket]);
+  useEffect(() => {
+    if ((resolution.stage === 'event' || resolution.stage === 'reveal') && resolvingRound !== null) onStarted?.(resolvingRound);
+  }, [resolution.stage, resolvingRound, onStarted]);
   const board = useMemo(() => buildBoard(ids, snap.startingCash, events), [ids, events, snap.startingCash]);
 
   // The islands that change production or costs get their moment first: at the round's start and at the launch.
@@ -222,6 +231,10 @@ export function Table3DScreen({ session, onExit, autoplay = false, showResult = 
       return lanePoint(owner, (o) => angles[laneOf(o)]!, stateOf(id) === 'docked' ? 'docked' : 'sailing');
     },
   });
+
+  // The decision is really up (its islands' moments played, the reroll card dealt) for the tutorial host to talk about it.
+  const calm = ready && !holding && !showIslands && !autoplay && !moments.blocking && (phase !== 'intel-reroll' || peek.cardShown);
+  useEffect(() => onCalm?.(calm), [onCalm, calm]);
 
   const finished = !holding && snap.result !== null;
   useEffect(() => onShown?.(dismissed, finished), [onShown, dismissed, finished]);
