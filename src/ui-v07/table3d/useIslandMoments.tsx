@@ -22,6 +22,8 @@ export interface MomentsInput {
   /** The table may show a moment now (loaded, no round being replayed, no full-screen card). */
   readonly free: boolean;
   readonly angleOf: (id: PlayerId) => number;
+  /** Leave out the opening moments of round 1 (the tutorial's welcome should not wait for them). */
+  readonly skipFirstOpening?: boolean;
 }
 
 export interface Moments {
@@ -33,14 +35,14 @@ export interface Moments {
 
 const NONE: ReadonlyMap<PlayerId, { readonly key: string; readonly tone: 'gain' | 'loss' }> = new Map();
 
-export function useIslandMoments({ events, board, free, angleOf }: MomentsInput): Moments {
+export function useIslandMoments({ events, board, free, angleOf, skipFirstOpening = false }: MomentsInput): Moments {
   const round = board.round;
   const islands = useMemo((): Readonly<Record<PlayerId, IslandId>> | null => {
     const chosen = events.find((e) => e.type === 'islands-chosen');
     return chosen?.type === 'islands-chosen' ? chosen.islands : null;
   }, [events]);
   const opening = useMemo(() => {
-    if (!islands || round < 1) return [];
+    if (!islands || round < 1 || (skipFirstOpening && round === 1)) return [];
     const produced = events.find((e) => e.type === 'goods-produced' && e.round === round);
     const made = (id: PlayerId) => (produced?.type === 'goods-produced' ? (produced.produced[id]?.spice ?? 0) : 0);
     return openingMoments(islands, round, RULES_V07, (id) => Math.max(0, (board.players[id]?.stock.spice ?? 0) - made(id)));

@@ -180,6 +180,7 @@ export function Table3DScreen({ session, onExit, autoplay = false, showResult = 
     board,
     free: ready && !holding && !showIslands && !autoplay && rerollShown === null,
     angleOf: (id) => angles[laneOf(id)]!,
+    skipFirstOpening: islandMarks,
   });
   const env: StageEnv | null =
     free && !moments.blocking && request && viewer && (phase === 'invest' || phase === 'role-deployment')
