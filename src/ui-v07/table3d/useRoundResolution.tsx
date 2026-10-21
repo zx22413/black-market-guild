@@ -51,6 +51,8 @@ export interface ResolutionInput {
   readonly paused: boolean;
   /** Stay on the market card once its rows are in (the tutorial explains the prices there). */
   readonly holdMarket?: boolean;
+  /** Keep the voyage event card up (not shrinking to the corner) until released (the tutorial explains it). */
+  readonly holdEvent?: boolean;
   readonly seats: readonly BeatSeat[];
   readonly angles: readonly number[];
   readonly laneOf: (id: PlayerId) => number;
@@ -127,7 +129,7 @@ export function stageShipState(stage: ResolutionStage, beatIndex: number, voyage
 }
 
 export function useRoundResolution(input: ResolutionInput): Resolution {
-  const { events, privateEvents, round, paused, seats, angles, laneOf, viewer, nameOf, weather, onFinish, holdMarket = false } = input;
+  const { events, privateEvents, round, paused, seats, angles, laneOf, viewer, nameOf, weather, onFinish, holdMarket = false, holdEvent = false } = input;
   // Who is wanted this round (§9.6, marked at the round's start): a red flag goes up on their
   // islands for a moment, then the voyage event's card (§5 step 5), then the roles are revealed.
   const wantedIds = useMemo(() => events.flatMap((e) => (e.type === 'wanted-marked' && e.round === round ? e.players : [])), [events, round]);
@@ -408,7 +410,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
       <>
         {stage === 'wanted' && <WantedBanner seats={wantedSeats} />}
         {weather && stage !== 'wanted' && stage !== 'event' && stage !== 'receipt' && <VoyageEventChip event={weather} />}
-        {weather && stage === 'event' && <VoyageEventCard key={round} event={weather} onDone={() => setStage('reveal')} />}
+        {weather && stage === 'event' && <VoyageEventCard key={round} event={weather} held={holdEvent} onDone={() => setStage('reveal')} />}
         {stage === 'receipt' && viewer !== null ? <ReceiptCard round={round!} viewer={viewer} lines={receipt.lines} net={receipt.net} onClose={finish} /> : null}
       </>
     ),

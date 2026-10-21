@@ -2053,6 +2053,22 @@ button.inv-stack:hover {
   15%, 85% { opacity: 1; transform: perspective(900px) rotateY(0deg) scale(1); }
   100% { opacity: 0; transform: translate(-38vw, -40vh) scale(0.2); }
 }
+/* Held open by the tutorial: the card flips in and stays; on release it only shrinks away. */
+.event-hold { animation: event-veil-in 300ms linear both; cursor: default; }
+.event-hold .event-card { animation: event-card-in 600ms linear both; }
+.event-leave { animation: event-veil-out 600ms linear both; }
+.event-leave .event-card { animation: event-card-out 600ms linear both; }
+@keyframes event-veil-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes event-veil-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes event-card-in {
+  0% { opacity: 0; transform: perspective(900px) translateY(40px) rotateY(90deg) scale(0.6); }
+  60% { opacity: 1; transform: perspective(900px) translateY(0) rotateY(-8deg) scale(1.06); }
+  100% { opacity: 1; transform: perspective(900px) rotateY(0deg) scale(1); }
+}
+@keyframes event-card-out {
+  0% { opacity: 1; transform: perspective(900px) rotateY(0deg) scale(1); }
+  100% { opacity: 0; transform: translate(-38vw, -40vh) scale(0.2); }
+}
 @media (prefers-reduced-motion: reduce) {
   .event-card { animation-name: event-veil; }
 }

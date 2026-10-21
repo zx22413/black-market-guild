@@ -29,6 +29,8 @@ export interface CoachView {
   readonly holdsDecision: boolean;
   /** The resolution stays on its market card until the step about it is read. */
   readonly holdsMarket: boolean;
+  /** The voyage event card stays up, un-shrunk, until the step about it is read. */
+  readonly holdsEvent: boolean;
   /** What to do for the decision on screen, once its steps are read. */
   readonly todo: string | null;
   /** Your choice is complete: only 「提交」 is lit, to press it. */
@@ -66,6 +68,7 @@ export function coachView(steps: readonly CoachStep[], read: number, moment: Coa
   const step = next !== undefined && reached(next.trigger, moment) ? next : null;
   const holdsDecision = steps.slice(read).some((s) => isDecision(s.trigger, moment.decision));
   const holdsMarket = steps.slice(read).some((s) => s.trigger.kind === 'market' && s.trigger.round === (moment.marketRound ?? 0));
+  const holdsEvent = step !== null && (step.focus ?? []).some((f) => f.kind === 'event');
   const last = read > 0 ? steps[read - 1] : undefined;
   const todo = !holdsDecision && last?.todo !== undefined && isDecision(last.trigger, moment.decision) ? last.todo : null;
   const ready = step === null && todo !== null && moment.draftReady === true;
@@ -77,5 +80,5 @@ export function coachView(steps: readonly CoachStep[], read: number, moment: Coa
       ? [{ kind: 'advance' }]
       : (step?.focus ?? (last?.focus ?? []));
   const guide = step === null && todo !== null && !ready && last?.guide ? last.guide.map(asGroup) : null;
-  return { step, number: Math.min(read + 1, steps.length), total: steps.length, holdsDecision, holdsMarket, todo, ready, pulse: ready || idle || guide !== null, focus, guide };
+  return { step, number: Math.min(read + 1, steps.length), total: steps.length, holdsDecision, holdsMarket, holdsEvent, todo, ready, pulse: ready || idle || guide !== null, focus, guide };
 }

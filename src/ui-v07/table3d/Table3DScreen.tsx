@@ -61,9 +61,11 @@ export interface Table3DScreenProps {
   readonly onMarket?: (round: number) => void;
   /** Keep the resolution on its market card (once the rows are in) until released. */
   readonly holdMarket?: boolean;
+  /** Keep the voyage event card on screen, un-shrunk, until released. */
+  readonly holdEvent?: boolean;
 }
 
-export function Table3DScreen({ session, onExit, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false }: Table3DScreenProps) {
+export function Table3DScreen({ session, onExit, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false }: Table3DScreenProps) {
   const snap = useSession(session);
   const [ready, setReady] = useState(false);
 
@@ -139,6 +141,7 @@ export function Table3DScreen({ session, onExit, autoplay = false, showResult = 
     round: autoplay ? null : resolvingRound,
     paused: rerollShown !== null,
     holdMarket,
+    holdEvent,
     seats,
     angles,
     laneOf,

@@ -73,6 +73,7 @@ export function TutorialScreen({ script, next, onReplay, onNext, onExit }: Tutor
           onDraft={session.setDraft}
           onMarket={session.setMarket}
           holdMarket={coach.holdsMarket}
+          holdEvent={coach.holdsEvent}
         />
       </Suspense>
       {ready && (

@@ -64,6 +64,16 @@ describe('coachView', () => {
     expect(coachView(STEPS, 2, at({ decision: R1, draftReady: true })).pulse).toBe(true);
   });
 
+  it('holds the voyage event card open while the step about it is on screen', () => {
+    const steps: readonly CoachStep[] = [
+      { trigger: { kind: 'resolution', round: 1 }, title: 'r', lines: [], focus: [{ kind: 'event' }] },
+      { trigger: { kind: 'resolution', round: 1 }, title: 's', lines: [], focus: [{ kind: 'rank' }] },
+    ];
+    expect(coachView(steps, 0, at({ resolvingRound: 1 })).holdsEvent).toBe(true);
+    expect(coachView(steps, 1, at({ resolvingRound: 1 })).holdsEvent).toBe(false);
+    expect(coachView(steps, 0, at({ resolvingRound: 0 })).holdsEvent).toBe(false);
+  });
+
   it('shows a market step when that round reaches its market card, and holds the card until it is read', () => {
     const steps: readonly CoachStep[] = [
       { trigger: { kind: 'resolution', round: 1 }, title: 'r', lines: [], focus: [{ kind: 'event' }] },
