@@ -15,7 +15,7 @@ const tide = nameOf(BOT.tide);
 
 const invest = (round: number): CoachTrigger => ({ kind: 'decision', round, phase: 'invest' });
 const resolving = (round: number): CoachTrigger => ({ kind: 'resolution', round });
-const voyage = (round: number): CoachTrigger => ({ kind: 'voyage', round });
+const voyage = (round: number): CoachTrigger => ({ kind: 'voyage', round, owners: ['p1'] });
 const market = (round: number): CoachTrigger => ({ kind: 'market', round });
 
 const step = (
@@ -152,7 +152,7 @@ export const BASICS: TutorialScript = {
       [F.build('shipyard')],
     ),
     step(resolving(3), '順風', [F.event], [`這回合是順風：所有船 +${R.voyageEvents.tailwind}。`]),
-    step({ kind: 'end' }, '順風救了你', [F.island('p1'), F.plate('p1')], [
+    step(voyage(3), '順風救了你', [F.beat], [
       `有出航的話，你的船原始骰值只有 3，靠順風 +${R.voyageEvents.tailwind} 變成 4 才抵達。`,
     ]),
     step({ kind: 'end' }, '總財富', [F.rank], [

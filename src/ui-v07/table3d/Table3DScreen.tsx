@@ -65,8 +65,8 @@ export interface Table3DScreenProps {
   readonly onStarted?: (round: number) => void;
   /** Told whether your decision is up with nothing still playing in front of it. */
   readonly onCalm?: (calm: boolean) => void;
-  /** Told when a round's voyage has shown your ship's result. */
-  readonly onVoyage?: (round: number) => void;
+  /** Told when a round's voyage has shown the result of a player's ship. */
+  readonly onVoyage?: (round: number, owner: PlayerId) => void;
   /** Hold the voyage on the ship being shown (the tutorial host is talking about it). */
   readonly holdVoyage?: boolean;
   /** Hold the resolution where it is (the tutorial host is talking about it). */
@@ -167,8 +167,8 @@ export function Table3DScreen({ session, onExit, autoplay = false, showResult = 
     if (resolution.marketDone && resolvingRound !== null) onMarket?.(resolvingRound);
   }, [resolution.marketDone, resolvingRound, onMarket]);
   useEffect(() => {
-    if (resolution.ownOutcomeShown && resolvingRound !== null) onVoyage?.(resolvingRound);
-  }, [resolution.ownOutcomeShown, resolvingRound, onVoyage]);
+    if (resolution.outcomeOf !== null && resolvingRound !== null) onVoyage?.(resolvingRound, resolution.outcomeOf);
+  }, [resolution.outcomeOf, resolvingRound, onVoyage]);
   useEffect(() => {
     if ((resolution.stage === 'event' || resolution.stage === 'reveal') && resolvingRound !== null) onStarted?.(resolvingRound);
   }, [resolution.stage, resolvingRound, onStarted]);

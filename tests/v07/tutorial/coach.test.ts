@@ -71,10 +71,12 @@ describe('coachView', () => {
   });
 
   it('shows a voyage step once your ship\'s result is out, and holds the voyage on it until read', () => {
-    const steps: readonly CoachStep[] = [{ trigger: { kind: 'voyage', round: 2 }, title: 'v', lines: [], focus: [{ kind: 'beat' }] }];
-    expect(coachView(steps, 0, at({ resolvingRound: 2, voyageRound: 1 })).step).toBeNull();
-    expect(coachView(steps, 0, at({ resolvingRound: 2, voyageRound: 2 }))).toMatchObject({ step: steps[0], holdsVoyage: true });
-    expect(coachView(steps, 1, at({ resolvingRound: 2, voyageRound: 2 })).holdsVoyage).toBe(false);
+    const steps: readonly CoachStep[] = [{ trigger: { kind: 'voyage', round: 2, owners: ['p1'] }, title: 'v', lines: [], focus: [{ kind: 'beat' }] }];
+    expect(coachView(steps, 0, at({ resolvingRound: 2, shownShips: ['1:p1'] })).step).toBeNull();
+    expect(coachView(steps, 0, at({ resolvingRound: 2, shownShips: ['2:p1'] }))).toMatchObject({ step: steps[0], holdsVoyage: true });
+    expect(coachView(steps, 1, at({ resolvingRound: 2, shownShips: ['2:p1'] })).holdsVoyage).toBe(false);
+    // A round shown to the end without that ship (it never sailed) still gets its step.
+    expect(coachView(steps, 0, at({ resolvingRound: 2, shownRound: 2 })).step).toBe(steps[0]);
   });
 
   it('waits for a calm table before a decision step', () => {

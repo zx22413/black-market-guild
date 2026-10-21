@@ -15,8 +15,8 @@ export interface CoachMoment {
   readonly marketRound?: number;
   /** The last round whose resolution has got past the wanted flag, to its voyage event card or the role reveal (0 before any). */
   readonly startedRound?: number;
-  /** The last round whose voyage has shown your ship's result (0 before any). */
-  readonly voyageRound?: number;
+  /** The ships whose voyage result has shown, as `round:owner`. */
+  readonly shownShips?: readonly string[];
   /** Your decision is up on the table, nothing is still playing in front of it (islands' moments, the reroll's beams). */
   readonly calm?: boolean;
   /** The match is over and its last resolution has played. */
@@ -66,7 +66,7 @@ function reached(trigger: CoachTrigger, moment: CoachMoment): boolean {
     case 'resolution':
       return (moment.startedRound ?? moment.resolvingRound) >= trigger.round;
     case 'voyage':
-      return (moment.voyageRound ?? 0) >= trigger.round;
+      return moment.shownRound >= trigger.round || trigger.owners.every((o) => (moment.shownShips ?? []).includes(`${trigger.round}:${o}`));
     case 'market':
       return (moment.marketRound ?? 0) >= trigger.round;
     case 'end':

@@ -40,7 +40,8 @@ const deployIntro = step(DEPLOY, '部署角色', [F.hand], [
  * While the round resolves: what to watch, never the result (the explanation comes at the end).
  * The voyage event card opens the resolution, so it is lit with what moves the show on.
  */
-const watch = (focus: readonly FocusTarget[], line: string): CoachStep => step(RESOLVING, '看結算', [...focus, F.event], [line]);
+const watch = (focus: readonly FocusTarget[], line: string, trigger: CoachTrigger = RESOLVING): CoachStep => step(trigger, '看結算', [...focus, F.event], [line]);
+const voyaged = (owners: readonly string[], round = 1): CoachTrigger => ({ kind: 'voyage', round, owners });
 const done = (next: string): CoachStep => step(END, '情境完成', [F.rank], [next]);
 
 const scenario = (script: Omit<TutorialScript, 'rules' | 'seats'>): TutorialScript => ({ ...script, rules: shortRules(1), seats: SEATS });
@@ -77,7 +78,7 @@ export const GUARD: TutorialScript = scenario({
       [F.role('guard'), F.target('p1')],
     ),
     watch([], '角色一次全部揭露，接著看你的船：起始骰值、護衛的加成，再判定抵達或沉沒。'),
-    step(END, '差一點就沉了', [F.island('p1'), F.plate('p1')], [
+    step(voyaged(['p1']), '差一點就沉了', [F.beat], [
       `你的船原始骰值只有 3，護衛 +${guard.modifier} 後變 4，剛好抵達。`,
       '小心航海事件「月黑風高」：被護衛守著的船 −1，正好抵銷護衛。',
     ]),
@@ -117,7 +118,7 @@ export const PIRATE: TutorialScript = scenario({
       [F.role('pirate'), F.target(BOT.vande)],
     ),
     watch([], `看${vande}的船：海盜的 ${pirate.modifier} 會不會讓它沉下去。`),
-    step(END, '擊沉', [F.island(BOT.vande), F.plate('p1')], [
+    step(voyaged([BOT.vande]), '擊沉', [F.beat], [
       `${vande}的船原始骰值 4，海盜 ${pirate.modifier} 後變 3，沉沒，戰利品歸你。`,
       '小心航海事件「海霧」：被海盜鎖定的船 +1，海盜反而幫了對手。',
     ]),
@@ -163,7 +164,7 @@ export const INTEL: TutorialScript = scenario({
       '選擇重擲，或維持原本的骰值。',
     ),
     watch([], '角色揭露時，大家都看得到哪艘船被重擲，但原本的骰值永遠只有你知道。'),
-    step(END, '重擲的結果', [F.island('p1'), F.plate('p1')], ['重擲的話新骰值是 5，船抵達；維持 2 的話就沉了。']),
+    step(voyaged(['p1']), '重擲的結果', [F.beat], ['重擲的話新骰值是 5，船抵達；維持 2 的話就沉了。']),
     done('下一課：走私商人。'),
   ],
 });
@@ -205,7 +206,7 @@ export const SMUGGLER: TutorialScript = scenario({
       [F.role('smuggler'), [F.target(BOT.vande), F.target(BOT.tide)]],
     ),
     watch([], '角色揭露時，看看你搭的那艘船上有沒有護衛。'),
-    step(END, '揭曉', [F.island(BOT.vande), F.island(BOT.tide), F.plate('p1')], [
+    step(voyaged([BOT.vande, BOT.tide]), '揭曉', [F.beat], [
       `${tide}派了護衛守自己的船：選那艘就被抓了。${vande}的船沒有護衛，走私成功。`,
       `這回合的航海事件是「黑市熱絡」：私貨價值從 ${smuggler.goodsValue} G 提高到 ${R.voyageEvents.blackMarketRushGoodsValue} G。`,
     ]),
@@ -245,7 +246,7 @@ export const ARMS_COVER: TutorialScript = scenario({
       [F.role('smuggler'), F.target('p1')],
     ),
     watch([], '角色揭露時，看看有沒有人派護衛守你的船。'),
-    step(END, '揭曉', [F.island('p1'), F.plate(BOT.vande)], [
+    step(voyaged(['p1']), '揭曉', [F.beat], [
       `${vande}派了護衛守你的船，想沒收你的軍火。有掩護的話軍火照常賣出；沒掩護就被他拿走了。`,
       `他守的是別人的船、船又抵達，沒收不到軍火時，就改拿 ${guard.escortFee} G 護航費。`,
     ]),
@@ -330,8 +331,8 @@ export const BROKER: TutorialScript = {
       ],
       `選莊家，點${vande}的船，再在船旁的清單押鐵礦會跌（莊家這課不用冷卻）。`,
       [F.role('broker'), F.target(BOT.vande), F.bet('iron', -1)]),
-      watch([F.price('iron')], '看鐵礦：需求減掉你押的 1 之後，到港的 1 鐵礦夠不夠賣。'),
-      step(END, '押跌也賺錢', [F.price('iron'), F.plate('p1')], [
+      watch([F.price('iron')], '看鐵礦：需求減掉你押的 1 之後，到港的 1 鐵礦夠不夠賣。', RESOLVING2),
+      step({ kind: 'market', round: 2 }, '押跌也賺錢', [F.marketCard], [
         '押跌讓鐵礦需求變 0，到港 1 鐵礦比需求多，價格下跌：銀行付你獎金。',
         `押跌時，${vande}的船賣鐵礦的單價再往下多動 2 格，少賣的差額由你拿走（最多拿到他的賣貨收入）。`,
       ]),

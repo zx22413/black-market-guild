@@ -59,8 +59,11 @@ export type CoachTrigger =
   | { readonly kind: 'decision'; readonly round: number; readonly phase: DecisionPhase }
   /** While that round's resolution plays. */
   | { readonly kind: 'resolution'; readonly round: number }
-  /** When your ship's result shows in that round's voyage (the show waits on it until the step is read). */
-  | { readonly kind: 'voyage'; readonly round: number }
+  /**
+   * When the result of every listed player's ship has shown in that round's voyage (the show waits
+   * there until the step is read). A round that plays out without them shows it at the end.
+   */
+  | { readonly kind: 'voyage'; readonly round: number; readonly owners: readonly PlayerId[] }
   /** When that round's resolution reaches the market card (it waits there until the step is read). */
   | { readonly kind: 'market'; readonly round: number }
   /** After the last resolution has played. */

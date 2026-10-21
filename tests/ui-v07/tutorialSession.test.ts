@@ -103,6 +103,8 @@ describe('tutorial session', () => {
     expect(session.getSnapshot().status).toBe('finished');
     expect(session.getCoach().step).toBeNull();
     session.setShown(1, true);
+    // The result steps that waited for a ship's result come first when the round has been shown without it.
+    for (let guard = 0; guard < 5 && session.getCoach().step?.trigger.kind !== 'end'; guard += 1) session.read();
     expect(session.getCoach().step?.trigger.kind).toBe('end');
   });
 });
