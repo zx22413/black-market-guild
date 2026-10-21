@@ -305,6 +305,8 @@ export interface BeatLayerInput {
   readonly tag: ReactNode;
   /** Seats, for the name and color on each pirate and guard boat. */
   readonly seats: readonly BeatSeat[];
+  /** Stay on the ship with its tag after the beat is over (the tutorial host is explaining its result). */
+  readonly hold?: boolean;
 }
 
 export interface BeatLayer {
@@ -321,7 +323,7 @@ export interface BeatLayer {
  * What one ship beat adds to the shared table: the close-up, the pirates and guards sailing in,
  * the hit, the ship's reaction and the tag above it. Used by the beat preview and the round.
  */
-export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats }: BeatLayerInput): BeatLayer {
+export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, hold = false }: BeatLayerInput): BeatLayer {
   const focusLane = laneOf(beat.owner);
   const focusPose = shipPose(angles[focusLane]!, 'sailing');
   const actors = actorsShown(beat, view);
@@ -336,7 +338,7 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats }: B
       })()
     : { before: keptOffset(beat, Math.max(0, view.stepsShown - 1), weather), after: keptOffset(beat, view.stepsShown, weather) };
   const striking = stepActors(beat, view);
-  const framing = framingOf(view);
+  const framing = framingOf(view, hold);
   // Islands at work on the ship (the lighthouse's beam, the cove's raiders, the fortress's guns):
   // the close-up widens to take in where they come from.
   const lookup = { angleOf: (id: PlayerId) => angles[laneOf(id)]!, islandOf: (id: PlayerId) => seats.find((s) => s.id === id)?.island ?? null };

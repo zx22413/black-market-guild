@@ -100,9 +100,9 @@ export function keptOffset(beat: ShipBeat, steps: number, weather: VoyageEventId
   return { forward: pushes * SHIP_KEEP.push, up: Math.min(SHIP_KEEP.maxLift, lifts * SHIP_KEEP.lift) };
 }
 
-/** Close-up on the ship from its start die until the beat is over; the whole table otherwise. */
-export function framingOf(view: BeatView): 'overview' | 'ship' {
-  return view.showStart && !view.done ? 'ship' : 'overview';
+/** Close-up on the ship from its start die until the beat is over (or while `hold` keeps it); the whole table otherwise. */
+export function framingOf(view: BeatView, hold = false): 'overview' | 'ship' {
+  return view.showStart && (hold || !view.done) ? 'ship' : 'overview';
 }
 
 /** Players the beat is about: the owner and every pirate and guard on the ship. */
