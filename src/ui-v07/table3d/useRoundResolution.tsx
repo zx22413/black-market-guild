@@ -74,6 +74,8 @@ export interface ResolutionInput {
 
 export interface Resolution {
   readonly stage: ResolutionStage | null;
+  /** The round `stage` is for (it lags one render behind a change of round). */
+  readonly stageRound: number | null;
   /** How many events the table should be built from at this point. */
   readonly cutoff: number;
   /** Cash moved by the settlement flights shown so far, on top of the table's cash. */
@@ -150,7 +152,12 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   const finishRef = useRef(onFinish);
   finishRef.current = onFinish;
   const finish = () => finishRef.current();
-  useEffect(() => setStage(firstStage), [round]); // eslint-disable-line react-hooks/exhaustive-deps
+  // The round `stage` belongs to: the stage kept from the last round is stale for a render after the round changes.
+  const [stageRound, setStageRound] = useState<number | null>(round);
+  useEffect(() => {
+    setStage(firstStage);
+    setStageRound(round);
+  }, [round]); // eslint-disable-line react-hooks/exhaustive-deps
   // The flag stays up for a few seconds (unless skipped), then the event card follows.
   useEffect(() => {
     if (stage !== 'wanted' || paused) return;
@@ -242,7 +249,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     stageShipState(stage, beats.findIndex((b) => b.shipId === id), voyageIndex, restingState(id), layer?.focusState ?? null);
 
   if (!active) {
-    return { stage: null, cutoff: events.length, cashBonus: {}, shipState: () => 'docked', camera: null, ringed: undefined, marketDone: false, outcomeOf: null, wrapShip: undefined, pins: [], scene: null, bar: null, overlay: null, onTableClick: undefined, marketPrices: undefined, changedGoods: undefined };
+    return { stage: null, stageRound: null, cutoff: events.length, cashBonus: {}, shipState: () => 'docked', camera: null, ringed: undefined, marketDone: false, outcomeOf: null, wrapShip: undefined, pins: [], scene: null, bar: null, overlay: null, onTableClick: undefined, marketPrices: undefined, changedGoods: undefined };
   }
 
   const colorOf = (id: string) => seats.find((s) => s.id === id)?.color ?? '#888';
@@ -400,6 +407,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   const changedGoods = stage === 'market' ? new Set(revealedRows.filter((r) => r.after !== r.before).map((r) => r.good)) : undefined;
   return {
     stage,
+    stageRound,
     cutoff,
     cashBonus: stage === 'settle' ? cashSoFar(flights, flightsShown) : {},
     shipState,

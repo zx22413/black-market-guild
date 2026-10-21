@@ -176,8 +176,9 @@ export function Table3DScreen({ session, onExit, autoplay = false, showResult = 
     if (resolution.outcomeOf !== null && resolvingRound !== null) onVoyage?.(resolvingRound, resolution.outcomeOf);
   }, [resolution.outcomeOf, resolvingRound, onVoyage]);
   useEffect(() => {
-    if ((resolution.stage === 'event' || resolution.stage === 'reveal') && resolvingRound !== null) onStarted?.(resolvingRound);
-  }, [resolution.stage, resolvingRound, onStarted]);
+    // The stage is only this round's once it has been reset for it (until then it is the last round's).
+    if ((resolution.stage === 'event' || resolution.stage === 'reveal') && resolvingRound !== null && resolution.stageRound === resolvingRound) onStarted?.(resolvingRound);
+  }, [resolution.stage, resolution.stageRound, resolvingRound, onStarted]);
   const board = useMemo(() => buildBoard(ids, snap.startingCash, events), [ids, events, snap.startingCash]);
 
   // The islands that change production or costs get their moment first: at the round's start and at the launch.
