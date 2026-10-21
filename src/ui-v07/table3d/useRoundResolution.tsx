@@ -333,8 +333,9 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
 
   const current = groups[Math.max(0, groupsShown - 1)];
   const allRevealed = groupsShown >= groups.length;
-  const go = (label: string, action: () => void) => (
-    <button type="button" className="primary" data-focus="advance" onClick={action}>
+  // Only a press the show waits for is what the tutorial lights: the event card moves on by itself.
+  const go = (label: string, action: () => void, waits = true) => (
+    <button type="button" className="primary" {...(waits ? { 'data-focus': 'advance' } : {})} onClick={action}>
       {label}
     </button>
   );
@@ -349,7 +350,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
           <SkipButton label="跳過" onClick={() => setStage(afterWanted)} />
         </>
       ) : stage === 'event' ? (
-        go('繼續', () => setStage('reveal'))
+        go('繼續', () => setStage('reveal'), false)
       ) : stage === 'reveal' ? (
         <>
           {groups.length === 0 ? <span className="chip muted">沒有人部署角色</span> : <RevealChips groups={groups} shown={groupsShown} />}
