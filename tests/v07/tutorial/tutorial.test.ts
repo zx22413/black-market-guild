@@ -153,13 +153,17 @@ describe('stage', () => {
   });
 });
 
-describe('basics: the whole guided match', () => {
+describe('basics: the guided match', () => {
   const { events } = playTutorial(BASICS);
   const market = (round: number) => events.find((e): e is Extract<MatchEvent, { type: 'market-settled' }> => e.type === 'market-settled' && e.round === round)!;
 
-  it('plays all six rounds', () => {
-    expect(BASICS.rules.rounds).toBe(6);
-    expect(events.filter((e) => e.type === 'round-ended')).toHaveLength(6);
+  it('plays three rounds and teaches no role: your role decisions are played for you', () => {
+    expect(BASICS.rules.rounds).toBe(3);
+    expect(events.filter((e) => e.type === 'round-ended')).toHaveLength(3);
+    playTutorial(BASICS, (c) => {
+      expect(c.decision.phase).toBe('invest');
+      return scriptedAction(BASICS, c);
+    });
   });
 
   it('round 1: your ship rolls 5 and arrives; round 2 you are wanted', () => {
@@ -168,56 +172,29 @@ describe('basics: the whole guided match', () => {
     expect(events.find((e) => e.type === 'wanted-marked' && e.round === 2)).toMatchObject({ players: ['p1'] });
   });
 
-  it('round 2: the storm takes your 4 to 3 and the guard back to 4; the unguarded 3 sinks; crowded wood falls', () => {
+  it('round 2: the storm sinks your 4, and the wood the bots crowd in loses price', () => {
     expect(events.find((e) => e.type === 'voyage-event-revealed' && e.round === 2)).toMatchObject({ event: 'storm' });
-    expect(modifiers(events, 2, 'r2-p1')).toMatchObject({ base: 4, guard: 1, event: -1, final: 4 });
-    expect(outcome(events, 'r2-p1')).toMatchObject({ outcome: 'arrived' });
-    expect(modifiers(events, 2, 'r2-p3')).toMatchObject({ base: 3, final: 2 });
-    expect(outcome(events, 'r2-p3')).toMatchObject({ outcome: 'sank' });
+    expect(modifiers(events, 2, 'r2-p1')).toMatchObject({ base: 4, event: -1, final: 3 });
+    expect(outcome(events, 'r2-p1')).toMatchObject({ outcome: 'sank' });
     expect(market(2).priceAfter.wood).toBeLessThan(market(2).priceBefore.wood);
   });
 
-  it('round 3: you build the shipyard, the tailwind brings your 3 home, your pirate still sinks the 3 it targets', () => {
+  it('round 3: you build the shipyard and a tailwind brings your 3 home', () => {
     expect(events.find((e) => e.type === 'buildings-built' && e.round === 3)).toMatchObject({ builds: [{ playerId: 'p1', building: 'shipyard' }] });
     expect(modifiers(events, 3, 'r3-p1')).toMatchObject({ base: 3, event: 1, final: 4 });
-    expect(modifiers(events, 3, 'r3-p2')).toMatchObject({ base: 3, pirate: -1, event: 1, final: 3 });
-    expect(outcome(events, 'r3-p2')).toMatchObject({ outcome: 'sank' });
-    expect(events.some((e) => e.type === 'cash-changed' && e.round === 3 && e.reason === 'pirate-loot' && e.playerId === 'p1')).toBe(true);
+    expect(outcome(events, 'r3-p1')).toMatchObject({ outcome: 'arrived' });
   });
 
-  it('round 4: your intel sees a 2 and the reroll brings a 5', () => {
-    const { privateEvents } = playTutorial(BASICS);
-    expect(privateEvents.find((e) => e.type === 'intel-report' && e.round === 4)).toMatchObject({ rawRoll: 2 });
-    expect(modifiers(events, 4, 'r4-p1')).toMatchObject({ base: 5 });
-  });
-
-  it('round 5: your smuggling pays 150 on the rush; the bot\'s covered arms are not seized and its guard takes the escort fee', () => {
-    expect(events.find((e) => e.type === 'smuggling-settled' && e.round === 5 && e.smugglers.includes('p1'))).toMatchObject({ shipId: 'r5-p2', result: 'taken' });
-    expect(events.some((e) => e.type === 'arms-confiscated')).toBe(false);
-    expect(events.some((e) => e.type === 'cash-changed' && e.round === 5 && e.reason === 'escort-fee' && e.playerId === 'p2')).toBe(true);
-  });
-
-  it('round 6: the broker\'s bull bet lifts wood, pays the bet, and your ship sells higher', () => {
-    expect(market(6)).toMatchObject({ demand: { wood: 2 }, arrived: { wood: 1 } });
-    expect(market(6).priceAfter.wood).toBe(market(6).priceBefore.wood + 1);
-    expect(cashFor(events, 'broker-bet', 'p1')).toBe(BASICS.rules.roles.broker.payout);
-    expect(cashFor(events, 'broker-lift', 'p1')).toBeGreaterThan(0);
-  });
-
-  it('holds for every load you may pick in rounds 1 and 2, and for any load later', () => {
+  it('holds for every load you may pick: wanted in round 2, the shipyard affordable in round 3', () => {
     const first = everyChoice(BASICS, 1, 'invest');
     const second = everyChoice(BASICS, 2, 'invest');
     expect(first.length).toBeGreaterThan(1);
     expect(second.length).toBeGreaterThan(1);
     first.forEach((_, i) =>
       second.forEach((__, j) => {
-        const log = playTutorial(BASICS, (c) => {
-          if (c.decision.phase !== 'invest') return scriptedAction(BASICS, c);
-          return c.legalActions[c.view.round === 1 ? i : c.view.round === 2 ? j : 0]!;
-        });
+        const log = playTutorial(BASICS, (c) => c.legalActions[c.view.round === 1 ? i : c.view.round === 2 ? j : 0]!);
         expect(log.events.find((e) => e.type === 'wanted-marked' && e.round === 2)).toMatchObject({ players: ['p1'] });
         expect(log.events.find((e) => e.type === 'buildings-built' && e.round === 3)).toMatchObject({ builds: [{ playerId: 'p1', building: 'shipyard' }] });
-        expect(cashFor(log.events, 'broker-bet', 'p1')).toBe(BASICS.rules.roles.broker.payout);
       }),
     );
   });

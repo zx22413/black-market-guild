@@ -2,13 +2,12 @@ import { TUTORIALS, type TutorialId } from '../../v07/tutorial';
 import { isLessonDone } from './progress';
 import './tutorial.css';
 
-// The list of lessons: the whole guided match (every role is taught inside it), then each role on
-// its own for a replay, and the island draft. Any lesson can be started or replayed at any time; a
-// check mark shows the ones finished in this browser.
+// The list of lessons: the guided match, one lesson per role, then the island draft. Any lesson
+// can be started or replayed at any time; a check mark shows the ones finished in this browser.
 
 export const TUTORIAL_GROUPS: readonly { readonly title: string; readonly ids: readonly TutorialId[] }[] = [
-  { title: '完整教學', ids: ['basics'] },
-  { title: '單課重玩：角色', ids: ['guard', 'pirate', 'intel', 'smuggler', 'arms-cover', 'broker'] },
+  { title: '基礎', ids: ['basics'] },
+  { title: '角色', ids: ['guard', 'pirate', 'intel', 'smuggler', 'arms-cover', 'broker'] },
   { title: '開局', ids: ['islands'] },
 ];
 
@@ -33,7 +32,7 @@ export function TutorialMenu({ onStart, onBack }: TutorialMenuProps) {
   return (
     <main className="v7-setup tut-menu">
       <h1>新手教學</h1>
-      <p className="v7-muted">先玩完整教學：一整局裡會教到所有角色。之後想複習某個角色，可以單獨重玩那一課。</p>
+      <p className="v7-muted">先玩基礎，再一課一課學角色與開局選島。每一課都可以隨時重玩。</p>
       {TUTORIAL_GROUPS.map((g) => (
         <section key={g.title}>
           <h2>{g.title}</h2>
