@@ -74,6 +74,8 @@ export function TutorialScreen({ script, next, onReplay, onNext, onExit }: Tutor
           onMarket={session.setMarket}
           onStarted={session.setStarted}
           onCalm={session.setCalm}
+          onVoyage={session.setVoyage}
+          holdVoyage={coach.holdsVoyage}
           holdShow={coach.holdsShow}
           holdMarket={coach.holdsMarket}
           holdEvent={coach.holdsEvent}

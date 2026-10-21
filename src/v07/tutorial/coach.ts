@@ -15,6 +15,8 @@ export interface CoachMoment {
   readonly marketRound?: number;
   /** The last round whose resolution has got past the wanted flag, to its voyage event card or the role reveal (0 before any). */
   readonly startedRound?: number;
+  /** The last round whose voyage has shown your ship's result (0 before any). */
+  readonly voyageRound?: number;
   /** Your decision is up on the table, nothing is still playing in front of it (islands' moments, the reroll's beams). */
   readonly calm?: boolean;
   /** The match is over and its last resolution has played. */
@@ -33,6 +35,8 @@ export interface CoachView {
   readonly holdsDecision: boolean;
   /** The resolution waits (does not play on) while a step about it is on screen. */
   readonly holdsShow: boolean;
+  /** The voyage stays on the ship whose result is out until the step about it is read. */
+  readonly holdsVoyage: boolean;
   /** The resolution stays on its market card until the step about it is read. */
   readonly holdsMarket: boolean;
   /** The voyage event card stays up, un-shrunk, until the step about it is read. */
@@ -61,6 +65,8 @@ function reached(trigger: CoachTrigger, moment: CoachMoment): boolean {
       return isDecision(trigger, moment.decision) && moment.shownRound >= trigger.round - 1 && moment.calm !== false;
     case 'resolution':
       return (moment.startedRound ?? moment.resolvingRound) >= trigger.round;
+    case 'voyage':
+      return (moment.voyageRound ?? 0) >= trigger.round;
     case 'market':
       return (moment.marketRound ?? 0) >= trigger.round;
     case 'end':
@@ -77,6 +83,7 @@ export function coachView(steps: readonly CoachStep[], read: number, moment: Coa
   // Held from the moment the round's resolution exists, so the card never plays a bit before the step shows.
   const holdsEvent = next !== undefined && next.trigger.kind === 'resolution' && moment.resolvingRound >= next.trigger.round && next.focus.some((f) => f.kind === 'event');
   const holdsShow = step !== null && step.trigger.kind === 'resolution';
+  const holdsVoyage = step !== null && step.trigger.kind === 'voyage';
   const last = read > 0 ? steps[read - 1] : undefined;
   const todo = !holdsDecision && last?.todo !== undefined && isDecision(last.trigger, moment.decision) ? last.todo : null;
   const ready = step === null && todo !== null && moment.draftReady === true;
@@ -88,5 +95,5 @@ export function coachView(steps: readonly CoachStep[], read: number, moment: Coa
       ? [{ kind: 'advance' }]
       : (step?.focus ?? (last?.focus ?? []));
   const guide = step === null && todo !== null && !ready && last?.guide ? last.guide.map(asGroup) : null;
-  return { step, number: Math.min(read + 1, steps.length), total: steps.length, holdsDecision, holdsMarket, holdsEvent, holdsShow, todo, ready, pulse: ready || idle || guide !== null, focus, guide };
+  return { step, number: Math.min(read + 1, steps.length), total: steps.length, holdsDecision, holdsMarket, holdsEvent, holdsShow, holdsVoyage, todo, ready, pulse: ready || idle || guide !== null, focus, guide };
 }

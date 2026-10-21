@@ -70,6 +70,13 @@ describe('coachView', () => {
     expect(coachView(STEPS, 3, at({ resolvingRound: 1, startedRound: 1 })).holdsShow).toBe(false);
   });
 
+  it('shows a voyage step once your ship\'s result is out, and holds the voyage on it until read', () => {
+    const steps: readonly CoachStep[] = [{ trigger: { kind: 'voyage', round: 2 }, title: 'v', lines: [], focus: [{ kind: 'beat' }] }];
+    expect(coachView(steps, 0, at({ resolvingRound: 2, voyageRound: 1 })).step).toBeNull();
+    expect(coachView(steps, 0, at({ resolvingRound: 2, voyageRound: 2 }))).toMatchObject({ step: steps[0], holdsVoyage: true });
+    expect(coachView(steps, 1, at({ resolvingRound: 2, voyageRound: 2 })).holdsVoyage).toBe(false);
+  });
+
   it('waits for a calm table before a decision step', () => {
     expect(coachView(STEPS, 0, at({ decision: R1, calm: false })).step).toBeNull();
     expect(coachView(STEPS, 0, at({ decision: R1, calm: true })).step).toBe(STEPS[0]);

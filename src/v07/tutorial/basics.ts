@@ -15,6 +15,7 @@ const tide = nameOf(BOT.tide);
 
 const invest = (round: number): CoachTrigger => ({ kind: 'decision', round, phase: 'invest' });
 const resolving = (round: number): CoachTrigger => ({ kind: 'resolution', round });
+const voyage = (round: number): CoachTrigger => ({ kind: 'voyage', round });
 const market = (round: number): CoachTrigger => ({ kind: 'market', round });
 
 const step = (
@@ -129,15 +130,15 @@ export const BASICS: TutorialScript = {
       `這回合翻到暴風雨：所有船 ${R.voyageEvents.storm}。航海事件在大家決定之後才公開，誰都來不及調整。`,
       '看看你的船撐不撐得住。',
     ]),
+    step(voyage(2), '沉船', [F.beat], [
+      `你的船原始骰值是 4，本來能抵達，暴風雨 ${R.voyageEvents.storm} 後變 3，沉了。沉沒的船貨全沒了，出航成本也不退。`,
+    ]),
     step(market(2), '大家都運木材', [F.marketCard], [
       `${vande}和${tide}都運了木材，到港量超過需求，木材跌價。`,
       '大家擠同一種貨，價格就會崩：猜別人會運什麼，是這個遊戲的核心。',
     ]),
 
     // ── Round 3: buildings ──
-    step(invest(3), '上回合：沉船', [F.island('p1'), F.plate('p1')], [
-      `你的船原始骰值是 4，本來能抵達，暴風雨 ${R.voyageEvents.storm} 後變 3，沉了。沉沒的船貨全沒了，出航成本也不退。`,
-    ]),
     step(invest(3), '建築', [F.build('shipyard')], [
       `投資時每回合可以蓋一棟建築，每人最多 ${R.buildings.maxPerPlayer} 棟、每種一棟，蓋好當回合就生效。`,
       `造船廠：${shipyard.cash} G＋${shipyard.wood} 木材，可裝貨量 +${R.capacity.shipyardBonus}。`,

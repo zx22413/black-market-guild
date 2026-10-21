@@ -65,13 +65,17 @@ export interface Table3DScreenProps {
   readonly onStarted?: (round: number) => void;
   /** Told whether your decision is up with nothing still playing in front of it. */
   readonly onCalm?: (calm: boolean) => void;
+  /** Told when a round's voyage has shown your ship's result. */
+  readonly onVoyage?: (round: number) => void;
+  /** Hold the voyage on the ship being shown (the tutorial host is talking about it). */
+  readonly holdVoyage?: boolean;
   /** Hold the resolution where it is (the tutorial host is talking about it). */
   readonly holdShow?: boolean;
   /** Keep the voyage event card on screen, un-shrunk, until released. */
   readonly holdEvent?: boolean;
 }
 
-export function Table3DScreen({ session, onExit, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, holdShow = false, onStarted, onCalm }: Table3DScreenProps) {
+export function Table3DScreen({ session, onExit, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, holdShow = false, holdVoyage = false, onVoyage, onStarted, onCalm }: Table3DScreenProps) {
   const snap = useSession(session);
   const [ready, setReady] = useState(false);
 
@@ -148,6 +152,7 @@ export function Table3DScreen({ session, onExit, autoplay = false, showResult = 
     paused: rerollShown !== null || holdShow,
     holdMarket,
     holdEvent,
+    holdVoyage,
     seats,
     angles,
     laneOf,
@@ -161,6 +166,9 @@ export function Table3DScreen({ session, onExit, autoplay = false, showResult = 
   useEffect(() => {
     if (resolution.marketDone && resolvingRound !== null) onMarket?.(resolvingRound);
   }, [resolution.marketDone, resolvingRound, onMarket]);
+  useEffect(() => {
+    if (resolution.ownOutcomeShown && resolvingRound !== null) onVoyage?.(resolvingRound);
+  }, [resolution.ownOutcomeShown, resolvingRound, onVoyage]);
   useEffect(() => {
     if ((resolution.stage === 'event' || resolution.stage === 'reveal') && resolvingRound !== null) onStarted?.(resolvingRound);
   }, [resolution.stage, resolvingRound, onStarted]);

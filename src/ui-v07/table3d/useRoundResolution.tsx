@@ -53,6 +53,8 @@ export interface ResolutionInput {
   readonly holdMarket?: boolean;
   /** Keep the voyage event card up (not shrinking to the corner) until released (the tutorial explains it). */
   readonly holdEvent?: boolean;
+  /** Stay on the ship being shown in the voyage (the tutorial explains its result). */
+  readonly holdVoyage?: boolean;
   readonly seats: readonly BeatSeat[];
   readonly angles: readonly number[];
   readonly laneOf: (id: PlayerId) => number;
@@ -75,6 +77,8 @@ export interface Resolution {
   readonly shipState: (id: ShipId) => ShipState;
   readonly camera: readonly FitPoint[] | null;
   readonly ringed: ReadonlySet<PlayerId> | undefined;
+  /** Your own ship's result is showing in the voyage. */
+  readonly ownOutcomeShown: boolean;
   /** The market card is up and every row of it has played. */
   readonly marketDone: boolean;
   readonly wrapShip: ((id: ShipId, ship: ReactNode) => ReactNode) | undefined;
@@ -131,7 +135,7 @@ export function stageShipState(stage: ResolutionStage, beatIndex: number, voyage
 }
 
 export function useRoundResolution(input: ResolutionInput): Resolution {
-  const { events, privateEvents, round, paused, seats, angles, laneOf, viewer, nameOf, weather, onFinish, holdMarket = false, holdEvent = false } = input;
+  const { events, privateEvents, round, paused, seats, angles, laneOf, viewer, nameOf, weather, onFinish, holdMarket = false, holdEvent = false, holdVoyage = false } = input;
   // Who is wanted this round (§9.6, marked at the round's start): a red flag goes up on their
   // islands for a moment, then the voyage event's card (§5 step 5), then the roles are revealed.
   const wantedIds = useMemo(() => events.flatMap((e) => (e.type === 'wanted-marked' && e.round === round ? e.players : [])), [events, round]);
@@ -187,7 +191,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     else setStage('market');
   };
   useEffect(() => {
-    if (stage !== 'voyage' || !playback.view.done) return;
+    if (stage !== 'voyage' || !playback.view.done || holdVoyage) return;
     const timer = setTimeout(nextShip, PACE.nextShip);
     return () => clearTimeout(timer);
   }); // re-armed on every render while the beat is done
@@ -234,7 +238,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     stageShipState(stage, beats.findIndex((b) => b.shipId === id), voyageIndex, restingState(id), layer?.focusState ?? null);
 
   if (!active) {
-    return { stage: null, cutoff: events.length, cashBonus: {}, shipState: () => 'docked', camera: null, ringed: undefined, marketDone: false, wrapShip: undefined, pins: [], scene: null, bar: null, overlay: null, onTableClick: undefined, marketPrices: undefined, changedGoods: undefined };
+    return { stage: null, cutoff: events.length, cashBonus: {}, shipState: () => 'docked', camera: null, ringed: undefined, marketDone: false, ownOutcomeShown: false, wrapShip: undefined, pins: [], scene: null, bar: null, overlay: null, onTableClick: undefined, marketPrices: undefined, changedGoods: undefined };
   }
 
   const colorOf = (id: string) => seats.find((s) => s.id === id)?.color ?? '#888';
@@ -416,9 +420,10 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
         {stage === 'receipt' && viewer !== null ? <ReceiptCard round={round!} viewer={viewer} lines={receipt.lines} net={receipt.net} onClose={finish} /> : null}
       </>
     ),
-    onTableClick: stage === 'voyage' ? () => (playback.next() ? undefined : nextShip()) : undefined,
+    onTableClick: stage === 'voyage' && !holdVoyage ? () => (playback.next() ? undefined : nextShip()) : undefined,
     marketPrices,
     changedGoods,
+    ownOutcomeShown: beat !== null && viewer !== null && beat.owner === viewer && playback.view.showOutcome,
     marketDone: stage === 'market' && rowsShown >= rows.length,
   };
 }

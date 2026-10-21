@@ -59,6 +59,8 @@ export type CoachTrigger =
   | { readonly kind: 'decision'; readonly round: number; readonly phase: DecisionPhase }
   /** While that round's resolution plays. */
   | { readonly kind: 'resolution'; readonly round: number }
+  /** When your ship's result shows in that round's voyage (the show waits on it until the step is read). */
+  | { readonly kind: 'voyage'; readonly round: number }
   /** When that round's resolution reaches the market card (it waits there until the step is read). */
   | { readonly kind: 'market'; readonly round: number }
   /** After the last resolution has played. */
@@ -95,6 +97,8 @@ export type FocusTarget =
   | { readonly kind: 'build'; readonly building: BuildingId }
   /** The market card of a resolution: how each price moved. */
   | { readonly kind: 'market-card' }
+  /** The voyage beat's tag over a ship: its die, steps and result.  */
+  | { readonly kind: 'beat' }
   /** The voyage event card, while it is shown at the start of a resolution. */
   | { readonly kind: 'event' }
   /** What moves the resolution on (「繼續」「開始航程」, the receipt's 「點任意處繼續」). */
