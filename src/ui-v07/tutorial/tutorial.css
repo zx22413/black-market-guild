@@ -248,7 +248,8 @@
 /* The 航行骰 step's picture: sits in the middle of the table, above the dimming. */
 .die-diagram {
   position: fixed;
-  top: 50%;
+  /* Below the middle, so the host's card (top left) stays clear of it on wide screens. */
+  top: max(58%, 540px);
   left: 50%;
   z-index: 88;
   width: min(680px, calc(100vw - 32px));
