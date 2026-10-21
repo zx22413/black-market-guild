@@ -92,6 +92,7 @@ export function TutorialScreen({ script, next, onReplay, onNext, onExit }: Tutor
           holdShow={coach.holdsShow}
           holdMarket={coach.holdsMarket}
           holdEvent={coach.holdsEvent}
+          lockSkips
           hideEvent={coach.step?.diagram !== undefined}
         />
       </Suspense>

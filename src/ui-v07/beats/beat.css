@@ -3321,3 +3321,9 @@ button .info-tip-anchor {
 .event-card-veil.event-hidden {
   visibility: hidden;
 }
+
+/* A skip the tutorial does not allow: dimmed and inert. */
+.inv-bar button.skip:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}

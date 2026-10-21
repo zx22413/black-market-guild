@@ -53,6 +53,8 @@ export interface ResolutionInput {
   readonly holdMarket?: boolean;
   /** Keep the voyage event card up (not shrinking to the corner) until released (the tutorial explains it). */
   readonly holdEvent?: boolean;
+  /** The skip buttons cannot be pressed (the tutorial teaches what they would skip). */
+  readonly lockSkips?: boolean;
   /** Hide the voyage event card for now (the card stays held, only out of sight). */
   readonly hideEvent?: boolean;
   /** Stay on the ship being shown in the voyage (the tutorial explains its result). */
@@ -137,7 +139,7 @@ export function stageShipState(stage: ResolutionStage, beatIndex: number, voyage
 }
 
 export function useRoundResolution(input: ResolutionInput): Resolution {
-  const { events, privateEvents, round, paused, seats, angles, laneOf, viewer, nameOf, weather, onFinish, holdMarket = false, holdEvent = false, hideEvent = false, holdVoyage = false } = input;
+  const { events, privateEvents, round, paused, seats, angles, laneOf, viewer, nameOf, weather, onFinish, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdVoyage = false } = input;
   // Who is wanted this round (§9.6, marked at the round's start): a red flag goes up on their
   // islands for a moment, then the voyage event's card (§5 step 5), then the roles are revealed.
   const wantedIds = useMemo(() => events.flatMap((e) => (e.type === 'wanted-marked' && e.round === round ? e.players : [])), [events, round]);
@@ -347,14 +349,14 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
       {stage === 'wanted' ? (
         <>
           <WantedChips seats={wantedSeats} />
-          <SkipButton label="跳過" onClick={() => setStage(afterWanted)} />
+          <SkipButton label="跳過" disabled={lockSkips} onClick={() => setStage(afterWanted)} />
         </>
       ) : stage === 'event' ? (
         go('繼續', () => setStage('reveal'), false)
       ) : stage === 'reveal' ? (
         <>
           {groups.length === 0 ? <span className="chip muted">沒有人部署角色</span> : <RevealChips groups={groups} shown={groupsShown} />}
-          {allRevealed ? go(beats.length > 0 ? '開始航程' : '繼續', () => setStage(beats.length > 0 ? 'voyage' : 'market')) : <SkipButton label="全部揭露" onClick={() => setGroupsShown(groups.length)} />}
+          {allRevealed ? go(beats.length > 0 ? '開始航程' : '繼續', () => setStage(beats.length > 0 ? 'voyage' : 'market')) : <SkipButton label="全部揭露" disabled={lockSkips} onClick={() => setGroupsShown(groups.length)} />}
         </>
       ) : stage === 'voyage' ? (
         <>
@@ -367,12 +369,12 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
               {voyageIndex + 1}/{beats.length}
             </span>
           </span>
-          <SkipButton label="跳過航程" onClick={() => setStage('market')} />
+          <SkipButton label="跳過航程" disabled={lockSkips} onClick={() => setStage('market')} />
         </>
       ) : stage === 'market' ? (
         <>
           <LockHint icon={<InfoIcon />} text="到港量和需求比較，決定新價格；這回合的貨都用新價格賣。" />
-          <SkipButton label="跳過" onClick={() => setStage('settle')} />
+          <SkipButton label="跳過" disabled={lockSkips} onClick={() => setStage('settle')} />
         </>
       ) : stage === 'settle' ? (
         <>
@@ -383,7 +385,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
             </span>
             {flying && <span className="chip">{withGoodIcons(flying.label)}</span>}
           </span>
-          <SkipButton label={viewer === null ? '跳過結帳' : '跳到帳單'} onClick={() => (viewer === null ? finish() : setStage('receipt'))} />
+          <SkipButton label={viewer === null ? '跳過結帳' : '跳到帳單'} disabled={lockSkips} onClick={() => (viewer === null ? finish() : setStage('receipt'))} />
         </>
       ) : null}
     </>

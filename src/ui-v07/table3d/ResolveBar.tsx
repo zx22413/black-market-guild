@@ -56,9 +56,9 @@ export function RevealChips({ groups, shown }: { readonly groups: readonly Revea
   );
 }
 
-export function SkipButton({ label, onClick }: { readonly label: string; readonly onClick: () => void }) {
+export function SkipButton({ label, onClick, disabled = false }: { readonly label: string; readonly onClick: () => void; readonly disabled?: boolean }) {
   return (
-    <button type="button" className="skip" title={label} aria-label={label} onClick={onClick}>
+    <button type="button" className="skip" title={disabled ? '教學中不能跳過' : label} aria-label={label} disabled={disabled} onClick={onClick}>
       <FastForwardIcon />
     </button>
   );
