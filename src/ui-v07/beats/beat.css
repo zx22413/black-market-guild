@@ -1199,18 +1199,35 @@ button.inv-stack:hover {
   z-index: 30;
 }
 .dep-bets {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
+  position: relative;
 }
+/* The list hangs off the badge, which stays where the "+" was. */
 .dep-bets ul {
+  position: absolute;
   display: flex;
   flex-direction: column;
   gap: 4px;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+.dep-bets[data-open='up'] ul {
+  bottom: 100%;
+  left: 50%;
+  margin-bottom: 6px;
+  transform: translateX(-50%);
+}
+.dep-bets[data-open='right'] ul {
+  left: 100%;
+  top: 50%;
+  margin-left: 6px;
+  transform: translateY(-50%);
+}
+.dep-bets[data-open='left'] ul {
+  right: 100%;
+  top: 50%;
+  margin-right: 6px;
+  transform: translateY(-50%);
 }
 .beat3d-pin button.dep-bet {
   display: flex;

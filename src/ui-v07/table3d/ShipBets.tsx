@@ -1,10 +1,21 @@
+import { useLayoutEffect, useRef, useState } from 'react';
 import { GOODS, type Bet, type GoodId, type PlayerId } from '../../v07/game';
 import { GOOD_LABELS } from '../labels';
 import { GoodIcon } from './GoodIcon';
 
 // The broker's bet, where the ship was clicked (§9.4): once the ship is picked, its "+" turns into
 // the broker's badge (click it to take the pick back) and the goods are listed right above it with
-// the one direction that ship takes, 漲 on your own ship and 跌 on an opponent's.
+// the one direction that ship takes, 漲 on your own ship and 跌 on an opponent's. The list opens
+// toward the middle of the table (up for the ship in front of you), so it stays off the name plates
+// that sit beside each island.
+
+type Side = 'up' | 'left' | 'right';
+
+/** Which way the list opens for a badge at `x`: sideways toward the screen's middle, up when it is near it. */
+export function listSide(x: number, width: number): Side {
+  const dx = x - width / 2;
+  return Math.abs(dx) < width * 0.1 ? 'up' : dx < 0 ? 'right' : 'left';
+}
 
 export interface ShipBetsProps {
   readonly label: string;
@@ -27,8 +38,19 @@ const same = (a: Bet | null, b: Bet) => a !== null && a.good === b.good && a.dir
 
 export function ShipBets({ label, owner, rim, badge, offered, side, chosen, todo, onBet, onBack }: ShipBetsProps) {
   const betOf = (good: GoodId): Bet => offered.find((b) => b.good === good) ?? { good, direction: side };
+  const badgeRef = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState<Side>('up');
+  useLayoutEffect(() => {
+    const measure = () => {
+      const box = badgeRef.current?.getBoundingClientRect();
+      if (box) setOpen(listSide(box.left + box.width / 2, window.innerWidth));
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
   return (
-    <div className="dep-bets">
+    <div className="dep-bets" data-open={open}>
       <ul>
         {GOODS.map((good) => {
           const bet = betOf(good);
@@ -52,6 +74,7 @@ export function ShipBets({ label, owner, rim, badge, offered, side, chosen, todo
         })}
       </ul>
       <button
+        ref={badgeRef}
         type="button"
         className="dep-ship on"
         style={{ borderColor: rim }}
