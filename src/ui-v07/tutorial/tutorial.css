@@ -245,24 +245,33 @@
   }
 }
 
-/* The 航行骰 step's picture: formula, then the faces split at the arrival line. */
+/* The 航行骰 step's picture: sits in the middle of the table, above the dimming. */
 .die-diagram {
-  margin: 10px 0 0;
-  padding: 10px;
-  border: 1px solid #b9a77d;
-  border-radius: 10px;
-  background: rgb(255 250 235 / 0.7);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 88;
+  width: min(680px, calc(100vw - 32px));
+  margin: 0;
+  padding: 28px 28px 22px;
+  transform: translate(-50%, -50%);
+  border: 4px double #8a5a2b;
+  border-radius: 14px;
+  background: linear-gradient(#f9efd6, #ecd9ae);
+  color: #4a2c14;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.55);
+  animation: coach-in 240ms ease-out;
 }
 .die-formula {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  font-size: var(--fs-note);
+  gap: 10px;
+  font-size: var(--fs-title);
 }
 .die-formula span {
-  padding: 2px 8px;
+  padding: 4px 16px;
   border-radius: 999px;
   background: #e8d9b2;
 }
@@ -272,17 +281,17 @@
 }
 .die-strip {
   display: flex;
-  gap: 6px;
-  margin-top: 10px;
+  gap: 12px;
+  margin-top: 26px;
 }
 .die-group {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 10px;
   flex-basis: 0;
-  padding: 6px 4px;
-  border-radius: 8px;
+  padding: 16px 8px 12px;
+  border-radius: 12px;
 }
 .die-group.sink {
   background: rgb(176 60 50 / 0.16);
@@ -294,19 +303,22 @@
 }
 .die-faces {
   display: flex;
-  gap: 4px;
+  gap: 10px;
 }
 .die-faces i {
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
-  border: 2px solid currentColor;
-  border-radius: 6px;
+  width: 56px;
+  height: 56px;
+  border: 3px solid currentColor;
+  border-radius: 12px;
   background: #fffaf0;
+  font-size: 28px;
   font-style: normal;
   font-weight: 700;
 }
 .die-group small {
+  font-size: var(--fs-title);
   font-weight: 700;
+  letter-spacing: 0.2em;
 }

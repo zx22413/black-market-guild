@@ -73,9 +73,11 @@ export interface Table3DScreenProps {
   readonly holdShow?: boolean;
   /** Keep the voyage event card on screen, un-shrunk, until released. */
   readonly holdEvent?: boolean;
+  /** Hide the voyage event card for now (something else is up in the middle of the table). */
+  readonly hideEvent?: boolean;
 }
 
-export function Table3DScreen({ session, onExit, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, holdShow = false, holdVoyage = false, onVoyage, onStarted, onCalm }: Table3DScreenProps) {
+export function Table3DScreen({ session, onExit, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, hideEvent = false, holdShow = false, holdVoyage = false, onVoyage, onStarted, onCalm }: Table3DScreenProps) {
   const snap = useSession(session);
   const [ready, setReady] = useState(false);
 
@@ -152,6 +154,7 @@ export function Table3DScreen({ session, onExit, autoplay = false, showResult = 
     paused: rerollShown !== null || holdShow,
     holdMarket,
     holdEvent,
+    hideEvent,
     holdVoyage,
     seats,
     angles,

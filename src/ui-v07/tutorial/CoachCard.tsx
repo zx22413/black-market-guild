@@ -1,6 +1,5 @@
 import { forwardRef, type CSSProperties } from 'react';
 import type { CoachView } from '../../v07/tutorial';
-import { DieDiagram } from './DieDiagram';
 
 // The host's card (docs/tutorial-outline.md §1): beside the table, never over it, so the part being
 // explained stays in view. A step is read with 「下一步」; at the end, the card offers what to do next.
@@ -46,7 +45,6 @@ export const CoachCard = forwardRef<HTMLElement, CoachCardProps>(function CoachC
       {step.lines.map((line, i) => (
         <p key={i}>{line}</p>
       ))}
-      {step.diagram && <DieDiagram successMin={step.diagram.successMin} dieMax={step.diagram.dieMax} />}
       {step.todo && <p className="coach-next">{step.todo}</p>}
       <footer className="coach-foot">
         {ending ? (

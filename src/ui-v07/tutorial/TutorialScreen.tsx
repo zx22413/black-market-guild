@@ -1,6 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import type { TutorialScript } from '../../v07/tutorial';
 import { startTutorialSession } from '../session/tutorialSession';
+import { DieDiagram } from './DieDiagram';
 import { CoachCard, type CoachEndAction } from './CoachCard';
 import { FocusMask } from './FocusMask';
 import { placeCard, type Hole } from './focus';
@@ -79,12 +80,14 @@ export function TutorialScreen({ script, next, onReplay, onNext, onExit }: Tutor
           holdShow={coach.holdsShow}
           holdMarket={coach.holdsMarket}
           holdEvent={coach.holdsEvent}
+          hideEvent={coach.step?.diagram !== undefined}
         />
       </Suspense>
       {ready && (
         <>
           {blocking && <div className="coach-block" aria-hidden="true" onPointerDown={() => setNudge((n) => n + 1)} />}
           <FocusMask targets={coach.focus} guide={coach.guide} pulse={coach.pulse} onHoles={onHoles} />
+          {coach.step?.diagram && <DieDiagram successMin={coach.step.diagram.successMin} dieMax={coach.step.diagram.dieMax} />}
           <CoachCard ref={card} style={spot} view={coach} onRead={session.read} onSkip={onExit} endActions={endActions} nudge={nudge} />
         </>
       )}

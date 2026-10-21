@@ -16,14 +16,14 @@ const iconUrl = (event: VoyageEventId): string => cardIconUrl({ kind: 'voyage', 
  * `held` freezes the card open (the tutorial explains it); once released it shrinks away on its own,
  * from the held pose, instead of replaying the whole show.
  */
-export function VoyageEventCard({ event, held = false, onDone }: { readonly event: VoyageEventId; readonly held?: boolean; readonly onDone: () => void }) {
+export function VoyageEventCard({ event, held = false, hidden = false, onDone }: { readonly event: VoyageEventId; readonly held?: boolean; readonly hidden?: boolean; readonly onDone: () => void }) {
   const title = VOYAGE_EVENT_LABELS[event];
   const [wasHeld, setWasHeld] = useState(held);
   if (held && !wasHeld) setWasHeld(true);
   const mode = held ? 'hold' : wasHeld ? 'leave' : 'auto';
   const style = mode === 'auto' ? { animationDuration: `${EVENT_CARD_MS}ms` } : undefined;
   return (
-    <div className={`event-card-veil event-${mode}`} style={style} role="dialog" aria-label={`航海事件：${title}`} onClick={held ? undefined : onDone}>
+    <div className={`event-card-veil event-${mode} ${hidden ? 'event-hidden' : ''}`} style={style} role="dialog" aria-label={`航海事件：${title}`} onClick={held ? undefined : onDone}>
       <div className="event-card" data-focus="event" style={style} onAnimationEnd={(e) => { if (mode !== 'hold' && e.animationName !== 'event-card-in') onDone(); }}>
         <small className="event-card-kind">航海事件</small>
         <div className="event-card-emblem">

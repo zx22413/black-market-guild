@@ -3316,3 +3316,8 @@ button .info-tip-anchor {
 .info-tip b {
   font-size: var(--fs-body);
 }
+
+/* Out of sight while the tutorial shows something else in the middle (the card stays held). */
+.event-card-veil.event-hidden {
+  visibility: hidden;
+}
