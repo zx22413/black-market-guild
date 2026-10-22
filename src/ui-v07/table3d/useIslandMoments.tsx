@@ -24,6 +24,8 @@ export interface MomentsInput {
   readonly angleOf: (id: PlayerId) => number;
   /** Leave out the opening moments of round 1 (the tutorial's welcome should not wait for them). */
   readonly skipFirstOpening?: boolean;
+  /** Leave out every moment (a tutorial lesson that does not mention the islands plays without them). */
+  readonly skip?: boolean;
 }
 
 export interface Moments {
@@ -35,7 +37,7 @@ export interface Moments {
 
 const NONE: ReadonlyMap<PlayerId, { readonly key: string; readonly tone: 'gain' | 'loss' }> = new Map();
 
-export function useIslandMoments({ events, board, free, angleOf, skipFirstOpening = false }: MomentsInput): Moments {
+export function useIslandMoments({ events, board, free, angleOf, skipFirstOpening = false, skip = false }: MomentsInput): Moments {
   const round = board.round;
   const islands = useMemo((): Readonly<Record<PlayerId, IslandId>> | null => {
     const chosen = events.find((e) => e.type === 'islands-chosen');
@@ -58,7 +60,7 @@ export function useIslandMoments({ events, board, free, angleOf, skipFirstOpenin
   const [openedRound, setOpenedRound] = useState(0);
   const [launchedRound, setLaunchedRound] = useState(0);
   const phase: 'opening' | 'launch' | null =
-    !free || round < 1 ? null : openedRound < round ? 'opening' : launched && launchedRound < round ? 'launch' : null;
+    skip || !free || round < 1 ? null : openedRound < round ? 'opening' : launched && launchedRound < round ? 'launch' : null;
   const shown: readonly IslandMoment[] = phase === 'opening' ? opening : phase === 'launch' ? launch : [];
 
   useEffect(() => {

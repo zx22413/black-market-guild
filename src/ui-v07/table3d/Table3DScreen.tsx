@@ -51,6 +51,8 @@ export interface Table3DScreenProps {
   readonly rounds?: number;
   /** Skip the reveal of everyone's islands before round 1. */
   readonly skipIslandReveal?: boolean;
+  /** No island moments (production and cost chips) before the investment and the deployment. */
+  readonly skipIslandMoments?: boolean;
   /** Invisible marks around each island, so a highlight can frame it (the tutorial's focus). */
   readonly islandMarks?: boolean;
   /** Called once the table has loaded and is on screen. */
@@ -79,7 +81,7 @@ export interface Table3DScreenProps {
   readonly hideEvent?: boolean;
 }
 
-export function Table3DScreen({ session, onExit, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdShow = false, holdVoyage = false, onVoyage, onStarted, onCalm }: Table3DScreenProps) {
+export function Table3DScreen({ session, onExit, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, skipIslandMoments = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdShow = false, holdVoyage = false, onVoyage, onStarted, onCalm }: Table3DScreenProps) {
   const snap = useSession(session);
   const [ready, setReady] = useState(false);
 
@@ -188,6 +190,7 @@ export function Table3DScreen({ session, onExit, autoplay = false, showResult = 
     free: ready && !holding && !showIslands && !autoplay && rerollShown === null,
     angleOf: (id) => angles[laneOf(id)]!,
     skipFirstOpening: islandMarks,
+    skip: skipIslandMoments,
   });
   const env: StageEnv | null =
     free && !moments.blocking && request && viewer && (phase === 'invest' || phase === 'role-deployment')

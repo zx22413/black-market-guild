@@ -81,6 +81,7 @@ export function TutorialScreen({ script, next, onReplay, onNext, onExit }: Tutor
           rounds={script.rules.rounds}
           onShown={session.setShown}
           skipIslandReveal={!script.showIslandReveal}
+          skipIslandMoments={!script.showIslandReveal}
           islandMarks
           onReady={() => setReady(true)}
           onDraft={session.setDraft}
