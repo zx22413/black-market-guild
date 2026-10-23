@@ -1,6 +1,18 @@
-import { useEffect, useState, useSyncExternalStore } from 'react';
-import { connectRoom, createRoom, saveHostKey, savedHostKey, savedName, type OnlineClient, type OnlineState } from './onlineClient';
+import { useEffect, useLayoutEffect, useState, useSyncExternalStore, type FormEvent } from 'react';
+import { ROOM_CODE_LENGTH, isRoomCode } from '../../v07/online';
 import { MatchView } from '../table/MatchView';
+import type { Rematch } from '../table3d/ResultCard';
+import { seatCards, type SeatCard } from './lobbySeats';
+import {
+  connectRoom,
+  createRoom,
+  forgetLastRoom,
+  saveHostKey,
+  savedHostKey,
+  savedName,
+  type OnlineClient,
+  type OnlineState,
+} from './onlineClient';
 
 const CONNECTION_LABELS: Readonly<Record<OnlineState['connection'], string>> = {
   connecting: '連線中…',
@@ -16,8 +28,47 @@ function setRoomInUrl(code: string | null): void {
   history.replaceState(null, '', url);
 }
 
-function HostPanel({ onRoom, onBack }: { readonly onRoom: (code: string) => void; readonly onBack: () => void }) {
+/**
+ * Only the host opens rooms (server/rooms.ts checks the host key). The button shows in a browser
+ * that has the key saved, or on a page opened with `?host` to enter it the first time; everyone
+ * else joins with a code or a link.
+ */
+const canHost = (): boolean => savedHostKey() !== '' || new URLSearchParams(location.search).has('host');
+
+function JoinByCode({ onRoom }: { readonly onRoom: (code: string) => void }) {
+  const [code, setCode] = useState('');
+  const valid = isRoomCode(code);
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (valid) onRoom(code);
+  };
+  return (
+    <form className="menu-join" onSubmit={submit}>
+      <label htmlFor="room-code">輸入房號</label>
+      <div className="menu-row">
+        <input
+          id="room-code"
+          className="menu-code-input"
+          value={code}
+          maxLength={ROOM_CODE_LENGTH}
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+          placeholder="K7QX2M"
+          onChange={(e) => setCode(e.target.value.toUpperCase().replace(/\s/g, ''))}
+        />
+        <button type="submit" className="menu-go" disabled={!valid}>
+          加入
+        </button>
+      </div>
+      {code.length === ROOM_CODE_LENGTH && !valid && <p className="menu-error">房號只有英文字母與數字，沒有 0、O、1、I、L</p>}
+    </form>
+  );
+}
+
+function HostRoom({ onRoom }: { readonly onRoom: (code: string) => void }) {
   const [key, setKey] = useState(savedHostKey);
+  const [askKey, setAskKey] = useState(() => savedHostKey() === '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const open = async () => {
@@ -29,104 +80,165 @@ function HostPanel({ onRoom, onBack }: { readonly onRoom: (code: string) => void
       onRoom(code);
     } catch (e) {
       setError(e instanceof Error ? e.message : '無法開房');
+      setAskKey(true);
     } finally {
       setBusy(false);
     }
   };
   return (
-    <main className="v7-setup">
-      <h1>線上房間 <small>V0.7</small></h1>
-      <p className="v7-muted">開一個房間，把連結傳給朋友，空位由電腦補上。</p>
-      <label className="v7-seed">
-        房主密碼
-        <input type="password" value={key} autoComplete="off" onChange={(e) => setKey(e.target.value)} />
-      </label>
-      {error && <p className="v7-error">{error}</p>}
-      <button className="v7-primary" disabled={busy || key.length === 0} onClick={open}>
-        {busy ? '開房中…' : '開新房間'}
+    <section className="menu-host">
+      {askKey && (
+        <label className="menu-field">
+          房主密碼
+          <input type="password" value={key} autoComplete="off" onChange={(e) => setKey(e.target.value)} />
+        </label>
+      )}
+      {error && <p className="menu-error">{error}</p>}
+      <button type="button" className="menu-action" disabled={busy || key.length === 0} onClick={open}>
+        {busy ? '開房中…' : '建立房間'}
+        <small>空位由電腦補上</small>
       </button>
-      <button className="v7-btn" onClick={onBack}>
-        返回
-      </button>
+    </section>
+  );
+}
+
+function OnlineHome({ onRoom, onBack }: { readonly onRoom: (code: string) => void; readonly onBack: () => void }) {
+  return (
+    <main className="menu-panel menu-page">
+      <h2>線上房間</h2>
+      <JoinByCode onRoom={onRoom} />
+      <p className="menu-note">朋友傳來的邀請連結，點開就會直接進房。</p>
+      {canHost() && <HostRoom onRoom={onRoom} />}
+      <div className="menu-foot">
+        <button type="button" className="menu-small" onClick={onBack}>
+          返回
+        </button>
+      </div>
     </main>
   );
 }
 
-function Lobby({ code, client, state, onLeave }: { readonly code: string; readonly client: OnlineClient; readonly state: OnlineState; readonly onLeave: () => void }) {
-  const room = state.room;
-  const [name, setName] = useState(savedName);
-  const [seats, setSeats] = useState(4);
+function CopyLink({ code }: { readonly code: string }) {
   const [copied, setCopied] = useState(false);
-  const joined = room?.joined ?? false;
-  const memberCount = room?.members.length ?? 0;
-  const seatOptions = room ? [3, 4].filter((n) => n >= Math.max(room.minSeats, memberCount) && n <= room.maxSeats) : [];
-  const chosenSeats = seatOptions.includes(seats) ? seats : (seatOptions.at(-1) ?? seats);
   const link = `${location.origin}${location.pathname}?room=${code}`;
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(link);
       setCopied(true);
     } catch {
-      // Clipboard blocked: the link stays on screen to copy by hand.
+      // Clipboard blocked: the code itself is on screen to read out.
     }
   };
+  return (
+    <button type="button" className="menu-small" onClick={copy} title={link}>
+      {copied ? '已複製' : '複製邀請連結'}
+    </button>
+  );
+}
+
+function NameRow({ client, joined, connected }: { readonly client: OnlineClient; readonly joined: boolean; readonly connected: boolean }) {
+  const [name, setName] = useState(savedName);
+  return (
+    <form
+      className="menu-row"
+      onSubmit={(e) => {
+        e.preventDefault();
+        client.join(name);
+      }}
+    >
+      <input value={name} maxLength={12} placeholder="商會名稱" aria-label="商會名稱" onChange={(e) => setName(e.target.value)} />
+      <button type="submit" className={joined ? 'menu-small' : 'menu-go'} disabled={name.trim().length === 0 || !connected}>
+        {joined ? '改名' : '入座'}
+      </button>
+    </form>
+  );
+}
+
+function Seats({ cards }: { readonly cards: readonly SeatCard[] }) {
+  return (
+    <ol className="menu-seats">
+      {cards.map((card, i) =>
+        card.kind === 'member' ? (
+          <li key={i} className={`menu-seat ${card.online ? '' : 'away'}`}>
+            <small>
+              {i + 1}P{card.isHost && '・房主'}
+            </small>
+            <strong>{card.name}</strong>
+            <small className={card.online ? 'menu-online' : 'menu-offline'}>{card.online ? '在線' : '離線'}</small>
+          </li>
+        ) : (
+          <li key={i} className="menu-seat empty">
+            <small>{i + 1}P</small>
+            <strong>空位</strong>
+            <small>開始時由電腦補上</small>
+          </li>
+        ),
+      )}
+    </ol>
+  );
+}
+
+interface LobbyProps {
+  readonly code: string;
+  readonly client: OnlineClient;
+  readonly state: OnlineState;
+  readonly onLeave: () => void;
+}
+
+function Lobby({ code, client, state, onLeave }: LobbyProps) {
+  const room = state.room;
+  const [seats, setSeats] = useState(4);
+  const joined = room?.joined ?? false;
+  const connected = state.connection === 'open';
+  const members = room?.members ?? [];
+  const seatOptions = room ? [3, 4].filter((n) => n >= Math.max(room.minSeats, members.length) && n <= room.maxSeats) : [];
+  const chosenSeats = seatOptions.includes(seats) ? seats : (seatOptions.at(-1) ?? seats);
+  const shownSeats = room?.isHost ? chosenSeats : (room?.maxSeats ?? 4);
 
   return (
-    <main className="v7-setup">
-      <h1>線上房間 <small>{code}</small></h1>
-      <p>
-        <code className="v7-link">{link}</code>{' '}
-        <button className="v7-btn" onClick={copy}>
-          {copied ? '已複製' : '複製連結'}
-        </button>
-      </p>
-      <p className={`v7-conn ${state.connection}`}>{CONNECTION_LABELS[state.connection]}</p>
-      {state.notice && <p className="v7-error">{state.notice}</p>}
+    <main className="menu-panel menu-page menu-lobby">
+      <header className="menu-room">
+        <span className="menu-room-code" aria-label="房號">
+          {code}
+        </span>
+        <CopyLink code={code} />
+        <span className={`menu-conn ${state.connection}`}>{CONNECTION_LABELS[state.connection]}</span>
+      </header>
+      {state.notice && <p className="menu-error">{state.notice}</p>}
 
       {room?.phase === 'lobby' && (
         <>
-          <div className="v7-chips">
-            <input value={name} maxLength={12} placeholder="商會名稱" onChange={(e) => setName(e.target.value)} />
-            <button className="v7-btn" disabled={name.trim().length === 0 || state.connection !== 'open'} onClick={() => client.join(name)}>
-              {joined ? '改名' : '加入'}
-            </button>
-          </div>
-          <ol className="v7-members">
-            {room.members.map((m, i) => (
-              <li key={i} className={m.online ? '' : 'away'}>
-                {i + 1}P {m.name} {m.isHost && '（房主）'} {!m.online && '（離線）'}
-              </li>
-            ))}
-            {room.members.length === 0 && <li className="away">還沒有人加入</li>}
-          </ol>
+          <Seats cards={seatCards(members, shownSeats)} />
+          <NameRow client={client} joined={joined} connected={connected} />
           {room.isHost ? (
-            <>
-              <div className="v7-chips" role="group" aria-label="座位數">
+            <div className="menu-foot">
+              <div className="menu-kind" role="radiogroup" aria-label="座位數">
                 {seatOptions.map((n) => (
-                  <button key={n} className={`v7-btn${n === chosenSeats ? ' on' : ''}`} onClick={() => setSeats(n)}>
+                  <button key={n} type="button" role="radio" aria-checked={n === chosenSeats} className={n === chosenSeats ? 'on' : ''} onClick={() => setSeats(n)}>
                     {n} 人局
                   </button>
                 ))}
               </div>
-              <p className="v7-muted">空位由電腦補上{joined ? '' : '；你也要先加入'}</p>
-              <button className="v7-primary" disabled={!joined || state.connection !== 'open'} onClick={() => client.start(chosenSeats)}>
+              <button type="button" className="menu-go" disabled={!joined || !connected} onClick={() => client.start(chosenSeats)}>
                 開始對局
               </button>
-            </>
+            </div>
           ) : (
-            <p className="v7-muted">{joined ? '等房主開始對局…' : '輸入名稱後按「加入」'}</p>
+            <p className="menu-note">{joined ? '等房主開始對局…' : '輸入名稱後按「入座」'}</p>
           )}
         </>
       )}
-      {room && room.phase !== 'lobby' && room.match?.you === null && <p className="v7-muted">這個房間的對局已經開始，無法再加入。</p>}
-      <button className="v7-btn" onClick={onLeave}>
-        離開房間
-      </button>
+      {room && room.phase !== 'lobby' && room.match?.you === null && <p className="menu-note">這個房間的對局已經開始，無法再加入。</p>}
+      <div className="menu-foot">
+        <button type="button" className="menu-small" onClick={onLeave}>
+          離開房間
+        </button>
+      </div>
     </main>
   );
 }
 
-function Room({ code, onLeave }: { readonly code: string; readonly onLeave: () => void }) {
+function Room({ code, onLeave, onInMatch }: { readonly code: string; readonly onLeave: (forget: boolean) => void; readonly onInMatch: (inMatch: boolean) => void }) {
   // Created inside the effect so React StrictMode's mount-unmount-mount does not leave a closed client.
   const [client, setClient] = useState<OnlineClient | null>(null);
   useEffect(() => {
@@ -135,45 +247,78 @@ function Room({ code, onLeave }: { readonly code: string; readonly onLeave: () =
     return () => next.close();
   }, [code]);
   if (!client) return null;
-  return <RoomView code={code} client={client} onLeave={onLeave} />;
+  return <RoomView code={code} client={client} onLeave={onLeave} onInMatch={onInMatch} />;
 }
 
-function RoomView({ code, client, onLeave }: { readonly code: string; readonly client: OnlineClient; readonly onLeave: () => void }) {
+interface RoomViewProps {
+  readonly code: string;
+  readonly client: OnlineClient;
+  readonly onLeave: (forget: boolean) => void;
+  readonly onInMatch: (inMatch: boolean) => void;
+}
+
+/** Each match of a room gets its own session object; a new one means a fresh table (after a rematch). */
+const matchKeys = new WeakMap<object, number>();
+let nextMatchKey = 1;
+function matchKey(session: object): number {
+  let key = matchKeys.get(session);
+  if (key === undefined) {
+    key = nextMatchKey++;
+    matchKeys.set(session, key);
+  }
+  return key;
+}
+
+function RoomView({ code, client, onLeave, onInMatch }: RoomViewProps) {
   const state = useSyncExternalStore(client.subscribe, client.getState);
   const session = state.room?.match?.you ? client.getSession() : null;
+  const inMatch = session !== null;
+  // Before paint, so the menu's 3D table is gone before the match's table mounts (one WebGL scene at a time).
+  useLayoutEffect(() => onInMatch(inMatch), [inMatch, onInMatch]);
   if (session) {
+    const finished = state.room?.phase === 'finished';
+    const rematch: Rematch = state.room?.isHost ? { kind: 'now', onRematch: () => client.rematch() } : { kind: 'host-decides' };
     return (
       <>
         {state.connection !== 'open' && <div className="v7-banner">{CONNECTION_LABELS[state.connection]}</div>}
-        <MatchView session={session} onExit={onLeave} />
+        {/* Leaving mid-match keeps the room on the main menu as "back to the room". */}
+        <MatchView key={matchKey(session)} session={session} onExit={() => onLeave(finished)} rematch={rematch} />
       </>
     );
   }
-  return <Lobby code={code} client={client} state={state} onLeave={onLeave} />;
+  return (
+    <Lobby
+      code={code}
+      client={client}
+      state={state}
+      onLeave={() => {
+        client.leave();
+        onLeave(true);
+      }}
+    />
+  );
 }
 
 interface OnlineScreenProps {
   readonly initialRoom: string | null;
   readonly onExit: () => void;
+  /** Told when a match takes the screen (the menu's live table should stop) and when it gives it back. */
+  readonly onInMatch: (inMatch: boolean) => void;
 }
 
-/** Online play: the host opens a room with the host key, friends join through the link. */
-export function OnlineScreen({ initialRoom, onExit }: OnlineScreenProps) {
+/** Online play: join a room by code or link; the host also opens rooms. */
+export function OnlineScreen({ initialRoom, onExit, onInMatch }: OnlineScreenProps) {
   const [code, setCode] = useState(initialRoom);
-  const leave = () => {
+  // Also when coming back from the main menu's "back to the room": a reload stays in the room.
+  useEffect(() => {
+    if (code) setRoomInUrl(code);
+  }, [code]);
+  const leave = (forget: boolean) => {
+    if (forget && code) forgetLastRoom(code);
     setRoomInUrl(null);
+    onInMatch(false);
     onExit();
   };
-  if (!code) {
-    return (
-      <HostPanel
-        onRoom={(room) => {
-          setRoomInUrl(room);
-          setCode(room);
-        }}
-        onBack={leave}
-      />
-    );
-  }
-  return <Room key={code} code={code} onLeave={leave} />;
+  if (!code) return <OnlineHome onRoom={setCode} onBack={() => leave(false)} />;
+  return <Room key={code} code={code} onLeave={leave} onInMatch={onInMatch} />;
 }

@@ -26,19 +26,6 @@
       "port": 8787
     },
     {
-      "name": "online-v07",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": [
-        "wrangler",
-        "dev",
-        "-c",
-        "wrangler.v07.jsonc",
-        "--port",
-        "8788"
-      ],
-      "port": 8788
-    },
-    {
       "name": "web-alt",
       "runtimeExecutable": "npm",
       "runtimeArgs": [

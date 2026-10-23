@@ -22,7 +22,6 @@
     "art:ui:png": "tsx scripts/raster-ui-art.ts && python3 scripts/webp-ui-art.py",
     "capture": "python3 scripts/capture-receiver.py",
     "server:dev": "wrangler dev",
-    "server:dev:v07": "wrangler dev -c wrangler.v07.jsonc --port 8788",
     "online:smoke": "node --experimental-websocket --import tsx scripts/online-smoke.ts",
     "deploy": "npm run build && wrangler deploy"
   },

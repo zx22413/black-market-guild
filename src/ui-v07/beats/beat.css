@@ -308,6 +308,11 @@
   color: #2b2116;
   cursor: pointer;
 }
+.result-wait {
+  align-self: center;
+  margin-right: auto;
+  color: #6b5a3e;
+}
 .beat-foot button.primary {
   background: #e0a63c;
   border-color: #b9822a;

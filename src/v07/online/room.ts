@@ -59,6 +59,8 @@ export class Room {
   private members: readonly Member[] = [];
   private match: MatchRecord | null = null;
   private pending: readonly Pending[] = [];
+  /** Everyone who said hello, members or not, so watchers also learn when the lobby reopens. */
+  private seen: ReadonlySet<string> = new Set();
   private nextRequestId = 1;
 
   constructor(private readonly options: RoomOptions) {}
@@ -71,6 +73,7 @@ export class Room {
           this.fail(token, 'outdated', '遊戲已更新，請重新整理頁面');
           return;
         }
+        this.seen = new Set([...this.seen, token]);
         this.sync(token);
         return;
       case 'join':
@@ -78,6 +81,12 @@ export class Room {
         return;
       case 'start':
         this.start(token, message.seats, seed);
+        return;
+      case 'rematch':
+        this.rematch(token);
+        return;
+      case 'leave':
+        this.leave(token);
         return;
       case 'submit':
         this.submit(token, message.requestId, message.action);
@@ -206,6 +215,34 @@ export class Room {
     );
   }
 
+  /** Back to the lobby after a finished match; members stay joined and newcomers may join again. */
+  private rematch(token: string): void {
+    if (token !== this.options.hostToken) {
+      this.fail(token, 'not-host', '只有房主可以再開一局');
+      return;
+    }
+    if (this.phase !== 'finished') {
+      this.fail(token, 'not-finished', '這一局還沒結束');
+      return;
+    }
+    this.phase = 'lobby';
+    this.match = null;
+    // Nobody waits for someone who already went home; they can sit down again if they come back.
+    this.members = this.members.filter((m) => m.token === token || this.options.isOnline(m.token));
+    this.syncAll();
+  }
+
+  private leave(token: string): void {
+    if (this.phase !== 'lobby') {
+      this.fail(token, 'already-started', '對局已經開始，座位會保留');
+      return;
+    }
+    this.members = this.members.filter((m) => m.token !== token);
+    this.syncAll();
+    // The leaver is no longer a member; make sure they see their seat is gone.
+    if (!this.knownTokens().includes(token)) this.sync(token);
+  }
+
   private seatController(match: MatchRecord, token: string): Controller {
     return {
       decide: (context) =>
@@ -261,7 +298,7 @@ export class Room {
   }
 
   private knownTokens(): readonly string[] {
-    return [...new Set([this.options.hostToken, ...this.members.map((m) => m.token)])];
+    return [...new Set([this.options.hostToken, ...this.members.map((m) => m.token), ...this.seen])];
   }
 
   private sync(token: string): void {

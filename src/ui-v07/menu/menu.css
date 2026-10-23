@@ -1,0 +1,440 @@
+/* Main menu, single-player setup, online room and lobby, tutorial list: one card-style panel
+   (dark wood frame, parchment, thin gold line; docs/ui/v07-style-layers.md layer 2) over the
+   live table. Wide screens put the panel on the left, phones at the bottom. */
+
+.menu-panel {
+  --m-wood: var(--c-wood, #4a2f1b);
+  --m-wood-dark: var(--c-wood-dark, #2a190d);
+  --m-gold: var(--c-gold, #d9b25a);
+  --m-parch: var(--c-parch, #f4ead2);
+  --m-sunk: var(--c-parch-sunk, #e8dab8);
+  --m-on: var(--c-parch-on, #fff4d4);
+  --m-ink: var(--c-ink, #2a1d10);
+  --m-soft: var(--c-soft, #6b5537);
+  --m-button: var(--c-button, #e8b931);
+  --m-button-edge: var(--c-button-edge, #a9831a);
+  --m-wax: var(--l3-wax, #a3262f);
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(400px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  margin: max(24px, 10vh) 0 24px clamp(16px, 5vw, 64px);
+  padding: 22px 22px 18px;
+  border: 3px solid var(--m-wood);
+  border-radius: 14px;
+  background: var(--c-grain, none), var(--m-parch);
+  color: var(--m-ink);
+  box-shadow:
+    inset 0 0 0 2px var(--m-gold),
+    inset 0 0 0 4px rgb(217 178 90 / 0.25),
+    0 6px 0 var(--m-wood-dark),
+    0 18px 40px rgb(5 20 25 / 0.45);
+  font-size: var(--fs-body);
+}
+.menu-page.menu-lobby {
+  width: min(460px, calc(100vw - 32px));
+}
+.menu-panel h2 {
+  font-size: var(--fs-title);
+  color: var(--m-wood-dark);
+  letter-spacing: 0.08em;
+}
+.menu-panel h3 {
+  color: var(--m-soft);
+}
+
+/* ---------- live table behind the panel ---------- */
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(180deg, #5fb6d4 0%, #1f7f88 55%, #10242b 100%);
+}
+.menu-backdrop > .beat3d {
+  opacity: 0;
+  transition: opacity 0.9s ease;
+}
+.menu-backdrop.ready > .beat3d {
+  opacity: 1;
+}
+
+/* ---------- title ---------- */
+.menu-logo h1 {
+  font-size: 2.4rem;
+  letter-spacing: 0.14em;
+  color: var(--m-wood-dark);
+  text-shadow: 0 2px 0 rgb(217 178 90 / 0.6);
+}
+.menu-logo p,
+.menu-note {
+  color: var(--m-soft);
+  font-size: var(--fs-note);
+}
+.menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ---------- buttons ---------- */
+.menu-panel button {
+  cursor: pointer;
+  color: var(--m-ink);
+}
+.menu-panel button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.menu-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--m-wood);
+  border-radius: 10px;
+  background: var(--m-sunk);
+  box-shadow: 0 3px 0 var(--m-wood-dark);
+  font-size: 1.15rem;
+  font-weight: 700;
+  text-align: left;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.menu-action small {
+  font-size: var(--fs-note);
+  font-weight: 400;
+  color: var(--m-soft);
+}
+.menu-action:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 0 var(--m-wood-dark);
+}
+.menu-action:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--m-wood-dark);
+}
+.menu-action.rejoin {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 10px;
+}
+.menu-action.primary {
+  background: var(--m-button);
+  border-color: var(--m-button-edge);
+  box-shadow: 0 3px 0 var(--m-button-edge), 0 0 0 2px rgb(255 214 120 / 0.5);
+}
+.menu-code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  letter-spacing: 0.12em;
+}
+.menu-tag {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--m-wax);
+  color: #fff4e4;
+  font-size: var(--fs-note);
+  font-weight: 400;
+}
+.menu-go,
+.menu-small {
+  padding: 8px 16px;
+  min-height: 40px;
+  border-radius: 9px;
+  border: 1px solid var(--m-wood);
+  background: var(--m-sunk);
+  box-shadow: 0 2px 0 var(--m-wood-dark);
+}
+.menu-go {
+  background: var(--m-button);
+  border-color: var(--m-button-edge);
+  box-shadow: 0 2px 0 var(--m-button-edge);
+  font-weight: 700;
+}
+.menu-small:hover:not(:disabled),
+.menu-go:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+.menu-x {
+  border: 0;
+  background: transparent;
+  color: var(--m-soft);
+  font-size: 1.1rem;
+}
+.menu-corner {
+  display: flex;
+  gap: 8px;
+}
+.menu-icon {
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--m-soft);
+}
+.menu-icon:hover {
+  border-color: var(--m-wood);
+}
+.menu-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ---------- fields ---------- */
+.menu-panel input,
+.menu-panel select {
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 1px solid var(--m-wood);
+  border-radius: 8px;
+  background: var(--m-on);
+  color: var(--m-ink);
+  color-scheme: light;
+}
+.menu-row {
+  display: flex;
+  gap: 8px;
+}
+.menu-row input {
+  flex: 1;
+  min-width: 0;
+}
+.menu-field,
+.menu-join {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--m-soft);
+}
+.menu-code-input {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 1.3rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+.menu-error {
+  color: var(--m-wax);
+  font-size: var(--fs-note);
+}
+.menu-host {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--c-rule, rgb(42 29 16 / 0.35));
+}
+
+/* ---------- single player ---------- */
+.menu-presets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.menu-preset {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px;
+  border: 1px solid var(--m-wood);
+  border-radius: 10px;
+  background: var(--m-sunk);
+  box-shadow: 0 2px 0 var(--m-wood-dark);
+  text-align: left;
+}
+.menu-preset strong {
+  font-size: 1.1rem;
+}
+.menu-preset small {
+  color: var(--m-soft);
+  font-size: var(--fs-note);
+}
+.menu-preset.on {
+  background: var(--m-on);
+  border-color: var(--m-button-edge);
+  box-shadow: 0 2px 0 var(--m-button-edge), inset 0 0 0 2px var(--m-gold);
+}
+.menu-more summary {
+  cursor: pointer;
+  color: var(--m-soft);
+}
+.menu-more[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.menu-seat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.menu-seat-list li {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+}
+.menu-seat-list input {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.menu-seat-list select {
+  flex: none;
+  padding-right: 4px;
+}
+.menu-seat-list .menu-kind button {
+  padding: 6px 8px;
+}
+.menu-seat-no {
+  min-width: 2em;
+  font-weight: 700;
+  color: var(--m-soft);
+}
+.menu-kind {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--m-wood);
+  border-radius: 8px;
+}
+.menu-kind button {
+  padding: 6px 12px;
+  border: 0;
+  background: var(--m-sunk);
+}
+.menu-kind button.on {
+  background: var(--m-button);
+  font-weight: 700;
+}
+.menu-seed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--m-soft);
+}
+.menu-seed input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- online room ---------- */
+.menu-room {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.menu-room-code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--m-wood-dark);
+}
+.menu-conn {
+  margin-left: auto;
+  font-size: var(--fs-note);
+  color: var(--m-soft);
+}
+.menu-conn.open {
+  color: #3b6d11;
+}
+.menu-conn.closed {
+  color: var(--m-wax);
+}
+.menu-seats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.menu-seat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 84px;
+  padding: 10px 12px;
+  border: 1px solid var(--m-wood);
+  border-radius: 10px;
+  background: var(--m-on);
+  box-shadow: 0 2px 0 var(--m-wood-dark);
+}
+.menu-seat strong {
+  font-size: 1.1rem;
+  overflow-wrap: anywhere;
+}
+.menu-seat small {
+  color: var(--m-soft);
+  font-size: var(--fs-note);
+}
+.menu-seat.empty {
+  border-style: dashed;
+  background: transparent;
+  box-shadow: none;
+}
+.menu-seat.empty strong {
+  color: var(--m-soft);
+}
+.menu-seat.away {
+  opacity: 0.65;
+}
+.menu-seat .menu-online {
+  color: #3b6d11;
+}
+.menu-seat .menu-offline {
+  color: var(--m-wax);
+}
+
+/* ---------- tutorial list inside the panel ---------- */
+.menu-panel .tut-lesson {
+  border-color: var(--m-wood);
+  background: var(--m-sunk);
+  color: var(--m-ink);
+  box-shadow: 0 2px 0 var(--m-wood-dark);
+}
+.menu-panel .tut-lesson:hover {
+  border-color: var(--m-button-edge);
+}
+.menu-panel .tut-lesson-text small {
+  color: var(--m-soft);
+}
+.menu-panel .tut-done {
+  border-color: var(--m-soft);
+}
+
+/* ---------- phones: the panel sits at the bottom, the table above it ---------- */
+@media (max-width: 720px) {
+  .menu-panel,
+  .menu-page.menu-lobby {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    width: auto;
+    max-height: 72dvh;
+    margin: 0;
+    padding: 18px 16px 14px;
+  }
+  .menu-logo h1 {
+    font-size: 1.9rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-action,
+  .menu-backdrop > .beat3d {
+    transition: none;
+  }
+}

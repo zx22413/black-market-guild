@@ -1,6 +1,6 @@
-# `src/ui-v07`｜V0.7 介面（搬遷中）
+# `src/ui-v07`｜V0.7 介面
 
-V0.7 的瀏覽器介面，與 V0.6 的 `src/ui` 並存，入口是 `v07.html`（開發伺服器網址 `/v07.html`；正式 `vite build` 尚未收錄，切換時才加入）。只透過 `src/v07/{game,bots,match,online}` 的公開 API 取得資料。計畫見 [`docs/v07-migration-plan.md`](../../docs/v07-migration-plan.md) 第 4 節階段 5。
+遊戲的瀏覽器介面，正式入口是 `index.html`（`vite build` 只收這頁）；`v07.html` 是開發用的別名，讓 `/v07.html?dev=…` 的預覽網址繼續可用。V0.6 的 `src/ui` 只剩開發用的 `v06.html`。只透過 `src/v07/{game,bots,match,online}` 的公開 API 取得資料。計畫見 [`docs/v07-migration-plan.md`](../../docs/v07-migration-plan.md) 第 4 節階段 5。
 
 對局畫面是 3D 桌面（`table3d/Table3DScreen.tsx`，由 `table/MatchView.tsx` 依需要載入），單機、同機輪流（換人遮蔽）與連線都用它；網址加 `?ui=panel` 會改用第一版的純面板（`table/TableScreen.tsx`），作為手機版面完成前的備用。
 
@@ -8,7 +8,8 @@ V0.7 的瀏覽器介面，與 V0.6 的 `src/ui` 並存，入口是 `v07.html`（
 | --- | --- |
 | `session/gameSession.ts` | 單機對局：Bot 座位自行決定，真人座位等 UI 提交。 |
 | `session/tutorialSession.ts` | 新手教學的 session：Bot 照腳本、你的決定只留這一課允許的行動、講解步驟讀完前不把你的決定交給桌面；`gameSession.ts` 的 `startSession` 是兩者共用的部分。 |
-| `tutorial/` | 新手教學畫面：`TutorialMenu`（課程列表與完成記號，完成記號存本機 `progress.ts`）、`TutorialScreen`（一般的 3D 桌面＋講解卡，不顯示結果卡；講解讀完前用透明擋板擋住你的決定）、`CoachCard`（桌面旁的講解卡；讀完後縮成待辦，最後一步有再玩一次／下一課／回選單）、`FocusMask`／`focus.ts`（聚焦框：SVG 遮罩挖洞，每格畫面跟著目標更新，不吃點擊；目標用 `data-focus` 標記找元素，島嶼用 `table3d/islandMarks.tsx` 在島四周放的隱形標籤框出）。入口在開始畫面的「新手教學」。腳本在 `src/v07/tutorial`。 |
+| `tutorial/` | 新手教學畫面：`TutorialMenu`（課程列表與完成記號，完成記號存本機 `progress.ts`）、`TutorialScreen`（一般的 3D 桌面＋講解卡，不顯示結果卡；講解讀完前用透明擋板擋住你的決定）、`CoachCard`（桌面旁的講解卡；讀完後縮成待辦，最後一步有再玩一次／下一課／回選單）、`FocusMask`／`focus.ts`（聚焦框：SVG 遮罩挖洞，每格畫面跟著目標更新，不吃點擊；目標用 `data-focus` 標記找元素，島嶼用 `table3d/islandMarks.tsx` 在島四周放的隱形標籤框出）。入口在主選單的「新手教學」。腳本在 `src/v07/tutorial`。 |
+| `menu/` | 主選單（2026-10-23）：`MainMenu`（標題、回到房間、單機對局、線上房間、新手教學〔基礎課沒完成前標「建議先玩」〕、角落的規則書）、`LocalSetup`（單機子頁：四個預設方案，座位與 Seed 收在「調整座位」）、`MenuBackdrop`／`MenuScene`（背後的即時桌面：用 `scene/TableCanvas` 擺四座島，鏡頭環島、每艘船沿航線往返黑市港；寬螢幕桌面偏右、手機偏上，避開面板；減少動態效果時停在一格；載入前是海色漸層）、`menuMotion.ts`（鏡頭與船的純函式）、`menu.css`（卡牌風面板，寬螢幕在左、手機在下）。主選單、單機子頁、線上房間與大廳、教學列表都畫在同一張背景上，進入對局時背景卸載，同一時間只跑一個 3D 場景。黑市島的名字與外觀尚未定案，定案後換掉中央的島。 |
 | `session/board.ts` | 只用公開事件重建桌面（現金、倉庫、建築、船、角色、價格）；與引擎最終狀態一致有測試（`tests/ui-v07/`）。3D 場景之後也讀這裡。 |
 | `session/usePlayback.ts` | 逐筆播放公開事件、回合間暫停、同機輪流的換人遮蔽（換人前不顯示任何私有資訊）。 |
 | `table/` | `MatchView`（選 3D 或純面板）；純面板版：商會、市場、船隻面板，與選島／投資／部署／情報重擲四個決策表單（合法行動以 `legalActions` 為準）；兩版共用的選擇邏輯 `investChoice`、`deployChoice`。 |
@@ -22,7 +23,7 @@ V0.7 的瀏覽器介面，與 V0.6 的 `src/ui` 並存，入口是 `v07.html`（
 | 畫面文字原則 | 一個畫面只留一個大字重點；字級只用 `v07.css` 的三個 token（`--fs-note`／`--fs-body`／`--fs-title`）；按鈕只寫動詞（「提交」「繼續」），狀態放在旁邊的圖示晶片；箭頭、鎖、加減號不用文字字元，用 `table3d/icons.tsx`；操作教學只顯示一次（`table/reminderSettings.ts` 的 `isHintSeen`／`markHintSeen`）；規則整句放 hover 或點擊，不可只靠 hover（手機點擊也要看得到）；商品一律用圖示（價格板除外），規則句與 title 提示仍保留商品名。島嶼效果的圖示摘要 `table/islandGlance.ts` 是依 `ISLAND_TEXT` 手動維護的，改島嶼規則時兩邊一起改（`tests/ui-v07/islandGlance.test.ts` 只檢查對應是否齊全）。 |
 | `skin/layers.css` | 試用中的外觀：卡牌桌遊風（深色木框裝羊皮紙、金色細線；常駐列是素木條、決定是卡牌、秘密是深漆封蠟），說明見 [`docs/ui/v07-style-layers.md`](../../docs/ui/v07-style-layers.md)；網址加 `?skin=classic` 切回舊外觀比較。 |
 | `dev/` | 只在開發模式：`/v07.html?dev=beat` 滿版卡版本、`/v07.html?dev=beat3d` 3D 桌面的結算拍、`/v07.html?dev=round3d`（或 `invest3d`，直接開一局你對三個 Bot，和正式畫面同一個 `Table3DScreen`）在 3D 桌面上連續玩整局：選島 → 投資 → 部署 → 情報重擲 → 角色揭露 → 航程 → 市場 → 結帳 → 帳單 → 下一回合，最後是結果畫面；加 `&autoplay` 會自動代打並跳過演出，直接看結局。 |
-| `online/` | 連線房間，協定版本 2；開發時 `/api-v07` 由 Vite 轉到 `npm run server:dev:v07`（8788）。 |
+| `online/` | 連線房間，協定版本 3（加了「再來一局」）；開發時 `/api` 由 Vite 轉到 `npm run server:dev`（8787）。`OnlineScreen`：輸入房號或點邀請連結加入；「建立房間」只在存過房主密碼的瀏覽器、或用 `?host` 開的頁面出現；大廳是大字房號、複製邀請連結、座位卡（`lobbySeats.ts`，空位寫「開始時由電腦補上」）。入座過的房號存在本機（`onlineClient.ts` 的 `lastRoom`），主選單顯示「回到房間」；對局中按離開會保留，大廳按離開或對局結束後離開才清掉。對局結束時房主按「再來一局」，整個房間回到同一個大廳（已經離線的人讓出座位，回來可以再入座；旁觀的人也會收到）；其他人看到「等房主開下一局」。在大廳按「離開房間」會讓出座位（協定的 `leave`），對局開始後座位保留。 |
 | `labels.ts`、`log.ts` | 中文名稱與規則說明（只是重述 `game-design.md`，不新增規則）、航海日誌文字。 |
 
-本機試玩連線：先 `npm run server:dev:v07`，再用房主密碼（`.dev.vars` 的 `HOST_KEY`）開房。
+本機試玩連線：先 `npm run build` 再 `npm run server:dev`，開 `/?host` 用房主密碼（`.dev.vars` 的 `HOST_KEY`）開房。

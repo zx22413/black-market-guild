@@ -30,18 +30,20 @@ export function TutorialMenu({ onStart, onBack }: TutorialMenuProps) {
   );
 
   return (
-    <main className="v7-setup tut-menu">
-      <h1>新手教學</h1>
-      <p className="v7-muted">先玩基礎，再一課一課學角色與開局選島。每一課都可以隨時重玩。</p>
+    <main className="menu-panel menu-page tut-menu">
+      <h2>新手教學</h2>
+      <p className="menu-note">先玩基礎，再一課一課學角色與開局選島。每一課都可以隨時重玩。</p>
       {TUTORIAL_GROUPS.map((g) => (
         <section key={g.title}>
-          <h2>{g.title}</h2>
+          <h3>{g.title}</h3>
           <ol className="tut-lessons">{TUTORIALS.filter((t) => g.ids.includes(t.id)).map(lesson)}</ol>
         </section>
       ))}
-      <button type="button" className="v7-btn" onClick={onBack}>
-        回到開始畫面
-      </button>
+      <div className="menu-foot">
+        <button type="button" className="menu-small" onClick={onBack}>
+          返回
+        </button>
+      </div>
     </main>
   );
 }

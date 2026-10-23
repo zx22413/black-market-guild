@@ -1,8 +1,8 @@
 import type { DecisionContext } from '../bots';
 import type { Action, MatchEvent, MatchResult, PlayerId, PrivateEvent } from '../game';
 
-/** Bumped whenever messages change shape; a stale tab is told to reload. 2 = V0.7 rules. */
-export const PROTOCOL_VERSION = 2;
+/** Bumped whenever messages change shape; a stale tab is told to reload. 2 = V0.7 rules, 3 = rematch. */
+export const PROTOCOL_VERSION = 3;
 
 /** Largest client message the server reads; actions are small JSON objects. */
 export const MAX_MESSAGE_BYTES = 16_384;
@@ -65,6 +65,10 @@ export type ClientMessage =
   | { readonly type: 'hello'; readonly token: string; readonly protocol: number }
   | { readonly type: 'join'; readonly name: string }
   | { readonly type: 'start'; readonly seats: number }
+  /** Host only, after the match ended: back to the lobby with the same people. */
+  | { readonly type: 'rematch' }
+  /** Gives up a seat in the lobby; a running match keeps its seats. */
+  | { readonly type: 'leave' }
   | { readonly type: 'submit'; readonly requestId: number; readonly action: Action };
 
 export type ServerMessage =
@@ -83,6 +87,7 @@ export type ErrorCode =
   | 'not-joined'
   | 'room-full'
   | 'already-started'
+  | 'not-finished'
   | 'not-host'
   | 'bad-seats'
   | 'bad-name'
@@ -136,6 +141,10 @@ export function parseClientMessage(raw: string): ClientMessage | null {
       return typeof data.name === 'string' ? { type: 'join', name: data.name } : null;
     case 'start':
       return Number.isInteger(data.seats) ? { type: 'start', seats: data.seats as number } : null;
+    case 'rematch':
+      return { type: 'rematch' };
+    case 'leave':
+      return { type: 'leave' };
     case 'submit':
       return Number.isInteger(data.requestId) && isRecord(data.action) && typeof data.action.playerId === 'string'
         ? { type: 'submit', requestId: data.requestId as number, action: data.action as unknown as Action }

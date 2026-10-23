@@ -62,6 +62,8 @@ export interface TableCanvasProps {
   readonly seats: readonly BeatSeat[];
   readonly weather: VoyageEventId | null;
   readonly ships: readonly TableShip[];
+  /** Replaces the framing camera (FocusCamera) with another rig, e.g. the main menu's orbit. */
+  readonly camera?: ReactNode;
   /** What the camera frames (see FocusCamera); `safe` keeps it clear of the HUD. */
   readonly cameraPoints: readonly FitPoint[];
   readonly safe: SafeArea;
@@ -153,7 +155,7 @@ function asSceneShip(ship: TableShip, lane: number): SceneShip {
   return { id: ship.id, kind: 'solo', owners: [ship.owner], lane, state: ship.state, roles: [], rerolled: false, smuggled: 0, caughtSmugglers: [], modifier: null };
 }
 
-export function TableCanvas({ seats, weather, ships, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, pulses }: TableCanvasProps) {
+export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, pulses }: TableCanvasProps) {
   const look = WEATHER[weather ?? 'clear'];
   const { angles, laneOf } = useTableLayout(seats);
   const islandKey = seats.map((s) => s.island ?? '').join('|');
@@ -173,7 +175,7 @@ export function TableCanvas({ seats, weather, ships, cameraPoints, safe, ringed,
   return (
     <div className={`beat3d ${dim ? 'dim' : ''}`} onClick={onClick}>
       <Canvas shadows camera={{ position: [0, 82, 60], fov: 38 }} onCreated={() => setReady(true)}>
-        <FocusCamera points={cameraPoints} safe={safe} />
+        {camera ?? <FocusCamera points={cameraPoints} safe={safe} />}
         <color attach="background" args={[look.sky]} />
         <WeatherFog color={look.sky} near={look.fogNear} far={look.fogFar} />
         <ambientLight intensity={look.ambient} />

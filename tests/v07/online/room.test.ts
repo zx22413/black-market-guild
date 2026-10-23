@@ -80,13 +80,13 @@ describe('V0.7 online room', () => {
     expect(events.at(-1)).toMatchObject({ type: 'match-ended' });
   });
 
-  it('speaks protocol 2 with V0.7 rules', () => {
-    expect(PROTOCOL_VERSION).toBe(2);
+  it('speaks protocol 3 with V0.7 rules', () => {
+    expect(PROTOCOL_VERSION).toBe(3);
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'hello', token: HOST, protocol: PROTOCOL_VERSION });
     const sync = ctx.last(HOST, 'sync');
     expect(sync?.type === 'sync' && [sync.room.minSeats, sync.room.maxSeats]).toEqual([3, 4]);
-    ctx.send(HOST, { type: 'hello', token: HOST, protocol: 1 });
+    ctx.send(HOST, { type: 'hello', token: HOST, protocol: 2 });
     expect(ctx.last(HOST, 'error')).toMatchObject({ code: 'outdated' });
   });
 
@@ -179,12 +179,91 @@ describe('V0.7 online room', () => {
   });
 });
 
+describe('playing again in the same room', () => {
+  it('lets only the host bring a finished room back to its lobby with the same people', async () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'join', name: '房主' });
+    ctx.send(GUEST, { type: 'join', name: '客人' });
+    ctx.send(HOST, { type: 'start', seats: 3 });
+
+    ctx.send(HOST, { type: 'rematch' });
+    expect(ctx.last(HOST, 'error')).toMatchObject({ code: 'not-finished' });
+
+    await playOut(ctx, [HOST, GUEST]);
+    ctx.send(GUEST, { type: 'rematch' });
+    expect(ctx.last(GUEST, 'error')).toMatchObject({ code: 'not-host' });
+
+    ctx.send(HOST, { type: 'rematch' });
+    const lobby = ctx.last(GUEST, 'sync');
+    expect(lobby?.type === 'sync' && lobby.room.phase).toBe('lobby');
+    expect(lobby?.type === 'sync' && lobby.room.match).toBeNull();
+    expect(lobby?.type === 'sync' && lobby.room.members.map((m) => m.name)).toEqual(['房主', '客人']);
+    expect(lobby?.type === 'sync' && lobby.room.joined).toBe(true);
+  });
+
+  it('starts a fresh match after the rematch and lets newcomers join the lobby', async () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'join', name: '房主' });
+    ctx.send(HOST, { type: 'start', seats: 3 });
+    await playOut(ctx, [HOST]);
+    ctx.send(HOST, { type: 'rematch' });
+    ctx.send(LATE, { type: 'join', name: '晚到' });
+    ctx.send(HOST, { type: 'start', seats: 4 });
+
+    const started = ctx.last(LATE, 'sync');
+    expect(started?.type === 'sync' && started.room.phase).toBe('playing');
+    expect(started?.type === 'sync' && started.room.match?.events).toEqual([]);
+    expect(started?.type === 'sync' && started.room.match?.players.map((p) => p.kind)).toEqual(['remote', 'local-human', 'bot', 'bot']);
+  });
+});
+
+describe('leaving a lobby', () => {
+  it('frees the seat of whoever leaves the lobby, and refuses leaving a running match', () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'join', name: '房主' });
+    ctx.send(GUEST, { type: 'join', name: '客人' });
+    ctx.send(GUEST, { type: 'leave' });
+    const lobby = ctx.last(HOST, 'sync');
+    expect(lobby?.type === 'sync' && lobby.room.members.map((m) => m.name)).toEqual(['房主']);
+    expect(ctx.last(GUEST, 'sync')).toMatchObject({ room: { joined: false } });
+
+    ctx.send(HOST, { type: 'start', seats: 3 });
+    ctx.send(HOST, { type: 'leave' });
+    expect(ctx.last(HOST, 'error')).toMatchObject({ code: 'already-started' });
+  });
+
+  it('drops people who are gone when the host plays again, so the next match never waits on them', async () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'join', name: '房主' });
+    ctx.send(GUEST, { type: 'join', name: '客人' });
+    ctx.send(LATE, { type: 'join', name: '走了' });
+    ctx.send(HOST, { type: 'start', seats: 3 });
+    await playOut(ctx, [HOST, GUEST, LATE]);
+    ctx.send(HOST, { type: 'rematch' });
+    const lobby = ctx.last(GUEST, 'sync');
+    // LATE is not online in makeRoom.
+    expect(lobby?.type === 'sync' && lobby.room.members.map((m) => m.name)).toEqual(['房主', '客人']);
+  });
+
+  it('tells people who only watched the match that the lobby is open again', async () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'join', name: '房主' });
+    ctx.send(HOST, { type: 'start', seats: 3 });
+    ctx.send(LATE, { type: 'hello', token: LATE, protocol: PROTOCOL_VERSION });
+    await playOut(ctx, [HOST]);
+    ctx.send(HOST, { type: 'rematch' });
+    expect(ctx.last(LATE, 'sync')).toMatchObject({ room: { phase: 'lobby', joined: false } });
+  });
+});
+
 describe('protocol parsing', () => {
   it('accepts well-formed messages and drops everything else', () => {
     expect(parseClientMessage(JSON.stringify({ type: 'hello', token: HOST, protocol: 1 }))).toMatchObject({ type: 'hello' });
     expect(parseClientMessage(JSON.stringify({ type: 'hello', token: 'short', protocol: 1 }))).toBeNull();
     expect(parseClientMessage('not json')).toBeNull();
     expect(parseClientMessage(JSON.stringify({ type: 'start', seats: 3.5 }))).toBeNull();
+    expect(parseClientMessage(JSON.stringify({ type: 'rematch' }))).toEqual({ type: 'rematch' });
+    expect(parseClientMessage(JSON.stringify({ type: 'leave' }))).toEqual({ type: 'leave' });
     expect(parseClientMessage(JSON.stringify({ type: 'submit', requestId: 1, action: [] }))).toBeNull();
     expect(parseClientMessage(JSON.stringify({ type: 'join', name: 'x'.repeat(20_000) }))).toBeNull();
   });

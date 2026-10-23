@@ -15,7 +15,7 @@ import { IslandDraft, IslandReveal } from './IslandDraft';
 import { MarketStrip } from './MarketStrip';
 import { RankRail } from './RankRail';
 import { RerollCard } from './RerollCard';
-import { ResultCard } from './ResultCard';
+import { ResultCard, type Rematch } from './ResultCard';
 import { resultRows } from './resultModel';
 import { RulesPanel } from './RulesPanel';
 import { seatPlates } from './seatPlates';
@@ -41,6 +41,8 @@ const NO_GOODS: Goods = { wood: 0, iron: 0, spice: 0, arms: 0 };
 export interface Table3DScreenProps {
   readonly session: GameSession;
   readonly onExit: () => void;
+  /** The result card's "play again" (none: only back to the menu). */
+  readonly rematch?: Rematch | undefined;
   /** Dev only: answer every decision with its first legal action and skip every show. */
   readonly autoplay?: boolean;
   /** The result card at the end; the tutorial ends with its host instead. */
@@ -81,7 +83,7 @@ export interface Table3DScreenProps {
   readonly hideEvent?: boolean;
 }
 
-export function Table3DScreen({ session, onExit, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, skipIslandMoments = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdShow = false, holdVoyage = false, onVoyage, onStarted, onCalm }: Table3DScreenProps) {
+export function Table3DScreen({ session, onExit, rematch, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, skipIslandMoments = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdShow = false, holdVoyage = false, onVoyage, onStarted, onCalm }: Table3DScreenProps) {
   const snap = useSession(session);
   const [ready, setReady] = useState(false);
 
@@ -370,7 +372,7 @@ export function Table3DScreen({ session, onExit, autoplay = false, showResult = 
           }}
         />
       )}
-      {ready && finished && showResult && <ResultCard rows={rows} nameOf={nameOf} colorOf={colorOf} viewer={hotSeat ? null : viewer} rounds={rounds} onRestart={onExit} />}
+      {ready && finished && showResult && <ResultCard rows={rows} nameOf={nameOf} colorOf={colorOf} viewer={hotSeat ? null : viewer} rounds={rounds} onRestart={onExit} rematch={rematch} />}
 
       {ready && handoffTo && (
         <div className="beat-backdrop handoff-backdrop" role="dialog" aria-modal="true" aria-label="換人">

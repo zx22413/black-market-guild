@@ -107,7 +107,7 @@
 }
 
 /* ---------- lesson menu ---------- */
-.tut-menu h2 {
+.tut-menu h3 {
   margin: 8px 0 0;
   font-size: var(--fs-title);
 }

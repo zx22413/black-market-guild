@@ -13,6 +13,12 @@ const ROW_MS = 1300;
 const WINNER_PAUSE_MS = 700;
 const COUNT_MS = 700;
 
+/**
+ * What the card offers after the reveal besides going back to the menu: play again at once
+ * (single player, or the host of an online room), or wait for the host to (online guests).
+ */
+export type Rematch = { readonly kind: 'now'; readonly onRematch: () => void } | { readonly kind: 'host-decides' };
+
 function useCountUp(target: number, running: boolean): number {
   const [value, setValue] = useState(0);
   useEffect(() => {
@@ -83,10 +89,12 @@ export interface ResultCardProps {
   readonly viewer: PlayerId | null;
   /** Rounds in the match (§3). */
   readonly rounds: number;
+  /** Back to the main menu. */
   readonly onRestart: () => void;
+  readonly rematch?: Rematch | undefined;
 }
 
-export function ResultCard({ rows, nameOf, colorOf, viewer, rounds, onRestart }: ResultCardProps) {
+export function ResultCard({ rows, nameOf, colorOf, viewer, rounds, onRestart, rematch }: ResultCardProps) {
   // Reveal from the last row up; the winner(s) last, after a pause.
   const [revealed, setRevealed] = useState(0);
   useEffect(() => {
@@ -124,9 +132,15 @@ export function ResultCard({ rows, nameOf, colorOf, viewer, rounds, onRestart }:
               全部揭曉
             </button>
           )}
+          {done && rematch?.kind === 'host-decides' && <span className="result-wait">等房主開下一局…</span>}
           {done && (
-            <button type="button" className="primary" onClick={onRestart}>
-              再玩一局
+            <button type="button" className={rematch?.kind === 'now' ? '' : 'primary'} onClick={onRestart}>
+              回主選單
+            </button>
+          )}
+          {done && rematch?.kind === 'now' && (
+            <button type="button" className="primary" onClick={rematch.onRematch}>
+              再來一局
             </button>
           )}
         </footer>

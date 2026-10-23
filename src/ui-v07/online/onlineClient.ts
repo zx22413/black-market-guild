@@ -2,8 +2,8 @@ import type { Action } from '../../v07/game';
 import { PROTOCOL_VERSION, type ClientMessage, type RoomSnapshot, type ServerMessage } from '../../v07/online';
 import type { GameSession, SessionSnapshot } from '../session/gameSession';
 
-/** The V0.7 page reaches the local V0.7 Worker through this dev-server proxy path (vite.config.ts). */
-export const API_BASE = '/api-v07';
+/** The Worker's room API; in development Vite forwards it to `npm run server:dev` (vite.config.ts). */
+export const API_BASE = '/api';
 
 export type Connection = 'connecting' | 'open' | 'closed';
 
@@ -21,6 +21,10 @@ export interface OnlineClient {
   subscribe(listener: () => void): () => void;
   join(name: string): void;
   start(seats: number): void;
+  /** Host only, after the match: everyone goes back to this room's lobby. */
+  rematch(): void;
+  /** Gives up this browser's lobby seat and stops sitting down again on its own. */
+  leave(): void;
   /** The running match as a GameSession for the table screen; null before the start. */
   getSession(): GameSession | null;
   close(): void;
@@ -44,6 +48,14 @@ function storageSet(key: string, value: string): void {
   }
 }
 
+function storageRemove(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // Blocked storage: nothing was saved either.
+  }
+}
+
 let memoryToken: string | null = null;
 
 /** The random id this browser is known by in every room; kept so a reload keeps the seat. */
@@ -59,6 +71,14 @@ export const savedName = (): string => storageGet('bmg7.name') ?? '';
 export const saveName = (name: string): void => storageSet('bmg7.name', name);
 export const savedHostKey = (): string => storageGet('bmg7.hostKey') ?? '';
 export const saveHostKey = (key: string): void => storageSet('bmg7.hostKey', key);
+
+/** The room this browser last sat in, offered on the main menu as "back to the room". */
+export const lastRoom = (): string | null => storageGet('bmg7.lastRoom');
+export const saveLastRoom = (code: string): void => storageSet('bmg7.lastRoom', code);
+export function forgetLastRoom(code?: string): void {
+  if (code !== undefined && lastRoom() !== code) return;
+  storageRemove('bmg7.lastRoom');
+}
 
 /** Asks the server for a new room; only works with the host key. */
 export async function createRoom(hostKey: string): Promise<string> {
@@ -130,6 +150,8 @@ export function connectRoom(code: string): OnlineClient {
     if (match !== lastMatch) {
       lastMatch = match;
       sessionSnapshot = state.room ? toSessionSnapshot(state.room) : null;
+      // Back in the lobby (rematch): the next match gets a fresh session for a fresh table.
+      if (sessionSnapshot === null) session = null;
     }
     listeners.forEach((listener) => listener());
   };
@@ -157,11 +179,13 @@ export function connectRoom(code: string): OnlineClient {
     }
     if (message.type === 'error') {
       const fatal = message.code === 'no-room' || message.code === 'outdated';
+      if (message.code === 'no-room') forgetLastRoom(code);
       update({ notice: message.message, fatal: state.fatal || fatal });
       return;
     }
     const room = applyMessage(state.room, message);
     update({ room, ...(message.type === 'sync' ? { notice: null } : {}) });
+    if (room?.joined) saveLastRoom(code);
     // After a server restart the lobby forgets people; rejoin whoever had joined this room.
     if (message.type === 'sync' && !room?.joined && room?.phase === 'lobby' && storageGet(`bmg7.joined.${code}`)) {
       send({ type: 'join', name: savedName() });
@@ -219,6 +243,11 @@ export function connectRoom(code: string): OnlineClient {
       send({ type: 'join', name });
     },
     start: (seats) => send({ type: 'start', seats }),
+    rematch: () => send({ type: 'rematch' }),
+    leave: () => {
+      storageRemove(`bmg7.joined.${code}`);
+      send({ type: 'leave' });
+    },
     getSession: () => {
       if (sessionSnapshot === null) return null;
       session ??= {

@@ -2,8 +2,8 @@
  * Plays one V0.7 online match against a running Worker with two headless clients (host and
  * guest) driven by bots, plus two bot seats filled by the room; the guest drops and reconnects
  * mid-match. Checks that each client only receives its own requests and private events.
- * Usage: npm run server:dev:v07   (in another terminal)
- *        npm run online:smoke -- [--url http://localhost:8788]
+ * Usage: npm run build && npm run server:dev   (in another terminal)
+ *        npm run online:smoke -- [--url http://localhost:8787]
  * The host key comes from HOST_KEY or .dev.vars.
  */
 import { createBot, type Bot } from '../src/v07/bots';
@@ -54,7 +54,7 @@ interface Client {
   ended: boolean;
 }
 
-const base = option('url', 'http://localhost:8788');
+const base = option('url', 'http://localhost:8787');
 const problems: string[] = [];
 
 /** `onMessage` returns false when it replaced the client's socket; the old socket then stops answering. */
