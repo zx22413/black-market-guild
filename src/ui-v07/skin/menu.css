@@ -293,3 +293,95 @@
     0 3px 0 var(--c-wood-dark),
     0 0 14px rgb(255 194 61 / 0.55);
 }
+
+/* ---------- seats: the lobby and the local setup's seat list ---------- */
+/*
+ * A seat is a name plate (layers.css): a parchment card with the guild colour it will have at the
+ * table as a bookmark ribbon (--seat, set by the component). An open lobby seat stays a dashed
+ * outline with no ribbon: nobody's colour yet.
+ */
+:root:not(.skin-classic) .menu-panel :is(.menu-seat:not(.empty), .menu-seat-row) {
+  position: relative;
+  border: 0;
+  border-radius: 3px;
+  background:
+    var(--c-grain),
+    linear-gradient(180deg, #fcf5e2, #ecdfbd);
+  background-size: 160px 160px, auto;
+  box-shadow:
+    inset 0 1px 0 #fffaf0,
+    inset 0 0 0 1px rgb(120 85 30 / 0.3),
+    0 2px 0 var(--c-wood-dark),
+    0 5px 10px rgb(60 40 15 / 0.15);
+}
+:root:not(.skin-classic) .menu-panel :is(.menu-seat:not(.empty), .menu-seat-row)::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  bottom: -5px;
+  left: 6px;
+  width: 7px;
+  background: var(--seat, #888);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 4px), 0 100%);
+  pointer-events: none;
+}
+:root:not(.skin-classic) .menu-panel .menu-seat {
+  padding-left: 22px;
+}
+:root:not(.skin-classic) .menu-panel .menu-seat.empty {
+  border: 1.5px dashed rgb(120 85 30 / 0.45);
+  border-radius: 3px;
+  background: rgb(255 250 235 / 0.25);
+}
+:root:not(.skin-classic) .menu-panel .menu-seat-row {
+  padding: 6px 8px 6px 20px;
+}
+:root:not(.skin-classic) .menu-panel .menu-seat-no {
+  min-width: 1.6em;
+}
+
+/* Fields sit sunk into the paper. */
+:root:not(.skin-classic) .menu-panel :is(input, select) {
+  border: 1px solid rgb(120 85 30 / 0.45);
+  border-radius: 3px;
+  background: #fffaf0;
+  box-shadow: inset 0 2px 3px rgb(90 60 20 / 0.18), 0 1px 0 rgb(255 250 235 / 0.8);
+}
+:root:not(.skin-classic) .menu-panel :is(input, select):focus-visible {
+  outline: 2px solid var(--c-gold);
+  outline-offset: 1px;
+}
+
+/* A two-way choice (真人／電腦, the seat count) is a groove in the paper; the chosen one is a brass key. */
+:root:not(.skin-classic) .menu-panel .menu-kind {
+  gap: 2px;
+  padding: 2px;
+  border: 0;
+  border-radius: 4px;
+  background: rgb(120 85 30 / 0.18);
+  box-shadow: inset 0 1px 2px rgb(60 40 15 / 0.35), 0 1px 0 rgb(255 250 235 / 0.8);
+}
+:root:not(.skin-classic) .menu-panel .menu-kind button {
+  border-radius: 3px;
+  background: transparent;
+  color: var(--c-soft);
+}
+:root:not(.skin-classic) .menu-panel .menu-kind button.on {
+  background: linear-gradient(180deg, #ffe08a, #edb93f 45%, #c98a1c);
+  color: var(--c-ink);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.6), 0 1px 0 #6b4c10, 0 2px 3px rgb(60 40 10 / 0.3);
+  text-shadow: 0 1px 0 rgb(255 240 190 / 0.7);
+}
+/* On a phone the plate's ribbon and padding leave no room for a bot's name: it drops to its own line. */
+@media (max-width: 640px) {
+  :root:not(.skin-classic) .menu-panel .menu-seat-row {
+    flex-wrap: wrap;
+  }
+  :root:not(.skin-classic) .menu-panel .menu-seat-row input {
+    order: 1;
+    flex: 1 1 100%;
+  }
+  :root:not(.skin-classic) .menu-panel .menu-seat-row .menu-x {
+    margin-left: auto;
+  }
+}

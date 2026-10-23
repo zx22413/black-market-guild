@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect, useState, useSyncExternalStore, type FormEvent } from 'react';
+import { useEffect, useLayoutEffect, useState, useSyncExternalStore, type CSSProperties, type FormEvent } from 'react';
 import { ROOM_CODE_LENGTH, isRoomCode } from '../../v07/online';
+import { PLAYER_COLORS } from '../../ui/scene/tableModel';
 import { MatchView } from '../table/MatchView';
 import type { Rematch } from '../table3d/ResultCard';
 import { useLaunchOnStart } from '../menu/launch';
@@ -163,12 +164,17 @@ function NameRow({ client, joined, connected }: { readonly client: OnlineClient;
   );
 }
 
+/** The seat's guild colour (the colour it gets at the table), for the name plate's ribbon. */
+function seatRibbon(index: number): CSSProperties {
+  return { '--seat': PLAYER_COLORS[index % PLAYER_COLORS.length] } as CSSProperties;
+}
+
 function Seats({ cards }: { readonly cards: readonly SeatCard[] }) {
   return (
     <ol className="menu-seats">
       {cards.map((card, i) =>
         card.kind === 'member' ? (
-          <li key={i} className={`menu-seat ${card.online ? '' : 'away'}`}>
+          <li key={i} className={`menu-seat ${card.online ? '' : 'away'}`} style={seatRibbon(i)}>
             <small>
               {i + 1}P{card.isHost && '・房主'}
             </small>

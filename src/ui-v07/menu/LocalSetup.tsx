@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { BOT_STRATEGIES, type BotStrategy } from '../../v07/bots';
 import { RULES_V07 } from '../../v07/game';
 import type { SeatConfig } from '../../v07/match';
+import { PLAYER_COLORS } from '../../ui/scene/tableModel';
 import type { SessionOptions } from '../session/gameSession';
 
 // Seat drafts and presets for a match on this device; the seat list is folded away under 「調整座位」.
@@ -102,7 +103,7 @@ function SeatList({ seats, onChange }: { readonly seats: readonly SeatDraft[]; r
   return (
     <ol className="menu-seat-list">
       {seats.map((seat, i) => (
-        <li key={i}>
+        <li key={i} className="menu-seat-row" style={{ '--seat': PLAYER_COLORS[i % PLAYER_COLORS.length] } as CSSProperties}>
           <span className="menu-seat-no">{i + 1}P</span>
           <div className="menu-kind" role="radiogroup" aria-label={`座位 ${i + 1} 類型`}>
             {(['local-human', 'bot'] as const).map((kind) => (
