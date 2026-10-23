@@ -249,3 +249,66 @@ export function marketDock(seatAngle: number): MarketDock {
   ];
   return { parts, porterPath };
 }
+
+/** A painted mark on a crate face: its middle, the face's outward turn about y (0 = +z), and its size. */
+export interface CrateMark {
+  readonly at: Vec3;
+  readonly yaw: number;
+  readonly size: readonly [number, number];
+}
+
+export interface ContrabandPile {
+  /** The crates and their straps, in table space. */
+  readonly parts: readonly KitPart[];
+  /** Where CONTRABAY is sprayed (the outward faces of the front crates). */
+  readonly marks: readonly CrateMark[];
+  /** The pile's foot on the sand. */
+  readonly at: Vec3;
+}
+
+/** The smugglers' pile: crates about twice a pier's, so the stencil still reads as a mark from the table camera. */
+const PILE = { crate: 0.8, strap: 0.07, mark: [0.74, 0.37] as const, lift: 0.004 } as const;
+
+/** The middle of the widest gap between the seats' bearings, where no pier or porter comes. */
+export function quietBearing(seatAngles: readonly number[]): number {
+  if (seatAngles.length === 0) return Math.PI / 4;
+  const sorted = [...seatAngles].map((a) => ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)).sort((a, b) => a - b);
+  let best = { gap: -1, mid: 0 };
+  sorted.forEach((a, i) => {
+    const next = i + 1 < sorted.length ? sorted[i + 1]! : sorted[0]! + 2 * Math.PI;
+    if (next - a > best.gap) best = { gap: next - a, mid: (a + next) / 2 };
+  });
+  return best.mid;
+}
+
+/**
+ * A pile of smuggled crates on the market island's sand, between two piers (docs/title-wordmark.html,
+ * H3-A): three big crates and a long one, CONTRABAY sprayed on the faces toward the sea. Built in a
+ * frame with +z out along the bearing and x across it, then turned into place like the pier heads.
+ */
+export function contrabandPile(seatAngles: readonly number[]): ContrabandPile {
+  const bearing = quietBearing(seatAngles);
+  const yaw = Math.atan2(Math.cos(bearing), Math.sin(bearing));
+  const grass = grassRadius(bearing) + HEAD.margin;
+  const edge = cliffProfile(bearing)[0]!.r - HEAD.margin;
+  // Toward the cliff's edge rather than the sand's middle, clear of the grass's ragged rim.
+  const r = Math.max((grass + edge) / 2, edge - PILE.crate * 0.75);
+  const s = PILE.crate;
+  const parts: KitPart[] = [];
+  const marks: CrateMark[] = [];
+  const crate = (x: number, y: number, z: number, size: Vec3, mat: KitPart['mat'], mark: boolean): void => {
+    const [w, h, d] = size;
+    const box = (center: Vec3, sz: Vec3, m: KitPart['mat'], bevel: number): KitPart => ({ kind: 'box', center, size: sz, bevel, mat: m, spin: yaw });
+    parts.push(box([x, CLIFF_TOP + y, r + z], size, mat, 0.05));
+    // Two straps round the crate, a little proud of it, near its top and bottom.
+    for (const band of [-0.32, 0.32]) {
+      parts.push(box([x, CLIFF_TOP + y + band * h, r + z], [w + PILE.strap, PILE.strap * 1.4, d + PILE.strap], 'woodDark', 0.01));
+    }
+    if (mark) marks.push({ at: spinPoint([x, CLIFF_TOP + y, r + z + d / 2 + PILE.lift], yaw), yaw, size: [PILE.mark[0] * (w / s), PILE.mark[1]] });
+  };
+  crate(-0.46, s / 2, 0.05, [s, s, s], 'wood', true);
+  crate(0.44, s / 2, -0.12, [s, s, s], 'woodDark', false);
+  crate(-0.05, s * 1.5, -0.04, [s, s, s], 'wood', true);
+  crate(1.3, 0.25, 0.12, [1.0, 0.5, 0.5], 'woodDark', false);
+  return { parts, marks, at: spinPoint([0, CLIFF_TOP, r], yaw) };
+}

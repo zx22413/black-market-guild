@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { AdditiveBlending, BoxGeometry, DoubleSide, MeshBasicMaterial, MeshStandardMaterial, type BufferGeometry, type Group, type Mesh, type PointLight, type Sprite } from 'three';
 import { geometryFromParts } from './buildings/Building';
+import { ContrabandPile } from './ContrabandPile';
 import { Landmark } from './buildings/Landmark';
 import {
   AWNING_OPEN,
@@ -489,6 +490,7 @@ export function MarketIsland({ seatAngles, show = DEFAULT_SHOW, night = false }:
         <RushDress rush={show.rush ?? false} />
       </group>
       <Piers geometry={pierGeometry} />
+      <ContrabandPile seatAngles={seatAngles} />
       <Porters deliveries={show.deliveries} paths={paths} />
     </group>
   );

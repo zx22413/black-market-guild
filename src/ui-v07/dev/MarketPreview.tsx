@@ -11,15 +11,16 @@ import type { BeatSeat } from '../scene/beatStage';
 import { TableCanvas, type TableShip } from '../scene/TableCanvas';
 import { menuPrices } from '../menu/menuMotion';
 
-// Dev-only: the market island up close, at /v07.html?dev=market. Query: `view` front | back | top | far
-// (or `spin=1` to circle it), `weather` (storm, moonless-night, black-market-rush, …), `awnings` open | reefed | shut,
+// Dev-only: the market island up close, at /v07.html?dev=market. Query: `view` front | back | top | far | crates
+// (the smugglers' pile up close; or `spin=1` to circle it), `weather` (storm, moonless-night, black-market-rush, …), `awnings` open | reefed | shut,
 // `players` 3 or 4. Every ship lies at its berth and its porters set off again every 20 seconds.
 
-const VIEWS: Readonly<Record<'front' | 'back' | 'top' | 'far', { readonly position: readonly [number, number, number]; readonly target: readonly [number, number, number] }>> = {
+const VIEWS: Readonly<Record<'front' | 'back' | 'top' | 'far' | 'crates', { readonly position: readonly [number, number, number]; readonly target: readonly [number, number, number] }>> = {
   front: { position: [0, 22, 34], target: [0, 6, 0] },
   back: { position: [0, 22, -34], target: [0, 6, 0] },
   top: { position: [0, 70, 6], target: [0, 0, 0] },
   far: { position: [0, 82, 60], target: [0, 0, 0] },
+  crates: { position: [14, 7, 13], target: [7.2, 3.6, 7.2] },
 };
 
 const LOADS = [

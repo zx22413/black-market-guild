@@ -21,9 +21,9 @@ import {
 import { SWATCHES } from '../../src/ui/scene/buildings/materials';
 import { bounds, partFaces, spinPoint, type Part, type Vec3 } from '../../src/ui/scene/buildings/polyhedra';
 import { BUILDING_DESIGNS } from '../../src/ui/scene/buildings/designs';
-import { ASSET_BUILDING_SCALE, seatAngles } from '../../src/ui/scene/layout';
+import { ASSET_BUILDING_SCALE, TARGET_ISLAND_RADIUS, seatAngles } from '../../src/ui/scene/layout';
 import { TARGET_ISLAND_HEIGHT } from '../../src/ui/scene/islandShape';
-import { MARKET_GROUND, berthOf, grassRadius, marketDock } from '../../src/ui/scene/marketDocks';
+import { MARKET_GROUND, berthOf, contrabandPile, grassRadius, marketDock, quietBearing } from '../../src/ui/scene/marketDocks';
 import { lanternLitAt, pathLength } from '../../src/ui/scene/marketMotion';
 
 const sub = (a: Vec3, b: Vec3): number[] => a.map((n, i) => n - b[i]!);
@@ -191,6 +191,34 @@ describe('market piers and porters', () => {
         for (let i = 1; i < walk.length; i++) expect(segmentDistance(c, walk[i - 1]!, walk[i]!)).toBeGreaterThan(0.5);
       }
     }
+  });
+
+  it('piles the smugglers\' crates on the sand between two piers, clear of every porter, marked toward the sea', () => {
+    for (const count of [3, 4]) {
+      const seats = seatAngles(count);
+      const { parts, marks, at } = contrabandPile(seats);
+      parts.forEach(expectClosedConvex);
+      for (const q of parts.flatMap((p) => partFaces(p).flatMap((f) => f.points))) {
+        // Standing on the sand: no lower than its top, past the grass, inside the island.
+        expect(q[1]).toBeGreaterThanOrEqual(TARGET_ISLAND_HEIGHT - 1e-6);
+        expect(Math.hypot(q[0], q[2])).toBeGreaterThan(grassRadius(angle(q)));
+        expect(Math.hypot(q[0], q[2])).toBeLessThan(TARGET_ISLAND_RADIUS);
+      }
+      for (const seat of seats) {
+        const walk = marketDock(seat).porterPath;
+        for (let i = 1; i < walk.length; i++) expect(segmentDistance(at, walk[i - 1]!, walk[i]!)).toBeGreaterThan(3);
+      }
+      expect(marks.length).toBeGreaterThan(0);
+      for (const m of marks) {
+        const out = Math.hypot(m.at[0], m.at[2]);
+        expect((Math.sin(m.yaw) * m.at[0] + Math.cos(m.yaw) * m.at[2]) / out).toBeGreaterThan(0.99);
+      }
+    }
+  });
+
+  it('finds the quiet bearing in the middle of the widest gap between seats', () => {
+    expect(quietBearing([0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2])).toBeCloseTo(Math.PI / 4);
+    expect(quietBearing([0, 0.5, 1])).toBeCloseTo(1 + (2 * Math.PI - 1) / 2);
   });
 
   it('keeps the berths of different seats apart', () => {
