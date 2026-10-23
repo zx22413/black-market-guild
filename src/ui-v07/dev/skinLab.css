@@ -54,6 +54,7 @@
   grid-template-columns: 1fr;
 }
 .lab-cell {
+  min-width: 0;
   margin: 0;
   display: grid;
   grid-template-rows: auto 1fr;
@@ -69,6 +70,7 @@
 }
 .lab-stage {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
   min-height: 150px;
   padding: 36px 24px;

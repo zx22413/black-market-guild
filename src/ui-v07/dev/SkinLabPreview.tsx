@@ -13,8 +13,8 @@ import './skinLab.css';
  * bevelled wood with a groove and brass end caps, price-tag chips, chamfered keys with a lip, and a
  * panel with a title plaque, brass corners and a faint compass rose under the text. Then two pictures
  * that do a job: the rules as a handbook whose thumb-index tabs are the chapter tabs, and submitting
- * as pressing a wax seal, which stays on the bar once the decision is sealed. Nothing here is used by
- * the game yet.
+ * as pressing a wax seal, which stays on the bar once the decision is sealed. A row that has been
+ * applied to the game shows only the game's own look ("已套用").
  */
 export function SkinLabPreview() {
   return (
@@ -25,7 +25,7 @@ export function SkinLabPreview() {
       </header>
       <LabRow title="底欄（第 1 層）" note="斜面木條＋凹槽、黃銅端蓋、吊牌形狀的晶片、切角按鍵" now={<BarNow />} next={<BarNext />} />
       <LabRow title="面板（第 2 層＋美術層）" note="橫跨上緣的標題牌、黃銅護角、木框斜面、紙上淡淡的羅盤與航線" now={<PanelNow />} next={<PanelNext />} />
-      <LabRow title="主按鈕" note="黃銅漸層、頂部亮線、按下時底邊收起；次要按鈕是壓印羊皮紙" now={<ButtonsNow />} next={<ButtonsNext />} />
+      <LabRow title="主按鈕（已套用）" note="切角按鍵：主要是黃銅、次要是壓印羊皮紙，按下時鍵面落到底邊上" now={<ButtonsNow />} />
       <LabRow wide title="規則面板 → 航海手冊" note="書籤就是章節頁籤，翻到的那章書籤最突出、和書頁同色；寬螢幕雙頁，手機單頁、書籤移到上緣" now={<RulesNow />} next={<RulesBook />} />
       <LabRow title="提交 → 封蠟章" note="封蠟章就是提交鈕；封上之後章留在底欄、轉個角度寫「已封」，被封住的選擇變淡（試驗頁可再按一次復原）" now={<BarNow />} next={<BarSeal />} />
     </div>
@@ -36,7 +36,8 @@ interface LabRowProps {
   readonly title: string;
   readonly note: string;
   readonly now: ReactNode;
-  readonly next: ReactNode;
+  /** The trial version; left out once the row has been applied to the game. */
+  readonly next?: ReactNode;
   /** Stack the two versions instead of setting them side by side (for wide pieces like the book). */
   readonly wide?: boolean;
 }
@@ -50,13 +51,15 @@ function LabRow({ title, note, now, next, wide = false }: LabRowProps) {
       </h2>
       <div className={`lab-pair ${wide ? 'wide' : ''}`}>
         <figure className="lab-cell">
-          <figcaption>現在</figcaption>
+          <figcaption>{next === undefined ? '已套用到遊戲' : '現在'}</figcaption>
           <div className="lab-stage">{now}</div>
         </figure>
-        <figure className="lab-cell">
-          <figcaption>新做法</figcaption>
-          <div className="lab-stage">{next}</div>
-        </figure>
+        {next !== undefined && (
+          <figure className="lab-cell">
+            <figcaption>新做法</figcaption>
+            <div className="lab-stage">{next}</div>
+          </figure>
+        )}
       </div>
     </section>
   );
@@ -250,12 +253,6 @@ function PanelNext() {
 
 // ---------- buttons ----------
 
-const STATES = [
-  { label: '一般', cls: '' },
-  { label: '滑過', cls: 'is-hover' },
-  { label: '按下', cls: 'is-down' },
-] as const;
-
 function ButtonsNow() {
   return (
     <div className="lab-btns">
@@ -268,31 +265,6 @@ function ButtonsNow() {
             停用
           </button>
           <span className="lab-hint">滑過與按下請直接操作</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ButtonsNext() {
-  return (
-    <div className="lab-btns">
-      {(['primary', ''] as const).map((kind) => (
-        <div key={kind} className="lab-btn-row">
-          {STATES.map((s) => (
-            <span key={s.label} className="lab-state">
-              <button type="button" className={`nb-btn ${kind} ${s.cls}`}>
-                {kind ? '提交' : '仍要提交'}
-              </button>
-              <small>{s.label}</small>
-            </span>
-          ))}
-          <span className="lab-state">
-            <button type="button" className={`nb-btn ${kind}`} disabled>
-              停用
-            </button>
-            <small>停用</small>
-          </span>
         </div>
       ))}
     </div>
