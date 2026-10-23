@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import type { IslandId } from '../../v07/game';
 import { ISLAND_LABELS, ISLAND_TEXT } from '../labels';
+import { CinnabarChop } from '../skin/titleMark';
 import { IslandGlance } from './IslandGlance';
 import { cardLean, pointerTilt, roughEdge } from './cardCraft';
 import './islandCard.css';
@@ -88,7 +89,10 @@ export function IslandCard({ island, faceUp, selected = false, showFull = false,
         <span className="isle-face back" aria-hidden={faceUp}>
           <span className="isle-paper">
             <CompassRose className="isle-emboss center" />
-            <span className="isle-back-title">黑市商會</span>
+            <span className="isle-back-title">
+              暗潮商戰
+              <CinnabarChop className="isle-back-chop" />
+            </span>
           </span>
         </span>
       </span>

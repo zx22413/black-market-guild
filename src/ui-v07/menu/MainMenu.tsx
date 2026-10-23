@@ -1,4 +1,5 @@
 import { Suspense, lazy, useState } from 'react';
+import { CinnabarChop, GameTitle } from '../skin/titleMark';
 import { isLessonDone } from '../tutorial/progress';
 
 // The title panel over the live table: one big "back to the room" when this browser was in an
@@ -22,7 +23,12 @@ export function MainMenu({ lastRoom, onRejoin, onLocal, onOnline, onTutorial }: 
   return (
     <main className="menu-panel menu-title">
       <header className="menu-logo">
-        <h1>黑市商會</h1>
+        <span className="menu-title-mark">
+          <h1>
+            <GameTitle />
+          </h1>
+          <CinnabarChop className="menu-title-chop" />
+        </span>
         <p>V0.7 試玩版</p>
       </header>
       <nav className="menu-actions" aria-label="主選單">

@@ -788,3 +788,17 @@ button:disabled {
     padding: 6px 8px 8px;
   }
 }
+
+/* The game's name and its chop (skin/titleMark.tsx): the faces the SVG text is drawn in. */
+.title-stencil .title-zh {
+  font-family: 'Noto Sans TC', var(--font-strong);
+  font-weight: 900;
+}
+.title-stencil .title-en {
+  font-family: 'Stardos Stencil', var(--font-strong);
+  font-weight: 700;
+}
+.cinnabar-chop text {
+  font-family: 'Noto Serif TC', var(--font-strong);
+  font-weight: 900;
+}

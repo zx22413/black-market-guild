@@ -154,3 +154,19 @@
   backdrop-filter: none;
   animation: none;
 }
+
+/* ---------- the game's name ---------- */
+
+/* The menu panel sits on the left (or the bottom on phones) over the table; here it sits in its cell. */
+.lab-menu {
+  display: grid;
+  justify-items: center;
+  width: 100%;
+}
+.lab-menu .menu-panel {
+  position: relative;
+  inset: auto;
+  width: min(400px, 100%);
+  max-height: none;
+  margin: 0;
+}

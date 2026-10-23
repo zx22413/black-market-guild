@@ -332,6 +332,14 @@
   /* Debossed into the wood: a dark lip on top, a gold catch-light below. */
   text-shadow: 0 -1px 0 rgb(0 0 0 / 0.6), 0 1px 0 rgb(217 178 90 / 0.6);
 }
+/* The game's chop stamped after the name (skin/titleMark.tsx). */
+.isle-back-chop {
+  width: 1.5em;
+  margin-left: 0.1em;
+  vertical-align: -0.35em;
+  color: #b3343a;
+  rotate: -6deg;
+}
 
 /* ---------- picked ---------- */
 .isle-card.on .isle-face {

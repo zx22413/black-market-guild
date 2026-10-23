@@ -188,3 +188,7 @@ V0.7 的卡牌插圖（`cards/<種類>-<id>.svg`，400×300）與從插圖抽出
 | `ui/table-backdrop.jpg` | 本專案 3D 桌面的擷取畫面（`window.bmgCapture`），選單背景用 |
 
 - `src/ui/scene/props/handshakeIcon.ts` 內含 `icons/handshake.svg` 的路徑資料，用來擠出合資演出的 3D 握手與獎章浮雕（衍生作品，授權同上：CC BY 3.0，作者 Delapouite）。
+
+## 網頁圖示
+
+`public/favicon.png`（64px）與 `public/apple-touch-icon.png`（180px）是遊戲的朱印（`src/ui-v07/skin/titleMark.tsx` 的 `CinnabarChop`）：紅底挖出「暗潮商戰」四字，由 [`scripts/draw-favicon.py`](../../scripts/draw-favicon.py)（需要 Pillow）用 macOS 內建的「宋體-繁 粗體」（Songti TC Bold）畫成；圖檔本身是本專案原創，字型只用來描出字形，不隨檔案散布。改設計後重跑 `python3 -I scripts/draw-favicon.py public`。

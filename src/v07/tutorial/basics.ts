@@ -77,7 +77,7 @@ export const BASICS: TutorialScript = {
   ],
   coach: [
     // ── Round 1: sail and sell ──
-    step(invest(1), '歡迎來到黑市商會', [F.island('p1'), F.plate('p1'), F.round], [
+    step(invest(1), '歡迎來到暗潮商戰', [F.island('p1'), F.plate('p1'), F.round], [
       '你經營一座島：島上生產材料，你決定留下來蓋建築，或裝船運到中央巴扎港的黑市換錢。',
       `一局打 ${R.rounds} 回合，結束時總財富最高的人獲勝。這場教學只打 ${ROUNDS} 回合；角色另外有單課。`,
     ]),

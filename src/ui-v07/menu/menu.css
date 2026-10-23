@@ -146,6 +146,34 @@
   color: var(--m-wood-dark);
   text-shadow: 0 2px 0 rgb(217 178 90 / 0.6);
 }
+/* The name is stencilled and sprayed on the paper (skin/titleMark.tsx), the cinnabar chop beside it. */
+.menu-title-mark {
+  position: relative;
+  display: block;
+  width: fit-content;
+  margin-inline: auto;
+}
+.menu-title-mark h1 {
+  margin: 0;
+  line-height: 0;
+}
+.menu-title-mark .title-stencil {
+  display: block;
+  width: min(250px, 64vw);
+  height: auto;
+  color: var(--m-wood-dark);
+  mix-blend-mode: multiply;
+}
+.menu-title-chop {
+  position: absolute;
+  top: 4px;
+  left: calc(100% + 4px);
+  width: 34px;
+  color: var(--m-wax);
+  rotate: -6deg;
+  opacity: 0.92;
+  mix-blend-mode: multiply;
+}
 .menu-logo p,
 .menu-note {
   color: var(--m-soft);
@@ -509,8 +537,15 @@
     margin: 0;
     padding: 18px 16px 14px;
   }
-  .menu-logo h1 {
-    font-size: 1.9rem;
+}
+/* On a phone the chop sits on the title's top corner so the panel edge does not cut it off. */
+@media (max-width: 560px) {
+  .menu-title-mark .title-stencil {
+    width: 54vw;
+  }
+  .menu-title-chop {
+    top: -6px;
+    left: calc(100% - 8px);
   }
 }
 

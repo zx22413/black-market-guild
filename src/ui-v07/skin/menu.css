@@ -39,30 +39,12 @@
 }
 
 /* ---------- titles ---------- */
-/* The game's name is engraved: dark wood ink with a lit lower edge, over a brass rule with a diamond. */
+/* The game's name is sprayed on the paper (menu.css, skin/titleMark.tsx); here it is centred. */
 :root:not(.skin-classic) .menu-logo {
   display: grid;
   justify-items: center;
-  gap: 2px;
+  gap: 4px;
   text-align: center;
-}
-:root:not(.skin-classic) .menu-logo h1 {
-  color: var(--c-wood-dark);
-  text-shadow: 0 1px 0 rgb(255 250 235 / 0.9), 0 -1px 0 rgb(60 35 10 / 0.25);
-}
-:root:not(.skin-classic) .menu-logo::after {
-  content: '';
-  order: 1;
-  width: 72%;
-  height: 12px;
-  margin-top: 4px;
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 .5L11.5 6L6 11.5L.5 6Z' fill='%23dcae52' stroke='%235b3f12'/%3E%3Cpath d='M6 2.5L9.5 6L6 6Z' fill='%23fbe4a0'/%3E%3C/svg%3E") center / 12px 12px no-repeat,
-    linear-gradient(90deg, transparent, var(--c-gold-dark) 18%, var(--c-gold-dark) 82%, transparent) center / 100% 1.5px no-repeat;
-}
-:root:not(.skin-classic) .menu-logo p {
-  order: 2;
-  margin-top: 2px;
 }
 
 /* Every other page hangs its title on the plaque the table's panels use. */

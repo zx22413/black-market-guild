@@ -4,8 +4,11 @@ import { LockHint } from '../table3d/LockHint';
 import { RulesPanel } from '../table3d/RulesPanel';
 import { SealSubmit } from '../table3d/SealSubmit';
 import { PanelsApplied } from './SkinLabPanels';
+import { TitleApplied } from './SkinLabTitle';
 import '../beats/beat.css';
+import '../menu/menu.css';
 import '../skin/layers.css';
+import '../skin/menu.css';
 import './skinLab.css';
 
 /**
@@ -23,6 +26,11 @@ export function SkinLabPreview() {
         <h1>介面質感試驗</h1>
         <p>左邊是現在的樣子，右邊是新做法。底欄與按鈕可以實際點按。</p>
       </header>
+      <LabRow
+        title="遊戲名稱：暗潮商戰／Contrabay（已套用）"
+        note="型板字噴漆直接噴在羊皮紙上，旁邊蓋朱印（docs/title-wordmark.html 的 H3-A）；下面是英文為主的版本，遊戲還沒有英文介面"
+        now={<TitleApplied />}
+      />
       <LabRow title="底欄與封蠟章（第 1 層，已套用）" note="斜面木條＋凹槽、黃銅端蓋、吊牌晶片（黑市列的孔圈是貨品色）；提交是封蠟章，封上後留在底欄寫「已封」、選擇變淡，等其他人決定" now={<BarNow />} />
       <LabRow
         wide
