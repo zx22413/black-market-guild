@@ -7,6 +7,8 @@ import { MainMenu } from './menu/MainMenu';
 import { MenuBackdrop } from './menu/MenuBackdrop';
 import type { MenuView } from './menu/menuSeats';
 import './menu/menu.css';
+import './skin/layers.css';
+import './skin/menu.css';
 import { lastRoom } from './online/onlineClient';
 import { OnlineScreen } from './online/OnlineScreen';
 import { startGameSession, type GameSession, type SessionOptions } from './session/gameSession';
