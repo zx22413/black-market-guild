@@ -72,8 +72,13 @@
 :root:not(.skin-classic) :is(.inv-market, .rank-rail) {
   border-radius: 8px;
 }
-:root:not(.skin-classic) :is(.island-badge > button, .t3-menu .t3-round) {
+:root:not(.skin-classic) .t3-menu .t3-round {
   border-radius: 999px;
+}
+/* An island's name is a small wooden sign board, not a pill. */
+:root:not(.skin-classic) .island-badge > button {
+  border-radius: 4px;
+  padding-right: 14px;
 }
 /* The two long strips (market and bar) have a groove routed along them: a dark cut, a lit lower lip. */
 :root:not(.skin-classic) :is(.inv-market, .inv-bar)::before {
@@ -124,7 +129,7 @@
 }
 
 /* parchment tokens on the wood */
-:root:not(.skin-classic) :is(.bar-chips .chip.empty, .rank-rail li, .beat3d-plate, .isle-chip, .inv-market .bet, .beat3d-pin button.dep-bet, .inv-note, .rank-fold, .note-badge > button) {
+:root:not(.skin-classic) :is(.bar-chips .chip.empty, .isle-chip, .inv-market .bet, .beat3d-pin button.dep-bet, .note-badge > button) {
   border: 0;
   border-radius: 999px;
   background: var(--c-grain), var(--c-parch);
@@ -198,6 +203,58 @@
     filter: drop-shadow(0 2px 0 var(--c-wood-dark));
   }
 }
+/*
+ * Name plates (a guild's plate on the table, its ranking row, the owner over its island card): a
+ * small parchment card, not a pill, with the guild's colour as a bookmark ribbon tucked over the top
+ * edge. The ribbon takes the seat colour the components already set (`border-color` inline, or
+ * --seat), so the plate needs no new markup.
+ */
+:root:not(.skin-classic) :is(.rank-rail li, .beat3d-plate, .isle-owner-tag) {
+  position: relative;
+  border: 0;
+  border-radius: 3px;
+  background:
+    var(--c-grain),
+    linear-gradient(180deg, #fcf5e2, #ecdfbd);
+  background-size: 160px 160px, auto;
+  color: var(--c-ink);
+  box-shadow:
+    inset 0 1px 0 #fffaf0,
+    inset 0 0 0 1px rgb(120 85 30 / 0.28),
+    0 2px 0 var(--c-wood-dark),
+    0 6px 10px rgb(10 30 30 / 0.18);
+}
+:root:not(.skin-classic) :is(.rank-rail li, .beat3d-plate, .isle-owner-tag)::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  bottom: -5px;
+  left: 6px;
+  width: 0;
+  border-left: 7px solid;
+  border-left-color: inherit;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 4px), 0 100%);
+  pointer-events: none;
+}
+:root:not(.skin-classic) .isle-owner .isle-owner-tag::before {
+  border-left-color: var(--seat, #888);
+}
+:root:not(.skin-classic) .beat3d-plate {
+  padding: 3px 10px 3px 20px;
+}
+:root:not(.skin-classic) .isle-owner-tag {
+  padding: 3px 12px 3px 20px;
+}
+:root:not(.skin-classic) .rank-rail .rank-top {
+  padding-left: 20px;
+}
+:root:not(.skin-classic) .rank-fold {
+  border: 0;
+  background: var(--c-grain), var(--c-parch);
+  background-size: 160px 160px, auto;
+  color: var(--c-ink);
+  box-shadow: 0 2px 0 var(--c-wood-dark);
+}
 /* An island's moment keeps its gold (or grey) on the parchment chips. */
 :root:not(.skin-classic) .isle-chip.gain {
   box-shadow: 0 2px 0 var(--c-wood-dark), 0 0 0 2px #e0a91f, 0 0 18px rgb(255 201 74 / 0.9);
@@ -206,13 +263,24 @@
   box-shadow: 0 2px 0 var(--c-wood-dark), 0 0 0 2px #8d94a5;
   filter: grayscale(0.6);
 }
-:root:not(.skin-classic) :is(.rank-rail li, .inv-note, .rank-fold) {
+:root:not(.skin-classic) .inv-note {
+  border: 0;
+  background: var(--c-grain), var(--c-parch);
+  background-size: 160px 160px, auto;
+  color: var(--c-ink);
+  box-shadow: 0 2px 0 var(--c-wood-dark);
+}
+:root:not(.skin-classic) :is(.inv-note, .rank-fold) {
   border-radius: 8px;
 }
 :root:not(.skin-classic) .rank-rail li.me {
-  background: var(--c-grain), var(--c-parch-on);
+  background: var(--c-grain), linear-gradient(180deg, #fff8e0, #f6e3ad);
   background-size: 160px 160px, auto;
-  box-shadow: 0 2px 0 var(--c-wood-dark), 0 0 0 1.5px var(--c-gold);
+  box-shadow:
+    inset 0 1px 0 #fffaf0,
+    inset 0 0 0 1px var(--c-gold-dark),
+    0 0 0 1.5px var(--c-gold),
+    0 2px 0 var(--c-wood-dark);
 }
 :root:not(.skin-classic) .inv-market .need {
   color: var(--c-soft);
