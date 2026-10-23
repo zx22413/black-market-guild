@@ -2,16 +2,15 @@ import { useState, type ReactNode } from 'react';
 import { Flow, HouseIcon, IconDisc, InfoIcon, tokenIconUrl } from '../table3d/icons';
 import { LockHint } from '../table3d/LockHint';
 import { RulesBook, RulesNow } from './SkinLabBook';
-import { BrassCap, BrassCorner, CompassWatermark, WaxSeal } from './skinLabArt';
+import { BrassCorner, CompassWatermark, WaxSeal } from './skinLabArt';
 import '../beats/beat.css';
 import '../skin/layers.css';
 import './skinLab.css';
 
 /**
- * Dev-only: the skin lab (`/v07.html?dev=skin-lab`). The bottom bar, a panel and the main button,
- * each shown as it looks now (the real classes and layers.css) next to a trial of the richer look:
- * bevelled wood with a groove and brass end caps, price-tag chips, chamfered keys with a lip, and a
- * panel with a title plaque, brass corners and a faint compass rose under the text. Then two pictures
+ * Dev-only: the skin lab (`/v07.html?dev=skin-lab`). Pieces of the UI as they look now (the real
+ * classes and layers.css) next to a trial of a richer look: a panel with a title plaque, brass corners
+ * and a faint compass rose under the text. Then two pictures
  * that do a job: the rules as a handbook whose thumb-index tabs are the chapter tabs, and submitting
  * as pressing a wax seal, which stays on the bar once the decision is sealed. A row that has been
  * applied to the game shows only the game's own look ("已套用").
@@ -23,7 +22,7 @@ export function SkinLabPreview() {
         <h1>介面質感試驗</h1>
         <p>左邊是現在的樣子，右邊是新做法。底欄與按鈕可以實際點按。</p>
       </header>
-      <LabRow title="底欄（第 1 層）" note="斜面木條＋凹槽、黃銅端蓋、吊牌形狀的晶片、切角按鍵" now={<BarNow />} next={<BarNext />} />
+      <LabRow title="底欄（第 1 層，已套用）" note="斜面木條＋凹槽、黃銅端蓋、吊牌形狀的晶片；黑市列同樣是斜面＋凹槽，價格是吊牌（孔圈是貨品色）" now={<BarNow />} />
       <LabRow title="面板（第 2 層＋美術層）" note="橫跨上緣的標題牌、黃銅護角、木框斜面、紙上淡淡的羅盤與航線" now={<PanelNow />} next={<PanelNext />} />
       <LabRow title="主按鈕（已套用）" note="切角按鍵：主要是黃銅、次要是壓印羊皮紙，按下時鍵面落到底邊上" now={<ButtonsNow />} />
       <LabRow wide title="規則面板 → 航海手冊" note="書籤就是章節頁籤，翻到的那章書籤最突出、和書頁同色；寬螢幕雙頁，手機單頁、書籤移到上緣" now={<RulesNow />} next={<RulesBook />} />
@@ -93,43 +92,6 @@ function BarNow() {
   );
 }
 
-function Tag({ title, cash = false, children }: { readonly title: string; readonly cash?: boolean; readonly children: ReactNode }) {
-  return (
-    <span className="nb-tag-wrap">
-      <span className={`nb-tag ${cash ? 'cash' : ''}`} title={title}>
-        {children}
-      </span>
-    </span>
-  );
-}
-
-function BarNext() {
-  return (
-    <div className="nb-bar">
-      <BrassCap side="left" />
-      <span className="nb-tags">
-        <Tag title="建築">
-          <HouseIcon /> 不蓋
-        </Tag>
-        <Tag title="出航">
-          <IconDisc src={tokenIconUrl('ship')} /> 不出航
-        </Tag>
-        <Tag title="現金（G）" cash>
-          <IconDisc src={tokenIconUrl('coin')} />
-          <Flow from={1000} to={<b>1000</b>} />
-        </Tag>
-      </span>
-      <button type="button" className="nb-btn primary">
-        提交
-      </button>
-      <span className="nb-lock">
-        <LockHint text={LOCK_TEXT} />
-      </span>
-      <BrassCap side="right" />
-    </div>
-  );
-}
-
 // ---------- wax seal submit ----------
 
 function Seal({ state = '', sealed = false, disabled = false, onClick }: { readonly state?: string; readonly sealed?: boolean; readonly disabled?: boolean; readonly onClick?: () => void }) {
@@ -145,25 +107,21 @@ function BarSeal() {
   const [sealed, setSealed] = useState(false);
   return (
     <div className="lab-stack">
-      <div className={`nb-bar ${sealed ? 'is-sealed' : ''}`}>
-        <BrassCap side="left" />
-        <span className="nb-tags">
-          <Tag title="建築">
+      <div className={`inv-bar lab-static ${sealed ? 'is-sealed' : ''}`}>
+        <span className="bar-chips">
+          <span className="chip" title="建築">
             <HouseIcon /> 不蓋
-          </Tag>
-          <Tag title="出航">
+          </span>
+          <span className="chip" title="出航">
             <IconDisc src={tokenIconUrl('ship')} /> 不出航
-          </Tag>
-          <Tag title="現金（G）" cash>
+          </span>
+          <span className="chip cash" title="現金（G）">
             <IconDisc src={tokenIconUrl('coin')} />
             <Flow from={1000} to={<b>1000</b>} />
-          </Tag>
+          </span>
         </span>
         <Seal sealed={sealed} onClick={() => setSealed((s) => !s)} />
-        <span className="nb-lock">
-          <LockHint text={LOCK_TEXT} icon={<InfoIcon />} />
-        </span>
-        <BrassCap side="right" />
+        <LockHint text={LOCK_TEXT} icon={<InfoIcon />} />
       </div>
       <div className="lab-seal-states">
         {[

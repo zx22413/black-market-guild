@@ -1,7 +1,8 @@
 import { useId } from 'react';
 
-// Hand-drawn ornaments for the skin lab (dev/SkinLabPreview.tsx): brass end caps for the always-on
-// strips, brass corner plates for cards, and the faint compass rose printed on a panel's parchment.
+// Hand-drawn ornaments for the skin lab (dev/SkinLabPreview.tsx): brass corner plates for cards, the
+// faint compass rose printed on a panel's parchment, and the wax seal. (The bar's brass end caps now
+// live in skin/layers.css as data URIs.)
 // Flat shapes, no outline, lit from the top, the same as the card art (docs/ui/v07-style-layers.md).
 
 /** A `useId` that is safe inside `url(#…)`. */
@@ -27,26 +28,6 @@ function Rivet({ cx, cy }: { readonly cx: number; readonly cy: number }) {
       <circle cx={cx} cy={cy} r={2.4} fill="#e9c36f" />
       <circle cx={cx - 0.7} cy={cy - 0.8} r={0.9} fill="#fff4cf" />
     </g>
-  );
-}
-
-/** The brass cap clamped on one end of a wood strip; it sticks out past the strip a little. */
-export function BrassCap({ side }: { readonly side: 'left' | 'right' }) {
-  const fill = useSvgId();
-  return (
-    <svg className={`lab-cap ${side}`} viewBox="0 0 20 60" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-      <defs>
-        <BrassFill id={fill} />
-      </defs>
-      <g transform={side === 'right' ? 'translate(20 0) scale(-1 1)' : undefined}>
-        <path d="M20 2 H8 L2 8 V52 L8 58 H20 Z" fill="#5b3f12" />
-        <path d="M20 1 H8 L2 7 V51 L8 57 H20 Z" fill={`url(#${fill})`} />
-        <path d="M14 8 V50" stroke="#8a6420" strokeWidth="1.2" />
-        <path d="M15.2 8 V50" stroke="#fbe4a0" strokeWidth="0.8" opacity="0.7" />
-        <Rivet cx={8} cy={14} />
-        <Rivet cx={8} cy={44} />
-      </g>
-    </svg>
   );
 }
 
