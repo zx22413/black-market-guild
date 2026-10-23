@@ -1,0 +1,284 @@
+/*
+ * The rules as a ship's handbook (RulesPanel.tsx): a leather cover with stitching and brass corner
+ * plates (skin/ornaments.tsx), a two-page spread of parchment, and thumb-index tabs that are the
+ * chapter tabs. The tabs come out from under the cover's right edge; the open chapter's tab is
+ * parchment and sticks out furthest. On phones it is one page and the tabs stand on the top edge.
+ * The cover and page edges are CSS, so the text area can grow and scroll. Like the island cards, the
+ * book is the same with ?skin=classic.
+ */
+
+.rules-backdrop {
+  z-index: 70;
+  cursor: default;
+}
+.rules-backdrop > .rules-book {
+  cursor: default;
+}
+
+/* One entry: its name (with an icon) and the rule sentence. */
+.rules-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rules-list li {
+  display: grid;
+  gap: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #d9cba6;
+}
+.rules-list b {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-title);
+}
+.rules-list p {
+  margin: 0;
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: #3d2f1d;
+}
+
+/* Brass corner plates on the cover (drawn for the top-left corner, turned for the others). */
+.brass-corner {
+  position: absolute;
+  z-index: 1;
+  width: 30px;
+  height: 30px;
+  filter: drop-shadow(0 2px 0 #24150a);
+  pointer-events: none;
+}
+.brass-corner.tl {
+  top: -5px;
+  left: -5px;
+}
+.brass-corner.tr {
+  top: -5px;
+  right: -5px;
+  scale: -1 1;
+}
+.brass-corner.bl {
+  bottom: -5px;
+  left: -5px;
+  scale: 1 -1;
+}
+.brass-corner.br {
+  right: -5px;
+  bottom: -5px;
+  scale: -1 -1;
+}
+
+.rules-book {
+  /* its own colours, so the book looks the same with ?skin=classic (the skin's tokens are off there) */
+  --rb-ink: #2a1d10;
+  --rb-soft: #6b5537;
+  --rb-cream: #f6ead0;
+  --rb-cream-soft: #d9c9a3;
+  --rb-gold: #d9b25a;
+  --rb-gold-dark: #8a6420;
+  --rb-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.36 0 0 0 0 0.25 0 0 0 0 0.1 0 0 0 0.16 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  --rb-tab-out: 26px;
+  position: relative;
+  width: min(880px, 100%);
+  padding-right: calc(var(--rb-tab-out) + 10px);
+}
+.rules-cover {
+  position: relative;
+  z-index: 1;
+  padding: 14px 14px 20px;
+  border-radius: 6px 12px 12px 6px;
+  background:
+    var(--rb-grain),
+    linear-gradient(90deg, rgb(0 0 0 / 0.3), transparent 4%),
+    linear-gradient(180deg, #7a3326, #5a2219 60%, #43170f);
+  background-size: 160px 160px, auto, auto;
+  box-shadow:
+    inset 0 1px 0 rgb(255 200 170 / 0.25),
+    inset 0 -2px 0 rgb(0 0 0 / 0.35),
+    0 0 0 1px #2a0d08,
+    0 6px 0 #2a0d08,
+    0 24px 40px rgb(0 0 0 / 0.4);
+}
+/* Stitching round the cover. */
+.rules-cover::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1.5px dashed rgb(240 200 150 / 0.35);
+  border-radius: 4px 9px 9px 4px;
+  pointer-events: none;
+}
+.rules-cover .brass-corner {
+  width: 26px;
+  height: 26px;
+}
+
+/* Two pages: darker toward the spine and the outer edges, a stack of page edges under them. */
+.rules-spread {
+  --rb-gutter: 72px;
+  position: relative;
+  height: min(520px, 70vh);
+  overflow: auto;
+  padding: 24px 36px 28px;
+  border-radius: 3px;
+  background:
+    linear-gradient(90deg, transparent calc(50% - 44px), rgb(90 55 20 / 0.3) 50%, transparent calc(50% + 44px)),
+    linear-gradient(90deg, rgb(90 55 20 / 0.2), transparent 5%, transparent 95%, rgb(90 55 20 / 0.2)),
+    var(--rb-grain),
+    linear-gradient(180deg, #f8efd9, #ecdcb6);
+  background-size: auto, auto, 160px 160px, auto;
+  color: var(--rb-ink);
+  box-shadow: 0 0 0 1px #3a1a10, 0 3px 0 #e6d6ae, 0 4px 0 #b9a074, 0 6px 0 #e0cc9f, 0 7px 0 #3a1a10;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(110 70 20 / 0.45) transparent;
+}
+/* A running head over each page: the book on the left, the chapter on the right. */
+.rules-run {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--rb-gutter);
+  margin-bottom: 14px;
+  color: var(--rb-soft);
+  font-size: 12px;
+  letter-spacing: 0.3em;
+}
+.rules-run span {
+  padding-bottom: 6px;
+  border-bottom: 3px double rgb(138 100 32 / 0.5);
+}
+.rules-run span:last-child {
+  text-align: right;
+}
+.rules-list.rules-pages {
+  display: block;
+  columns: 2;
+  column-gap: var(--rb-gutter);
+}
+.rules-list.rules-pages li {
+  break-inside: avoid;
+  margin-bottom: 12px;
+  border-bottom-color: rgb(138 100 32 / 0.3);
+}
+
+/* Thumb-index tabs, behind the cover and sticking out of its right edge. (Scoped to the book so the
+   main menu's button colours do not reach them.) */
+.rules-index {
+  position: absolute;
+  z-index: 0;
+  top: 36px;
+  right: 0;
+  display: grid;
+  gap: 5px;
+}
+.rules-book .rules-tab {
+  width: calc(var(--rb-tab-out) + 22px);
+  padding: 12px 0 12px 22px;
+  border: 0;
+  border-radius: 0 8px 8px 0;
+  background: var(--rb-grain), linear-gradient(90deg, #3a1610, #5a2219);
+  background-size: 160px 160px, auto;
+  color: var(--rb-cream-soft);
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.25em;
+  writing-mode: vertical-rl;
+  text-align: center;
+  box-shadow: inset 0 0 0 1px rgb(217 178 90 / 0.35), 0 2px 0 #2a0d08;
+  translate: -10px 0;
+  cursor: pointer;
+  transition: translate 140ms, background 140ms;
+}
+.rules-book .rules-tab:hover {
+  translate: -6px 0;
+  color: var(--rb-cream);
+}
+.rules-book .rules-tab.on {
+  background: var(--rb-grain), linear-gradient(90deg, #e6d6ae, #f8efd9);
+  background-size: 160px 160px, auto;
+  color: var(--rb-ink);
+  font-family: var(--font-strong);
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px var(--rb-gold-dark), 0 2px 0 #2a0d08;
+  translate: 0 0;
+}
+.rules-book .rules-tab:focus-visible {
+  outline: 2px solid var(--rb-gold);
+  outline-offset: 1px;
+}
+
+/* Close: a small brass stud on the cover's corner. */
+.rules-book .rules-close {
+  position: absolute;
+  z-index: 2;
+  top: -10px;
+  right: -10px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fbe4a0, #dcae52 50%, #8a6420);
+  color: var(--rb-ink);
+  box-shadow: 0 0 0 1px #5b3f12, 0 3px 0 #2a0d08;
+  cursor: pointer;
+}
+
+/* Phones: one page, and the tabs stand up from the top edge. */
+@media (max-width: 640px) {
+  .rules-book {
+    padding-right: 0;
+    padding-top: calc(var(--rb-tab-out) + 4px);
+  }
+  .rules-index {
+    top: 0;
+    right: 46px;
+    left: 18px;
+    display: flex;
+    gap: 3px;
+  }
+  .rules-book .rules-tab {
+    flex: 1;
+    width: auto;
+    height: calc(var(--rb-tab-out) + 10px);
+    padding: 6px 0 10px;
+    border-radius: 8px 8px 0 0;
+    writing-mode: horizontal-tb;
+    letter-spacing: 0.05em;
+    translate: 0 6px;
+  }
+  .rules-book .rules-tab:hover {
+    translate: 0 4px;
+  }
+  .rules-book .rules-tab.on {
+    translate: 0 0;
+  }
+  .rules-spread {
+    --rb-gutter: 0px;
+    padding: 18px 16px 22px;
+    background:
+      linear-gradient(90deg, rgb(90 55 20 / 0.25), transparent 6%),
+      var(--rb-grain),
+      linear-gradient(180deg, #f8efd9, #ecdcb6);
+    background-size: auto, 160px 160px, auto;
+  }
+  .rules-run {
+    grid-template-columns: 1fr;
+  }
+  .rules-run span:first-child {
+    display: none;
+  }
+  .rules-list.rules-pages {
+    columns: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rules-book .rules-tab {
+    transition: none;
+  }
+}

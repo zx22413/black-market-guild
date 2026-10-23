@@ -1,16 +1,17 @@
 import { useState, type ReactNode } from 'react';
+import { WaxSeal } from '../skin/ornaments';
 import { Flow, HouseIcon, IconDisc, InfoIcon, tokenIconUrl } from '../table3d/icons';
 import { LockHint } from '../table3d/LockHint';
-import { RulesBook, RulesNow } from './SkinLabBook';
+import { RulesPanel } from '../table3d/RulesPanel';
 import { PanelsApplied } from './SkinLabPanels';
-import { WaxSeal } from './skinLabArt';
 import '../beats/beat.css';
 import '../skin/layers.css';
 import './skinLab.css';
 
 /**
  * Dev-only: the skin lab (`/v07.html?dev=skin-lab`). Pieces of the UI as they look now (the real
- * classes and layers.css), next to a trial where one is still being tried. Then two pictures
+ * classes and layers.css), next to a trial where one is still being tried. The applied panels and the
+ * rule book sit in the cell instead of covering the screen (skinLab.css). Then two pictures
  * that do a job: the rules as a handbook whose thumb-index tabs are the chapter tabs, and submitting
  * as pressing a wax seal, which stays on the bar once the decision is sealed. A row that has been
  * applied to the game shows only the game's own look ("已套用").
@@ -35,7 +36,16 @@ export function SkinLabPreview() {
         }
       />
       <LabRow title="主按鈕（已套用）" note="切角按鍵：主要是黃銅、次要是壓印羊皮紙，按下時鍵面落到底邊上" now={<ButtonsNow />} />
-      <LabRow wide title="規則面板 → 航海手冊" note="書籤就是章節頁籤，翻到的那章書籤最突出、和書頁同色；寬螢幕雙頁，手機單頁、書籤移到上緣" now={<RulesNow />} next={<RulesBook />} />
+      <LabRow
+        wide
+        title="規則面板 → 航海手冊（已套用）"
+        note="書籤就是章節頁籤，翻到的那章書籤最突出、和書頁同色；寬螢幕雙頁，手機單頁、書籤移到上緣"
+        now={
+          <div className="lab-overlay">
+            <RulesPanel onClose={() => undefined} />
+          </div>
+        }
+      />
       <LabRow title="提交 → 封蠟章" note="封蠟章就是提交鈕；封上之後章留在底欄、轉個角度寫「已封」，被封住的選擇變淡（試驗頁可再按一次復原）" now={<BarNow />} next={<BarSeal />} />
     </div>
   );

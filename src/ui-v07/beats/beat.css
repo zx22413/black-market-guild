@@ -2694,95 +2694,12 @@ button.inv-stack:hover {
   align-content: start;
 }
 
-/* Rules panel (src/ui-v07/table3d/RulesPanel.tsx). */
+/* The round's menu buttons (Table3DScreen.tsx); the rules book is styled in table3d/rulesBook.css. */
 .t3-menu button {
   display: grid;
   place-items: center;
   min-width: 34px;
   min-height: 30px;
-}
-.beat-card.rules-panel {
-  width: min(560px, 100%);
-  min-height: min(420px, 100%);
-  cursor: default;
-}
-.rules-backdrop {
-  z-index: 70;
-}
-.rules-tabs {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-.rules-tabs button {
-  padding: 6px 14px;
-  border: 1px solid #b9a77d;
-  border-radius: 999px;
-  background: transparent;
-  color: #6b5537;
-  font-size: var(--fs-body);
-  cursor: pointer;
-}
-.rules-tabs button.on {
-  background: #e0a63c;
-  border-color: #b9822a;
-  color: #2b2116;
-  font-weight: 700;
-  font-family: var(--font-strong);
-}
-.rules-list {
-  display: grid;
-  gap: 12px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.rules-list li {
-  display: grid;
-  gap: 6px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #d9cba6;
-}
-.rules-list b {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: var(--fs-title);
-}
-.rules-list p {
-  margin: 0;
-  font-size: var(--fs-body);
-  line-height: 1.6;
-  color: #3d2f1d;
-}
-.rules-tabs {
-  align-items: center;
-}
-.rules-tabs button {
-  flex: none;
-  padding: 6px 12px;
-  white-space: nowrap;
-}
-.rules-tabs .rules-close {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  margin-left: auto;
-  padding: 0;
-  border-color: transparent;
-}
-@media (max-width: 640px) {
-  .rules-tabs {
-    gap: 4px;
-  }
-  .rules-tabs button {
-    padding: 6px 9px;
-  }
-  .rules-tabs .rules-close {
-    width: 28px;
-    margin-left: 0;
-  }
 }
 
 /* Building cards: icon, name, cost; the effect sentence is a tooltip (printed inside the card on touch). */

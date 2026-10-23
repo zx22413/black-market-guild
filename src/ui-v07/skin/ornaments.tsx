@@ -1,8 +1,8 @@
 import { useId } from 'react';
 
-// Hand-drawn ornaments for the skin lab (dev/SkinLabPreview.tsx): brass corner plates (the rule
-// book) and the wax seal. The bar's end caps, the panel frame and the compass rose now live in
-// skin/layers.css as data URIs.
+// Hand-drawn ornaments of the V0.7 skin that need markup: brass corner plates (the rule book's cover,
+// table3d/RulesPanel.tsx) and the wax seal (still on trial in dev/SkinLabPreview.tsx). Ornaments that
+// CSS can place alone (the bar's end caps, the panel frame, the compass rose) live in layers.css.
 // Flat shapes, no outline, lit from the top, the same as the card art (docs/ui/v07-style-layers.md).
 
 /** A `useId` that is safe inside `url(#…)`. */
@@ -35,7 +35,7 @@ function Rivet({ cx, cy }: { readonly cx: number; readonly cy: number }) {
 export function BrassCorner({ at }: { readonly at: 'tl' | 'tr' | 'bl' | 'br' }) {
   const fill = useSvgId();
   return (
-    <svg className={`lab-corner ${at}`} viewBox="0 0 36 36" aria-hidden="true" focusable="false">
+    <svg className={`brass-corner ${at}`} viewBox="0 0 36 36" aria-hidden="true" focusable="false">
       <defs>
         <BrassFill id={fill} />
       </defs>
@@ -70,7 +70,7 @@ const WAX_PATH = (() => {
 export function WaxSeal() {
   const fill = useSvgId();
   return (
-    <svg className="lab-wax" viewBox="-50 -50 100 100" aria-hidden="true" focusable="false">
+    <svg className="wax-seal-art" viewBox="-50 -50 100 100" aria-hidden="true" focusable="false">
       <defs>
         <radialGradient id={fill} cx="0.38" cy="0.32" r="0.75">
           <stop offset="0" stopColor="#d8545c" />

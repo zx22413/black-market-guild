@@ -391,7 +391,7 @@
  * plates. A border-image is painted outside the panel's scroll area, so the corners never scroll
  * with the text or get clipped by it. The hand cards keep the plain card frame above.
  */
-:root:not(.skin-classic) :is(.beat-card:not(.reroll, .rules-panel), .market-card) {
+:root:not(.skin-classic) :is(.beat-card:not(.reroll), .market-card) {
   /* the wood is 14 of the image's 40-unit slice: 4px outside the box + a 6px border, so the paper
      starts where the image's sunk edge is; the corner plates reach about 15px onto the paper */
   border: 6px solid transparent;

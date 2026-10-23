@@ -120,36 +120,6 @@
   opacity: 0.75;
 }
 
-/* ---------- brass corner plates (the rule book, dev/SkinLabBook.tsx) ---------- */
-
-.lab-corner {
-  position: absolute;
-  z-index: 1;
-  width: 30px;
-  height: 30px;
-  filter: drop-shadow(0 2px 0 #24150a);
-  pointer-events: none;
-}
-.lab-corner.tl {
-  top: -5px;
-  left: -5px;
-}
-.lab-corner.tr {
-  top: -5px;
-  right: -5px;
-  scale: -1 1;
-}
-.lab-corner.bl {
-  bottom: -5px;
-  left: -5px;
-  scale: 1 -1;
-}
-.lab-corner.br {
-  right: -5px;
-  bottom: -5px;
-  scale: -1 -1;
-}
-
 /* ---------- the wax seal submit ---------- */
 
 /*
@@ -188,7 +158,7 @@
 .lab .lab-stage .inv-bar.lab-static button.nb-seal::after {
   content: none;
 }
-.nb-seal .lab-wax {
+.nb-seal .wax-seal-art {
   position: absolute;
   inset: 0;
   width: 100%;

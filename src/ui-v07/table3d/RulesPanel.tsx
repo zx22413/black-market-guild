@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
 import { GOODS, RULES_V07, type BuildingId, type IslandId, type RoleId, type VoyageEventId } from '../../v07/game';
 import { BUILDING_LABELS, BUILDING_TEXT, GOOD_LABELS, ISLAND_LABELS, ISLAND_TEXT, ROLE_LABELS, VOYAGE_EVENT_LABELS, VOYAGE_EVENT_TEXT, WEALTH_RULE_TEXT } from '../labels';
+import { BrassCorner } from '../skin/ornaments';
 import { goodDetail, marketRule } from '../table/goodText';
 import { roleDetail } from '../table/roleText';
 import { GoodIcon } from './GoodIcon';
 import { CloseIcon, IconDisc } from './icons';
 import { IslandGlance } from './IslandGlance';
 import { roleIconUrl } from './RoleBadges';
+import './rulesBook.css';
 
-// The rules, for looking things up: one tab per kind of thing. Every sentence comes from the texts
-// the table already uses (labels.ts, roleText.ts, goodText.ts), so the panel can never say something else.
+// The rules, for looking things up, as a ship's handbook: one chapter per kind of thing, and the
+// book's thumb-index tabs are the chapter tabs (rulesBook.css). Every sentence comes from the texts
+// the table already uses (labels.ts, roleText.ts, goodText.ts), so the book can never say something else.
 
 export type RulesTab = 'roles' | 'islands' | 'buildings' | 'goods' | 'events' | 'score';
 
@@ -24,7 +27,7 @@ export const RULES_TABS: readonly { readonly id: RulesTab; readonly label: strin
 
 const keysOf = <K extends string>(record: Readonly<Record<K, unknown>>): K[] => Object.keys(record) as K[];
 
-/** The entries of one tab, as `<li>`s (also used by the skin lab's rule book, dev/SkinLabBook.tsx). */
+/** The entries of one chapter, as `<li>`s. */
 export function RulesEntries({ tab }: { readonly tab: RulesTab }) {
   switch (tab) {
     case 'roles':
@@ -112,22 +115,33 @@ export function RulesPanel({ onClose }: { readonly onClose: () => void }) {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
+  const label = RULES_TABS.find((t) => t.id === tab)?.label ?? '';
   return (
     <div className="beat-backdrop rules-backdrop" role="dialog" aria-modal="true" aria-label="規則" onClick={onClose}>
-      <div className="beat-card rules-panel" onClick={(e) => e.stopPropagation()}>
-        <nav className="rules-tabs" role="tablist">
+      <div className="rules-book" onClick={(e) => e.stopPropagation()}>
+        <nav className="rules-index" role="tablist" aria-label="規則章節">
           {RULES_TABS.map((t) => (
-            <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} className={tab === t.id ? 'on' : ''} onClick={() => setTab(t.id)}>
+            <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} className={`rules-tab ${tab === t.id ? 'on' : ''}`} onClick={() => setTab(t.id)}>
               {t.label}
             </button>
           ))}
-          <button type="button" className="rules-close" aria-label="關閉" title="關閉" onClick={onClose}>
+        </nav>
+        <div className="rules-cover">
+          <div className="rules-spread" role="tabpanel" aria-label={label}>
+            <header className="rules-run">
+              <span>規則</span>
+              <span>{label}</span>
+            </header>
+            <ul className="rules-list rules-pages">
+              <RulesEntries tab={tab} />
+            </ul>
+          </div>
+          <button type="button" className="rules-close" aria-label="闔上" title="闔上" onClick={onClose}>
             <CloseIcon />
           </button>
-        </nav>
-        <ul className="rules-list">
-          <RulesEntries tab={tab} />
-        </ul>
+          <BrassCorner at="tl" />
+          <BrassCorner at="bl" />
+        </div>
       </div>
     </div>
   );
