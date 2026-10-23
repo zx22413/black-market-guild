@@ -1,8 +1,8 @@
 import { useId } from 'react';
 
-// Hand-drawn ornaments for the skin lab (dev/SkinLabPreview.tsx): brass corner plates for cards, the
-// faint compass rose printed on a panel's parchment, and the wax seal. (The bar's brass end caps now
-// live in skin/layers.css as data URIs.)
+// Hand-drawn ornaments for the skin lab (dev/SkinLabPreview.tsx): brass corner plates (the rule
+// book) and the wax seal. The bar's end caps, the panel frame and the compass rose now live in
+// skin/layers.css as data URIs.
 // Flat shapes, no outline, lit from the top, the same as the card art (docs/ui/v07-style-layers.md).
 
 /** A `useId` that is safe inside `url(#…)`. */
@@ -43,32 +43,6 @@ export function BrassCorner({ at }: { readonly at: 'tl' | 'tr' | 'bl' | 'br' }) 
       <path d="M2 4 L4 2 H34 L28 8 H14 Q8 8 8 14 V28 L2 34 Z" fill={`url(#${fill})`} />
       <path d="M28 4.6 H14 Q5 4.6 4.6 14 V28" fill="none" stroke="#fbe4a0" strokeWidth="0.8" opacity="0.6" />
       <Rivet cx={6} cy={6} />
-    </svg>
-  );
-}
-
-/**
- * A sea-chart compass rose with rhumb lines running off the edge, in ink. It is printed very faintly
- * under a panel's text, so it reads as paper, not as a picture.
- */
-export function CompassWatermark() {
-  const points = Array.from({ length: 16 }, (_, i) => i * 22.5);
-  return (
-    <svg className="lab-watermark" viewBox="-200 -200 400 400" aria-hidden="true" focusable="false">
-      <g stroke="currentColor" fill="none">
-        {points.map((a) => (
-          <line key={a} x1="0" y1="0" x2="0" y2="-400" strokeWidth="0.8" transform={`rotate(${a})`} />
-        ))}
-        <circle r="78" strokeWidth="1.2" />
-        <circle r="70" strokeWidth="0.6" />
-        <circle r="30" strokeWidth="0.8" />
-      </g>
-      <g fill="currentColor">
-        {points.map((a, i) => (
-          <path key={a} d={i % 2 === 0 ? 'M0 -96 L9 0 L-9 0 Z' : 'M0 -60 L6 0 L-6 0 Z'} transform={`rotate(${a})`} opacity={i % 4 === 0 ? 1 : 0.6} />
-        ))}
-        <circle r="5" />
-      </g>
     </svg>
   );
 }

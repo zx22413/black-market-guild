@@ -2,7 +2,7 @@
  * Skin lab (dev/SkinLabPreview.tsx): trial looks for the bottom bar, a panel and the buttons, set next
  * to the current ones. Uses the tokens from skin/layers.css; nothing outside the lab picks these up.
  * The trial pieces are prefixed `nb-`, the lab's own layout `lab-`. Rows already applied to the game
- * (bar, buttons) use the game's classes and keep no copy here.
+ * (bar, buttons, panels) use the game's classes and keep no copy here.
  */
 
 /* ---------- page ---------- */
@@ -120,194 +120,8 @@
   opacity: 0.75;
 }
 
-/* ---------- shared bits ---------- */
+/* ---------- brass corner plates (the rule book, dev/SkinLabBook.tsx) ---------- */
 
-/* A small brass diamond: bullet, plaque studs, the divider's centre. */
-.nb-gem {
-  display: inline-block;
-  flex: none;
-  width: 9px;
-  height: 9px;
-  rotate: 45deg;
-  background: linear-gradient(135deg, #fbe4a0, #dcae52 45%, #8a6420);
-  box-shadow: 0 0 0 1px #5b3f12;
-}
-
-/* ---------- buttons: chamfered keys ---------- */
-
-/*
- * The button itself is the key's edge (dark, with a thicker foot = the lip); ::before is the face set
- * into it, ::after a soft sheen on the face's top half. Pressing moves the face down onto the lip.
- */
-.nb-btn {
-  --cut: 7px;
-  --edge: linear-gradient(180deg, #8f7546, #4f3a20);
-  --face: var(--c-grain), linear-gradient(180deg, #fff7e2, #ecdcb5 55%, #dcc596);
-  position: relative;
-  isolation: isolate;
-  min-height: 38px;
-  padding: 6px 22px 9px;
-  border: 0;
-  clip-path: polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut));
-  background: var(--edge);
-  color: var(--c-ink);
-  flex: none;
-  font: inherit;
-  font-size: var(--fs-body);
-  white-space: nowrap;
-  cursor: pointer;
-}
-.nb-btn::before,
-.nb-btn::after {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  pointer-events: none;
-}
-.nb-btn::before {
-  inset: 1px 1px 4px;
-  clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
-  background: var(--face);
-  background-size: 160px 160px, auto;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.75), inset 0 -6px 10px -6px rgb(110 75 20 / 0.4);
-  transition: inset 90ms, filter 120ms;
-}
-.nb-btn::after {
-  inset: 3px 8px 55%;
-  border-radius: 3px;
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.3), rgb(255 255 255 / 0));
-  transition: inset 90ms;
-}
-.nb-btn.primary {
-  --edge: linear-gradient(180deg, #b38a22, #6b4c10);
-  --face: linear-gradient(180deg, #ffe08a, #edb93f 40%, #c98a1c);
-  font-family: var(--font-strong);
-  font-weight: 700;
-  text-shadow: 0 1px 0 rgb(255 240 190 / 0.7);
-}
-.nb-btn:is(:hover, .is-hover):not(:disabled)::before {
-  filter: brightness(1.07) saturate(1.1);
-}
-.nb-btn:is(:active, .is-down):not(:disabled) {
-  padding: 9px 22px 6px;
-}
-.nb-btn:is(:active, .is-down):not(:disabled)::before {
-  inset: 3px 1px 1px;
-  box-shadow: inset 0 2px 4px rgb(80 50 10 / 0.45);
-}
-.nb-btn:is(:active, .is-down):not(:disabled)::after {
-  inset: 6px 8px 50%;
-  opacity: 0.5;
-}
-.nb-btn:disabled {
-  cursor: not-allowed;
-  filter: grayscale(0.75);
-  opacity: 0.55;
-}
-.nb-btn:focus-visible {
-  outline: none;
-}
-.nb-btn:focus-visible::before {
-  filter: brightness(1.12);
-}
-
-/* ---------- layer 2 + art layer: the panel ---------- */
-
-.nb-frame {
-  position: relative;
-  width: min(440px, 100%);
-  margin-top: 14px;
-  padding: 7px;
-  border-radius: 6px;
-  background:
-    repeating-linear-gradient(92deg, rgb(255 255 255 / 0.035) 0 3px, transparent 3px 11px),
-    var(--c-grain),
-    linear-gradient(180deg, #6a4528, var(--c-wood) 60%, #3a2414);
-  background-size: auto, 160px 160px, auto;
-  box-shadow:
-    inset 0 1px 0 rgb(255 225 170 / 0.3),
-    inset 0 -2px 0 rgb(0 0 0 / 0.35),
-    0 0 0 1px #1d1108,
-    0 6px 0 #24150a,
-    0 24px 40px rgb(0 0 0 / 0.35);
-}
-/* The paper sits under the frame: sunk at the edges, darkened toward them, a double gold rule inside. */
-.nb-paper {
-  position: relative;
-  overflow: hidden;
-  padding: 34px 28px 18px;
-  border-radius: 2px;
-  background:
-    radial-gradient(ellipse at 50% 45%, transparent 48%, rgb(110 70 20 / 0.3) 100%),
-    var(--c-grain),
-    linear-gradient(180deg, #f8efd9, #ebdab3);
-  background-size: auto, 160px 160px, auto;
-  color: var(--c-ink);
-  box-shadow: 0 0 0 1px #2a190d, inset 0 2px 6px rgb(60 35 10 / 0.4);
-}
-.nb-paper::before,
-.nb-paper::after {
-  content: '';
-  position: absolute;
-  border: 1px solid rgb(138 100 32 / 0.6);
-  border-radius: 1px;
-  pointer-events: none;
-}
-.nb-paper::before {
-  inset: 6px;
-}
-.nb-paper::after {
-  inset: 9px;
-  border-color: rgb(138 100 32 / 0.3);
-}
-.lab-watermark {
-  position: absolute;
-  top: 50%;
-  left: 62%;
-  width: 380px;
-  height: 380px;
-  translate: -50% -50%;
-  color: #5b3f12;
-  opacity: 0.09;
-  pointer-events: none;
-}
-.nb-paper > :not(.lab-watermark) {
-  position: relative;
-}
-/* The title plaque straddles the frame's top edge, studded with a brass diamond on each side. */
-.nb-plaque-wrap {
-  position: absolute;
-  z-index: 2;
-  top: -15px;
-  left: 50%;
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  translate: -50% 0;
-  filter: drop-shadow(0 3px 0 #24150a);
-}
-.nb-plaque {
-  position: relative;
-  isolation: isolate;
-  padding: 6px 30px 7px;
-  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%);
-  background: linear-gradient(180deg, #fbe4a0, #b38a22 55%, #6b4c10);
-  color: #f6d98c;
-  font-family: var(--font-strong);
-  font-size: 16px;
-  letter-spacing: 0.25em;
-  white-space: nowrap;
-  text-shadow: 0 1px 0 #1d1108;
-}
-.nb-plaque::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: 2px;
-  clip-path: polygon(13px 0, calc(100% - 13px) 0, 100% 50%, calc(100% - 13px) 100%, 13px 100%, 0 50%);
-  background: var(--c-grain), linear-gradient(180deg, #4a2f1b, #2a190d);
-  background-size: 160px 160px, auto;
-}
 .lab-corner {
   position: absolute;
   z-index: 1;
@@ -334,63 +148,6 @@
   right: -5px;
   bottom: -5px;
   scale: -1 -1;
-}
-.nb-lines {
-  margin: 4px 0 12px;
-  padding: 0;
-  list-style: none;
-  line-height: 1.8;
-}
-.nb-lines li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.nb-lines li::before {
-  content: '';
-  flex: none;
-  width: 7px;
-  height: 7px;
-  rotate: 45deg;
-  background: linear-gradient(135deg, #f1c75a, #8a6420);
-  box-shadow: 0 0 0 1px #5b3f12;
-}
-.nb-skip {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  color: var(--c-soft);
-  font-size: var(--fs-body);
-}
-/* A ruled divider with a brass diamond in the middle. */
-.nb-rule {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 12px 0;
-}
-.nb-rule::before,
-.nb-rule::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgb(138 100 32 / 0.7));
-}
-.nb-rule::after {
-  background: linear-gradient(90deg, rgb(138 100 32 / 0.7), transparent);
-}
-.nb-foot {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .nb-btn::before,
-  .nb-btn::after {
-    transition: none;
-  }
 }
 
 /* ---------- the wax seal submit ---------- */
@@ -482,4 +239,27 @@
   .nb-seal {
     transition: none;
   }
+}
+
+/* ---------- applied panels ---------- */
+
+.lab-panels {
+  display: grid;
+  gap: 28px;
+  justify-items: center;
+  width: 100%;
+}
+/* The bill and the result cover the screen in the game; in the lab they sit in the cell. */
+.lab-overlay {
+  display: grid;
+  justify-items: center;
+  width: 100%;
+}
+.lab-overlay .beat-backdrop {
+  position: static;
+  width: 100%;
+  padding: 0;
+  background: none;
+  backdrop-filter: none;
+  animation: none;
 }

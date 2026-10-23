@@ -2,15 +2,15 @@ import { useState, type ReactNode } from 'react';
 import { Flow, HouseIcon, IconDisc, InfoIcon, tokenIconUrl } from '../table3d/icons';
 import { LockHint } from '../table3d/LockHint';
 import { RulesBook, RulesNow } from './SkinLabBook';
-import { BrassCorner, CompassWatermark, WaxSeal } from './skinLabArt';
+import { PanelsApplied } from './SkinLabPanels';
+import { WaxSeal } from './skinLabArt';
 import '../beats/beat.css';
 import '../skin/layers.css';
 import './skinLab.css';
 
 /**
  * Dev-only: the skin lab (`/v07.html?dev=skin-lab`). Pieces of the UI as they look now (the real
- * classes and layers.css) next to a trial of a richer look: a panel with a title plaque, brass corners
- * and a faint compass rose under the text. Then two pictures
+ * classes and layers.css), next to a trial where one is still being tried. Then two pictures
  * that do a job: the rules as a handbook whose thumb-index tabs are the chapter tabs, and submitting
  * as pressing a wax seal, which stays on the bar once the decision is sealed. A row that has been
  * applied to the game shows only the game's own look ("已套用").
@@ -23,7 +23,17 @@ export function SkinLabPreview() {
         <p>左邊是現在的樣子，右邊是新做法。底欄與按鈕可以實際點按。</p>
       </header>
       <LabRow title="底欄（第 1 層，已套用）" note="斜面木條＋凹槽、黃銅端蓋、吊牌形狀的晶片；黑市列同樣是斜面＋凹槽，價格是吊牌（孔圈是貨品色）" now={<BarNow />} />
-      <LabRow title="面板（第 2 層＋美術層）" note="橫跨上緣的標題牌、黃銅護角、木框斜面、紙上淡淡的羅盤與航線" now={<PanelNow />} next={<PanelNext />} />
+      <LabRow
+        wide
+        title="面板（第 2 層＋美術層，已套用）"
+        note="一張 9-slice 外框：斜面木框、凹槽、紙面下沉的邊與黃銅護角；標題掛在上框下的標題牌；帳單、結果、市場卡的紙上印著淡淡的羅盤"
+        now={
+          <div className="lab-panels">
+            <PanelNow />
+            <PanelsApplied />
+          </div>
+        }
+      />
       <LabRow title="主按鈕（已套用）" note="切角按鍵：主要是黃銅、次要是壓印羊皮紙，按下時鍵面落到底邊上" now={<ButtonsNow />} />
       <LabRow wide title="規則面板 → 航海手冊" note="書籤就是章節頁籤，翻到的那章書籤最突出、和書頁同色；寬螢幕雙頁，手機單頁、書籤移到上緣" now={<RulesNow />} next={<RulesBook />} />
       <LabRow title="提交 → 封蠟章" note="封蠟章就是提交鈕；封上之後章留在底欄、轉個角度寫「已封」，被封住的選擇變淡（試驗頁可再按一次復原）" now={<BarNow />} next={<BarSeal />} />
@@ -165,46 +175,6 @@ function PanelNow() {
         </button>
         <button type="button">仍要提交</button>
       </footer>
-    </div>
-  );
-}
-
-function PanelNext() {
-  const [skip, setSkip] = useState(false);
-  return (
-    <div className="nb-frame">
-      <div className="nb-plaque-wrap">
-        <i className="nb-gem" />
-        <strong className="nb-plaque">還沒做完</strong>
-        <i className="nb-gem" />
-      </div>
-      <div className="nb-paper">
-        <CompassWatermark />
-        <ul className="nb-lines">
-          {REMINDER_LINES.map((line) => (
-            <li key={line}>{line}</li>
-          ))}
-        </ul>
-        <label className="nb-skip">
-          <input type="checkbox" checked={skip} onChange={(e) => setSkip(e.target.checked)} />
-          不再提醒
-        </label>
-        <div className="nb-rule" aria-hidden="true">
-          <i className="nb-gem" />
-        </div>
-        <footer className="nb-foot">
-          <button type="button" className="nb-btn primary">
-            回去補上
-          </button>
-          <button type="button" className="nb-btn">
-            仍要提交
-          </button>
-        </footer>
-      </div>
-      <BrassCorner at="tl" />
-      <BrassCorner at="tr" />
-      <BrassCorner at="bl" />
-      <BrassCorner at="br" />
     </div>
   );
 }
