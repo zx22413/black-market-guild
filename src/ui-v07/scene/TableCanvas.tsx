@@ -31,7 +31,7 @@ import { FocusCamera } from './FocusCamera';
 import { IslandPulse } from './IslandPulse';
 import '../beats/beat.css';
 import '../skin/layers.css';
-import { around } from './focusMath';
+import { around, clampPin } from './focusMath';
 import type { BeatSeat } from './beatStage';
 
 // The V0.7 table on top of the V0.6 scene pieces (sea, weather, islands, lanes, ships), shared by
@@ -57,7 +57,10 @@ export interface TablePin {
   readonly position: Vec3;
   readonly node: ReactNode;
   readonly hidden?: boolean;
+  /** Keep the whole label on screen, pushed in from an edge it would run past (a wide card such as the market's). */
+  readonly clamp?: boolean;
 }
+
 
 export interface TableCanvasProps {
   readonly seats: readonly BeatSeat[];
@@ -148,7 +151,11 @@ function PinTracker({ pins, elements }: { readonly pins: readonly TablePin[]; re
       const el = elements.current.get(pin.id);
       if (!el) continue;
       v.set(...pin.position).project(camera);
-      el.style.transform = `translate(${((v.x + 1) / 2) * width}px, ${((1 - v.y) / 2) * height}px)`;
+      let x = ((v.x + 1) / 2) * width;
+      let y = ((1 - v.y) / 2) * height;
+      const box = pin.clamp ? (el.firstElementChild as HTMLElement | null) : null;
+      if (box) [x, y] = clampPin(x, y, box.offsetWidth, box.offsetHeight, width, height);
+      el.style.transform = `translate(${x}px, ${y}px)`;
     }
   });
   return null;

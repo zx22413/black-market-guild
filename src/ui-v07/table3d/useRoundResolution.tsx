@@ -343,7 +343,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   ];
 
   const marketPins: TablePin[] =
-    stage === 'market' ? [{ id: 'market-card', position: MARKET_CARD_AT, node: <MarketCard rows={rows} shown={rowsShown} /> }] : [];
+    stage === 'market' ? [{ id: 'market-card', position: MARKET_CARD_AT, clamp: true, node: <MarketCard rows={rows} shown={rowsShown} /> }] : [];
 
   const camera: readonly FitPoint[] | null =
     stage === 'voyage'

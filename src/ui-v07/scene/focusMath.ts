@@ -92,3 +92,15 @@ export function around(center: readonly [number, number, number], radius: number
     return { position: [center[0] + Math.cos(a) * radius, 0, center[2] + Math.sin(a) * radius] as const, clearance };
   });
 }
+
+/** Room kept between a clamped label and the edge of the screen, in px. */
+const PIN_MARGIN = 8;
+
+/**
+ * Where a label hung bottom-center at (x, y) goes so its `w` × `h` box stays on a `width` × `height`
+ * screen: pushed in from any edge it would cross (centered where the screen is narrower than it).
+ */
+export function clampPin(x: number, y: number, w: number, h: number, width: number, height: number, margin = PIN_MARGIN): readonly [number, number] {
+  const fit = (at: number, low: number, high: number) => (low > high ? (low + high) / 2 : Math.min(high, Math.max(low, at)));
+  return [fit(x, w / 2 + margin, width - w / 2 - margin), fit(y, h + margin, height - margin)];
+}
