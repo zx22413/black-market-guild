@@ -105,7 +105,15 @@
     left: 16px;
     right: 16px;
     width: auto;
-    max-height: 45vh;
+    max-height: 50vh;
+    padding: 10px 12px 8px;
+    line-height: 1.5;
+  }
+  .coach p {
+    margin-top: 6px;
+  }
+  .coach-foot {
+    margin-top: 8px;
   }
 }
 
@@ -121,6 +129,45 @@
   margin: 0;
   padding: 0;
   list-style: none;
+}
+.menu-panel.tut-menu {
+  width: min(640px, calc(100vw - 32px));
+}
+.tut-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.tut-grid .tut-lesson {
+  height: 100%;
+}
+.tut-pager {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+@media (max-width: 720px) {
+  .menu-panel.tut-menu {
+    width: auto;
+    gap: 8px;
+  }
+  .tut-grid {
+    gap: 6px;
+  }
+  .tut-grid .tut-lesson {
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+  .tut-grid .tut-done {
+    width: 16px;
+    height: 16px;
+  }
+  .tut-grid .tut-done.on::after {
+    left: 4px;
+    top: 0;
+    width: 4px;
+    height: 8px;
+  }
 }
 .tut-lesson {
   display: flex;

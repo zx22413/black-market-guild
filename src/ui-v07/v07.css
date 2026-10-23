@@ -36,6 +36,8 @@ body {
 }
 #app {
   min-height: 100%;
+  /* A menu panel's top margin stays inside the page instead of pushing it past the window (a page scroll bar). */
+  display: flow-root;
 }
 button,
 input,

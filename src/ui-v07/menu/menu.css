@@ -47,6 +47,46 @@
   color: var(--m-soft);
 }
 
+/* A panel with more below its fold (data-more, set by scrollHint.ts): a fade and a bobbing chevron at its foot.
+   The pseudo-element takes no room: its negative margin cancels its height and the column gap. */
+.menu-panel[data-more='true']::after,
+.rules-spread[data-more='true']::after,
+.coach[data-more='true']::after {
+  content: '▾';
+  position: sticky;
+  bottom: 0;
+  flex: none;
+  align-self: stretch;
+  height: 36px;
+  margin-top: -50px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  color: var(--m-wood, #4a2f1b);
+  font-size: 1.1rem;
+  line-height: 1;
+  background: linear-gradient(180deg, rgb(235 218 179 / 0), rgb(235 218 179 / 0.95) 70%);
+  pointer-events: none;
+  animation: menu-more 1.4s ease-in-out infinite;
+}
+@keyframes menu-more {
+  50% {
+    transform: translateY(3px);
+  }
+}
+/* Block containers have no column gap to cancel. */
+.rules-spread[data-more='true']::after,
+.coach[data-more='true']::after {
+  margin-top: -36px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-panel[data-more='true']::after,
+  .rules-spread[data-more='true']::after,
+  .coach[data-more='true']::after {
+    animation: none;
+  }
+}
+
 /* ---------- live table behind the panel ---------- */
 .menu-backdrop {
   position: fixed;

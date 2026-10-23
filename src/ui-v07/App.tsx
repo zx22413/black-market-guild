@@ -13,6 +13,7 @@ import { lastRoom } from './online/onlineClient';
 import { OnlineScreen } from './online/OnlineScreen';
 import { startGameSession, type GameSession, type SessionOptions } from './session/gameSession';
 import { MatchView } from './table/MatchView';
+import { watchMenuPanels } from './menu/scrollHint';
 import { TutorialMenu } from './tutorial/TutorialMenu';
 import { TutorialScreen } from './tutorial/TutorialScreen';
 
@@ -74,6 +75,9 @@ export function App() {
   };
   const startLocal = (options: SessionOptions) => setMode({ kind: 'local', session: startGameSession(options), options });
   const launchLocal = (options: SessionOptions) => (launchMs() > 0 ? setMode({ kind: 'launching', options }) : startLocal(options));
+
+  // A menu panel that has to scroll says so (a fade and a chevron at its foot).
+  useEffect(() => watchMenuPanels(), []);
 
   useEffect(() => {
     if (mode.kind !== 'launching') return;
