@@ -124,6 +124,7 @@
   color: var(--c-ink);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 3px 0 var(--c-button-edge), 0 0 0 1px var(--c-gold-dark);
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 :root:not(.skin-classic) :is(.inv-bar, .beat-foot, .t3-menu) button:not(.bar-lock, :disabled):active,
 :root:not(.skin-classic) .inv-build > button:active {
@@ -238,6 +239,7 @@
   background: radial-gradient(circle at 35% 35%, #c9434b, var(--l3-wax));
   color: var(--l3-cream);
   font-weight: 700;
+  font-family: var(--font-strong);
   box-shadow: 0 2px 0 #5d1218;
   rotate: 8deg;
 }

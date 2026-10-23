@@ -305,6 +305,7 @@
   color: var(--frame-dark);
   font-size: calc(var(--w) * 0.09);
   font-weight: 700;
+  font-family: var(--font-strong);
   letter-spacing: 0.3em;
   /* Debossed into the wood: a dark lip on top, a gold catch-light below. */
   text-shadow: 0 -1px 0 rgb(0 0 0 / 0.6), 0 1px 0 rgb(217 178 90 / 0.6);
@@ -387,6 +388,7 @@
   color: #2d2a24;
   font-size: var(--fs-body);
   font-weight: 700;
+  font-family: var(--font-strong);
   box-shadow: 0 3px 0 #c9b892, inset 5px 0 0 var(--seat, #888);
 }
 @media (max-width: 640px) {

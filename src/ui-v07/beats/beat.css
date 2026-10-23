@@ -142,6 +142,7 @@
   color: #2b2116;
   font-size: 52px;
   font-weight: 700;
+  font-family: var(--font-strong);
   box-shadow: inset 0 -5px 0 #d8c9a4, 0 6px 14px rgb(0 0 0 / 0.25);
   animation: beat-roll 380ms cubic-bezier(0.2, 1.5, 0.4, 1);
 }
@@ -186,6 +187,7 @@
   opacity: 1;
   transform: scale(1.35);
   font-weight: 700;
+  font-family: var(--font-strong);
   box-shadow: 0 0 0 2px #2b2116;
 }
 
@@ -198,6 +200,7 @@
 .beat-big {
   font-size: 30px;
   font-weight: 700;
+  font-family: var(--font-strong);
   animation: beat-pop 300ms cubic-bezier(0.2, 1.5, 0.4, 1);
 }
 .beat-big small {
@@ -212,6 +215,7 @@
   border-radius: 8px;
   font-size: 34px;
   font-weight: 700;
+  font-family: var(--font-strong);
   letter-spacing: 0.3em;
   transform: rotate(-6deg);
   animation: beat-stamp 360ms cubic-bezier(0.2, 1.6, 0.4, 1);
@@ -250,6 +254,7 @@
   border-radius: 6px;
   color: #fff;
   font-weight: 700;
+  font-family: var(--font-strong);
   animation: beat-flip 420ms ease-out backwards;
 }
 .good-wood {
@@ -317,6 +322,7 @@
   background: #e0a63c;
   border-color: #b9822a;
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 
 .receipt-lines {
@@ -339,6 +345,7 @@
   border-top: 3px double #8a7550;
   font-size: 24px;
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .muted {
   color: #6b5537;
@@ -616,6 +623,7 @@
   color: #2b2116;
   font-size: var(--fs-body);
   font-weight: 700;
+  font-family: var(--font-strong);
   white-space: nowrap;
   transition: opacity 400ms;
 }
@@ -751,6 +759,7 @@
   background: #e0a63c;
   border-color: #b9822a;
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 
 /* Investment on the 3D island (src/ui-v07/dev/Invest3DPreview.tsx). */
@@ -823,6 +832,7 @@
   background: rgb(245 236 212 / 0.95);
   color: #2b2116;
   font-weight: 700;
+  font-family: var(--font-strong);
   cursor: pointer;
 }
 .inv-build > button.on {
@@ -934,6 +944,7 @@
   background: #e0a63c;
   border-color: #b9822a;
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .inv-bar button:disabled {
   opacity: 0.5;
@@ -980,6 +991,7 @@
   color: #2b2116;
   font-size: var(--fs-note);
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .inv-stack.good-wood { border-color: var(--wood); }
 .inv-stack.good-iron { border-color: var(--iron); }
@@ -997,6 +1009,7 @@ button.inv-stack {
   font: inherit;
   font-size: var(--fs-note);
   font-weight: 700;
+  font-family: var(--font-strong);
   cursor: pointer;
   pointer-events: auto;
 }
@@ -1087,6 +1100,7 @@ button.inv-stack:hover {
 .dep-strip header span {
   font-size: var(--fs-body);
   font-weight: 700;
+  font-family: var(--font-strong);
   color: #8a4b12;
 }
 .dep-strip p {
@@ -1098,6 +1112,7 @@ button.inv-stack:hover {
 .dep-strip p.why {
   color: #8a241c;
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .dep-strip.idle p {
   margin: 0;
@@ -1159,6 +1174,7 @@ button.inv-stack:hover {
 .dep-fee {
   font-size: var(--fs-body);
   font-weight: 700;
+  font-family: var(--font-strong);
   color: #8a4b12;
 }
 .dep-card.on {
@@ -1184,6 +1200,7 @@ button.inv-stack:hover {
   color: #2b2116;
   font-size: var(--fs-body);
   font-weight: 700;
+  font-family: var(--font-strong);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -1458,6 +1475,7 @@ button.inv-stack:hover {
 .market-card header {
   margin-bottom: 6px;
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .market-card table {
   border-collapse: collapse;
@@ -1554,6 +1572,7 @@ button.inv-stack:hover {
 .result-rank {
   font-size: 26px;
   font-weight: 700;
+  font-family: var(--font-strong);
   text-align: center;
 }
 .result-name {
@@ -1577,6 +1596,7 @@ button.inv-stack:hover {
 .result-wealth {
   font-size: 24px;
   font-weight: 700;
+  font-family: var(--font-strong);
   font-variant-numeric: tabular-nums;
 }
 .result-stamp {
@@ -1590,6 +1610,7 @@ button.inv-stack:hover {
   color: #8a5a10;
   font-size: var(--fs-title);
   font-weight: 700;
+  font-family: var(--font-strong);
   letter-spacing: 0.2em;
   transform: rotate(8deg);
   animation: beat-stamp 400ms cubic-bezier(0.2, 1.6, 0.4, 1);
@@ -1769,6 +1790,7 @@ button.inv-stack:hover {
   color: #f6ead0;
   font-size: var(--fs-body);
   font-weight: 700;
+  font-family: var(--font-strong);
   white-space: nowrap;
   cursor: help;
   pointer-events: auto;
@@ -1863,6 +1885,7 @@ button.inv-stack:hover {
   color: #f6ead0;
   font-size: var(--fs-body);
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .t3-menu button {
   padding: 4px 10px;
@@ -1919,6 +1942,7 @@ button.inv-stack:hover {
   background: #e0a63c;
   color: #2b1c05;
   font-weight: 700;
+  font-family: var(--font-strong);
   cursor: pointer;
 }
 
@@ -2133,6 +2157,7 @@ button.inv-stack:hover {
   background: rgb(255 248 236 / 0.94);
   font-size: var(--fs-note);
   font-weight: 700;
+  font-family: var(--font-strong);
   letter-spacing: 0.08em;
   white-space: nowrap;
   animation: beat-stamp 360ms cubic-bezier(0.2, 1.6, 0.4, 1);
@@ -2154,6 +2179,7 @@ button.inv-stack:hover {
   color: #f6ead0;
   font-size: var(--fs-body);
   font-weight: 700;
+  font-family: var(--font-strong);
   white-space: nowrap;
 }
 .actor-tag.pirate {
@@ -2172,6 +2198,7 @@ button.inv-stack:hover {
   background: rgb(255 248 236 / 0.95);
   font-size: 26px;
   font-weight: 900;
+  font-family: var(--font-strong);
   letter-spacing: 0.12em;
   white-space: nowrap;
   opacity: 0;
@@ -2278,6 +2305,7 @@ button.inv-stack:hover {
 .rank-no {
   min-width: 14px;
   font-weight: 700;
+  font-family: var(--font-strong);
   color: #8a4b12;
 }
 .rank-name {
@@ -2334,6 +2362,7 @@ button.inv-stack:hover {
   font-style: normal;
   font-size: var(--fs-note);
   font-weight: 700;
+  font-family: var(--font-strong);
   color: #2b2116;
 }
 .rank-stock i.good-wood {
@@ -2356,6 +2385,7 @@ button.inv-stack:hover {
 .rank-rail li em.wanted {
   color: #9a2512;
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .rank-rail li em.done {
   color: #1f6b3a;
@@ -2565,6 +2595,7 @@ button.inv-stack:hover {
 }
 .bar-chips .chip b {
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 
 /* Island effects as icon rows (src/ui-v07/table3d/IslandGlance.tsx); the full sentence opens on tap or hover. */
@@ -2578,6 +2609,7 @@ button.inv-stack:hover {
   gap: 8px;
   font-size: var(--fs-body);
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .glance-row.pro {
   color: #1d6a30;
@@ -2696,6 +2728,7 @@ button.inv-stack:hover {
   border-color: #b9822a;
   color: #2b2116;
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .rules-list {
   display: grid;
@@ -2784,6 +2817,7 @@ button.inv-stack:hover {
   gap: 4px 8px;
   font-size: var(--fs-body);
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .inv-need {
   display: inline-flex;
@@ -3124,6 +3158,7 @@ button.inv-stack:hover {
   gap: 3px;
   margin-right: 6px;
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .beat-crate[class] {
   width: auto;
@@ -3168,6 +3203,7 @@ button.inv-stack:hover {
   align-items: center;
   gap: 4px;
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .note-hint {
   color: #6b5537;
@@ -3217,6 +3253,7 @@ button.inv-stack:hover {
 .note-label {
   font-size: var(--fs-note);
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .note-title,
 .note-hint {
@@ -3240,6 +3277,7 @@ button.inv-stack:hover {
   /* The moment's one big word: what the island just made or missed. */
   font-size: var(--fs-title);
   font-weight: 800;
+  font-family: var(--font-strong);
   white-space: nowrap;
   /* Pops up off the island and floats a little higher, then stays to be read. */
   animation: isle-rise 1100ms cubic-bezier(0.2, 1.4, 0.4, 1) backwards;
@@ -3284,6 +3322,7 @@ button.inv-stack:hover {
   color: #4a2c05;
   font-size: var(--fs-body);
   font-weight: 800;
+  font-family: var(--font-strong);
   white-space: nowrap;
   box-shadow: 0 2px 0 #9a6a10, 0 0 16px rgb(255 201 74 / 0.9);
   animation: isle-rise 1100ms cubic-bezier(0.2, 1.4, 0.4, 1) backwards;

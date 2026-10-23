@@ -18,7 +18,10 @@
   --fs-note: 12px;
   --fs-body: 14px;
   --fs-title: 18px;
-  font-family: 'LXGW WenKai TC', 'PingFang TC', 'Noto Sans TC', system-ui, sans-serif;
+  /* Body: Marker Gothic only ships Regular, so bold text switches to --font-strong (a real bold face). */
+  --font-body: 'Inter', 'LXGW Marker Gothic', 'PingFang TC', system-ui, sans-serif;
+  --font-strong: 'Inter', 'Noto Sans TC', 'PingFang TC', system-ui, sans-serif;
+  font-family: var(--font-body);
   color-scheme: dark;
 }
 * {
@@ -87,6 +90,7 @@ small {
   color: var(--accent-ink);
   border-color: var(--accent);
   font-weight: 700;
+  font-family: var(--font-strong);
   width: 100%;
   min-height: 46px;
   margin-top: 10px;
@@ -136,6 +140,7 @@ button:disabled {
 }
 .v7-seat-no {
   font-weight: 700;
+  font-family: var(--font-strong);
   color: var(--accent);
   min-width: 2em;
 }
@@ -244,6 +249,7 @@ button:disabled {
   padding: 2px 10px;
   font-size: 0.85rem;
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .v7-event {
   font-size: 0.9rem;
@@ -335,6 +341,7 @@ button:disabled {
 }
 .v7-good b {
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .g-wood i {
   background: var(--wood);
@@ -596,6 +603,7 @@ button:disabled {
   margin-top: 6px;
   color: var(--accent);
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .v7-role-card.off {
   opacity: 0.45;
@@ -720,6 +728,7 @@ button:disabled {
 .v7-log li.round {
   color: var(--accent);
   font-weight: 700;
+  font-family: var(--font-strong);
   margin-top: 8px;
 }
 .v7-handoff {

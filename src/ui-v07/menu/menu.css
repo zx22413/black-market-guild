@@ -88,6 +88,7 @@
   color: var(--c-ink, #2a1d10);
   font-size: var(--fs-body);
   font-weight: 700;
+  font-family: var(--font-strong);
   white-space: nowrap;
   box-shadow: 0 2px 0 var(--c-wood-dark, #2a190d);
 }
@@ -138,6 +139,7 @@
   box-shadow: 0 3px 0 var(--m-wood-dark);
   font-size: 1.15rem;
   font-weight: 700;
+  font-family: var(--font-strong);
   text-align: left;
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
@@ -192,6 +194,7 @@
   border-color: var(--m-button-edge);
   box-shadow: 0 2px 0 var(--m-button-edge);
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .menu-small:hover:not(:disabled),
 .menu-go:hover:not(:disabled) {
@@ -335,6 +338,7 @@
 .menu-seat-no {
   min-width: 2em;
   font-weight: 700;
+  font-family: var(--font-strong);
   color: var(--m-soft);
 }
 .menu-kind {
@@ -351,6 +355,7 @@
 .menu-kind button.on {
   background: var(--m-button);
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .menu-seed {
   display: flex;
@@ -374,6 +379,7 @@
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 2rem;
   font-weight: 700;
+  font-family: var(--font-strong);
   letter-spacing: 0.2em;
   color: var(--m-wood-dark);
 }

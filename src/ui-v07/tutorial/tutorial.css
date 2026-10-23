@@ -45,6 +45,7 @@
   border-radius: 4px;
   background: rgb(224 166 60 / 0.18);
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .coach-foot {
   display: flex;
@@ -65,6 +66,7 @@
   background: var(--accent);
   border-color: #b9822a;
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 /* While you carry out a step: only what to do, small, so the table stays clear. */
 .coach.coach-todo {
@@ -75,6 +77,7 @@
   max-width: min(340px, calc(100vw - 32px));
   padding: 8px 14px;
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .coach-todo-mark {
   flex: none;
@@ -317,11 +320,13 @@
   font-size: 28px;
   font-style: normal;
   font-weight: 700;
+  font-family: var(--font-strong);
 }
 .die-group small {
   color: inherit;
   opacity: 1;
   font-size: var(--fs-title);
   font-weight: 700;
+  font-family: var(--font-strong);
   letter-spacing: 0.2em;
 }
