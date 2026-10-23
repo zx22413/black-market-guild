@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>標題字樣</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@900&family=Cinzel:wght@600;800&family=Stardos+Stencil:wght@700&family=Inter:wght@500;800&display=swap" />
+<style>
+  :root {
+    --bg: #10242b; --card: #19343d; --line: #31606d; --ink: #f1ead8; --mute: #9db5b8;
+    --gold: #e0a63c; --cinnabar: #b5302a; --paper: #efe3c8;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 24px 16px 64px; background: var(--bg); color: var(--ink); font-family: 'Inter', system-ui, sans-serif; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 36px 0 12px; color: var(--gold); }
+  .hint { color: var(--mute); font-size: 13px; margin: 0 0 8px; line-height: 1.6; }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .opt { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; overflow: hidden; }
+  .tag { display: block; font: 12px/1.5 ui-monospace, Menlo, monospace; color: var(--mute); margin-bottom: 12px; }
+  .tag b { color: var(--gold); font-weight: 600; }
+  .stage { border-radius: 8px; padding: 28px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 220px; }
+  svg { display: block; max-width: 100%; height: auto; }
+
+  /* H1 金漆刻字 */
+  .h1 .stage { background: radial-gradient(ellipse at 50% 40%, #1e4450, #0c1c22 75%); container-type: inline-size; }
+  .h1 .zh {
+    font: 900 min(19cqi, 92px)/1 'Noto Serif TC', serif; letter-spacing: .1em; margin-right: -.1em; white-space: nowrap;
+    background: linear-gradient(180deg, #fbe7a8 0%, #e9b54d 45%, #a8711f 70%, #e2ad4a 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 2px 0 #3b2507) drop-shadow(0 10px 14px rgba(0, 0, 0, .55));
+  }
+  .h1 .en { display: flex; align-items: center; gap: 10px; margin-top: 14px; font: 800 min(4.4cqi, 22px)/1 'Cinzel', serif; white-space: nowrap; letter-spacing: .38em; color: #e9cf96; }
+  .h1 .en::before, .h1 .en::after { content: ''; width: clamp(16px, 6vw, 48px); height: 1px; background: linear-gradient(90deg, transparent, #c99a45); }
+  .h1 .en::after { transform: scaleX(-1); }
+  .h1 .en svg { width: 26px; margin: 0 -2px 0 -10px; }
+
+  /* H3 貨箱噴漆 */
+  .h3 .stage {
+    background:
+      linear-gradient(180deg, rgba(0,0,0,.25), transparent 8%, transparent 92%, rgba(0,0,0,.3)),
+      repeating-linear-gradient(180deg, #a57a49 0 52px, #6e4b28 52px 55px),
+      repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 3px, transparent 3px 11px);
+  }
+
+  /* Gold engraved face shared by H1, V1 and the covers. */
+  .gold {
+    background: linear-gradient(180deg, #fbe7a8 0%, #e9b54d 45%, #a8711f 70%, #e2ad4a 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  /* 直排版：sizes in cqi so the same lockup scales from a preview card to a cover. */
+  .lockup-v { container-type: inline-size; width: 100%; display: flex; flex-direction: column; align-items: center; }
+  .lockup-v .zh {
+    font: 900 34cqi/1.02 'Noto Serif TC', serif; letter-spacing: .06em; margin-right: -.06em; text-align: center;
+    filter: drop-shadow(0 .6cqi 0 #3b2507) drop-shadow(0 2cqi 3cqi rgba(0, 0, 0, .6));
+  }
+  .lockup-v .rule { display: flex; align-items: center; gap: 3cqi; width: 78%; margin: 4cqi 0 3.5cqi; }
+  .lockup-v .rule::before, .lockup-v .rule::after { content: ''; flex: 1; height: max(1px, .5cqi); background: linear-gradient(90deg, transparent, #d9a84f); }
+  .lockup-v .rule::after { transform: scaleX(-1); }
+  .lockup-v .rule svg { width: 9cqi; }
+  .lockup-v .en { font: 800 7.4cqi/1 'Cinzel', serif; letter-spacing: .3em; margin-right: -.3em; color: #f0d79c; text-shadow: 0 .4cqi 0 #2a1a05, 0 0 3cqi rgba(0, 0, 0, .7); }
+  .v-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .v-grid .stage { min-height: 380px; padding: 32px 28px; }
+  .v-grid .lockup-v, .v-grid .v-water { max-width: 240px; }
+
+  /* 封面試排：600×900 at preview size; everything inside sizes off the cover width. */
+  .covers { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .cover {
+    position: relative; container-type: inline-size; width: 100%; max-width: 320px; aspect-ratio: 2 / 3; margin: 0 auto;
+    border-radius: 6px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, .5); isolation: isolate;
+  }
+  .cover > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+  .cover::before { content: ''; position: absolute; inset: 0; z-index: -1; }
+  .cover .logo { position: absolute; left: 8%; right: 8%; display: flex; flex-direction: column; align-items: center; }
+  .cover .seal-slot { width: 16cqi; }
+  /* C1 夜海：logo 放在月光上方的天空，靠漸層暗角把天空壓暗 */
+  .c1 > img { object-position: 52% 50%; }
+  .c1::before { background: linear-gradient(180deg, rgba(5, 14, 20, .85) 0%, rgba(5, 14, 20, .35) 40%, transparent 60%, rgba(5, 14, 20, .7) 100%); }
+  .c1 .logo { top: 7%; }
+  .c1 .bottom { position: absolute; bottom: 5%; left: 0; right: 0; display: flex; justify-content: center; }
+  /* C2 暴風：畫面太亂，logo 壓在羊皮紙底板上 */
+  .c2 > img { object-position: 30% 50%; }
+  .c2::before { background: radial-gradient(ellipse at 50% 35%, transparent 30%, rgba(0, 0, 0, .55) 100%); }
+  .c2 .logo { top: 9%; padding: 8cqi 6cqi 7cqi; }
+  .c2 .plate { position: absolute; inset: 0; z-index: -1; filter: drop-shadow(0 2cqi 3cqi rgba(0, 0, 0, .6)); }
+  .c2 .plate svg { width: 100%; height: 100%; }
+  .c2 .zh { font: 900 26cqi/1.02 'Noto Serif TC', serif; letter-spacing: .06em; margin-right: -.06em; text-align: center; color: #3a1a0c; }
+  .c2 .zh .red { color: #a3271f; }
+  .c2 .en { margin-top: 3cqi; font: 800 6.4cqi/1 'Cinzel', serif; letter-spacing: .3em; margin-right: -.3em; color: #5a3416; }
+  /* C3 港口金光：大印章當徽記，英文壓在下方（Nine Sols／Okami 的做法） */
+  .c3 > img { object-position: 62% 50%; }
+  .c3::before { background: linear-gradient(180deg, rgba(40, 20, 5, .15) 0%, transparent 45%, rgba(20, 10, 3, .75) 100%); }
+  .c3 .logo { top: 9%; }
+  .c3 .big-seal { width: 60cqi; filter: drop-shadow(0 1.5cqi 2cqi rgba(40, 10, 0, .5)); }
+  .c3 .en { margin-top: 5cqi; font: 800 8cqi/1 'Cinzel', serif; letter-spacing: .26em; margin-right: -.26em; color: #fff3d6; text-shadow: 0 .4cqi 0 #3b2507, 0 0 4cqi rgba(60, 25, 0, .8); }
+  .credit { font: 11px/1.5 ui-monospace, Menlo, monospace; color: var(--mute); margin-top: 10px; text-align: center; }
+
+  .seals { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .seals .stage { min-height: 240px; }
+  .on-paper { background: var(--paper); }
+  .on-sea { background: #0c1c22; }
+  .sizes { display: flex; flex-wrap: wrap; gap: 16px; }
+  .sizes .opt { flex: 1 1 300px; }
+  .size-row { display: flex; align-items: flex-end; gap: 18px; padding: 16px; border-radius: 8px; }
+  .size-row figure { margin: 0; text-align: center; font: 11px ui-monospace, Menlo, monospace; color: #7a6a52; }
+  .on-sea figure { color: var(--mute); }
+  .size-row figcaption { margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>標題字樣：暗潮商戰／Contrabay</h1>
+  <p class="hint">橫排版給主選單、Steam 橫幅、載入畫面；2×2 印章版給 App 圖示、蠟封、牌背。中文全是 Google Fonts 現成字（思源宋體／黑體 900），定案後再找或請人描繪專用字形。</p>
+
+  <h2>橫排版</h2>
+  <div class="grid">
+    <section class="opt h1">
+      <span class="tag"><b>H1 金漆刻字</b> · 思源宋體 900＋Cinzel，商會帳本、金幣的正統感</span>
+      <div class="stage">
+        <div class="zh">暗潮商戰</div>
+        <div class="en">CONTRA<svg viewBox="0 0 26 10" aria-hidden="true"><path d="M1 6 q3 -5 6 0 t6 0 t6 0 t6 0" fill="none" stroke="#c99a45" stroke-width="1.6"/></svg>BAY</div>
+      </div>
+    </section>
+
+    <section class="opt h2">
+      <span class="tag"><b>H2 半沉水面</b> · 思源黑體 900，字的下半截沉在海裡＝「暗潮」</span>
+      <div class="stage on-sea">
+        <svg viewBox="0 0 640 240" role="img" aria-label="暗潮商戰 Contrabay">
+          <defs>
+            <linearGradient id="deep" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#3d8a92" /><stop offset="1" stop-color="#0f2e36" />
+            </linearGradient>
+            <clipPath id="above"><path d="M0 0 H640 V124 q-20 -8 -40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 Z" /></clipPath>
+            <clipPath id="below"><path d="M0 240 H640 V124 q-20 -8 -40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 t-40 0 Z" /></clipPath>
+          </defs>
+          <g font-family="Noto Sans TC" font-weight="900" font-size="124" text-anchor="middle" letter-spacing="8">
+            <text x="324" y="106" dominant-baseline="central" fill="#f1ead8" clip-path="url(#above)">暗潮商戰</text>
+            <g clip-path="url(#below)" filter="url(#ripple)">
+              <text x="324" y="106" dominant-baseline="central" fill="url(#deep)" opacity=".9">暗潮商戰</text>
+            </g>
+          </g>
+          <path d="M0 124 q20 -8 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0" fill="none" stroke="#e0a63c" stroke-width="2" opacity=".8" />
+          <text x="320" y="214" text-anchor="middle" font-family="Inter" font-weight="800" font-size="24" letter-spacing="14" fill="#9db5b8">CONTRA<tspan fill="#e0a63c">·</tspan>BAY</text>
+        </svg>
+      </div>
+    </section>
+
+    <section class="opt h3">
+      <span class="tag"><b>H3 貨箱噴漆</b> · 型板字＋噴漆斑駁，走私貨箱上的標記</span>
+      <div class="stage">
+        <svg viewBox="0 0 640 240" role="img" aria-label="暗潮商戰 Contrabay">
+          <defs>
+            <mask id="stencil">
+              <rect width="640" height="240" fill="#fff" />
+              <rect x="0" y="98" width="640" height="5" fill="#000" />
+              <rect x="0" y="196" width="640" height="3" fill="#000" />
+            </mask>
+          </defs>
+          <g filter="url(#spray)" mask="url(#stencil)">
+            <text x="324" y="100" text-anchor="middle" dominant-baseline="central" font-family="Noto Sans TC" font-weight="900" font-size="118" letter-spacing="10" fill="#1d1510">暗潮商戰</text>
+            <text x="320" y="200" text-anchor="middle" dominant-baseline="central" font-family="Stardos Stencil" font-weight="700" font-size="54" letter-spacing="10" fill="#1d1510">CONTRABAY</text>
+          </g>
+          <g transform="rotate(-8 548 40)" filter="url(#rough)" opacity=".85">
+            <rect x="500" y="22" width="104" height="38" fill="none" stroke="#a3271f" stroke-width="3" />
+            <text x="552" y="42" text-anchor="middle" dominant-baseline="central" font-family="Stardos Stencil" font-weight="700" font-size="18" letter-spacing="3" fill="#a3271f">No.07</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+  </div>
+
+  <h2>直排版</h2>
+  <p class="hint">給直式封面（Steam 遊戲庫 600×900、盒子正面）。中文兩字一行疊成方塊，跟 2×2 印章同一個結構；英文放最下面當底座。</p>
+  <div class="v-grid">
+    <section class="opt">
+      <span class="tag"><b>V1 金漆疊排</b> · H1 的直式版本，中間用海浪細線分開中英文</span>
+      <div class="stage" style="background: radial-gradient(ellipse at 50% 40%, #1e4450, #0c1c22 75%)">
+        <div class="lockup-v">
+          <div class="zh gold">暗潮<br />商戰</div>
+          <div class="rule"><svg viewBox="0 0 26 10" aria-hidden="true"><path d="M1 6 q3 -5 6 0 t6 0 t6 0 t6 0" fill="none" stroke="#d9a84f" stroke-width="1.6"/></svg></div>
+          <div class="en">CONTRABAY</div>
+        </div>
+      </div>
+    </section>
+    <section class="opt">
+      <span class="tag"><b>V2 半沉疊排</b> · H2 的直式版本：「暗潮」在水面上，「商戰」沉一半</span>
+      <div class="stage on-sea">
+        <svg class="v-water" viewBox="0 0 360 430" role="img" aria-label="暗潮商戰 Contrabay">
+          <defs>
+            <clipPath id="v-above"><path d="M0 0 H360 V300 q-15 -7 -30 0 t-30 0 t-30 0 t-30 0 t-30 0 t-30 0 t-30 0 t-30 0 t-30 0 t-30 0 t-30 0 t-30 0 Z" /></clipPath>
+            <clipPath id="v-below"><path d="M0 430 H360 V300 q-15 -7 -30 0 t-30 0 t-30 0 t-30 0 t-30 0 t-30 0 t-30 0 t-30 0 t-30 0 t-30 0 t-30 0 t-30 0 Z" /></clipPath>
+          </defs>
+          <g font-family="Noto Sans TC" font-weight="900" font-size="150" text-anchor="middle" letter-spacing="6">
+            <g clip-path="url(#v-above)" fill="#f1ead8">
+              <text x="183" y="92" dominant-baseline="central">暗潮</text>
+              <text x="183" y="252" dominant-baseline="central">商戰</text>
+            </g>
+            <g clip-path="url(#v-below)" filter="url(#ripple)">
+              <text x="183" y="252" dominant-baseline="central" fill="url(#deep)" opacity=".9">商戰</text>
+            </g>
+          </g>
+          <path d="M0 300 q15 -7 30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0" fill="none" stroke="#e0a63c" stroke-width="2" opacity=".8" />
+          <text x="180" y="404" text-anchor="middle" font-family="Inter" font-weight="800" font-size="26" letter-spacing="12" fill="#9db5b8">CONTRA<tspan fill="#e0a63c">·</tspan>BAY</text>
+        </svg>
+      </div>
+    </section>
+  </div>
+
+  <h2>封面試排（600×900）</h2>
+  <p class="hint">背景先借專案裡的公有領域名畫（public/art/paintings，來源見 SOURCES.md），只是試排用，正式封面要另外畫。三種做法對應三種讓 logo 在插畫上讀得清楚的方式。</p>
+  <div class="covers">
+    <section class="opt">
+      <span class="tag"><b>C1 留天空＋暗角</b> · V1 放在月夜的天空；上方加深色漸層，下方放小印章</span>
+      <div class="cover c1">
+        <img src="../public/art/paintings/night-sea.jpg" alt="" />
+        <div class="logo">
+          <div class="lockup-v">
+            <div class="zh gold">暗潮<br />商戰</div>
+            <div class="rule"><svg viewBox="0 0 26 10" aria-hidden="true"><path d="M1 6 q3 -5 6 0 t6 0 t6 0 t6 0" fill="none" stroke="#d9a84f" stroke-width="1.6"/></svg></div>
+            <div class="en">CONTRABAY</div>
+          </div>
+        </div>
+        <div class="bottom"><div class="seal-slot" data-seal="wax"></div></div>
+      </div>
+      <p class="credit">背景：Aivazovsky《A Moonlit Night at Sea》1885</p>
+    </section>
+    <section class="opt">
+      <span class="tag"><b>C2 羊皮紙底板</b> · 背景再亂都讀得清楚（Monkey Island 2 的做法）；紅字點出「商戰」</span>
+      <div class="cover c2">
+        <img src="../public/art/paintings/storm.jpg" alt="" />
+        <div class="logo">
+          <div class="plate"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M4 6 L18 3 L30 7 L46 2 L60 6 L74 3 L88 6 L97 4 L95 22 L98 40 L94 58 L97 76 L95 96 L80 93 L64 98 L50 94 L34 97 L20 93 L5 97 L7 78 L3 60 L6 42 L2 24 Z" fill="#e9d6ad" filter="url(#rough)" />
+            <path d="M4 6 L18 3 L30 7 L46 2 L60 6 L74 3 L88 6 L97 4 L95 22 L98 40 L94 58 L97 76 L95 96 L80 93 L64 98 L50 94 L34 97 L20 93 L5 97 L7 78 L3 60 L6 42 L2 24 Z" fill="none" stroke="#8a5a2b" stroke-width=".8" opacity=".5" vector-effect="non-scaling-stroke" />
+          </svg></div>
+          <div class="zh">暗潮<br /><span class="red">商戰</span></div>
+          <div class="en">CONTRABAY</div>
+        </div>
+      </div>
+      <p class="credit">背景：Bakhuizen《Ships in Distress in a Raging Storm》c.1690</p>
+    </section>
+    <section class="opt">
+      <span class="tag"><b>C3 大印章當徽記</b> · 白文朱印放大當 logo 主體，英文壓在下面（Nine Sols／Okami 的做法）</span>
+      <div class="cover c3">
+        <img src="../public/art/paintings/harbor.jpg" alt="" />
+        <div class="logo">
+          <div class="big-seal seal-slot" data-seal="white"></div>
+          <div class="en">CONTRABAY</div>
+        </div>
+      </div>
+      <p class="credit">背景：Claude Lorrain《Seaport with the Embarkation of Saint Ursula》1641</p>
+    </section>
+  </div>
+
+  <h2>2×2 印章版</h2>
+  <p class="hint">P1～P3 依現代閱讀順序（左→右、上→下）。P4 是傳統印章順序（右欄先讀，由上而下），比較正統但玩家可能讀成「商戰暗潮」。</p>
+  <div class="seals" id="seals"></div>
+
+  <h2>小尺寸測試</h2>
+  <p class="hint">App 圖示和 favicon 會縮到 32px 以下，筆畫太細就糊掉。</p>
+  <div class="sizes" id="sizes"></div>
+</div>
+
+<!-- Shared filters -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="rough" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="4" result="n" />
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="3.5" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+    <filter id="worn" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="4" result="n" />
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="3.5" xChannelSelector="R" yChannelSelector="G" result="d" />
+      <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="2" seed="9" result="s" />
+      <feColorMatrix in="s" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -16 10.6" result="holes" />
+      <feComposite in="d" in2="holes" operator="in" />
+    </filter>
+    <filter id="spray" x="-5%" y="-10%" width="110%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" seed="2" result="s" />
+      <feColorMatrix in="s" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -9 6.3" result="holes" />
+      <feComposite in="SourceGraphic" in2="holes" operator="in" result="c" />
+      <feGaussianBlur in="c" stdDeviation=".5" />
+    </filter>
+    <filter id="ripple" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.18" numOctaves="2" seed="7" result="n" />
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="9" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+    <filter id="wax-edge" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="11" result="n" />
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="14" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+    <radialGradient id="wax" cx=".4" cy=".35" r=".75">
+      <stop offset="0" stop-color="#c2453b" /><stop offset=".6" stop-color="#8d221d" /><stop offset="1" stop-color="#5c1210" />
+    </radialGradient>
+  </defs>
+</svg>
+
+<script>
+// Character cells inside a 200×200 seal; ROWS reads left→right then down, COLUMNS is the
+// traditional seal order (right column first, top to bottom).
+const ROWS = [['暗', 62, 62], ['潮', 138, 62], ['商', 62, 138], ['戰', 138, 138]];
+const COLUMNS = [['暗', 138, 62], ['潮', 138, 138], ['商', 62, 62], ['戰', 62, 138]];
+
+const glyphs = (cells, fill, size = 72, extra = '') =>
+  cells.map(([c, x, y]) =>
+    `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-family="Noto Serif TC" font-weight="900" font-size="${size}" fill="${fill}" ${extra}>${c}</text>`).join('');
+
+// 白文：red block with the characters cut out.
+const whiteSeal = (id, cells) => `
+<svg viewBox="0 0 200 200" role="img" aria-label="暗潮商戰 印章">
+  <mask id="${id}"><rect width="200" height="200" fill="#fff" />${glyphs(cells, '#000')}</mask>
+  <g filter="url(#worn)"><rect x="12" y="12" width="176" height="176" rx="8" fill="#b5302a" mask="url(#${id})" /></g>
+</svg>`;
+
+// 朱文：red characters inside a red frame.
+const redSeal = (cells) => `
+<svg viewBox="0 0 200 200" role="img" aria-label="暗潮商戰 印章">
+  <g filter="url(#worn)">
+    <rect x="16" y="16" width="168" height="168" rx="6" fill="none" stroke="#b5302a" stroke-width="10" />
+    ${glyphs(cells, '#b5302a', 68)}
+  </g>
+</svg>`;
+
+// 蠟封：wax blob with the characters pressed in.
+const waxSeal = (cells) => `
+<svg viewBox="0 0 220 220" role="img" aria-label="暗潮商戰 蠟封">
+  <g filter="url(#wax-edge)"><circle cx="110" cy="112" r="96" fill="#4a0e0c" /><circle cx="110" cy="108" r="96" fill="url(#wax)" /></g>
+  <circle cx="110" cy="108" r="74" fill="none" stroke="#5e1210" stroke-width="3" />
+  <circle cx="110" cy="109.5" r="74" fill="none" stroke="#d76a5c" stroke-width="1" opacity=".5" />
+  <g transform="translate(10 8)">
+    ${glyphs(cells, '#f0a090', 60, 'opacity=".55" transform="translate(0 1.8)"')}
+    ${glyphs(cells, '#5a0f0d', 60)}
+  </g>
+</svg>`;
+
+const seals = [
+  ['P1 白文朱印', '紅底挖字，最像印章、最醒目；小尺寸也撐得住', 'on-paper', whiteSeal('m1', ROWS)],
+  ['P2 朱文框印', '紅字加外框，較秀氣；疊在羊皮紙或帳本上好看', 'on-paper', redSeal(ROWS)],
+  ['P3 蠟封', '商會封信用的蠟封，跟主色金／紅都搭；適合牌背、讀取圖示', 'on-sea', waxSeal(ROWS)],
+  ['P4 白文・傳統順序', '右欄先讀：暗潮／商戰。較正統，但閱讀有門檻', 'on-paper', whiteSeal('m4', COLUMNS)],
+];
+document.getElementById('seals').innerHTML = seals.map(([name, desc, bg, svg]) => `
+<section class="opt">
+  <span class="tag"><b>${name}</b> · ${desc}</span>
+  <div class="stage ${bg}" style="padding:20px"><div style="width:180px">${svg}</div></div>
+</section>`).join('');
+
+const sizeRow = (label, bg, make) => `
+<section class="opt">
+  <span class="tag"><b>${label}</b></span>
+  <div class="size-row ${bg}">
+    ${[128, 64, 32, 20].map((px, i) => `<figure><div style="width:${px}px">${make(i)}</div><figcaption>${px}px</figcaption></figure>`).join('')}
+  </div>
+</section>`;
+document.querySelectorAll('.seal-slot').forEach((slot, i) => {
+  slot.innerHTML = slot.dataset.seal === 'wax' ? waxSeal(ROWS) : whiteSeal(`cover-${i}`, ROWS);
+});
+
+document.getElementById('sizes').innerHTML =
+  sizeRow('P1 白文朱印', 'on-paper', (i) => whiteSeal(`s1-${i}`, ROWS)) +
+  sizeRow('P3 蠟封', 'on-sea', () => waxSeal(ROWS));
+</script>
+</body>
+</html>
