@@ -217,6 +217,22 @@
 :root:not(.skin-classic) .inv-market .need {
   color: var(--c-soft);
 }
+/*
+ * The 漲／跌 buttons sit inside the paper price tags: a slightly deeper paper with an ink rim, so they
+ * still read as buttons on paper. The rim is an outline because the "still to choose" gold breath
+ * animates box-shadow. A bet that cannot be made has no rim and fades.
+ */
+:root:not(.skin-classic) .inv-market .bet {
+  background: linear-gradient(180deg, #fbf1d8, #e8d6aa);
+  outline: 1px solid rgb(120 85 30 / 0.55);
+  outline-offset: -1px;
+}
+:root:not(.skin-classic) .inv-market .bet:disabled {
+  background: transparent;
+  outline: 0;
+  box-shadow: none;
+  color: var(--c-soft);
+}
 :root:not(.skin-classic) :is(.inv-market .bet, .beat3d-pin button.dep-bet).on {
   background: var(--c-button);
   box-shadow: 0 2px 0 var(--c-button-edge);
