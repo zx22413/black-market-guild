@@ -574,6 +574,93 @@
   background: none;
 }
 
+/*
+ * The final ranking: each guild is a slip of the same name-plate family, laid on the panel's paper,
+ * its colour a ribbon that hangs past the slip. The place is a coin (brass for the winner), and the
+ * winner's 勝利 is a brass plate riveted on the corner.
+ */
+:root:not(.skin-classic) .result-row {
+  padding-left: 30px;
+  border: 0;
+  border-radius: 3px;
+  background:
+    var(--c-grain),
+    linear-gradient(180deg, #fcf5e2, #ecdfbd);
+  background-size: 160px 160px, auto;
+  box-shadow:
+    inset 0 1px 0 #fffaf0,
+    inset 0 0 0 1px rgb(120 85 30 / 0.28),
+    0 2px 0 rgb(90 60 25 / 0.55),
+    0 6px 12px rgb(60 40 15 / 0.16);
+}
+:root:not(.skin-classic) .result-row::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  bottom: -9px;
+  left: 9px;
+  width: 0;
+  border-left: 10px solid;
+  border-left-color: inherit;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 6px), 0 100%);
+  pointer-events: none;
+}
+:root:not(.skin-classic) .result-row.mine {
+  background: var(--c-grain), linear-gradient(180deg, #fff8e0, #f6e3ad);
+  background-size: 160px 160px, auto;
+}
+:root:not(.skin-classic) .result-row.winner.in {
+  box-shadow:
+    inset 0 1px 0 #fffaf0,
+    inset 0 0 0 1px var(--c-gold-dark),
+    0 0 0 2px var(--c-gold),
+    0 2px 0 3px var(--c-gold-dark),
+    0 0 24px 4px rgb(255 194 61 / 0.5);
+}
+:root:not(.skin-classic) .result-rank {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff8e2, #e3d2a8 70%, #c9b07a);
+  color: var(--c-ink);
+  font-size: 20px;
+  box-shadow: inset 0 0 0 1.5px rgb(120 85 30 / 0.55), inset 0 -2px 0 rgb(120 85 30 / 0.3), 0 1px 0 #fffaf0;
+}
+:root:not(.skin-classic) .result-row.winner.in .result-rank {
+  background: radial-gradient(circle at 35% 30%, #fff1b8, #e9be55 55%, #a8781f);
+  color: #3a2508;
+  box-shadow: inset 0 0 0 1.5px #7a5410, inset 0 -2px 0 rgb(90 55 5 / 0.45), 0 1px 0 #fff4c8, 0 2px 4px rgb(90 60 10 / 0.35);
+}
+:root:not(.skin-classic) .result-stamp {
+  top: -12px;
+  right: -10px;
+  padding: 1px 12px 2px 14px;
+  border: 1px solid #5b3f12;
+  border-radius: 2px;
+  background:
+    radial-gradient(circle at 6px 50%, #5b3f12 0 1.6px, #fff1b8 1.6px 2.6px, transparent 3px),
+    linear-gradient(180deg, #fbe4a0, #dcae52 45%, #a8781f);
+  color: #3a2508;
+  text-shadow: 0 1px 0 rgb(255 240 200 / 0.6);
+  box-shadow: inset 0 1px 0 #fff4c8, 0 2px 0 #5b3f12, 0 6px 10px rgb(60 40 10 / 0.3);
+}
+@media (max-width: 640px) {
+  :root:not(.skin-classic) .result-row {
+    padding-left: 26px;
+  }
+  :root:not(.skin-classic) .result-row::before {
+    left: 7px;
+    border-left-width: 8px;
+  }
+  :root:not(.skin-classic) .result-rank {
+    width: 28px;
+    height: 28px;
+    font-size: 17px;
+  }
+}
+
 /* A building or role card's picture window, framed like the island cards' art. */
 :root:not(.skin-classic) :is(.inv-card .inv-ic, .dep-card .dep-ic) {
   width: 100%;
