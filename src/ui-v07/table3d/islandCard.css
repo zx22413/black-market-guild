@@ -50,9 +50,10 @@
   --paper-edge: #e3d3ad;
   --ink: #2a1d10;
   --ink-soft: #6b5537;
-  --foil-a: #8a5a12;
-  --foil-b: #f3cf6b;
-  --foil-c: #fff1bf;
+  --foil-b: #f5d27a;
+  --foil-c: #fff6d6;
+  --foil-d: #d9a33e;
+  --foil-edge: #2e0d07;
   --ribbon: #7d2b22;
   --ribbon-dark: #561a14;
   --frame: #4a2f1b;
@@ -192,14 +193,19 @@
   display: block;
   font-size: calc(var(--w) * 0.1);
   line-height: 1.25;
+  font-weight: 900;
   letter-spacing: 0.08em;
   white-space: nowrap;
-  /* Foil: a metallic gradient in the letters; the bright band follows the pointer's glare. */
-  background: linear-gradient(115deg, var(--foil-a) 0%, var(--foil-b) 30%, var(--foil-c) calc(var(--gx) * 0.6 + 20%), var(--foil-b) 70%, var(--foil-a) 100%);
+  /* Foil: a top-lit metallic gradient that stays light enough to read on the red ribbon, a soft
+     bright band that follows the pointer's glare, and a dark pressed edge around the letters. */
+  background:
+    linear-gradient(115deg, transparent calc(var(--gx) * 0.6 + 8%), rgb(255 255 255 / 0.55) calc(var(--gx) * 0.6 + 20%), transparent calc(var(--gx) * 0.6 + 32%)),
+    linear-gradient(180deg, var(--foil-c) 0%, var(--foil-b) 46%, var(--foil-d) 54%, var(--foil-b) 100%);
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 1px 0 rgb(0 0 0 / 0.45));
+  filter: drop-shadow(0 0 0.6px var(--foil-edge)) drop-shadow(0 0 0.6px var(--foil-edge)) drop-shadow(0 1.5px 0 var(--foil-edge))
+    drop-shadow(0 2px 3px rgb(0 0 0 / 0.4));
 }
 .isle-card.small .isle-name {
   font-size: calc(var(--w) * 0.11);
