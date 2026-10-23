@@ -1239,6 +1239,12 @@ button.inv-stack:hover {
   margin-bottom: 6px;
   transform: translateX(-50%);
 }
+.dep-bets[data-open='down'] ul {
+  top: 100%;
+  left: 50%;
+  margin-top: 6px;
+  transform: translateX(-50%);
+}
 .dep-bets[data-open='right'] ul {
   left: 100%;
   top: 50%;

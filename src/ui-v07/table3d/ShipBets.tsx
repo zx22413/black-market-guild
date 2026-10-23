@@ -9,12 +9,16 @@ import { GoodIcon } from './GoodIcon';
 // toward the middle of the table (up for the ship in front of you), so it stays off the name plates
 // that sit beside each island.
 
-type Side = 'up' | 'left' | 'right';
+type Side = 'up' | 'down' | 'left' | 'right';
 
-/** Which way the list opens for a badge at `x`: sideways toward the screen's middle, up when it is near it. */
-export function listSide(x: number, width: number): Side {
+/** The list is four rows tall; a badge nearer the screen's top than this has no room above it (the market strip sits there). */
+const ROOM_ABOVE = 260;
+
+/** Which way the list opens for a badge at (`x`, `y`): sideways toward the screen's middle, up when it is near it, down when up would run under the market strip. */
+export function listSide(x: number, width: number, y = Infinity): Side {
   const dx = x - width / 2;
-  return Math.abs(dx) < width * 0.1 ? 'up' : dx < 0 ? 'right' : 'left';
+  if (Math.abs(dx) >= width * 0.1) return dx < 0 ? 'right' : 'left';
+  return y < ROOM_ABOVE ? 'down' : 'up';
 }
 
 export interface ShipBetsProps {
@@ -43,7 +47,7 @@ export function ShipBets({ label, owner, rim, badge, offered, side, chosen, todo
   useLayoutEffect(() => {
     const measure = () => {
       const box = badgeRef.current?.getBoundingClientRect();
-      if (box) setOpen(listSide(box.left + box.width / 2, window.innerWidth));
+      if (box) setOpen(listSide(box.left + box.width / 2, window.innerWidth, box.top));
     };
     measure();
     window.addEventListener('resize', measure);
