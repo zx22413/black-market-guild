@@ -15,6 +15,8 @@ export function createGoldGlow(): GoldGlow {
 /**
  * Patches a standard material so a building under construction looks like molten gold: the base
  * color is pulled toward gold, a band of light runs up the walls, and the silhouette rims bright.
+ * The rim uses three's view-space `normal` (set by normal_fragment_begin) rather than `vNormal`,
+ * which flat-shaded materials such as the crates don't declare.
  */
 export function goldGlowPatch(glow: GoldGlow) {
   return (shader: WebGLProgramParametersWithUniforms): void => {
@@ -35,7 +37,7 @@ export function goldGlowPatch(glow: GoldGlow) {
         '#include <emissivemap_fragment>',
         `#include <emissivemap_fragment>
         float band = 0.5 + 0.5 * sin(vLocalY * 5.0 - uTime * 7.0);
-        float rim = pow(1.0 - abs(dot(normalize(vNormal), normalize(vViewPosition))), 2.0);
+        float rim = pow(1.0 - abs(dot(normal, normalize(vViewPosition))), 2.0);
         totalEmissiveRadiance += goldTint * uGlow * (0.12 + 0.3 * band + 0.55 * rim);`,
       );
   };
