@@ -30,8 +30,9 @@ import { GoodCount, GoodIcon } from './GoodIcon';
 import { CRATE_SIZE } from '../scene/CrateModel';
 import { MINT_SECONDS } from '../scene/mintMath';
 import { NoteBadge } from './NoteBadge';
-import { ArrowIcon, CloseIcon, CrateIcon, Flow, HouseIcon, IconDisc, tokenIconUrl } from './icons';
+import { ArrowIcon, CloseIcon, CrateIcon, Flow, HouseIcon, IconDisc, InfoIcon, tokenIconUrl } from './icons';
 import { LockHint } from './LockHint';
+import { SealSubmit } from './SealSubmit';
 import type { StageEnv, StageParts } from './stage';
 import { cardArtUrl } from './cardArt';
 
@@ -300,6 +301,21 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     },
   ];
 
+  // What a submit seals: kept on the bar under the seal while the others decide.
+  const chips = (
+    <span className="bar-chips">
+      <span className="chip" title="建築">
+        <HouseIcon /> {choice.build ? `${BUILDING_LABELS[choice.build]} −${summary.buildCash}` : '不蓋'}
+      </span>
+      <span className="chip" title="出航">
+        <IconDisc src={tokenIconUrl('ship')} /> {summary.sails ? `${summary.loaded}/${summary.capacity} −${summary.shipCost}` : '不出航'}
+      </span>
+      <span className="chip cash" title="現金（G）">
+        <IconDisc src={tokenIconUrl('coin')} />
+        <Flow from={summary.cashBefore} to={<b>{summary.cashAfter}</b>} />
+      </span>
+    </span>
+  );
   return {
     pins,
     camera,
@@ -325,24 +341,12 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     ),
     bar: (
       <>
-        <span className="bar-chips">
-          <span className="chip" title="建築">
-            <HouseIcon /> {choice.build ? `${BUILDING_LABELS[choice.build]} −${summary.buildCash}` : '不蓋'}
-          </span>
-          <span className="chip" title="出航">
-            <IconDisc src={tokenIconUrl('ship')} /> {summary.sails ? `${summary.loaded}/${summary.capacity} −${summary.shipCost}` : '不出航'}
-          </span>
-          <span className="chip cash" title="現金（G）">
-            <IconDisc src={tokenIconUrl('coin')} />
-            <Flow from={summary.cashBefore} to={<b>{summary.cashAfter}</b>} />
-          </span>
-        </span>
-        <button type="button" className="primary" data-focus="submit" disabled={!action} onClick={submit}>
-          提交
-        </button>
-        <LockHint text="提交後不能更改；所有人都提交後，建築與出航同時公開，船上的貨不公開。" />
+        {chips}
+        <SealSubmit disabled={!action} onClick={submit} />
+        <LockHint icon={<InfoIcon />} text="提交後不能更改；所有人都提交後，建築與出航同時公開，船上的貨不公開。" />
       </>
     ),
+    sealedChips: chips,
     overlay: reminding && (
       <ReminderDialog
         title="還沒做完"

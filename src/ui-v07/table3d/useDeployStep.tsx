@@ -23,9 +23,10 @@ import { ReminderDialog } from '../table/ReminderDialog';
 import { isReminderSkipped, setReminderSkipped } from '../table/reminderSettings';
 import { roleDetail } from '../table/roleText';
 import { DeployChips } from './DeployChips';
-import { ClockIcon, IconDisc, tokenIconUrl, ForbidIcon } from './icons';
+import { ClockIcon, IconDisc, InfoIcon, tokenIconUrl, ForbidIcon } from './icons';
 import { InfoTip } from './InfoTip';
 import { LockHint } from './LockHint';
+import { SealSubmit } from './SealSubmit';
 import { roleIconUrl } from './RoleBadges';
 import { ShipBets } from './ShipBets';
 import { DashedArrows } from './RoleArrows';
@@ -247,6 +248,17 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
 
   const incomplete = choice.role !== null && !action;
   const targetOwner = choice.target === null ? undefined : ownerOf(choice.target);
+  // What a submit seals: kept on the bar under the seal while the others decide.
+  const chips = (
+    <span className="bar-chips">
+      <DeployChips
+        role={choice.role}
+        bet={choice.bet}
+        needsShip={needsTarget(choice.role, aims)}
+        target={targetOwner === undefined ? null : { name: nameOf(targetOwner), color: seats[laneOf(targetOwner)]?.color ?? '#999' }}
+      />
+    </span>
+  );
   return {
     pins,
     camera: null,
@@ -270,20 +282,12 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     ),
     bar: (
       <>
-        <span className="bar-chips">
-          <DeployChips
-            role={choice.role}
-            bet={choice.bet}
-            needsShip={needsTarget(choice.role, aims)}
-            target={targetOwner === undefined ? null : { name: nameOf(targetOwner), color: seats[laneOf(targetOwner)]?.color ?? '#999' }}
-          />
-        </span>
-        <button type="button" className="primary" data-focus="submit" disabled={incomplete} onClick={submit}>
-          提交
-        </button>
-        <LockHint text="提交後不能更改；所有人都提交後，角色一起公開（情報商人重擲後再公開）。" />
+        {chips}
+        <SealSubmit disabled={incomplete} onClick={submit} />
+        <LockHint icon={<InfoIcon />} text="提交後不能更改；所有人都提交後，角色一起公開（情報商人重擲後再公開）。" />
       </>
     ),
+    sealedChips: chips,
     overlay: reminding && (
       <ReminderDialog
         title="還沒選角色"

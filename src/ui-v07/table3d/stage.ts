@@ -28,6 +28,11 @@ export interface StageParts {
   readonly pins: readonly TablePin[];
   readonly scene: ReactNode;
   readonly bar: ReactNode;
+  /**
+   * The bar's chips of what a submit would seal (the chosen building, role…): kept on the bar,
+   * quieted under a sealed seal, while the others decide (Table3DScreen, SealSubmit).
+   */
+  readonly sealedChips?: ReactNode;
   /** Cards standing above the bar (the role hand). */
   readonly dock?: ReactNode;
   readonly overlay?: ReactNode;

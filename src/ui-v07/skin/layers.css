@@ -259,9 +259,10 @@
  * ::after the face set into it, with a sheen on its top half. Pressing moves the face down onto the
  * lip. Because the button is not clipped, a glow on it (filter: drop-shadow) follows the key's shape;
  * a box-shadow would draw a rectangle, so glows here use drop-shadow.
- * Secondary keys are pressed parchment, the main one is brass.
+ * Secondary keys are pressed parchment, the main one is brass. The wax-seal submit
+ * (table3d/SealSubmit.tsx) is its own shape and is left out.
  */
-:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock),
+:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock, .seal-submit),
 :root:not(.skin-classic) .beat-card.handoff button {
   --key-cut: 7px;
   --key-edge: linear-gradient(180deg, #8f7546, #4f3a20);
@@ -278,8 +279,8 @@
   box-shadow: none;
   transition: filter 120ms;
 }
-:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock)::before,
-:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock)::after,
+:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock, .seal-submit)::before,
+:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock, .seal-submit)::after,
 :root:not(.skin-classic) .beat-card.handoff button::before,
 :root:not(.skin-classic) .beat-card.handoff button::after {
   --cut: var(--key-cut);
@@ -289,12 +290,12 @@
   clip-path: polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut));
   pointer-events: none;
 }
-:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock)::before,
+:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock, .seal-submit)::before,
 :root:not(.skin-classic) .beat-card.handoff button::before {
   inset: 0;
   background: var(--key-edge);
 }
-:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock)::after,
+:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock, .seal-submit)::after,
 :root:not(.skin-classic) .beat-card.handoff button::after {
   --cut: calc(var(--key-cut) - 1px);
   inset: 1px 1px 4px;
@@ -316,26 +317,26 @@
   font-family: var(--font-strong);
   text-shadow: 0 1px 0 rgb(255 240 190 / 0.7);
 }
-:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock, :disabled):hover::after,
+:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock, .seal-submit, :disabled):hover::after,
 :root:not(.skin-classic) .beat-card.handoff button:hover::after {
   filter: brightness(1.07) saturate(1.1);
 }
-:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock, :disabled):active,
+:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock, .seal-submit, :disabled):active,
 :root:not(.skin-classic) .beat-card.handoff button:active {
   padding-top: 9px;
   padding-bottom: 6px;
 }
-:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock, :disabled):active::after,
+:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock, .seal-submit, :disabled):active::after,
 :root:not(.skin-classic) .beat-card.handoff button:active::after {
   inset: 3px 1px 1px;
   box-shadow: inset 0 2px 4px rgb(80 50 10 / 0.45);
 }
-:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock):disabled {
+:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock, .seal-submit):disabled {
   filter: grayscale(0.75);
   opacity: 0.55;
   cursor: not-allowed;
 }
-:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock):focus-visible,
+:root:not(.skin-classic) :is(.inv-bar, .beat-foot, .coach-foot) button:not(.bar-lock, .seal-submit):focus-visible,
 :root:not(.skin-classic) .beat-card.handoff button:focus-visible {
   outline: 2px solid var(--c-gold);
   outline-offset: 2px;
@@ -579,7 +580,7 @@
 :root:not(.skin-classic) .beat-card.reroll .beat-foot .bar-lock {
   color: var(--l3-soft);
 }
-:root:not(.skin-classic) .beat-card.reroll .beat-foot button:not(.bar-lock) {
+:root:not(.skin-classic) .beat-card.reroll .beat-foot button:not(.bar-lock, .seal-submit) {
   /* the same key, in lacquer with a brass edge */
   --key-edge: linear-gradient(180deg, var(--l3-brass), #5e4618);
   --key-face: linear-gradient(180deg, #333d60, var(--l3-lacquer-2) 55%, var(--l3-lacquer));
@@ -589,10 +590,10 @@
   font-family: inherit;
   text-shadow: none;
 }
-:root:not(.skin-classic) .beat-card.reroll .beat-foot button:not(.bar-lock)::after {
+:root:not(.skin-classic) .beat-card.reroll .beat-foot button:not(.bar-lock, .seal-submit)::after {
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), inset 0 -6px 10px -6px rgb(0 0 0 / 0.5);
 }
-:root:not(.skin-classic) .beat-card.reroll .beat-foot button:not(.bar-lock, :disabled):hover {
+:root:not(.skin-classic) .beat-card.reroll .beat-foot button:not(.bar-lock, .seal-submit, :disabled):hover {
   filter: drop-shadow(0 0 8px rgb(255 179 92 / 0.55));
 }
 :root:not(.skin-classic) .beat-card.reroll .beat-meter li.on {

@@ -120,95 +120,16 @@
   opacity: 0.75;
 }
 
-/* ---------- the wax seal submit ---------- */
+/* ---------- the bar's seal states ---------- */
 
-/*
- * Submitting seals the decision: the seal is the button, and once pressed it stays on the bar,
- * turned and marked 已封, while the chips it sealed go quiet. It pokes out above and below the bar.
- */
-.nb-seal {
-  position: relative;
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 64px;
-  height: 64px;
-  margin: -12px 2px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: #f6e2c4;
-  font-family: var(--font-strong);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  /* pressed into the wax: dark above the letters, a light lip below */
-  text-shadow: 0 -1px 0 rgb(60 8 12 / 0.7), 0 1px 0 rgb(255 190 190 / 0.25);
-  filter: drop-shadow(0 6px 6px rgb(0 0 0 / 0.3));
-  cursor: pointer;
-  transition: transform 140ms, filter 140ms;
-}
-/* On the real bar the game's key styles would apply to the seal; undo them (stage 5 does this in
-   skin/layers.css when the seal goes into the game). */
-.lab .lab-stage .inv-bar.lab-static button.nb-seal {
-  min-height: 0;
-  padding: 0;
-}
-.lab .lab-stage .inv-bar.lab-static button.nb-seal::before,
-.lab .lab-stage .inv-bar.lab-static button.nb-seal::after {
-  content: none;
-}
-.nb-seal .wax-seal-art {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-.nb-seal > span {
-  position: relative;
-}
-.nb-seal:is(:hover, .is-hover):not(:disabled, .sealed) {
-  transform: translateY(-3px) rotate(-6deg);
-  filter: drop-shadow(0 10px 8px rgb(0 0 0 / 0.3)) drop-shadow(0 0 10px rgb(255 140 120 / 0.45));
-}
-.nb-seal:is(:active, .is-down):not(:disabled, .sealed) {
-  transform: scale(0.9);
-  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.35));
-}
-.nb-seal.sealed {
-  transform: rotate(9deg);
-  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.35));
-  cursor: default;
-}
-.nb-seal:disabled:not(.sealed) {
-  filter: grayscale(0.85) brightness(0.9);
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-.nb-seal:focus-visible {
-  outline: 2px dashed var(--c-gold);
-  outline-offset: 2px;
-  border-radius: 50%;
-}
-.inv-bar.is-sealed .bar-chips {
-  opacity: 0.6;
-  filter: saturate(0.6);
-}
 .lab-seal-states {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
-  margin-top: 26px;
+  margin-top: 30px;
 }
 .lab-stack {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   justify-items: center;
-}
-@media (prefers-reduced-motion: reduce) {
-  .nb-seal {
-    transition: none;
-  }
+  width: 100%;
 }
 
 /* ---------- applied panels ---------- */

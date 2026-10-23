@@ -1,0 +1,83 @@
+/*
+ * The wax seal that submits a decision (SealSubmit.tsx). It pokes out above and below the bar;
+ * hovering lifts and turns it, pressing squashes it, and once sealed it sits turned, marked 已封.
+ * Like the rule book it looks the same with ?skin=classic.
+ */
+.inv-bar .seal-submit {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  min-height: 0;
+  margin: -12px 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: #f6e2c4;
+  font-family: var(--font-strong);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  /* pressed into the wax: dark above the letters, a light lip below */
+  text-shadow: 0 -1px 0 rgb(60 8 12 / 0.7), 0 1px 0 rgb(255 190 190 / 0.25);
+  filter: drop-shadow(0 6px 6px rgb(0 0 0 / 0.3));
+  opacity: 1;
+  cursor: pointer;
+  transition: transform 140ms, filter 140ms;
+}
+.seal-submit .wax-seal-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.seal-submit > span {
+  position: relative;
+}
+.inv-bar .seal-submit:hover:not(:disabled) {
+  transform: translateY(-3px) rotate(-6deg);
+  filter: drop-shadow(0 10px 8px rgb(0 0 0 / 0.3)) drop-shadow(0 0 10px rgb(255 140 120 / 0.45));
+}
+.inv-bar .seal-submit:active:not(:disabled) {
+  transform: scale(0.9);
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.35));
+}
+.inv-bar .seal-submit.sealed {
+  opacity: 1;
+  transform: rotate(9deg);
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.35));
+  cursor: default;
+}
+.inv-bar .seal-submit:disabled:not(.sealed) {
+  filter: grayscale(0.85) brightness(0.9);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.inv-bar .seal-submit:focus-visible {
+  outline: 2px dashed #d9b25a;
+  outline-offset: 2px;
+}
+/* The choices a seal closed, while the others decide (Table3DScreen). */
+.sealed-choice {
+  display: contents;
+}
+.sealed-choice .bar-chips {
+  opacity: 0.6;
+  filter: saturate(0.6);
+}
+@media (max-width: 640px) {
+  .inv-bar .seal-submit {
+    width: 56px;
+    height: 56px;
+    margin: -8px 2px;
+    font-size: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .inv-bar .seal-submit {
+    transition: none;
+  }
+}

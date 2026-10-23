@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react';
-import { WaxSeal } from '../skin/ornaments';
 import { Flow, HouseIcon, IconDisc, InfoIcon, tokenIconUrl } from '../table3d/icons';
 import { LockHint } from '../table3d/LockHint';
 import { RulesPanel } from '../table3d/RulesPanel';
+import { SealSubmit } from '../table3d/SealSubmit';
 import { PanelsApplied } from './SkinLabPanels';
 import '../beats/beat.css';
 import '../skin/layers.css';
@@ -23,7 +23,7 @@ export function SkinLabPreview() {
         <h1>介面質感試驗</h1>
         <p>左邊是現在的樣子，右邊是新做法。底欄與按鈕可以實際點按。</p>
       </header>
-      <LabRow title="底欄（第 1 層，已套用）" note="斜面木條＋凹槽、黃銅端蓋、吊牌形狀的晶片；黑市列同樣是斜面＋凹槽，價格是吊牌（孔圈是貨品色）" now={<BarNow />} />
+      <LabRow title="底欄與封蠟章（第 1 層，已套用）" note="斜面木條＋凹槽、黃銅端蓋、吊牌晶片（黑市列的孔圈是貨品色）；提交是封蠟章，封上後留在底欄寫「已封」、選擇變淡，等其他人決定" now={<BarNow />} />
       <LabRow
         wide
         title="面板（第 2 層＋美術層，已套用）"
@@ -46,7 +46,6 @@ export function SkinLabPreview() {
           </div>
         }
       />
-      <LabRow title="提交 → 封蠟章" note="封蠟章就是提交鈕；封上之後章留在底欄、轉個角度寫「已封」，被封住的選擇變淡（試驗頁可再按一次復原）" now={<BarNow />} next={<BarSeal />} />
     </div>
   );
 }
@@ -91,43 +90,8 @@ const REMINDER_LINES = ['還沒選建築：會不蓋', '船是空的：不出航
 
 function BarNow() {
   return (
-    <div className="inv-bar lab-static">
-      <span className="bar-chips">
-        <span className="chip" title="建築">
-          <HouseIcon /> 不蓋
-        </span>
-        <span className="chip" title="出航">
-          <IconDisc src={tokenIconUrl('ship')} /> 不出航
-        </span>
-        <span className="chip cash" title="現金（G）">
-          <IconDisc src={tokenIconUrl('coin')} />
-          <Flow from={1000} to={<b>1000</b>} />
-        </span>
-      </span>
-      <button type="button" className="primary">
-        提交
-      </button>
-      <LockHint text={LOCK_TEXT} />
-    </div>
-  );
-}
-
-// ---------- wax seal submit ----------
-
-function Seal({ state = '', sealed = false, disabled = false, onClick }: { readonly state?: string; readonly sealed?: boolean; readonly disabled?: boolean; readonly onClick?: () => void }) {
-  return (
-    <button type="button" className={`nb-seal ${state} ${sealed ? 'sealed' : ''}`} disabled={disabled} aria-pressed={sealed} onClick={onClick}>
-      <WaxSeal />
-      <span>{sealed ? '已封' : '提交'}</span>
-    </button>
-  );
-}
-
-function BarSeal() {
-  const [sealed, setSealed] = useState(false);
-  return (
     <div className="lab-stack">
-      <div className={`inv-bar lab-static ${sealed ? 'is-sealed' : ''}`}>
+      <div className="inv-bar lab-static">
         <span className="bar-chips">
           <span className="chip" title="建築">
             <HouseIcon /> 不蓋
@@ -140,22 +104,21 @@ function BarSeal() {
             <Flow from={1000} to={<b>1000</b>} />
           </span>
         </span>
-        <Seal sealed={sealed} onClick={() => setSealed((s) => !s)} />
-        <LockHint text={LOCK_TEXT} icon={<InfoIcon />} />
+        <SealSubmit />
+        <LockHint icon={<InfoIcon />} text={LOCK_TEXT} />
       </div>
-      <div className="lab-seal-states">
-        {[
-          { label: '可提交', node: <Seal /> },
-          { label: '滑過', node: <Seal state="is-hover" /> },
-          { label: '按下', node: <Seal state="is-down" /> },
-          { label: '已封', node: <Seal sealed /> },
-          { label: '還不能提交', node: <Seal disabled /> },
-        ].map((s) => (
-          <span key={s.label} className="lab-state">
-            {s.node}
-            <small>{s.label}</small>
+      <div className="inv-bar lab-static lab-seal-states">
+        <span className="sealed-choice">
+          <span className="bar-chips">
+            <span className="chip" title="建築">
+              <HouseIcon /> 不蓋
+            </span>
           </span>
-        ))}
+        </span>
+        <SealSubmit sealed />
+        <span>等待 黑潮會 決定…</span>
+        <SealSubmit disabled />
+        <span className="lab-hint">還不能提交</span>
       </div>
     </div>
   );

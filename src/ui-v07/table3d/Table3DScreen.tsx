@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { GOODS, RULES_V07, type Action, type Goods, type PlayerId, type ShipId } from '../../v07/game';
 import type { SafeArea } from '../../ui/scene/CameraRig';
 import { eventLine } from '../log';
@@ -19,6 +19,7 @@ import { RerollCard } from './RerollCard';
 import { ResultCard, type Rematch } from './ResultCard';
 import { resultRows } from './resultModel';
 import { RulesPanel } from './RulesPanel';
+import { SealSubmit } from './SealSubmit';
 import { seatPlates } from './seatPlates';
 import type { StageEnv } from './stage';
 import { useDeployStep } from './useDeployStep';
@@ -195,13 +196,37 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     skipFirstOpening: islandMarks,
     skip: skipIslandMoments,
   });
+  // A submitted decision stays on the bar under its sealed seal while the others decide: submitting
+  // keeps the step's chips (SealSubmit), and the next decision or the round's show replaces them.
+  const sealable = useRef<ReactNode>(null);
+  const [sealed, setSealed] = useState<ReactNode>(null);
   const env: StageEnv | null =
     free && !moments.blocking && request && viewer && (phase === 'invest' || phase === 'role-deployment')
-      ? { request, board, seats, angles, laneOf, viewer, nameOf, submit: (a: Action) => session.submit(request.id, a), ...(onDraft ? { onDraft } : {}) }
+      ? {
+          request,
+          board,
+          seats,
+          angles,
+          laneOf,
+          viewer,
+          nameOf,
+          submit: (a: Action) => {
+            setSealed(sealable.current);
+            session.submit(request.id, a);
+          },
+          ...(onDraft ? { onDraft } : {}),
+        }
       : null;
   const invest = useInvestStep(env);
   const deploy = useDeployStep(env);
   const step = invest ?? deploy;
+  useEffect(() => {
+    sealable.current = step?.sealedChips ?? null;
+  });
+  const hasStep = step !== null;
+  useEffect(() => {
+    if (hasStep || holding) setSealed(null);
+  }, [hasStep, holding]);
 
   // Ships: at the dock until the voyage event is out, then at sea; the resolution moves them on.
   const ships: TableShip[] = board.ships.map((s) => {
@@ -355,6 +380,12 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
         <div ref={barRef} data-focus="bar" className="inv-bar">
           {step?.bar}
           {holding && !rerollShown && resolution.bar}
+          {idle && sealed !== null && (
+            <>
+              <span className="sealed-choice">{sealed}</span>
+              <SealSubmit sealed />
+            </>
+          )}
           {idle && <span>{snap.status === 'running' ? (waitingNames.length > 0 ? `等待 ${waitingNames.join('、')} 決定…` : '結算中…') : ''}</span>}
           {snap.error && <span className="t3-error">對局發生錯誤：{snap.error}</span>}
         </div>
