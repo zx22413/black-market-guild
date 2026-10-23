@@ -21,6 +21,12 @@ describe('black market rush gold motes', () => {
     expect(motes.some((m) => Math.hypot(m.x, m.z) > 40)).toBe(true);
   });
 
+  it("rises thickest straight off the market's terraces, up its tiers", () => {
+    const over = motes.filter((m) => Math.hypot(m.x, m.z) < 8);
+    expect(over.length / motes.length).toBeGreaterThan(0.3);
+    expect(over.some((m) => m.y > TARGET_ISLAND_HEIGHT + 3)).toBe(true);
+  });
+
   it('starts over the port plateau on the island and at the sea surface elsewhere', () => {
     for (const m of motes) {
       if (Math.hypot(m.x, m.z) < TARGET_ISLAND_RADIUS * 0.7) expect(m.y).toBeGreaterThan(TARGET_ISLAND_HEIGHT);

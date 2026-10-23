@@ -1,7 +1,7 @@
 import { spinPoint, type Vec2, type Vec3 } from '../polyhedra';
 import type { Mat } from '../materials';
 import { cloth } from './cloth';
-import type { LandmarkDesign, LandmarkFlag, P } from './design';
+import type { LandmarkDesign, LandmarkFlag, P, Walker } from './design';
 import { person, type Dress } from './people';
 
 // The market island at the middle of the table (docs/ui/v07-event-presentation.md §1.10): a stepped
@@ -107,23 +107,31 @@ export const AWNING_OPEN = 0.28;
 export const AWNING_SHUT = -1.35;
 export const AWNING_REEFED = -0.55;
 
-/** Counter, wares and front posts of a stall on the +z face, before it is turned to its face. */
+/** Where things stand in a stall, out from its wall: the keeper, the counter's middle, and how high the awning is hinged. */
+const STALL = { keeper: 0.12, counter: 0.3, hinge: 0.92 } as const;
+
+/** Counter, wares and posts of a stall on the +z face, before it is turned to its face. */
 function stallFrame(s: StallSpot, index: number): P[] {
   const wall = TIERS[s.wallTier];
   const floor = floorOf(s.wallTier);
   const half = stallLength(s) / 2;
   const front = wall + s.depth - 0.08;
+  // The awning droops from its hinge to the front posts.
+  const frontTop = floor + STALL.hinge - Math.sin(AWNING_OPEN) * (s.depth - 0.08) - 0.03;
   const wares = [-0.5, 0, 0.5].map((f, j): P => ({
     kind: 'box',
-    center: [f * half, floor + 0.34, wall + 0.15],
+    center: [f * half, floor + 0.34, wall + STALL.counter],
     size: [0.14, 0.08, 0.12],
     bevel: 0.02,
     mat: WARES[(index * 3 + j) % WARES.length]!,
   }));
   return [
-    { kind: 'box', center: [0, floor + 0.15, wall + 0.15], size: [half * 2 - 0.1, 0.3, 0.2], bevel: 0.02, mat: 'wood' },
+    { kind: 'box', center: [0, floor + 0.15, wall + STALL.counter], size: [half * 2 - 0.1, 0.3, 0.2], bevel: 0.02, mat: 'wood' },
     ...wares,
-    ...[-half, half].map((x): P => ({ kind: 'beam', from: [x, floor, front], to: [x, floor + 0.5, front], width: 0.05, mat: 'woodDark' })),
+    ...[-half, half].flatMap((x): P[] => [
+      { kind: 'beam', from: [x, floor, front], to: [x, frontTop, front], width: 0.05, mat: 'woodDark' },
+      { kind: 'beam', from: [x, floor, wall + 0.04], to: [x, floor + STALL.hinge, wall + 0.04], width: 0.05, mat: 'woodDark' },
+    ]),
   ];
 }
 
@@ -145,10 +153,77 @@ function awning(s: StallSpot): MarketAwning {
     size: [strip, 0.03, s.depth],
     mat: k % 2 === 0 ? AWNING_MATS[s.wallTier] : 'plaster',
   }));
-  return { parts, hinge: [0, floorOf(s.wallTier) + 0.62, TIERS[s.wallTier] + 0.02], spin: s.spin };
+  return { parts, hinge: [0, floorOf(s.wallTier) + STALL.hinge, TIERS[s.wallTier] + 0.04], spin: s.spin };
 }
 
 export const MARKET_AWNINGS: readonly MarketAwning[] = STALLS.map(awning);
+
+/** How big the market's people are against its design (porters, keepers, buyers, the lamplighter). */
+export const PEOPLE_SCALE = 0.8;
+
+/**
+ * The outer market on the grass round the foot of the first terrace, on its four slanted faces (the
+ * straight ones have the flights): a little ridge tent with its counter and keeper, a stack of crates
+ * and a barrel, and a handcart with a load. Laid out on the +z face, out from the wall at `TIERS[0]`.
+ */
+const OUTER = { tent: { x: -0.45, z: 0.32, width: 0.72, depth: 0.46, posts: 0.88, ridge: 0.24 }, crates: { x: 0.38, z: 0.28 }, cart: { x: 0.98, z: 0.46 } } as const;
+const TENT_MATS: readonly Mat[] = ['awningPink', 'awningPurple', 'plaster', 'awningPink'];
+
+function outerTent(index: number): P[] {
+  const { x, z, width, depth, posts, ridge } = OUTER.tent;
+  const middle = TIERS[0] + z;
+  const corners: Vec2[] = [
+    [x - width / 2, middle - depth / 2],
+    [x + width / 2, middle - depth / 2],
+    [x + width / 2, middle + depth / 2],
+    [x - width / 2, middle + depth / 2],
+  ];
+  return [
+    ...corners.map(([px, pz]): P => ({ kind: 'beam', from: [px, 0, pz], to: [px, posts, pz], width: 0.04, mat: 'woodDark' })),
+    { kind: 'roof', base: [x, posts, middle], size: [width, ridge, depth], ridge: 'x', overhang: 0.07, thickness: 0.03, mat: TENT_MATS[index % TENT_MATS.length]! },
+    { kind: 'box', center: [x, 0.15, middle + depth / 2 - 0.08], size: [width - 0.08, 0.3, 0.16], bevel: 0.02, mat: 'wood' },
+    ...[-0.2, 0.05, 0.25].map((f, j): P => ({ kind: 'box', center: [x + f, 0.34, middle + depth / 2 - 0.08], size: [0.12, 0.08, 0.1], bevel: 0.02, mat: WARES[(index * 2 + j + 3) % WARES.length]! })),
+  ];
+}
+
+function outerCrates(): P[] {
+  const { x, z } = OUTER.crates;
+  const at = TIERS[0] + z;
+  const crate = (cx: number, cy: number, cz: number, mat: Mat): P => ({ kind: 'box', center: [cx, cy, cz], size: [0.2, 0.2, 0.2], bevel: 0.02, mat });
+  return [
+    crate(x - 0.11, 0.1, at, 'wood'),
+    crate(x + 0.11, 0.1, at, 'woodDark'),
+    crate(x, 0.3, at, 'wood'),
+    { kind: 'prism', base: [x + 0.32, 0, at + 0.02], radius: 0.09, top: 0.1, height: 0.24, sides: 10, mat: 'wood' },
+    { kind: 'prism', base: [x + 0.32, 0.17, at + 0.02], radius: 0.105, height: 0.03, sides: 10, mat: 'metal' },
+  ];
+}
+
+function outerCart(index: number): P[] {
+  const { x, z } = OUTER.cart;
+  const at = TIERS[0] + z;
+  const wheel = (side: number): P => ({ kind: 'beam', from: [x, 0.14, at + side * 0.16], to: [x, 0.14, at + side * 0.2], width: 0.26, sides: 10, mat: 'woodDark' });
+  return [
+    wheel(-1),
+    wheel(1),
+    { kind: 'beam', from: [x, 0.14, at - 0.16], to: [x, 0.14, at + 0.16], width: 0.04, mat: 'metal' },
+    { kind: 'box', center: [x, 0.22, at], size: [0.5, 0.06, 0.3], bevel: 0.01, mat: 'wood' },
+    ...[-1, 1].map((side): P => ({ kind: 'beam', from: [x - 0.2, 0.24, at + side * 0.12], to: [x - 0.55, 0.04, at + side * 0.12], width: 0.035, mat: 'woodDark' })),
+    { kind: 'box', center: [x + 0.08, 0.33, at], size: [0.18, 0.16, 0.18], bevel: 0.02, mat: WARES[(index + 5) % WARES.length]! },
+    { kind: 'box', center: [x - 0.1, 0.31, at + 0.02], size: [0.14, 0.12, 0.14], bevel: 0.02, mat: 'plaster' },
+  ];
+}
+
+const OUTER_PARTS: P[] = DIAGONAL_FACES.flatMap((spin, i) => spun([...outerTent(i), ...outerCrates(), ...outerCart(i)], spin));
+
+/** The outer market's tent keepers, standing behind their counters under the ridge. */
+const OUTER_KEEPERS = DIAGONAL_FACES.map((spin) => ({ at: turned([OUTER.tent.x, 0, TIERS[0] + OUTER.tent.z - 0.08], spin), heading: spin - Math.PI / 2 }));
+
+/** A keeper behind each counter, facing out over it: where, and the turn of a figure (which faces +x) to face out. */
+export const STALL_KEEPERS: readonly { readonly at: Vec3; readonly heading: number }[] = [
+  ...STALLS.map((s) => ({ at: turned([0, floorOf(s.wallTier), TIERS[s.wallTier] + STALL.keeper], s.spin), heading: s.spin - Math.PI / 2 })),
+  ...OUTER_KEEPERS,
+];
 
 /** Where porters set down their crates: in front of each straight-face stall on the first terrace, by its turn. */
 export const STALL_DROPS: readonly { readonly spin: number; readonly at: Vec3 }[] = AXIS_FACES.map((spin) => ({ spin, at: turned([0, floorOf(1), TIERS[1] + 0.62], spin) }));
@@ -319,8 +394,8 @@ const PENNANT_PARTS = pennants();
 
 /** The market's static parts, as a landmark design (the moving parts are drawn by `MarketIsland`). */
 export const MARKET_DESIGN: LandmarkDesign = {
-  motif: '疊市：三層市集台地，頂上四面價格板與報價鐘',
-  parts: [...terraces(), ...stairs(), ...STALLS.flatMap((s, i) => spun(stallFrame(s, i), s.spin)), ...RING_0.parts, ...RING_1.parts, ...boardAndFrame(), ...TOP_POSTS, ...PENNANT_PARTS.poles],
+  motif: '疊市：三層市集台地，頂上四面價格板與報價鐘，台地腳下一圈帳篷攤',
+  parts: [...terraces(), ...stairs(), ...STALLS.flatMap((s, i) => spun(stallFrame(s, i), s.spin)), ...RING_0.parts, ...RING_1.parts, ...boardAndFrame(), ...TOP_POSTS, ...PENNANT_PARTS.poles, ...OUTER_PARTS],
   flags: PENNANT_PARTS.flags,
 };
 
@@ -426,3 +501,128 @@ export const LAMPLIGHTER = {
     { kind: 'box', center: [0.43, 1.58, 0.2], size: [0.06, 0.08, 0.06], mat: 'brass' } as P,
   ],
 };
+
+/** What the stall keepers wear, one stall to the next: aprons over plain coats, never a player's color. */
+const KEEPER_DRESSES: readonly Dress[] = [
+  { coat: 'plaster', legs: 'woodDark', hat: 'cap', hatMat: 'mace' },
+  { coat: 'sandstone', legs: 'dark', hat: 'none', skirt: 'woodDark' },
+  { coat: 'wood', legs: 'woodDark', hat: 'brim', hatMat: 'woodDark' },
+  { coat: 'heather', legs: 'slate', hat: 'cap', hatMat: 'plaster' },
+];
+export const KEEPERS = KEEPER_DRESSES.map(person);
+
+/** Shoppers in the plain colors of a port crowd. */
+const BUYER_DRESSES: readonly Dress[] = [
+  { coat: 'wood', legs: 'woodDark', hat: 'brim', hatMat: 'woodDark', collar: true },
+  { coat: 'slate', legs: 'dark', hat: 'cap', skirt: 'slate', carry: 'basket' },
+  { coat: 'sandstone', legs: 'woodDark', hat: 'cap', hatMat: 'plaster', carry: 'sack' },
+  { coat: 'heather', legs: 'dark', hat: 'none', skirt: 'heather' },
+  { coat: 'pastelBlue', legs: 'slate', hat: 'brim' },
+  { coat: 'dark', legs: 'dark', hat: 'brim', collar: true },
+  { coat: 'cardamom', legs: 'woodDark', hat: 'cap', hatMat: 'woodDark', carry: 'basket' },
+  { coat: 'mace', legs: 'dark', hat: 'none', skirt: 'woodDark' },
+];
+
+/** The buyers' rounds: loops round the first and second terraces in front of the stalls, half of them each way. */
+const BUYER_RINGS = [
+  { apothem: 2.76, floor: 1, reverse: false },
+  { apothem: 2.82, floor: 1, reverse: true },
+  { apothem: 1.86, floor: 2, reverse: false },
+  { apothem: 1.92, floor: 2, reverse: true },
+] as const;
+
+function buyerLoop(ring: (typeof BUYER_RINGS)[number]): Vec3[] {
+  const corners = ringWalk(ring.apothem, floorOf(ring.floor), 0).slice(0, 8);
+  return ring.reverse ? [...corners].reverse() : corners;
+}
+
+/**
+ * Every buyer who can be out, the everyday few first (`EVERYDAY_BUYERS`), the rest only in a black
+ * market rush: which ring each walks, how fast and where it starts round it.
+ */
+const BUYER_PLAN: readonly { readonly ring: number; readonly start: number }[] = [
+  { ring: 0, start: 0.05 },
+  { ring: 1, start: 0.4 },
+  { ring: 2, start: 0.2 },
+  { ring: 0, start: 0.55 },
+  { ring: 3, start: 0.7 },
+  { ring: 1, start: 0.85 },
+  // The rush: the terraces fill up.
+  { ring: 0, start: 0.3 },
+  { ring: 1, start: 0.15 },
+  { ring: 2, start: 0.6 },
+  { ring: 3, start: 0.1 },
+  { ring: 0, start: 0.8 },
+  { ring: 1, start: 0.62 },
+  { ring: 2, start: 0.9 },
+  { ring: 3, start: 0.4 },
+  { ring: 0, start: 0.18 },
+  { ring: 1, start: 0.03 },
+];
+export const EVERYDAY_BUYERS = 6;
+
+export const MARKET_BUYERS: readonly Walker[] = BUYER_PLAN.map(({ ring, start }, i) => ({
+  ...person(BUYER_DRESSES[i % BUYER_DRESSES.length]!),
+  path: buyerLoop(BUYER_RINGS[ring]!),
+  speed: 0.32 + ((i * 7) % 5) * 0.04,
+  start,
+  scale: PEOPLE_SCALE,
+}));
+
+/** Bunting for a black market rush: strings of pennants from the bell frame's corners down to the first terrace's posts. */
+const BUNTING_MATS: readonly Mat[] = ['awningPurple', 'spiceYellow', 'awningPink', 'plaster', 'cardamom', 'mace'];
+const BUNTING_FLAGS = 8;
+
+function buntingLine(from: Vec3, to: Vec3, line: number): P[] {
+  const mid = lerp(from, to, 0.5);
+  const sag: Vec3 = [mid[0], mid[1] - 0.18, mid[2]];
+  const along = (t: number): Vec3 => (t < 0.5 ? lerp(from, sag, t * 2) : lerp(sag, to, t * 2 - 1));
+  const flags = Array.from({ length: BUNTING_FLAGS }, (_, k): P => {
+    const [x, y, z] = along((k + 1) / (BUNTING_FLAGS + 1));
+    return { kind: 'prism', base: [x, y - 0.13, z], radius: 0.006, top: 0.05, height: 0.12, sides: 3, mat: BUNTING_MATS[(line + k) % BUNTING_MATS.length]! };
+  });
+  return [{ kind: 'beam', from, to: sag, width: 0.015, mat: 'rope' }, { kind: 'beam', from: sag, to, width: 0.015, mat: 'rope' }, ...flags];
+}
+
+export const MARKET_BUNTING: readonly P[] = (() => {
+  const top = floorOf(1) + POST_HEIGHT[0];
+  const apothem = edgeOf(0) - POST_IN;
+  const frameTop = ROOF.bottom - 0.08;
+  // Each frame corner sits on a diagonal; its strings run to the two first-terrace corners either side of it.
+  return [0, 1, 2, 3].flatMap((c) => {
+    const t = Math.PI / 4 + (c * Math.PI) / 2;
+    const corner: Vec3 = [Math.sin(t) * FRAME.half * Math.SQRT2, frameTop, Math.cos(t) * FRAME.half * Math.SQRT2];
+    return [-1, 1].flatMap((side, j) => {
+      const a = t + (side * Math.PI) / 8;
+      const r = apothem / Math.cos(Math.PI / 8);
+      return buntingLine(corner, [Math.sin(a) * r, top, Math.cos(a) * r], c * 2 + j);
+    });
+  });
+})();
+
+/** Gold rims round the price board's faces, glowing in a black market rush. */
+export const BOARD_RIMS: readonly P[] = AXIS_FACES.flatMap((spin) => {
+  const h = (BOX.size - 0.14) / 2 + 0.02;
+  const z = BOARD_FACE + 0.02;
+  const corners: Vec3[] = [
+    [-h, BOARD_MIDDLE - h, z],
+    [h, BOARD_MIDDLE - h, z],
+    [h, BOARD_MIDDLE + h, z],
+    [-h, BOARD_MIDDLE + h, z],
+  ];
+  return spun(
+    corners.map((from, k): P => ({ kind: 'beam', from, to: corners[(k + 1) % 4]!, width: 0.045, mat: 'gold' })),
+    spin,
+  );
+});
+
+/** Strollers along the outer market, walking up and down in front of the tents: a couple every day, more in a rush. */
+const STROLLER_REACH = 1.0;
+const STROLLER_Z = TIERS[0] + 0.75;
+export const EVERYDAY_STROLLERS = 2;
+export const MARKET_STROLLERS: readonly Walker[] = [0, 2, 1, 3].map((face, i) => {
+  const spin = DIAGONAL_FACES[face]!;
+  const there = turned([-STROLLER_REACH, 0, STROLLER_Z], spin);
+  const back = turned([STROLLER_REACH, 0, STROLLER_Z], spin);
+  return { ...person(BUYER_DRESSES[(i * 3 + 1) % BUYER_DRESSES.length]!), path: [there, back], speed: 0.3 + i * 0.03, start: i * 0.27, scale: PEOPLE_SCALE };
+});

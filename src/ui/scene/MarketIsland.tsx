@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { AdditiveBlending, BoxGeometry, MeshBasicMaterial, MeshStandardMaterial, type BufferGeometry, type Group, type Mesh, type PointLight, type Sprite } from 'three';
+import { AdditiveBlending, BoxGeometry, DoubleSide, MeshBasicMaterial, MeshStandardMaterial, type BufferGeometry, type Group, type Mesh, type PointLight, type Sprite } from 'three';
 import { geometryFromParts } from './buildings/Building';
 import { Landmark } from './buildings/Landmark';
 import {
@@ -18,9 +18,19 @@ import {
   MARKET_SCALE,
   PORTER,
   PORTER_CRATE,
+  BOARD_RIMS,
+  EVERYDAY_BUYERS,
+  EVERYDAY_STROLLERS,
+  MARKET_STROLLERS,
+  KEEPERS,
+  MARKET_BUNTING,
+  MARKET_BUYERS,
+  PEOPLE_SCALE,
+  STALL_KEEPERS,
   barLength,
   rowHeight,
 } from './buildings/islands/market';
+import { Walkers } from './buildings/LandmarkWalkers';
 import { limbSwing, walkBob } from './buildings/islands/people';
 import type { KitPart } from './buildings/kit';
 import type { Walker } from './buildings/islands/design';
@@ -29,7 +39,7 @@ import { TARGET_ISLAND_HEIGHT, TARGET_ISLAND_SEED } from './islandShape';
 import { TARGET_ISLAND_RADIUS } from './layout';
 import { useLiveFrame } from './liveFrame';
 import { MARKET_GROUND, marketDock } from './marketDocks';
-import { awningAngle, bellSwing, flipAngle, flipShowsNew, FLIP, lanternLitAt, pathLength, walkAt } from './marketMotion';
+import { awningAngle, bellSwing, flipAngle, flipShowsNew, FLIP, hawkArm, lanternLitAt, pathLength, pealSwing, walkAt } from './marketMotion';
 import { glowTexture } from './Night';
 
 // The market island at the middle of the table (docs/ui/v07-event-presentation.md §1.10): the stepped
@@ -47,8 +57,11 @@ export interface MarketDelivery {
   readonly crates: readonly string[];
 }
 
-/** How the lanterns are lit: dark, lit one by one by the lamplighter from when night falls, or (the menu) lit and put out in a loop. */
-export type LanternMode = 'off' | 'night' | 'cycle';
+/**
+ * How the lanterns are lit: dark, lit one by one by the lamplighter from when night falls, all lit at
+ * once for a black market rush, or (the menu) lit and put out in a loop.
+ */
+export type LanternMode = 'off' | 'night' | 'festive' | 'cycle';
 
 export interface MarketShow {
   /** Each good's price cell (0..6), board row order (wood, iron, spice, arms); null hides nothing and shows the opening cells. */
@@ -60,6 +73,8 @@ export interface MarketShow {
   readonly deliveries: readonly MarketDelivery[];
   /** Strikes the bell whenever it changes (null: no stroke). */
   readonly bellKey?: string | null;
+  /** A black market rush: crowds, bunting, a peal of the bell and the board's rims aglow. */
+  readonly rush?: boolean;
 }
 
 const OPENING_CELLS = [2, 2, 3, 3] as const;
@@ -79,8 +94,13 @@ const RING_LIGHTS = [
   { at: [0, 4.2, 0], reach: 10, ring: 1 },
 ] as const;
 const RING_LIGHT_INTENSITY = 16;
+/** How often a keeper calls out (seconds), and how much more often in a rush. */
+const HAWK = { every: 4.5, rushEvery: 1.8 } as const;
+const RIM_GOLD = '#ffd25c';
 
 const awningGeometries = MARKET_AWNINGS.map((a) => geometryFromParts(a.parts));
+const buntingGeometry = geometryFromParts(MARKET_BUNTING);
+const rimGeometry = geometryFromParts(BOARD_RIMS);
 const bellGeometry = geometryFromParts(MARKET_BELL.parts).translate(-MARKET_BELL.pivot[0], -MARKET_BELL.pivot[1], -MARKET_BELL.pivot[2]);
 const lanternGeometry = new BoxGeometry(LANTERN_SIZE.width, LANTERN_SIZE.height, LANTERN_SIZE.width).translate(0, -LANTERN_SIZE.height / 2, 0);
 const barGeometry = new BoxGeometry(1, BOARD_ROW.height, 0.03).translate(0.5, 0, 0);
@@ -171,15 +191,19 @@ function Board({ prices, colors }: { readonly prices: readonly number[] | null; 
   );
 }
 
-function Bell({ strike }: { readonly strike: string | null }) {
+function Bell({ strike, peal }: { readonly strike: string | null; readonly peal: boolean }) {
   const swing = useRef<Group>(null);
-  const struck = useRef({ at: -Infinity, now: 0 });
+  const struck = useRef({ at: -Infinity, pealAt: -Infinity, now: 0 });
   useEffect(() => {
     if (strike !== null) struck.current.at = struck.current.now;
   }, [strike]);
+  useEffect(() => {
+    if (peal) struck.current.pealAt = struck.current.now;
+  }, [peal]);
   useLiveFrame(({ clock }) => {
-    struck.current.now = clock.elapsedTime;
-    if (swing.current) swing.current.rotation.x = bellSwing(struck.current.now - struck.current.at);
+    const s = struck.current;
+    s.now = clock.elapsedTime;
+    if (swing.current) swing.current.rotation.x = bellSwing(s.now - s.at) + pealSwing(s.now - s.pealAt);
   });
   return (
     <group position={[...MARKET_BELL.pivot]} ref={swing}>
@@ -187,6 +211,67 @@ function Bell({ strike }: { readonly strike: string | null }) {
         <meshStandardMaterial vertexColors roughness={0.5} metalness={0.3} />
       </mesh>
     </group>
+  );
+}
+
+/** Bunting and the board's glowing rims, hung out for a black market rush. */
+function RushDress({ rush }: { readonly rush: boolean }) {
+  const rim = useRef<MeshBasicMaterial>(null);
+  useLiveFrame(({ clock }) => {
+    rim.current?.color.set(RIM_GOLD).multiplyScalar(1.1 + 0.5 * (0.5 + 0.5 * Math.sin(clock.elapsedTime * 5)));
+  });
+  return (
+    <group visible={rush}>
+      <mesh geometry={buntingGeometry} castShadow dispose={null}>
+        <meshStandardMaterial vertexColors roughness={0.8} side={DoubleSide} />
+      </mesh>
+      <mesh geometry={rimGeometry} dispose={null}>
+        <meshBasicMaterial ref={rim} color={RIM_GOLD} toneMapped={false} />
+      </mesh>
+    </group>
+  );
+}
+
+/** A keeper behind every counter, calling out now and then with a wave (more often in a rush). */
+function Keepers({ rush }: { readonly rush: boolean }) {
+  const geometries = useMemo(() => KEEPERS.map((k) => ({ body: geometryFromParts(k.body), limbs: k.limbs.map((l) => geometryFromParts(l.parts)) })), []);
+  const arms = useRef<(Group | null)[]>([]);
+  const bodies = useRef<(Group | null)[]>([]);
+  const every = rush ? HAWK.rushEvery : HAWK.every;
+  useLiveFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    STALL_KEEPERS.forEach(({ heading }, i) => {
+      // The arm on the figure's far shoulder (its last limb) does the calling; the body turns a little as it does.
+      const arm = arms.current[i];
+      const wave = hawkArm(t, i, every);
+      if (arm) arm.rotation.set(0, 0, wave);
+      bodies.current[i]?.rotation.set(0, heading + 0.15 * Math.sin(t * 0.6 + i), 0);
+    });
+  });
+  return (
+    <>
+      {STALL_KEEPERS.map(({ at, heading }, i) => {
+        const kind = i % KEEPERS.length;
+        const keeper = KEEPERS[kind]!;
+        const g = geometries[kind]!;
+        return (
+          <group key={i} position={[...at]} rotation={[0, heading, 0]} scale={PEOPLE_SCALE} ref={(r) => void (bodies.current[i] = r)}>
+            <mesh geometry={g.body} castShadow dispose={null}>
+              <meshStandardMaterial vertexColors roughness={0.85} />
+            </mesh>
+            {keeper.limbs.map(({ hinge }, j) => (
+              <group key={j} position={[...hinge]} ref={(r) => {
+                  if (j === keeper.limbs.length - 1) arms.current[i] = r;
+                }}>
+                <mesh geometry={g.limbs[j]!} castShadow dispose={null}>
+                  <meshStandardMaterial vertexColors roughness={0.85} />
+                </mesh>
+              </group>
+            ))}
+          </group>
+        );
+      })}
+    </>
   );
 }
 
@@ -239,11 +324,12 @@ function CarriedCrate({ path, color, start, delay }: { readonly path: readonly [
     g.visible = t >= 0 && done < PORTERS.vanish;
     if (!g.visible) return;
     const { at, heading } = walkAt(path, d);
-    const run = d / MARKET_SCALE;
+    const run = d / (MARKET_SCALE * PEOPLE_SCALE);
     const shrink = done > 0 ? Math.max(0.01, 1 - done / PORTERS.vanish) : 1;
-    g.position.set(at[0], at[1] + walkBob(run) * MARKET_SCALE, at[2]);
+    const size = MARKET_SCALE * PEOPLE_SCALE;
+    g.position.set(at[0], at[1] + walkBob(d / size) * size, at[2]);
     g.rotation.set(0, heading, 0);
-    g.scale.setScalar(MARKET_SCALE * shrink);
+    g.scale.setScalar(size * shrink);
     stride(PORTER, hinges.current, done > 0 ? 0 : run);
   });
   return (
@@ -268,6 +354,8 @@ function CarriedCrate({ path, color, start, delay }: { readonly path: readonly [
 /** How far along the lamplighter's walk he is `elapsed` seconds into the night (or the menu's loop), and whether he is out walking. */
 function lighterProgress(mode: LanternMode, elapsed: number): { readonly distance: number; readonly walking: boolean } {
   if (mode === 'off') return { distance: -1, walking: false };
+  // A rush lights every lantern at once, in broad daylight: no one walks round.
+  if (mode === 'festive') return { distance: Infinity, walking: false };
   const walk = lighterLength / LIGHTER.speed;
   if (mode === 'cycle') {
     const loop = walk + LIGHTER.holdLit + LIGHTER.rest;
@@ -323,9 +411,10 @@ function Lanterns({ mode, night }: { readonly mode: LanternMode; readonly night:
       w.visible = walking;
       if (walking) {
         const { at, heading } = walkAt(LIGHTER_PATH, distance);
-        w.position.set(at[0], at[1] + walkBob(distance), at[2]);
+        const run = distance / PEOPLE_SCALE;
+        w.position.set(at[0], at[1] + walkBob(run) * PEOPLE_SCALE, at[2]);
         w.rotation.set(0, heading, 0);
-        LAMPLIGHTER.limbs.forEach(({ swing, hinge }, i) => hinges.current[i]?.rotation.set(0, 0, limbSwing(distance, swing, hinge[1] < 0.6)));
+        LAMPLIGHTER.limbs.forEach(({ swing, hinge }, i) => hinges.current[i]?.rotation.set(0, 0, limbSwing(run, swing, hinge[1] < 0.6)));
       }
     }
   });
@@ -342,7 +431,7 @@ function Lanterns({ mode, night }: { readonly mode: LanternMode; readonly night:
       {RING_LIGHTS.map(({ at, reach }, r) => (
         <pointLight key={r} position={[...at]} color={LANTERN_LIT} distance={reach / MARKET_SCALE} decay={2} intensity={0} ref={(l) => void (lights.current[r] = l)} />
       ))}
-      <group ref={walker} visible={false}>
+      <group ref={walker} visible={false} scale={PEOPLE_SCALE}>
         <mesh geometry={body} castShadow dispose={null}>
           <meshStandardMaterial vertexColors roughness={0.85} />
         </mesh>
@@ -393,8 +482,11 @@ export function MarketIsland({ seatAngles, show = DEFAULT_SHOW, night = false }:
         <Landmark design="market" />
         <Awnings state={show.awnings} />
         <Board prices={show.prices} colors={show.rowColors} />
-        <Bell strike={show.bellKey ?? null} />
+        <Bell strike={show.bellKey ?? null} peal={show.rush ?? false} />
         <Lanterns mode={show.lanterns} night={night} />
+        <Keepers rush={show.rush ?? false} />
+        <Walkers walkers={show.rush ? [...MARKET_BUYERS, ...MARKET_STROLLERS] : [...MARKET_BUYERS.slice(0, EVERYDAY_BUYERS), ...MARKET_STROLLERS.slice(0, EVERYDAY_STROLLERS)]} />
+        <RushDress rush={show.rush ?? false} />
       </group>
       <Piers geometry={pierGeometry} />
       <Porters deliveries={show.deliveries} paths={paths} />

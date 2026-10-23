@@ -12,7 +12,7 @@ import { TableCanvas, type TableShip } from '../scene/TableCanvas';
 import { menuPrices } from '../menu/menuMotion';
 
 // Dev-only: the market island up close, at /v07.html?dev=market. Query: `view` front | back | top | far
-// (or `spin=1` to circle it), `weather` (storm, moonless-night, …), `awnings` open | reefed | shut,
+// (or `spin=1` to circle it), `weather` (storm, moonless-night, black-market-rush, …), `awnings` open | reefed | shut,
 // `players` 3 or 4. Every ship lies at its berth and its porters set off again every 20 seconds.
 
 const VIEWS: Readonly<Record<'front' | 'back' | 'top' | 'far', { readonly position: readonly [number, number, number]; readonly target: readonly [number, number, number] }>> = {
@@ -64,7 +64,8 @@ export function MarketPreview() {
     prices: menuPrices(time),
     rowColors: GOODS.map((g) => GOOD_COLORS[g]),
     awnings,
-    lanterns: weather === 'moonless-night' ? 'night' : 'off',
+    lanterns: weather === 'moonless-night' ? 'night' : weather === 'black-market-rush' ? 'festive' : 'off',
+    rush: weather === 'black-market-rush',
     deliveries: angles.map((angle, i) => ({ key: `${loop}-${i}`, angle, crates: cargoCrates(LOADS[i % LOADS.length]!) })),
     bellKey: menuPrices(time).join(','),
   };

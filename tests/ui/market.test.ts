@@ -3,6 +3,11 @@ import { ROOF_MATS } from '../../src/ui/scene/buildings/designs';
 import {
   AWNING_OPEN,
   AWNING_SHUT,
+  BOARD_RIMS,
+  EVERYDAY_BUYERS,
+  MARKET_BUNTING,
+  MARKET_BUYERS,
+  STALL_KEEPERS,
   LIGHTER_PATH,
   MARKET_AWNINGS,
   MARKET_LANTERNS,
@@ -17,6 +22,7 @@ import { SWATCHES } from '../../src/ui/scene/buildings/materials';
 import { bounds, partFaces, spinPoint, type Part, type Vec3 } from '../../src/ui/scene/buildings/polyhedra';
 import { BUILDING_DESIGNS } from '../../src/ui/scene/buildings/designs';
 import { ASSET_BUILDING_SCALE, seatAngles } from '../../src/ui/scene/layout';
+import { TARGET_ISLAND_HEIGHT } from '../../src/ui/scene/islandShape';
 import { MARKET_GROUND, berthOf, grassRadius, marketDock } from '../../src/ui/scene/marketDocks';
 import { lanternLitAt, pathLength } from '../../src/ui/scene/marketMotion';
 
@@ -31,6 +37,13 @@ function expectClosedConvex(part: Part): void {
 }
 
 const angle = ([x, , z]: Vec3): number => Math.atan2(z, x);
+
+/** Distance on the ground from `p` to the segment a–b. */
+function segmentDistance(p: Vec3, a: Vec3, b: Vec3): number {
+  const [dx, dz] = [b[0] - a[0], b[2] - a[2]];
+  const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[2] - a[2]) * dz) / (dx * dx + dz * dz || 1)));
+  return Math.hypot(p[0] - a[0] - dx * t, p[2] - a[2] - dz * t);
+}
 
 describe('spun parts', () => {
   it('turns a part about y through the origin after its tilt, as three.js turns +z toward +x', () => {
@@ -48,10 +61,11 @@ describe('market island model', () => {
 
   it('builds the market from closed convex parts in shared swatches, never an asset roof color', () => {
     const roofs = new Set<string>(Object.values(ROOF_MATS));
-    for (const part of parts) {
+    for (const part of [...parts, ...MARKET_BUNTING, ...BOARD_RIMS]) {
       expect(SWATCHES).toHaveProperty(part.mat);
       expect(roofs.has(part.mat)).toBe(false);
-      expectClosedConvex(part);
+      // A pitched roof is two convex slabs; tests/ui/buildings.test.ts covers that kind.
+      if (part.kind !== 'roof') expectClosedConvex(part);
     }
   });
 
@@ -86,6 +100,39 @@ describe('market island model', () => {
     expect(barLength(-2)).toBe(barLength(0));
   });
 });
+
+describe('market people', () => {
+  const floors = [0, 1, 2, 3].map(floorOf);
+  const onFloor = (y: number): boolean => floors.some((f) => Math.abs(f - y) < 1e-9);
+
+  it("stands a keeper behind every counter, the terraces' stalls and the outer tents, facing out", () => {
+    expect(STALL_KEEPERS).toHaveLength(12);
+    for (const { at, heading } of STALL_KEEPERS) {
+      expect(onFloor(at[1])).toBe(true);
+      // A figure faces +x; turned by its heading it looks away from the market's middle.
+      const facing: Vec3 = [Math.cos(heading), 0, -Math.sin(heading)];
+      expect(facing[0] * at[0] + facing[2] * at[2]).toBeGreaterThan(0);
+    }
+  });
+
+  it('walks the buyers round the terraces clear of the lantern posts, a few every day and a crowd in a rush', () => {
+    expect(EVERYDAY_BUYERS).toBeLessThan(MARKET_BUYERS.length / 2);
+    const posts = MARKET_DESIGN_POSTS();
+    for (const { path } of MARKET_BUYERS) {
+      for (const p of path) {
+        expect(onFloor(p[1])).toBe(true);
+        for (const q of posts) if (Math.abs(q[1] - p[1]) < 1e-6) expect(Math.hypot(p[0] - q[0], p[2] - q[2])).toBeGreaterThan(0.12);
+      }
+    }
+  });
+});
+
+/** The feet of the market's lantern posts (upright beams standing on a floor). */
+function MARKET_DESIGN_POSTS(): Vec3[] {
+  return marketRestParts().flatMap((part) =>
+    part.kind === 'beam' && part.mat === 'woodDark' && part.from[0] === part.to[0] && part.from[2] === part.to[2] ? [part.from] : [],
+  );
+}
 
 describe('lamplighter', () => {
   it('walks only on the market floors, climbing as he goes', () => {
@@ -126,6 +173,25 @@ describe('market piers and porters', () => {
       }
     });
   }
+
+  it("stands each pier head's shed and pile on the cliff-top sand, clear of the porters' way", () => {
+    for (const seat of [...seatAngles(3), ...seatAngles(4)]) {
+      const { parts, porterPath } = marketDock(seat);
+      const head = parts.filter((p) => partFaces(p).every((f) => f.points.every((q) => q[1] >= TARGET_ISLAND_HEIGHT - 1e-6)));
+      expect(head.length).toBeGreaterThan(0);
+      const walk = porterPath.filter((q) => Math.abs(q[1] - TARGET_ISLAND_HEIGHT) < 1e-6 || Math.abs(q[1] - MARKET_GROUND) < 1e-6);
+      for (const part of head) {
+        for (const q of partFaces(part).flatMap((f) => f.points)) {
+          if (q[1] > TARGET_ISLAND_HEIGHT + 0.05) continue;
+          // Feet on the sand: past the grass, short of the cliff's edge.
+          expect(Math.hypot(q[0], q[2])).toBeGreaterThan(grassRadius(angle(q)));
+        }
+        const middle = bounds([part]);
+        const c: Vec3 = [(middle.min[0] + middle.max[0]) / 2, 0, (middle.min[2] + middle.max[2]) / 2];
+        for (let i = 1; i < walk.length; i++) expect(segmentDistance(c, walk[i - 1]!, walk[i]!)).toBeGreaterThan(0.5);
+      }
+    }
+  });
 
   it('keeps the berths of different seats apart', () => {
     const angles = seatAngles(4);

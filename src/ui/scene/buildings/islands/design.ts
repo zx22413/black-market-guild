@@ -73,6 +73,8 @@ export interface Walker {
   readonly speed: number;
   /** How far round the loop (0..1) it starts. */
   readonly start: number;
+  /** How big the figure is against the design (1 = a townsperson's usual size). */
+  readonly scale?: number;
 }
 
 /** A salute fired round a fort's guns, in the design's coordinates. */

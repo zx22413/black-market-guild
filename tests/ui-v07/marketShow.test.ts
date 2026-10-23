@@ -26,6 +26,14 @@ describe('market island show', () => {
     expect(show([started], { weather: 'tailwind' }).lanterns).toBe('off');
   });
 
+  it('fills the market for a black market rush: crowds, every lantern lit in daylight', () => {
+    const rush = show([started], { weather: 'black-market-rush' });
+    expect(rush.rush).toBe(true);
+    expect(rush.lanterns).toBe('festive');
+    expect(rush.awnings).toBe('open');
+    expect(show([started]).rush).toBe(false);
+  });
+
   it('sends porters only once an arrived ship has shown its cargo, one crate per unit', () => {
     const arrived = [{ shipId: SHIP, owner: A, angle: 1 }];
     expect(show([started], { arrived }).deliveries).toEqual([]);

@@ -66,3 +66,26 @@ export function awningAngle(from: number, to: number, elapsed: number, time = 0.
   const t = Math.min(1, Math.max(0, elapsed / time));
   return from + (to - from) * (1 - (1 - t) * (1 - t));
 }
+
+/** Seconds between the strokes of a peal (a black market rush rings the bell three times). */
+export const PEAL = { strokes: 3, gap: 1.1 } as const;
+
+/** The bell's swing `elapsed` seconds into a peal: three strokes, each dying away as the next comes. */
+export function pealSwing(elapsed: number): number {
+  let swing = 0;
+  for (let k = 0; k < PEAL.strokes; k++) swing += bellSwing(elapsed - k * PEAL.gap);
+  return swing;
+}
+
+/**
+ * A stall keeper's calling arm `time` seconds in: down most of the time, then raised and waved for a
+ * moment, once every `every` seconds (shorter in a rush), each keeper out of step by its `seed`.
+ * Returns the arm's swing forward and up, in radians.
+ */
+export function hawkArm(time: number, seed: number, every: number): number {
+  const t = (((time + seed * 1.7) % every) + every) % every;
+  const raised = 1.4;
+  if (t > raised) return 0;
+  const up = Math.sin((t / raised) * Math.PI);
+  return up * (2.2 + 0.35 * Math.sin(t * 14));
+}

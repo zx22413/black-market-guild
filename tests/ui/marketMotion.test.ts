@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FLIP, awningAngle, bellSwing, flipAngle, flipShowsNew, lanternLitAt, pathLength, walkAt } from '../../src/ui/scene/marketMotion';
+import { FLIP, PEAL, awningAngle, bellSwing, flipAngle, flipShowsNew, hawkArm, lanternLitAt, pathLength, pealSwing, walkAt } from '../../src/ui/scene/marketMotion';
 import type { Vec3 } from '../../src/ui/scene/buildings/polyhedra';
 
 const PATH: Vec3[] = [
@@ -49,5 +49,24 @@ describe('market moving parts', () => {
     expect(awningAngle(0.3, -1.3, 0)).toBeCloseTo(0.3);
     expect(awningAngle(0.3, -1.3, 10)).toBeCloseTo(-1.3);
     expect(awningAngle(0.3, -1.3, 0.45)).toBeLessThan(0.3);
+  });
+});
+
+describe('market rush', () => {
+  it('rings a peal of three strokes and falls quiet after', () => {
+    const strokes = [0, 1, 2].map((k) => Math.abs(pealSwing(k * PEAL.gap + 0.22)));
+    strokes.forEach((s) => expect(s).toBeGreaterThan(0.2));
+    expect(pealSwing(PEAL.gap * 2 + 3.1)).toBe(0);
+  });
+
+  it('has a keeper raise the arm now and then, more often when the market is busy', () => {
+    const raisedShare = (every: number): number => {
+      let up = 0;
+      for (let t = 0; t < 60; t += 0.05) if (hawkArm(t, 0, every) > 0.5) up++;
+      return up / 1200;
+    };
+    expect(raisedShare(4.5)).toBeGreaterThan(0.05);
+    expect(raisedShare(1.8)).toBeGreaterThan(raisedShare(4.5) * 1.8);
+    expect(hawkArm(3, 0, 4.5)).toBe(0);
   });
 });

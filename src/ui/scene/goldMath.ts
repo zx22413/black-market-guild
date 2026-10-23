@@ -25,15 +25,22 @@ export interface Mote {
 /** Share of motes that rise around the black market port; the rest are scattered over the table. */
 const NEAR_PORT = 0.72;
 const PORT_SPREAD = 26;
+/** Share of the port's motes that rise from the market's terraces, how far out, and how high up its tiers they start. */
+const OVER_MARKET = 0.4;
+const MARKET_SPREAD = 8;
+const MARKET_TIERS = 6;
 const TABLE = { x: 85, z: 65 } as const;
 
 /** A new gold mote: mostly around the port in the middle, starting on the plateau or the sea surface. */
 export function spawnMote(random: () => number): Mote {
   let x: number;
   let z: number;
+  let overMarket = false;
   if (random() < NEAR_PORT) {
+    // A good share rise straight off the market's terraces, thickest over the bazaar itself.
+    overMarket = random() < OVER_MARKET;
     const a = random() * Math.PI * 2;
-    const r = PORT_SPREAD * Math.sqrt(random());
+    const r = (overMarket ? MARKET_SPREAD : PORT_SPREAD) * Math.sqrt(random());
     x = Math.cos(a) * r;
     z = Math.sin(a) * r;
   } else {
@@ -43,7 +50,7 @@ export function spawnMote(random: () => number): Mote {
   const onPort = Math.hypot(x, z) < TARGET_ISLAND_RADIUS;
   return {
     x,
-    y: onPort ? TARGET_ISLAND_HEIGHT + 0.6 + random() * 1.5 : 0.2 + random() * 0.4,
+    y: overMarket ? TARGET_ISLAND_HEIGHT + 0.6 + random() * MARKET_TIERS : onPort ? TARGET_ISLAND_HEIGHT + 0.6 + random() * 1.5 : 0.2 + random() * 0.4,
     z,
     rise: 1 + random() * 1.2,
     sway: 0.3 + random() * 0.6,

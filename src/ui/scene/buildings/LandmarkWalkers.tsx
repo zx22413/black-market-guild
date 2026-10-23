@@ -19,11 +19,13 @@ function Townsperson({ walker }: { readonly walker: Walker }) {
   useLiveFrame(({ clock }) => {
     const run = walker.speed * clock.elapsedTime + walker.start * lap;
     const { at, heading } = steeredAlong(walker.path, run, STEER);
-    root.current?.position.set(at[0], at[1] + walkBob(run), at[2]);
+    const scale = walker.scale ?? 1;
+    root.current?.position.set(at[0], at[1] + walkBob(run / scale) * scale, at[2]);
     root.current?.rotation.set(0, heading, 0);
+    root.current?.scale.setScalar(scale);
     walker.limbs.forEach(({ swing, hinge }, i) => {
       // Legs hang from the hips, arms from the shoulders higher up.
-      hinges.current[i]?.rotation.set(0, 0, limbSwing(run, swing, hinge[1] < 0.6));
+      hinges.current[i]?.rotation.set(0, 0, limbSwing(run / (walker.scale ?? 1), swing, hinge[1] < 0.6));
     });
   });
   return (

@@ -78,6 +78,66 @@ function stairSlope(profile: readonly { readonly r: number; readonly y: number }
   return Math.max(1, ...checks.map(({ r, y }) => (r + STAIR.clearance - top.r) / Math.max(0.1, top.y - y)));
 }
 
+/** The pier head's cargo shed and the pile of goods waiting to be carried up, either side of the porters' way over the sand. */
+const HEAD = { aside: 1.6, shed: { width: 1.5, depth: 1.0, high: 1.3, low: 1.0 }, pile: 0.8, margin: 0.25 } as const;
+
+/**
+ * Where on the cliff top's sand a thing `depth` deep can stand, `aside` to one side of the porters' way
+ * (in the pier's frame: x across, z out along its bearing): the middle of the sand between the grass
+ * and the cliff's edge there, or null where the sand is too narrow.
+ */
+function onSand(pierAngle: number, yaw: number, aside: number, depth: number): { readonly z: number; readonly depth: number } | null {
+  const probe = spinPoint([aside, 0, 10], yaw);
+  const bearing = Math.atan2(probe[2], probe[0]);
+  const grass = grassRadius(bearing) + HEAD.margin;
+  const edge = cliffProfile(bearing)[0]!.r - HEAD.margin;
+  const room = Math.min(depth, edge - grass);
+  if (room < 0.5) return null;
+  const middle = (grass + edge) / 2;
+  return { z: Math.sqrt(Math.max(0, middle * middle - aside * aside)), depth: room };
+}
+
+/** The shed and the waiting pile at a pier head, built in the pier's frame and turned onto its bearing. */
+function pierHead(pierAngle: number, yaw: number): KitPart[] {
+  const parts: KitPart[] = [];
+  const turn = (part: KitPart): KitPart => ({ ...part, spin: yaw });
+  const shedAt = onSand(pierAngle, yaw, HEAD.aside, HEAD.shed.depth);
+  if (shedAt) {
+    const { width, high, low } = HEAD.shed;
+    const [x, z, d] = [HEAD.aside, shedAt.z, shedAt.depth];
+    // Open toward the porters' way (its -x side), the roof running down away from it.
+    const corners: [number, number, number][] = [
+      [x - width / 2, z - d / 2, high],
+      [x - width / 2, z + d / 2, high],
+      [x + width / 2, z - d / 2, low],
+      [x + width / 2, z + d / 2, low],
+    ];
+    corners.forEach(([px, pz, h]) => parts.push(turn({ kind: 'beam', from: [px, CLIFF_TOP, pz], to: [px, CLIFF_TOP + h, pz], width: 0.14, mat: 'woodDark' })));
+    const slope = Math.atan2(high - low, width);
+    parts.push(
+      turn({
+        kind: 'box',
+        center: [x, CLIFF_TOP + (high + low) / 2 + 0.05, z],
+        size: [Math.hypot(width, high - low) + 0.3, 0.08, d + 0.3],
+        bevel: 0.02,
+        mat: 'wood',
+        tilt: { axis: 'z', angle: slope, pivot: [x, CLIFF_TOP + (high + low) / 2 + 0.05, z] },
+      }),
+    );
+    const crate = (cx: number, cy: number, cz: number, mat: KitPart['mat']): KitPart => turn({ kind: 'box', center: [cx, CLIFF_TOP + cy, cz], size: [0.42, 0.42, 0.42], bevel: 0.04, mat });
+    parts.push(crate(x + 0.3, 0.21, z - 0.18, 'wood'), crate(x + 0.3, 0.21, z + 0.26, 'woodDark'), crate(x + 0.3, 0.63, z + 0.04, 'wood'));
+    parts.push(turn({ kind: 'box', center: [x - 0.2, CLIFF_TOP + 0.16, z + 0.15], size: [0.36, 0.32, 0.3], bevel: 0.1, mat: 'plaster' }));
+  }
+  const pileAt = onSand(pierAngle, yaw, -HEAD.aside, HEAD.pile);
+  if (pileAt) {
+    const [x, z] = [-HEAD.aside, pileAt.z];
+    const crate = (cx: number, cy: number, cz: number, mat: KitPart['mat']): KitPart => turn({ kind: 'box', center: [x + cx, CLIFF_TOP + cy, z + cz], size: [0.4, 0.4, 0.4], bevel: 0.04, mat });
+    parts.push(crate(-0.2, 0.2, -0.2, 'wood'), crate(0.22, 0.2, -0.18, 'woodDark'), crate(0, 0.2, 0.22, 'wood'), crate(0, 0.6, -0.05, 'woodDark'));
+    parts.push(turn({ kind: 'box', center: [x + 0.3, CLIFF_TOP + 0.15, z + 0.3], size: [0.34, 0.3, 0.28], bevel: 0.1, mat: 'plaster' }));
+  }
+  return parts;
+}
+
 export interface MarketDock {
   /** Pier, pilings and the cliff stair, in table space. */
   readonly parts: readonly KitPart[];
@@ -157,6 +217,7 @@ export function marketDock(seatAngle: number): MarketDock {
       parts.push({ kind: 'beam', from: foot, to: atHeight(foot, topY - 0.16), width: 0.14, mat: 'woodDark' });
     }
   }
+  parts.push(...pierHead(pierAngle, yaw));
   // The porters: off the ship onto the pier, up the stair, over the sand and grass, up the market's flight.
   const face = nearestFace(pierAngle);
   const drop = STALL_DROPS.find((d) => Math.abs(Math.sin((d.spin - face) / 2)) < 1e-6) ?? STALL_DROPS[0]!;

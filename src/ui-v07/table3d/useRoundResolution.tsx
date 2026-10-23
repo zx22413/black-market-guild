@@ -39,6 +39,14 @@ export type ResolutionStage = 'wanted' | 'event' | 'reveal' | 'voyage' | 'market
 /** Pace of each part, in ms (initial values to tune in play). */
 const PACE = { wanted: 3000, revealGroup: 1600, revealSpotlight: (SPOTLIGHT_HOLD.reveal + SPOT_TIME.fade) * 1000 + 400, nextShip: 1000, marketRow: 1000, afterMarket: 1500, flight: 1100, afterSettle: 900 } as const;
 const HARBOR_BADGES = [-(TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2, 0, (TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2] as const;
+/**
+ * The market card stands on the sea off the market island's front right, a bearing no seat's lane
+ * takes with three or four players, so it covers neither the island's price board nor a berth.
+ */
+const MARKET_CARD_BEARING = (40 * Math.PI) / 180;
+const MARKET_CARD_AT = [Math.cos(MARKET_CARD_BEARING) * (TARGET_ISLAND_RADIUS + 9), 1, Math.sin(MARKET_CARD_BEARING) * (TARGET_ISLAND_RADIUS + 9)] as const;
+/** The card is about this wide on the table (it hangs centered on its point), so the camera keeps both its sides in view. */
+const MARKET_CARD_HALF = 10;
 /** Ships that do not involve you play this much faster (presentation default, see the doc §4). */
 const OTHERS_SPEED = 1.5;
 
@@ -335,10 +343,14 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   ];
 
   const marketPins: TablePin[] =
-    stage === 'market' ? [{ id: 'market-card', position: [0, 10, 0], node: <MarketCard rows={rows} shown={rowsShown} /> }] : [];
+    stage === 'market' ? [{ id: 'market-card', position: MARKET_CARD_AT, node: <MarketCard rows={rows} shown={rowsShown} /> }] : [];
 
   const camera: readonly FitPoint[] | null =
-    stage === 'voyage' ? (layer?.camera ?? null) : stage === 'market' ? [...around([0, 0, 0], 20), { position: [0, 10, 0], clearance: 220 }] : null;
+    stage === 'voyage'
+      ? (layer?.camera ?? null)
+      : stage === 'market'
+        ? [...around([0, 0, 0], 20), ...[-MARKET_CARD_HALF, MARKET_CARD_HALF].map((dx) => ({ position: [MARKET_CARD_AT[0] + dx, MARKET_CARD_AT[1], MARKET_CARD_AT[2]] as const, clearance: 220 }))]
+        : null;
 
   const current = groups[Math.max(0, groupsShown - 1)];
   const allRevealed = groupsShown >= groups.length;

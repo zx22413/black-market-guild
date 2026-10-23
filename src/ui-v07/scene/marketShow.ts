@@ -4,8 +4,9 @@ import { GOOD_COLORS } from './CrateModel';
 
 // What the market island shows (docs/ui/v07-event-presentation.md §1.10), read from the public events
 // the table has played so far: open for trade between a round's start and its end, awnings half in
-// against a storm, lanterns lit through a moonless night, porters carrying the cargo of every ship that
-// has arrived, and the board at the prices on show. Pure, so the mapping is testable.
+// against a storm, lanterns lit through a moonless night, crowds and bunting in a black market rush,
+// porters carrying the cargo of every ship that has arrived, and the board at the prices on show.
+// Pure, so the mapping is testable.
 
 export interface ArrivedShip {
   readonly shipId: ShipId;
@@ -51,9 +52,10 @@ export function marketShow({ events, prices, weather, arrived }: MarketShowInput
     prices: cells,
     rowColors: GOODS.map((g) => GOOD_COLORS[g]),
     awnings: awningsOf(events, weather),
-    lanterns: weather === 'moonless-night' ? 'night' : 'off',
+    lanterns: weather === 'moonless-night' ? 'night' : weather === 'black-market-rush' ? 'festive' : 'off',
     deliveries,
     // A stroke at each round's start and whenever a price on the board moves.
     bellKey: `${roundNo}:${cells.join(',')}`,
+    rush: weather === 'black-market-rush',
   };
 }
