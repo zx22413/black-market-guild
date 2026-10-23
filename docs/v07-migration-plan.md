@@ -1,4 +1,4 @@
-# 黑市商會｜V0.7 搬遷計畫（草案）
+# 暗潮商戰｜V0.7 搬遷計畫（草案）
 
 **狀態：** 執行中（2026-10-12 使用者確認第 5 節全部採用建議）。目前進度：階段 1 完成（2026-10-12，`src/v07/game`，測試在 `tests/v07/game/`）；階段 2 完成（2026-10-12，`src/v07/bots`，測試在 `tests/v07/bots/`）；階段 3 完成（2026-10-12，`src/v07/match`、`npm run simulate`）；階段 4 完成（2026-10-12，`src/v07/online`、`server/worker-v07.ts`）；階段 5 進行中（5a／5b 第一版面板完成，見階段 5 紀錄）。
 **目標：** 把正式引擎、Bot、Match Runner、連線房間與 UI 從 V0.6 換成 [`game-design.md`](game-design.md) 的 V0.7，最後部署到線上。

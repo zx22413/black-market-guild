@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 專案現況
 
-《黑市商會》（Black Market Guild）是 3～4 人（2 人模式規劃中）的商業、航運與心理博弈策略遊戲。技術棧為 **TypeScript + Vite（web）**，測試用 **Vitest**；規則引擎依 [`docs/implementation-plan.md`](docs/implementation-plan.md) 的里程碑開發中，進度記錄在該文件。日後桌面／Steam 以 Electron 或 Tauri 打包、手機以 Capacitor 打包（尚未設定）。
+《暗潮商戰》（Contrabay；舊名《黑市商會》／Black Market Guild，repo 與程式碼識別字仍沿用 `black-market-guild`）是 3～4 人（2 人模式規劃中）的商業、航運與心理博弈策略遊戲。技術棧為 **TypeScript + Vite（web）**，測試用 **Vitest**；規則引擎依 [`docs/implementation-plan.md`](docs/implementation-plan.md) 的里程碑開發中，進度記錄在該文件。日後桌面／Steam 以 Electron 或 Tauri 打包、手機以 Capacitor 打包（尚未設定）。
 
 ## 指令
 

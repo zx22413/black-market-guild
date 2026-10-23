@@ -1,6 +1,6 @@
 # 低面數模型風格指南
 
-《黑市商會》桌面上自製的 3D 模型（目前是四種資產建築）都依本文件的規則製作，讓新模型跟 Kenney Pirate Kit 素材與既有建築看起來是同一套美術。製作流程見 [`.claude/skills/lowpoly-model/SKILL.md`](../../.claude/skills/lowpoly-model/SKILL.md)。
+《暗潮商戰》桌面上自製的 3D 模型（目前是四種資產建築）都依本文件的規則製作，讓新模型跟 Kenney Pirate Kit 素材與既有建築看起來是同一套美術。製作流程見 [`.claude/skills/lowpoly-model/SKILL.md`](../../.claude/skills/lowpoly-model/SKILL.md)。
 
 ## 1. 整體方向
 

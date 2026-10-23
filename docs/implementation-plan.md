@@ -1,4 +1,4 @@
-# 黑市商會｜規則引擎實作計畫
+# 暗潮商戰｜規則引擎實作計畫
 
 > **注意（2026-10-11）：** 本計畫的 M1～M8 對應 V0.6 規則（[`archive/game-design-v0.6.md`](archive/game-design-v0.6.md)），已完成。規則已改版為 V0.7，搬遷計畫見 [`v07-migration-plan.md`](v07-migration-plan.md)；V0.7 的完整原型在 `src/proto/economy`。
 
