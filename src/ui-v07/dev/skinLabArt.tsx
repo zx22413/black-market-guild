@@ -1,0 +1,134 @@
+import { useId } from 'react';
+
+// Hand-drawn ornaments for the skin lab (dev/SkinLabPreview.tsx): brass end caps for the always-on
+// strips, brass corner plates for cards, and the faint compass rose printed on a panel's parchment.
+// Flat shapes, no outline, lit from the top, the same as the card art (docs/ui/v07-style-layers.md).
+
+/** A `useId` that is safe inside `url(#…)`. */
+function useSvgId(): string {
+  return `lab${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
+}
+
+/** Top-lit brass: light rim, mid body, dark foot. */
+function BrassFill({ id }: { readonly id: string }) {
+  return (
+    <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stopColor="#fbe4a0" />
+      <stop offset="0.35" stopColor="#dcae52" />
+      <stop offset="1" stopColor="#8a6420" />
+    </linearGradient>
+  );
+}
+
+function Rivet({ cx, cy }: { readonly cx: number; readonly cy: number }) {
+  return (
+    <g>
+      <circle cx={cx} cy={cy + 0.8} r={2.6} fill="#5b3f12" />
+      <circle cx={cx} cy={cy} r={2.4} fill="#e9c36f" />
+      <circle cx={cx - 0.7} cy={cy - 0.8} r={0.9} fill="#fff4cf" />
+    </g>
+  );
+}
+
+/** The brass cap clamped on one end of a wood strip; it sticks out past the strip a little. */
+export function BrassCap({ side }: { readonly side: 'left' | 'right' }) {
+  const fill = useSvgId();
+  return (
+    <svg className={`lab-cap ${side}`} viewBox="0 0 20 60" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <defs>
+        <BrassFill id={fill} />
+      </defs>
+      <g transform={side === 'right' ? 'translate(20 0) scale(-1 1)' : undefined}>
+        <path d="M20 2 H8 L2 8 V52 L8 58 H20 Z" fill="#5b3f12" />
+        <path d="M20 1 H8 L2 7 V51 L8 57 H20 Z" fill={`url(#${fill})`} />
+        <path d="M14 8 V50" stroke="#8a6420" strokeWidth="1.2" />
+        <path d="M15.2 8 V50" stroke="#fbe4a0" strokeWidth="0.8" opacity="0.7" />
+        <Rivet cx={8} cy={14} />
+        <Rivet cx={8} cy={44} />
+      </g>
+    </svg>
+  );
+}
+
+/** A brass corner plate; drawn for the top-left corner, CSS turns it for the other three. */
+export function BrassCorner({ at }: { readonly at: 'tl' | 'tr' | 'bl' | 'br' }) {
+  const fill = useSvgId();
+  return (
+    <svg className={`lab-corner ${at}`} viewBox="0 0 36 36" aria-hidden="true" focusable="false">
+      <defs>
+        <BrassFill id={fill} />
+      </defs>
+      <path d="M2 4 L4 2 H34 L28 8 H14 Q8 8 8 14 V28 L2 34 Z" fill="#5b3f12" transform="translate(0 1)" />
+      <path d="M2 4 L4 2 H34 L28 8 H14 Q8 8 8 14 V28 L2 34 Z" fill={`url(#${fill})`} />
+      <path d="M28 4.6 H14 Q5 4.6 4.6 14 V28" fill="none" stroke="#fbe4a0" strokeWidth="0.8" opacity="0.6" />
+      <Rivet cx={6} cy={6} />
+    </svg>
+  );
+}
+
+/**
+ * A sea-chart compass rose with rhumb lines running off the edge, in ink. It is printed very faintly
+ * under a panel's text, so it reads as paper, not as a picture.
+ */
+export function CompassWatermark() {
+  const points = Array.from({ length: 16 }, (_, i) => i * 22.5);
+  return (
+    <svg className="lab-watermark" viewBox="-200 -200 400 400" aria-hidden="true" focusable="false">
+      <g stroke="currentColor" fill="none">
+        {points.map((a) => (
+          <line key={a} x1="0" y1="0" x2="0" y2="-400" strokeWidth="0.8" transform={`rotate(${a})`} />
+        ))}
+        <circle r="78" strokeWidth="1.2" />
+        <circle r="70" strokeWidth="0.6" />
+        <circle r="30" strokeWidth="0.8" />
+      </g>
+      <g fill="currentColor">
+        {points.map((a, i) => (
+          <path key={a} d={i % 2 === 0 ? 'M0 -96 L9 0 L-9 0 Z' : 'M0 -60 L6 0 L-6 0 Z'} transform={`rotate(${a})`} opacity={i % 4 === 0 ? 1 : 0.6} />
+        ))}
+        <circle r="5" />
+      </g>
+    </svg>
+  );
+}
+
+/** The wax blob's outline: a circle pushed in and out at fixed points, so it looks poured, not stamped. */
+const WAX_BUMPS = [3, -2, 4, 1, -3, 2, 5, -1, 2, -4, 3, 0, 4, -2, 1, 3, -3, 2] as const;
+const WAX_PATH = (() => {
+  const pts = WAX_BUMPS.map((bump, i) => {
+    const a = (i / WAX_BUMPS.length) * Math.PI * 2;
+    const r = 42 + bump;
+    return [Math.cos(a) * r, Math.sin(a) * r] as const;
+  });
+  const mid = (i: number) => {
+    const p = pts[i % pts.length]!;
+    const q = pts[(i + 1) % pts.length]!;
+    return `${((p[0] + q[0]) / 2).toFixed(1)} ${((p[1] + q[1]) / 2).toFixed(1)}`;
+  };
+  return `M${mid(0)} ${pts.map((_, i) => `Q${pts[(i + 1) % pts.length]![0].toFixed(1)} ${pts[(i + 1) % pts.length]![1].toFixed(1)} ${mid(i + 1)}`).join(' ')} Z`;
+})();
+
+/**
+ * A red wax seal: a poured blob with a raised ring pressed into it. The word on it is HTML laid on
+ * top (dev/SkinLabPreview.tsx), so the seal itself carries no text.
+ */
+export function WaxSeal() {
+  const fill = useSvgId();
+  return (
+    <svg className="lab-wax" viewBox="-50 -50 100 100" aria-hidden="true" focusable="false">
+      <defs>
+        <radialGradient id={fill} cx="0.38" cy="0.32" r="0.75">
+          <stop offset="0" stopColor="#d8545c" />
+          <stop offset="0.55" stopColor="#a3262f" />
+          <stop offset="1" stopColor="#74161e" />
+        </radialGradient>
+      </defs>
+      <path d={WAX_PATH} fill="#5d1218" transform="translate(0 3)" />
+      <path d={WAX_PATH} fill={`url(#${fill})`} />
+      <circle r="29" fill="none" stroke="#5d1218" strokeWidth="3" opacity="0.55" />
+      <circle r="29" fill="none" stroke="#e98a8f" strokeWidth="1" opacity="0.45" transform="translate(0 1.5)" />
+      <circle r="24" fill="#8f1d26" opacity="0.35" />
+      <ellipse cx="-16" cy="-22" rx="9" ry="4" fill="#fff" opacity="0.18" transform="rotate(-30 -16 -22)" />
+    </svg>
+  );
+}

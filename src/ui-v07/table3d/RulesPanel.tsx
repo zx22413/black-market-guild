@@ -11,9 +11,9 @@ import { roleIconUrl } from './RoleBadges';
 // The rules, for looking things up: one tab per kind of thing. Every sentence comes from the texts
 // the table already uses (labels.ts, roleText.ts, goodText.ts), so the panel can never say something else.
 
-type Tab = 'roles' | 'islands' | 'buildings' | 'goods' | 'events' | 'score';
+export type RulesTab = 'roles' | 'islands' | 'buildings' | 'goods' | 'events' | 'score';
 
-const TABS: readonly { readonly id: Tab; readonly label: string }[] = [
+export const RULES_TABS: readonly { readonly id: RulesTab; readonly label: string }[] = [
   { id: 'roles', label: '角色' },
   { id: 'islands', label: '島嶼' },
   { id: 'buildings', label: '建築' },
@@ -24,7 +24,8 @@ const TABS: readonly { readonly id: Tab; readonly label: string }[] = [
 
 const keysOf = <K extends string>(record: Readonly<Record<K, unknown>>): K[] => Object.keys(record) as K[];
 
-function Entries({ tab }: { readonly tab: Tab }) {
+/** The entries of one tab, as `<li>`s (also used by the skin lab's rule book, dev/SkinLabBook.tsx). */
+export function RulesEntries({ tab }: { readonly tab: RulesTab }) {
   switch (tab) {
     case 'roles':
       return (
@@ -105,7 +106,7 @@ function Entries({ tab }: { readonly tab: Tab }) {
 }
 
 export function RulesPanel({ onClose }: { readonly onClose: () => void }) {
-  const [tab, setTab] = useState<Tab>('roles');
+  const [tab, setTab] = useState<RulesTab>('roles');
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     document.addEventListener('keydown', onKey);
@@ -115,7 +116,7 @@ export function RulesPanel({ onClose }: { readonly onClose: () => void }) {
     <div className="beat-backdrop rules-backdrop" role="dialog" aria-modal="true" aria-label="規則" onClick={onClose}>
       <div className="beat-card rules-panel" onClick={(e) => e.stopPropagation()}>
         <nav className="rules-tabs" role="tablist">
-          {TABS.map((t) => (
+          {RULES_TABS.map((t) => (
             <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} className={tab === t.id ? 'on' : ''} onClick={() => setTab(t.id)}>
               {t.label}
             </button>
@@ -125,7 +126,7 @@ export function RulesPanel({ onClose }: { readonly onClose: () => void }) {
           </button>
         </nav>
         <ul className="rules-list">
-          <Entries tab={tab} />
+          <RulesEntries tab={tab} />
         </ul>
       </div>
     </div>

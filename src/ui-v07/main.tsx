@@ -13,6 +13,8 @@ const Round3DPreview = import.meta.env.DEV ? lazy(() => import('./dev/Round3DPre
 const IslandCardsPreview = import.meta.env.DEV ? lazy(() => import('./dev/IslandCardsPreview').then((m) => ({ default: m.IslandCardsPreview }))) : null;
 // The market island up close: /v07.html?dev=market (&view=back|top|far, &weather=moonless-night, &players=3).
 const MarketPreview = import.meta.env.DEV ? lazy(() => import('./dev/MarketPreview').then((m) => ({ default: m.MarketPreview }))) : null;
+// Richer UI looks next to the current ones (bar, panel, buttons): /v07.html?dev=skin-lab.
+const SkinLabPreview = import.meta.env.DEV ? lazy(() => import('./dev/SkinLabPreview').then((m) => ({ default: m.SkinLabPreview }))) : null;
 const devPage = import.meta.env.DEV ? new URLSearchParams(window.location.search).get('dev') : null;
 
 // Trial skin (src/ui-v07/skin/layers.css): `?skin=classic` shows the previous look to compare.
@@ -29,7 +31,11 @@ if (!container) {
 }
 createRoot(container).render(
   <StrictMode>
-    {devPage === 'market' && MarketPreview ? (
+    {devPage === 'skin-lab' && SkinLabPreview ? (
+      <Suspense fallback={null}>
+        <SkinLabPreview />
+      </Suspense>
+    ) : devPage === 'market' && MarketPreview ? (
       <Suspense fallback={null}>
         <MarketPreview />
       </Suspense>
