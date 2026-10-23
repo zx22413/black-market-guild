@@ -7,6 +7,7 @@ import { Clouds } from '../../ui/scene/Clouds';
 import { EffectWarmup } from '../../ui/scene/EffectWarmup';
 import { GoldRush } from '../../ui/scene/GoldRush';
 import { PlayerIsland, TargetIsland } from '../../ui/scene/Islands';
+import type { MarketShow } from '../../ui/scene/MarketIsland';
 import { islandLook } from './IslandLook';
 import { backdropTop, islandAnnex } from './islandScenery';
 import { islandShorelines, playerIslandHeading, playerIslandSeed } from '../../ui/scene/islandShape';
@@ -82,6 +83,8 @@ export interface TableCanvasProps {
   readonly dim?: boolean;
   /** Islands that just counted: each hops with a glowing shore ring (a new key replays it). */
   readonly pulses?: ReadonlyMap<PlayerId, { readonly key: string; readonly tone: 'gain' | 'loss' }>;
+  /** What the market island shows (`marketShow`); without it the market stands open at its opening prices. */
+  readonly market?: MarketShow;
 }
 
 export function useTableLayout(seats: readonly BeatSeat[]) {
@@ -155,7 +158,7 @@ function asSceneShip(ship: TableShip, lane: number): SceneShip {
   return { id: ship.id, kind: 'solo', owners: [ship.owner], lane, state: ship.state, roles: [], rerolled: false, smuggled: 0, caughtSmugglers: [], modifier: null };
 }
 
-export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, pulses }: TableCanvasProps) {
+export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, pulses, market }: TableCanvasProps) {
   const look = WEATHER[weather ?? 'clear'];
   const { angles, laneOf } = useTableLayout(seats);
   const islandKey = seats.map((s) => s.island ?? '').join('|');
@@ -203,7 +206,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
             {weather === 'moonless-night' && <Night seatAngles={angles} />}
             {weather === 'black-market-rush' && <GoldRush />}
             <Routes angles={angles} colors={seats.map((s) => s.color)} />
-            <TargetIsland />
+            <TargetIsland seatAngles={angles} night={weather === 'moonless-night'} {...(market ? { show: market } : {})} />
             {seats.map((seat, i) => (
               <IslandPulse key={seat.id} angle={angles[i]!} pulseKey={pulses?.get(seat.id)?.key ?? null} tone={pulses?.get(seat.id)?.tone ?? 'gain'}>
                 <PlayerIsland

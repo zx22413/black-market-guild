@@ -11,6 +11,8 @@ const Beat3DPreview = import.meta.env.DEV ? lazy(() => import('./dev/Beat3DPrevi
 const Round3DPreview = import.meta.env.DEV ? lazy(() => import('./dev/Round3DPreview').then((m) => ({ default: m.Round3DPreview }))) : null;
 // The island cards on their own: /v07.html?dev=island-cards (&island=lighthouse).
 const IslandCardsPreview = import.meta.env.DEV ? lazy(() => import('./dev/IslandCardsPreview').then((m) => ({ default: m.IslandCardsPreview }))) : null;
+// The market island up close: /v07.html?dev=market (&view=back|top|far, &weather=moonless-night, &players=3).
+const MarketPreview = import.meta.env.DEV ? lazy(() => import('./dev/MarketPreview').then((m) => ({ default: m.MarketPreview }))) : null;
 const devPage = import.meta.env.DEV ? new URLSearchParams(window.location.search).get('dev') : null;
 
 // Trial skin (src/ui-v07/skin/layers.css): `?skin=classic` shows the previous look to compare.
@@ -18,13 +20,20 @@ if (new URLSearchParams(window.location.search).get('skin') === 'classic') {
   document.documentElement.classList.add('skin-classic');
 }
 
+// Dev-only full-resolution capture of the 3D canvas (`await window.bmgCapture()`, see src/ui/dev/capture.ts).
+if (import.meta.env.DEV) void import('../ui/dev/capture').then((m) => m.installCapture());
+
 const container = document.querySelector<HTMLDivElement>('#app');
 if (!container) {
   throw new Error('#app container is missing from v07.html');
 }
 createRoot(container).render(
   <StrictMode>
-    {devPage === 'island-cards' && IslandCardsPreview ? (
+    {devPage === 'market' && MarketPreview ? (
+      <Suspense fallback={null}>
+        <MarketPreview />
+      </Suspense>
+    ) : devPage === 'island-cards' && IslandCardsPreview ? (
       <Suspense fallback={null}>
         <IslandCardsPreview />
       </Suspense>

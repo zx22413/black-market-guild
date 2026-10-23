@@ -1,5 +1,5 @@
 import { useFrame, useThree } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Group } from 'three';
 import type { PlayerId } from '../../v07/game';
 import { seatAngles } from '../../ui/scene/layout';
@@ -10,7 +10,11 @@ import { useSwell, useWavePhase } from '../../ui/scene/SwellContext';
 import { PLAYER_COLORS } from '../../ui/scene/tableModel';
 import type { BeatSeat } from '../scene/beatStage';
 import { TableCanvas } from '../scene/TableCanvas';
-import { orbitPosition, orbitTarget, shuttle } from './menuMotion';
+import type { MarketShow } from '../../ui/scene/MarketIsland';
+import { cargoCrates } from '../scene/marketShow';
+import { GOOD_COLORS } from '../scene/CrateModel';
+import { GOODS } from '../../v07/game';
+import { MENU_BERTH, menuArrivals, menuPrices, orbitPosition, orbitTarget, shuttle } from './menuMotion';
 
 // The live table behind the main menu: four guild islands around the market, the camera circling
 // slowly and every guild's ship sailing to the market and back. With reduced motion the scene
@@ -59,7 +63,7 @@ function ShuttleShip({ angle, offset, still }: { readonly angle: number; readonl
     if (!g) return;
     const time = still ? STILL_TIME : clock.elapsedTime;
     const { t, outbound } = shuttle(time, offset);
-    const pose = lanePose(angle, t);
+    const pose = lanePose(angle, t * MENU_BERTH);
     g.position.set(pose.position.x, seaSurfaceY(pose.position.x, pose.position.z, phase.current, swell.current.height) - SEA_LEVEL, pose.position.z);
     g.rotation.order = 'YXZ';
     g.rotation.y = pose.heading + (outbound ? 0 : Math.PI);
@@ -72,9 +76,47 @@ function ShuttleShip({ angle, offset, still }: { readonly angle: number; readonl
   );
 }
 
+/** The loads the menu's porters carry, one per ship (wood, iron, spice, arms units). */
+const MENU_LOADS = [
+  { wood: 2, iron: 1, spice: 0, arms: 0 },
+  { wood: 0, iron: 0, spice: 2, arms: 1 },
+  { wood: 1, iron: 0, spice: 3, arms: 0 },
+  { wood: 0, iron: 2, spice: 0, arms: 2 },
+] as const;
+/** How often the menu's market looks at the clock (ms): its changes are seconds apart. */
+const MARKET_TICK = 400;
+
+function menuMarket(time: number, angles: readonly number[], still: boolean): MarketShow {
+  return {
+    prices: menuPrices(time),
+    rowColors: GOODS.map((g) => GOOD_COLORS[g]),
+    awnings: 'open',
+    // With reduced motion the lamplighter stays home.
+    lanterns: still ? 'off' : 'cycle',
+    deliveries: menuArrivals(time, SHIP_OFFSETS).map(({ ship, trip }) => ({ key: `${ship}-${trip}`, angle: angles[ship] ?? 0, crates: cargoCrates(MENU_LOADS[ship % MENU_LOADS.length]!) })),
+    bellKey: menuPrices(time).join(','),
+  };
+}
+
+/** The menu market's show, recomputed a few times a second and only replaced when something changed. */
+function useMenuMarket(angles: readonly number[], still: boolean): MarketShow {
+  const [show, setShow] = useState(() => menuMarket(still ? STILL_TIME : 0, angles, still));
+  useEffect(() => {
+    if (still) return;
+    const start = performance.now();
+    const id = setInterval(() => {
+      const next = menuMarket((performance.now() - start) / 1000, angles, false);
+      setShow((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+    }, MARKET_TICK);
+    return () => clearInterval(id);
+  }, [angles, still]);
+  return show;
+}
+
 export function MenuScene({ onReady }: { readonly onReady: () => void }) {
   const still = useMemo(prefersStill, []);
   const angles = useMemo(() => seatAngles(MENU_SEATS.length), []);
+  const market = useMenuMarket(angles, still);
   return (
     <TableCanvas
       seats={MENU_SEATS}
@@ -85,6 +127,7 @@ export function MenuScene({ onReady }: { readonly onReady: () => void }) {
       safe={{ top: 0, bottom: 0, left: 0, right: 0 }}
       pins={[]}
       onReady={onReady}
+      market={market}
     >
       {angles.map((angle, i) => (
         <ShuttleShip key={i} angle={angle} offset={SHIP_OFFSETS[i] ?? 0} still={still} />

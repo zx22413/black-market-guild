@@ -52,6 +52,9 @@ export const SWATCHES = {
   heather: { top: '#9064d9', bottom: '#6743bf' },
   // Canal water: the table's clear-day sea (`weather.ts`), so the free port's canal reads as the same water.
   canal: { top: '#2fa3a8', bottom: '#25878c' },
+  // The market's striped stall awnings (colormap column 15 of row A, and the pink of the row above it).
+  awningPurple: { top: '#a475e5', bottom: '#5e3bb9' },
+  awningPink: { top: '#ef78f0', bottom: '#aa77e7' },
 } as const satisfies Record<string, Swatch>;
 export type Mat = keyof typeof SWATCHES;
 

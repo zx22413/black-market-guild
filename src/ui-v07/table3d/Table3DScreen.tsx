@@ -5,6 +5,7 @@ import { eventLine } from '../log';
 import { beatSeats } from '../scene/beatStage';
 import { ShipCargo } from '../scene/InvestIsland';
 import { TableCanvas, overviewPoints, useTableLayout, type TableShip } from '../scene/TableCanvas';
+import { marketShow } from '../scene/marketShow';
 import { buildBoard } from '../session/board';
 import type { GameSession, HumanRequest } from '../session/gameSession';
 import { useSession } from '../session/useSession';
@@ -209,6 +210,12 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     return step?.ship ? step.ship(base) : base;
   });
   const stateOf = (id: ShipId) => ships.find((x) => x.id === id)?.state;
+  const market = marketShow({
+    events,
+    prices: resolution.marketPrices ?? board.prices,
+    weather: board.voyageEvent,
+    arrived: board.ships.filter((s) => stateOf(s.id) === 'arrived').map((s) => ({ shipId: s.id, owner: s.owner, angle: angles[laneOf(s.owner)]! })),
+  });
   // Only the visible seat's own cargo (§4); hidden between hot-seat turns.
   const loaded = viewer ? snap.privateEvents.filter((e) => e.type === 'cargo-loaded' && e.playerId === viewer && e.round === board.round) : [];
   const lastLoaded = loaded[loaded.length - 1];
@@ -289,6 +296,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
         }}
         dim={step?.dim ?? false}
         pulses={moments.pulses}
+        market={market}
         {...(finished ? { ringed: winners } : resolution.ringed ? { ringed: resolution.ringed } : {})}
         {...(resolution.wrapShip ? { wrapShip: resolution.wrapShip } : {})}
         {...(step?.onSelectShip ? { onSelectShip: step.onSelectShip } : {})}

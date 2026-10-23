@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ORBIT, SHUTTLE, orbitPosition, orbitTarget, shuttle } from '../../src/ui-v07/menu/menuMotion';
+import { MENU_FLIP_EVERY, ORBIT, SHUTTLE, menuArrivals, menuPrices, orbitPosition, orbitTarget, shuttle } from '../../src/ui-v07/menu/menuMotion';
 
 describe('main menu camera orbit', () => {
   it('circles the market island at a fixed height and distance', () => {
@@ -77,5 +77,26 @@ describe('main menu ship shuttle', () => {
 
   it('spreads ships out with their offsets', () => {
     expect(shuttle(1, 0).t).not.toBeCloseTo(shuttle(1, 0.5).t);
+  });
+});
+
+describe('main menu market', () => {
+  it('starts the board at the opening cells and moves one row a cell at each flip, on the track', () => {
+    expect(menuPrices(0)).toEqual([2, 2, 3, 3]);
+    let last = menuPrices(0);
+    for (let k = 1; k < 60; k++) {
+      const now = menuPrices(k * MENU_FLIP_EVERY);
+      now.forEach((c) => expect(c >= 0 && c <= 6).toBe(true));
+      const moved = now.reduce((n, c, i) => n + Math.abs(c - last[i]!), 0);
+      expect(moved).toBe(1);
+      last = now;
+    }
+  });
+
+  it('counts a ship as at the market while it waits there, a new trip each time', () => {
+    const at = SHUTTLE.sail + 1;
+    expect(menuArrivals(at, [0])).toEqual([{ ship: 0, trip: 0 }]);
+    expect(menuArrivals(1, [0])).toEqual([]);
+    expect(menuArrivals(at + 2 * (SHUTTLE.sail + SHUTTLE.wait), [0])).toEqual([{ ship: 0, trip: 1 }]);
   });
 });

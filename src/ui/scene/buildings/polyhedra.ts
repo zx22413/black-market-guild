@@ -14,7 +14,12 @@ export interface Tilt {
 }
 
 /** Every part is convex (each roof slab is), so faces never overlap within one solid. */
-export type Part = { readonly mat: string; readonly tilt?: Tilt } & (
+export type Part = {
+  readonly mat: string;
+  readonly tilt?: Tilt;
+  /** Turn of the whole part about the y axis through the origin, after any tilt (as three.js turns +z toward +x): a stall on an octagon's slanted face. */
+  readonly spin?: number;
+} & (
   | {
       /** Axis-aligned box around `center`; `bevel` chamfers every edge so it catches light. */
       readonly kind: 'box';
@@ -248,9 +253,19 @@ export function tiltPoint(p: Vec3, { axis, angle, pivot }: Tilt): Vec3 {
   return add(pivot, axis === 'x' ? [x, y * cos - z * sin, y * sin + z * cos] : [x * cos - y * sin, x * sin + y * cos, z]);
 }
 
+/** Turns `p` about the y axis through the origin by `angle` (three.js' rotation.y). */
+export function spinPoint([x, y, z]: Vec3, angle: number): Vec3 {
+  const [cos, sin] = [Math.cos(angle), Math.sin(angle)];
+  return [x * cos + z * sin, y, -x * sin + z * cos];
+}
+
 export function partFaces(part: Part): Face[] {
-  const { tilt } = part;
-  return partSolids(part).flatMap((polygons) => solid(tilt ? polygons.map((polygon) => polygon.map((p) => tiltPoint(p, tilt))) : polygons, part.mat));
+  const { tilt, spin } = part;
+  const place = (p: Vec3): Vec3 => {
+    const tilted = tilt ? tiltPoint(p, tilt) : p;
+    return spin ? spinPoint(tilted, spin) : tilted;
+  };
+  return partSolids(part).flatMap((polygons) => solid(tilt || spin ? polygons.map((polygon) => polygon.map(place)) : polygons, part.mat));
 }
 
 /** Axis-aligned bounds of a set of parts, for placing a building on its lot. */

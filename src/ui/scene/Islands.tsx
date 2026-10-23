@@ -4,14 +4,13 @@ import type { IslandAnnex } from './islandShape';
 import { IslandRing } from './IslandRing';
 import { useState, type ReactNode } from 'react';
 import { BuildSite } from './BuildSite';
-import { ASSET_BUILDING_SCALE, ASSET_LOTS, PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatPosition } from './layout';
-import { TARGET_ISLAND_HEIGHT, TARGET_ISLAND_SEED, playerIslandHeading } from './islandShape';
+import { ASSET_BUILDING_SCALE, ASSET_LOTS, PLAYER_ISLAND_RADIUS, seatAngles, seatPosition } from './layout';
+import { MarketIsland, type MarketShow } from './MarketIsland';
+import { playerIslandHeading } from './islandShape';
 import { Model } from './Model';
 import type { SceneSeat } from './tableModel';
 
 const PLATEAU = 2.6;
-/** The target island's props were laid out for a radius of 8 and grow with the island. */
-const TARGET_DECOR_SCALE = TARGET_ISLAND_RADIUS / 8;
 
 /** A guild pennant in the player's color. */
 function Banner({ color, position }: { readonly color: string; readonly position: readonly [number, number, number] }) {
@@ -89,32 +88,8 @@ export function PlayerIsland({ seat, angle, seed, selectable = false, selected =
   );
 }
 
-/** The destination island at the center of the table. */
-export function TargetIsland() {
-  return (
-    <group>
-      <IslandBase radius={TARGET_ISLAND_RADIUS} seed={TARGET_ISLAND_SEED} height={TARGET_ISLAND_HEIGHT} />
-      <group position={[0, 3.4, 0]} scale={TARGET_DECOR_SCALE}>
-        <Model name="tower-complete-large" position={[0, 0, -1]} scale={0.8} />
-        <Model name="castle-wall" position={[-3.2, 0, 0.6]} scale={0.7} rotation={[0, 0.5, 0]} />
-        <Model name="castle-wall" position={[3.2, 0, 0.6]} scale={0.7} rotation={[0, -0.5, 0]} />
-        <Model name="palm-detailed-bend" position={[-4.6, 0, -2.6]} scale={0.8} />
-        <Model name="palm-straight" position={[4.8, 0, -2.2]} scale={0.75} />
-        <Model name="chest" position={[1.6, 0, 3]} scale={0.7} />
-        <Model name="flag-high" position={[0, 8.2, -1]} scale={0.8} />
-      </group>
-      {[0, 1, 2, 3].map((i) => {
-        const a = (i * Math.PI) / 2 + Math.PI / 4;
-        return (
-          <Model
-            key={i}
-            name="structure-platform-dock-small"
-            position={[Math.cos(a) * (TARGET_ISLAND_RADIUS + 0.6), 0.2, Math.sin(a) * (TARGET_ISLAND_RADIUS + 0.6)]}
-            rotation={[0, -a + Math.PI / 2, 0]}
-          />
-        );
-      })}
-    </group>
-  );
+/** The market island at the center of the table, where every ship sails to sell (`MarketIsland`). */
+export function TargetIsland({ seatAngles: angles = seatAngles(4), show, night = false }: { readonly seatAngles?: readonly number[]; readonly show?: MarketShow; readonly night?: boolean }) {
+  return <MarketIsland seatAngles={angles} night={night} {...(show ? { show } : {})} />;
 }
 

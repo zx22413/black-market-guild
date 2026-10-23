@@ -9,6 +9,7 @@
 import { ASSET_IDS } from '../src/game';
 import { BUILDING_DESIGNS } from '../src/ui/scene/buildings/designs';
 import { LANDMARK_DESIGNS, landmarkParts } from '../src/ui/scene/buildings/landmarks';
+import { MARKET_DESIGN, marketRestParts } from '../src/ui/scene/buildings/islands/market';
 import { SWATCHES, type Mat, type Swatch } from '../src/ui/scene/buildings/materials';
 import { partFaces, type Face, type Part, type Vec3 } from '../src/ui/scene/buildings/polyhedra';
 import { boatPose } from '../src/ui/scene/buildings/islands/seaLoop';
@@ -148,10 +149,39 @@ function panel(scenery: IslandScenery, index: number, defs: string[]): string {
   </g>`;
 }
 
+/** The market island at the middle of the table (`MarketIsland`): its stepped bazaar on the grass, awnings out. */
+function marketPanel(index: number, defs: string[]): string {
+  const parts = marketRestParts();
+  const grass = { top: '#79b35a', bottom: shade('#79b35a', 0.85) };
+  const ground = partFaces({ kind: 'prism', base: [0, -0.3, 0], radius: 4.6, height: 0.3, sides: 11, mat: 'ground' }).map((face) => ({ face, swatch: grass }));
+  const all = [...ground, ...partsDrawn(parts, [0, 0, 0], 1, 0)];
+  const front = visible(all);
+  const back = visible(all.map((d) => ({ ...d, face: placeFace(d.face, [0, 0, 0], 1, Math.PI) })));
+  const mats = [...new Set(parts.map((p) => p.mat))];
+  const y0 = 150 + index * 780;
+  return `
+  <g transform="translate(40,${y0})">
+    <rect width="1360" height="740" rx="18" fill="#fbf3e2"/>
+    <path d="M18 0 H1342 A18 18 0 0 1 1360 18 V64 H0 V18 A18 18 0 0 1 18 0 Z" fill="#8b5fbf"/>
+    <text x="28" y="44" class="title">黑市島（中央，名字待定）</text>
+    <text x="1332" y="42" class="motif" text-anchor="end">${MARKET_DESIGN.motif}</text>
+    <g transform="translate(10,90)">${fitted(front, 640, 560, 70, defs)}</g>
+    <g transform="translate(690,90)">${fitted(back, 640, 560, 70, defs)}</g>
+    <text x="330" y="96" class="note" text-anchor="middle">正面（+z，桌面鏡頭這側）</text>
+    <text x="1010" y="96" class="note" text-anchor="middle">背面</text>
+    <text x="40" y="668" class="note">會動的部件：棚子（開市展開、收市收起、暴風雨收一半）、</text>
+    <text x="40" y="690" class="note">燈籠（點燈人逐盞點亮）、價格板四行（價格移動時翻牌）、報價鐘；</text>
+    <text x="40" y="712" class="note">挑夫、點燈人與各座位的碼頭依桌面產生，設計圖不畫。</text>
+    <g transform="translate(740,660)">${fitted(front, 160, 56, 6, defs, true)}</g>
+    <text x="820" y="732" class="note" text-anchor="middle">桌面距離剪影</text>
+    ${chipRows(mats.map((m) => SWATCHES[m]))}
+  </g>`;
+}
+
 const sceneries = Object.values(ISLAND_SCENERY).filter((s): s is IslandScenery => s !== undefined);
 const defs: string[] = [];
-const panels = sceneries.map((s, i) => panel(s, i, defs)).join('');
-const height = 150 + sceneries.length * 780;
+const panels = [marketPanel(0, defs), ...sceneries.map((s, i) => panel(s, i + 1, defs))].join('');
+const height = 150 + (sceneries.length + 1) * 780;
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 1440 ${height}">
   <style>
     text { font-family: 'Noto Serif TC', 'Songti TC', 'PingFang TC', serif; }
@@ -165,7 +195,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 1
   <rect width="1440" height="${height}" fill="#2d5d7c"/>
   <g stroke="#3b6d8e" stroke-width="1">${Array.from({ length: 24 }, (_, i) => `<line x1="${i * 60}" y1="0" x2="${i * 60}" y2="${height}"/>`).join('')}${Array.from({ length: Math.ceil(height / 60) }, (_, i) => `<line x1="0" y1="${i * 60}" x2="1440" y2="${i * 60}"/>`).join('')}</g>
   <text x="40" y="72" class="head">黑市商會・島嶼外觀設計圖</text>
-  <text x="40" y="110" class="sub">選島後才換上｜地面色＋招牌建築與造景｜不使用資產建築的屋頂色｜碼頭朝左下</text>
+  <text x="40" y="110" class="sub">中央的黑市島，與選島後才換上的各島｜地面色＋招牌建築與造景｜不使用資產建築的屋頂色｜碼頭朝左下</text>
   ${panels}
 </svg>`;
 

@@ -46,3 +46,39 @@ export function shuttle(time: number, offset: number): { readonly t: number; rea
   if (at < 2 * sail + wait) return { t: 1 - smooth((at - sail - wait) / sail), outbound: false };
   return { t: 0, outbound: false };
 }
+
+/** Where a menu ship ties up: the game's berth beside the market's pier (`LANE_T.arrived`), not the lane's end. */
+export const MENU_BERTH = 0.86;
+
+/** Seconds between two price flips on the menu's board. */
+export const MENU_FLIP_EVERY = 6;
+
+/**
+ * The menu board's price cells at `time`: every `MENU_FLIP_EVERY` seconds one row steps up or down a
+ * cell, by a fixed pattern that stays on the track (0..6). Starts at the opening cells.
+ */
+export function menuPrices(time: number): number[] {
+  const cells = [2, 2, 3, 3];
+  const flips = Math.max(0, Math.floor(time / MENU_FLIP_EVERY));
+  for (let k = 0; k < flips; k++) {
+    const row = (k * 3 + 1) % cells.length;
+    const up = ((k * 7 + 3) % 5) < 3;
+    const next = cells[row]! + (up ? 1 : -1);
+    cells[row] = next < 0 || next > 6 ? cells[row]! - (up ? 1 : -1) : next;
+  }
+  return cells;
+}
+
+/**
+ * The menu ships at the market at `time`, one entry per ship that is tied up: its index and which trip
+ * it is on (a new trip, a new load for the porters).
+ */
+export function menuArrivals(time: number, offsets: readonly number[]): { readonly ship: number; readonly trip: number }[] {
+  const { sail, wait } = SHUTTLE;
+  const tripTime = 2 * (sail + wait);
+  return offsets.flatMap((offset, ship) => {
+    const shifted = time + offset * tripTime;
+    const at = ((shifted % tripTime) + tripTime) % tripTime;
+    return at >= sail && at < sail + wait ? [{ ship, trip: Math.floor(shifted / tripTime) }] : [];
+  });
+}

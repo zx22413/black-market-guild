@@ -3,6 +3,7 @@ import { FORTRESS_LANDMARKS } from './islands/fortress';
 import { FREE_PORT_LANDMARKS } from './islands/freePort';
 import { LIGHTHOUSE_LANDMARKS } from './islands/lighthouse';
 import { LUMBER_LANDMARKS } from './islands/lumber';
+import { MARKET_DESIGN } from './islands/market';
 import { MINE_LANDMARKS } from './islands/mine';
 import { PIRATE_COVE_LANDMARKS } from './islands/pirateCove';
 import { SMUGGLER_PORT_LANDMARKS } from './islands/smugglerPort';
@@ -20,5 +21,7 @@ export const LANDMARK_DESIGNS = {
   ...FREE_PORT_LANDMARKS,
   ...FORTRESS_LANDMARKS,
   ...LIGHTHOUSE_LANDMARKS,
+  // The market island at the middle of the table (`MarketIsland`), not one of the guilds' islands.
+  market: MARKET_DESIGN,
 } as const satisfies Record<string, LandmarkDesign>;
 export type LandmarkId = keyof typeof LANDMARK_DESIGNS;
