@@ -163,7 +163,7 @@ function marketPanel(index: number, defs: string[]): string {
   <g transform="translate(40,${y0})">
     <rect width="1360" height="740" rx="18" fill="#fbf3e2"/>
     <path d="M18 0 H1342 A18 18 0 0 1 1360 18 V64 H0 V18 A18 18 0 0 1 18 0 Z" fill="#8b5fbf"/>
-    <text x="28" y="44" class="title">黑市島（中央，名字待定）</text>
+    <text x="28" y="44" class="title">巴扎港（中央的黑市）</text>
     <text x="1332" y="42" class="motif" text-anchor="end">${MARKET_DESIGN.motif}</text>
     <g transform="translate(10,90)">${fitted(front, 640, 560, 70, defs)}</g>
     <g transform="translate(690,90)">${fitted(back, 640, 560, 70, defs)}</g>
@@ -195,7 +195,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 1
   <rect width="1440" height="${height}" fill="#2d5d7c"/>
   <g stroke="#3b6d8e" stroke-width="1">${Array.from({ length: 24 }, (_, i) => `<line x1="${i * 60}" y1="0" x2="${i * 60}" y2="${height}"/>`).join('')}${Array.from({ length: Math.ceil(height / 60) }, (_, i) => `<line x1="0" y1="${i * 60}" x2="1440" y2="${i * 60}"/>`).join('')}</g>
   <text x="40" y="72" class="head">黑市商會・島嶼外觀設計圖</text>
-  <text x="40" y="110" class="sub">中央的黑市島，與選島後才換上的各島｜地面色＋招牌建築與造景｜不使用資產建築的屋頂色｜碼頭朝左下</text>
+  <text x="40" y="110" class="sub">中央的巴扎港，與選島後才換上的各島｜地面色＋招牌建築與造景｜不使用資產建築的屋頂色｜碼頭朝左下</text>
   ${panels}
 </svg>`;
 

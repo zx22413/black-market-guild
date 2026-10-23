@@ -78,7 +78,7 @@ export const BASICS: TutorialScript = {
   coach: [
     // ── Round 1: sail and sell ──
     step(invest(1), '歡迎來到黑市商會', [F.island('p1'), F.plate('p1'), F.round], [
-      '你經營一座島：島上生產材料，你決定留下來蓋建築，或裝船運到黑市換錢。',
+      '你經營一座島：島上生產材料，你決定留下來蓋建築，或裝船運到中央巴扎港的黑市換錢。',
       `一局打 ${R.rounds} 回合，結束時總財富最高的人獲勝。這場教學只打 ${ROUNDS} 回合；角色另外有單課。`,
     ]),
     step(invest(1), '你的島：林場島', [F.island('p1'), F.plate('p1')], [
@@ -112,7 +112,7 @@ export const BASICS: TutorialScript = {
       '這回合是「風平浪靜」，沒有效果。',
     ]),
     step(resolving(1), '看結算', [F.log, F.rank], [
-      '接下來每艘船依序揭曉骰值與結果，抵達的船再到黑市賣貨。',
+      '接下來每艘船依序揭曉骰值與結果，抵達巴扎港的船再到黑市賣貨。',
       '頂部的日誌鈕可以回看每一筆收支；右上角的排行是目前的總財富。',
     ]),
     step(market(1), '價格怎麼動', [F.marketCard], [

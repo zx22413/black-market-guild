@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { IslandId, PlayerId } from '../../v07/game';
 import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
+import { MARKET_GROUND } from '../../ui/scene/marketDocks';
+import { MARKET_TOP } from '../../ui/scene/buildings/islands/market';
 import type { Vec3 } from '../../ui/scene/buildings/polyhedra';
-import { ISLAND_LABELS, ISLAND_TEXT } from '../labels';
+import { ISLAND_LABELS, ISLAND_TEXT, MARKET_ISLAND_LABEL, MARKET_ISLAND_TEXT } from '../labels';
 import type { TablePin } from '../scene/TableCanvas';
 import { IslandGlance } from './IslandGlance';
 import { IslandIcon } from './IslandIcon';
@@ -24,7 +26,8 @@ function opensBelow(badge: HTMLElement | null): boolean {
   return top - TIP_ROOM < hud + 8;
 }
 
-export function IslandBadge({ island }: { readonly island: IslandId }) {
+/** A name badge on the table that opens a tip when hovered (desktop) or tapped; tap elsewhere to close. */
+function TableBadge({ name, tip }: { readonly name: ReactNode; readonly tip: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [below, setBelow] = useState(false);
   const self = useRef<HTMLSpanElement>(null);
@@ -37,7 +40,6 @@ export function IslandBadge({ island }: { readonly island: IslandId }) {
     document.addEventListener('pointerdown', close);
     return () => document.removeEventListener('pointerdown', close);
   }, [open]);
-  const text = ISLAND_TEXT[island];
   return (
     <span ref={self} className={`island-badge ${open ? 'open' : ''} ${below ? 'below' : ''}`} onPointerEnter={place}>
       <button
@@ -49,22 +51,63 @@ export function IslandBadge({ island }: { readonly island: IslandId }) {
           setOpen((v) => !v);
         }}
       >
-        <IslandIcon island={island} />
-        {ISLAND_LABELS[island]}
+        {name}
       </button>
       <span className="island-tip" role="tooltip">
-        <b>
-          <IslandIcon island={island} />
-          {ISLAND_LABELS[island]}
-        </b>
-        <IslandGlance island={island} />
-        <span className="draft-full">
-          <span>{text.pro}</span>
-          <span>{text.con}</span>
-        </span>
+        {tip}
       </span>
     </span>
   );
+}
+
+export function IslandBadge({ island }: { readonly island: IslandId }) {
+  const text = ISLAND_TEXT[island];
+  const name = (
+    <>
+      <IslandIcon island={island} />
+      {ISLAND_LABELS[island]}
+    </>
+  );
+  return (
+    <TableBadge
+      name={name}
+      tip={
+        <>
+          <b>{name}</b>
+          <IslandGlance island={island} />
+          <span className="draft-full">
+            <span>{text.pro}</span>
+            <span>{text.con}</span>
+          </span>
+        </>
+      }
+    />
+  );
+}
+
+/** The market island's name badge: where every ship sails to sell (§1, §7). */
+export function MarketBadge() {
+  return (
+    <TableBadge
+      name={MARKET_ISLAND_LABEL}
+      tip={
+        <>
+          <b>{MARKET_ISLAND_LABEL}</b>
+          <span>{MARKET_ISLAND_TEXT}</span>
+        </>
+      }
+    />
+  );
+}
+
+/**
+ * The market badge floats like a sign just over the bazaar's bell frame: every bearing round the island
+ * is taken by some seat's berth (three or four players), the brokers' badges or the market card.
+ */
+export const MARKET_BADGE_AT: Vec3 = [0, MARKET_GROUND + MARKET_TOP + 1.2, 0];
+
+export function marketBadgePin(): TablePin {
+  return { id: 'market-island', position: MARKET_BADGE_AT, node: <MarketBadge /> };
 }
 
 /**

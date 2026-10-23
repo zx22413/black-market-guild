@@ -3,6 +3,10 @@ import { RULES_V07, priceAt, type BuildingId, type CashReason, type GoodId, type
 // Names and short texts below restate docs/game-design.md (V0.7): §6.1, §9.4, §10.2, §11.2, §12.
 // Do not add rules here; change the design document first.
 
+/** The market island at the middle of the table (§1), where every ship sails to sell (§7). */
+export const MARKET_ISLAND_LABEL = '巴扎港';
+export const MARKET_ISLAND_TEXT = '所有出航的船都開往這裡賣貨；黑市價格依各種貨的到港量與當回合需求決定。';
+
 export const GOOD_LABELS: Readonly<Record<GoodId, string>> = { wood: '木材', iron: '鐵礦', spice: '香料', arms: '軍火' };
 
 export const ROLE_LABELS: Readonly<Record<RoleId, string>> = {

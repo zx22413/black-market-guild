@@ -428,6 +428,9 @@ function boardBars(cells: readonly number[]): P[] {
   return BOARD.faces.flatMap((spin) => cells.map((cell, i): P => moveBy(barPart(barLength(cell), ROW_MATS[i]!), [0, rowHeight(i), BOARD.out], spin)));
 }
 
+/** The top of the bell frame's finial above the grass, in table units (design height × `MARKET_SCALE`). */
+export const MARKET_TOP = (ROOF.bottom + ROOF.height + 0.25) * MARKET_SCALE;
+
 /** Everything at rest, awnings out, as the blueprint draws it (prices at their opening cells, §7.1). */
 export function marketRestParts(): P[] {
   return [

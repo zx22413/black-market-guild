@@ -10,7 +10,7 @@ import { buildBoard } from '../session/board';
 import type { GameSession, HumanRequest } from '../session/gameSession';
 import { useSession } from '../session/useSession';
 import { BookIcon, ExitIcon, LogIcon } from './icons';
-import { islandBadgePins } from './IslandBadge';
+import { islandBadgePins, marketBadgePin } from './IslandBadge';
 import { islandMarkPins } from './islandMarks';
 import { IslandDraft, IslandReveal } from './IslandDraft';
 import { MarketStrip } from './MarketStrip';
@@ -234,7 +234,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   );
   const islandBadges = islandBadgePins(seats, angles, (id) => board.players[id]?.island ?? null);
   const marks = useMemo(() => (islandMarks ? islandMarkPins(seats.map((s) => ({ id: s.id, angle: angles[laneOf(s.id)]! }))) : []), [islandMarks, seats, angles, laneOf]);
-  const pins = [...plates, ...islandBadges, ...moments.pins, ...(step?.pins ?? []), ...resolution.pins, ...marks];
+  const pins = [...plates, marketBadgePin(), ...islandBadges, ...moments.pins, ...(step?.pins ?? []), ...resolution.pins, ...marks];
   const camera = step?.camera ?? resolution.camera ?? overviewPoints(angles, seats.map((s) => s.island));
 
   const marketRef = useRef<HTMLDivElement>(null);

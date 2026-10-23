@@ -14,7 +14,7 @@ type NameOf = (id: PlayerId) => string;
 export function TargetSign({ ref }: { readonly ref: Ref<HTMLDivElement> }) {
   return (
     <div ref={ref} className="island-sign">
-      黑市港
+      巴扎港
     </div>
   );
 }
