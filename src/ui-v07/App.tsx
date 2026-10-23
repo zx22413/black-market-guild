@@ -1,9 +1,11 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { isRoomCode } from '../v07/online';
 import { TUTORIALS, tutorialById, type TutorialId } from '../v07/tutorial';
+import { launchMs } from './menu/launch';
 import { LocalSetup } from './menu/LocalSetup';
 import { MainMenu } from './menu/MainMenu';
 import { MenuBackdrop } from './menu/MenuBackdrop';
+import type { MenuView } from './menu/menuSeats';
 import './menu/menu.css';
 import { lastRoom } from './online/onlineClient';
 import { OnlineScreen } from './online/OnlineScreen';
@@ -21,6 +23,8 @@ function roomFromUrl(): string | null {
 type Mode =
   | { readonly kind: 'menu' }
   | { readonly kind: 'local-setup' }
+  /** The ships sail out on the menu table before the match screen takes over. */
+  | { readonly kind: 'launching'; readonly options: SessionOptions }
   /** `options` again with a new seed is the result card's "play again". */
   | { readonly kind: 'local'; readonly session: GameSession; readonly options: SessionOptions }
   | { readonly kind: 'online'; readonly room: string | null }
@@ -33,25 +37,53 @@ const nextLesson = (id: TutorialId) => TUTORIALS[TUTORIALS.findIndex((t) => t.id
 
 const randomSeed = (): number => crypto.getRandomValues(new Uint32Array(1))[0]! >>> 1;
 
-/** Screens drawn over the main menu's live table; the match screens bring their own table. */
-const OVER_MENU: ReadonlySet<Mode['kind']> = new Set(['menu', 'local-setup', 'online', 'tutorial-menu']);
+/**
+ * What the menu table shows behind each screen; null where a match screen brings its own table
+ * (two 3D scenes never run at once). The online pages say for themselves (`onlineView`).
+ */
+function menuViewOf(mode: Mode, onlineView: MenuView | null): MenuView | null {
+  switch (mode.kind) {
+    case 'menu':
+      return { stage: 'title' };
+    case 'local-setup':
+      return { stage: 'local' };
+    case 'tutorial-menu':
+      return { stage: 'tutorial' };
+    case 'launching':
+      return { stage: 'launch', seatCount: mode.options.seats.length };
+    case 'online':
+      return onlineView;
+    case 'local':
+    case 'tutorial':
+      return null;
+  }
+}
 
 export function App() {
   const [mode, setMode] = useState<Mode>(() => {
     const room = roomFromUrl();
     return room ? { kind: 'online', room } : { kind: 'menu' };
   });
-  // An online match takes the whole screen; the menu's table stops so two 3D scenes never run.
-  const [onlineMatch, setOnlineMatch] = useState(false);
-  const onInMatch = useCallback((inMatch: boolean) => setOnlineMatch(inMatch), []);
-  const home = () => setMode({ kind: 'menu' });
+  const [onlineView, setOnlineView] = useState<MenuView | null>({ stage: 'online' });
+  const onView = useCallback((view: MenuView | null) => setOnlineView(view), []);
+  const home = () => {
+    setOnlineView({ stage: 'online' });
+    setMode({ kind: 'menu' });
+  };
   const startLocal = (options: SessionOptions) => setMode({ kind: 'local', session: startGameSession(options), options });
-  const backdrop = OVER_MENU.has(mode.kind) && !(mode.kind === 'online' && onlineMatch);
+  const launchLocal = (options: SessionOptions) => (launchMs() > 0 ? setMode({ kind: 'launching', options }) : startLocal(options));
 
+  useEffect(() => {
+    if (mode.kind !== 'launching') return;
+    const timer = setTimeout(() => startLocal(mode.options), launchMs());
+    return () => clearTimeout(timer);
+  }, [mode]);
+
+  const view = menuViewOf(mode, onlineView);
   return (
     <>
-      {backdrop && <MenuBackdrop />}
-      <Screen mode={mode} setMode={setMode} home={home} startLocal={startLocal} onInMatch={onInMatch} />
+      {view && <MenuBackdrop view={view} />}
+      <Screen mode={mode} setMode={setMode} home={home} launchLocal={launchLocal} startLocal={startLocal} onView={onView} />
     </>
   );
 }
@@ -60,11 +92,12 @@ interface ScreenProps {
   readonly mode: Mode;
   readonly setMode: (mode: Mode) => void;
   readonly home: () => void;
+  readonly launchLocal: (options: SessionOptions) => void;
   readonly startLocal: (options: SessionOptions) => void;
-  readonly onInMatch: (inMatch: boolean) => void;
+  readonly onView: (view: MenuView | null) => void;
 }
 
-function Screen({ mode, setMode, home, startLocal, onInMatch }: ScreenProps) {
+function Screen({ mode, setMode, home, launchLocal, startLocal, onView }: ScreenProps) {
   switch (mode.kind) {
     case 'menu':
       return (
@@ -77,7 +110,9 @@ function Screen({ mode, setMode, home, startLocal, onInMatch }: ScreenProps) {
         />
       );
     case 'local-setup':
-      return <LocalSetup onStart={startLocal} onBack={home} />;
+      return <LocalSetup onStart={launchLocal} onBack={home} />;
+    case 'launching':
+      return null;
     case 'tutorial-menu':
       return <TutorialMenu onStart={(id) => setMode({ kind: 'tutorial', id, run: 0 })} onBack={home} />;
     case 'tutorial': {
@@ -95,7 +130,7 @@ function Screen({ mode, setMode, home, startLocal, onInMatch }: ScreenProps) {
       );
     }
     case 'online':
-      return <OnlineScreen initialRoom={mode.room} onExit={home} onInMatch={onInMatch} />;
+      return <OnlineScreen initialRoom={mode.room} onExit={home} onView={onView} />;
     case 'local': {
       const { options } = mode;
       return (

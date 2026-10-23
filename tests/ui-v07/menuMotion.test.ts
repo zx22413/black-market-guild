@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MENU_FLIP_EVERY, ORBIT, SHUTTLE, menuArrivals, menuPrices, orbitPosition, orbitTarget, shuttle } from '../../src/ui-v07/menu/menuMotion';
+import { MENU_FLIP_EVERY, ORBIT, SHUTTLE, menuArrivals, menuPrices, orbitPosition, shuttle } from '../../src/ui-v07/menu/menuMotion';
 
 describe('main menu camera orbit', () => {
   it('circles the market island at a fixed height and distance', () => {
@@ -20,29 +20,6 @@ describe('main menu camera orbit', () => {
     const [x, , z] = orbitPosition(0);
     expect(x).toBeCloseTo(0);
     expect(z).toBeGreaterThan(0);
-  });
-});
-
-describe('main menu camera aim', () => {
-  it('looks straight at the market island without a shift', () => {
-    orbitTarget(12, 0, 0).forEach((v) => expect(v).toBeCloseTo(0));
-  });
-
-  it('aims left of the island to show it on the right, and nearer the camera to show it higher', () => {
-    // At time 0 the camera is in front (+z) looking toward -z: its right is +x.
-    const [lx, , lz] = orbitTarget(0, 10, 0);
-    expect(lx).toBeCloseTo(-10);
-    expect(lz).toBeCloseTo(0);
-    const [ux, , uz] = orbitTarget(0, 0, 10);
-    expect(ux).toBeCloseTo(0);
-    expect(uz).toBeCloseTo(10);
-  });
-
-  it('keeps the shift the same size all the way around', () => {
-    for (const time of [0, 20, 75, 140]) {
-      const [x, , z] = orbitTarget(time, 30, 40);
-      expect(Math.hypot(x, z)).toBeCloseTo(50);
-    }
   });
 });
 

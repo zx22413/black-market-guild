@@ -62,6 +62,42 @@
   opacity: 1;
 }
 
+/* The launch: the ships sail out, then the page dims to the match screen's loading color
+   (LAUNCH in menuShots.ts: 2.6 s of sailing, the last 0.7 s dimming). */
+.menu-launch-fade {
+  position: absolute;
+  inset: 0;
+  background: #10242b;
+  opacity: 0;
+  pointer-events: none;
+  animation: menu-launch-fade 0.7s ease-in 1.9s forwards;
+}
+@keyframes menu-launch-fade {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Plates over the lobby's islands: a guild's name, or an open seat the bots will fill. */
+.menu-pin {
+  display: inline-block;
+  padding: 3px 10px;
+  border: 1px solid var(--c-wood, #4a2f1b);
+  border-radius: 999px;
+  background: var(--c-parch, #f4ead2);
+  color: var(--c-ink, #2a1d10);
+  font-size: var(--fs-body);
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 2px 0 var(--c-wood-dark, #2a190d);
+}
+.menu-pin.open {
+  border-style: dashed;
+  background: rgb(244 234 210 / 0.8);
+  color: var(--c-soft, #6b5537);
+  font-weight: 400;
+}
+
 /* ---------- title ---------- */
 .menu-logo h1 {
   font-size: 2.4rem;
@@ -433,6 +469,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .menu-launch-fade {
+    animation: none;
+  }
   .menu-action,
   .menu-backdrop > .beat3d {
     transition: none;

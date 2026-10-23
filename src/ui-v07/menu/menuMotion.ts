@@ -16,21 +16,6 @@ export function orbitPosition(time: number): Vec3 {
   return [Math.cos(a) * ORBIT.radius, ORBIT.height, Math.sin(a) * ORBIT.radius];
 }
 
-/**
- * Where the camera looks at `time`: the market island, moved so the island shows `right` units
- * right of center (panel on the left of a wide screen) and `up` units above (panel at the
- * bottom of a phone). Looking left of the island puts it on the right, and looking at a point
- * nearer the camera puts it higher.
- */
-export function orbitTarget(time: number, right: number, up: number): Vec3 {
-  const [x, , z] = orbitPosition(time);
-  const length = Math.hypot(x, z);
-  const fx = -x / length;
-  const fz = -z / length;
-  // Forward is (fx, fz) on the sea; the camera's right is (-fz, fx).
-  return [fz * right - fx * up, 0, -fx * right - fz * up];
-}
-
 const smooth = (x: number): number => x * x * (3 - 2 * x);
 
 /**

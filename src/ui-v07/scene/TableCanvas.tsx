@@ -86,6 +86,8 @@ export interface TableCanvasProps {
   readonly dim?: boolean;
   /** Islands that just counted: each hops with a glowing shore ring (a new key replays it). */
   readonly pulses?: ReadonlyMap<PlayerId, { readonly key: string; readonly tone: 'gain' | 'loss' }>;
+  /** Islands whose night lights (fires, lighthouse beams) are on whatever the weather, e.g. the menu's tutorial stop. */
+  readonly litSeats?: ReadonlySet<PlayerId>;
   /** What the market island shows (`marketShow`); without it the market stands open at its opening prices. */
   readonly market?: MarketShow;
 }
@@ -165,7 +167,7 @@ function asSceneShip(ship: TableShip, lane: number): SceneShip {
   return { id: ship.id, kind: 'solo', owners: [ship.owner], lane, state: ship.state, roles: [], rerolled: false, smuggled: 0, caughtSmugglers: [], modifier: null };
 }
 
-export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, pulses, market }: TableCanvasProps) {
+export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, pulses, market, litSeats }: TableCanvasProps) {
   const look = WEATHER[weather ?? 'clear'];
   const { angles, laneOf } = useTableLayout(seats);
   const islandKey = seats.map((s) => s.island ?? '').join('|');
@@ -217,7 +219,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
             {seats.map((seat, i) => (
               <IslandPulse key={seat.id} angle={angles[i]!} pulseKey={pulses?.get(seat.id)?.key ?? null} tone={pulses?.get(seat.id)?.tone ?? 'gain'}>
                 <PlayerIsland
-                  {...islandLook(seat.island, playerIslandHeading(angles[i]!), weather === 'moonless-night')}
+                  {...islandLook(seat.island, playerIslandHeading(angles[i]!), weather === 'moonless-night' || (litSeats?.has(seat.id) ?? false))}
                   seat={{ assets: seat.buildings, color: seat.color }}
                   angle={angles[i]!}
                   seed={playerIslandSeed(i)}

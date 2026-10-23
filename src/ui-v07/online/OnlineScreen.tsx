@@ -2,6 +2,8 @@ import { useEffect, useLayoutEffect, useState, useSyncExternalStore, type FormEv
 import { ROOM_CODE_LENGTH, isRoomCode } from '../../v07/online';
 import { MatchView } from '../table/MatchView';
 import type { Rematch } from '../table3d/ResultCard';
+import { useLaunchOnStart } from '../menu/launch';
+import type { MenuView } from '../menu/menuSeats';
 import { seatCards, type SeatCard } from './lobbySeats';
 import {
   connectRoom,
@@ -102,7 +104,14 @@ function HostRoom({ onRoom }: { readonly onRoom: (code: string) => void }) {
   );
 }
 
-function OnlineHome({ onRoom, onBack }: { readonly onRoom: (code: string) => void; readonly onBack: () => void }) {
+interface OnlineHomeProps {
+  readonly onRoom: (code: string) => void;
+  readonly onBack: () => void;
+  readonly onView: (view: MenuView | null) => void;
+}
+
+function OnlineHome({ onRoom, onBack, onView }: OnlineHomeProps) {
+  useLayoutEffect(() => onView({ stage: 'online' }), [onView]);
   return (
     <main className="menu-panel menu-page">
       <h2>線上房間</h2>
@@ -183,9 +192,10 @@ interface LobbyProps {
   readonly client: OnlineClient;
   readonly state: OnlineState;
   readonly onLeave: () => void;
+  readonly onView: (view: MenuView | null) => void;
 }
 
-function Lobby({ code, client, state, onLeave }: LobbyProps) {
+function Lobby({ code, client, state, onLeave, onView }: LobbyProps) {
   const room = state.room;
   const [seats, setSeats] = useState(4);
   const joined = room?.joined ?? false;
@@ -194,6 +204,14 @@ function Lobby({ code, client, state, onLeave }: LobbyProps) {
   const seatOptions = room ? [3, 4].filter((n) => n >= Math.max(room.minSeats, members.length) && n <= room.maxSeats) : [];
   const chosenSeats = seatOptions.includes(seats) ? seats : (seatOptions.at(-1) ?? seats);
   const shownSeats = room?.isHost ? chosenSeats : (room?.maxSeats ?? 4);
+  const cards = seatCards(members, shownSeats);
+  // The menu table mirrors the seat cards: a flag for everyone who sat down, mist over open seats.
+  const tableKey = cards.map((c) => (c.kind === 'member' ? `m:${c.name}` : 'e')).join('|');
+  useLayoutEffect(() => {
+    onView({ stage: 'lobby', seats: cards.map((c) => (c.kind === 'member' ? { kind: 'member', name: c.name } : { kind: 'empty' })) });
+    // `cards` is rebuilt every render; `tableKey` says when it really changed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tableKey, onView]);
 
   return (
     <main className="menu-panel menu-page menu-lobby">
@@ -208,7 +226,7 @@ function Lobby({ code, client, state, onLeave }: LobbyProps) {
 
       {room?.phase === 'lobby' && (
         <>
-          <Seats cards={seatCards(members, shownSeats)} />
+          <Seats cards={cards} />
           <NameRow client={client} joined={joined} connected={connected} />
           {room.isHost ? (
             <div className="menu-foot">
@@ -238,7 +256,13 @@ function Lobby({ code, client, state, onLeave }: LobbyProps) {
   );
 }
 
-function Room({ code, onLeave, onInMatch }: { readonly code: string; readonly onLeave: (forget: boolean) => void; readonly onInMatch: (inMatch: boolean) => void }) {
+interface RoomProps {
+  readonly code: string;
+  readonly onLeave: (forget: boolean) => void;
+  readonly onView: (view: MenuView | null) => void;
+}
+
+function Room({ code, onLeave, onView }: RoomProps) {
   // Created inside the effect so React StrictMode's mount-unmount-mount does not leave a closed client.
   const [client, setClient] = useState<OnlineClient | null>(null);
   useEffect(() => {
@@ -247,14 +271,14 @@ function Room({ code, onLeave, onInMatch }: { readonly code: string; readonly on
     return () => next.close();
   }, [code]);
   if (!client) return null;
-  return <RoomView code={code} client={client} onLeave={onLeave} onInMatch={onInMatch} />;
+  return <RoomView code={code} client={client} onLeave={onLeave} onView={onView} />;
 }
 
 interface RoomViewProps {
   readonly code: string;
   readonly client: OnlineClient;
   readonly onLeave: (forget: boolean) => void;
-  readonly onInMatch: (inMatch: boolean) => void;
+  readonly onView: (view: MenuView | null) => void;
 }
 
 /** Each match of a room gets its own session object; a new one means a fresh table (after a rematch). */
@@ -269,12 +293,19 @@ function matchKey(session: object): number {
   return key;
 }
 
-function RoomView({ code, client, onLeave, onInMatch }: RoomViewProps) {
+function RoomView({ code, client, onLeave, onView }: RoomViewProps) {
   const state = useSyncExternalStore(client.subscribe, client.getState);
   const session = state.room?.match?.you ? client.getSession() : null;
-  const inMatch = session !== null;
+  // A match started while we watched the lobby: the menu table sends the ships out first.
+  const launching = useLaunchOnStart(state.room?.phase ?? null) && session !== null;
+  const seatCount = state.room?.match?.players.length ?? 0;
+  const inMatch = session !== null && !launching;
   // Before paint, so the menu's 3D table is gone before the match's table mounts (one WebGL scene at a time).
-  useLayoutEffect(() => onInMatch(inMatch), [inMatch, onInMatch]);
+  useLayoutEffect(() => {
+    if (launching) onView({ stage: 'launch', seatCount });
+    else if (inMatch) onView(null);
+  }, [launching, inMatch, seatCount, onView]);
+  if (launching) return null;
   if (session) {
     const finished = state.room?.phase === 'finished';
     const rematch: Rematch = state.room?.isHost ? { kind: 'now', onRematch: () => client.rematch() } : { kind: 'host-decides' };
@@ -291,6 +322,7 @@ function RoomView({ code, client, onLeave, onInMatch }: RoomViewProps) {
       code={code}
       client={client}
       state={state}
+      onView={onView}
       onLeave={() => {
         client.leave();
         onLeave(true);
@@ -302,12 +334,12 @@ function RoomView({ code, client, onLeave, onInMatch }: RoomViewProps) {
 interface OnlineScreenProps {
   readonly initialRoom: string | null;
   readonly onExit: () => void;
-  /** Told when a match takes the screen (the menu's live table should stop) and when it gives it back. */
-  readonly onInMatch: (inMatch: boolean) => void;
+  /** What the menu table behind should show; null while a match has the screen (the table stops). */
+  readonly onView: (view: MenuView | null) => void;
 }
 
 /** Online play: join a room by code or link; the host also opens rooms. */
-export function OnlineScreen({ initialRoom, onExit, onInMatch }: OnlineScreenProps) {
+export function OnlineScreen({ initialRoom, onExit, onView }: OnlineScreenProps) {
   const [code, setCode] = useState(initialRoom);
   // Also when coming back from the main menu's "back to the room": a reload stays in the room.
   useEffect(() => {
@@ -316,9 +348,8 @@ export function OnlineScreen({ initialRoom, onExit, onInMatch }: OnlineScreenPro
   const leave = (forget: boolean) => {
     if (forget && code) forgetLastRoom(code);
     setRoomInUrl(null);
-    onInMatch(false);
     onExit();
   };
-  if (!code) return <OnlineHome onRoom={setCode} onBack={() => leave(false)} />;
-  return <Room key={code} code={code} onLeave={leave} onInMatch={onInMatch} />;
+  if (!code) return <OnlineHome onRoom={setCode} onBack={() => leave(false)} onView={onView} />;
+  return <Room key={code} code={code} onLeave={leave} onView={onView} />;
 }
