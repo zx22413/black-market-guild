@@ -4,6 +4,8 @@
 
 **遊戲內佔位素材**（2026-09-28 起）：UI 使用的佔位圖示（game-icons.net，CC BY 3.0）與背景畫作（Wikimedia Commons 公有領域）放在 [`public/art/`](../../public/art/)，每個檔案的來源、作者、授權與取得日期記錄於 [`public/art/SOURCES.md`](../../public/art/SOURCES.md)。它們只是佔位用，不是正式美術。3D 場景用的 Kenney 模型（Pirate Kit）與粒子貼圖（Particle Pack，2026-10-02 起）同樣為 CC0，來源也記錄在該檔。
 
+**音樂與音效**（2026-10-24 起）：放在 [`public/audio/`](../../public/audio/)，全部是本機以 Stable Audio 3 生成的 AI 音檔，提示詞、seed、後製與授權（Stability AI Community License）記錄於 [`public/audio/SOURCES.md`](../../public/audio/SOURCES.md)。
+
 先前討論中的圖片僅為即時搜尋取得的視覺參考，並未實際下載至本機；其來源與商業使用授權也尚未確認。因此，不能將它們視為本專案可使用、可散布或可再授權的素材。
 
 在取得原始檔案、來源連結與適用授權前，請勿將外部圖片加入版本控制或遊戲成品。若日後使用 AI 生成的 placeholder，應在個別檔案旁記錄生成方式、日期與使用限制。

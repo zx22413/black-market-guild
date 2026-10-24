@@ -1,4 +1,5 @@
 import { Suspense, lazy, useState } from 'react';
+import { SoundToggle } from '../audio/SoundToggle';
 import { CinnabarChop, GameTitle } from '../skin/titleMark';
 import { isLessonDone } from '../tutorial/progress';
 
@@ -51,6 +52,7 @@ export function MainMenu({ lastRoom, onRejoin, onLocal, onOnline, onTutorial }: 
         </button>
       </nav>
       <footer className="menu-corner">
+        <SoundToggle className="menu-icon" />
         <button type="button" className="menu-icon" onClick={() => setRules(true)}>
           規則書
         </button>

@@ -2562,6 +2562,16 @@ button.inv-stack:hover {
   .inv-market {
     max-width: calc(100vw - 420px);
   }
+  /* The corner menu stays clear of the strip: the round on one row, the buttons under it. */
+  .t3-menu {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 186px;
+  }
+  .rank-rail,
+  .rank-fold {
+    top: 88px;
+  }
 }
 @media (max-width: 640px) {
   .inv-market {

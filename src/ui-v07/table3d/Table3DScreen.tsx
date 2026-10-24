@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { GOODS, RULES_V07, type Action, type Goods, type PlayerId, type ShipId } from '../../v07/game';
 import type { SafeArea } from '../../ui/scene/CameraRig';
+import { soundEngine } from '../audio/soundEngine';
+import { SoundToggle } from '../audio/SoundToggle';
 import { eventLine } from '../log';
 import { beatSeats } from '../scene/beatStage';
 import { ShipCargo } from '../scene/InvestIsland';
@@ -185,6 +187,10 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     // The stage is only this round's once it has been reset for it (until then it is the last round's).
     if ((resolution.stage === 'event' || resolution.stage === 'reveal') && resolvingRound !== null && resolution.stageRound === resolvingRound) onStarted?.(resolvingRound);
   }, [resolution.stage, resolution.stageRound, resolvingRound, onStarted]);
+  // The round's bill rings up like a till.
+  useEffect(() => {
+    if (resolution.stage === 'receipt' && resolvingRound !== null && resolution.stageRound === resolvingRound) soundEngine.playSfx('bill-register');
+  }, [resolution.stage, resolution.stageRound, resolvingRound]);
   const board = useMemo(() => buildBoard(ids, snap.startingCash, events), [ids, events, snap.startingCash]);
 
   // The islands that change production or costs get their moment first: at the round's start and at the launch.
@@ -291,6 +297,16 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
 
   const finished = !holding && snap.result !== null;
   useEffect(() => onShown?.(dismissed, finished), [onShown, dismissed, finished]);
+  // The match's end: the harbor bell swings and rings a peal as the result card comes up.
+  const resultUp = ready && finished && showResult;
+  useEffect(() => {
+    if (resultUp) soundEngine.playSfx('match-end-bells');
+  }, [resultUp]);
+  // While a round resolves (and on the result) the music steps aside for the effects and the
+  // voyage event; it comes back as the next round opens. Leaving the table lets it go.
+  const musicHeld = holding || resultUp;
+  useEffect(() => soundEngine.holdMusic(musicHeld), [musicHeld]);
+  useEffect(() => () => soundEngine.holdMusic(false), []);
   const rows = useMemo(() => (snap.result ? resultRows(snap.events, snap.result, snap.startingCash, RULES_V07) : []), [snap.result, snap.events, snap.startingCash]);
   const winners = useMemo(() => new Set(snap.result?.winners ?? []), [snap.result]);
 
@@ -365,6 +381,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
         <button type="button" data-focus="log" title="航海日誌" aria-label="航海日誌" aria-expanded={logOpen} onClick={() => setLogOpen(!logOpen)}>
           <LogIcon />
         </button>
+        <SoundToggle />
         <button type="button" title="離開" aria-label="離開" onClick={onExit}>
           <ExitIcon />
         </button>
@@ -411,7 +428,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
           }}
         />
       )}
-      {ready && finished && showResult && <ResultCard rows={rows} nameOf={nameOf} colorOf={colorOf} viewer={hotSeat ? null : viewer} rounds={rounds} onRestart={onExit} rematch={rematch} />}
+      {resultUp && <ResultCard rows={rows} nameOf={nameOf} colorOf={colorOf} viewer={hotSeat ? null : viewer} rounds={rounds} onRestart={onExit} rematch={rematch} />}
 
       {ready && handoffTo && (
         <div className="beat-backdrop handoff-backdrop" role="dialog" aria-modal="true" aria-label="換人">
