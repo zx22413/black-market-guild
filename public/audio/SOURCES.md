@@ -13,12 +13,12 @@
 | ambience-waves.ogg | 海浪環境音的 AI 備用版（沒有 `licensed/` 時播） | SFX：gentle ocean waves on a sandy tropical beach / continuous soft waves rolling in and washing back, steady and calm / water and light foam, soft hiss / outdoor beach, wide stereo, no wind noise | 4001 | sfx，20 秒，cfg 1 | −22 LUFS；2 秒交叉淡化循環；循環 18 秒 |
 | sfx-bill-register.ogg | 回合帳單出現時的收銀機聲 | SFX：vintage cash register with a small bright bell / a quick mechanical clunk, then one loud clear high 'ding' of the bell ringing out, the drawer pops open / bright brass bell with a pure ringing tone, metal drawer / small shop, close-up, dry | 12001 | sfx，3 秒，cfg 4，negative：music, voice, long noise, no bell | 切掉頭尾靜音（−60 dB）；300 ms 淡出；峰值 −3 dBFS；2.7 秒 |
 | sfx-match-end-horn.ogg | 結果畫面公布第一名時的勝利號角 | Short triumphant brass fanfare of ship horns and trumpets announcing a safe arrival in port, bold and victorious, ending on a held major chord. | 50002 | music，5 秒，cfg 4，negative：drums loop, electronic, sad, vocals | 切掉頭尾靜音（−55 dB）；500 ms 淡出；峰值 −3 dBFS；4.8 秒 |
+| sfx-seal.ogg | 投資、部署送出（封蠟章，像蓋印章的「啪」） | SFX：rubber stamp, pressed down hard once onto a sheet of paper, a short sharp slap, rubber, ink pad, paper on a wooden desk, office, close-up, dry. | 60001 | sfx，1.5 秒，cfg 4，negative：music, voice, reverb tail, long | 只取第一下（起音前 0.01 秒起 0.45 秒），0.12 秒淡出；峰值 −0.5 dBFS |
 | event-storm.ogg | 暴風雨公開後的背景（取代海浪） | heavy tropical rainstorm at sea, howling wind, waves crashing against a wooden ship's hull, continuous pouring rain and gusts, with a distant thunder rumble now and then, rain on wood and canvas, rough water, out on the open sea, wide stereo. | 20001 | sfx，24 秒，cfg 1 | −20 LUFS；2 秒交叉淡化循環；22 秒 |
 | event-tailwind.ogg | 順風背景的 AI 備用版 | strong steady sea wind filling the canvas sails of a wooden sailing ship, continuous brisk wind, sails flapping and ropes creaking, the hull cutting fast through water, canvas, hemp rope, timber, spray, on deck, outdoors, wide stereo. | 21001 | sfx，24 秒，cfg 1 | −21 LUFS；2 秒交叉淡化循環；22 秒 |
 | event-fog.ogg | 海霧公開後的配樂 | Eerie misty ambient drone with soft low synth pads, a distant lonely foghorn and faint lapping water, slow, sparse and mysterious. | 22001 | music，32 秒，cfg 4，negative：drums, beat, fast, cheerful | 只取音量穩定的段落（0～28 秒）；−21 LUFS；1.5 秒交叉淡化循環；26.5 秒 |
 | event-moonless.ogg | 月黑風高公開後的配樂 | Dark suspenseful night ambient with a low cello drone, soft ticking percussion and quiet crickets, tense and secretive, smugglers sneaking in the dark. | 23001 | music，32 秒，cfg 4，negative：cheerful, upbeat, bright, loud drums | 只取音量穩定的段落（0～30 秒）；−21 LUFS；1.5 秒交叉淡化循環；28.5 秒 |
 | event-rush.ogg | 黑市熱絡公開後的配樂 | Feverish lively bazaar groove with energetic hand drums, shakers, plucked oud-like strings and punchy brass stabs, excited bustling market crowd energy. BPM: 124. | 24002 | music，32 秒，cfg 4，negative：slow, sad, calm | 切掉開頭 4 秒，循環終點選在節奏對齊處；0.4 秒交叉淡化；−19 LUFS；23.2 秒 |
-| sfx-dice.ogg | 擲骰的 AI 備用版 | two small wooden dice, rolled across a table, tumbling and clattering, then settling, bone dice on an oak table, close-up, dry. | 30001 | sfx，2 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
 | sfx-guard.ogg | 航程拍：護衛 +1 | heavy round iron shield, struck once, a firm protective metallic clang with a deep thud, iron and oak, outdoors on a ship's deck, close. | 31001 | sfx，2 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
 | sfx-pirate.ogg | 航程拍：海盜 −1 | old iron ship cannon, one cannon shot boom, the cannonball whistling and splashing into the sea nearby, black powder blast, water splash, open sea, medium distance. | 32001 | sfx，3 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
 | sfx-event-tailwind.ogg | 航程拍：順風 +1 | a sudden gust of sea wind into sails, a rising whoosh that fills the canvas with a snap, wind, canvas, outdoors, wide. | 33001 | sfx，2 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
@@ -26,8 +26,21 @@
 | sfx-event-fog.ogg | 航程拍：海霧（被海盜鎖定的船 +1） | ship's foghorn, one long low mournful blast fading into mist, brass horn, deep tone, foggy harbor, distant, reverberant. | 35001 | sfx，3 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
 | sfx-event-moonless.ogg | 航程拍：月黑風高（被護衛鎖定的船 −1） | deep cinematic low impact, one dark ominous boom with a soft reverse swell before it, sub bass, muffled drum, large dark space. | 36001 | sfx，2 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
 | sfx-island.ogg | 航程拍：燈塔島 +1 | lighthouse lamp switching on, a bright magical ascending shimmer with a warm hum, glass chimes, electric hum, close, light reverb. | 37001 | sfx，2 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
-| sfx-arrive.ogg | 航程拍：船抵達 | wooden sailing ship docking, bumping gently into a wooden pier, ropes tightening, anchor chain rattling down, timber, rope, iron chain, busy harbor, close. | 38001 | sfx，3 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
 | sfx-sink.ogg | 航程拍：船沉沒 | wooden ship hull breaking apart, timber cracking and splintering, a big splash, then bubbling as it sinks, wood, water, open sea, close. | 39001 | sfx，4 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
+
+## Kenney 的 CC0 音效（直接放在本目錄）
+
+取自 Kenney 的 [Casino Audio](https://kenney.nl/assets/casino-audio)（1.1）與 [Impact Sounds](https://kenney.nl/assets/impact-sounds)（2026-10-25），授權 [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)：可商用、免署名、可散布，所以放在公開 repo 裡。只把峰值調到 −1 dBFS，沒有其他剪輯。
+
+| 檔案 | 用途 | 原始檔案 |
+|---|---|---|
+| sfx-card-deal.ogg | 選島與島嶼公開：一張島卡發到桌上 | Casino Audio `card-shove-1.ogg` |
+| sfx-card-flip.ogg | 島卡翻面 | Casino Audio `card-place-3.ogg` |
+| sfx-card-pick.ogg | 選一座島 | Casino Audio `card-place-4.ogg` |
+| sfx-card-confirm.ogg | 選定，島卡飛向座位 | Casino Audio `card-shove-2.ogg` |
+| sfx-islands-reveal.ogg | 各商會的島公開 | Casino Audio `card-shuffle.ogg` |
+| sfx-arrive.ogg | 航程拍：船抵達 | Impact Sounds `impactBell_heavy_000.ogg` |
+| sfx-dice.ogg | 航程拍：起始骰值（沒有 `licensed/` 時；骰面跳動 0.52 秒後落下） | Casino Audio `dice-shake-1.ogg` 0.52 秒（0.7 倍）接 `die-throw-2.ogg`；+6 dB 軟限幅，峰值 −0.3 dBFS |
 
 ## 授權音效庫的剪輯（`licensed/`，不進 git）
 
@@ -35,14 +48,13 @@
 
 | 檔案 | 用途 | 原始錄音（Sonniss 檔名） | 剪輯 |
 |---|---|---|---|
-| licensed/sfx-dice.ogg | 航程拍：起始骰值 | Dice 9 | 整段（0.9 秒），50 ms 淡出；+8 dB 進軟限幅（tanh），峰值 −0.3 dBFS |
+| licensed/sfx-dice.ogg | 航程拍：起始骰值（骰面跳動 0.52 秒後落下） | Kenney Casino Audio `dice-shake-1.ogg`（CC0）；Sonniss Dice 9 | 搖骰 0.52 秒（0.7 倍），接著骰子落桌（Dice 9，+8 dB 軟限幅）；整體 +6 dB 軟限幅，峰值 −0.3 dBFS |
 | licensed/sfx-bill-register.ogg | 回合帳單出現時的收銀聲 | 本目錄的 AI 收銀機 `sfx-bill-register.ogg`；Money,Coins,Drop In Cash Register | AI 收銀機的「叮」之後 0.35 秒，硬幣掉進收銀機（0.8 倍） |
 | licensed/event-tailwind.ogg | 順風公開後的背景 | W 04 Water_19_Splashing, Sailing, Ship_T03 | 20 秒起取 40 秒，−21 LUFS，2 秒交叉淡化循環（38 秒） |
 | licensed/ambience-waves.ogg | 對局中的海浪環境音 | JSE_Ocean Waves Gentle Sand_07 | 10 秒起取 60 秒，−22 LUFS，2 秒交叉淡化循環（58 秒） |
 | licensed/sfx-guard.ogg | 航程拍：護衛 +1 | The Captain's Shield Metal Hit 5；Ice_Spell_Ice_Spell_Buff_Positive_02 | 盾牌撞擊（0.42 秒起 1.8 秒），0.05 秒後疊上增益魔法音（0.8 倍） |
 | licensed/sfx-pirate.ogg | 航程拍：海盜 −1 | warfare_t1b_cannon_firing_forest_distant_MKH8060_2；DeepExplosion02 | 第一聲砲擊（0.42 秒起 2.2 秒），0.5 秒後接低沉爆炸 |
 | licensed/sfx-island.ogg | 航程拍：燈塔島 +1（舞台燈打開） | Switch,ElectricalPanelBreaker,On；signal_lever_on；PM_FN_Events_LvlUps_PowerUps_25 | 斷路器「喀咚」疊上降調 0.6 倍的同一聲加厚低頻；0.35 秒後再接號誌拉桿＋斷路器＋能量上升（0.9 倍） |
-| licensed/sfx-arrive.ogg | 航程拍：船抵達 | ANTIQUE_MILL_BELL_RING_01 | 磨坊鐘一響（8.1 秒起取 1.6 秒、0.9 秒淡出），相隔 0.45 秒敲兩下 |
 | licensed/sfx-sink.ogg | 航程拍：船沉沒 | wood_breaking_cracking_snapping_breaking_peeling_bones_break_snap_crack_13；Bluezone_BC0256_water_splash_008；Elemental - Water Bubbles Big_4 | 木頭碎裂，0.3 秒後落水，1.3 秒後氣泡（0.45 倍） |
 | licensed/sfx-event-storm.ogg | 航程拍：暴風雨 −1，閃電擊中船 | Mixkit「Mid strength single thunder」（#1298）；Mixkit「Explosion hit」（#1704） | 單雷剪到最響處在 0.03 秒、爆炸最響處在 0.33 秒（對上白閃的兩下），共 4 秒，最後 1.4 秒淡出；+9 dB 進軟限幅（tanh），峰值 −0.3 dBFS |
 | licensed/sfx-storm-bolt.ogg | 暴風雨時桌上每道閃電落進海裡的雷聲 | Mixkit「Strong close thunder explosion」（#1300） | 從 0.35 秒起取 4 秒，最後 1.5 秒淡出；峰值 −1 dBFS |

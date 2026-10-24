@@ -1,3 +1,4 @@
+import { useLayoutEffect, useState } from 'react';
 import { GoodIcon } from '../table3d/GoodIcon';
 import { ArrowIcon } from '../table3d/icons';
 import { GOODS, type PlayerId } from '../../v07/game';
@@ -58,15 +59,54 @@ function Actor({ step }: { readonly step: BeatStep }) {
 }
 
 /** The die with the 1–6 meter beside it (1–3 sink, 4–6 arrive). */
+/** How long the start die tumbles through its faces before it lands (the dice sound's shake is as long). */
+export const DIE_TUMBLE_MS = 520;
+const TUMBLE_FACE_MS = 65;
+
+/**
+ * The start die's tumble: random faces, never the same twice running, until it lands on `value`.
+ * Only when the start value first shows (`rolls`), not when a modifier moves it.
+ */
+function useTumble(value: number | null, rolls: boolean): number | null {
+  const [face, setFace] = useState<number | null>(null);
+  // Before paint, so the real value never flashes ahead of the tumble.
+  useLayoutEffect(() => {
+    if (!rolls || value === null) return undefined;
+    let shown = value;
+    const next = () => {
+      shown = ((shown + Math.floor(Math.random() * 5)) % 6) + 1;
+      setFace(shown);
+    };
+    next();
+    const tick = setInterval(next, TUMBLE_FACE_MS);
+    const land = setTimeout(() => {
+      clearInterval(tick);
+      setFace(null);
+    }, DIE_TUMBLE_MS);
+    return () => {
+      clearInterval(tick);
+      clearTimeout(land);
+      setFace(null);
+    };
+  }, [value, rolls]);
+  return face;
+}
+
 export function BeatDie({ value, step, stepsShown }: { readonly value: number | null; readonly step: BeatStep | null; readonly stepsShown: number }) {
+  const tumbling = useTumble(value, stepsShown === 0);
+  const face = tumbling ?? value;
   return (
     <div className="beat-dice">
-      <div key={`${value}-${stepsShown}`} className={`beat-die ${step ? (step.delta > 0 ? 'up' : 'down') : ''} shake-${Math.min(3, Math.abs(step?.delta ?? 0))}`}>
-        {value ?? '?'}
-      </div>
+      {tumbling !== null ? (
+        <div className="beat-die tumble">{tumbling}</div>
+      ) : (
+        <div key={`${value}-${stepsShown}`} className={`beat-die ${step ? (step.delta > 0 ? 'up' : 'down') : ''} shake-${Math.min(3, Math.abs(step?.delta ?? 0))}`}>
+          {value ?? '?'}
+        </div>
+      )}
       <ol className="beat-meter" aria-label="1～3 沉沒，4～6 抵達">
         {[6, 5, 4, 3, 2, 1].map((v) => (
-          <li key={v} className={`${v <= SINK_MAX ? 'sink' : 'safe'} ${value === v ? 'on' : ''}`}>
+          <li key={v} className={`${v <= SINK_MAX ? 'sink' : 'safe'} ${face === v ? 'on' : ''}`}>
             {v}
           </li>
         ))}

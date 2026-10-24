@@ -219,6 +219,8 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
           nameOf,
           submit: (a: Action) => {
             setSealed(sealable.current);
+            // The wax seal is pressed as the decision is actually sent (not when the reminder holds it back).
+            soundEngine.playSfx('seal');
             session.submit(request.id, a);
           },
           ...(onDraft ? { onDraft } : {}),

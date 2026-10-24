@@ -35,7 +35,14 @@ export type SfxId =
   | 'settle-arms'
   | 'settle-insurance'
   | 'settle-salvage'
-  | 'settle-spoil';
+  | 'settle-spoil'
+  // The island draft and reveal (IslandDraft), and sealing a decision (SealSubmit).
+  | 'card-deal'
+  | 'card-flip'
+  | 'card-pick'
+  | 'card-confirm'
+  | 'islands-reveal'
+  | 'seal';
 
 /**
  * `loop`: the track repeats without a break (the menus). `interlude`: the track plays once, then
@@ -82,7 +89,7 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   'storm-strike': { licensed: 'sfx-event-storm.ogg', fallback: 'sfx-event-storm.ogg' },
   'storm-bolt': { licensed: 'sfx-storm-bolt.ogg', fallback: 'sfx-event-storm.ogg' },
   island: { licensed: 'sfx-island.ogg', fallback: 'sfx-island.ogg' },
-  arrive: { licensed: 'sfx-arrive.ogg', fallback: 'sfx-arrive.ogg' },
+  arrive: 'sfx-arrive.ogg',
   sink: { licensed: 'sfx-sink.ogg', fallback: 'sfx-sink.ogg' },
   'settle-sale': { licensed: 'sfx-settle-sale.ogg', fallback: null },
   'settle-coins': { licensed: 'sfx-settle-coins.ogg', fallback: null },
@@ -95,6 +102,12 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   'settle-insurance': { licensed: 'sfx-settle-insurance.ogg', fallback: null },
   'settle-salvage': { licensed: 'sfx-settle-salvage.ogg', fallback: null },
   'settle-spoil': { licensed: 'sfx-settle-spoil.ogg', fallback: null },
+  'card-deal': 'sfx-card-deal.ogg',
+  'card-flip': 'sfx-card-flip.ogg',
+  'card-pick': 'sfx-card-pick.ogg',
+  'card-confirm': 'sfx-card-confirm.ogg',
+  'islands-reveal': 'sfx-islands-reveal.ogg',
+  seal: 'sfx-seal.ogg',
 };
 
 /** Interlude music: seconds of ambience alone between plays, and the fade at the end of a play. */
@@ -110,7 +123,7 @@ export const SFX_GIVE_WAY: Readonly<Partial<Record<SfxId, { readonly gap: number
 };
 
 /** One-shots played louder than `MIX.sfx`: the storm's strike on a ship cuts through the rain; the die and the coins ring out. */
-export const SFX_GAIN: Readonly<Partial<Record<SfxId, number>>> = { 'storm-strike': 1, dice: 1, 'settle-sale': 1, 'settle-coins': 1 };
+export const SFX_GAIN: Readonly<Partial<Record<SfxId, number>>> = { 'storm-strike': 1, dice: 1, 'settle-sale': 1, 'settle-coins': 1, seal: 1 };
 
 /** Gain of each layer; the files are already levelled (music −16 LUFS, waves −22 LUFS). */
 export const MIX = { music: 0.55, ambience: 0.7, sfx: 0.8 } as const;

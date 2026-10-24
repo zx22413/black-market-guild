@@ -1,6 +1,8 @@
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import type { DecisionContext } from '../../v07/bots';
 import type { Action, IslandId, PlayerId } from '../../v07/game';
+import { soundEngine } from '../audio/soundEngine';
+import type { SfxId } from '../audio/soundPlan';
 import { ISLAND_LABELS, ISLAND_TEXT } from '../labels';
 import { legalOf } from '../table/forms';
 import { IslandCard, useDealt } from './IslandCard';
@@ -17,6 +19,19 @@ const FLY_MS = 650;
 const DEAL_MS = 350;
 const DEAL_GAP_MS = 220;
 
+/** A card slides onto the table when it is dealt (`order` staggers them) and turns over when it is up. */
+function useCardSounds(order: number, gapMs: number, up: boolean): void {
+  useEffect(() => {
+    const timer = setTimeout(() => soundEngine.playSfx('card-deal'), order * gapMs * 0.5);
+    return () => clearTimeout(timer);
+  }, [order, gapMs]);
+  useEffect(() => {
+    if (up) soundEngine.playSfx('card-flip');
+  }, [up]);
+}
+
+const play = (id: SfxId) => soundEngine.playSfx(id);
+
 export interface IslandDraftProps {
   readonly context: DecisionContext;
   readonly onSubmit: (action: Action) => void;
@@ -30,6 +45,7 @@ export function IslandDraft({ context, onSubmit }: IslandDraftProps) {
     const action = options.find((a) => a.island === picked);
     if (!action) return;
     setFlying(true);
+    play('card-confirm');
     setTimeout(() => onSubmit(action), FLY_MS);
   };
   return (
@@ -48,7 +64,11 @@ export function IslandDraft({ context, onSubmit }: IslandDraftProps) {
               order={i}
               picked={picked}
               flying={flying}
-              onPick={() => !flying && setPicked(a.island)}
+              onPick={() => {
+                if (flying || picked === a.island) return;
+                play('card-pick');
+                setPicked(a.island);
+              }}
             />
           ))}
         </div>
@@ -73,6 +93,11 @@ export interface IslandRevealProps {
 export function IslandReveal({ islands, seats, onClose }: IslandRevealProps) {
   // Tap a guild's island to read its full rule text.
   const [open, setOpen] = useState<PlayerId | null>(null);
+  useEffect(() => {
+    // A timer the cleanup can cancel: the reveal sounds once even when mounted twice (React's dev checks).
+    const timer = setTimeout(() => play('islands-reveal'), 0);
+    return () => clearTimeout(timer);
+  }, []);
   return (
     <div className="beat-backdrop draft-backdrop" role="dialog" aria-modal="true" aria-label="島嶼公開">
       <div data-focus="reveal" className="isle-reveal">
@@ -117,6 +142,7 @@ interface DraftSlotProps {
 
 function DraftSlot({ island, order, picked, flying, onPick }: DraftSlotProps) {
   const up = useDealt(DEAL_MS + order * DEAL_GAP_MS);
+  useCardSounds(order, DEAL_GAP_MS, up);
   const on = picked === island;
   const text = ISLAND_TEXT[island];
   return (
@@ -145,6 +171,7 @@ interface RevealSlotProps {
 
 function RevealSlot({ island, order, owner, color, open, onToggle }: RevealSlotProps) {
   const up = useDealt(DEAL_MS + order * DEAL_GAP_MS * 2);
+  useCardSounds(order, DEAL_GAP_MS * 2, up);
   const text = ISLAND_TEXT[island];
   return (
     <span className="isle-owner">
