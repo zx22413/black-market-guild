@@ -42,7 +42,13 @@ export type SfxId =
   | 'card-pick'
   | 'card-confirm'
   | 'islands-reveal'
-  | 'seal';
+  | 'seal'
+  // The role reveal, a group at a time (revealSounds.ts).
+  | 'role-intel'
+  | 'role-guard'
+  | 'role-pirate'
+  | 'role-smuggler'
+  | 'role-broker';
 
 /**
  * `loop`: the track repeats without a break (the menus). `interlude`: the track plays once, then
@@ -108,6 +114,11 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   'card-confirm': 'sfx-card-confirm.ogg',
   'islands-reveal': 'sfx-islands-reveal.ogg',
   seal: 'sfx-seal.ogg',
+  'role-intel': 'sfx-role-intel.ogg',
+  'role-guard': 'sfx-role-guard.ogg',
+  'role-pirate': 'sfx-role-pirate.ogg',
+  'role-smuggler': 'sfx-role-smuggler.ogg',
+  'role-broker': 'sfx-role-broker.ogg',
 };
 
 /** Interlude music: seconds of ambience alone between plays, and the fade at the end of a play. */

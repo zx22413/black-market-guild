@@ -30,7 +30,7 @@
 
 ## Kenney 的 CC0 音效（直接放在本目錄）
 
-取自 Kenney 的 [Casino Audio](https://kenney.nl/assets/casino-audio)（1.1）與 [Impact Sounds](https://kenney.nl/assets/impact-sounds)（2026-10-25），授權 [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)：可商用、免署名、可散布，所以放在公開 repo 裡。只把峰值調到 −1 dBFS，沒有其他剪輯。
+取自 Kenney 的 [Casino Audio](https://kenney.nl/assets/casino-audio)（1.1）、[Impact Sounds](https://kenney.nl/assets/impact-sounds) 與 [RPG Audio](https://kenney.nl/assets/rpg-audio)（2026-10-25），授權 [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)：可商用、免署名、可散布，所以放在公開 repo 裡。單一檔案只把峰值調到 −1 dBFS；疊合的（角色揭露、擲骰）另註，疊好後 +8 dB 進軟限幅、峰值 −0.3 dBFS。
 
 | 檔案 | 用途 | 原始檔案 |
 |---|---|---|
@@ -41,6 +41,11 @@
 | sfx-islands-reveal.ogg | 各商會的島公開 | Casino Audio `card-shuffle.ogg` |
 | sfx-arrive.ogg | 航程拍：船抵達 | Impact Sounds `impactBell_heavy_000.ogg` |
 | sfx-dice.ogg | 航程拍：起始骰值（沒有 `licensed/` 時；骰面跳動 0.52 秒後落下） | Casino Audio `dice-shake-1.ogg` 0.52 秒（0.7 倍）接 `die-throw-2.ogg`；+6 dB 軟限幅，峰值 −0.3 dBFS |
+| sfx-role-intel.ogg | 角色揭露：情報商人 | RPG Audio `metalLatch.ogg`，0.18 秒後疊 `metalClick.ogg`（望遠鏡拉開） |
+| sfx-role-guard.ogg | 角色揭露：護衛 | Impact Sounds `impactMetal_heavy_000.ogg` 疊 RPG Audio `beltHandle1.ogg`（0.5 倍） |
+| sfx-role-pirate.ogg | 角色揭露：海盜 | RPG Audio `drawKnife2.ogg`，0.12 秒後疊 Impact Sounds `impactMetal_light_002.ogg`（0.6 倍，拔刀的金屬餘響） |
+| sfx-role-smuggler.ogg | 角色揭露：走私商人 | RPG Audio `cloth3.ogg`，0.12 秒後疊 `beltHandle2.ogg`（0.6 倍） |
+| sfx-role-broker.ogg | 角色揭露：莊家 | RPG Audio `handleCoins2.ogg`（把玩硬幣） |
 
 ## 授權音效庫的剪輯（`licensed/`，不進 git）
 

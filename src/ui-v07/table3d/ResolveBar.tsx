@@ -1,4 +1,7 @@
+import { useEffect, useRef } from 'react';
 import type { RoleId } from '../../v07/game';
+import { revealSound } from '../audio/revealSounds';
+import { soundEngine } from '../audio/soundEngine';
 import { ROLE_LABELS, ROLE_TEXT } from '../labels';
 import { InfoTip } from './InfoTip';
 import { FastForwardIcon, FlagIcon, IconDisc } from './icons';
@@ -36,6 +39,13 @@ export interface RevealGroupLike {
 
 /** The roles of the round as discs, in reveal order; the ones still hidden are dashed blanks. */
 export function RevealChips({ groups, shown }: { readonly groups: readonly RevealGroupLike[]; readonly shown: number }) {
+  // Each group turned over sounds its role (only the last one when "reveal all" skips ahead).
+  const before = useRef(0);
+  useEffect(() => {
+    const sound = revealSound(groups, before.current, shown);
+    before.current = shown;
+    if (sound) soundEngine.playSfx(sound);
+  }, [groups, shown]);
   return (
     <span className="bar-chips">
       {groups.map((g, i) =>
