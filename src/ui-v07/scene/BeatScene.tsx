@@ -1,12 +1,15 @@
+import { Line } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { DoubleSide, Vector3, type Group, type Mesh, type MeshBasicMaterial } from 'three';
+import { DoubleSide, Vector3, type Group, type Mesh, type MeshBasicMaterial, type Object3D } from 'three';
 import type { PlayerId, ShipId, VoyageEventId } from '../../v07/game';
 import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
 import { seatPosition } from '../../ui/scene/layout';
 import { Model, type ModelName } from '../../ui/scene/Model';
 import { SEA_LEVEL, seaSurfaceY } from '../../ui/scene/seaWave';
 import { shipPose } from '../../ui/scene/Ships';
+import { boltPath } from '../../ui/scene/stormMath';
+import { soundEngine } from '../audio/soundEngine';
 import { useSwell, useWavePhase } from '../../ui/scene/SwellContext';
 import type { ShipState } from '../../ui/scene/tableModel';
 import type { BeatView } from '../beats/beatTimeline';
@@ -39,6 +42,10 @@ const ACTOR_SPOT = { x: 7, z: 5, spread: 5 } as const;
 /** How long after a step begins the ship takes the hit (an actor first has to arrive). */
 const HIT_DELAY: Readonly<Record<BeatHit['kind'], number>> = { ram: 0.7, raid: RAID.ram, shield: 0.45, bastion: BARRAGE.shield, lightning: 0.2, push: 0.15, lift: 0.45, jolt: 0.15, beacon: SPOT_TIME.lock };
 const HIT_LENGTH = 0.7;
+/** Height the storm's bolt drops from onto a struck ship. */
+const HIT_BOLT_HEIGHT = 28;
+/** The whole picture flashes white as the bolt lands: bright, a dip, a second flicker. */
+const WHITE_FLASH: Keyframe[] = [{ filter: 'none' }, { filter: 'brightness(3.4) saturate(0.2)' }, { filter: 'brightness(1.3)' }, { filter: 'brightness(2.6) saturate(0.4)' }, { filter: 'none' }];
 /** Hits from an island at work: their word lands with the hit itself (the CSS delay is for the rest). */
 const ISLAND_HITS: ReadonlySet<BeatHit['kind']> = new Set(['beacon', 'raid', 'bastion']);
 const HIT_WORD: Partial<Record<BeatHit['kind'], string>> = { ram: '撞擊！', raid: '海盜灣！', shield: '護航！', bastion: '要塞！', lightning: '雷擊！', beacon: '燈塔！' };
@@ -216,9 +223,20 @@ function ShieldFx({ at, delay = HIT_DELAY.shield, color = '#7ec8ff', size = 1 }:
 
 /** What the ship takes: a ram per pirate, a shield for guards, a lightning bolt in a storm. */
 function HitFx({ hit, at, from }: { readonly hit: BeatHit; readonly at: Vector3; readonly from: readonly Vector3[] }) {
-  const mesh = useRef<Mesh>(null);
+  const mesh = useRef<Object3D>(null);
   const start = useRef<number | null>(null);
   const canvas = useThree((state) => state.gl.domElement);
+  // A jagged bolt like the storm's own, laid out anew for each strike.
+  const bolt = useMemo(() => boltPath([at.x, at.z], HIT_BOLT_HEIGHT, Math.random) as [number, number, number][], [at.x, at.z, hit.key]);
+  useEffect(() => {
+    if (hit.kind !== 'lightning') return undefined;
+    // The thunderclap and the flash go off together: heard late, it would pass for the ship sinking.
+    const timer = setTimeout(() => {
+      canvas.animate?.(WHITE_FLASH, { duration: 450, easing: 'ease-out' });
+      soundEngine.playSfx('storm-strike');
+    }, HIT_DELAY.lightning * 1000);
+    return () => clearTimeout(timer);
+  }, [canvas, hit.kind, hit.key]);
   // The whole picture jolts when a ram lands.
   useEffect(() => {
     if (hit.kind !== 'ram' && hit.kind !== 'raid') return undefined;
@@ -237,14 +255,8 @@ function HitFx({ hit, at, from }: { readonly hit: BeatHit; readonly at: Vector3;
     if (!m) return;
     start.current ??= clock.elapsedTime;
     const t = clock.elapsedTime - start.current - HIT_DELAY[hit.kind];
-    const material = m.material as MeshBasicMaterial;
-    if (t < 0 || t > HIT_LENGTH) {
-      m.visible = false;
-      return;
-    }
-    m.visible = true;
-    // Two quick flickers.
-    material.opacity = Math.sin((t / HIT_LENGTH) * Math.PI * 4) > 0 ? 1 - (t / HIT_LENGTH) * 0.6 : 0.1;
+    // Two quick flickers, then gone.
+    m.visible = t >= 0 && t <= HIT_LENGTH && Math.sin((t / HIT_LENGTH) * Math.PI * 4) > 0;
   });
   if (hit.kind === 'ram' || hit.kind === 'raid') return <>{from.map((spot, i) => <RamFx key={i} ship={at} from={spot} delay={HIT_DELAY[hit.kind]} />)}</>;
   if (hit.kind === 'shield') return <ShieldFx at={at} />;
@@ -258,10 +270,10 @@ function HitFx({ hit, at, from }: { readonly hit: BeatHit; readonly at: Vector3;
     );
   if (hit.kind !== 'lightning') return null;
   return (
-    <mesh ref={mesh} position={[at.x, 14, at.z]} visible={false}>
-      <boxGeometry args={[0.35, 28, 0.35]} />
-      <meshBasicMaterial color="#f4f8ff" transparent toneMapped={false} />
-    </mesh>
+    <group ref={mesh} visible={false}>
+      <Line points={bolt} color="#b9c8ff" lineWidth={16} transparent opacity={0.3} />
+      <Line points={bolt} color="#fbfbff" lineWidth={5} />
+    </group>
   );
 }
 

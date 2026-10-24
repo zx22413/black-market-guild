@@ -44,9 +44,10 @@ describe('sound of each moment in a ship beat', () => {
     expect(beatSound(b, view({ showStart: true }), view({ showStart: true }))).toBeNull();
   });
 
+  // The storm's step (null here) sounds with the bolt's flash in the scene instead.
   it('gives each modifier its own sound', () => {
     const at = (n: number) => beatSound(b, view({ showStart: true, stepsShown: n - 1 }), view({ showStart: true, stepsShown: n }));
-    expect([1, 2, 3, 4, 5].map(at)).toEqual(['guard', 'pirate', 'event-storm', 'island', null]);
+    expect([1, 2, 3, 4, 5].map(at)).toEqual(['guard', 'pirate', null, 'island', null]);
   });
 
   it('sounds the voyage event that changed the die', () => {

@@ -16,11 +16,11 @@ export type SfxId =
   | 'guard'
   | 'pirate'
   | 'event-tailwind'
-  | 'event-storm'
   | 'event-fog'
   | 'event-moonless'
-  // A bolt of the storm's lightning over the table (Storm's onStrike).
+  // The storm's lightning: a bolt striking a ship (with its flash, BeatScene), a bolt over open sea (Storm's onStrike).
   | 'storm-strike'
+  | 'storm-bolt'
   | 'island'
   | 'arrive'
   | 'sink';
@@ -64,10 +64,10 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   guard: { licensed: 'sfx-guard.ogg', fallback: 'sfx-guard.ogg' },
   pirate: { licensed: 'sfx-pirate.ogg', fallback: 'sfx-pirate.ogg' },
   'event-tailwind': 'sfx-event-tailwind.ogg',
-  'event-storm': { licensed: 'sfx-event-storm.ogg', fallback: 'sfx-event-storm.ogg' },
   'event-fog': 'sfx-event-fog.ogg',
   'event-moonless': 'sfx-event-moonless.ogg',
-  'storm-strike': { licensed: 'sfx-storm-strike.ogg', fallback: 'sfx-event-storm.ogg' },
+  'storm-strike': { licensed: 'sfx-event-storm.ogg', fallback: 'sfx-event-storm.ogg' },
+  'storm-bolt': { licensed: 'sfx-storm-bolt.ogg', fallback: 'sfx-event-storm.ogg' },
   island: { licensed: 'sfx-island.ogg', fallback: 'sfx-island.ogg' },
   arrive: { licensed: 'sfx-arrive.ogg', fallback: 'sfx-arrive.ogg' },
   sink: { licensed: 'sfx-sink.ogg', fallback: 'sfx-sink.ogg' },
@@ -75,6 +75,18 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
 
 /** Interlude music: seconds of ambience alone between plays, and the fade at the end of a play. */
 export const INTERLUDE = { rest: 75, outro: 4 } as const;
+
+/**
+ * One-shots that give way: dropped when one of `after` started less than `gap` seconds ago. The
+ * storm's bolts over open sea stay quiet around the one that strikes a ship, so it is heard; the
+ * strike itself always sounds.
+ */
+export const SFX_GIVE_WAY: Readonly<Partial<Record<SfxId, { readonly gap: number; readonly after: readonly SfxId[] }>>> = {
+  'storm-bolt': { gap: 4, after: ['storm-bolt', 'storm-strike'] },
+};
+
+/** One-shots played louder than `MIX.sfx`: the storm's strike on a ship must cut through the rain. */
+export const SFX_GAIN: Readonly<Partial<Record<SfxId, number>>> = { 'storm-strike': 1 };
 
 /** Gain of each layer; the files are already levelled (music −16 LUFS, waves −22 LUFS). */
 export const MIX = { music: 0.55, ambience: 0.7, sfx: 0.8 } as const;

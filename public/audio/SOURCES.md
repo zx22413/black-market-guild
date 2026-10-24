@@ -22,7 +22,7 @@
 | sfx-guard.ogg | 航程拍：護衛 +1 | heavy round iron shield, struck once, a firm protective metallic clang with a deep thud, iron and oak, outdoors on a ship's deck, close. | 31001 | sfx，2 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
 | sfx-pirate.ogg | 航程拍：海盜 −1 | old iron ship cannon, one cannon shot boom, the cannonball whistling and splashing into the sea nearby, black powder blast, water splash, open sea, medium distance. | 32001 | sfx，3 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
 | sfx-event-tailwind.ogg | 航程拍：順風 +1 | a sudden gust of sea wind into sails, a rising whoosh that fills the canvas with a snap, wind, canvas, outdoors, wide. | 33001 | sfx，2 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
-| sfx-event-storm.ogg | 航程拍：暴風雨 −1 | lightning strike and thunder, one sharp thunder crack close by, rolling into a low rumble, thunder, open sea, huge outdoor space. | 34001 | sfx，3 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
+| sfx-event-storm.ogg | 暴風雨雷聲的 AI 備用版（沒有 `licensed/` 時，擊中船與海上閃電都播這個） | lightning strike and thunder, one sharp thunder crack close by, rolling into a low rumble, thunder, open sea, huge outdoor space. | 34001 | sfx，3 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
 | sfx-event-fog.ogg | 航程拍：海霧（被海盜鎖定的船 +1） | ship's foghorn, one long low mournful blast fading into mist, brass horn, deep tone, foggy harbor, distant, reverberant. | 35001 | sfx，3 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
 | sfx-event-moonless.ogg | 航程拍：月黑風高（被護衛鎖定的船 −1） | deep cinematic low impact, one dark ominous boom with a soft reverse swell before it, sub bass, muffled drum, large dark space. | 36001 | sfx，2 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
 | sfx-island.ogg | 航程拍：燈塔島 +1 | lighthouse lamp switching on, a bright magical ascending shimmer with a warm hum, glass chimes, electric hum, close, light reverb. | 37001 | sfx，2 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
@@ -40,10 +40,10 @@
 | licensed/sfx-island.ogg | 航程拍：燈塔島 +1（舞台燈打開） | Switch,ElectricalPanelBreaker,On；signal_lever_on；PM_FN_Events_LvlUps_PowerUps_25 | 斷路器「喀咚」疊上降調 0.6 倍的同一聲加厚低頻；0.35 秒後再接號誌拉桿＋斷路器＋能量上升（0.9 倍） |
 | licensed/sfx-arrive.ogg | 航程拍：船抵達 | ANTIQUE_MILL_BELL_RING_01 | 磨坊鐘一響（8.1 秒起取 1.6 秒、0.9 秒淡出），相隔 0.45 秒敲兩下 |
 | licensed/sfx-sink.ogg | 航程拍：船沉沒 | wood_breaking_cracking_snapping_breaking_peeling_bones_break_snap_crack_13；Bluezone_BC0256_water_splash_008；Elemental - Water Bubbles Big_4 | 木頭碎裂，0.3 秒後落水，1.3 秒後氣泡（0.45 倍） |
-| licensed/sfx-event-storm.ogg | 航程拍：暴風雨 −1 | Mixkit「Mid strength single thunder」（#1298）；Mixkit「Explosion hit」（#1704） | 單雷從 0.2 秒起，1.35 秒後接爆炸重擊（0.9 倍），共 5 秒，最後 1.5 秒淡出；峰值 −0.5 dBFS |
-| licensed/sfx-storm-strike.ogg | 暴風雨時桌上每道閃電落下的雷聲 | Mixkit「Strong close thunder explosion」（#1300）；Mixkit「Cinematic impact thunder」（#1286） | 近距離雷爆從 0.35 秒起，0.85 秒後接電影感雷擊（0.9 倍），共 5 秒，最後 1.5 秒淡出；峰值 −0.5 dBFS |
+| licensed/sfx-event-storm.ogg | 航程拍：暴風雨 −1，閃電擊中船 | Mixkit「Mid strength single thunder」（#1298）；Mixkit「Explosion hit」（#1704） | 單雷剪到最響處在 0.03 秒、爆炸最響處在 0.33 秒（對上白閃的兩下），共 4 秒，最後 1.4 秒淡出；+9 dB 進軟限幅（tanh），峰值 −0.3 dBFS |
+| licensed/sfx-storm-bolt.ogg | 暴風雨時桌上每道閃電落進海裡的雷聲 | Mixkit「Strong close thunder explosion」（#1300） | 從 0.35 秒起取 4 秒，最後 1.5 秒淡出；峰值 −1 dBFS |
 
-Mixkit 的四段取自 [mixkit.co](https://mixkit.co/free-sound-effects/thunder/)（2026-10-24），授權為 [Mixkit Sound Effects Free License](https://mixkit.co/license/#sfxFree)：可免費用於商業專案與電子遊戲、不需署名；**不得單獨散布音效本身**，所以同樣放在 `licensed/`。
+Mixkit 的三段素材取自 [mixkit.co](https://mixkit.co/free-sound-effects/thunder/)（2026-10-24），授權為 [Mixkit Sound Effects Free License](https://mixkit.co/license/#sfxFree)：可免費用於商業專案與電子遊戲、不需署名；**不得單獨散布音效本身**，所以同樣放在 `licensed/`。
 
 所有剪輯都重取樣為 48 kHz、峰值 −1 dBFS，輸出 Ogg Vorbis（quality 0.8）。
 

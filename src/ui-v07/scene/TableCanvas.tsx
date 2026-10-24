@@ -169,8 +169,8 @@ function asSceneShip(ship: TableShip, lane: number): SceneShip {
 }
 
 
-/** Each bolt of the storm over the table lands with a close thunderclap. */
-const strikeThunder = () => soundEngine.playSfx('storm-strike');
+/** Each bolt of the storm over open sea lands with a close thunderclap. */
+const strikeThunder = () => soundEngine.playSfx('storm-bolt');
 
 export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, pulses, market, litSeats }: TableCanvasProps) {
   const look = WEATHER[weather ?? 'clear'];

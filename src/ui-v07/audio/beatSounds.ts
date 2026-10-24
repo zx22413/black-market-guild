@@ -8,7 +8,7 @@ import type { SfxId } from './soundPlan';
 
 const EVENT_STEP: Readonly<Partial<Record<VoyageEventId, SfxId>>> = {
   tailwind: 'event-tailwind',
-  storm: 'event-storm',
+  // The storm's step is sounded by the scene, on the bolt's flash (BeatScene's HitFx), to stay in sync.
   'sea-fog': 'event-fog',
   'moonless-night': 'event-moonless',
 };

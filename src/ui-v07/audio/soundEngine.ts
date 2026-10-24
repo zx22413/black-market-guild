@@ -2,7 +2,7 @@
 // beat-aligned loop points stay seamless (an <audio loop> element can leave a gap). Browsers only
 // let sound start after the player touches the page, so nothing plays before `unlock`.
 
-import { FADE, INTERLUDE, MIX, SOUND_FILES, musicNow, type AmbienceId, type EventBedId, type MusicId, type SfxId, type Soundscape } from './soundPlan';
+import { FADE, INTERLUDE, MIX, SFX_GAIN, SFX_GIVE_WAY, SOUND_FILES, musicNow, type AmbienceId, type EventBedId, type MusicId, type SfxId, type Soundscape } from './soundPlan';
 
 type SoundId = keyof typeof SOUND_FILES;
 import { isMuted, subscribeMuted } from './soundSettings';
@@ -35,6 +35,8 @@ class SoundEngine {
   /** When each slot's outgoing track has gone quiet (audio-context time). */
   private readonly quietAt: Record<Slot, number> = { music: 0, ambience: 0 };
   private wanted: Soundscape | null = null;
+  /** When each one-shot last started (audio-context time), for `SFX_GIVE_WAY`. */
+  private readonly lastSfx = new Map<SfxId, number>();
   /** A round is resolving: interlude music stays out. */
   private held = false;
   /** The voyage event's bed, in place of the match's ambience while the round's show runs. */
@@ -101,16 +103,21 @@ class SoundEngine {
   setEventBed(bed: EventBedId | null): void {
     if (bed === this.eventBed) return;
     this.eventBed = bed;
+    // Load the storm's thunder before its first bolt, so the first clap is not late on its flash.
+    if (bed === 'storm' && this.ctx) for (const id of ['storm-strike', 'storm-bolt'] as const) void this.sound(id);
     this.apply();
   }
 
   playSfx(id: SfxId): void {
     const { ctx, master } = this;
     if (!ctx || !master || ctx.state !== 'running' || isMuted()) return;
+    const giveWay = SFX_GIVE_WAY[id];
+    if (giveWay && giveWay.after.some((other) => ctx.currentTime - (this.lastSfx.get(other) ?? -Infinity) < giveWay.gap)) return;
+    this.lastSfx.set(id, ctx.currentTime);
     void this.sound(id).then((buffer) => {
       if (!buffer) return;
       const gain = ctx.createGain();
-      gain.gain.value = MIX.sfx;
+      gain.gain.value = SFX_GAIN[id] ?? MIX.sfx;
       gain.connect(master);
       const source = ctx.createBufferSource();
       source.buffer = buffer;
