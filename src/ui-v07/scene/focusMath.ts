@@ -31,14 +31,22 @@ interface Box {
   readonly maxY: number;
 }
 
-/** Screen-space box (px) of the points, the label clearance above each point included. */
-function screenBox(camera: PerspectiveCamera, points: readonly FitPoint[], width: number, height: number): Box {
+/**
+ * A label's clearance takes at most this share of the free height. It is in pixels, so it does not
+ * shrink as the camera backs off: on a short screen a full clearance would push the camera out until
+ * the whole table is a speck. Past the cap the label overlaps its ship instead (labels are clamped
+ * on screen anyway).
+ */
+const CLEARANCE_SHARE = 0.45;
+
+/** Screen-space box (px) of the points, the label clearance above each point included (up to `maxClearance`). */
+function screenBox(camera: PerspectiveCamera, points: readonly FitPoint[], width: number, height: number, maxClearance = Infinity): Box {
   let box = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
   for (const { position, clearance = 0 } of points) {
     projected.set(...position).project(camera);
     const x = ((projected.x + 1) / 2) * width;
     const y = ((1 - projected.y) / 2) * height;
-    box = { minX: Math.min(box.minX, x), maxX: Math.max(box.maxX, x), minY: Math.min(box.minY, y - clearance), maxY: Math.max(box.maxY, y) };
+    box = { minX: Math.min(box.minX, x), maxX: Math.max(box.maxX, x), minY: Math.min(box.minY, y - Math.min(clearance, maxClearance)), maxY: Math.max(box.maxY, y) };
   }
   return box;
 }
@@ -47,14 +55,17 @@ function fits(box: Box, width: number, height: number, safe: SafeArea): boolean 
   return box.minX >= safe.left && box.maxX <= width - safe.right && box.minY >= safe.top && box.maxY <= height - safe.bottom;
 }
 
+const clearanceCap = (height: number, safe: SafeArea): number => Math.max(0, height - safe.top - safe.bottom) * CLEARANCE_SHARE;
+
 /** Smallest distance at which every point fits, aiming at (x, z), by bisection. */
 function closestDistance(camera: PerspectiveCamera, points: readonly FitPoint[], width: number, height: number, safe: SafeArea, x: number, z: number): number {
+  const maxClearance = clearanceCap(height, safe);
   let near = 10;
   let far = 800;
   for (let i = 0; i < 26; i++) {
     const mid = (near + far) / 2;
     placeCamera(camera, { x, z, distance: mid });
-    if (fits(screenBox(camera, points, width, height), width, height, safe)) far = mid;
+    if (fits(screenBox(camera, points, width, height, maxClearance), width, height, safe)) far = mid;
     else near = mid;
   }
   return far;
@@ -74,7 +85,7 @@ export function frame(camera: PerspectiveCamera, points: readonly FitPoint[], wi
   for (let i = 0; i < 6; i++) {
     distance = closestDistance(camera, points, width, height, safe, x, z);
     placeCamera(camera, { x, z, distance });
-    const box = screenBox(camera, points, width, height);
+    const box = screenBox(camera, points, width, height, clearanceCap(height, safe));
     const perPx = (2 * distance * Math.tan(MathUtils.degToRad(camera.fov) / 2)) / height;
     x += ((box.minX + box.maxX) / 2 - (safe.left + width - safe.right) / 2) * perPx;
     z += ((box.minY + box.maxY) / 2 - (safe.top + height - safe.bottom) / 2) * (perPx / tilt);

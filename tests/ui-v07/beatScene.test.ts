@@ -124,6 +124,16 @@ describe('focus camera framing', () => {
     expect(Math.abs(((c.x + 1) / 2) * width - (safe.left + width - safe.right) / 2)).toBeLessThan(12);
   });
 
+  it('keeps a close-up when a tall label leaves little room on a short screen', () => {
+    // 1025×785 with the market strip on two rows: the ship's tag asks for 300 px above it.
+    const short = { w: 1025, h: 785, safe: { top: 152, bottom: 107, left: 24, right: 24 } };
+    const camera = new PerspectiveCamera(38, short.w / short.h);
+    const ring = around([-30, 0, 2], 15);
+    const bare = frame(camera, ring, short.w, short.h, short.safe);
+    const tagged = frame(camera, [...ring, { position: [-30, 8, 0] as const, clearance: 300 }], short.w, short.h, short.safe);
+    expect(tagged.distance).toBeLessThan(bare.distance * 2); // it was 12× before the cap
+  });
+
   it('closes in further on one ship than on the whole table', () => {
     const camera = new PerspectiveCamera(38, width / height);
     const ship = frame(camera, around([-30, 0, 2], 24), width, height, safe);
