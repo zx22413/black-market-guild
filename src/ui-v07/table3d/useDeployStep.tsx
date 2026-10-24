@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Bet, ShipId } from '../../v07/game';
+import { soundEngine } from '../audio/soundEngine';
 import { ROLE_LABELS } from '../labels';
 import { besideShip, type TablePin, type TableShip } from '../scene/TableCanvas';
 import {
@@ -54,6 +55,10 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     setChoice(EMPTY_DEPLOY);
     setReminding(null);
     setPeek(null);
+    // Your turn to deploy: a soft call (a timer the cleanup cancels, so once).
+    if (requestId === null) return undefined;
+    const timer = setTimeout(() => soundEngine.playSfx('ui-turn'), 0);
+    return () => clearTimeout(timer);
   }, [requestId]);
 
   // What the choice would submit, for whoever follows along (the tutorial lights 「提交」 when it fits).
@@ -74,7 +79,11 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   const noDeploy = options.find((a) => a.role === null);
   const ownerOf = (id: ShipId) => board.ships.find((s) => s.id === id)?.owner;
 
-  const pick = (role: RolePick) => setChoice(pickRole(role));
+  // A role card snaps into place with a bright click, like a ball dropping into a roulette pocket.
+  const pick = (role: RolePick) => {
+    if (role !== choice.role) soundEngine.playSfx('role-pick');
+    setChoice(pickRole(role));
+  };
   // Click a ship to send the role there; click it again to take the role back. A lighthouse intel
   // merchant's next click on another ship is the optional second look (§11.2).
   const clickShip = (id: ShipId) => {

@@ -3,6 +3,7 @@ import type { DecisionContext } from '../../v07/bots';
 import type { Action, IslandId, PlayerId } from '../../v07/game';
 import { soundEngine } from '../audio/soundEngine';
 import type { SfxId } from '../audio/soundPlan';
+import { useSoundOnce } from '../audio/useUiSounds';
 import { ISLAND_LABELS, ISLAND_TEXT } from '../labels';
 import { legalOf } from '../table/forms';
 import { IslandCard, useDealt } from './IslandCard';
@@ -93,11 +94,7 @@ export interface IslandRevealProps {
 export function IslandReveal({ islands, seats, onClose }: IslandRevealProps) {
   // Tap a guild's island to read its full rule text.
   const [open, setOpen] = useState<PlayerId | null>(null);
-  useEffect(() => {
-    // A timer the cleanup can cancel: the reveal sounds once even when mounted twice (React's dev checks).
-    const timer = setTimeout(() => play('islands-reveal'), 0);
-    return () => clearTimeout(timer);
-  }, []);
+  useSoundOnce('islands-reveal');
   return (
     <div className="beat-backdrop draft-backdrop" role="dialog" aria-modal="true" aria-label="島嶼公開">
       <div data-focus="reveal" className="isle-reveal">

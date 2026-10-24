@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSoundOnce } from '../audio/useUiSounds';
 
 // A gentle "are you sure?" before submitting something unfinished: says what is missing, lets the
 // player go back or submit anyway, and can be switched off with "不再提醒".
@@ -13,6 +14,7 @@ export interface ReminderDialogProps {
 
 export function ReminderDialog({ title, lines, onBack, onConfirm }: ReminderDialogProps) {
   const [skip, setSkip] = useState(false);
+  useSoundOnce('ui-question');
   return (
     <div className="beat-backdrop reminder-backdrop" onClick={onBack} role="dialog" aria-modal="true" aria-label={title}>
       <div className="beat-card reminder" data-focus="dialog" onClick={(e) => e.stopPropagation()}>

@@ -30,7 +30,7 @@
 
 ## Kenney 的 CC0 音效（直接放在本目錄）
 
-取自 Kenney 的 [Casino Audio](https://kenney.nl/assets/casino-audio)（1.1）、[Impact Sounds](https://kenney.nl/assets/impact-sounds)、[RPG Audio](https://kenney.nl/assets/rpg-audio) 與 [Music Jingles](https://kenney.nl/assets/music-jingles)（2026-10-25），授權 [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)：可商用、免署名、可散布，所以放在公開 repo 裡。單一檔案只把峰值調到 −1 dBFS；疊合的（角色揭露、擲骰）另註，疊好後 +8 dB 進軟限幅、峰值 −0.3 dBFS。
+取自 Kenney 的 [Casino Audio](https://kenney.nl/assets/casino-audio)（1.1）、[Impact Sounds](https://kenney.nl/assets/impact-sounds)、[RPG Audio](https://kenney.nl/assets/rpg-audio)、[Music Jingles](https://kenney.nl/assets/music-jingles)、[Interface Sounds](https://kenney.nl/assets/interface-sounds) 與 [UI Audio](https://kenney.nl/assets/ui-audio)（2026-10-25），授權 [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)：可商用、免署名、可散布，所以放在公開 repo 裡。單一檔案只把峰值調到 −1 dBFS；疊合的（角色揭露、擲骰）另註，疊好後 +8 dB 進軟限幅、峰值 −0.3 dBFS。
 
 | 檔案 | 用途 | 原始檔案 |
 |---|---|---|
@@ -52,6 +52,14 @@
 | sfx-book-open.ogg | 打開規則書 | RPG Audio `bookOpen.ogg` |
 | sfx-book-flip.ogg | 規則書換章節 | RPG Audio `bookFlip3.ogg` |
 | sfx-book-close.ogg | 闔上規則書 | RPG Audio `bookClose.ogg` |
+| sfx-reroll.ogg | 情報重擲：骰子跳 1.4 秒後落定 | Casino Audio `dice-shake-1.ogg` 重複到 1.4 秒（0.7 倍），1.38 秒接 `die-throw-1.ogg` |
+| sfx-build.ogg | 建築升起（敲槌）到金光完成 | Impact Sounds `impactPlank_medium_000`、`impactWood_medium_001`、`impactPlank_medium_002`、`impactWood_medium_003` 於 0／0.35／0.7／1.05 秒，1.5 秒接 Interface Sounds `confirmation_002.ogg` |
+| sfx-ui-click.ogg | 一般按鈕點擊 | UI Audio `click1.ogg` |
+| sfx-ui-question.ogg | 「還沒做完」提醒 | Interface Sounds `question_003.ogg` |
+| sfx-ui-turn.ogg | 輪到你部署角色 | Interface Sounds `drop_002.ogg` |
+| sfx-ui-join.ogg | 線上大廳有人入座 | Interface Sounds `maximize_006.ogg` |
+| sfx-ui-leave.ogg | 線上大廳有人離開 | Interface Sounds `minimize_006.ogg` |
+| sfx-role-pick.ogg | 部署時選一張角色卡（像轉珠落格） | UI Audio `click5.ogg` 升調 1.15 倍，疊 Casino Audio `chips-collide-1.ogg` 前 0.12 秒（0.35 倍）；+8 dB 進軟限幅，峰值 −0.3 dBFS |
 
 ## 授權音效庫的剪輯（`licensed/`，不進 git）
 

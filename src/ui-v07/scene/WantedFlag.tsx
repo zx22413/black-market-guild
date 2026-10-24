@@ -1,6 +1,6 @@
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
-import { soundEngine } from '../audio/soundEngine';
+import { useMemo, useRef } from 'react';
+import { useSoundOnce } from '../audio/useUiSounds';
 import { BufferAttribute, BufferGeometry, Color, DoubleSide, type Group, type Mesh, type MeshBasicMaterial } from 'three';
 import type { Vec3 } from '../../ui/scene/layout';
 import { islandPoint } from './TableCanvas';
@@ -98,11 +98,8 @@ export function WantedFlag({ angle }: { readonly angle: number }) {
   const drop = useRef<Group>(null);
   const ring = useRef<Mesh>(null);
   const born = useRef<number | null>(null);
-  // The flag unfurls with a rustle of cloth (a timer the cleanup can cancel, so it sounds once).
-  useEffect(() => {
-    const timer = setTimeout(() => soundEngine.playSfx('wanted'), 0);
-    return () => clearTimeout(timer);
-  }, []);
+  // The flag unfurls with a rustle of cloth.
+  useSoundOnce('wanted');
   const landedAt = useRef<number | null>(null);
 
   useFrame(({ clock }) => {

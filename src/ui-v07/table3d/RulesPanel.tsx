@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { GOODS, RULES_V07, type BuildingId, type IslandId, type RoleId, type VoyageEventId } from '../../v07/game';
 import { BUILDING_LABELS, BUILDING_TEXT, GOOD_LABELS, ISLAND_LABELS, ISLAND_TEXT, ROLE_LABELS, VOYAGE_EVENT_LABELS, VOYAGE_EVENT_TEXT, WEALTH_RULE_TEXT } from '../labels';
 import { soundEngine } from '../audio/soundEngine';
+import { useSoundOnce } from '../audio/useUiSounds';
 import { BrassCorner } from '../skin/ornaments';
 import { goodDetail, marketRule } from '../table/goodText';
 import { roleDetail } from '../table/roleText';
@@ -138,10 +139,7 @@ export function RulesPanel({ onClose: close }: { readonly onClose: () => void })
     }
     setTab(next);
   };
-  useEffect(() => {
-    const timer = setTimeout(() => soundEngine.playSfx('book-open'), 0);
-    return () => clearTimeout(timer);
-  }, []);
+  useSoundOnce('book-open');
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     document.addEventListener('keydown', onKey);

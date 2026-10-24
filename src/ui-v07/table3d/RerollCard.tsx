@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { soundEngine } from '../audio/soundEngine';
 import type { DecisionContext } from '../../v07/bots';
 import type { Action, PlayerId, ShipId } from '../../v07/game';
 import { SINK_MAX } from '../beats/ShipBeatStage';
@@ -50,6 +51,8 @@ function RollingDie({ raw, result }: { readonly raw: number; readonly result: nu
   const [landed, setLanded] = useState(false);
   useEffect(() => {
     if (result === null) return;
+    // The dice shake through the tumble and land as it stops (sfx-reroll is as long).
+    soundEngine.playSfx('reroll');
     const started = performance.now();
     let tick = 0;
     const timer = setInterval(() => {

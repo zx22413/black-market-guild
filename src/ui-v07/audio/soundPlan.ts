@@ -55,7 +55,17 @@ export type SfxId =
   | 'wanted'
   | 'book-open'
   | 'book-flip'
-  | 'book-close';
+  | 'book-close'
+  // The intel's reroll, a building going up, and the interface (useUiSounds.ts).
+  | 'reroll'
+  | 'build'
+  | 'ui-click'
+  | 'ui-question'
+  | 'ui-turn'
+  | 'ui-join'
+  | 'ui-leave'
+  // Picking a role card from the hand (useDeployStep).
+  | 'role-pick';
 
 /**
  * `loop`: the track repeats without a break (the menus). `interlude`: the track plays once, then
@@ -132,6 +142,14 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   'book-open': 'sfx-book-open.ogg',
   'book-flip': 'sfx-book-flip.ogg',
   'book-close': 'sfx-book-close.ogg',
+  reroll: 'sfx-reroll.ogg',
+  build: 'sfx-build.ogg',
+  'ui-click': 'sfx-ui-click.ogg',
+  'ui-question': 'sfx-ui-question.ogg',
+  'ui-turn': 'sfx-ui-turn.ogg',
+  'ui-join': 'sfx-ui-join.ogg',
+  'ui-leave': 'sfx-ui-leave.ogg',
+  'role-pick': 'sfx-role-pick.ogg',
 };
 
 /** Interlude music: seconds of ambience alone between plays, and the fade at the end of a play. */

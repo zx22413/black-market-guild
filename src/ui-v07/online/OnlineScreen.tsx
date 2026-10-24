@@ -6,6 +6,7 @@ import type { Rematch } from '../table3d/ResultCard';
 import { useLaunchOnStart } from '../menu/launch';
 import type { MenuView } from '../menu/menuSeats';
 import { seatCards, type SeatCard } from './lobbySeats';
+import { useCountSound } from '../audio/useUiSounds';
 import {
   connectRoom,
   createRoom,
@@ -207,6 +208,8 @@ function Lobby({ code, client, state, onLeave, onView }: LobbyProps) {
   const joined = room?.joined ?? false;
   const connected = state.connection === 'open';
   const members = room?.members ?? [];
+  // Someone sitting down or leaving the lobby.
+  useCountSound(members.length, 'ui-join', 'ui-leave');
   const seatOptions = room ? [3, 4].filter((n) => n >= Math.max(room.minSeats, members.length) && n <= room.maxSeats) : [];
   const chosenSeats = seatOptions.includes(seats) ? seats : (seatOptions.at(-1) ?? seats);
   const shownSeats = room?.isHost ? chosenSeats : (room?.maxSeats ?? 4);

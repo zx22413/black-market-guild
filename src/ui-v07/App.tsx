@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { isRoomCode } from '../v07/online';
 import { useSoundtrack } from './audio/useSoundtrack';
+import { useUiClicks } from './audio/useUiSounds';
 import { TUTORIALS, tutorialById, type TutorialId } from '../v07/tutorial';
 import { launchMs } from './menu/launch';
 import { LocalSetup } from './menu/LocalSetup';
@@ -89,6 +90,7 @@ export function App() {
   const view = menuViewOf(mode, onlineView);
   // The menu table means the cover track; a match screen brings the in-game track and the sea.
   useSoundtrack(view);
+  useUiClicks();
   return (
     <>
       {view && <MenuBackdrop view={view} />}

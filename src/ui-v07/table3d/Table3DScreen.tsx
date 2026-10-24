@@ -4,6 +4,7 @@ import type { SafeArea } from '../../ui/scene/CameraRig';
 import { soundEngine } from '../audio/soundEngine';
 import { eventBedFor } from '../audio/soundPlan';
 import { SoundToggle } from '../audio/SoundToggle';
+import { useCountSound } from '../audio/useUiSounds';
 import { eventLine } from '../log';
 import { beatSeats } from '../scene/beatStage';
 import { ShipCargo } from '../scene/InvestIsland';
@@ -193,6 +194,11 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     if (resolution.stage === 'receipt' && resolvingRound !== null && resolution.stageRound === resolvingRound) soundEngine.playSfx('bill-register');
   }, [resolution.stage, resolution.stageRound, resolvingRound]);
   const board = useMemo(() => buildBoard(ids, snap.startingCash, events), [ids, events, snap.startingCash]);
+  // A building rising on someone's island: hammering, then a chime as it finishes.
+  useCountSound(
+    events.reduce((n, e) => n + (e.type === 'buildings-built' ? e.builds.length : 0), 0),
+    'build',
+  );
 
   // The islands that change production or costs get their moment first: at the round's start and at the launch.
   const moments = useIslandMoments({
