@@ -41,8 +41,9 @@
 | licensed/sfx-arrive.ogg | 航程拍：船抵達 | Bell_10_b | 同一聲鈴相隔 0.38 秒敲兩下 |
 | licensed/sfx-sink.ogg | 航程拍：船沉沒 | wood_breaking_cracking_snapping_breaking_peeling_bones_break_snap_crack_13；Bluezone_BC0256_water_splash_008；Elemental - Water Bubbles Big_4 | 木頭碎裂，0.3 秒後落水，1.3 秒後氣泡（0.45 倍） |
 | licensed/sfx-event-storm.ogg | 航程拍：暴風雨 −1 | Mixkit「Mid strength single thunder」（#1298）；Mixkit「Explosion hit」（#1704） | 單雷從 0.2 秒起，1.35 秒後接爆炸重擊（0.9 倍），共 5 秒，最後 1.5 秒淡出；峰值 −0.5 dBFS |
+| licensed/sfx-storm-strike.ogg | 暴風雨時桌上每道閃電落下的雷聲 | Mixkit「Strong close thunder explosion」（#1300）；Mixkit「Cinematic impact thunder」（#1286） | 近距離雷爆從 0.35 秒起，0.85 秒後接電影感雷擊（0.9 倍），共 5 秒，最後 1.5 秒淡出；峰值 −0.5 dBFS |
 
-Mixkit 的兩段取自 [mixkit.co](https://mixkit.co/free-sound-effects/thunder/)（2026-10-24），授權為 [Mixkit Sound Effects Free License](https://mixkit.co/license/#sfxFree)：可免費用於商業專案與電子遊戲、不需署名；**不得單獨散布音效本身**，所以同樣放在 `licensed/`。
+Mixkit 的四段取自 [mixkit.co](https://mixkit.co/free-sound-effects/thunder/)（2026-10-24），授權為 [Mixkit Sound Effects Free License](https://mixkit.co/license/#sfxFree)：可免費用於商業專案與電子遊戲、不需署名；**不得單獨散布音效本身**，所以同樣放在 `licensed/`。
 
 所有剪輯都重取樣為 48 kHz、峰值 −1 dBFS，輸出 Ogg Vorbis（quality 0.8）。
 

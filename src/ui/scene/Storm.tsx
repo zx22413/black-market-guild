@@ -72,7 +72,10 @@ function Rain() {
  * Lightning every few seconds over open sea between the islands: a jagged bolt drops to the water
  * while the whole table flashes with a cold light, flickers and goes dark again.
  */
-function Lightning({ seatAngles }: { readonly seatAngles: readonly number[] }) {
+function Lightning({ seatAngles, onStrike }: StormProps) {
+  // The latest callback, read when a bolt falls (the frame loop is set up once).
+  const strike = useRef(onStrike);
+  strike.current = onStrike;
   const ambient = useRef<AmbientLight>(null);
   const key = useRef<DirectionalLight>(null);
   // Strike times follow the real clock, so storms keep their rhythm even at a low frame rate.
@@ -93,6 +96,7 @@ function Lightning({ seatAngles }: { readonly seatAngles: readonly number[] }) {
     if (now >= nextAt.current) {
       struckAt.current = now;
       nextAt.current = now + nextStrikeDelay(Math.random);
+      strike.current?.();
       relaid.current = false;
     }
     if (!relaid.current && now - struckAt.current > FLASH_SECONDS) {
@@ -128,12 +132,18 @@ function Lightning({ seatAngles }: { readonly seatAngles: readonly number[] }) {
   );
 }
 
+interface StormProps {
+  readonly seatAngles: readonly number[];
+  /** Called as each bolt falls (the thunder). */
+  readonly onStrike?: () => void;
+}
+
 /** Storm weather: driving rain over the table and lightning striking the open sea. */
-export function Storm({ seatAngles }: { readonly seatAngles: readonly number[] }) {
+export function Storm({ seatAngles, onStrike }: StormProps) {
   return (
     <>
       <Rain />
-      <Lightning seatAngles={seatAngles} />
+      <Lightning seatAngles={seatAngles} {...(onStrike ? { onStrike } : {})} />
     </>
   );
 }

@@ -22,6 +22,7 @@ import { VoyageShip, lanePose } from '../../ui/scene/Ships';
 const LANE_POINT: Readonly<Record<ShipState, number>> = { docked: 0, sailing: 0.5, sunk: 0.5, arrived: 0.86 };
 import { CrestSpray, ShoreSpray } from '../../ui/scene/Spray';
 import { Storm } from '../../ui/scene/Storm';
+import { soundEngine } from '../audio/soundEngine';
 import { SwellProvider } from '../../ui/scene/SwellContext';
 import type { SceneShip, ShipState } from '../../ui/scene/tableModel';
 import { WEATHER, fillOf } from '../../ui/scene/weather';
@@ -167,6 +168,10 @@ function asSceneShip(ship: TableShip, lane: number): SceneShip {
   return { id: ship.id, kind: 'solo', owners: [ship.owner], lane, state: ship.state, roles: [], rerolled: false, smuggled: 0, caughtSmugglers: [], modifier: null };
 }
 
+
+/** Each bolt of the storm over the table lands with a close thunderclap. */
+const strikeThunder = () => soundEngine.playSfx('storm-strike');
+
 export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, pulses, market, litSeats }: TableCanvasProps) {
   const look = WEATHER[weather ?? 'clear'];
   const { angles, laneOf } = useTableLayout(seats);
@@ -209,7 +214,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
             <ShoreSpray shores={shores} />
             <CrestSpray shores={shores} />
             {(look.clouds ?? 0) > 0 && <Clouds amount={look.clouds ?? 0} />}
-            {weather === 'storm' && <Storm seatAngles={angles} />}
+            {weather === 'storm' && <Storm seatAngles={angles} onStrike={strikeThunder} />}
             {weather === 'tailwind' && <Wind />}
             {weather === 'sea-fog' && <SeaFog />}
             {weather === 'moonless-night' && <Night seatAngles={angles} />}

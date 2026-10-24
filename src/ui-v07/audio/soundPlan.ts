@@ -19,6 +19,8 @@ export type SfxId =
   | 'event-storm'
   | 'event-fog'
   | 'event-moonless'
+  // A bolt of the storm's lightning over the table (Storm's onStrike).
+  | 'storm-strike'
   | 'island'
   | 'arrive'
   | 'sink';
@@ -65,6 +67,7 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   'event-storm': { licensed: 'sfx-event-storm.ogg', fallback: 'sfx-event-storm.ogg' },
   'event-fog': 'sfx-event-fog.ogg',
   'event-moonless': 'sfx-event-moonless.ogg',
+  'storm-strike': { licensed: 'sfx-storm-strike.ogg', fallback: 'sfx-event-storm.ogg' },
   island: { licensed: 'sfx-island.ogg', fallback: 'sfx-island.ogg' },
   arrive: { licensed: 'sfx-arrive.ogg', fallback: 'sfx-arrive.ogg' },
   sink: { licensed: 'sfx-sink.ogg', fallback: 'sfx-sink.ogg' },
