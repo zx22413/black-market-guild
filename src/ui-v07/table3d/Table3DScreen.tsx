@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { GOODS, RULES_V07, type Action, type Goods, type PlayerId, type ShipId } from '../../v07/game';
 import type { SafeArea } from '../../ui/scene/CameraRig';
 import { soundEngine } from '../audio/soundEngine';
+import { eventBedFor } from '../audio/soundPlan';
 import { SoundToggle } from '../audio/SoundToggle';
 import { eventLine } from '../log';
 import { beatSeats } from '../scene/beatStage';
@@ -297,16 +298,18 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
 
   const finished = !holding && snap.result !== null;
   useEffect(() => onShown?.(dismissed, finished), [onShown, dismissed, finished]);
-  // The match's end: the harbor bell swings and rings a peal as the result card comes up.
   const resultUp = ready && finished && showResult;
-  useEffect(() => {
-    if (resultUp) soundEngine.playSfx('match-end-bells');
-  }, [resultUp]);
   // While a round resolves (and on the result) the music steps aside for the effects and the
   // voyage event; it comes back as the next round opens. Leaving the table lets it go.
   const musicHeld = holding || resultUp;
   useEffect(() => soundEngine.holdMusic(musicHeld), [musicHeld]);
   useEffect(() => () => soundEngine.holdMusic(false), []);
+  // Once the voyage event is out its bed replaces the waves (rain and thunder, wind, fog music…)
+  // until the round's show is over.
+  const eventOut = holding && resolution.stageRound === resolvingRound && resolution.stage !== null && resolution.stage !== 'wanted';
+  const bed = eventOut && weatherEvent?.type === 'voyage-event-revealed' ? eventBedFor(weatherEvent.event) : null;
+  useEffect(() => soundEngine.setEventBed(bed), [bed]);
+  useEffect(() => () => soundEngine.setEventBed(null), []);
   const rows = useMemo(() => (snap.result ? resultRows(snap.events, snap.result, snap.startingCash, RULES_V07) : []), [snap.result, snap.events, snap.startingCash]);
   const winners = useMemo(() => new Set(snap.result?.winners ?? []), [snap.result]);
 

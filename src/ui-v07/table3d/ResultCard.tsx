@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { soundEngine } from '../audio/soundEngine';
 import type { PlayerId } from '../../v07/game';
 import { BUILDING_LABELS, WEALTH_RULE_TEXT } from '../labels';
 import type { ResultRow } from './resultModel';
@@ -104,6 +105,10 @@ export function ResultCard({ rows, nameOf, colorOf, viewer, rounds, onRestart, r
     return () => clearTimeout(timer);
   }, [revealed, rows]);
   const done = revealed >= rows.length;
+  // The winner is out: the victory horns.
+  useEffect(() => {
+    if (done) soundEngine.playSfx('match-end-horn');
+  }, [done]);
   const winners = rows.filter((r) => r.winner).map((r) => (r.playerId === viewer ? '你' : nameOf(r.playerId)));
 
   return (

@@ -7,6 +7,7 @@ import type { ShipState } from '../../ui/scene/tableModel';
 import { BeatTag } from '../beats/BeatTag';
 import { ReceiptCard } from '../beats/ReceiptCard';
 import { buildReceipt, buildShipBeat, resolvedShips, type ShipBeat } from '../beats/shipBeat';
+import { useBeatSounds } from '../audio/useBeatSounds';
 import { useBeatPlayback } from '../beats/useBeatPlayback';
 import { ROLE_LABELS } from '../labels';
 import { beatLayer } from '../scene/BeatScene';
@@ -205,6 +206,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   useEffect(() => setVoyageIndex(0), [round]);
   const beat = stage === 'voyage' ? (beats[voyageIndex] ?? null) : null;
   const playback = useBeatPlayback(beat, beat && !mine(beat) ? OTHERS_SPEED : 1, !paused, false);
+  useBeatSounds(beat, playback.view);
   const nextShip = () => {
     if (voyageIndex + 1 < beats.length) setVoyageIndex(voyageIndex + 1);
     else setStage('market');

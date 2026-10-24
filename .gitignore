@@ -25,3 +25,7 @@ temp/
 .dev.vars
 .wrangler/
 .host-key
+
+# Licensed sound cuts (Sonniss GDC bundles): the licence forbids handing them out as files
+# and this repository is public. Kept in iCloud; see public/audio/SOURCES.md.
+public/audio/licensed/

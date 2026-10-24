@@ -2,7 +2,9 @@
 // beat-aligned loop points stay seamless (an <audio loop> element can leave a gap). Browsers only
 // let sound start after the player touches the page, so nothing plays before `unlock`.
 
-import { FADE, INTERLUDE, MIX, SOUND_FILES, musicNow, type AmbienceId, type MusicId, type SfxId, type Soundscape } from './soundPlan';
+import { FADE, INTERLUDE, MIX, SOUND_FILES, musicNow, type AmbienceId, type EventBedId, type MusicId, type SfxId, type Soundscape } from './soundPlan';
+
+type SoundId = keyof typeof SOUND_FILES;
 import { isMuted, subscribeMuted } from './soundSettings';
 
 type Slot = 'music' | 'ambience';
@@ -35,6 +37,8 @@ class SoundEngine {
   private wanted: Soundscape | null = null;
   /** A round is resolving: interlude music stays out. */
   private held = false;
+  /** The voyage event's bed, in place of the match's ambience while the round's show runs. */
+  private eventBed: EventBedId | null = null;
   /** Interlude music finished a play and waits out its rest. */
   private restTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -43,6 +47,7 @@ class SoundEngine {
     if (previous) {
       this.wanted = previous.wanted;
       this.held = previous.held;
+      this.eventBed = previous.eventBed;
     }
   }
 
@@ -92,10 +97,17 @@ class SoundEngine {
     this.apply();
   }
 
+  /** The voyage event is out (its bed replaces the waves) or the round's show is over (null). */
+  setEventBed(bed: EventBedId | null): void {
+    if (bed === this.eventBed) return;
+    this.eventBed = bed;
+    this.apply();
+  }
+
   playSfx(id: SfxId): void {
     const { ctx, master } = this;
     if (!ctx || !master || ctx.state !== 'running' || isMuted()) return;
-    void this.load(SOUND_FILES[id]).then((buffer) => {
+    void this.sound(id).then((buffer) => {
       if (!buffer) return;
       const gain = ctx.createGain();
       gain.gain.value = MIX.sfx;
@@ -117,7 +129,8 @@ class SoundEngine {
   /** What `slot` should be playing now. */
   private target(slot: Slot): TrackId | null {
     if (!this.wanted) return null;
-    return slot === 'music' ? musicNow(this.wanted, { held: this.held, resting: this.restTimer !== null }) : this.wanted.ambience;
+    if (slot === 'music') return musicNow(this.wanted, { held: this.held, resting: this.restTimer !== null });
+    return this.wanted.ambience && (this.eventBed ?? this.wanted.ambience);
   }
 
   private applyMute(): void {
@@ -149,7 +162,7 @@ class SoundEngine {
   }
 
   private async fadeIn(slot: Slot, id: TrackId): Promise<void> {
-    const buffer = await this.load(SOUND_FILES[id]);
+    const buffer = await this.sound(id);
     const { ctx, master } = this;
     // Something else was asked for while this one loaded.
     if (!buffer || !ctx || !master || this.layers[slot] || this.target(slot) !== id) return;
@@ -188,18 +201,30 @@ class SoundEngine {
     }, INTERLUDE.rest * 1000);
   }
 
-  private load(file: string): Promise<AudioBuffer | null> {
+  /** The sound's buffer: a licensed cut when this checkout has it, else its generated fallback. */
+  private async sound(id: SoundId): Promise<AudioBuffer | null> {
+    const file = SOUND_FILES[id];
+    if (typeof file === 'string') return this.load(file, false);
+    return (await this.load(`licensed/${file.licensed}`, true)) ?? this.load(file.fallback, false);
+  }
+
+  /**
+   * `optional`: a missing file is expected (a licensed cut this checkout does not have), so it is
+   * remembered as missing without a warning; any other failure only costs that sound.
+   */
+  private load(file: string, optional: boolean): Promise<AudioBuffer | null> {
     let pending = this.buffers.get(file);
     if (!pending) {
       const ctx = this.ctx!;
       pending = fetch(`${import.meta.env.BASE_URL}audio/${file}`)
         .then((res) => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          // The dev server answers a missing file with the app's HTML page.
+          if (!res.ok || res.headers.get('content-type')?.includes('text/html')) throw new Error(`HTTP ${res.status}, not audio`);
           return res.arrayBuffer();
         })
         .then((data) => ctx.decodeAudioData(data))
         .catch((error: unknown) => {
-          // A missing or undecodable file only costs that sound; the game goes on silent.
+          if (optional) return null;
           console.warn(`sound ${file} could not be played:`, error);
           this.buffers.delete(file);
           return null;

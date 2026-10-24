@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { musicNow, soundscapeFor } from '../../src/ui-v07/audio/soundPlan';
+import { eventBedFor, musicNow, soundscapeFor } from '../../src/ui-v07/audio/soundPlan';
 
 describe('soundscape for each screen', () => {
   it('plays the cover track with no ambience behind every menu page', () => {
@@ -32,5 +32,16 @@ describe('music right now', () => {
 
   it('never rests or holds the menu track', () => {
     expect(musicNow(menu, { held: true, resting: true })).toBe('cover');
+  });
+});
+
+describe('voyage event beds', () => {
+  it('gives each voyage event its own bed, and calm seas just the waves', () => {
+    expect(eventBedFor('storm')).toBe('storm');
+    expect(eventBedFor('tailwind')).toBe('tailwind');
+    expect(eventBedFor('sea-fog')).toBe('fog');
+    expect(eventBedFor('moonless-night')).toBe('moonless');
+    expect(eventBedFor('black-market-rush')).toBe('rush');
+    expect(eventBedFor('calm-seas')).toBeNull();
   });
 });
