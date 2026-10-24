@@ -1,3 +1,6 @@
+import { useEffect, useRef } from 'react';
+import { marketSound } from '../audio/marketSounds';
+import { soundEngine } from '../audio/soundEngine';
 import type React from 'react';
 import { RULES_V07 } from '../../v07/game';
 import { GOOD_LABELS, stepLabel } from '../labels';
@@ -36,6 +39,13 @@ function PriceScale({ before, after }: { readonly before: number; readonly after
 }
 
 export function MarketCard({ rows, shown }: { readonly rows: readonly MarketRow[]; readonly shown: number }) {
+  // Each row sounds its price move as it shows (only the last one when the card is skipped ahead).
+  const before = useRef(0);
+  useEffect(() => {
+    const sound = marketSound(rows, before.current, shown);
+    before.current = shown;
+    if (sound) soundEngine.playSfx(sound.id, sound.rate);
+  }, [rows, shown]);
   return (
     <div className="market-card" data-focus="market-card">
       <header>黑市成交</header>

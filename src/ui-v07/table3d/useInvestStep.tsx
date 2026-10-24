@@ -44,6 +44,10 @@ import { cardArtUrl } from './cardArt';
 
 /** The round's steel-drum phrase plays first; the warehouse's crates land when it is done. */
 const ROUND_OPEN_MS = 650;
+/** When a stack's production count pops up (its column's place in the warehouse row staggers them). */
+const mintChipDelay = (column: number): number => 150 + column * 120;
+/** Each next pop a little higher, like bubbles rising. */
+const BUBBLE_RISE = 0.12;
 
 export function useInvestStep(env: StageEnv | null): StageParts | null {
   const active = env?.request.context.decision.phase === 'invest' ? env : null;
@@ -59,8 +63,10 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const [unloaded, setUnloaded] = useState<string | null>(null);
   // This round's production arriving in the warehouse: shown in gold for a moment, then plain.
   const [minting, setMinting] = useState(true);
-  // Whether this round made anything here, read when its crates' sound is due.
+  // Whether this round made anything here, read when its crates' sound is due, and the warehouse
+  // columns whose counts pop up (one bubble each).
   const producing = useRef(false);
+  const popping = useRef<readonly number[]>([]);
   const buildArea = useRef<HTMLDivElement>(null);
 
   // A new investment (next round) starts from scratch.
@@ -73,7 +79,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     setMinting(true);
     const timer = setTimeout(() => setMinting(false), MINT_SECONDS * 1000);
     // The round opens with its steel-drum phrase; the island's new crates land in the warehouse after it.
-    const opening = requestId === null ? [] : [setTimeout(() => soundEngine.playSfx('round-open'), 0), setTimeout(() => producing.current && soundEngine.playSfx('produce'), ROUND_OPEN_MS)];
+    const pops = popping.current.map((column, i) => setTimeout(() => soundEngine.playSfx('bubble', 1 + i * BUBBLE_RISE), mintChipDelay(column)));
+    const opening = requestId === null ? [] : [setTimeout(() => soundEngine.playSfx('round-open'), 0), setTimeout(() => producing.current && soundEngine.playSfx('produce'), ROUND_OPEN_MS), ...pops];
     return () => [timer, ...opening].forEach(clearTimeout);
   }, [requestId]);
 
@@ -147,8 +154,10 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const slot = deckSlot(home, 0, 1);
   // What the island made this round (§6.2 with its island's trait): those crates arrive in gold
   // and the count pops over each stack, the same for every island.
-  const fresh = minting && me ? producedFor(context.view.rules, me.island, board.round) : null;
-  producing.current = fresh !== null && GOODS.some((g) => fresh[g] > 0);
+  const produced = me ? producedFor(context.view.rules, me.island, board.round) : null;
+  const fresh = minting ? produced : null;
+  producing.current = produced !== null && GOODS.some((g) => produced[g] > 0);
+  popping.current = produced ? GOODS.flatMap((g, column) => (produced[g] > 0 && context.view.myStock[g] > 0 ? [column] : [])) : [];
   const freshPins: TablePin[] = fresh
     ? GOODS.flatMap((good, column): TablePin[] => {
         const made = fresh[good];
@@ -160,7 +169,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
             id: `fresh-${good}`,
             position: islandPoint(home, [x, shown * (CRATE_SIZE + 0.05) + 0.4, z]),
             node: (
-              <span className="mint-chip" title={`這回合生產 ${made} ${GOOD_LABELS[good]}`} style={{ animationDelay: `${150 + column * 120}ms` }}>
+              <span className="mint-chip" title={`這回合生產 ${made} ${GOOD_LABELS[good]}`} style={{ animationDelay: `${mintChipDelay(column)}ms` }}>
                 +{made}
               </span>
             ),

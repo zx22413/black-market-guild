@@ -65,7 +65,12 @@ export type SfxId =
   | 'ui-join'
   | 'ui-leave'
   // Picking a role card from the hand (useDeployStep).
-  | 'role-pick';
+  | 'role-pick'
+  // A production count popping up over a warehouse stack (useInvestStep), higher for each next one.
+  | 'bubble'
+  // A market row showing its price move (marketSounds.ts).
+  | 'price-up'
+  | 'price-down';
 
 /**
  * `loop`: the track repeats without a break (the menus). `interlude`: the track plays once, then
@@ -150,6 +155,9 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   'ui-join': 'sfx-ui-join.ogg',
   'ui-leave': 'sfx-ui-leave.ogg',
   'role-pick': 'sfx-role-pick.ogg',
+  bubble: 'sfx-bubble.ogg',
+  'price-up': 'sfx-price-up.ogg',
+  'price-down': 'sfx-price-down.ogg',
 };
 
 /** Interlude music: seconds of ambience alone between plays, and the fade at the end of a play. */

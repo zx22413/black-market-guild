@@ -28,6 +28,12 @@
 | sfx-island.ogg | 航程拍：燈塔島 +1 | lighthouse lamp switching on, a bright magical ascending shimmer with a warm hum, glass chimes, electric hum, close, light reverb. | 37001 | sfx，2 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
 | sfx-sink.ogg | 航程拍：船沉沒 | wooden ship hull breaking apart, timber cracking and splintering, a big splash, then bubbling as it sinks, wood, water, open sea, close. | 39001 | sfx，4 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
 
+## 程式合成的音效
+
+| 檔案 | 用途 | 合成方式 |
+|---|---|---|
+| sfx-bubble.ogg | 生產的 +N 冒出（遊戲以播放速度 1、1.12、1.24… 讓每一聲比前一聲高） | 正弦波，頻率由 300 Hz 指數上刷到 900 Hz（時間常數 18 ms），疊 0.35 倍的低八度，2 ms 起音、60 ms 指數衰減，長 0.2 秒，峰值 −1 dBFS；作者自製，無授權限制 |
+
 ## Kenney 的 CC0 音效（直接放在本目錄）
 
 取自 Kenney 的 [Casino Audio](https://kenney.nl/assets/casino-audio)（1.1）、[Impact Sounds](https://kenney.nl/assets/impact-sounds)、[RPG Audio](https://kenney.nl/assets/rpg-audio)、[Music Jingles](https://kenney.nl/assets/music-jingles)、[Interface Sounds](https://kenney.nl/assets/interface-sounds) 與 [UI Audio](https://kenney.nl/assets/ui-audio)（2026-10-25），授權 [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)：可商用、免署名、可散布，所以放在公開 repo 裡。單一檔案只把峰值調到 −1 dBFS；疊合的（角色揭露、擲骰）另註，疊好後 +8 dB 進軟限幅、峰值 −0.3 dBFS。
@@ -47,6 +53,8 @@
 | sfx-role-smuggler.ogg | 角色揭露：走私商人 | RPG Audio `cloth3.ogg`，0.12 秒後疊 `beltHandle2.ogg`（0.6 倍） |
 | sfx-role-broker.ogg | 角色揭露：莊家 | RPG Audio `handleCoins2.ogg`（把玩硬幣） |
 | sfx-round-open.ogg | 新回合開始（進入投資） | Music Jingles `jingles_STEEL09.ogg`（鋼鼓短樂句） |
+| sfx-price-up.ogg | 市場卡：漲價（漲兩格時遊戲以 1.12 倍速播，音調更高） | Music Jingles `jingles_STEEL16.ogg` |
+| sfx-price-down.ogg | 市場卡：跌價（跌兩格時以 1/1.12 倍速播） | Music Jingles `jingles_STEEL16.ogg` 降 4 個半音（重取樣），峰值 −1 dBFS |
 | sfx-produce.ogg | 島嶼生產的貨箱落進倉庫 | Impact Sounds `impactPlank_medium_001.ogg`，0.16 秒後 `impactPlank_medium_003.ogg`（0.8 倍） |
 | sfx-wanted.ogg | 通緝令插旗 | RPG Audio `cloth4.ogg`，0.1 秒後疊 Music Jingles `jingles_PIZZI06.ogg`（0.7 倍，低沉撥弦） |
 | sfx-book-open.ogg | 打開規則書 | RPG Audio `bookOpen.ogg` |

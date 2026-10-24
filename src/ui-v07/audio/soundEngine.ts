@@ -108,7 +108,8 @@ class SoundEngine {
     this.apply();
   }
 
-  playSfx(id: SfxId): void {
+  /** `rate` above 1 plays it faster and higher (a run of pops that climbs). */
+  playSfx(id: SfxId, rate = 1): void {
     const { ctx, master } = this;
     if (!ctx || !master || ctx.state !== 'running' || isMuted()) return;
     const giveWay = SFX_GIVE_WAY[id];
@@ -121,6 +122,7 @@ class SoundEngine {
       gain.connect(master);
       const source = ctx.createBufferSource();
       source.buffer = buffer;
+      source.playbackRate.value = rate;
       source.connect(gain);
       source.onended = () => gain.disconnect();
       source.start();
