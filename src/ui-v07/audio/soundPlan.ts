@@ -23,7 +23,19 @@ export type SfxId =
   | 'storm-bolt'
   | 'island'
   | 'arrive'
-  | 'sink';
+  | 'sink'
+  // The settlement's flights, as each lands (flightSounds.ts).
+  | 'settle-sale'
+  | 'settle-coins'
+  | 'settle-tick'
+  | 'settle-smuggle'
+  | 'settle-caught'
+  | 'settle-fine'
+  | 'settle-loot'
+  | 'settle-arms'
+  | 'settle-insurance'
+  | 'settle-salvage'
+  | 'settle-spoil';
 
 /**
  * `loop`: the track repeats without a break (the menus). `interlude`: the track plays once, then
@@ -45,7 +57,8 @@ export interface Soundscape {
  */
 export interface LicensedSound {
   readonly licensed: string;
-  readonly fallback: string;
+  /** Null: no generated stand-in, the sound is simply left out. */
+  readonly fallback: string | null;
 }
 
 /** Files under `public/audio/` (sources and licences in `public/audio/SOURCES.md`). */
@@ -71,6 +84,17 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   island: { licensed: 'sfx-island.ogg', fallback: 'sfx-island.ogg' },
   arrive: { licensed: 'sfx-arrive.ogg', fallback: 'sfx-arrive.ogg' },
   sink: { licensed: 'sfx-sink.ogg', fallback: 'sfx-sink.ogg' },
+  'settle-sale': { licensed: 'sfx-settle-sale.ogg', fallback: null },
+  'settle-coins': { licensed: 'sfx-settle-coins.ogg', fallback: null },
+  'settle-tick': { licensed: 'sfx-settle-tick.ogg', fallback: null },
+  'settle-smuggle': { licensed: 'sfx-settle-smuggle.ogg', fallback: null },
+  'settle-caught': { licensed: 'sfx-settle-caught.ogg', fallback: null },
+  'settle-fine': { licensed: 'sfx-settle-fine.ogg', fallback: null },
+  'settle-loot': { licensed: 'sfx-settle-loot.ogg', fallback: null },
+  'settle-arms': { licensed: 'sfx-settle-arms.ogg', fallback: null },
+  'settle-insurance': { licensed: 'sfx-settle-insurance.ogg', fallback: null },
+  'settle-salvage': { licensed: 'sfx-settle-salvage.ogg', fallback: null },
+  'settle-spoil': { licensed: 'sfx-settle-spoil.ogg', fallback: null },
 };
 
 /** Interlude music: seconds of ambience alone between plays, and the fade at the end of a play. */
@@ -85,8 +109,8 @@ export const SFX_GIVE_WAY: Readonly<Partial<Record<SfxId, { readonly gap: number
   'storm-bolt': { gap: 4, after: ['storm-bolt', 'storm-strike'] },
 };
 
-/** One-shots played louder than `MIX.sfx`: the storm's strike on a ship cuts through the rain, the short die roll through the waves. */
-export const SFX_GAIN: Readonly<Partial<Record<SfxId, number>>> = { 'storm-strike': 1, dice: 1 };
+/** One-shots played louder than `MIX.sfx`: the storm's strike on a ship cuts through the rain; the die and the coins ring out. */
+export const SFX_GAIN: Readonly<Partial<Record<SfxId, number>>> = { 'storm-strike': 1, dice: 1, 'settle-sale': 1, 'settle-coins': 1 };
 
 /** Gain of each layer; the files are already levelled (music −16 LUFS, waves −22 LUFS). */
 export const MIX = { music: 0.55, ambience: 0.7, sfx: 0.8 } as const;

@@ -212,7 +212,8 @@ class SoundEngine {
   private async sound(id: SoundId): Promise<AudioBuffer | null> {
     const file = SOUND_FILES[id];
     if (typeof file === 'string') return this.load(file, false);
-    return (await this.load(`licensed/${file.licensed}`, true)) ?? this.load(file.fallback, false);
+    const licensed = await this.load(`licensed/${file.licensed}`, true);
+    return licensed ?? (file.fallback === null ? null : this.load(file.fallback, false));
   }
 
   /**

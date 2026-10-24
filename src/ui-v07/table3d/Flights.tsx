@@ -1,10 +1,13 @@
 import { useFrame } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { QuadraticBezierCurve3, Vector3, type Group, type Mesh, type MeshBasicMaterial } from 'three';
 import type { PlayerId, ShipId } from '../../v07/game';
 import { ASSET_LOTS, seatPosition, type Vec3 } from '../../ui/scene/layout';
 import { shipPose } from '../../ui/scene/Ships';
 import type { ShipState } from '../../ui/scene/tableModel';
+import { flightSound } from '../audio/flightSounds';
+import { soundEngine } from '../audio/soundEngine';
+import type { SfxId } from '../audio/soundPlan';
 import { CrateModel } from '../scene/CrateModel';
 import { islandPoint } from '../scene/TableCanvas';
 import type { Flight, Place } from './settlementModel';
@@ -108,6 +111,15 @@ function BuildingGlow({ flight, ctx }: { readonly flight: Flight; readonly ctx: 
 }
 
 export function Flights({ flights, ctx }: { readonly flights: readonly Flight[]; readonly ctx: PlaceContext }) {
+  // Each flight sounds as it lands: coins into a purse, a crate set down, a whistle. Keyed by the
+  // flights' keys, not the array (a new one every render), so a landing is scheduled once.
+  const keys = flights.map((f) => f.key).join(',');
+  const landing = useRef<readonly (SfxId | null)[]>([]);
+  landing.current = flights.map(flightSound);
+  useEffect(() => {
+    const timers = landing.current.flatMap((sound) => (sound ? [setTimeout(() => soundEngine.playSfx(sound), FLIGHT_SECONDS * 1000)] : []));
+    return () => timers.forEach((t) => clearTimeout(t));
+  }, [keys]);
   return (
     <>
       {flights.map((f) => (

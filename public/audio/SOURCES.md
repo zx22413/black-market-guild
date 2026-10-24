@@ -46,6 +46,17 @@
 | licensed/sfx-sink.ogg | 航程拍：船沉沒 | wood_breaking_cracking_snapping_breaking_peeling_bones_break_snap_crack_13；Bluezone_BC0256_water_splash_008；Elemental - Water Bubbles Big_4 | 木頭碎裂，0.3 秒後落水，1.3 秒後氣泡（0.45 倍） |
 | licensed/sfx-event-storm.ogg | 航程拍：暴風雨 −1，閃電擊中船 | Mixkit「Mid strength single thunder」（#1298）；Mixkit「Explosion hit」（#1704） | 單雷剪到最響處在 0.03 秒、爆炸最響處在 0.33 秒（對上白閃的兩下），共 4 秒，最後 1.4 秒淡出；+9 dB 進軟限幅（tanh），峰值 −0.3 dBFS |
 | licensed/sfx-storm-bolt.ogg | 暴風雨時桌上每道閃電落進海裡的雷聲 | Mixkit「Strong close thunder explosion」（#1300） | 從 0.35 秒起取 4 秒，最後 1.5 秒淡出；峰值 −1 dBFS |
+| licensed/sfx-settle-sale.ogg | 結算：賣貨收入 | Coins_Pouch_Leather_Drop_Into_Takes_3；Coin_Wood_Table_Singles_Drop_Spin_Takes_5 | 錢幣掉進皮錢袋（0.35 秒起 1 秒），疊上兩枚單幣落桌的「叮」（升調 1.15、1.2 倍，0.02 與 0.12 秒）；+9 dB 進軟限幅，峰值 −0.3 dBFS |
+| licensed/sfx-settle-coins.ogg | 結算：護航費、莊家獎金／抬價補貼／壓價差額 | 264604 - Stack Coin Bag 04；Coin_Wood_Table_Singles_Drop_Spin_Takes_5 | 錢袋放下（前 0.8 秒），0.03 秒後疊一枚單幣的「叮」（升調 1.15 倍）；+9 dB 進軟限幅，峰值 −0.3 dBFS |
+| licensed/sfx-settle-tick.ogg | 結算：交易所佣金 | Coin02 | 整段，0.2 秒淡出；峰值 −1 dBFS |
+| licensed/sfx-settle-smuggle.ogg | 結算：走私抽成 | Coin_Slide_Carpet；Coins_In_Sack_Held_By_Drawstring_06 | 硬幣滑過，0.18 秒後疊束口錢袋（0.8 倍）；峰值 −1 dBFS |
+| licensed/sfx-settle-caught.ogg | 結算：抓到走私 | Whistle_Finger_Moderate_02 | 第一聲哨（0.03 秒起 0.6 秒）；峰值 −1 dBFS |
+| licensed/sfx-settle-fine.ogg | 結算：走私罰款 | Money,Coins,Handle | 0.1 秒起 0.7 秒，0.2 秒淡出；峰值 −1 dBFS |
+| licensed/sfx-settle-loot.ogg | 結算：海盜戰利品、搶走私貨 | CST_Chest_Ancient_Close2_SFXWiz；coins sack throwing mono | 寶箱闔上（0.75 秒起 1.1 秒，0.9 倍），0.25 秒後疊一袋硬幣丟出（0.8 倍）；峰值 −1 dBFS |
+| licensed/sfx-settle-arms.ogg | 結算：沒收軍火 | Pile of Scrap Metal - Metal Scrap Pile, Rustle, Drop, Long Tail 03 | 0.55 秒起 1.1 秒；峰值 −1 dBFS |
+| licensed/sfx-settle-insurance.ogg | 結算：保險保住貨 | drop_multiple_boxes_003 | 整段；峰值 −1 dBFS |
+| licensed/sfx-settle-salvage.ogg | 結算：打撈撈到貨 | Bluezone_BC0256_water_splash_drop_006；drop_multiple_boxes_003 | 落水，0.35 秒後箱子落地（0.9 倍）；峰值 −1 dBFS |
+| licensed/sfx-settle-spoil.ogg | 結算：香料壞掉 | Bluezone_BC0263_creature_crab_organic_texture_carapace_crack_squishy_003 | 前 0.6 秒；峰值 −1 dBFS |
 
 Mixkit 的三段素材取自 [mixkit.co](https://mixkit.co/free-sound-effects/thunder/)（2026-10-24），授權為 [Mixkit Sound Effects Free License](https://mixkit.co/license/#sfxFree)：可免費用於商業專案與電子遊戲、不需署名；**不得單獨散布音效本身**，所以同樣放在 `licensed/`。
 

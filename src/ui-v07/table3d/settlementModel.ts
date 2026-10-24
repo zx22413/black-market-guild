@@ -15,6 +15,8 @@ export type Place =
 
 export interface Flight {
   readonly key: string;
+  /** What moves it: the cash reason, or insured, salvaged or spoiled goods (its sound). */
+  readonly kind: CashReason | 'kept' | 'salvage' | 'spoil';
   readonly from: Place;
   readonly to: Place;
   /** Who gains (or, for a fine, loses) the money or goods. */
@@ -36,7 +38,7 @@ const building = (playerId: PlayerId, b: BuildingId): Place => ({ kind: 'buildin
 const HARBOR: Place = { kind: 'harbor' };
 
 function cashFlight(e: Extract<MatchEvent, { type: 'cash-changed' }>, i: number): Flight | null {
-  const base = { key: `cash-${i}`, playerId: e.playerId, amount: e.amount, good: null, units: 0, label: CASH_REASON_LABELS[e.reason], shipId: e.shipId, building: null };
+  const base = { key: `cash-${i}`, kind: e.reason, playerId: e.playerId, amount: e.amount, good: null, units: 0, label: CASH_REASON_LABELS[e.reason], shipId: e.shipId, building: null };
   const fromShip = e.shipId ? ship(e.shipId) : HARBOR;
   const routes: Partial<Record<CashReason, { from: Place; to: Place; good?: GoodId; building?: BuildingId }>> = {
     sale: { from: HARBOR, to: island(e.playerId) },
@@ -73,13 +75,13 @@ export function settlementFlights(events: readonly MatchEvent[], round: number):
       if (f) flights.push(f);
     } else if (e.type === 'goods-kept') {
       for (const { good, units } of goodsOf(e.goods)) {
-        flights.push({ key: `kept-${i}-${good}`, from: ship(e.shipId), to: building(e.playerId, 'insurance'), playerId: e.playerId, amount: null, good, units, label: `保險保住 ${units} ${GOOD_LABELS[good]}`, shipId: e.shipId, building: 'insurance' });
+        flights.push({ key: `kept-${i}-${good}`, kind: 'kept', from: ship(e.shipId), to: building(e.playerId, 'insurance'), playerId: e.playerId, amount: null, good, units, label: `保險保住 ${units} ${GOOD_LABELS[good]}`, shipId: e.shipId, building: 'insurance' });
       }
     } else if (e.type === 'goods-salvaged') {
-      flights.push({ key: `salvage-${i}`, from: ship(e.shipId), to: building(e.playerId, 'salvage'), playerId: e.playerId, amount: null, good: e.good, units: 1, label: `打撈 +1 ${GOOD_LABELS[e.good]}`, shipId: e.shipId, building: 'salvage' });
+      flights.push({ key: `salvage-${i}`, kind: 'salvage', from: ship(e.shipId), to: building(e.playerId, 'salvage'), playerId: e.playerId, amount: null, good: e.good, units: 1, label: `打撈 +1 ${GOOD_LABELS[e.good]}`, shipId: e.shipId, building: 'salvage' });
     } else if (e.type === 'spice-spoiled') {
       for (const [playerId, units] of Object.entries(e.spoiled)) {
-        if (units > 0) flights.push({ key: `spoil-${i}-${playerId}`, from: island(playerId), to: island(playerId), playerId, amount: null, good: 'spice', units, label: `香料壞掉 ${units}`, shipId: null, building: null });
+        if (units > 0) flights.push({ key: `spoil-${i}-${playerId}`, kind: 'spoil', from: island(playerId), to: island(playerId), playerId, amount: null, good: 'spice', units, label: `香料壞掉 ${units}`, shipId: null, building: null });
       }
     }
   });
