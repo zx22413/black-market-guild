@@ -30,7 +30,7 @@
 
 ## Kenney 的 CC0 音效（直接放在本目錄）
 
-取自 Kenney 的 [Casino Audio](https://kenney.nl/assets/casino-audio)（1.1）、[Impact Sounds](https://kenney.nl/assets/impact-sounds) 與 [RPG Audio](https://kenney.nl/assets/rpg-audio)（2026-10-25），授權 [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)：可商用、免署名、可散布，所以放在公開 repo 裡。單一檔案只把峰值調到 −1 dBFS；疊合的（角色揭露、擲骰）另註，疊好後 +8 dB 進軟限幅、峰值 −0.3 dBFS。
+取自 Kenney 的 [Casino Audio](https://kenney.nl/assets/casino-audio)（1.1）、[Impact Sounds](https://kenney.nl/assets/impact-sounds)、[RPG Audio](https://kenney.nl/assets/rpg-audio) 與 [Music Jingles](https://kenney.nl/assets/music-jingles)（2026-10-25），授權 [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)：可商用、免署名、可散布，所以放在公開 repo 裡。單一檔案只把峰值調到 −1 dBFS；疊合的（角色揭露、擲骰）另註，疊好後 +8 dB 進軟限幅、峰值 −0.3 dBFS。
 
 | 檔案 | 用途 | 原始檔案 |
 |---|---|---|
@@ -46,6 +46,12 @@
 | sfx-role-pirate.ogg | 角色揭露：海盜 | RPG Audio `drawKnife2.ogg`，0.12 秒後疊 Impact Sounds `impactMetal_light_002.ogg`（0.6 倍，拔刀的金屬餘響） |
 | sfx-role-smuggler.ogg | 角色揭露：走私商人 | RPG Audio `cloth3.ogg`，0.12 秒後疊 `beltHandle2.ogg`（0.6 倍） |
 | sfx-role-broker.ogg | 角色揭露：莊家 | RPG Audio `handleCoins2.ogg`（把玩硬幣） |
+| sfx-round-open.ogg | 新回合開始（進入投資） | Music Jingles `jingles_STEEL09.ogg`（鋼鼓短樂句） |
+| sfx-produce.ogg | 島嶼生產的貨箱落進倉庫 | Impact Sounds `impactPlank_medium_001.ogg`，0.16 秒後 `impactPlank_medium_003.ogg`（0.8 倍） |
+| sfx-wanted.ogg | 通緝令插旗 | RPG Audio `cloth4.ogg`，0.1 秒後疊 Music Jingles `jingles_PIZZI06.ogg`（0.7 倍，低沉撥弦） |
+| sfx-book-open.ogg | 打開規則書 | RPG Audio `bookOpen.ogg` |
+| sfx-book-flip.ogg | 規則書換章節 | RPG Audio `bookFlip3.ogg` |
+| sfx-book-close.ogg | 闔上規則書 | RPG Audio `bookClose.ogg` |
 
 ## 授權音效庫的剪輯（`licensed/`，不進 git）
 

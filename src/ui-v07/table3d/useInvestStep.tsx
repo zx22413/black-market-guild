@@ -33,12 +33,17 @@ import { NoteBadge } from './NoteBadge';
 import { ArrowIcon, CloseIcon, CrateIcon, Flow, HouseIcon, IconDisc, InfoIcon, tokenIconUrl } from './icons';
 import { LockHint } from './LockHint';
 import { SealSubmit } from './SealSubmit';
+import { soundEngine } from '../audio/soundEngine';
 import type { StageEnv, StageParts } from './stage';
 import { cardArtUrl } from './cardArt';
 
 // The investment on your own island (docs/ui/v07-event-presentation.md §1.3): building cards,
 // warehouse crates onto the docked ship, gold glow on what is still undone, a reminder before
 // submitting something unfinished.
+
+
+/** The round's steel-drum phrase plays first; the warehouse's crates land when it is done. */
+const ROUND_OPEN_MS = 650;
 
 export function useInvestStep(env: StageEnv | null): StageParts | null {
   const active = env?.request.context.decision.phase === 'invest' ? env : null;
@@ -54,6 +59,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const [unloaded, setUnloaded] = useState<string | null>(null);
   // This round's production arriving in the warehouse: shown in gold for a moment, then plain.
   const [minting, setMinting] = useState(true);
+  // Whether this round made anything here, read when its crates' sound is due.
+  const producing = useRef(false);
   const buildArea = useRef<HTMLDivElement>(null);
 
   // A new investment (next round) starts from scratch.
@@ -65,7 +72,9 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     setUnloaded(null);
     setMinting(true);
     const timer = setTimeout(() => setMinting(false), MINT_SECONDS * 1000);
-    return () => clearTimeout(timer);
+    // The round opens with its steel-drum phrase; the island's new crates land in the warehouse after it.
+    const opening = requestId === null ? [] : [setTimeout(() => soundEngine.playSfx('round-open'), 0), setTimeout(() => producing.current && soundEngine.playSfx('produce'), ROUND_OPEN_MS)];
+    return () => [timer, ...opening].forEach(clearTimeout);
   }, [requestId]);
 
   // The building list closes on a click anywhere outside it (the table included).
@@ -139,6 +148,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   // What the island made this round (§6.2 with its island's trait): those crates arrive in gold
   // and the count pops over each stack, the same for every island.
   const fresh = minting && me ? producedFor(context.view.rules, me.island, board.round) : null;
+  producing.current = fresh !== null && GOODS.some((g) => fresh[g] > 0);
   const freshPins: TablePin[] = fresh
     ? GOODS.flatMap((good, column): TablePin[] => {
         const made = fresh[good];

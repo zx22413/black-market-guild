@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { GOODS, RULES_V07, type BuildingId, type IslandId, type RoleId, type VoyageEventId } from '../../v07/game';
 import { BUILDING_LABELS, BUILDING_TEXT, GOOD_LABELS, ISLAND_LABELS, ISLAND_TEXT, ROLE_LABELS, VOYAGE_EVENT_LABELS, VOYAGE_EVENT_TEXT, WEALTH_RULE_TEXT } from '../labels';
+import { soundEngine } from '../audio/soundEngine';
 import { BrassCorner } from '../skin/ornaments';
 import { goodDetail, marketRule } from '../table/goodText';
 import { roleDetail } from '../table/roleText';
@@ -8,6 +9,7 @@ import { GoodIcon } from './GoodIcon';
 import { CloseIcon, IconDisc } from './icons';
 import { IslandGlance } from './IslandGlance';
 import { roleIconUrl } from './RoleBadges';
+import { RulesPageTurn, type PageTurn } from './RulesPageTurn';
 import './rulesBook.css';
 
 // The rules, for looking things up, as a ship's handbook: one chapter per kind of thing, and the
@@ -108,34 +110,71 @@ export function RulesEntries({ tab }: { readonly tab: RulesTab }) {
   }
 }
 
-export function RulesPanel({ onClose }: { readonly onClose: () => void }) {
+export function RulesPanel({ onClose: close }: { readonly onClose: () => void }) {
   const [tab, setTab] = useState<RulesTab>('roles');
+  // The book opens, turns to a chapter and shuts with the sounds of a real one.
+  const onClose = useCallback(() => {
+    soundEngine.playSfx('book-close');
+    close();
+  }, [close]);
+  // A chapter change turns a real page (RulesPageTurn), unless motion is turned down.
+  const spread = useRef<HTMLDivElement>(null);
+  const [turn, setTurn] = useState<(PageTurn<RulesTab> & { readonly key: number }) | null>(null);
+  const turnTo = (next: RulesTab) => {
+    if (next === tab) return;
+    soundEngine.playSfx('book-flip');
+    const el = spread.current;
+    if (el && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      el.scrollTop = 0;
+      const order = (t: RulesTab) => RULES_TABS.findIndex((r) => r.id === t);
+      setTurn({
+        key: performance.now(),
+        from: tab,
+        to: next,
+        forward: order(next) > order(tab),
+        single: matchMedia('(max-width: 640px)').matches,
+        box: { top: el.offsetTop, left: el.offsetLeft, width: el.offsetWidth, height: el.offsetHeight },
+      });
+    }
+    setTab(next);
+  };
+  useEffect(() => {
+    const timer = setTimeout(() => soundEngine.playSfx('book-open'), 0);
+    return () => clearTimeout(timer);
+  }, []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
-  const label = RULES_TABS.find((t) => t.id === tab)?.label ?? '';
+  const labelOf = (t: RulesTab) => RULES_TABS.find((r) => r.id === t)?.label ?? '';
+  const label = labelOf(tab);
+  const page = (t: RulesTab): ReactNode => (
+    <>
+      <header className="rules-run">
+        <span>規則</span>
+        <span>{labelOf(t)}</span>
+      </header>
+      <ul className="rules-list rules-pages">
+        <RulesEntries tab={t} />
+      </ul>
+    </>
+  );
   return (
     <div className="beat-backdrop rules-backdrop" role="dialog" aria-modal="true" aria-label="規則" onClick={onClose}>
       <div className="rules-book" onClick={(e) => e.stopPropagation()}>
         <nav className="rules-index" role="tablist" aria-label="規則章節">
           {RULES_TABS.map((t) => (
-            <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} className={`rules-tab ${tab === t.id ? 'on' : ''}`} onClick={() => setTab(t.id)}>
+            <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} className={`rules-tab ${tab === t.id ? 'on' : ''}`} onClick={() => turnTo(t.id)}>
               {t.label}
             </button>
           ))}
         </nav>
         <div className="rules-cover">
-          <div className="rules-spread" role="tabpanel" aria-label={label}>
-            <header className="rules-run">
-              <span>規則</span>
-              <span>{label}</span>
-            </header>
-            <ul className="rules-list rules-pages">
-              <RulesEntries tab={tab} />
-            </ul>
+          <div ref={spread} className="rules-spread" role="tabpanel" aria-label={label}>
+            {page(tab)}
           </div>
+          {turn && <RulesPageTurn key={turn.key} turn={turn} page={page} onDone={() => setTurn(null)} />}
           <button type="button" className="rules-close" aria-label="闔上" title="闔上" onClick={onClose}>
             <CloseIcon />
           </button>

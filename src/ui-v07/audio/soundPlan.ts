@@ -48,7 +48,14 @@ export type SfxId =
   | 'role-guard'
   | 'role-pirate'
   | 'role-smuggler'
-  | 'role-broker';
+  | 'role-broker'
+  // A round opening (its steel-drum phrase, the warehouse's new crates), the wanted flag, the rule book.
+  | 'round-open'
+  | 'produce'
+  | 'wanted'
+  | 'book-open'
+  | 'book-flip'
+  | 'book-close';
 
 /**
  * `loop`: the track repeats without a break (the menus). `interlude`: the track plays once, then
@@ -119,6 +126,12 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   'role-pirate': 'sfx-role-pirate.ogg',
   'role-smuggler': 'sfx-role-smuggler.ogg',
   'role-broker': 'sfx-role-broker.ogg',
+  'round-open': 'sfx-round-open.ogg',
+  produce: 'sfx-produce.ogg',
+  wanted: 'sfx-wanted.ogg',
+  'book-open': 'sfx-book-open.ogg',
+  'book-flip': 'sfx-book-flip.ogg',
+  'book-close': 'sfx-book-close.ogg',
 };
 
 /** Interlude music: seconds of ambience alone between plays, and the fade at the end of a play. */
@@ -131,6 +144,8 @@ export const INTERLUDE = { rest: 75, outro: 4 } as const;
  */
 export const SFX_GIVE_WAY: Readonly<Partial<Record<SfxId, { readonly gap: number; readonly after: readonly SfxId[] }>>> = {
   'storm-bolt': { gap: 4, after: ['storm-bolt', 'storm-strike'] },
+  // Several guilds wanted at once raise their flags together: one rustle for them all.
+  wanted: { gap: 1, after: ['wanted'] },
 };
 
 /** One-shots played louder than `MIX.sfx`: the storm's strike on a ship cuts through the rain; the die and the coins ring out. */
