@@ -52,15 +52,15 @@ export interface LicensedSound {
 export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string | LicensedSound>> = {
   cover: 'music-cover.ogg',
   ingame: 'music-ingame.ogg',
-  waves: 'ambience-waves.ogg',
+  waves: { licensed: 'ambience-waves.ogg', fallback: 'ambience-waves.ogg' },
   storm: 'event-storm.ogg',
-  tailwind: 'event-tailwind.ogg',
+  tailwind: { licensed: 'event-tailwind.ogg', fallback: 'event-tailwind.ogg' },
   fog: 'event-fog.ogg',
   moonless: 'event-moonless.ogg',
   rush: 'event-rush.ogg',
-  'bill-register': 'sfx-bill-register.ogg',
+  'bill-register': { licensed: 'sfx-bill-register.ogg', fallback: 'sfx-bill-register.ogg' },
   'match-end-horn': 'sfx-match-end-horn.ogg',
-  dice: 'sfx-dice.ogg',
+  dice: { licensed: 'sfx-dice.ogg', fallback: 'sfx-dice.ogg' },
   guard: { licensed: 'sfx-guard.ogg', fallback: 'sfx-guard.ogg' },
   pirate: { licensed: 'sfx-pirate.ogg', fallback: 'sfx-pirate.ogg' },
   'event-tailwind': 'sfx-event-tailwind.ogg',
@@ -85,8 +85,8 @@ export const SFX_GIVE_WAY: Readonly<Partial<Record<SfxId, { readonly gap: number
   'storm-bolt': { gap: 4, after: ['storm-bolt', 'storm-strike'] },
 };
 
-/** One-shots played louder than `MIX.sfx`: the storm's strike on a ship must cut through the rain. */
-export const SFX_GAIN: Readonly<Partial<Record<SfxId, number>>> = { 'storm-strike': 1 };
+/** One-shots played louder than `MIX.sfx`: the storm's strike on a ship cuts through the rain, the short die roll through the waves. */
+export const SFX_GAIN: Readonly<Partial<Record<SfxId, number>>> = { 'storm-strike': 1, dice: 1 };
 
 /** Gain of each layer; the files are already levelled (music −16 LUFS, waves −22 LUFS). */
 export const MIX = { music: 0.55, ambience: 0.7, sfx: 0.8 } as const;
