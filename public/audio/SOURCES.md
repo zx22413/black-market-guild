@@ -38,7 +38,7 @@
 | licensed/sfx-guard.ogg | 航程拍：護衛 +1 | The Captain's Shield Metal Hit 5；Ice_Spell_Ice_Spell_Buff_Positive_02 | 盾牌撞擊（0.42 秒起 1.8 秒），0.05 秒後疊上增益魔法音（0.8 倍） |
 | licensed/sfx-pirate.ogg | 航程拍：海盜 −1 | warfare_t1b_cannon_firing_forest_distant_MKH8060_2；DeepExplosion02 | 第一聲砲擊（0.42 秒起 2.2 秒），0.5 秒後接低沉爆炸 |
 | licensed/sfx-island.ogg | 航程拍：燈塔島 +1（舞台燈打開） | Switch,ElectricalPanelBreaker,On；signal_lever_on；PM_FN_Events_LvlUps_PowerUps_25 | 斷路器「喀咚」疊上降調 0.6 倍的同一聲加厚低頻；0.35 秒後再接號誌拉桿＋斷路器＋能量上升（0.9 倍） |
-| licensed/sfx-arrive.ogg | 航程拍：船抵達 | Bell_10_b | 同一聲鈴相隔 0.38 秒敲兩下 |
+| licensed/sfx-arrive.ogg | 航程拍：船抵達 | ANTIQUE_MILL_BELL_RING_01 | 磨坊鐘一響（8.1 秒起取 1.6 秒、0.9 秒淡出），相隔 0.45 秒敲兩下 |
 | licensed/sfx-sink.ogg | 航程拍：船沉沒 | wood_breaking_cracking_snapping_breaking_peeling_bones_break_snap_crack_13；Bluezone_BC0256_water_splash_008；Elemental - Water Bubbles Big_4 | 木頭碎裂，0.3 秒後落水，1.3 秒後氣泡（0.45 倍） |
 | licensed/sfx-event-storm.ogg | 航程拍：暴風雨 −1 | Mixkit「Mid strength single thunder」（#1298）；Mixkit「Explosion hit」（#1704） | 單雷從 0.2 秒起，1.35 秒後接爆炸重擊（0.9 倍），共 5 秒，最後 1.5 秒淡出；峰值 −0.5 dBFS |
 | licensed/sfx-storm-strike.ogg | 暴風雨時桌上每道閃電落下的雷聲 | Mixkit「Strong close thunder explosion」（#1300）；Mixkit「Cinematic impact thunder」（#1286） | 近距離雷爆從 0.35 秒起，0.85 秒後接電影感雷擊（0.9 倍），共 5 秒，最後 1.5 秒淡出；峰值 −0.5 dBFS |
