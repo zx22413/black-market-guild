@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { RULES_V07, type IslandId, type MatchEvent, type PlayerId } from '../../v07/game';
 import { seatPosition } from '../../ui/scene/layout';
+import { soundEngine } from '../audio/soundEngine';
 import type { TablePin } from '../scene/TableCanvas';
 import type { Board } from '../session/board';
 import { slowed } from '../scene/showTempo';
@@ -36,6 +37,12 @@ export interface Moments {
 }
 
 const NONE: ReadonlyMap<PlayerId, { readonly key: string; readonly tone: 'gain' | 'loss' }> = new Map();
+
+
+/** When a notice's chip `i` pops up (its sound waits the same). */
+const chipDelay = (i: number): number => 300 + i * 160;
+/** A cost's chip pops lower than a gain's. */
+const LOSS_PITCH = 0.82;
 
 export function useIslandMoments({ events, board, free, angleOf, skipFirstOpening = false, skip = false }: MomentsInput): Moments {
   const round = board.round;
@@ -74,6 +81,20 @@ export function useIslandMoments({ events, board, free, angleOf, skipFirstOpenin
     return () => clearTimeout(timer);
   }, [phase, round, shown.length]);
 
+  // Each notice chip pops up with a low bubble as it shows: lower still for a cost. Islands showing
+  // at once share the pops (one per chip slot, a gain if any island's chip there is one).
+  useEffect(() => {
+    if (phase === null) return undefined;
+    const slots = Math.max(0, ...shown.map((m) => m.chips.length));
+    const timers = Array.from({ length: slots }, (_, i) => {
+      const gain = shown.some((m) => m.chips[i]?.tone === 'gain');
+      return setTimeout(() => soundEngine.playSfx('island-pop', gain ? 1 : LOSS_PITCH), chipDelay(i));
+    });
+    return () => timers.forEach(clearTimeout);
+    // Once per phase of a round; `shown` is rebuilt every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, round]);
+
   if (phase === null || shown.length === 0) return { blocking: phase !== null, pins: [], pulses: NONE };
   return {
     blocking: true,
@@ -86,7 +107,7 @@ export function useIslandMoments({ events, board, free, angleOf, skipFirstOpenin
         node: (
           <span className={`isle-moment ${m.tone}`}>
             {m.chips.map((c, i) => (
-              <span key={i} className={`isle-chip ${c.tone}`} title={c.title} style={{ animationDelay: `${300 + i * 160}ms` }}>
+              <span key={i} className={`isle-chip ${c.tone}`} title={c.title} style={{ animationDelay: `${chipDelay(i)}ms` }}>
                 {c.good && <GoodIcon good={c.good} size="md" />}
                 {c.text}
               </span>

@@ -68,6 +68,8 @@ export type SfxId =
   | 'role-pick'
   // A production count popping up over a warehouse stack (useInvestStep), higher for each next one.
   | 'bubble'
+  // An island's trait notice popping up (useIslandMoments): a low, big bubble.
+  | 'island-pop'
   // A market row showing its price move (marketSounds.ts).
   | 'price-up'
   | 'price-down';
@@ -156,6 +158,7 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   'ui-leave': 'sfx-ui-leave.ogg',
   'role-pick': 'sfx-role-pick.ogg',
   bubble: 'sfx-bubble.ogg',
+  'island-pop': 'sfx-island-pop.ogg',
   'price-up': 'sfx-price-up.ogg',
   'price-down': 'sfx-price-down.ogg',
 };
