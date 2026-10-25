@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { DoubleSide, Vector3, type Group, type Mesh, type MeshBasicMaterial, type Object3D } from 'three';
 import type { PlayerId, ShipId, VoyageEventId } from '../../v07/game';
 import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
-import { seatPosition } from '../../ui/scene/layout';
+import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
 import { Model, type ModelName } from '../../ui/scene/Model';
 import { SEA_LEVEL, seaSurfaceY } from '../../ui/scene/seaWave';
 import { shipPose } from '../../ui/scene/Ships';
@@ -38,7 +38,7 @@ const ACTOR_LOOK: Readonly<Record<BeatActor['role'], { readonly model: ModelName
   pirate: { model: 'ship-pirate-medium', scale: 0.45, dx: 1 },
   guard: { model: 'boat-row-small', scale: 1.2, dx: -1 },
 };
-const ACTOR_SPOT = { x: 7, z: 5, spread: 5 } as const;
+const ACTOR_SPOT = { x: 7, z: 5, spread: 6 } as const;
 /** How long after a step begins the ship takes the hit (an actor first has to arrive). */
 const HIT_DELAY: Readonly<Record<BeatHit['kind'], number>> = { ram: 0.7, raid: RAID.ram, shield: 0.45, bastion: BARRAGE.shield, lightning: 0.2, push: 0.15, lift: 0.45, jolt: 0.15, beacon: SPOT_TIME.lock };
 const HIT_LENGTH = 0.7;
@@ -89,8 +89,22 @@ export interface BeatSceneProps {
 }
 
 /** Where an actor stops beside the ship at `p`, and the way it came from (toward its own island). */
-function actorSpot(p: Vector3, look: (typeof ACTOR_LOOK)[BeatActor['role']], actor: BeatActor): Vector3 {
-  return new Vector3(p.x + look.dx * (ACTOR_SPOT.x + ACTOR_SPOT.spread * actor.order), 0, p.z + ACTOR_SPOT.z);
+function actorSpot(p: Vector3, look: (typeof ACTOR_LOOK)[BeatActor['role']], actor: BeatActor, flip: 1 | -1 = 1): Vector3 {
+  return new Vector3(p.x + flip * look.dx * (ACTOR_SPOT.x + ACTOR_SPOT.spread * actor.order), 0, p.z + ACTOR_SPOT.z);
+}
+
+/**
+ * Pirates stand to the right of the ship and guards to the left, unless an island sits on that side
+ * and the boats would be moored inside it: then the sides swap (-1) when that leaves more open water.
+ */
+function clearerSide(p: Vector3, angles: readonly number[], actors: readonly BeatActor[]): 1 | -1 {
+  const obstacles = [{ at: [0, 0, 0] as const, radius: TARGET_ISLAND_RADIUS }, ...angles.map((a) => ({ at: seatPosition(a), radius: PLAYER_ISLAND_RADIUS }))];
+  const room = (flip: 1 | -1): number =>
+    Math.min(...actors.flatMap((actor) => {
+      const spot = actorSpot(p, ACTOR_LOOK[actor.role], actor, flip);
+      return obstacles.map((o) => Math.hypot(spot.x - o.at[0], spot.z - o.at[2]) - o.radius);
+    }), Infinity);
+  return room(-1) > room(1) + 0.5 ? -1 : 1;
 }
 
 interface Strike {
@@ -374,7 +388,9 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, hol
     ...(barrage ? [{ position: barrage.fort, clearance: LAMP_CLEARANCE }] : []),
   ];
   const p = focusPose.position;
-  const spotOf = (actor: BeatActor) => actorSpot(p, ACTOR_LOOK[actor.role], actor);
+  // Judged on every actor of the beat, not just those shown so far, so the sides never swap mid-beat.
+  const flip = clearerSide(p, angles, actorsShown(beat, { ...view, stepsShown: beat.steps.length }));
+  const spotOf = (actor: BeatActor) => actorSpot(p, ACTOR_LOOK[actor.role], actor, flip);
   const seatOf = (id: PlayerId) => seats.find((s) => s.id === id);
   return {
     camera:
