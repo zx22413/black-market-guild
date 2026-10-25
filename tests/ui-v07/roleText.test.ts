@@ -15,7 +15,7 @@ describe('role descriptions (the strip above the hand)', () => {
   it('take the numbers from the rules, not from memory', () => {
     const { guard, pirate, smuggler } = RULES_V07.roles;
     expect(roleDetail('guard', RULES_V07)).toContain(`${guard.escortFee} G`);
-    expect(roleDetail('pirate', RULES_V07)).toContain(`${pirate.loot} G`);
+    expect(roleDetail('pirate', RULES_V07)).toContain(`${pirate.loot[2]} G`);
     expect(roleDetail('pirate', RULES_V07)).toContain(`+${RULES_V07.wanted.lootBonus} G`);
     expect(roleDetail('smuggler', RULES_V07)).toContain(`抽走船東 ${smuggler.goodsValue} G`);
     expect(roleDetail('smuggler', { ...RULES_V07, roles: { ...RULES_V07.roles, smuggler: { ...smuggler, fine: 123 } } })).toContain('罰 123 G');

@@ -31,9 +31,9 @@ describe('sound of each settlement flight', () => {
     expect(flightSound(flight('pirate-loot'))).toBe('settle-loot');
   });
 
-  it('sounds the goods: seized arms, insured and salvaged cargo, spoiled spice', () => {
+  it('sounds the goods: seized arms, insurance, salvaged cargo, spoiled spice', () => {
     expect(flightSound(flight('arms-confiscated'))).toBe('settle-arms');
-    expect(flightSound(flight('kept', null))).toBe('settle-insurance');
+    expect(flightSound(flight('insurance'))).toBe('settle-insurance');
     expect(flightSound(flight('salvage', null))).toBe('settle-salvage');
     expect(flightSound(flight('spoil', null))).toBe('settle-spoil');
   });

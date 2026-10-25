@@ -17,8 +17,8 @@ const FLIGHT_SOUND: Readonly<Record<Flight['kind'], SfxId | null>> = {
   'smuggling-fine': 'settle-fine',
   'smuggling-seized': 'settle-loot',
   'pirate-loot': 'settle-loot',
+  insurance: 'settle-insurance',
   'arms-confiscated': 'settle-arms',
-  kept: 'settle-insurance',
   salvage: 'settle-salvage',
   spoil: 'settle-spoil',
   // Paid before the settlement, never a flight.

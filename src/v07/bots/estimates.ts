@@ -22,6 +22,19 @@ export function arriveChance(rules: Rules, modifier: number): number {
   return hits / (dieMax - dieMin + 1);
 }
 
+/** Expected pirate loot from a ship under a known total modifier: 0 when it arrives, else the loot of its final value (§9.4). */
+export function expectedLoot(rules: Rules, modifier: number, bonus = 0): number {
+  const { dieMin, dieMax, successMin } = rules.sailing;
+  let total = 0;
+  for (let face = dieMin; face <= dieMax; face += 1) {
+    const final = Math.min(dieMax, Math.max(dieMin, face + modifier));
+    if (final < successMin) {
+      total += (rules.roles.pirate.loot[final] ?? 0) + bonus;
+    }
+  }
+  return total / (dieMax - dieMin + 1);
+}
+
 /** Price of a fractional step, interpolated along the track (§7.1). */
 function priceOfStep(rules: Rules, good: GoodId, step: number): number {
   return priceAt(rules, good, Math.min(rules.price.steps - 1, Math.max(0, step)));
@@ -83,10 +96,6 @@ export function perUnitCost(rules: Rules): number {
   return rules.shipCost / rules.capacity.base;
 }
 
-/** Insurance keeps one unit of a sunk cargo (§10.2); a kept unit is worth a warehoused unit. */
-export function insuredValue(rules: Rules, shipped: number, price: number): number {
-  return Math.min(rules.buildings.insurance.keepPerRound, shipped) * price * 0.6;
-}
 
 /** Rough value of a building over the rounds it will work, plus its end-game value (§10.2, §13). */
 export function buildingWorth(view: PlayerView, building: BuildingId): number {
@@ -100,9 +109,9 @@ export function buildingWorth(view: PlayerView, building: BuildingId): number {
     case 'shipyard':
       return endValue + roundsLeft * rules.capacity.shipyardBonus * price * p * 0.6;
     case 'insurance':
-      return endValue + roundsLeft * ((1 - p) * 0.7 * insuredValue(rules, rules.capacity.base, price) + 10);
+      return endValue + roundsLeft * (1 - p) * 0.7 * rules.buildings.insurance.payout;
     case 'salvage':
-      return endValue + roundsLeft * Math.min(rules.buildings.salvage.maxPerRound, opponents * 0.6 * (1 - p)) * price * p * 0.8;
+      return endValue + roundsLeft * Math.min(rules.buildings.salvage.maxPerRound, opponents * 0.6 * (1 - p)) * price * rules.buildings.salvage.unitsPerShip * p * 0.8;
     case 'exchange': {
       const { commissionPerUnit, maxUnitsPerRound } = rules.buildings.exchange;
       return endValue + roundsLeft * Math.min(maxUnitsPerRound, opponents * rules.capacity.base * 0.8 * p) * commissionPerUnit;

@@ -15,13 +15,13 @@ import {
   ARMS_SEIZURE_RISK,
   OTHERS_LOAD_SHARE,
   arriveChance,
+  expectedLoot,
   averagePrice,
   buildingWorth,
   carriesWanted,
   currentPrice,
   expectedPrice,
   expectedSeizure,
-  insuredValue,
   me,
   othersExpectedArrivals,
   ownArmsValue,
@@ -61,7 +61,7 @@ function scoreInvest(view: PlayerView, action: Invest, persona: Personality): nu
     score += (view.myStock[g] - (cost?.[g] ?? 0) - shipped) * keepEach;
   }
   if (insured && shippedUnits > 0) {
-    score += (1 - p) * insuredValue(rules, shippedUnits, cargoValue / shippedUnits);
+    score += (1 - p) * rules.buildings.insurance.payout;
   }
   if (action.build !== null) {
     score += persona.builder * buildingWorth(view, action.build) - rules.buildings.costs[action.build].cash;
@@ -131,7 +131,7 @@ function scoreDeploy(view: PlayerView, action: Deploy, persona: Personality): nu
   switch (action.role) {
     case 'guard': {
       const boost =
-        rules.roles.guard.modifier + trait.guardModifier + (player.buildings.includes('insurance') ? rules.buildings.insurance.guardBonus : 0);
+        rules.roles.guard.modifier + trait.guardModifier;
       const guarded = arriveChance(rules, boost);
       const seizure = expectedSeizure(view, ship);
       // §9.4: confiscating arms forfeits the escort fee, which is only paid for others' ships.
@@ -141,7 +141,7 @@ function scoreDeploy(view: PlayerView, action: Deploy, persona: Personality): nu
     }
     case 'pirate': {
       const attacked = arriveChance(rules, rules.roles.pirate.modifier + trait.pirateModifier);
-      const loot = (rules.roles.pirate.loot + (carriesWanted(view, ship) ? rules.wanted.lootBonus : 0)) * (1 - attacked);
+      const loot = expectedLoot(rules, rules.roles.pirate.modifier + trait.pirateModifier, carriesWanted(view, ship) ? rules.wanted.lootBonus : 0);
       const salvage = player.buildings.includes('salvage') && stake === 0 ? (base - attacked) * averagePrice(view) * base : 0;
       return loot * persona.aggression + salvage - (base - attacked) * stake - fee;
     }

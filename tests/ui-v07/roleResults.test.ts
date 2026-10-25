@@ -53,7 +53,7 @@ describe('role results (stamps)', () => {
   });
 
   it('shows a 查獲 stamp somewhere in a batch of matches', () => {
-    const caught = SEEDS.flatMap(play).filter((e) => e.type === 'smuggling-settled' && e.result === 'caught');
+    const caught = Array.from({ length: 30 }, (_, i) => i + 1).flatMap(play).filter((e) => e.type === 'smuggling-settled' && e.result === 'caught');
     expect(caught.length).toBeGreaterThan(0);
   });
 });

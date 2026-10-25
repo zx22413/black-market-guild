@@ -13,7 +13,7 @@ import './beat.css';
 // BeatTag, pinned above the ship.
 
 /** §9.1 step 8: 1–3 sinks, 4–6 arrives. Display only; the outcome itself comes from the event. */
-export const SINK_MAX = 3;
+export const SINK_MAX = 2;
 
 type Names = Readonly<Record<PlayerId, string>>;
 
@@ -104,7 +104,7 @@ export function BeatDie({ value, step, stepsShown }: { readonly value: number | 
           {value ?? '?'}
         </div>
       )}
-      <ol className="beat-meter" aria-label="1～3 沉沒，4～6 抵達">
+      <ol className="beat-meter" aria-label="1～2 沉沒，3～6 抵達">
         {[6, 5, 4, 3, 2, 1].map((v) => (
           <li key={v} className={`${v <= SINK_MAX ? 'sink' : 'safe'} ${face === v ? 'on' : ''}`}>
             {v}
@@ -218,7 +218,7 @@ export function BeatCard({ beat, playback, names, viewer, onDone }: BeatCardProp
               +{g.units} <GoodIcon good={g.good} size="sm" />
             </b>
             <span>{g.playerId === viewer ? '你' : (names[g.playerId] ?? g.playerId)}</span>
-            <small>{g.via === 'insurance' ? '航運保險保住' : '打撈公司撈到'}</small>
+            <small>打撈公司撈到</small>
           </li>
         ))}
       </ul>

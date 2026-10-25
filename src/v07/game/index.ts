@@ -5,7 +5,7 @@ export type { MatchConfig } from './engine';
 export { getPendingDecisions, getLegalActions, buildingCost } from './decisions';
 export { getPlayerView } from './view';
 export type { IntelKnowledge, PlayerView, PublicPlayer, ViewShip } from './view';
-export { RULES_V07, NEUTRAL_TRAIT } from './rules';
+export { RULES_V07, NEUTRAL_TRAIT, pirateLoot } from './rules';
 export type { BuildingRule, IslandTrait, Rules } from './rules';
 export { buildingValue } from './scoring';
 export { priceAt } from './goods';

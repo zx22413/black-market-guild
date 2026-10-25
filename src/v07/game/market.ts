@@ -1,6 +1,8 @@
 import { chain, changeCash, holds, payAll, playerOf, updatePlayer, type StepFn } from './cash';
 import { addGoods, mapGoods, nextPriceStep, only, priceAt, units } from './goods';
 import { traitOf } from './islands';
+import { voyageModifier } from './resolution';
+import { pirateLoot } from './rules';
 import { GOODS, type Bet, type GoodId, type Goods, type MatchEvent, type MatchState, type PlayerId, type Ship, type ShipId, type Step } from './types';
 
 interface Prices {
@@ -37,7 +39,7 @@ export function settleMarket(state: MatchState): Step {
     ...sunkShips.map(settleSinking),
     payEscortFees,
     payCommission,
-    keepInsuredGoods(prices.before),
+    payInsurance,
     salvage(sunkShips, prices.after),
     payBets(bets, prices),
     spoilSpice,
@@ -168,7 +170,7 @@ function smuggle(ship: Ship, smugglers: readonly PlayerId[], proceeds: number): 
   };
 }
 
-/** §9.4, §9.5, §9.6: pirates split the loot (wanted bonus included) and any smuggled goods aboard. */
+/** §9.4, §9.5, §9.6: pirates split the loot (set by the ship's final value; wanted bonus included) and any smuggled goods aboard. */
 function settleSinking(ship: Ship): StepFn {
   return (state) => {
     const pirates = deployed(state, ship, 'pirate');
@@ -179,7 +181,7 @@ function settleSinking(ship: Ship): StepFn {
       return { state, events: lost };
     }
     const bonus = state.roundState.wanted.includes(ship.owner) ? state.rules.wanted.lootBonus : 0;
-    const loot = Math.floor((state.rules.roles.pirate.loot + bonus) / pirates.length);
+    const loot = Math.floor((pirateLoot(state.rules, voyageModifier(state, ship).final) + bonus) / pirates.length);
     const seized = Math.floor(goodsValue(state) / pirates.length) * smugglers.length;
     const paid = chain(state, [
       ...payAll(pirates.map((playerId) => ({ playerId, amount: loot })), 'pirate-loot', ship.id),
@@ -217,55 +219,44 @@ const payCommission: StepFn = (state) => {
   );
 };
 
-/** §10.2: insured owners keep their most valuable lost units (ties in good order), capped per round. */
-function keepInsuredGoods(before: Goods): StepFn {
-  return (state) => {
-    const steps = state.roundState.ships
+/** §10.2: an insured owner is paid by the bank for each of their ships that sank. */
+const payInsurance: StepFn = (state) =>
+  chain(
+    state,
+    state.roundState.ships
       .filter((s) => s.outcome === 'sank' && holds(state, s.owner, 'insurance'))
-      .map((ship): StepFn => (current) => {
-        const order = [...GOODS].sort((a, b) => before[b] - before[a]);
-        let left = current.rules.buildings.insurance.keepPerRound;
-        const kept = order.reduce((acc, g) => {
-          const take = Math.min(left, ship.cargo[g]);
-          left -= take;
-          return { ...acc, [g]: take };
-        }, mapGoods(() => 0));
-        if (units(kept) === 0) {
-          return { state: current, events: [] };
-        }
-        return {
-          state: updatePlayer(current, ship.owner, (p) => ({ ...p, stock: addGoods(p.stock, kept) })),
-          events: [{ type: 'goods-kept', round: current.round, playerId: ship.owner, goods: kept, shipId: ship.id }],
-        };
-      });
-    return chain(state, steps);
-  };
-}
+      .flatMap((ship) => payAll([{ playerId: ship.owner, amount: state.rules.buildings.insurance.payout }], 'insurance', ship.id)),
+  );
 
 /**
- * §10.2: each sunk ship gives 1 unit of its most common good (ties in good order). Holders take
- * turns in seat order; each takes up to `maxPerRound` of the most valuable units at this round's
- * new price (ties by ship order) from other players' ships that fewer than `maxHoldersPerShip`
- * holders have salvaged.
+ * §10.2: from a sunk ship a holder takes up to `unitsPerShip` units, always from the good with the
+ * most units left aboard (ties in good order). Holders take turns in seat order; each salvages up
+ * to `maxPerRound` other players' ships, the ones whose units are worth the most at this round's
+ * new price first (ties by ship order). Any number of holders can salvage the same ship.
  */
 function salvage(sunk: readonly Ship[], after: Goods): StepFn {
   return (state) => {
-    const { maxHoldersPerShip, maxPerRound } = state.rules.buildings.salvage;
+    const { unitsPerShip, maxPerRound } = state.rules.buildings.salvage;
     const offers = sunk.map((ship, order) => {
-      const good = GOODS.reduce<GoodId>((best, g) => (ship.cargo[g] > ship.cargo[best] ? g : best), 'wood');
-      return { ship, good, order, value: priceAt(state.rules, good, after[good]) };
+      const left = { ...ship.cargo };
+      const picked: GoodId[] = [];
+      while (picked.length < unitsPerShip) {
+        const good = GOODS.reduce<GoodId>((best, g) => (left[g] > left[best] ? g : best), 'wood');
+        if (left[good] === 0) break;
+        left[good] -= 1;
+        picked.push(good);
+      }
+      return { ship, picked, order, value: picked.reduce((sum, g) => sum + priceAt(state.rules, g, after[g]), 0) };
     });
-    const taken = new Map<string, number>();
     const claims = state.players
       .filter((p) => p.buildings.includes('salvage'))
-      .flatMap((holder) => {
-        const picks = offers
-          .filter((o) => o.ship.owner !== holder.id && (taken.get(o.ship.id) ?? 0) < maxHoldersPerShip)
-          .sort((a, b) => b.value - a.value || a.order - b.order)
-          .slice(0, maxPerRound);
-        picks.forEach((o) => taken.set(o.ship.id, (taken.get(o.ship.id) ?? 0) + 1));
-        return picks.map((o) => ({ playerId: holder.id, ship: o.ship, good: o.good }));
-      });
+      .flatMap((holder) =>
+        offers
+          .filter((o) => o.ship.owner !== holder.id && o.picked.length > 0)
+          .sort((x, y) => y.value - x.value || x.order - y.order)
+          .slice(0, maxPerRound)
+          .flatMap((o) => o.picked.map((good) => ({ playerId: holder.id, ship: o.ship, good }))),
+      );
     return claims.reduce<Step>(
       (acc, { playerId, ship, good }) => ({
         state: updatePlayer(acc.state, playerId, (p) => ({ ...p, stock: addGoods(p.stock, only(good, 1)) })),

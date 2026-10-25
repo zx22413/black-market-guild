@@ -34,7 +34,7 @@ export interface SimStats {
   pirateFees: number;
   pirateSinks: number;
   escortFees: number;
-  insuredKept: number;
+  insurancePaid: number;
   salvaged: number;
   smuggled: number;
   smugglersCaught: number;
@@ -74,7 +74,7 @@ export function emptyStats(steps: number): SimStats {
     pirateFees: 0,
     pirateSinks: 0,
     escortFees: 0,
-    insuredKept: 0,
+    insurancePaid: 0,
     salvaged: 0,
     smuggled: 0,
     smugglersCaught: 0,
@@ -162,9 +162,6 @@ export function addMatch(stats: SimStats, log: MatchLog, strategyOf: (playerId: 
       case 'smuggling-settled':
         stats.smugglersCaught += event.result === 'caught' ? event.smugglers.length : 0;
         break;
-      case 'goods-kept':
-        stats.insuredKept += units(event.goods);
-        break;
       case 'goods-salvaged':
         stats.salvaged += 1;
         break;
@@ -187,6 +184,8 @@ function addCash(stats: SimStats, reason: string, amount: number): void {
     stats.betsWon += 1;
   } else if (reason === 'arms-confiscated') {
     stats.armsConfiscatedCash += amount;
+  } else if (reason === 'insurance') {
+    stats.insurancePaid += amount;
   } else if (reason === 'exchange-commission') {
     stats.commission += amount;
   } else if (reason === 'smuggling' && amount > 0) {

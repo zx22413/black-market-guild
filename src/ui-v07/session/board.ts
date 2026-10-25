@@ -194,8 +194,6 @@ export function applyEvent(board: Board, event: MatchEvent, rules: Rules = RULES
         prices: event.priceAfter,
         settlement: { arrived: event.arrived, priceBefore: event.priceBefore, priceAfter: event.priceAfter },
       };
-    case 'goods-kept':
-      return mapPlayer(board, event.playerId, (p) => ({ ...p, stock: addTo(p.stock, event.goods) }));
     case 'goods-salvaged':
       return mapPlayer(board, event.playerId, (p) => ({ ...p, stock: addTo(p.stock, { ...NONE, [event.good]: 1 }) }));
     case 'spice-spoiled':

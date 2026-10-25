@@ -10,7 +10,7 @@ function play(seed: number): MatchEvent[] {
   return runMatchSync(setup, setup.bots).events as MatchEvent[];
 }
 
-const SETTLED_REASONS = new Set(['sale', 'smuggling', 'smuggling-fine', 'smuggling-confiscated', 'smuggling-seized', 'arms-confiscated', 'pirate-loot', 'escort-fee', 'exchange-commission', 'broker-bet', 'broker-control', 'broker-lift']);
+const SETTLED_REASONS = new Set(['sale', 'smuggling', 'smuggling-fine', 'smuggling-confiscated', 'smuggling-seized', 'arms-confiscated', 'pirate-loot', 'insurance', 'escort-fee', 'exchange-commission', 'broker-bet', 'broker-control', 'broker-lift']);
 
 describe('settlement flights', () => {
   it.each([1, 2, 3, 7, 11])('move exactly the money of the settlement, every payment once (seed %i)', (seed) => {

@@ -18,17 +18,16 @@ function rolePhase(state: MatchState): MatchState {
 }
 
 describe('§9.1 voyage modifiers', () => {
-  it('adds guards, insured guards, pirates, the voyage event and the lighthouse, then clamps', () => {
+  it('adds guards, pirates, the voyage event and the lighthouse, then clamps', () => {
     let state = ready(4);
-    state = edit(state, 'p2', { buildings: ['insurance'] });
     state = edit(state, 'p4', { island: 'lighthouse' });
     const { events } = playRound(state, {
       loads: { p1: G(1), p4: G(1) },
-      rolls: { p1: 3, p4: 2 },
+      rolls: { p1: 2, p4: 2 },
       roles: { p2: ['guard', 'p1'], p3: ['pirate', 'p1'] },
       voyageEvent: 'storm',
     });
-    expect(modifiers(events, 'p1')).toMatchObject({ base: 3, guard: 2, pirate: -1, event: -1, island: 0, final: 3 });
+    expect(modifiers(events, 'p1')).toMatchObject({ base: 2, guard: 1, pirate: -1, event: -1, island: 0, final: 1 });
     expect(modifiers(events, 'p4')).toMatchObject({ base: 2, event: -1, island: 1, final: 2 });
     expect(find(events, 'ship-resolved').map((e) => e.outcome)).toEqual(['sank', 'sank']);
   });
@@ -62,17 +61,17 @@ describe('§9.2 fees and §9.3 cooldowns', () => {
       loads: { p1: G(1) },
       roles: { p1: ['pirate', 'p1'], p2: ['guard', 'p1'], p3: ['intel', 'p1'], p4: ['pirate', 'p1'] },
     });
-    expect(cash(events, 'role-fee', 'p1')).toBe(-100);
+    expect(cash(events, 'role-fee', 'p1')).toBe(-50);
     expect(cash(events, 'role-fee', 'p2')).toBe(-75);
     expect(cash(events, 'role-fee', 'p3')).toBe(0);
-    expect(cash(events, 'role-fee', 'p4')).toBe(-125);
+    expect(cash(events, 'role-fee', 'p4')).toBe(-75);
     expect(find(events, 'roles-revealed').map((e) => e.role)).toEqual(['intel', 'guard', 'pirate', 'smuggler', 'broker']);
   });
 
   it('hides unaffordable roles', () => {
     const state = rolePhase(edit(ready(3), 'p3', { cash: 60 }));
     const roles = new Set(getLegalActions(state, 'p3').map((a) => (a.type === 'deploy-role' ? a.role : 'x')));
-    expect(roles).toEqual(new Set([null, 'intel', 'guard', 'smuggler']));
+    expect(roles).toEqual(new Set([null, 'intel', 'guard', 'pirate', 'smuggler']));
   });
 
   it('cools a role down for two rounds, the fortress guard for one', () => {
@@ -135,10 +134,14 @@ describe('§9.4 roles', () => {
   it('pays pirates loot on a sink, with the wanted bonus (§9.6)', () => {
     const state = withWanted(ready(3), ['p1']);
     const { events } = playRound(state, { loads: { p1: G(1) }, rolls: { p1: 3 }, roles: { p2: ['pirate', 'p1'], p3: ['pirate', 'p1'] } });
-    expect(cash(events, 'pirate-loot', 'p2')).toBe(125);
-    expect(cash(events, 'pirate-loot', 'p3')).toBe(125);
+    // Two pirates: 3 - 2 = final 1, 250 G + 100 G wanted bonus, split in two.
+    expect(cash(events, 'pirate-loot', 'p2')).toBe(175);
+    expect(cash(events, 'pirate-loot', 'p3')).toBe(175);
+    // One pirate: 3 - 1 = final 2 pays 100 G; a raw 2 makes it final 1, which pays 250 G.
     const plainLoot = playRound(ready(3), { loads: { p1: G(1) }, rolls: { p1: 3 }, roles: { p2: ['pirate', 'p1'] } });
-    expect(cash(plainLoot.events, 'pirate-loot', 'p2')).toBe(150);
+    expect(cash(plainLoot.events, 'pirate-loot', 'p2')).toBe(100);
+    const deepLoot = playRound(ready(3), { loads: { p1: G(1) }, rolls: { p1: 2 }, roles: { p2: ['pirate', 'p1'] } });
+    expect(cash(deepLoot.events, 'pirate-loot', 'p2')).toBe(250);
   });
 
   it('pays brokers whose price moved their way, after shifting demand', () => {
@@ -203,7 +206,7 @@ describe('§9.4 roles', () => {
       const wrong = playRound(ready(3), { loads: { p1: G(1) }, bets: { p2: { good: 'wood', direction: -1, aim: 'p1' } } });
       expect(paid(wrong.events, 'broker-bet', 'p2')).toBe(0);
       expect(paid(wrong.events, 'broker-control', 'p2')).toBe(0);
-      const sunk = playRound(ready(3), { loads: { p1: G(2) }, rolls: { p1: 3 }, bets: { p2: { good: 'wood', direction: -1, aim: 'p1' } } });
+      const sunk = playRound(ready(3), { loads: { p1: G(2) }, rolls: { p1: 2 }, bets: { p2: { good: 'wood', direction: -1, aim: 'p1' } } });
       expect(paid(sunk.events, 'broker-control', 'p2')).toBe(0);
     });
 

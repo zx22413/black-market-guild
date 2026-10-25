@@ -44,7 +44,7 @@ export function voyageModifier(state: MatchState, ship: Ship): VoyageModifier {
   const base = ship.rerolledRoll ?? ship.rawRoll;
   const guard = targeting(state, ship, 'guard').reduce(
     (sum, d) =>
-      sum + rules.roles.guard.modifier + trait(d.playerId).guardModifier + (holds(state, d.playerId, 'insurance') ? rules.buildings.insurance.guardBonus : 0),
+      sum + rules.roles.guard.modifier + trait(d.playerId).guardModifier,
     0,
   );
   // + 0 turns -0 into 0.

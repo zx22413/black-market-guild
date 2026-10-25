@@ -169,6 +169,7 @@ export type CashReason =
   | 'smuggling-seized'
   | 'arms-confiscated'
   | 'pirate-loot'
+  | 'insurance'
   | 'escort-fee'
   | 'exchange-commission'
   | 'broker-bet'
@@ -252,7 +253,6 @@ export type MatchEvent =
       readonly priceBefore: Goods;
       readonly priceAfter: Goods;
     }
-  | { readonly type: 'goods-kept'; readonly round: number; readonly playerId: PlayerId; readonly goods: Goods; readonly shipId: ShipId }
   | { readonly type: 'goods-salvaged'; readonly round: number; readonly playerId: PlayerId; readonly good: GoodId; readonly shipId: ShipId }
   | { readonly type: 'spice-spoiled'; readonly round: number; readonly spoiled: Readonly<Record<PlayerId, number>> }
   | { readonly type: 'round-ended'; readonly round: number }

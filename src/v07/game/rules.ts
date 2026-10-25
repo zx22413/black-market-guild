@@ -68,7 +68,8 @@ export interface Rules {
     /** A role used in round r is unavailable until round r + cooldown + 1 (§9.3). */
     readonly cooldown: number;
     readonly guard: { readonly modifier: number; readonly escortFee: number };
-    readonly pirate: { readonly modifier: number; readonly loot: number };
+    /** `loot` is keyed by the sunk ship's final value (§9.4): a final value with no entry pays nothing. */
+    readonly pirate: { readonly modifier: number; readonly loot: Readonly<Record<number, number>> };
     readonly smuggler: { readonly goodsValue: number; readonly fine: number };
     /**
      * §9.4: the broker also names a ship; when the bet is right, that ship sells the bet's good
@@ -88,8 +89,10 @@ export interface Rules {
     readonly maxPerPlayer: number;
     /** Share of each held building's cash cost counted in final wealth (§13). */
     readonly valueRatio: number;
-    readonly insurance: { readonly keepPerRound: number; readonly guardBonus: number };
-    readonly salvage: { readonly maxHoldersPerShip: number; readonly maxPerRound: number };
+    /** §10.2: the bank pays the owner `payout` G for each of their ships that sinks. */
+    readonly insurance: { readonly payout: number };
+    /** §10.2: up to `unitsPerShip` units from each of up to `maxPerRound` other players' sunk ships. */
+    readonly salvage: { readonly unitsPerShip: number; readonly maxPerRound: number };
     readonly exchange: { readonly commissionPerUnit: number; readonly maxUnitsPerRound: number };
   };
   readonly islands: { readonly offered: number; readonly traits: Readonly<Record<IslandId, IslandTrait>> };
@@ -150,12 +153,12 @@ export const RULES_V07: Rules = {
   },
   capacity: { base: 3, shipyardBonus: 1 }, // §8
   shipCost: 100, // §8
-  sailing: { dieMin: 1, dieMax: 6, successMin: 4 }, // §9.1
+  sailing: { dieMin: 1, dieMax: 6, successMin: 3 }, // §9.1
   roles: {
-    fees: { intel: 50, guard: 50, pirate: 100, smuggler: 0, broker: 75 }, // §9.2
+    fees: { intel: 50, guard: 50, pirate: 50, smuggler: 0, broker: 75 }, // §9.2
     cooldown: 2, // §9.3
     guard: { modifier: 1, escortFee: 75 }, // §9.4
-    pirate: { modifier: -1, loot: 150 }, // §9.4
+    pirate: { modifier: -1, loot: { 1: 250, 2: 100 } }, // §9.4
     smuggler: { goodsValue: 100, fine: 100 }, // §9.5
     broker: { shift: 1, payout: 100, targetSteps: 2, targetOwnUp: 1 }, // §9.4
   },
@@ -165,13 +168,13 @@ export const RULES_V07: Rules = {
     costs: {
       shipyard: { cash: 100, wood: 2, iron: 0 },
       insurance: { cash: 100, wood: 1, iron: 1 },
-      salvage: { cash: 100, wood: 0, iron: 2 },
+      salvage: { cash: 125, wood: 1, iron: 1 },
       exchange: { cash: 150, wood: 1, iron: 1 },
     },
     maxPerPlayer: 2,
     valueRatio: 0.5, // §13
-    insurance: { keepPerRound: 1, guardBonus: 1 },
-    salvage: { maxHoldersPerShip: 2, maxPerRound: 2 },
+    insurance: { payout: 200 },
+    salvage: { unitsPerShip: 1, maxPerRound: 2 },
     exchange: { commissionPerUnit: 15, maxUnitsPerRound: 4 },
   },
   islands: {
@@ -198,3 +201,8 @@ export const RULES_V07: Rules = {
     blackMarketRushGoodsValue: 150,
   },
 };
+
+/** §9.4: the loot the bank pays pirates for a ship that sank with this final value (before the wanted bonus). */
+export function pirateLoot(rules: Rules, finalValue: number): number {
+  return rules.roles.pirate.loot[finalValue] ?? 0;
+}

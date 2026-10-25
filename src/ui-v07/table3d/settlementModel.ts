@@ -16,7 +16,7 @@ export type Place =
 export interface Flight {
   readonly key: string;
   /** What moves it: the cash reason, or insured, salvaged or spoiled goods (its sound). */
-  readonly kind: CashReason | 'kept' | 'salvage' | 'spoil';
+  readonly kind: CashReason | 'salvage' | 'spoil';
   readonly from: Place;
   readonly to: Place;
   /** Who gains (or, for a fine, loses) the money or goods. */
@@ -48,6 +48,7 @@ function cashFlight(e: Extract<MatchEvent, { type: 'cash-changed' }>, i: number)
     'smuggling-seized': { from: fromShip, to: island(e.playerId) },
     'arms-confiscated': { from: fromShip, to: island(e.playerId), good: 'arms' },
     'pirate-loot': { from: fromShip, to: island(e.playerId) },
+    insurance: { from: HARBOR, to: building(e.playerId, 'insurance'), building: 'insurance' },
     'escort-fee': { from: HARBOR, to: island(e.playerId) },
     'exchange-commission': { from: HARBOR, to: building(e.playerId, 'exchange'), building: 'exchange' },
     'broker-bet': { from: HARBOR, to: island(e.playerId) },
@@ -73,10 +74,6 @@ export function settlementFlights(events: readonly MatchEvent[], round: number):
     if (e.type === 'cash-changed') {
       const f = cashFlight(e, i);
       if (f) flights.push(f);
-    } else if (e.type === 'goods-kept') {
-      for (const { good, units } of goodsOf(e.goods)) {
-        flights.push({ key: `kept-${i}-${good}`, kind: 'kept', from: ship(e.shipId), to: building(e.playerId, 'insurance'), playerId: e.playerId, amount: null, good, units, label: `保險保住 ${units} ${GOOD_LABELS[good]}`, shipId: e.shipId, building: 'insurance' });
-      }
     } else if (e.type === 'goods-salvaged') {
       flights.push({ key: `salvage-${i}`, kind: 'salvage', from: ship(e.shipId), to: building(e.playerId, 'salvage'), playerId: e.playerId, amount: null, good: e.good, units: 1, label: `打撈 +1 ${GOOD_LABELS[e.good]}`, shipId: e.shipId, building: 'salvage' });
     } else if (e.type === 'spice-spoiled') {

@@ -75,8 +75,8 @@ describe('investment choice on the island (only legal actions)', () => {
     expect(cards.find((c) => c.id === 'shipyard')!.reason).toBe('已經有了');
     expect(cards.find((c) => c.id === 'salvage')!.reason).toBe('最多 2 棟');
 
-    const poor = scenario({ stock: G(0, 1, 0, 0) });
-    expect(buildOptions(poor.context, poor.options).find((c) => c.id === 'salvage')!.reason).toBe('材料不足：鐵礦');
+    const poor = scenario({ stock: G(0, 0, 0, 0) });
+    expect(buildOptions(poor.context, poor.options).find((c) => c.id === 'salvage')!.reason).toBe('材料不足：木材、鐵礦');
     const broke = scenario({ cash: 50 });
     expect(buildOptions(broke.context, broke.options).find((c) => c.id === 'shipyard')!.reason).toBe('現金不足（100 G）');
     for (const card of buildOptions(broke.context, broke.options)) expect(card.legal).toBe(broke.options.some((a) => a.build === card.id));

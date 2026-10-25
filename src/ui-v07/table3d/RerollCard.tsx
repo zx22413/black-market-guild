@@ -36,7 +36,7 @@ const nextFace = (current: number, tick: number): number => ((current - 1 + JUMB
 
 function Meter({ value }: { readonly value: number }) {
   return (
-    <ol className="beat-meter" aria-label="1～3 沉沒，4～6 抵達">
+    <ol className="beat-meter" aria-label="1～2 沉沒，3～6 抵達">
       {[6, 5, 4, 3, 2, 1].map((v) => (
         <li key={v} className={`${v <= SINK_MAX ? 'sink' : 'safe'} ${value === v ? 'on' : ''}`}>
           {v}
@@ -126,7 +126,7 @@ export function RerollCard({ context, board, viewer, nameOf, onSubmit, rerolled,
             text={
               rerolled
                 ? '重擲後必須接受新結果。之後還會加上護衛、海盜、航海事件與島嶼的修正。'
-                : '1～3 沉沒、4～6 抵達，之後還會加上護衛、海盜、航海事件與島嶼的修正。重擲後必須接受新結果；現在還不知道航海事件和別人的角色。'
+                : '1～2 沉沒、3～6 抵達，之後還會加上護衛、海盜、航海事件與島嶼的修正。重擲後必須接受新結果；現在還不知道航海事件和別人的角色。'
             }
           />
           {!rerolled &&

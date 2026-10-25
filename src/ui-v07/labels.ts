@@ -100,6 +100,7 @@ export const CASH_REASON_LABELS: Readonly<Record<CashReason, string>> = {
   'smuggling-seized': '搶走私貨',
   'arms-confiscated': '沒收軍火',
   'pirate-loot': '海盜戰利品',
+  insurance: '航運保險理賠',
   'escort-fee': '護航費',
   'exchange-commission': '交易所佣金',
   'broker-bet': '莊家獎金',

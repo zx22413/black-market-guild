@@ -55,7 +55,7 @@ export const GUARD: TutorialScript = scenario({
     {
       demand: ROUND1_DEMAND,
       event: 'calm-seas',
-      rolls: { p1: 3, [BOT.vande]: 5 },
+      rolls: { p1: 2, [BOT.vande]: 5 },
       bots: { [BOT.vande]: { load: { iron: 1 } } },
       you: {
         invest: { demo: { load: { wood: 1, spice: 1 } }, choose: false },
@@ -71,7 +71,7 @@ export const GUARD: TutorialScript = scenario({
       '護衛',
       [F.hand, F.island('p1')],
       [
-        `護衛守一艘船，讓它的航行骰 +${guard.modifier}。你看不到自己的骰值，派護衛是押注：抵達的機會從一半提高到三分之二。`,
+        `護衛守一艘船，讓它的航行骰 +${guard.modifier}。你看不到自己的骰值，派護衛是押注：抵達的機會從三分之二提高到六分之五。`,
         `守別人的船、而那艘船抵達時，還能從銀行拿 ${guard.escortFee} G 護航費。`,
       ],
       `派護衛守自己的船（部署費 ${fee('guard')} G）。`,
@@ -79,7 +79,7 @@ export const GUARD: TutorialScript = scenario({
     ),
     watch([], '角色一次全部揭露，接著看你的船：起始骰值、護衛的加成，再判定抵達或沉沒。'),
     step(voyaged(['p1']), '差一點就沉了', [F.beat], [
-      `你的船原始骰值只有 3，護衛 +${guard.modifier} 後變 4，剛好抵達。`,
+      `你的船原始骰值只有 2，護衛 +${guard.modifier} 後變 3，剛好抵達。`,
       '小心航海事件「月黑風高」：被護衛守著的船 −1，正好抵銷護衛。',
     ]),
     done('下一課：海盜。'),
@@ -95,7 +95,7 @@ export const PIRATE: TutorialScript = scenario({
     {
       demand: ROUND1_DEMAND,
       event: 'calm-seas',
-      rolls: { [BOT.vande]: 4, [BOT.tide]: 6 },
+      rolls: { [BOT.vande]: 3, [BOT.tide]: 6 },
       bots: { [BOT.vande]: { load: { wood: 2 } }, [BOT.tide]: { load: { iron: 1 } } },
       you: {
         invest: { demo: {}, choose: false },
@@ -111,7 +111,7 @@ export const PIRATE: TutorialScript = scenario({
       '海盜',
       [F.hand, F.island(BOT.vande)],
       [
-        `海盜鎖定一艘船，讓它 ${pirate.modifier}。那艘船沉沒時，銀行付 ${pirate.loot} G 戰利品，由鎖定它的海盜平分。`,
+        `海盜鎖定一艘船，讓它 ${pirate.modifier}。那艘船沉沒時，銀行付戰利品，由鎖定它的海盜平分：最終值 2 付 ${pirate.loot[2]} G，最終值 1 付 ${pirate.loot[1]} G。`,
         `船上載著通緝者的貨時，戰利品再多 ${R.wanted.lootBonus} G。`,
       ],
       `派海盜鎖定${vande}的船（部署費 ${fee('pirate')} G）。`,
@@ -119,7 +119,7 @@ export const PIRATE: TutorialScript = scenario({
     ),
     watch([], `看${vande}的船：海盜的 ${pirate.modifier} 會不會讓它沉下去。`),
     step(voyaged([BOT.vande]), '擊沉', [F.beat], [
-      `${vande}的船原始骰值 4，海盜 ${pirate.modifier} 後變 3，沉沒，戰利品歸你。`,
+      `${vande}的船原始骰值 3，海盜 ${pirate.modifier} 後變 2，沉沒，戰利品歸你。`,
       '小心航海事件「海霧」：被海盜鎖定的船 +1，海盜反而幫了對手。',
     ]),
     done('下一課：情報商人。'),

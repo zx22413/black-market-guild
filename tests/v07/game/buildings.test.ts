@@ -13,26 +13,28 @@ describe('§10.2 buildings', () => {
     // Round 2 produces only spice.
     expect(stockOf(state, 'p1')).toEqual(G(2, 2, 1, 1));
     expect(stockOf(state, 'p2')).toEqual(G(1, 3, 1, 1));
-    expect(stockOf(state, 'p3')).toEqual(G(3, 1, 1, 1));
+    expect(stockOf(state, 'p3')).toEqual(G(2, 2, 1, 1));
   });
 
-  it('insurance keeps the most valuable sunk unit, one per round', () => {
-    const state = withPrices(edit(ready(3), 'p1', { buildings: ['insurance'] }), G(3, 5, 3, 3));
-    const { events, state: next } = playRound(state, { loads: { p1: G(1, 1, 1) }, rolls: { p1: 1 } });
-    expect(find(events, 'goods-kept')).toEqual([{ type: 'goods-kept', round: 1, playerId: 'p1', goods: G(0, 1), shipId: 'r1-p1' }]);
-    expect(stockOf(next, 'p1').iron).toBe(3);
+  it('insurance pays its owner in cash when their ship sinks, and nothing when it arrives', () => {
+    const state = edit(ready(3), 'p1', { buildings: ['insurance'] });
+    const sunk = playRound(state, { loads: { p1: G(1) }, rolls: { p1: 1 } });
+    expect(cash(sunk.events, 'insurance', 'p1')).toBe(RULES_V07.buildings.insurance.payout);
+    const safe = playRound(state, { loads: { p1: G(1) }, rolls: { p1: 6 } });
+    expect(cash(safe.events, 'insurance', 'p1')).toBe(0);
+    const bare = playRound(ready(3), { loads: { p1: G(1) }, rolls: { p1: 1 } });
+    expect(cash(bare.events, 'insurance', 'p1')).toBe(0);
   });
 
-  it('salvage takes the most common good from other players sunk ships, capped', () => {
+  it('salvage takes 1 unit of the most common good, and every holder can salvage the same ship', () => {
     let state: MatchState = ready(4);
     for (const id of ['p2', 'p3', 'p4']) {
       state = edit(state, id, { buildings: ['salvage'] });
     }
     const { events } = playRound(state, { loads: { p1: G(1, 2), p2: G(1) }, rolls: { p1: 1, p2: 1 } });
     const salvaged = find(events, 'goods-salvaged').map((e) => `${e.playerId}:${e.good}:${e.shipId}`);
-    // Both goods rise to 175 G, so ties go by ship order. Holders take turns in seat order:
-    // p2 takes p1's iron; p3 takes p1's iron and p2's wood; p1's ship is full, so p4 takes p2's wood.
-    expect(salvaged).toEqual(['p2:iron:r1-p1', 'p3:iron:r1-p1', 'p3:wood:r1-p2', 'p4:wood:r1-p2']);
+    // p2 cannot salvage its own ship; p3 and p4 take both wrecks, the more valuable one first.
+    expect(salvaged).toEqual(['p2:iron:r1-p1', 'p3:iron:r1-p1', 'p3:wood:r1-p2', 'p4:iron:r1-p1', 'p4:wood:r1-p2']);
   });
 
   it('salvages the most valuable units when more ships sink than a holder may take', () => {

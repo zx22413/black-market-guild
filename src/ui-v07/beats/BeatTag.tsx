@@ -82,7 +82,7 @@ export function BeatTag({ beat, view, names, viewer }: BeatTagProps) {
                 <GoodIcon good={g.good} size="sm" />
               </b>
               <span>{who(g.playerId)}</span>
-              <small>{g.via === 'insurance' ? '保險保住' : '打撈'}</small>
+              <small>打撈</small>
             </li>
           ))}
         </ul>

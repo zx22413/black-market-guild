@@ -47,7 +47,7 @@ describe('ship beat built from public events', () => {
         expect(beat.final).toBe(mod.final);
         // The running total of the steps ends on the final value (clamp included).
         expect(beat.steps.at(-1)?.value ?? beat.start).toBe(mod.final);
-        expect(beat.outcome).toBe(mod.final <= 3 ? 'sank' : 'arrived');
+        expect(beat.outcome).toBe(mod.final <= 2 ? 'sank' : 'arrived');
         const sum = (kind: string) => beat.steps.filter((s) => s.kind === kind).reduce((n, s) => n + s.delta, 0);
         expect(sum('guard')).toBe(mod.guard);
         expect(sum('pirate')).toBe(mod.pirate);

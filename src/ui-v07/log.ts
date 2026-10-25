@@ -55,8 +55,6 @@ export function eventLine(event: MatchEvent, ctx: LogContext): string | null {
       return `${shipOf(event.shipId)}的走私：${{ taken: '成功', caught: '被抓', seized: '被海盜搶走', lost: '隨船沉沒' }[event.result]}`;
     case 'market-settled':
       return `黑市：${GOODS.filter((g) => event.priceBefore[g] !== event.priceAfter[g]).map((g) => `${GOOD_LABELS[g]}${event.priceAfter[g] > event.priceBefore[g] ? '漲' : '跌'}`).join('、') || '價格不變'}`;
-    case 'goods-kept':
-      return `${nameOf(event.playerId)}的保險保住 ${goodsText(event.goods)}`;
     case 'goods-salvaged':
       return `${nameOf(event.playerId)}撈到 1 ${GOOD_LABELS[event.good]}`;
     case 'spice-spoiled':

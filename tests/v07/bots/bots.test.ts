@@ -96,10 +96,10 @@ describe('V0.7 bot factory and helpers', () => {
     expect(state.phase).toBe('game-over');
   });
 
-  it('arrival chance follows §9.1 (4-6 arrives, clamped to 1-6)', () => {
-    expect(arriveChance(RULES_V07, 0)).toBe(0.5);
-    expect(arriveChance(RULES_V07, 1)).toBeCloseTo(4 / 6);
-    expect(arriveChance(RULES_V07, -3)).toBe(0);
+  it('arrival chance follows §9.1 (3-6 arrives, clamped to 1-6)', () => {
+    expect(arriveChance(RULES_V07, 0)).toBeCloseTo(4 / 6);
+    expect(arriveChance(RULES_V07, 1)).toBeCloseTo(5 / 6);
+    expect(arriveChance(RULES_V07, -4)).toBe(0);
     expect(arriveChance(RULES_V07, 5)).toBe(1);
   });
 });
@@ -121,7 +121,7 @@ describe('V0.7 bot decisions', () => {
     expect(worth('builder', 'lumber')).toBeGreaterThan(worth('balanced', 'lumber'));
     expect(worth('cautious', 'fortress')).toBeGreaterThan(worth('aggressive', 'fortress'));
     expect(worth('balanced', 'spice-isles')).toBeGreaterThan(0);
-    expect(worth('balanced', 'smuggler-port')).toBeLessThan(worth('balanced', 'free-port'));
+    expect(worth('balanced', 'smuggler-port')).toBeLessThan(worth('balanced', 'spice-isles'));
   });
 
   it('ships spice rather than letting it spoil', () => {

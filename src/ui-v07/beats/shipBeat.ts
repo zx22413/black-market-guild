@@ -30,7 +30,7 @@ export interface BeatGoods {
   readonly playerId: PlayerId;
   readonly good: GoodId;
   readonly units: number;
-  readonly via: 'insurance' | 'salvage';
+  readonly via: 'salvage';
 }
 
 export interface ShipBeat {
@@ -54,7 +54,7 @@ export interface ShipBeat {
   readonly armsConfiscated: number;
   /** Money moved because of this ship, in event order (launch cost excluded: it was paid before). */
   readonly cash: readonly BeatCash[];
-  /** Goods returned to the warehouse by insurance or salvage. */
+  /** Goods taken into a warehouse by salvage. */
   readonly goods: readonly BeatGoods[];
 }
 
@@ -143,11 +143,6 @@ export function buildShipBeat(events: readonly MatchEvent[], shipId: ShipId): Sh
     ),
     goods: inRound.flatMap((e): BeatGoods[] => {
       if (e.type === 'goods-salvaged' && e.shipId === shipId) return [{ playerId: e.playerId, good: e.good, units: 1, via: 'salvage' }];
-      if (e.type === 'goods-kept' && e.shipId === shipId) {
-        return (Object.entries(e.goods) as [GoodId, number][])
-          .filter(([, units]) => units > 0)
-          .map(([good, units]) => ({ playerId: e.playerId, good, units, via: 'insurance' }));
-      }
       return [];
     }),
   };

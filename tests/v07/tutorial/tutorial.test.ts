@@ -174,16 +174,16 @@ describe('basics: the guided match', () => {
     expect(events.find((e) => e.type === 'wanted-marked' && e.round === 2)).toMatchObject({ players: ['p1'] });
   });
 
-  it('round 2: the storm sinks your 4, and the wood the bots crowd in loses price', () => {
+  it('round 2: the storm sinks your 3, and the wood the bots crowd in loses price', () => {
     expect(events.find((e) => e.type === 'voyage-event-revealed' && e.round === 2)).toMatchObject({ event: 'storm' });
-    expect(modifiers(events, 2, 'r2-p1')).toMatchObject({ base: 4, event: -1, final: 3 });
+    expect(modifiers(events, 2, 'r2-p1')).toMatchObject({ base: 3, event: -1, final: 2 });
     expect(outcome(events, 'r2-p1')).toMatchObject({ outcome: 'sank' });
     expect(market(2).priceAfter.wood).toBeLessThan(market(2).priceBefore.wood);
   });
 
-  it('round 3: you build the shipyard and a tailwind brings your 3 home', () => {
+  it('round 3: you build the shipyard and a tailwind brings your 2 home', () => {
     expect(events.find((e) => e.type === 'buildings-built' && e.round === 3)).toMatchObject({ builds: [{ playerId: 'p1', building: 'shipyard' }] });
-    expect(modifiers(events, 3, 'r3-p1')).toMatchObject({ base: 3, event: 1, final: 4 });
+    expect(modifiers(events, 3, 'r3-p1')).toMatchObject({ base: 2, event: 1, final: 3 });
     expect(outcome(events, 'r3-p1')).toMatchObject({ outcome: 'arrived' });
   });
 
@@ -203,16 +203,16 @@ describe('basics: the guided match', () => {
 });
 
 describe('role scenarios', () => {
-  it('guard: your 3 plus the guard is a 4 and arrives', () => {
+  it('guard: your 2 plus the guard is a 3 and arrives', () => {
     const { events } = playTutorial(GUARD);
-    expect(modifiers(events, 1, 'r1-p1')).toMatchObject({ base: 3, guard: 1, final: 4 });
+    expect(modifiers(events, 1, 'r1-p1')).toMatchObject({ base: 2, guard: 1, final: 3 });
     expect(outcome(events, 'r1-p1')).toMatchObject({ outcome: 'arrived' });
   });
 
-  it('pirate: the targeted 4 sinks and the loot is yours', () => {
+  it('pirate: the targeted 3 sinks and the loot is yours', () => {
     const { events } = playTutorial(PIRATE);
-    expect(modifiers(events, 1, 'r1-p2')).toMatchObject({ base: 4, pirate: -1, final: 3 });
-    expect(cashFor(events, 'pirate-loot', 'p1')).toBe(PIRATE.rules.roles.pirate.loot);
+    expect(modifiers(events, 1, 'r1-p2')).toMatchObject({ base: 3, pirate: -1, final: 2 });
+    expect(cashFor(events, 'pirate-loot', 'p1')).toBe(PIRATE.rules.roles.pirate.loot[2]);
   });
 
   it('intel: you see a 2; a reroll brings a 5, keeping it sinks', () => {

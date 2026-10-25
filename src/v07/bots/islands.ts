@@ -1,5 +1,5 @@
 import { GOODS, ROLE_IDS, capacityFor, cooldownFor, producedFor, roleFee, traitOf, type GoodId, type IslandId, type PlayerView, type RoleId, type Rules } from '../game';
-import { ARMS_SEIZURE_RISK, arriveChance, averagePrice, perUnitCost, seizureRisk } from './estimates';
+import { ARMS_SEIZURE_RISK, arriveChance, averagePrice, expectedLoot, perUnitCost, seizureRisk } from './estimates';
 import type { Personality } from './personality';
 
 // Island draft (§11.1): estimate what each island's trait (§11.2) is worth over the whole match,
@@ -68,8 +68,8 @@ function roleUseValue(view: PlayerView, island: IslandId | null, role: RoleId, c
       return (arriveChance(rules, rules.roles.guard.modifier + t.guardModifier) - p) * cargo * (1 + persona.risk) - fee;
     case 'pirate': {
       // §9.6: assume the target carries a wanted player's goods 1 time in N players.
-      const loot = rules.roles.pirate.loot + rules.wanted.lootBonus / view.players.length;
-      return (p - arriveChance(rules, rules.roles.pirate.modifier + t.pirateModifier)) * loot * persona.aggression - fee;
+      const bonus = rules.wanted.lootBonus / view.players.length;
+      return expectedLoot(rules, rules.roles.pirate.modifier + t.pirateModifier, bonus) * persona.aggression - fee;
     }
     case 'intel':
       return (1 + t.intelPeeks) * cargo * (1 - p) * p * 0.5 - fee;

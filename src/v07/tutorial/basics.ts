@@ -51,18 +51,18 @@ export const BASICS: TutorialScript = {
       you: { invest: { demo: { load: { wood: 1, spice: 1 } }, choose: true, allow: loadWithin({ wood: 1, spice: 1 }) } },
     },
     {
-      // Round 2: two bots crowd wood past the demand; the storm turns your 4 into a 3.
+      // Round 2: two bots crowd wood past the demand; the storm turns your 3 into a 2.
       demand: goods({ wood: 1, iron: 2, spice: 1, arms: 1 }),
       event: 'storm',
-      rolls: { p1: 4 },
+      rolls: { p1: 3 },
       bots: { [BOT.vande]: { load: { wood: 2 } }, [BOT.tide]: { load: { wood: 1 } } },
       you: { invest: { demo: { load: { wood: 1, spice: 1 } }, choose: true, allow: loadWithin({ wood: 1, spice: 1 }) } },
     },
     {
-      // Round 3: you build the shipyard; a tailwind lifts your 3 to a 4.
+      // Round 3: you build the shipyard; a tailwind lifts your 2 to a 3.
       demand: goods({ wood: 1, iron: 1, spice: 2, arms: 2 }),
       event: 'tailwind',
-      rolls: { p1: 3 },
+      rolls: { p1: 2 },
       bots: { [BOT.anchor]: { load: { arms: 2 } } },
       you: {
         invest: {
@@ -138,7 +138,7 @@ export const BASICS: TutorialScript = {
       '看看你的船撐不撐得住。',
     ]),
     step(voyage(2), '沉船', [F.beat], [
-      `你的船原始骰值是 4，本來能抵達，暴風雨 ${R.voyageEvents.storm} 後變 3，沉了。沉沒的船貨全沒了，出航成本也不退。`,
+      `你的船原始骰值是 3，本來能抵達，暴風雨 ${R.voyageEvents.storm} 後變 2，沉了。沉沒的船貨全沒了，出航成本也不退。`,
     ]),
     step(market(2), '大家都運木材', [F.marketCard], [
       `${vande}和${tide}都運了木材，到港量超過需求，木材跌價。`,
@@ -160,7 +160,7 @@ export const BASICS: TutorialScript = {
     ),
     step(resolving(3), '順風', [F.event], [`這回合是順風：所有船 +${R.voyageEvents.tailwind}。`]),
     step(voyage(3), '順風救了你', [F.beat], [
-      `有出航的話，你的船原始骰值只有 3，靠順風 +${R.voyageEvents.tailwind} 變成 4 才抵達。`,
+      `有出航的話，你的船原始骰值只有 2，靠順風 +${R.voyageEvents.tailwind} 變成 3 才抵達。`,
     ]),
     step({ kind: 'end' }, '總財富', [F.rank], [
       `對局結束時比總財富：現金＋持有建築現金成本的 ${R.buildings.valueRatio * 100}%。倉庫裡剩下的材料不計分。`,

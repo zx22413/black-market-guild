@@ -186,7 +186,7 @@ function roleSection(s: SimStats): string[] {
     )}；軍火被沒收 ${s.armsConfiscatedUnits} 單位、${s.armsConfiscatedCash} G。`,
     `- 海盜：目標沉沒率 ${pct(s.pirateSinks, s.roles.pirate ?? 0)}；每次平均淨收益 ${pirateNet(s).toFixed(0)} G。`,
     `- 莊家：押注 ${s.roles.broker ?? 0} 次，押中 ${pct(s.betsWon, s.roles.broker ?? 0)}。情報商人重擲 ${s.intelRerolls} 艘（部署 ${s.roles.intel ?? 0} 次）。`,
-    `- 保險保住 ${s.insuredKept} 單位；打撈 ${s.salvaged} 單位；交易所佣金 ${s.commission} G。`,
+    `- 保險理賠 ${s.insurancePaid} G；打撈 ${s.salvaged} 單位；交易所佣金 ${s.commission} G。`,
   ];
 }
 
