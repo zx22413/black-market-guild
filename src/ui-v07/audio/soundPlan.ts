@@ -80,8 +80,8 @@ export type SfxId =
   // A market row showing its price move (marketSounds.ts).
   | 'price-up'
   | 'price-down'
-  // The market card done, all its rows out: a heavy plank coming down.
-  | 'market-close';
+  // The market card coming up: a heavy plank set down.
+  | 'market-open';
 
 /**
  * `loop`: the track repeats without a break (the menus). `interlude`: the track plays once, then
@@ -175,7 +175,7 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   'island-pop': 'sfx-island-pop.ogg',
   'price-up': 'sfx-price-up.ogg',
   'price-down': 'sfx-price-down.ogg',
-  'market-close': 'sfx-market-close.ogg',
+  'market-open': 'sfx-market-open.ogg',
 };
 
 /** Interlude music: seconds of ambience alone between plays, and the fade at the end of a play. */

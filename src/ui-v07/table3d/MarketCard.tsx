@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { MARKET_CLOSE_MS, marketCloses, marketSound } from '../audio/marketSounds';
+import { marketSound } from '../audio/marketSounds';
+import { useSoundOnce } from '../audio/useUiSounds';
 import { soundEngine } from '../audio/soundEngine';
 import type React from 'react';
 import { RULES_V07 } from '../../v07/game';
@@ -39,17 +40,14 @@ function PriceScale({ before, after }: { readonly before: number; readonly after
 }
 
 export function MarketCard({ rows, shown }: { readonly rows: readonly MarketRow[]; readonly shown: number }) {
-  // Each row sounds its price move as it shows (only the last one when the card is skipped ahead),
-  // and a heavy plank comes down once the last row has settled.
+  // The card comes up with a heavy plank set down, then each row sounds its price move as it shows
+  // (only the last one when the card is skipped ahead).
+  useSoundOnce('market-open');
   const before = useRef(0);
   useEffect(() => {
     const sound = marketSound(rows, before.current, shown);
-    const closes = marketCloses(rows, before.current, shown);
     before.current = shown;
     if (sound) soundEngine.playSfx(sound.id, sound.rate);
-    if (!closes) return undefined;
-    const timer = setTimeout(() => soundEngine.playSfx('market-close'), MARKET_CLOSE_MS);
-    return () => clearTimeout(timer);
   }, [rows, shown]);
   return (
     <div className="market-card" data-focus="market-card">

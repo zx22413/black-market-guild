@@ -62,7 +62,7 @@
 | sfx-price-up.ogg | 市場卡：漲價（漲兩格時遊戲以 1.12 倍速播，音調更高） | Music Jingles `jingles_STEEL16.ogg` |
 | sfx-price-down.ogg | 市場卡：跌價（跌兩格時以 1/1.12 倍速播） | Music Jingles `jingles_STEEL16.ogg` 降 4 個半音（重取樣），峰值 −1 dBFS |
 | sfx-produce.ogg | 島嶼生產的貨箱落進倉庫 | Impact Sounds `impactPlank_medium_001.ogg`，0.16 秒後 `impactPlank_medium_003.ogg`（0.8 倍） |
-| sfx-market-close.ogg | 黑市成交面板列完：沉重的木板落下 | `sfx-produce.ogg`（Impact Sounds 的兩聲木板）以 0.65 倍速重取樣（更低、更沉），峰值 −1 dBFS |
+| sfx-market-open.ogg | 黑市成交面板出現：沉重的木板放下 | `sfx-produce.ogg`（Impact Sounds 的兩聲木板）以 0.65 倍速重取樣（更低、更沉），峰值 −1 dBFS |
 | sfx-wanted.ogg | 通緝令插旗 | RPG Audio `cloth4.ogg`，0.1 秒後疊 Music Jingles `jingles_PIZZI06.ogg`（0.7 倍，低沉撥弦） |
 | sfx-book-open.ogg | 打開規則書 | RPG Audio `bookOpen.ogg` |
 | sfx-book-flip.ogg | 規則書換章節 | RPG Audio `bookFlip3.ogg` |
