@@ -10,10 +10,10 @@ describe('§10.2 buildings', () => {
     const { events, state } = playRound(ready(3), { builds: { p1: 'exchange', p2: 'shipyard', p3: 'salvage' } });
     expect(cash(events, 'build', 'p1')).toBe(-150);
     expect(find(events, 'buildings-built')[0]!.builds).toHaveLength(3);
-    // Round 2 produces only spice.
-    expect(stockOf(state, 'p1')).toEqual(G(2, 2, 1, 1));
-    expect(stockOf(state, 'p2')).toEqual(G(1, 3, 1, 1));
-    expect(stockOf(state, 'p3')).toEqual(G(2, 2, 1, 1));
+    // Round 2 produces nothing, and the spice in the warehouse spoils.
+    expect(stockOf(state, 'p1')).toEqual(G(2, 2, 0, 1));
+    expect(stockOf(state, 'p2')).toEqual(G(1, 3, 0, 1));
+    expect(stockOf(state, 'p3')).toEqual(G(2, 2, 0, 1));
   });
 
   it('insurance pays its owner in cash when their ship sinks, and nothing when it arrives', () => {

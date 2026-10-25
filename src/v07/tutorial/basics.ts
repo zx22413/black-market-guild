@@ -56,7 +56,7 @@ export const BASICS: TutorialScript = {
       event: 'storm',
       rolls: { p1: 3 },
       bots: { [BOT.vande]: { load: { wood: 2 } }, [BOT.tide]: { load: { wood: 1 } } },
-      you: { invest: { demo: { load: { wood: 1, spice: 1 } }, choose: true, allow: loadWithin({ wood: 1, spice: 1 }) } },
+      you: { invest: { demo: { load: { wood: 1, arms: 1 } }, choose: true, allow: loadWithin({ wood: 1, arms: 1 }) } },
     },
     {
       // Round 3: you build the shipyard; a tailwind lifts your 2 to a 3.
@@ -129,9 +129,9 @@ export const BASICS: TutorialScript = {
       invest(2),
       '四種貨',
       [F.island('p1')],
-      ['木材、鐵礦可以蓋建築，也可以賣；香料和軍火只能賣。', '香料放不住：回合結束時還在倉庫裡就壞掉。軍火賣得最貴，但可能被別人的護衛沒收。'],
-      '再裝木材、香料出航一次。',
-      [F.crate('wood'), F.crate('spice')],
+      ['木材、鐵礦可以蓋建築，也可以賣；香料和軍火只能賣。', '香料放不住：回合結束時還在倉庫裡就壞掉，而且只在第 1、3、5 回合生產。軍火賣得最貴，但可能被別人的護衛沒收。'],
+      '再裝木材、軍火出航一次。',
+      [F.crate('wood'), F.crate('arms')],
     ),
     step(resolving(2), '暴風雨', [F.event], [
       `這回合翻到暴風雨：所有船 ${R.voyageEvents.storm}。航海事件在大家決定之後才公開，誰都來不及調整。`,

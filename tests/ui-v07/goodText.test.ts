@@ -4,7 +4,7 @@ import { goodDetail, marketRule, productionRounds } from '../../src/ui-v07/table
 
 describe('goods text', () => {
   it('names the production rounds from the rules (§6.2)', () => {
-    expect(productionRounds('spice', RULES_V07)).toBe('每回合');
+    expect(productionRounds('spice', RULES_V07)).toBe('第 1、3、5 回合');
     expect(productionRounds('wood', RULES_V07)).toBe('第 1、3、5 回合');
     expect(productionRounds('arms', RULES_V07)).toBe('第 1、3、5 回合');
   });

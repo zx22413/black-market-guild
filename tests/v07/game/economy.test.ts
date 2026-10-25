@@ -5,12 +5,12 @@ import { G, apply, cash, cashOf, edit, find, plain, playRound, start, stockOf, w
 const stocked = (state: MatchState, stock = G(3, 3, 1, 1)) => state.players.reduce((s, p) => edit(s, p.id, { stock }), state);
 
 describe('§6 production and warehouse', () => {
-  it('produces wood, iron and arms in rounds 1, 3, 5 and spice every round', () => {
+  it('produces wood, iron, spice and arms in rounds 1, 3, 5', () => {
     const rounds = [1, 2, 3, 4, 5, 6].map((r) => producedFor(RULES_V07, null, r));
     expect(rounds.map((g) => g.wood)).toEqual([1, 0, 1, 0, 1, 0]);
     expect(rounds.map((g) => g.iron)).toEqual([1, 0, 1, 0, 1, 0]);
     expect(rounds.map((g) => g.arms)).toEqual([1, 0, 1, 0, 1, 0]);
-    expect(rounds.map((g) => g.spice)).toEqual([1, 1, 1, 1, 1, 1]);
+    expect(rounds.map((g) => g.spice)).toEqual([1, 0, 1, 0, 1, 0]);
   });
 
   it('applies island production overrides (§11.2)', () => {
@@ -20,22 +20,23 @@ describe('§6 production and warehouse', () => {
     expect(per('mine').map((g) => g.iron)).toEqual([1, 1, 1, 1, 1, 0]);
     expect(per('mine').map((g) => g.wood)).toEqual([1, 0, 0, 1, 0, 0]);
     expect(per('smuggler-port').map((g) => g.arms)).toEqual([1, 1, 1, 1, 1, 1]);
-    expect(per('spice-isles').map((g) => g.spice)).toEqual([2, 2, 2, 2, 2, 2]);
+    expect(per('spice-isles').map((g) => g.spice)).toEqual([2, 1, 2, 1, 2, 1]);
   });
 
   it('announces production and keeps goods across rounds, except spice (§6.3)', () => {
     const state = stocked(plain(3), G(2, 2, 1, 0));
     const { state: next, events } = playRound(state);
     expect(find(events, 'spice-spoiled')[0]?.spoiled).toEqual({ p1: 1, p2: 1, p3: 1 });
-    expect(find(events, 'goods-produced')[0]?.produced.p1).toEqual(G(0, 0, 1, 0));
-    expect(stockOf(next, 'p1')).toEqual(G(2, 2, 1, 0));
+    // Round 2 produces nothing; the spice already in the warehouse spoils.
+    expect(find(events, 'goods-produced')[0]?.produced.p1).toEqual(G(0));
+    expect(stockOf(next, 'p1')).toEqual(G(2, 2, 0, 0));
   });
 
   it('keeps spice on the spice isles (§11.2)', () => {
     const state = edit(stocked(plain(3), G(0, 0, 2, 0)), 'p1', { island: 'spice-isles' });
     const { state: next } = playRound(state);
-    expect(stockOf(next, 'p1').spice).toBe(4);
-    expect(stockOf(next, 'p2').spice).toBe(1);
+    expect(stockOf(next, 'p1').spice).toBe(3);
+    expect(stockOf(next, 'p2').spice).toBe(0);
   });
 });
 

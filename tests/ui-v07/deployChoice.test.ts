@@ -32,7 +32,7 @@ function apply(state: MatchState, action: Action): MatchState {
 
 /** Round 1 at role deployment: every player sails with one wood. */
 function deploying(islands: Parameters<typeof start>[2] = {}): MatchState {
-  let state = start(3, undefined, islands);
+  let state = start(3, undefined, { p1: 'lumber', p2: 'lumber', p3: 'lumber', ...islands });
   for (const id of ['p1', 'p2', 'p3']) state = edit(state, id, { stock: G(1, 1, 1, 0) });
   for (const id of ['p1', 'p2', 'p3']) state = apply(state, { type: 'invest', playerId: id, build: null, load: G(1) });
   return state;

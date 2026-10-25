@@ -135,7 +135,7 @@ export const RULES_V07: Rules = {
   startingCash: 1000, // §3
   startingStock: goods({ wood: 1, iron: 1 }), // §3
   production: goods({ wood: 1, iron: 1, spice: 1, arms: 1 }), // §6.2
-  productionEvery: goods({ wood: 2, iron: 2, spice: 1, arms: 2 }), // §6.2: rounds 1, 3, 5 / every round
+  productionEvery: goods({ wood: 2, iron: 2, spice: 2, arms: 2 }), // §6.2: rounds 1, 3, 5
   price: {
     steps: 7, // §7.1
     tracks: {
@@ -148,8 +148,8 @@ export const RULES_V07: Rules = {
   },
   demand: {
     // §7.2
-    3: { min: goods({ wood: 1, iron: 1, spice: 1, arms: 0 }), max: goods({ wood: 1, iron: 2, spice: 3, arms: 2 }) },
-    4: { min: goods({ wood: 1, iron: 1, spice: 2, arms: 0 }), max: goods({ wood: 2, iron: 3, spice: 3, arms: 2 }) },
+    3: { min: goods({ wood: 1, iron: 1, spice: 1, arms: 0 }), max: goods({ wood: 1, iron: 2, spice: 2, arms: 2 }) },
+    4: { min: goods({ wood: 1, iron: 1, spice: 1, arms: 0 }), max: goods({ wood: 2, iron: 3, spice: 3, arms: 2 }) },
   },
   capacity: { base: 3, shipyardBonus: 1 }, // §8
   shipCost: 100, // §8
