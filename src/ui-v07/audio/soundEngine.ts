@@ -66,10 +66,15 @@ class SoundEngine {
     void this.ctx.resume().then(() => this.apply());
   }
 
-  /** Pause everything while the page is hidden; pick up where it was when it comes back. */
+  /**
+   * Pause everything while the page is hidden; pick up where it was when it comes back. Changes
+   * asked for while it was hidden (a new round, the voyage event's bed, the interlude's rest
+   * running out) were held back while the audio was paused, so they are caught up on now.
+   */
   setPageVisible(visible: boolean): void {
     if (!this.ctx) return;
-    void (visible ? this.ctx.resume() : this.ctx.suspend());
+    if (visible) void this.ctx.resume().then(() => this.apply());
+    else void this.ctx.suspend();
   }
 
   /** Silence and release everything (the engine is not used again). */
