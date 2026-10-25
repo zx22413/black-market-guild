@@ -38,7 +38,7 @@ import { VoyageEventCard, VoyageEventChip } from './VoyageEventCard';
 export type ResolutionStage = 'wanted' | 'event' | 'reveal' | 'voyage' | 'market' | 'settle' | 'receipt';
 
 /** Pace of each part, in ms (initial values to tune in play). */
-const PACE = { wanted: 3000, revealGroup: 1600, revealSpotlight: (SPOTLIGHT_HOLD.reveal + SPOT_TIME.fade) * 1000 + 400, nextShip: 1000, marketRow: 1000, afterMarket: 1500, flight: 1100, afterSettle: 900 } as const;
+const PACE = { wanted: 3000, revealGroup: 1600, revealSpotlight: (SPOTLIGHT_HOLD.reveal + SPOT_TIME.fade) * 1000 + 400, nextShip: 1000, marketRow: 1000, afterMarket: 5000, flight: 1100, afterSettle: 900 } as const;
 const HARBOR_BADGES = [-(TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2, 0, (TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2] as const;
 /**
  * The market card stands on the sea off the market island's front right, a bearing no seat's lane
@@ -395,7 +395,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
       ) : stage === 'market' ? (
         <>
           <LockHint icon={<InfoIcon />} text="到港量和需求比較，決定新價格；這回合的貨都用新價格賣。" />
-          <SkipButton label="跳過" disabled={lockSkips} onClick={() => setStage('settle')} />
+          {rowsShown >= rows.length ? go('繼續', () => setStage('settle'), false) : <SkipButton label="跳過" disabled={lockSkips} onClick={() => setStage('settle')} />}
         </>
       ) : stage === 'settle' ? (
         <>
