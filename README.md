@@ -4,6 +4,11 @@
 
 目前專案以 [V0.7 遊戲設計文件](docs/game-design.md) 為唯一的 gameplay 規則基準。V0.7 的規則引擎（`src/v07`）、3D 桌面介面（`src/ui-v07`）與線上房間（Cloudflare Worker）都已可遊玩；V0.6 的 `src/game`／`src/ui` 保留作對照（[封存的 V0.6 規則](docs/archive/game-design-v0.6.md)），不再部署。
 
+## 線上遊玩
+
+- 正式網址：<https://black-market-guild.zx2241384.workers.dev>（Cloudflare Worker，含線上房間）。
+- 開房需要房主密碼，朋友用房間連結加入；單人對 Bot 不需要密碼。
+
 ## 專案狀態
 
 - 規則引擎、Bot（含策略個性）、批量模擬與平衡報表已完成；進度與里程碑記錄在 [`docs/implementation-plan.md`](docs/implementation-plan.md)。
