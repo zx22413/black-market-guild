@@ -19,7 +19,7 @@ const viewAfter = (beat: ShipBeat, started: number) => beatView(beat, beatCues(b
 
 describe('ship beat on the 3D table', () => {
   const all = [1, 2, 3, 7].flatMap(beats);
-  const withPirate = all.find((b) => b.steps.some((s) => s.kind === 'pirate'))!;
+  const withPirate = all.find((b) => b.steps.some((s) => s.kind === 'pirate' && s.boosted.length === 0))!;
 
   it('brings in each pirate and guard with its own step, and keeps them', () => {
     expect(withPirate).toBeDefined();

@@ -149,7 +149,7 @@ export const RULES_V07: Rules = {
   demand: {
     // §7.2
     3: { min: goods({ wood: 1, iron: 1, spice: 1, arms: 0 }), max: goods({ wood: 2, iron: 2, spice: 2, arms: 2 }) },
-    4: { min: goods({ wood: 1, iron: 1, spice: 1, arms: 0 }), max: goods({ wood: 3, iron: 3, spice: 3, arms: 2 }) },
+    4: { min: goods({ wood: 1, iron: 1, spice: 2, arms: 0 }), max: goods({ wood: 2, iron: 3, spice: 3, arms: 2 }) },
   },
   capacity: { base: 3, shipyardBonus: 1 }, // §8
   shipCost: 100, // §8
