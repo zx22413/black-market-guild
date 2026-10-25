@@ -104,7 +104,7 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   ingame: 'music-ingame.ogg',
   waves: { licensed: 'ambience-waves.ogg', fallback: 'ambience-waves.ogg' },
   storm: 'event-storm.ogg',
-  tailwind: { licensed: 'event-tailwind.ogg', fallback: 'event-tailwind.ogg' },
+  tailwind: 'event-tailwind-shanty.ogg',
   fog: 'event-fog.ogg',
   moonless: 'event-moonless.ogg',
   rush: 'event-rush.ogg',
@@ -215,8 +215,8 @@ const EVENT_BEDS: Readonly<Record<VoyageEventId, EventBedId | null>> = {
 };
 
 /**
- * The bed under the round's show once `event` is out: the storm and the tailwind are sound (rain,
- * thunder, wind in the sails), the fog, the moonless night and the market rush have little sound
+ * The bed under the round's show once `event` is out: the storm is sound (rain, thunder), the
+ * tailwind a crew's sea shanty, the fog, the moonless night and the market rush have little sound
  * of their own and get music. Calm seas keep the waves.
  */
 export function eventBedFor(event: VoyageEventId): EventBedId | null {
