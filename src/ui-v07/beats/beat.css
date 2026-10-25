@@ -1594,6 +1594,71 @@ button.inv-stack:hover {
   opacity: 0;
   animation: flourish-spark 900ms cubic-bezier(0.1, 0.8, 0.3, 1) var(--flourish-chord) forwards;
 }
+/*
+ * The winner announced (ResultCard's CONFETTI): confetti fired from cannons at both bottom corners.
+ * Each span carries its piece across; the piece inside goes up, then flutters and spins as it falls.
+ */
+.confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+.confetti span {
+  position: absolute;
+  bottom: -2vh;
+  animation: confetti-across var(--t) cubic-bezier(0.15, 0.7, 0.4, 1) var(--delay) both;
+}
+.confetti .from-left {
+  left: 2vw;
+}
+.confetti .from-right {
+  right: 2vw;
+}
+.confetti i {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  animation: confetti-arc var(--t) linear var(--delay) both;
+}
+.confetti i.strip {
+  width: 7px;
+  height: 18px;
+}
+@keyframes confetti-across {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(var(--dx));
+  }
+}
+/* Up fast, a hang at the top, then a slow fluttering fall that fades out low on the screen. */
+@keyframes confetti-arc {
+  0% {
+    transform: translateY(0) rotate(0deg) rotateX(0deg);
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.1, 0.6, 0.3, 1);
+  }
+  28% {
+    transform: translateY(calc(var(--up) * -1)) rotate(calc(var(--spin) * 0.35)) rotateX(180deg);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.8, 0.6);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(calc(var(--up) * -0.15)) rotate(var(--spin)) rotateX(900deg);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .confetti {
+    display: none;
+  }
+}
 @keyframes flourish-bump {
   40% {
     transform: translateY(-5px) scale(1.012);

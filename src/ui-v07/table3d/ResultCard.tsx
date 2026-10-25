@@ -27,6 +27,28 @@ const FLOURISH_STYLE = {
   '--flourish-2': `${FLOURISH_MS.second}ms`,
   '--flourish-chord': `${FLOURISH_MS.chord}ms`,
 } as React.CSSProperties;
+/**
+ * The confetti fired as the winner is announced, from cannons at both bottom corners: how far each
+ * piece flies across (vw) and up (vh), its fall, timing, color and flutter. Laid out from its index
+ * (no randomness), so it is the same every time.
+ */
+const CONFETTI_COLORS = ['#ffd25a', '#e8483b', '#2fb5a3', '#f4ead2', '#4f8de0', '#f08a3c'];
+const CONFETTI = Array.from({ length: 72 }, (_, i) => {
+  const k = (i * 37) % 72;
+  const fromLeft = i % 2 === 0;
+  const across = 12 + ((k * 7) % 46);
+  return {
+    left: fromLeft,
+    dx: fromLeft ? across : -across,
+    up: 48 + ((k * 13) % 38),
+    seconds: 2.6 + ((k * 11) % 10) / 10,
+    delay: ((k * 5) % 9) * 0.03,
+    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length]!,
+    strip: i % 3 !== 0,
+    spin: (k % 2 ? 1 : -1) * (540 + ((k * 17) % 540)),
+  };
+});
+
 /** The burst's sparks: where each flies to (fractions of the spark distance). */
 const SPARKS = Array.from({ length: 16 }, (_, i) => {
   const a = (i / 16) * Math.PI * 2 + 0.2;
@@ -140,6 +162,19 @@ export function ResultCard({ rows, nameOf, colorOf, viewer, rounds, onRestart, r
           <i key={i} style={{ '--dx': p.dx, '--dy': p.dy } as React.CSSProperties} />
         ))}
       </div>
+      {done && (
+        <div className="confetti" aria-hidden="true">
+          {CONFETTI.map((c, i) => (
+            <span
+              key={i}
+              className={c.left ? 'from-left' : 'from-right'}
+              style={{ '--dx': `${c.dx}vw`, '--up': `${c.up}vh`, '--t': `${c.seconds}s`, '--delay': `${c.delay}s` } as React.CSSProperties}
+            >
+              <i className={c.strip ? 'strip' : ''} style={{ background: c.color, '--spin': `${c.spin}deg` } as React.CSSProperties} />
+            </span>
+          ))}
+        </div>
+      )}
       <div className="beat-card result" onClick={(e) => e.stopPropagation()}>
         <header className="beat-head">
           <span>第 {rounds} 回合結束</span>
