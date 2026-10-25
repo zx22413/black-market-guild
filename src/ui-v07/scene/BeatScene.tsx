@@ -289,7 +289,7 @@ function HitFx({ hit, at, from }: { readonly hit: BeatHit; readonly at: Vector3;
  * the moment that step lands): it never slides back or drops until the outcome lets go. Rams and
  * other trouble shake it where it is.
  */
-function Reaction({ hit, heading, before, after, children }: { readonly hit: BeatHit | null; readonly heading: number; readonly before: ShipOffset; readonly after: ShipOffset; readonly children: ReactNode }) {
+function Reaction({ hit, heading, before, after, releasing, children }: { readonly hit: BeatHit | null; readonly heading: number; readonly before: ShipOffset; readonly after: ShipOffset; readonly releasing: boolean; readonly children: ReactNode }) {
   const group = useRef<Group>(null);
   const since = useRef<{ key: number; at: number } | null>(null);
   const at = useRef<ShipOffset>({ forward: 0, up: 0 });
@@ -300,7 +300,8 @@ function Reaction({ hit, heading, before, after, children }: { readonly hit: Bea
     const t = hit && since.current ? clock.elapsedTime - since.current.at - HIT_DELAY[hit.kind] : -1;
     const target = hit && t >= 0 ? after : before;
     // Glide there and stay: a firm ease, no spring back.
-    const ease = 1 - Math.exp(-delta * 5);
+    // Letting go at the outcome, match the ship's own glide into port (Ships.tsx) so it never slides back first.
+    const ease = 1 - Math.exp(-delta * (releasing ? 2.2 : 5));
     at.current = { forward: at.current.forward + (target.forward - at.current.forward) * ease, up: at.current.up + (target.up - at.current.up) * ease };
     let { forward } = at.current;
     let side = 0;
@@ -380,7 +381,7 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, hol
     focusState: view.showOutcome ? (beat.outcome === 'sank' ? 'sunk' : 'arrived') : 'sailing',
     wrapShip: (id, body) =>
       id === beat.shipId ? (
-        <Reaction hit={hit} heading={focusPose.heading} before={kept.before} after={kept.after}>
+        <Reaction hit={hit} heading={focusPose.heading} before={kept.before} after={kept.after} releasing={view.showOutcome}>
           {body}
         </Reaction>
       ) : (

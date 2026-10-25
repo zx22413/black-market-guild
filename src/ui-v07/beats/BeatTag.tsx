@@ -26,7 +26,7 @@ export function BeatTag({ beat, view, names, viewer }: BeatTagProps) {
   const who = (id: PlayerId) => (id === viewer ? '你' : (names[id] ?? id));
 
   return (
-    <div className="beat-tag" data-focus="beat">
+    <div className={`beat-tag${view.showOutcome ? ' is-final' : ''}`} data-focus="beat">
       <div className="beat-tag-top">
         <BeatDie value={view.die} step={lastStep} stepsShown={view.stepsShown} />
         <div className="beat-tag-say" aria-live="polite">
