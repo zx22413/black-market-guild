@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import type React from 'react';
 import { soundEngine } from '../audio/soundEngine';
+import { useSoundOnce } from '../audio/useUiSounds';
 import type { PlayerId } from '../../v07/game';
 import { BUILDING_LABELS, WEALTH_RULE_TEXT } from '../labels';
 import type { ResultRow } from './resultModel';
@@ -13,6 +15,24 @@ import type { ResultRow } from './resultModel';
 const ROW_MS = 1300;
 const WINNER_PAUSE_MS = 700;
 const COUNT_MS = 700;
+
+/**
+ * The accents of the closing flourish (`sfx-result-open.ogg`, played as the card pops up), in ms:
+ * the card bumps on the first two, and on the last, the final chord, the title glows and a burst of
+ * gold goes off behind the card.
+ */
+export const FLOURISH_MS = { first: 460, second: 840, chord: 1300 } as const;
+const FLOURISH_STYLE = {
+  '--flourish-1': `${FLOURISH_MS.first}ms`,
+  '--flourish-2': `${FLOURISH_MS.second}ms`,
+  '--flourish-chord': `${FLOURISH_MS.chord}ms`,
+} as React.CSSProperties;
+/** The burst's sparks: where each flies to (fractions of the spark distance). */
+const SPARKS = Array.from({ length: 16 }, (_, i) => {
+  const a = (i / 16) * Math.PI * 2 + 0.2;
+  const r = i % 2 ? 0.75 : 1;
+  return { dx: Math.cos(a) * r, dy: Math.sin(a) * r };
+});
 
 /**
  * What the card offers after the reveal besides going back to the menu: play again at once
@@ -105,6 +125,8 @@ export function ResultCard({ rows, nameOf, colorOf, viewer, rounds, onRestart, r
     return () => clearTimeout(timer);
   }, [revealed, rows]);
   const done = revealed >= rows.length;
+  // The card pops up on a steel-drum flourish: the match is over.
+  useSoundOnce('result-open');
   // The winner is out: the victory horns.
   useEffect(() => {
     if (done) soundEngine.playSfx('match-end-horn');
@@ -112,7 +134,12 @@ export function ResultCard({ rows, nameOf, colorOf, viewer, rounds, onRestart, r
   const winners = rows.filter((r) => r.winner).map((r) => (r.playerId === viewer ? '你' : nameOf(r.playerId)));
 
   return (
-    <div className="beat-backdrop result-backdrop" role="dialog" aria-modal="true" aria-label="最終結算" onClick={() => setRevealed(rows.length)}>
+    <div className="beat-backdrop result-backdrop" role="dialog" aria-modal="true" aria-label="最終結算" onClick={() => setRevealed(rows.length)} style={FLOURISH_STYLE}>
+      <div className="flourish-burst" aria-hidden="true">
+        {SPARKS.map((p, i) => (
+          <i key={i} style={{ '--dx': p.dx, '--dy': p.dy } as React.CSSProperties} />
+        ))}
+      </div>
       <div className="beat-card result" onClick={(e) => e.stopPropagation()}>
         <header className="beat-head">
           <span>第 {rounds} 回合結束</span>

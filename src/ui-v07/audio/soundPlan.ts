@@ -10,6 +10,8 @@ export type AmbienceId = 'waves' | EventBedId;
 export type EventBedId = 'storm' | 'tailwind' | 'fog' | 'moonless' | 'rush';
 export type SfxId =
   | 'bill-register'
+  // The end-of-match card popping up: a steel-drum flourish that closes the match (ResultCard moves to its beats).
+  | 'result-open'
   | 'match-end-horn'
   // The voyage beat: the die, each modifier, the outcome (beatSounds.ts).
   | 'dice'
@@ -22,6 +24,11 @@ export type SfxId =
   | 'storm-strike'
   | 'storm-bolt'
   | 'island'
+  // The lighthouse's word landing on the ship; the fortress's salute (each shot, its splash, its ding).
+  | 'beacon-ding'
+  | 'salute-pop'
+  | 'salute-splash'
+  | 'salute-ding'
   | 'arrive'
   | 'sink'
   // The settlement's flights, as each lands (flightSounds.ts).
@@ -72,7 +79,9 @@ export type SfxId =
   | 'island-pop'
   // A market row showing its price move (marketSounds.ts).
   | 'price-up'
-  | 'price-down';
+  | 'price-down'
+  // The market card done, all its rows out: a heavy plank coming down.
+  | 'market-close';
 
 /**
  * `loop`: the track repeats without a break (the menus). `interlude`: the track plays once, then
@@ -109,6 +118,7 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   moonless: 'event-moonless.ogg',
   rush: 'event-rush.ogg',
   'bill-register': { licensed: 'sfx-bill-register.ogg', fallback: 'sfx-bill-register.ogg' },
+  'result-open': 'sfx-result-open.ogg',
   'match-end-horn': 'sfx-match-end-horn.ogg',
   dice: { licensed: 'sfx-dice.ogg', fallback: 'sfx-dice.ogg' },
   guard: { licensed: 'sfx-guard.ogg', fallback: 'sfx-guard.ogg' },
@@ -119,6 +129,10 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   'storm-strike': { licensed: 'sfx-event-storm.ogg', fallback: 'sfx-event-storm.ogg' },
   'storm-bolt': { licensed: 'sfx-storm-bolt.ogg', fallback: 'sfx-event-storm.ogg' },
   island: { licensed: 'sfx-island.ogg', fallback: 'sfx-island.ogg' },
+  'beacon-ding': 'sfx-beacon-ding.ogg',
+  'salute-pop': 'sfx-salute-pop.ogg',
+  'salute-splash': 'sfx-salute-splash.ogg',
+  'salute-ding': 'sfx-salute-ding.ogg',
   arrive: 'sfx-arrive.ogg',
   sink: { licensed: 'sfx-sink.ogg', fallback: 'sfx-sink.ogg' },
   'settle-sale': { licensed: 'sfx-settle-sale.ogg', fallback: null },
@@ -161,6 +175,7 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   'island-pop': 'sfx-island-pop.ogg',
   'price-up': 'sfx-price-up.ogg',
   'price-down': 'sfx-price-down.ogg',
+  'market-close': 'sfx-market-close.ogg',
 };
 
 /** Interlude music: seconds of ambience alone between plays, and the fade at the end of a play. */

@@ -1,10 +1,12 @@
 import { useFrame } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { AdditiveBlending, Vector3, type Group, type Mesh, type MeshBasicMaterial } from 'three';
 import { glowTexture } from '../../ui/scene/Night';
 import { Model } from '../../ui/scene/Model';
 import { SEA_LEVEL, seaSurfaceY } from '../../ui/scene/seaWave';
 import { useSwell, useWavePhase } from '../../ui/scene/SwellContext';
+import { saluteSounds } from '../audio/saluteSounds';
+import { soundEngine } from '../audio/soundEngine';
 import { Burst, WaterRing, fan } from './beatFx';
 import { SHOW_TEMPO } from './showTempo';
 import { BARRAGE, RAID, RAIDERS, SHOTS, flareSpot, landsAt, raiderPose, shotPose, type BarrageCue, type RaidCue } from './islandForceMath';
@@ -123,6 +125,10 @@ function MuzzleFlash({ at }: { readonly at: Vector3 }) {
  * the guard's shield, each with a sparkle, before the fort's own golden shield goes up over it.
  */
 export function Barrage({ cue }: { readonly cue: BarrageCue }) {
+  useEffect(() => {
+    const timers = saluteSounds().map((s) => setTimeout(() => soundEngine.playSfx(s.id, s.rate), s.at * 1000));
+    return () => timers.forEach(clearTimeout);
+  }, [cue.key]);
   return (
     <>
       <MuzzleFlash at={new Vector3(...cue.fort)} />

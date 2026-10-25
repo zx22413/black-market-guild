@@ -17,3 +17,11 @@ export function marketSound(rows: readonly MarketRow[], before: number, now: num
   const pitch = STEP_PITCH ** (steps - 1);
   return { id: rise ? 'price-up' : 'price-down', rate: rise ? pitch : 1 / pitch };
 }
+
+/** How long after the last row shows the card closes with its plank (that row's price has settled by then). */
+export const MARKET_CLOSE_MS = 1000;
+
+/** Whether the card's last row has just shown, so the plank comes down after it. */
+export function marketCloses(rows: readonly MarketRow[], before: number, now: number): boolean {
+  return rows.length > 0 && before < rows.length && now >= rows.length;
+}

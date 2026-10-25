@@ -1547,8 +1547,91 @@ button.inv-stack:hover {
   z-index: 70;
 }
 .beat-card.result {
+  position: relative;
+  z-index: 1;
   width: min(720px, 100%);
   min-height: 0;
+  /* Pops up, then bumps on the closing flourish's first two accents (ResultCard's FLOURISH_MS). */
+  animation:
+    beat-rise 320ms cubic-bezier(0.2, 1.3, 0.4, 1),
+    flourish-bump 240ms ease-out var(--flourish-1),
+    flourish-bump 240ms ease-out var(--flourish-2),
+    flourish-land 420ms cubic-bezier(0.2, 1.5, 0.4, 1) var(--flourish-chord);
+}
+/* The title glows gold on the final chord. */
+.beat-card.result > .beat-head strong {
+  animation: flourish-glow 1.4s ease-out var(--flourish-chord) backwards;
+}
+/* Behind the card, on the final chord: gold rays flare and turn slowly away, sparks fly out. */
+.flourish-burst {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.flourish-burst::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150vmax;
+  height: 150vmax;
+  margin: -75vmax 0 0 -75vmax;
+  background: repeating-conic-gradient(from 0deg, rgb(255 214 110 / 0.34) 0deg 7deg, transparent 7deg 22deg);
+  mask: radial-gradient(circle, #000 8%, transparent 42%);
+  opacity: 0;
+  animation: flourish-rays 2.6s ease-out var(--flourish-chord) forwards;
+}
+.flourish-burst i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  background: radial-gradient(circle, #fff6d0 0 22%, #ffd25a 42%, transparent 70%);
+  opacity: 0;
+  animation: flourish-spark 900ms cubic-bezier(0.1, 0.8, 0.3, 1) var(--flourish-chord) forwards;
+}
+@keyframes flourish-bump {
+  40% {
+    transform: translateY(-5px) scale(1.012);
+  }
+}
+@keyframes flourish-land {
+  30% {
+    transform: scale(1.035);
+  }
+}
+@keyframes flourish-glow {
+  from {
+    text-shadow: 0 0 18px rgb(255 205 80 / 0.95);
+  }
+}
+@keyframes flourish-rays {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) rotate(0deg);
+  }
+  12% {
+    opacity: 1;
+    transform: scale(1) rotate(4deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1) rotate(24deg);
+  }
+}
+@keyframes flourish-spark {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1.4);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--dx) * min(46vw, 440px)), calc(var(--dy) * min(40vh, 340px))) scale(0.4);
+  }
 }
 .result-rule {
   margin: 8px 0 12px;

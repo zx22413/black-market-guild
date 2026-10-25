@@ -12,6 +12,7 @@
 | music-ingame.ogg | 對局中的音樂 | Slow lazy Hawaiian beach music with unhurried slack-key acoustic guitar fingerpicking, lap steel slide guitar gliding slowly between notes, softly strummed ukulele, relaxed swaying feel, warm sleepy afternoon in a hammock under palm trees. BPM: 68. | 5001 | music，120 秒，cfg 4，negative：jazz, lounge, cafe, bossa nova, piano, upright bass, brushed drums, saxophone, upbeat, energetic, cheerful bouncy, fast strumming, sad, melancholic, romantic ballad | 切掉開頭 6 秒；循環終點 104.8 秒（節奏對齊）；0.4 秒交叉淡化；−16 LUFS；循環 98.4 秒 |
 | ambience-waves.ogg | 海浪環境音的 AI 備用版（沒有 `licensed/` 時播） | SFX：gentle ocean waves on a sandy tropical beach / continuous soft waves rolling in and washing back, steady and calm / water and light foam, soft hiss / outdoor beach, wide stereo, no wind noise | 4001 | sfx，20 秒，cfg 1 | −22 LUFS；2 秒交叉淡化循環；循環 18 秒 |
 | sfx-bill-register.ogg | 回合帳單出現時的收銀機聲 | SFX：vintage cash register with a small bright bell / a quick mechanical clunk, then one loud clear high 'ding' of the bell ringing out, the drawer pops open / bright brass bell with a pure ringing tone, metal drawer / small shop, close-up, dry | 12001 | sfx，3 秒，cfg 4，negative：music, voice, long noise, no bell | 切掉頭尾靜音（−60 dB）；300 ms 淡出；峰值 −3 dBFS；2.7 秒 |
+| sfx-result-open.ogg | 終局結算面板彈出時的收尾樂句（面板的彈跳、標題金光與背後的光芒火花對著它的三個重音：0.46、0.84、1.30 秒） | 原曲：Short cheerful tropical steel drum ending flourish, a quick rising phrase that resolves on a bright final chord, like a little ta-da, the end.（seed 73001，music，4 秒，cfg 4，negative：drums loop, sad, vocals, long）。原曲有破音，以 Stable Audio 3 的 variation（音訊轉音訊）重新渲染：Short cheerful tropical steel drum ending flourish, a quick rising phrase that resolves on a bright final chord, like a little ta-da, clean high quality studio recording. | 74102 | variation，強度 0.45，4 秒，cfg 4，negative：distorted, glitchy, artifacts, crackle, warbling, noise, drums loop, sad, vocals | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS；3.8 秒 |
 | sfx-match-end-horn.ogg | 結果畫面公布第一名時的勝利號角 | Short triumphant brass fanfare of ship horns and trumpets announcing a safe arrival in port, bold and victorious, ending on a held major chord. | 50002 | music，5 秒，cfg 4，negative：drums loop, electronic, sad, vocals | 切掉頭尾靜音（−55 dB）；500 ms 淡出；峰值 −3 dBFS；4.8 秒 |
 | sfx-seal.ogg | 投資、部署送出（封蠟章，像蓋印章的「啪」） | SFX：rubber stamp, pressed down hard once onto a sheet of paper, a short sharp slap, rubber, ink pad, paper on a wooden desk, office, close-up, dry. | 60001 | sfx，1.5 秒，cfg 4，negative：music, voice, reverb tail, long | 只取第一下（起音前 0.01 秒起 0.45 秒），0.12 秒淡出；峰值 −0.5 dBFS |
 | event-storm.ogg | 暴風雨公開後的背景（取代海浪） | heavy tropical rainstorm at sea, howling wind, waves crashing against a wooden ship's hull, continuous pouring rain and gusts, with a distant thunder rumble now and then, rain on wood and canvas, rough water, out on the open sea, wide stereo. | 20001 | sfx，24 秒，cfg 1 | −20 LUFS；2 秒交叉淡化循環；22 秒 |
@@ -27,6 +28,9 @@
 | sfx-event-moonless.ogg | 航程拍：月黑風高（被護衛鎖定的船 −1） | deep cinematic low impact, one dark ominous boom with a soft reverse swell before it, sub bass, muffled drum, large dark space. | 36001 | sfx，2 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
 | sfx-island.ogg | 航程拍：燈塔島 +1 | lighthouse lamp switching on, a bright magical ascending shimmer with a warm hum, glass chimes, electric hum, close, light reverb. | 37001 | sfx，2 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
 | sfx-sink.ogg | 航程拍：船沉沒 | wooden ship hull breaking apart, timber cracking and splintering, a big splash, then bubbling as it sinks, wood, water, open sea, close. | 39001 | sfx，4 秒，cfg 4，negative：music, melody, voice, speech | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −3 dBFS |
+| sfx-salute-pop.ogg | 要塞島禮炮：每門砲發射（5 發連射） | a small ceremonial saluting cannon fired once from a fort, a short sharp muffled pop boom, black powder, outdoors, medium distance. | 71001 | sfx，1.5 秒，cfg 4，negative：music, melody, voice, speech, whistle, splash, long rumble | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −7.4 dBFS（五發疊在一起不會太響） |
+| sfx-salute-splash.ogg | 要塞島禮炮：每發落下的落水聲 | a small object dropping into the sea, a short light plop splash, water, outdoors, close. | 72001 | sfx，1.5 秒，cfg 4，negative：music, melody, voice, speech, big splash, waves | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −9 dBFS |
+| sfx-salute-ding.ogg | 要塞島禮炮：每發落下後的「叮」（遊戲以 1、1.12、1.24… 倍速播，一聲比一聲高） | a single small brass bell, struck once, a bright clear high ding ringing out, metal bell, close, light reverb. | 70001 | sfx，2 秒，cfg 4，negative：music, melody, voice, speech, long noise, multiple hits | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −6.1 dBFS |
 
 ## 程式合成的音效
 
@@ -34,6 +38,7 @@
 |---|---|---|
 | sfx-bubble.ogg | 生產的 +N 冒出（遊戲以播放速度 1、1.12、1.24… 讓每一聲比前一聲高） | 正弦波，頻率由 300 Hz 指數上刷到 900 Hz（時間常數 18 ms），疊 0.35 倍的低八度，2 ms 起音、60 ms 指數衰減，長 0.2 秒，峰值 −1 dBFS；作者自製，無授權限制 |
 | sfx-island-pop.ogg | 島嶼技能通知的晶片冒出（代價晶片以 0.82 倍速播，更低沉） | 正弦波，頻率由 260 Hz 指數上刷到 760 Hz（時間常數 20 ms），疊 0.5 倍的低八度，2 ms 起音、80 ms 指數衰減，長 0.25 秒，峰值 −1 dBFS（低沉的大泡泡）；作者自製，無授權限制 |
+| sfx-beacon-ding.ogg | 燈塔島：「燈塔！」字樣跳出時的叮 | 鈴聲：基頻 1175 Hz 的正弦波，疊 0.5、2、2.76、5.4 倍頻的泛音（振幅 0.25、0.55、0.35、0.18），各自指數衰減（時間常數 0.55 秒乘上 1.3、0.7、0.5、0.3），2 ms 起音，長 1.6 秒，峰值 −3 dBFS；作者自製，無授權限制 |
 
 ## Kenney 的 CC0 音效（直接放在本目錄）
 
@@ -57,6 +62,7 @@
 | sfx-price-up.ogg | 市場卡：漲價（漲兩格時遊戲以 1.12 倍速播，音調更高） | Music Jingles `jingles_STEEL16.ogg` |
 | sfx-price-down.ogg | 市場卡：跌價（跌兩格時以 1/1.12 倍速播） | Music Jingles `jingles_STEEL16.ogg` 降 4 個半音（重取樣），峰值 −1 dBFS |
 | sfx-produce.ogg | 島嶼生產的貨箱落進倉庫 | Impact Sounds `impactPlank_medium_001.ogg`，0.16 秒後 `impactPlank_medium_003.ogg`（0.8 倍） |
+| sfx-market-close.ogg | 黑市成交面板列完：沉重的木板落下 | `sfx-produce.ogg`（Impact Sounds 的兩聲木板）以 0.65 倍速重取樣（更低、更沉），峰值 −1 dBFS |
 | sfx-wanted.ogg | 通緝令插旗 | RPG Audio `cloth4.ogg`，0.1 秒後疊 Music Jingles `jingles_PIZZI06.ogg`（0.7 倍，低沉撥弦） |
 | sfx-book-open.ogg | 打開規則書 | RPG Audio `bookOpen.ogg` |
 | sfx-book-flip.ogg | 規則書換章節 | RPG Audio `bookFlip3.ogg` |
