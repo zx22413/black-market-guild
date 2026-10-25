@@ -254,7 +254,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
 
   const restingState = (id: ShipId): ShipState => (outcomes.get(id) === 'sank' ? 'sunk' : outcomes.get(id) === 'arrived' ? 'arrived' : 'sailing');
   const tag = beat ? <BeatTag beat={beat} view={playback.view} names={Object.fromEntries(seats.map((s) => [s.id, s.name]))} viewer={viewer} /> : null;
-  const layer = beat ? beatLayer({ beat, view: playback.view, angles, laneOf, weather, tag, seats, hold: holdVoyage }) : null;
+  const layer = beat ? beatLayer({ beat, view: playback.view, angles, laneOf, weather, tag, seats, settled: beats.slice(0, voyageIndex), hold: holdVoyage }) : null;
   const shipState = (id: ShipId): ShipState =>
     stageShipState(stage, beats.findIndex((b) => b.shipId === id), voyageIndex, restingState(id), layer?.focusState ?? null);
 

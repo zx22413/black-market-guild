@@ -342,7 +342,7 @@ function Reaction({ hit, heading, before, after, releasing, children }: { readon
     const target = hit && t >= 0 ? after : before;
     // Glide there and stay: a firm ease, no spring back.
     // Letting go at the outcome, let go slower than the ship's own glide into port (Ships.tsx, 2.2) so the two never add up to a slide back.
-    const ease = 1 - Math.exp(-delta * (releasing ? 0.9 : 5));
+    const ease = 1 - Math.exp(-delta * (releasing ? 1.5 : 5));
     at.current = { forward: at.current.forward + (target.forward - at.current.forward) * ease, up: at.current.up + (target.up - at.current.up) * ease };
     let { forward } = at.current;
     let side = 0;
@@ -365,6 +365,8 @@ export interface BeatLayerInput {
   readonly tag: ReactNode;
   /** Seats, for the name and color on each pirate and guard boat. */
   readonly seats: readonly BeatSeat[];
+  /** Ships whose beats are already played: a wreck stays where it was pushed to instead of snapping back when the next beat starts. */
+  readonly settled?: readonly ShipBeat[];
   /** Stay on the ship with its tag after the beat is over (the tutorial host is explaining its result). */
   readonly hold?: boolean;
 }
@@ -383,7 +385,7 @@ export interface BeatLayer {
  * What one ship beat adds to the shared table: the close-up, the pirates and guards sailing in,
  * the hit, the ship's reaction and the tag above it. Used by the beat preview and the round.
  */
-export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, hold = false }: BeatLayerInput): BeatLayer {
+export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, settled = [], hold = false }: BeatLayerInput): BeatLayer {
   const focusLane = laneOf(beat.owner);
   const focusPose = shipPose(angles[focusLane]!, 'sailing');
   const actors = actorsShown(beat, view);
@@ -416,6 +418,17 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, hol
   const spots = actorSpots(p, angles, actorsShown(beat, { ...view, stepsShown: beat.steps.length }));
   const spotOf = (actor: BeatActor): Vector3 => spots.get(actorKey(actor))!;
   const seatOf = (id: PlayerId) => seats.find((s) => s.id === id);
+  // Same wrapper as the live ship had, so React keeps it (and where it rests) across the change of beat.
+  const wrapSettled = (id: ShipId, body: ReactNode): ReactNode => {
+    const done = settled.find((b) => b.shipId === id);
+    if (!done) return body;
+    const rest = done.outcome === 'sank' ? { forward: keptOffset(done, done.steps.length, weather).forward, up: 0 } : { forward: 0, up: 0 };
+    return (
+      <Reaction hit={null} heading={shipPose(angles[laneOf(done.owner)]!, 'sailing').heading} before={rest} after={rest} releasing>
+        {body}
+      </Reaction>
+    );
+  };
   return {
     camera:
       framing === 'ship'
@@ -429,7 +442,7 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, hol
           {body}
         </Reaction>
       ) : (
-        body
+        wrapSettled(id, body)
       ),
     pins: [
       // The tag follows where a push carries the ship, so its pointer keeps aiming at the hull.
