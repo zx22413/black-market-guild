@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { RULES_V07, ROLE_IDS, type Rules } from '../../src/v07/game';
 import { roleDetail } from '../../src/ui-v07/table/roleText';
+import { BUILDING_TEXT } from '../../src/ui-v07/labels';
 
 const withBroker = (patch: Partial<Rules['roles']['broker']>): Rules => ({
   ...RULES_V07,
@@ -29,5 +30,14 @@ describe('role descriptions (the strip above the hand)', () => {
     expect(text).toContain('多 2 格（每單位 50 G');
     expect(roleDetail('broker', withBroker({ targetOwnUp: 0 }))).toContain('押漲指定對手的船');
     expect(roleDetail('broker', withBroker({ targetSteps: 0 }))).not.toContain('指定');
+  });
+});
+
+describe('building descriptions', () => {
+  it('take the numbers from the rules, not from memory', () => {
+    const { insurance, salvage } = RULES_V07.buildings;
+    expect(BUILDING_TEXT.insurance).toContain(`${insurance.payout} G`);
+    expect(BUILDING_TEXT.insurance).not.toContain('護衛');
+    expect(BUILDING_TEXT.salvage).toContain(`${salvage.maxPerRound} 艘`);
   });
 });

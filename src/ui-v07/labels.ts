@@ -36,8 +36,8 @@ export const BUILDING_LABELS: Readonly<Record<BuildingId, string>> = {
 /** §10.2 */
 export const BUILDING_TEXT: Readonly<Record<BuildingId, string>> = {
   shipyard: '每回合可裝貨量 +1。',
-  insurance: '自己的船沉沒時，保住船上 1 單位最貴的貨；自己部署的護衛 +1。',
-  salvage: '別人的船沉沒時，撈到該船上數量最多的貨 1 單位（每回合最多 2 次）。',
+  insurance: `自己的船沉沒時，銀行付 ${RULES_V07.buildings.insurance.payout} G 給你。`,
+  salvage: `別人的船沉沒時，撈到該船上數量最多的貨 ${RULES_V07.buildings.salvage.unitsPerShip} 單位（每回合最多 ${RULES_V07.buildings.salvage.maxPerRound} 艘）。`,
   exchange: '別人的貨每抵達 1 單位拿 15 G 佣金，每回合最多計 4 單位。',
 };
 
