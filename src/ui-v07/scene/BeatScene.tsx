@@ -142,6 +142,10 @@ function ActorBoat({ from, to, model, scale, strike }: { readonly from: Vector3;
       const travel = Math.max(0, dist - HULL_RADIUS - 1) * reach;
       const local = new Vector3((dx / dist) * travel, 0, (dz / dist) * travel).applyAxisAngle(new Vector3(0, 1, 0), -g.rotation.y);
       b.position.copy(local);
+      // Bow first: the boat was heading for its spot beside the ship, which can leave its stern to the hull.
+      const face = Math.atan2(dx, dz) - g.rotation.y;
+      const turned = Math.atan2(Math.sin(face), Math.cos(face));
+      b.rotation.y = turned * Math.min(1, (t - lungeStart) / 0.12, (lungeEnd - t) / 0.12);
     } else {
       b.rotation.z = Math.sin(t * 14) * 0.12 * (1 - (t - lungeStart) / (lungeEnd - lungeStart));
     }
@@ -300,8 +304,8 @@ function Reaction({ hit, heading, before, after, releasing, children }: { readon
     const t = hit && since.current ? clock.elapsedTime - since.current.at - HIT_DELAY[hit.kind] : -1;
     const target = hit && t >= 0 ? after : before;
     // Glide there and stay: a firm ease, no spring back.
-    // Letting go at the outcome, match the ship's own glide into port (Ships.tsx) so it never slides back first.
-    const ease = 1 - Math.exp(-delta * (releasing ? 2.2 : 5));
+    // Letting go at the outcome, let go slower than the ship's own glide into port (Ships.tsx, 2.2) so the two never add up to a slide back.
+    const ease = 1 - Math.exp(-delta * (releasing ? 0.9 : 5));
     at.current = { forward: at.current.forward + (target.forward - at.current.forward) * ease, up: at.current.up + (target.up - at.current.up) * ease };
     let { forward } = at.current;
     let side = 0;
@@ -388,7 +392,8 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, hol
         body
       ),
     pins: [
-      { id: `tag-${beat.shipId}`, position: [p.x, TAG_HEIGHT, p.z - TAG_BACK], node: tag, hidden: !(framing === 'ship' && view.showStart) },
+      // The tag follows where a push carries the ship, so its pointer keeps aiming at the hull.
+      { id: `tag-${beat.shipId}`, position: [p.x + Math.sin(focusPose.heading) * kept.after.forward, TAG_HEIGHT, p.z - TAG_BACK + Math.cos(focusPose.heading) * kept.after.forward], glide: true, node: tag, hidden: !(framing === 'ship' && view.showStart) },
       // A big word at the moment of impact, so what hit the ship is unmistakable.
       ...(hit && HIT_WORD[hit.kind]
         ? [{ id: `hit-${beat.shipId}-${hit.key}`, position: [p.x, 5, p.z] as const, node: (

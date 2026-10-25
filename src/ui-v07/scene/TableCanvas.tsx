@@ -60,6 +60,8 @@ export interface TablePin {
   readonly hidden?: boolean;
   /** Keep the whole label on screen, pushed in from an edge it would run past (a wide card such as the market's). */
   readonly clamp?: boolean;
+  /** Ease toward the position instead of jumping, for a label that follows something that glides (a pushed ship). */
+  readonly glide?: boolean;
 }
 
 
@@ -149,13 +151,20 @@ function PinTracker({ pins, elements }: { readonly pins: readonly TablePin[]; re
   const camera = useThree((s) => s.camera);
   const { width, height } = useThree((s) => s.size);
   const v = useMemo(() => new Vector3(), []);
-  useFrame(() => {
+  const eased = useRef(new Map<string, [number, number]>());
+  useFrame((_, delta) => {
     for (const pin of pins) {
       const el = elements.current.get(pin.id);
       if (!el) continue;
       v.set(...pin.position).project(camera);
       let x = ((v.x + 1) / 2) * width;
       let y = ((1 - v.y) / 2) * height;
+      if (pin.glide) {
+        const was = eased.current.get(pin.id);
+        const k = 1 - Math.exp(-delta * 6);
+        if (was) [x, y] = [was[0] + (x - was[0]) * k, was[1] + (y - was[1]) * k];
+        eased.current.set(pin.id, [x, y]);
+      }
       const box = pin.clamp ? (el.firstElementChild as HTMLElement | null) : null;
       if (box) [x, y] = clampPin(x, y, box.offsetWidth, box.offsetHeight, width, height);
       el.style.transform = `translate(${x}px, ${y}px)`;
