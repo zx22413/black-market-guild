@@ -38,7 +38,7 @@ const ACTOR_LOOK: Readonly<Record<BeatActor['role'], { readonly model: ModelName
   pirate: { model: 'ship-pirate-medium', scale: 0.45, dx: 1 },
   guard: { model: 'boat-row-small', scale: 1.2, dx: -1 },
 };
-const ACTOR_SPOT = { x: 7, z: 5, spread: 6 } as const;
+const ACTOR_SPOT = { x: 7, z: 5, spread: 7 } as const;
 /** How long after a step begins the ship takes the hit (an actor first has to arrive). */
 const HIT_DELAY: Readonly<Record<BeatHit['kind'], number>> = { ram: 0.7, raid: RAID.ram, shield: 0.45, bastion: BARRAGE.shield, lightning: 0.2, push: 0.15, lift: 0.45, jolt: 0.15, beacon: SPOT_TIME.lock };
 const HIT_LENGTH = 0.7;
@@ -93,12 +93,15 @@ function actorSpot(p: Vector3, look: (typeof ACTOR_LOOK)[BeatActor['role']], act
   return new Vector3(p.x + flip * look.dx * (ACTOR_SPOT.x + ACTOR_SPOT.spread * actor.order), 0, p.z + ACTOR_SPOT.z);
 }
 
+/** The shallows and moored boats round a player island: boats keep this far outside its shore. */
+const ISLAND_REEF = 4;
+
 /**
  * Pirates stand to the right of the ship and guards to the left, unless an island sits on that side
  * and the boats would be moored inside it: then the sides swap (-1) when that leaves more open water.
  */
 function clearerSide(p: Vector3, angles: readonly number[], actors: readonly BeatActor[]): 1 | -1 {
-  const obstacles = [{ at: [0, 0, 0] as const, radius: TARGET_ISLAND_RADIUS }, ...angles.map((a) => ({ at: seatPosition(a), radius: PLAYER_ISLAND_RADIUS }))];
+  const obstacles = [{ at: [0, 0, 0] as const, radius: TARGET_ISLAND_RADIUS }, ...angles.map((a) => ({ at: seatPosition(a), radius: PLAYER_ISLAND_RADIUS + ISLAND_REEF }))];
   const room = (flip: 1 | -1): number =>
     Math.min(...actors.flatMap((actor) => {
       const spot = actorSpot(p, ACTOR_LOOK[actor.role], actor, flip);
