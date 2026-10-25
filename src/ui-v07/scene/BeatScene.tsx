@@ -411,13 +411,15 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, hol
     ...(barrage ? [{ position: barrage.fort, clearance: LAMP_CLEARANCE }] : []),
   ];
   const p = focusPose.position;
+  // The tag goes where the ship is: pushed on during the steps, then in port once it arrives.
+  const shipAt = view.showOutcome && beat.outcome !== 'sank' ? shipPose(angles[focusLane]!, 'arrived').position : p;
   const spots = actorSpots(p, angles, actorsShown(beat, { ...view, stepsShown: beat.steps.length }));
   const spotOf = (actor: BeatActor): Vector3 => spots.get(actorKey(actor))!;
   const seatOf = (id: PlayerId) => seats.find((s) => s.id === id);
   return {
     camera:
       framing === 'ship'
-        ? [...around([p.x, 0, p.z], CLOSE_UP_RADIUS), { position: [p.x, TAG_HEIGHT, p.z - TAG_BACK] as const, clearance: TAG_CLEARANCE }, ...sources]
+        ? [...around([p.x, 0, p.z], CLOSE_UP_RADIUS), ...(shipAt === p ? [] : around([shipAt.x, 0, shipAt.z], CLOSE_UP_RADIUS / 2)), { position: [shipAt.x, TAG_HEIGHT, shipAt.z - TAG_BACK] as const, clearance: TAG_CLEARANCE }, ...sources]
         : null,
     ringed: framing === 'ship' ? involved(beat) : new Set(),
     focusState: view.showOutcome ? (beat.outcome === 'sank' ? 'sunk' : 'arrived') : 'sailing',
@@ -431,7 +433,7 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, hol
       ),
     pins: [
       // The tag follows where a push carries the ship, so its pointer keeps aiming at the hull.
-      { id: `tag-${beat.shipId}`, position: [p.x + Math.sin(focusPose.heading) * kept.after.forward, TAG_HEIGHT, p.z - TAG_BACK + Math.cos(focusPose.heading) * kept.after.forward], glide: true, node: tag, hidden: !(framing === 'ship' && view.showStart) },
+      { id: `tag-${beat.shipId}`, position: [shipAt.x + Math.sin(focusPose.heading) * kept.after.forward, TAG_HEIGHT, shipAt.z - TAG_BACK + Math.cos(focusPose.heading) * kept.after.forward], glide: true, node: tag, hidden: !(framing === 'ship' && view.showStart) },
       // A big word at the moment of impact, so what hit the ship is unmistakable.
       ...(hit && HIT_WORD[hit.kind]
         ? [{ id: `hit-${beat.shipId}-${hit.key}`, position: [p.x, 5, p.z] as const, node: (

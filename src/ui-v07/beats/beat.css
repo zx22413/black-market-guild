@@ -653,10 +653,6 @@
   box-shadow: 0 10px 24px rgb(0 0 0 / 0.3);
   position: relative;
 }
-/* The ship has moved on (or gone down) by the outcome: the pointer would aim at empty water. */
-.beat-tag.is-final::after {
-  display: none;
-}
 /* A small pointer down to the ship. */
 .beat-tag::after {
   content: '';

@@ -23,7 +23,11 @@ export function useBeatPlayback(beat: ShipBeat | null, speed = 1, running = true
   const cues = useMemo(() => (beat ? beatCues(beat, speed, money) : [{ kind: 'done' as const, index: 0, at: 0 }]), [beat, speed, money]);
   const total = cues[cues.length - 1]!.at;
   // Only the number of started cues is state: the frame loop re-renders nothing between cues.
-  const [started, setStarted] = useState(() => cuesStarted(cues, 0));
+  const [clock, setClock] = useState(() => ({ cues, started: cuesStarted(cues, 0) }));
+  // A new beat starts from nothing at once: the count left over from the last beat (all of it
+  // started) would show the new ship's tag and die for a frame before the effect below resets it.
+  const started = clock.cues === cues ? clock.started : cuesStarted(cues, 0);
+  const setStarted = (n: number) => setClock((c) => (c.cues === cues && c.started === n ? c : { cues, started: n }));
   const origin = useRef(0);
   const frame = useRef(0);
   const run = useRef<() => void>(() => {});

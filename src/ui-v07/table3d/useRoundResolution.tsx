@@ -266,7 +266,8 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   const olderArrows = new Set(arrows.filter((a) => stage !== 'reveal' || a.group < groupsShown - 1).map((a) => a.key));
   const showArrows = stage === 'reveal' || stage === 'voyage';
   // During the voyage only the arrows at the ship being played stay: the rest would cross the close-up.
-  const shownArrows: readonly RoleArrow[] = stage === 'voyage' ? arrows.filter((a) => beat !== null && a.targetShipId === beat.shipId) : arrows;
+  // Once the outcome is out the ship sails on to port or goes down, and they would point at empty water.
+  const shownArrows: readonly RoleArrow[] = stage === 'voyage' ? arrows.filter((a) => beat !== null && !playback.view.showOutcome && a.targetShipId === beat.shipId) : arrows;
   // Only your intel merchant's dice, low-key, while the reveal is on (§4).
   const intelPins: TablePin[] = [];
   if (stage === 'reveal') {
