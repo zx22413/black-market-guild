@@ -380,6 +380,10 @@
   outline-offset: 6px;
   border-radius: 6px;
 }
+/* The opened card keeps no ring: it already shows its rule slip, and the ring boxed card and slip together. */
+.isle-slot[aria-expanded='true']:focus-visible {
+  outline: none;
+}
 .isle-slot.gone {
   opacity: 0;
 }
@@ -402,6 +406,8 @@
 }
 .isle-reveal .isle-deal {
   flex-wrap: nowrap;
+  /* Top-aligned: the opened card's rule slip makes its column taller, and the others must not stretch to match. */
+  align-items: flex-start;
   gap: 14px;
 }
 @media (max-width: 640px) {
@@ -411,6 +417,7 @@
 }
 .isle-owner {
   display: grid;
+  align-content: start;
   justify-items: center;
   gap: 10px;
 }
