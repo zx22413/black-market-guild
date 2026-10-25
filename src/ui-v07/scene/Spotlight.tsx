@@ -4,7 +4,8 @@ import { AdditiveBlending, CylinderGeometry, ShaderMaterial, Vector2, Vector3, t
 import { BEAM_COLOR, beamMaterial } from '../../ui/scene/buildings/Landmark';
 import { glowTexture } from '../../ui/scene/Night';
 import type { Vec3 } from '../../ui/scene/layout';
-import { DARKNESS, spotlightFrame, type SpotlightCue } from './spotlightMath';
+import { soundEngine } from '../audio/soundEngine';
+import { DARKNESS, SPOT_TIME, spotlightFrame, type SpotlightCue } from './spotlightMath';
 
 // The lighthouse at work on the 3D table: everything goes dark but the lighthouse's lamp and the
 // ships its beams fall on, the beams swing onto them, lock with a flash and, at the reveal, close
@@ -47,6 +48,14 @@ function veilMaterial(): ShaderMaterial {
 }
 
 export function Spotlight({ cue }: { readonly cue: SpotlightCue }) {
+  // A ding as the beams lock onto the ships, and another as they close onto the one that was rerolled.
+  // The one place the lighthouse sounds, whoever's beam it is (a beat's island step, an intel look).
+  useEffect(() => {
+    const skip = cue.skip ?? 0;
+    const dings = [SPOT_TIME.lock, ...(cue.settle === null ? [] : [SPOT_TIME.closeFrom])].filter((at) => at >= skip);
+    const timers = dings.map((at) => setTimeout(() => soundEngine.playSfx('beacon-ding'), (at - skip) * 1000));
+    return () => timers.forEach(clearTimeout);
+  }, [cue.key]);
   const start = useRef<number | null>(null);
   const beams = useRef<(Group | null)[]>([]);
   const pools = useRef<(Mesh | null)[]>([]);

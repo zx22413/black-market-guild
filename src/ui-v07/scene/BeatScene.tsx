@@ -278,12 +278,6 @@ function HitFx({ hit, at, from }: { readonly hit: BeatHit; readonly at: Vector3;
     }, HIT_DELAY.lightning * 1000);
     return () => clearTimeout(timer);
   }, [canvas, hit.kind, hit.key]);
-  // The lighthouse's word lands on the ship with a ding.
-  useEffect(() => {
-    if (hit.kind !== 'beacon') return undefined;
-    const timer = setTimeout(() => soundEngine.playSfx('beacon-ding'), HIT_DELAY.beacon * 1000);
-    return () => clearTimeout(timer);
-  }, [hit.kind, hit.key]);
   // The whole picture jolts when a ram lands.
   useEffect(() => {
     if (hit.kind !== 'ram' && hit.kind !== 'raid') return undefined;
