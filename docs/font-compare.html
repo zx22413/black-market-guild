@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>字型對照</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@500;700;900&family=LXGW+Marker+Gothic&family=Zen+Maru+Gothic:wght@400;500;700&family=Inter:wght@400;500;700&family=Playfair+Display:wght@600;800&display=swap" />
+<style>
+  :root { --bg:#1d2733; --card:#27364a; --ink:#f1e8d4; --mute:#9fb0c4; --gold:#e8b94a; --line:#3b4d66; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:24px 16px 64px; background:var(--bg); color:var(--ink); font-family:system-ui,sans-serif; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  .hint { color:var(--mute); font-size:13px; margin:0 0 20px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:16px; max-width:1300px; margin:0 auto; }
+  .opt { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; }
+  .tag { font:12px/1 ui-monospace,Menlo,monospace; color:var(--mute); margin-bottom:12px; display:block; }
+  .tag b { color:var(--gold); font-weight:600; }
+  .title { font-size:26px; margin:0 0 4px; color:var(--gold); }
+  .sub { font-size:15px; margin:0 0 14px; }
+  .panel { background:#1d2733; border:1px solid var(--line); border-radius:8px; padding:12px 14px; margin-bottom:12px; }
+  .panel h3 { margin:0 0 8px; font-size:16px; }
+  .row { display:flex; justify-content:space-between; padding:3px 0; font-size:14px; }
+  .num { font-variant-numeric:tabular-nums; color:var(--gold); }
+  .log { font-size:13px; line-height:1.7; color:#cfd9e6; }
+  .small { font-size:11px; color:var(--mute); line-height:1.5; }
+  .btn { display:inline-block; background:var(--gold); color:#2a1d05; padding:6px 16px; border-radius:6px; font-size:15px; font-weight:700; margin-top:6px; }
+
+  .a { font-family:'LXGW WenKai TC','PingFang TC',sans-serif; }
+  .b { font-family:'Inter','Noto Sans TC','PingFang TC',sans-serif; }
+  .b .title, .b h3 { font-family:'Playfair Display','Noto Serif TC',serif; font-weight:800; }
+  .c { font-family:'Inter','LXGW Marker Gothic','PingFang TC',sans-serif; }
+  .d { font-family:'Inter','Zen Maru Gothic','PingFang TC',sans-serif; }
+  .e { font-family:'Inter','Noto Sans TC','PingFang TC',sans-serif; }
+  .e .title, .e h3 { font-family:'Playfair Display','Noto Serif TC',serif; font-weight:800; }
+  .f { font-family:'Inter','Noto Sans TC','PingFang TC',sans-serif; }
+  .c2 { font-family:'Inter','LXGW Marker Gothic','PingFang TC',sans-serif; }
+  .c2 .title, .c2 h3, .c2 .btn { font-family:'Inter','Noto Sans TC','PingFang TC',sans-serif; font-weight:700; }
+  .c3 { font-family:'Inter','LXGW Marker Gothic','PingFang TC',sans-serif; font-synthesis:none; }
+  .c4 { font-family:'Inter','LXGW Marker Gothic','PingFang TC',sans-serif; }
+  .c4 .title, .c4 h3, .c4 .btn { font-family:'Inter','Noto Serif TC','PingFang TC',serif; font-weight:900; }
+  .c .title, .c h3, .c .btn { font-weight:700; }
+  .c4 .btn { font-weight:900; }
+</style>
+</head>
+<body>
+<h1>字型對照</h1>
+<p class="hint">同一份介面文字套用不同字型。A 為目前使用；C1～C4 為霞鶩漫黑的不同處理方式，重點看標題與按鈕的粗體。</p>
+<div class="grid" id="grid"></div>
+<script>
+const opts = [
+  ['a','A　目前','LXGW WenKai TC（霞鶩文楷）'],
+  ['c','C1　純漫黑（假粗體）','全部漫黑，粗體由瀏覽器合成'],
+  ['c3','C2　純漫黑（禁假粗體）','font-synthesis:none，粗字顯示為一般字重'],
+  ['c2','C3　混搭（推薦）','標題 Noto Sans TC 700＋內文漫黑 400'],
+  ['c4','C4　混搭宋體標題','標題 Noto Serif TC 900＋內文漫黑 400'],
+];
+const tpl = (cls, tag, desc) => `
+<section class="opt ${cls}">
+  <span class="tag"><b>${tag}</b> · ${desc}</span>
+  <h2 class="title">黑市商會 Black Market Guild</h2>
+  <p class="sub">第 3 回合・巴扎港開市 / Round 3 · Bazaar Open</p>
+  <div class="panel">
+    <h3>巴扎港市場 Market</h3>
+    <div class="row"><span>香料 Spice</span><span class="num">價格 12 → 15 金</span></div>
+    <div class="row"><span>絲綢 Silk</span><span class="num">價格 8 → 7 金</span></div>
+    <div class="row"><span>軍火 Arms</span><span class="num">價格 1,250 金</span></div>
+  </div>
+  <div class="panel log">
+    阿德把 3 箱香料裝上「海鷗號」，駛向鐵錨島。<br />
+    海盜襲擊！護衛費 60 金，損失貨物 2 箱。<br />
+    玩家 P2 (Alice) 秘密提交了行動。
+  </div>
+  <div class="small">規則提示：每回合所有玩家同時提交秘密行動，結算後公開事件。航線風險依船隻等級與護衛數量而定。</div>
+  <span class="btn">確認提交 Confirm</span>
+</section>`;
+document.getElementById('grid').innerHTML = opts.map(o => tpl(...o)).join('');
+</script>
+</body>
+</html>
