@@ -88,26 +88,46 @@ export interface BeatSceneProps {
   readonly onClick?: () => void;
 }
 
-/** Where an actor stops beside the ship at `p`, and the way it came from (toward its own island). */
-function actorSpot(p: Vector3, look: (typeof ACTOR_LOOK)[BeatActor['role']], actor: BeatActor, flip: 1 | -1 = 1): Vector3 {
-  return new Vector3(p.x + flip * look.dx * (ACTOR_SPOT.x + ACTOR_SPOT.spread * actor.order), 0, p.z + ACTOR_SPOT.z);
-}
-
-/** The shallows and moored boats round a player island: boats keep this far outside its shore. */
+/** The shallows and moored boats round an island: boats keep this far outside its shore. */
 const ISLAND_REEF = 4;
+/** Boats keep at least this far from each other and from the ship, so none sails into another. */
+const BOAT_GAP = 8;
+/** Rings and directions tried around the ship when looking for open water. */
+const SPOT_RINGS = [8, 11, 14, 17, 20] as const;
+const SPOT_DIRECTIONS = 24;
+
+const actorKey = (actor: BeatActor): string => `${actor.role}-${actor.playerId}`;
 
 /**
- * Pirates stand to the right of the ship and guards to the left, unless an island sits on that side
- * and the boats would be moored inside it: then the sides swap (-1) when that leaves more open water.
+ * Where each pirate and guard of the beat stops beside the ship at `p`: pirates lean to its right
+ * and guards to its left, on the near side, as close as open water allows. A spot is open water
+ * when it is outside every island and its shallows and a boat's length from the ship and from the
+ * boats placed before it. Worked out once for the whole beat so no boat moves when the next arrives.
  */
-function clearerSide(p: Vector3, angles: readonly number[], actors: readonly BeatActor[]): 1 | -1 {
-  const obstacles = [{ at: [0, 0, 0] as const, radius: TARGET_ISLAND_RADIUS }, ...angles.map((a) => ({ at: seatPosition(a), radius: PLAYER_ISLAND_RADIUS + ISLAND_REEF }))];
-  const room = (flip: 1 | -1): number =>
-    Math.min(...actors.flatMap((actor) => {
-      const spot = actorSpot(p, ACTOR_LOOK[actor.role], actor, flip);
-      return obstacles.map((o) => Math.hypot(spot.x - o.at[0], spot.z - o.at[2]) - o.radius);
-    }), Infinity);
-  return room(-1) > room(1) + 0.5 ? -1 : 1;
+function actorSpots(p: Vector3, angles: readonly number[], actors: readonly BeatActor[]): ReadonlyMap<string, Vector3> {
+  const obstacles = [{ x: 0, z: 0, radius: TARGET_ISLAND_RADIUS + ISLAND_REEF - 1 }, ...angles.map((a) => { const [x, , z] = seatPosition(a); return { x, z, radius: PLAYER_ISLAND_RADIUS + ISLAND_REEF }; })];
+  const placed = new Map<string, Vector3>();
+  for (const actor of actors) {
+    const lean = ACTOR_LOOK[actor.role].dx;
+    const taken = [...placed.values()];
+    const fits = (c: Vector3): boolean =>
+      Math.hypot(c.x - p.x, c.z - p.z) >= BOAT_GAP - 1 &&
+      obstacles.every((o) => Math.hypot(c.x - o.x, c.z - o.z) >= o.radius) &&
+      taken.every((t) => Math.hypot(c.x - t.x, c.z - t.z) >= BOAT_GAP);
+    const candidates = SPOT_RINGS.flatMap((r) =>
+      Array.from({ length: SPOT_DIRECTIONS }, (_, i) => {
+        const a = (i / SPOT_DIRECTIONS) * Math.PI * 2;
+        const c = new Vector3(p.x + Math.sin(a) * r, 0, p.z + Math.cos(a) * r);
+        // Nearer is better; the wrong side of the ship and the far side (under its tag) cost extra.
+        const cost = r + (Math.sin(a) * lean < 0 ? 5 : 0) + (Math.cos(a) < 0 ? 4 : 0);
+        return { c, cost };
+      }),
+    ).filter(({ c }) => fits(c));
+    const best = candidates.reduce<{ c: Vector3; cost: number } | null>((m, x) => (m === null || x.cost < m.cost ? x : m), null);
+    // No open water at all: the old row beside the ship.
+    placed.set(actorKey(actor), best?.c ?? new Vector3(p.x + lean * (ACTOR_SPOT.x + ACTOR_SPOT.spread * actor.order), 0, p.z + ACTOR_SPOT.z));
+  }
+  return placed;
 }
 
 interface Strike {
@@ -391,9 +411,8 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, hol
     ...(barrage ? [{ position: barrage.fort, clearance: LAMP_CLEARANCE }] : []),
   ];
   const p = focusPose.position;
-  // Judged on every actor of the beat, not just those shown so far, so the sides never swap mid-beat.
-  const flip = clearerSide(p, angles, actorsShown(beat, { ...view, stepsShown: beat.steps.length }));
-  const spotOf = (actor: BeatActor) => actorSpot(p, ACTOR_LOOK[actor.role], actor, flip);
+  const spots = actorSpots(p, angles, actorsShown(beat, { ...view, stepsShown: beat.steps.length }));
+  const spotOf = (actor: BeatActor): Vector3 => spots.get(actorKey(actor))!;
   const seatOf = (id: PlayerId) => seats.find((s) => s.id === id);
   return {
     camera:
