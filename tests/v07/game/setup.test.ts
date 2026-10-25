@@ -68,15 +68,15 @@ describe('§3 match setup and §11.1 island draft', () => {
 });
 
 describe('§7.2 demand deck', () => {
-  it('holds one card per combination: 24 for 3 players and 36 for 4', () => {
+  it('holds one card per combination: 18 for 3 players and 36 for 4', () => {
     const three = buildDemandDeck(RULES_V07, 3);
     const four = buildDemandDeck(RULES_V07, 4);
-    expect(three).toHaveLength(24);
+    expect(three).toHaveLength(18);
     expect(four).toHaveLength(36);
-    expect(three).toContainEqual(G(2, 1, 2, 0));
+    expect(three).toContainEqual(G(1, 1, 3, 0));
     expect(four).toContainEqual(G(2, 3, 3, 2));
     expect(four.every((c) => c.wood <= 2 && c.spice >= 2)).toBe(true);
-    expect(three.every((c) => c.wood <= 2 && c.arms <= 2)).toBe(true);
+    expect(three.every((c) => c.wood === 1 && c.arms <= 2)).toBe(true);
     expect(buildDemandDeck(RULES_V07, 5)).toEqual([]);
   });
 
