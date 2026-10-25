@@ -7,6 +7,7 @@ import { launchMs } from './menu/launch';
 import { LocalSetup } from './menu/LocalSetup';
 import { MainMenu } from './menu/MainMenu';
 import { MenuBackdrop } from './menu/MenuBackdrop';
+import { StartGate } from './menu/StartGate';
 import type { MenuView } from './menu/menuSeats';
 import './menu/menu.css';
 import './skin/layers.css';
@@ -69,6 +70,8 @@ export function App() {
     const room = roomFromUrl();
     return room ? { kind: 'online', room } : { kind: 'menu' };
   });
+  // Dev preview links (`?dev=…`) skip the cover.
+  const [started, setStarted] = useState(() => new URLSearchParams(location.search).has('dev'));
   const [onlineView, setOnlineView] = useState<MenuView | null>({ stage: 'online' });
   const onView = useCallback((view: MenuView | null) => setOnlineView(view), []);
   const home = () => {
@@ -94,7 +97,8 @@ export function App() {
   return (
     <>
       {view && <MenuBackdrop view={view} />}
-      <Screen mode={mode} setMode={setMode} home={home} launchLocal={launchLocal} startLocal={startLocal} onView={onView} />
+      {!started && <StartGate onStart={() => setStarted(true)} />}
+      {started && <Screen mode={mode} setMode={setMode} home={home} launchLocal={launchLocal} startLocal={startLocal} onView={onView} />}
     </>
   );
 }

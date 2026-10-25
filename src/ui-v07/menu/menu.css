@@ -558,3 +558,47 @@
     transition: none;
   }
 }
+
+/* ---------- start gate (the click that lets sound begin) ---------- */
+.start-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5rem;
+  border: 0;
+  background: rgb(20 12 6 / 0.68);
+  color: var(--m-on);
+  font-family: var(--font-strong);
+  cursor: pointer;
+}
+
+.start-gate-title {
+  font-size: var(--fs-title);
+}
+
+.start-gate .title-stencil {
+  color: var(--m-on);
+  filter: drop-shadow(0 2px 0 var(--m-wood-dark));
+}
+
+.start-gate-prompt {
+  font-size: var(--fs-body);
+  letter-spacing: 0.3em;
+  animation: start-gate-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes start-gate-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .start-gate-prompt {
+    animation: none;
+  }
+}
