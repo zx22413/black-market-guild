@@ -26,6 +26,8 @@ export type SfxId =
   | 'island'
   // The lighthouse's word landing on the ship; the fortress's salute (each shot, its splash, its ding).
   | 'beacon-ding'
+  // The lighthouse's beam swinging onto the ship, ending as it locks (Spotlight).
+  | 'beam-sweep'
   | 'salute-pop'
   | 'salute-splash'
   | 'salute-ding'
@@ -130,6 +132,7 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   'storm-bolt': { licensed: 'sfx-storm-bolt.ogg', fallback: 'sfx-event-storm.ogg' },
   island: { licensed: 'sfx-island.ogg', fallback: 'sfx-island.ogg' },
   'beacon-ding': 'sfx-beacon-ding.ogg',
+  'beam-sweep': 'sfx-beam-sweep.ogg',
   'salute-pop': 'sfx-salute-pop.ogg',
   'salute-splash': 'sfx-salute-splash.ogg',
   'salute-ding': 'sfx-salute-ding.ogg',

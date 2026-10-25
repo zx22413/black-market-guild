@@ -48,12 +48,16 @@ function veilMaterial(): ShaderMaterial {
 }
 
 export function Spotlight({ cue }: { readonly cue: SpotlightCue }) {
-  // A ding as the beams lock onto the ships, and another as they close onto the one that was rerolled.
+  // The beam's sweep as it swings onto the ships, a ding as it locks, and another as the beams close onto the one that was rerolled.
   // The one place the lighthouse sounds, whoever's beam it is (a beat's island step, an intel look).
   useEffect(() => {
     const skip = cue.skip ?? 0;
-    const dings = [SPOT_TIME.lock, ...(cue.settle === null ? [] : [SPOT_TIME.closeFrom])].filter((at) => at >= skip);
-    const timers = dings.map((at) => setTimeout(() => soundEngine.playSfx('beacon-ding'), (at - skip) * 1000));
+    const sounds = [
+      { at: SPOT_TIME.swingFrom, id: 'beam-sweep' as const },
+      { at: SPOT_TIME.lock, id: 'beacon-ding' as const },
+      ...(cue.settle === null ? [] : [{ at: SPOT_TIME.closeFrom, id: 'beacon-ding' as const }]),
+    ].filter(({ at }) => at >= skip);
+    const timers = sounds.map(({ at, id }) => setTimeout(() => soundEngine.playSfx(id), (at - skip) * 1000));
     return () => timers.forEach(clearTimeout);
   }, [cue.key]);
   const start = useRef<number | null>(null);
