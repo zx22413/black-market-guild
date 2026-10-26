@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FAST_MS, GOOD_WINDOWS, MAX_FLIPS, SLOW_MS, isPhone, judgeWindow, phoneDprLevels, startState } from '../../src/ui-v07/perf/dprPolicy';
+import { FAST_MS, GOOD_WINDOWS, MAX_GOOD_WINDOWS, SLOW_MS, goodWindowsFor, isPhone, judgeWindow, phoneDprLevels, startState } from '../../src/ui-v07/perf/dprPolicy';
 
 const LEVELS = phoneDprLevels(3);
 
@@ -43,16 +43,32 @@ describe('judgeWindow', () => {
     expect(s.level).toBe(2);
   });
 
-  it('gives up climbing after steps up keep being undone', () => {
+  it('waits twice as long to climb again each time a climb is undone, but never gives up', () => {
+    expect(goodWindowsFor(0)).toBe(GOOD_WINDOWS);
+    expect(goodWindowsFor(1)).toBe(GOOD_WINDOWS * 2);
+    expect(goodWindowsFor(2)).toBe(GOOD_WINDOWS * 4);
+    expect(goodWindowsFor(50)).toBe(MAX_GOOD_WINDOWS);
+
     let s = judgeWindow(startState(LEVELS), 40, LEVELS);
-    for (let round = 0; round < MAX_FLIPS; round++) {
-      for (let i = 0; i < GOOD_WINDOWS; i++) s = judgeWindow(s, FAST_MS, LEVELS);
+    for (let i = 0; i < GOOD_WINDOWS; i++) s = judgeWindow(s, FAST_MS, LEVELS);
+    expect(s.level).toBe(2);
+    s = judgeWindow(s, 40, LEVELS); // the climb is undone
+    expect(s).toMatchObject({ level: 1, flips: 1 });
+
+    for (let i = 0; i < goodWindowsFor(1) - 1; i++) s = judgeWindow(s, FAST_MS, LEVELS);
+    expect(s.level).toBe(1);
+    s = judgeWindow(s, FAST_MS, LEVELS);
+    expect(s.level).toBe(2);
+  });
+
+  it('still climbs after many undone climbs, within the longest wait', () => {
+    let s = judgeWindow(startState(LEVELS), 40, LEVELS);
+    for (let round = 0; round < 6; round++) {
+      for (let i = 0; i < MAX_GOOD_WINDOWS; i++) s = judgeWindow(s, FAST_MS, LEVELS);
       expect(s.level).toBe(2);
       s = judgeWindow(s, 40, LEVELS);
-      expect(s.level).toBe(1);
     }
-    expect(s.flips).toBe(MAX_FLIPS);
-    for (let i = 0; i < GOOD_WINDOWS * 2; i++) s = judgeWindow(s, FAST_MS, LEVELS);
-    expect(s.level).toBe(1);
+    for (let i = 0; i < MAX_GOOD_WINDOWS; i++) s = judgeWindow(s, FAST_MS, LEVELS);
+    expect(s.level).toBe(2);
   });
 });
