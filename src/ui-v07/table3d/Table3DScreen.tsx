@@ -275,7 +275,9 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   );
   const islandBadges = islandBadgePins(seats, angles, (id) => board.players[id]?.island ?? null);
   const marks = useMemo(() => (islandMarks ? islandMarkPins(seats.map((s) => ({ id: s.id, angle: angles[laneOf(s.id)]! }))) : []), [islandMarks, seats, angles, laneOf]);
-  const pins = [...plates, marketBadgePin(), ...islandBadges, ...moments.pins, ...(step?.pins ?? []), ...resolution.pins, ...marks];
+  // While the wanted flag stands (its pole reaches up over the island's name badge), the island badges step aside.
+  const badgesNow = resolution.stage === 'wanted' ? islandBadges.map((pin) => ({ ...pin, hidden: true })) : islandBadges;
+  const pins = [...plates, marketBadgePin(), ...badgesNow, ...moments.pins, ...(step?.pins ?? []), ...resolution.pins, ...marks];
   const camera = step?.camera ?? resolution.camera ?? overviewPoints(angles, seats.map((s) => s.island));
 
   const marketRef = useRef<HTMLDivElement>(null);
