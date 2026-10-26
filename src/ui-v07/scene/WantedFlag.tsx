@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useSoundOnce } from '../audio/useUiSounds';
 import { BufferAttribute, BufferGeometry, Color, DoubleSide, type Group, type Mesh, type MeshBasicMaterial } from 'three';
 import type { Vec3 } from '../../ui/scene/layout';
@@ -65,6 +65,8 @@ function Cloth({ landedAt }: { readonly landedAt: { current: number | null } }) 
     geometry.setAttribute('color', new BufferAttribute(colors, 3));
     return { geometry, base };
   }, []);
+
+  useEffect(() => () => geometry.dispose(), [geometry]);
 
   useFrame(({ clock }) => {
     const g = group.current;

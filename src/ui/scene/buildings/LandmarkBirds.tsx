@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { DoubleSide, type Group } from 'three';
 import { useLiveFrame } from '../liveFrame';
 import { geometryFromParts } from './Building';
@@ -9,6 +9,13 @@ import type { LandmarkBirds } from './islands/design';
 export function Birds({ birds }: { readonly birds: LandmarkBirds }) {
   const body = useMemo(() => geometryFromParts(birds.body), [birds]);
   const wings = useMemo(() => birds.wings.map((wing) => geometryFromParts(wing.parts)), [birds]);
+  useEffect(
+    () => () => {
+      body.dispose();
+      wings.forEach((g) => g.dispose());
+    },
+    [body, wings],
+  );
   const flyers = useRef<(Group | null)[]>([]);
   const hinges = useRef<(Group | null)[][]>([]);
   useLiveFrame(({ clock }) => {

@@ -1,4 +1,4 @@
-import { perfFlags } from '../../ui/scene/perfFlags';
+import { notifyPerfFlags, perfFlags } from '../../ui/scene/perfFlags';
 import type { FrameSummary } from './frameStats';
 
 /** What the probe inside the canvas reports about the renderer. */
@@ -53,4 +53,5 @@ export function setSwitch(change: Partial<Pick<PerfView, 'seaFrozen' | 'shadowsO
   root.toggle('perf-no-blur', next.noBlur);
   root.toggle('perf-no-fx', next.noFx);
   emit(next);
+  notifyPerfFlags();
 }

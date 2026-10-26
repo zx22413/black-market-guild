@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { Group } from 'three';
 import { useLiveFrame } from '../liveFrame';
 import { geometryFromParts } from './Building';
@@ -13,6 +13,13 @@ const STEER = 0.18;
 function Townsperson({ walker }: { readonly walker: Walker }) {
   const body = useMemo(() => geometryFromParts(walker.body), [walker]);
   const limbs = useMemo(() => walker.limbs.map((limb) => geometryFromParts(limb.parts)), [walker]);
+  useEffect(
+    () => () => {
+      body.dispose();
+      limbs.forEach((g) => g.dispose());
+    },
+    [body, limbs],
+  );
   const lap = useMemo(() => loopLength(walker.path), [walker]);
   const root = useRef<Group>(null);
   const hinges = useRef<(Group | null)[]>([]);

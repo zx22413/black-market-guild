@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { QuadraticBezierCurve3, Quaternion, TubeGeometry, Vector3, type Mesh, type MeshBasicMaterial } from 'three';
 import type { RoleArrow } from './revealModel';
 
@@ -13,6 +13,7 @@ function Arrow({ arrow, color, dim }: { readonly arrow: RoleArrow; readonly colo
   const curve = useMemo(() => new QuadraticBezierCurve3(new Vector3(...arrow.from), new Vector3(...arrow.control), new Vector3(...arrow.to)), [arrow]);
   const radius = arrow.faint ? 0.12 : 0.5;
   const geometry = useMemo(() => new TubeGeometry(curve, 40, radius, 6, false), [curve, radius]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
   const tube = useRef<Mesh>(null);
   const head = useRef<Mesh>(null);
   const born = useRef<number | null>(null);

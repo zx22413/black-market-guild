@@ -12,7 +12,7 @@ const canvasSize = new Vector2();
 
 /**
  * Inside the canvas: measures frame intervals and renderer counts for the perf panel and applies
- * its canvas switches (shadow, pixel ratio). Does nothing unless the page was opened with `?perf=1`.
+ * its shadow switch (the pixel ratio one goes through the canvas's dpr, see tableDpr). Does nothing unless the page was opened with `?perf=1`.
  */
 export function PerfProbe() {
   if (!ON) return null;
@@ -22,11 +22,10 @@ export function PerfProbe() {
 function Probe() {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
-  const setDpr = useThree((s) => s.setDpr);
   const frames = useRef<number[]>([]);
   const since = useRef(0);
   const sun = useRef<DirectionalLight | null>(null);
-  const applied = useRef<{ shadowsOff: boolean; dprCap: number | null; dpr: number }>({ shadowsOff: false, dprCap: null, dpr: gl.getPixelRatio() });
+  const applied = useRef({ shadowsOff: false });
 
   useFrame((_, delta) => {
     frames.current.push(delta * 1000);
@@ -39,11 +38,7 @@ function Probe() {
     }
     if (sun.current && applied.current.shadowsOff !== perfFlags.shadowsOff) {
       sun.current.castShadow = !perfFlags.shadowsOff;
-      applied.current = { ...applied.current, shadowsOff: perfFlags.shadowsOff };
-    }
-    if (applied.current.dprCap !== perfFlags.dprCap) {
-      setDpr(perfFlags.dprCap ?? applied.current.dpr);
-      applied.current = { ...applied.current, dprCap: perfFlags.dprCap };
+      applied.current = { shadowsOff: perfFlags.shadowsOff };
     }
 
     if (since.current < WINDOW_MS) return;
