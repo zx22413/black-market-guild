@@ -2,7 +2,7 @@ import type { BufferGeometry } from 'three';
 import type { KitPart } from './buildings/kit';
 import { FLIGHT_FOOT, FLIGHT_HEAD, MARKET_SCALE, STALL_DROPS } from './buildings/islands/market';
 import { spinPoint, type Vec3 } from './buildings/polyhedra';
-import { TARGET_ISLAND_HEIGHT, TARGET_ISLAND_SEED, cliffLift, craggyCylinder, islandCliff } from './islandShape';
+import { TARGET_ISLAND_HEIGHT, TARGET_ISLAND_SEED, cliffLift, grassSlab, islandCliff } from './islandShape';
 import { TARGET_ISLAND_RADIUS, laneCurve } from './layout';
 
 // Where each guild's ship ties up at the market island, and the porters' way from it up to a stall
@@ -58,7 +58,7 @@ function cliffProfile(angle: number): { readonly r: number; readonly y: number }
 
 /** How far the grass reaches along `angle`. */
 export function grassRadius(angle: number): number {
-  const grass = craggyCylinder(TARGET_ISLAND_RADIUS * 0.78, 0.5, TARGET_ISLAND_SEED + 7, 1.05);
+  const grass = grassSlab(TARGET_ISLAND_RADIUS * 0.78, TARGET_ISLAND_SEED + 7);
   const r = ringRadius(grass, 11, 0, angle);
   grass.dispose();
   return r;

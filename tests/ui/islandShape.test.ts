@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatAngles, seatPosition } from '../../src/ui/scene/layout';
-import { SHORE_POINTS, annexedCliff, annexedRadius, annexedShores, islandShorelines, islandWaterline } from '../../src/ui/scene/islandShape';
+import { GRASS_FLARE, SHORE_POINTS, annexedCliff, annexedRadius, annexedShores, grassSlab, islandShorelines, islandWaterline } from '../../src/ui/scene/islandShape';
 
 const centroid = (points: readonly (readonly [number, number])[]) => {
   const [x, z] = points.reduce(([sx, sz], [px, pz]) => [sx + px, sz + pz], [0, 0]);
@@ -74,5 +74,28 @@ describe('annexed island', () => {
     const zs = Array.from({ length: position.count }, (_, i) => position.getZ(i));
     expect(Math.min(...zs)).toBeLessThan(-16);
     expect(Math.max(...zs)).toBeLessThan(13 * 1.35);
+  });
+});
+
+describe('grass slab', () => {
+  it('drops plumb from its waist to its foot, so its sides never lie almost flat along the cliff top', () => {
+    const slab = grassSlab(PLAYER_ISLAND_RADIUS * 0.78, 7);
+    const position = slab.attributes.position!;
+    const rings = new Map<string, { foot?: number; waist?: number }>();
+    for (let i = 0; i < position.count; i++) {
+      const [x, y, z] = [position.getX(i), position.getY(i), position.getZ(i)];
+      if (x === 0 && z === 0) continue;
+      const key = Math.atan2(z, x).toFixed(3);
+      const ring = rings.get(key) ?? {};
+      if (y < -0.2) ring.foot = Math.hypot(x, z);
+      if (Math.abs(y) < 0.1) ring.waist = Math.hypot(x, z);
+      rings.set(key, ring);
+    }
+    for (const { foot, waist } of rings.values()) {
+      if (foot === undefined || waist === undefined) continue;
+      expect(foot / waist).toBeGreaterThanOrEqual(1);
+      expect(foot / waist).toBeLessThanOrEqual(GRASS_FLARE + 1e-6);
+    }
+    slab.dispose();
   });
 });

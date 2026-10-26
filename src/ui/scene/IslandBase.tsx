@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { PLAYER_ISLAND_HEIGHT, annexedCliff, cliffLift, craggyCylinder, islandCliff, type IslandAnnex } from './islandShape';
+import { GRASS_SLAB, PLAYER_ISLAND_HEIGHT, annexedCliff, cliffLift, grassSlab, islandCliff, type IslandAnnex } from './islandShape';
 
 interface IslandBaseProps {
   readonly radius: number;
@@ -29,7 +29,7 @@ export function IslandBase({ radius, seed, height = PLAYER_ISLAND_HEIGHT, ground
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [radius, height, seed, annexKey],
   );
-  const grass = useMemo(() => craggyCylinder(radius * 0.78, 0.5, seed + 7, 1.05), [radius, seed]);
+  const grass = useMemo(() => grassSlab(radius * 0.78, seed + 7), [radius, seed]);
   useEffect(() => () => cliff.dispose(), [cliff]);
   useEffect(() => () => grass.dispose(), [grass]);
   return (
@@ -37,7 +37,7 @@ export function IslandBase({ radius, seed, height = PLAYER_ISLAND_HEIGHT, ground
       <mesh geometry={cliff} position={[0, cliffLift(height), 0]} castShadow receiveShadow>
         <meshStandardMaterial color={ground.cliff} flatShading roughness={0.95} />
       </mesh>
-      <mesh geometry={grass} position={[0, height + 0.2, 0]} receiveShadow>
+      <mesh geometry={grass} position={[0, height + GRASS_SLAB.lift, 0]} receiveShadow>
         <meshStandardMaterial color={ground.top} flatShading roughness={0.9} />
       </mesh>
     </group>

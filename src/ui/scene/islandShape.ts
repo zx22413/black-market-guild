@@ -22,8 +22,22 @@ function jitter(seed: number, angle: number, layer: number): number {
   return x - Math.floor(x);
 }
 
-/** Irregular low-poly cylinder: flat top, craggy sides, wider at the waterline. */
-export function craggyCylinder(radius: number, height: number, seed: number, flare: number, sides = SHORE_POINTS): BufferGeometry {
+/** How much wider the grass slab is at its foot than at its waist. */
+export const GRASS_FLARE = 1.05;
+/** The grass slab's size and where it sits: its top this far above the cliff top, its foot just below it. */
+export const GRASS_SLAB = { thickness: 0.5, lift: 0.2 } as const;
+
+/**
+ * The grass (or a chosen island's ground) on the plateau. Its foot follows its waist rather than
+ * taking its own crags: a foot jutting out past the waist would lie almost flat along the cliff top
+ * it sinks into, and the two would flicker against each other as the camera moves.
+ */
+export function grassSlab(radius: number, seed: number): BufferGeometry {
+  return craggyCylinder(radius, GRASS_SLAB.thickness, seed, GRASS_FLARE, SHORE_POINTS, true);
+}
+
+/** Irregular low-poly cylinder: flat top, craggy sides, wider at the waterline (`plumbFoot`: the foot keeps the waist's crags). */
+export function craggyCylinder(radius: number, height: number, seed: number, flare: number, sides = SHORE_POINTS, plumbFoot = false): BufferGeometry {
   const geometry = new CylinderGeometry(radius, radius * flare, height, sides, 2);
   const position = geometry.attributes.position!;
   for (let i = 0; i < position.count; i++) {
@@ -33,7 +47,7 @@ export function craggyCylinder(radius: number, height: number, seed: number, fla
     if (x === 0 && z === 0) continue;
     const angle = Math.atan2(z, x);
     const layer = Math.round((y / height + 0.5) * 2);
-    const scale = 0.82 + jitter(seed, angle, layer) * 0.3;
+    const scale = 0.82 + jitter(seed, angle, plumbFoot && layer === 0 ? 1 : layer) * 0.3;
     position.setXYZ(i, x * scale, y + (layer === 1 ? (jitter(seed, angle, 9) - 0.5) * height * 0.3 : 0), z * scale);
   }
   geometry.computeVertexNormals();

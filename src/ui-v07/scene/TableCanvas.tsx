@@ -250,6 +250,9 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
           shadow-camera-right={80}
           shadow-camera-top={80}
           shadow-camera-bottom={-80}
+          // Without a bias, flat floors shadow themselves in fine stripes (shadow acne) that flicker along their edges as the camera moves.
+          shadow-bias={-0.0004}
+          shadow-normalBias={0.04}
         />
         <SwellProvider target={look.swell}>
           <Suspense fallback={null}>

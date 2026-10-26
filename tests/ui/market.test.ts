@@ -78,6 +78,18 @@ describe('market island model', () => {
     }
   });
 
+  it('lays each terrace floor flat, so the wall above sits right on it with no sliver to flicker in', () => {
+    const copings = parts.filter((part) => part.kind === 'loft' && part.mat === 'stone');
+    expect(copings).toHaveLength(3);
+    for (const coping of copings) {
+      const points = partFaces(coping).flatMap((f) => f.points);
+      const top = Math.max(...points.map((p) => p[1]));
+      const reach = (ring: Vec3[]): number => Math.max(...ring.map((p) => Math.hypot(p[0], p[2])));
+      const [upper, lower] = [points.filter((p) => p[1] === top), points.filter((p) => p[1] !== top)];
+      expect(reach(upper)).toBeCloseTo(reach(lower), 6);
+    }
+  });
+
   it('rises above the tallest asset building without towering over the table', () => {
     const top = bounds(parts).max[1] * MARKET_SCALE;
     const tallest = Math.max(...Object.values(BUILDING_DESIGNS).map((d) => bounds(d.parts).max[1] * ASSET_BUILDING_SCALE));

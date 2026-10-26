@@ -44,7 +44,7 @@ const turned = spinPoint;
 function terraces(): P[] {
   return TIERS.flatMap((apothem, i): P[] => [
     { kind: 'loft', base: [0, floorOf(i), 0], outline: OCTAGON, height: TIER_HEIGHT, bottom: apothem, top: apothem * BATTER, mat: 'sandstone' },
-    { kind: 'loft', base: [0, floorOf(i) + TIER_HEIGHT, 0], outline: OCTAGON, height: COPING, bottom: edgeOf(i), mat: 'stone' },
+    { kind: 'loft', base: [0, floorOf(i) + TIER_HEIGHT, 0], outline: OCTAGON, height: COPING, bottom: edgeOf(i), top: edgeOf(i), mat: 'stone' },
   ]);
 }
 
