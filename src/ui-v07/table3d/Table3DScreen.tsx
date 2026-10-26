@@ -214,6 +214,10 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   // keeps the step's chips (SealSubmit), and the next decision or the round's show replaces them.
   const sealable = useRef<ReactNode>(null);
   const [sealed, setSealed] = useState<ReactNode>(null);
+  // Only the visible seat's own cargo (§4); hidden between hot-seat turns.
+  const loaded = viewer ? snap.privateEvents.filter((e) => e.type === 'cargo-loaded' && e.playerId === viewer && e.round === board.round) : [];
+  const lastLoaded = loaded[loaded.length - 1];
+  const cargoNow = lastLoaded?.type === 'cargo-loaded' ? lastLoaded.cargo : NO_GOODS;
   const env: StageEnv | null =
     free && !moments.blocking && request && viewer && (phase === 'invest' || phase === 'role-deployment')
       ? {
@@ -224,6 +228,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
           laneOf,
           viewer,
           nameOf,
+          cargo: cargoNow,
           submit: (a: Action) => {
             setSealed(sealable.current);
             // The wax seal is pressed as the decision is actually sent (not when the reminder holds it back).
@@ -257,10 +262,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     weather: board.voyageEvent,
     arrived: board.ships.filter((s) => stateOf(s.id) === 'arrived').map((s) => ({ shipId: s.id, owner: s.owner, angle: angles[laneOf(s.owner)]! })),
   });
-  // Only the visible seat's own cargo (§4); hidden between hot-seat turns.
-  const loaded = viewer ? snap.privateEvents.filter((e) => e.type === 'cargo-loaded' && e.playerId === viewer && e.round === board.round) : [];
-  const lastLoaded = loaded[loaded.length - 1];
-  const myCargo = lastLoaded?.type === 'cargo-loaded' ? lastLoaded.cargo : NO_GOODS;
+  const myCargo = cargoNow;
 
   const waiting = new Set(snap.waitingOn);
   const deciding = !holding && snap.status === 'running' && board.round > 0;

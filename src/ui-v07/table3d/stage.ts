@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Action, PlayerId, ShipId } from '../../v07/game';
+import type { Action, Goods, PlayerId, ShipId } from '../../v07/game';
 import type { FitPoint } from '../../ui/scene/CameraRig';
 import type { BeatSeat } from '../scene/beatStage';
 import type { TablePin, TableShip } from '../scene/TableCanvas';
@@ -20,6 +20,8 @@ export interface StageEnv {
   readonly viewer: PlayerId;
   readonly nameOf: (id: PlayerId) => string;
   readonly submit: (action: Action) => void;
+  /** What this round's own ship carries (private to the viewer; all zero before it is loaded). */
+  readonly cargo?: Goods;
   /** Told the action the current choice would submit (null while it is not a legal one yet). */
   readonly onDraft?: (action: Action | null) => void;
 }

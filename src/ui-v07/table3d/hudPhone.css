@@ -629,3 +629,33 @@
     flex: none;
   }
 }
+
+/* The goods on your own ship, while deploying: the bar's cargo chip, and a gold ring on those goods' market tags. */
+.inv-market .inv-chip.aboard .good-ic {
+  outline: 2px solid #e0a63c;
+  outline-offset: 1px;
+}
+.dep-strip header .cargo {
+  margin-left: auto;
+}
+:root:root:root .dep-strip.idle header::after {
+  content: none;
+}
+.dep-bets .dep-bet.aboard {
+  position: relative;
+}
+/* A small 「船上」 flag on the goods your own ship carries (the whole list breathes gold while a bet is due, so a ring alone would not stand out). */
+.dep-bets .dep-bet.aboard::after {
+  content: '船上';
+  position: absolute;
+  top: -7px;
+  right: 8px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #2b2116;
+  color: #ffd98a;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+  pointer-events: none;
+}

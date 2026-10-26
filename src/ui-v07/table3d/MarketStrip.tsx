@@ -12,6 +12,8 @@ export interface BetControls {
   readonly chosen: Bet | null;
   /** Still to choose: the buttons breathe gold. */
   readonly todo: boolean;
+  /** Goods your own ship carries: their tags are ringed, so you remember what you may bet on. */
+  readonly aboard?: ReadonlySet<GoodId>;
   readonly onBet: (bet: Bet) => void;
 }
 
@@ -38,7 +40,7 @@ export function MarketStrip({
     <div ref={ref} data-focus="market" className={`inv-market ${bets ? 'betting' : ''} ${dimmed && !bets ? 'dimmed' : ''}`}>
       <b title="黑市：價格（G）與需求量">黑市</b>
       {GOODS.map((g) => (
-        <span key={`${g}-${changed?.has(g) ? 'new' : 'old'}`} data-focus={`price-${g}`} className={`inv-chip good-${g} ${changed?.has(g) ? 'flash' : ''}`}>
+        <span key={`${g}-${changed?.has(g) ? 'new' : 'old'}`} data-focus={`price-${g}`} className={`inv-chip good-${g} ${changed?.has(g) ? 'flash' : ''} ${bets?.aboard?.has(g) ? 'aboard' : ''}`} {...(bets?.aboard?.has(g) ? { title: '你的船上有這個貨' } : {})}>
           <span className="inv-line">
             <GoodIcon good={g} size="sm" /> <span className="inv-name">{GOOD_LABELS[g]}</span> <b>{stepLabel(g, (prices ?? board.prices)[g])}</b>{' '}
             <span className="need" title={`需求 ${board.demand[g]}`}>

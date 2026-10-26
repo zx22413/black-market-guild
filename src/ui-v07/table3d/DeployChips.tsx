@@ -1,8 +1,8 @@
-import type { Bet, RoleId } from '../../v07/game';
+import { GOODS, type Bet, type Goods, type RoleId } from '../../v07/game';
 import { ROLE_LABELS } from '../labels';
 import { betLabel, type RolePick } from '../table/deployChoice';
-import { GoodIcon } from './GoodIcon';
-import { ArrowIcon, IconDisc, TrendIcon } from './icons';
+import { GoodCount, GoodIcon } from './GoodIcon';
+import { ArrowIcon, IconDisc, TrendIcon, tokenIconUrl } from './icons';
 import { roleIconUrl } from './RoleBadges';
 
 // What is being sent where, as two chips with an arrow between: [role] ▸ [whose ship]. A slot not
@@ -55,5 +55,24 @@ export function DeployChips({ role, bet, needsShip, target }: DeployChipsProps) 
         </>
       )}
     </>
+  );
+}
+
+/** What your own ship carries, so a smuggler remembers whether there is arms aboard and a broker which good to bet on. */
+export function CargoChip({ cargo }: { readonly cargo: Goods }) {
+  const aboard = GOODS.filter((g) => cargo[g] > 0);
+  return (
+    <span className="chip cargo" title="你的船上裝的貨">
+      <IconDisc src={tokenIconUrl('ship')} />
+      {aboard.length === 0 ? (
+        '空船'
+      ) : (
+        <>
+          {aboard.map((g) => (
+            <GoodCount key={g} good={g} count={cargo[g]} size="sm" />
+          ))}
+        </>
+      )}
+    </span>
   );
 }

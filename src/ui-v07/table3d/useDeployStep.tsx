@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollText } from './ScrollText';
-import type { Bet, ShipId } from '../../v07/game';
+import { GOODS, type Bet, type GoodId, type Goods, type ShipId } from '../../v07/game';
 import { soundEngine } from '../audio/soundEngine';
 import { ROLE_LABELS } from '../labels';
 import { besideShip, type TablePin, type TableShip } from '../scene/TableCanvas';
@@ -24,7 +24,7 @@ import {
 import { ReminderDialog } from '../table/ReminderDialog';
 import { isReminderSkipped, setReminderSkipped } from '../table/reminderSettings';
 import { roleDetail } from '../table/roleText';
-import { DeployChips } from './DeployChips';
+import { CargoChip, DeployChips } from './DeployChips';
 import { ClockIcon, IconDisc, InfoIcon, tokenIconUrl, ForbidIcon } from './icons';
 import { InfoTip } from './InfoTip';
 import { LockHint } from './LockHint';
@@ -41,6 +41,7 @@ import { cardArtUrl } from './cardArt';
 // What is still needed breathes gold; the submit button says what is being submitted.
 
 const TAG_HEIGHT = 3;
+const NO_CARGO: Goods = { wood: 0, iron: 0, spice: 0, arms: 0 };
 
 export function useDeployStep(env: StageEnv | null): StageParts | null {
   const active = env?.request.context.decision.phase === 'role-deployment' ? env : null;
@@ -73,6 +74,8 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
 
   if (!active || !context) return null;
   const { board, seats, angles, laneOf, viewer, nameOf, submit: submitAction } = active;
+  const cargo = active.cargo ?? NO_CARGO;
+  const aboard: ReadonlySet<GoodId> = new Set(GOODS.filter((g) => cargo[g] > 0));
   const cards = roleCards(context, options);
   const aims = brokerAims(options, choice.bet);
   const todo = deployTodo(choice, aims);
@@ -140,6 +143,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
             side={ship.owner === viewer ? 1 : -1}
             chosen={choice.bet}
             todo={todo.bet}
+            aboard={ship.owner === viewer ? aboard : undefined}
             onBet={(bet) => pickBet(bet, ship.id)}
             onBack={() => clickShip(ship.id)}
           />
@@ -173,15 +177,24 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
 
   const shown = peek ?? choice.role;
   const shownCard = shown !== null && shown !== 'none' ? cards.find((c) => c.id === shown) : undefined;
-  // The description strip is only there while a role is pointed at or picked; it sits above the
-  // hand, so the hand itself never moves.
+  // The description strip sits above the hand, so the hand itself never moves: it describes the role pointed at or
+  // picked, else it shows the cargo alone.
   const strip =
-    shown === null ? null : (
+    shown === null ? (
+      // Nothing pointed at yet: the strip still says what your ship carries, so a smuggler or a broker is chosen knowing it.
+      <div className="dep-strip idle">
+        <header>
+          <b>你的船</b>
+          <CargoChip cargo={cargo} />
+        </header>
+      </div>
+    ) : (
       <div className={`dep-strip ${stripOpen ? 'open' : ''}`} aria-live="polite" onClick={() => setStripOpen((v) => !v)}>
         {shown === 'none' && (
           <>
             <header>
               <b>不部署</b>
+              <CargoChip cargo={cargo} />
             </header>
             <p>這回合不派角色，也不付部署費。</p>
           </>
@@ -198,6 +211,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
                 <ClockIcon />
                 {shownCard.cooldown}
               </span>
+              <CargoChip cargo={cargo} />
             </header>
             <ScrollText key={shown}>
               {shownCard.reason && <p className="why">{shownCard.reason}</p>}
@@ -282,7 +296,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     onSelectShip: clickShip,
     dim: true,
     // Bets that name no ship (nobody to name) are the only ones left on the market strip.
-    ...(broker && loose.length > 0 ? { bets: { offered: loose, chosen: choice.bet, todo: todo.bet && choice.target === null, onBet: (bet: Bet) => pickBet(bet, null) } } : {}),
+    ...(broker && loose.length > 0 ? { bets: { offered: loose, chosen: choice.bet, todo: todo.bet && choice.target === null, aboard, onBet: (bet: Bet) => pickBet(bet, null) } } : {}),
     scene:
       choice.role !== null && choice.role !== 'none' ? (
         <DashedArrows

@@ -34,13 +34,15 @@ export interface ShipBetsProps {
   readonly chosen: Bet | null;
   /** Still to choose: the buttons breathe gold. */
   readonly todo: boolean;
+  /** Goods your own ship carries (on your own ship's list): ringed, so you remember what you may bet on. */
+  readonly aboard?: ReadonlySet<GoodId> | undefined;
   readonly onBet: (bet: Bet) => void;
   readonly onBack: () => void;
 }
 
 const same = (a: Bet | null, b: Bet) => a !== null && a.good === b.good && a.direction === b.direction;
 
-export function ShipBets({ label, owner, rim, badge, offered, side, chosen, todo, onBet, onBack }: ShipBetsProps) {
+export function ShipBets({ label, owner, rim, badge, offered, side, chosen, todo, aboard, onBet, onBack }: ShipBetsProps) {
   const betOf = (good: GoodId): Bet => offered.find((b) => b.good === good) ?? { good, direction: side };
   const badgeRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState<Side>('up');
@@ -64,7 +66,8 @@ export function ShipBets({ label, owner, rim, badge, offered, side, chosen, todo
             <li key={good}>
               <button
                 type="button"
-                className={`dep-bet good-${good} ${on ? 'on' : ''} ${todo && can ? 'todo' : ''}`}
+                className={`dep-bet good-${good} ${on ? 'on' : ''} ${todo && can ? 'todo' : ''} ${aboard?.has(good) ? 'aboard' : ''}`}
+                {...(aboard?.has(good) ? { title: '你的船上有這個貨' } : {})}
                 disabled={!can}
                 data-bet={`${good}${bet.direction === 1 ? '+' : '-'}`}
                 data-done={on}
