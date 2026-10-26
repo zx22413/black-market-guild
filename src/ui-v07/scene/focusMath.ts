@@ -57,6 +57,16 @@ function fits(box: Box, width: number, height: number, safe: SafeArea): boolean 
 
 const clearanceCap = (height: number, safe: SafeArea): number => Math.max(0, height - safe.top - safe.bottom) * CLEARANCE_SHARE;
 
+/**
+ * Whether the box is no larger than the safe area. Where it sits does not matter here: the aim moves
+ * to centre it (`frame`). Testing the position too, with the aim fixed, can fail at every distance (a
+ * tall HUD above and a label's clearance in pixels that does not shrink with the camera's distance) and
+ * leave the camera at its farthest, over open sea.
+ */
+function fitsSize(box: Box, width: number, height: number, safe: SafeArea): boolean {
+  return box.maxX - box.minX <= width - safe.left - safe.right && box.maxY - box.minY <= height - safe.top - safe.bottom;
+}
+
 /** Smallest distance at which every point fits, aiming at (x, z), by bisection. */
 function closestDistance(camera: PerspectiveCamera, points: readonly FitPoint[], width: number, height: number, safe: SafeArea, x: number, z: number): number {
   const maxClearance = clearanceCap(height, safe);
@@ -65,7 +75,7 @@ function closestDistance(camera: PerspectiveCamera, points: readonly FitPoint[],
   for (let i = 0; i < 26; i++) {
     const mid = (near + far) / 2;
     placeCamera(camera, { x, z, distance: mid });
-    if (fits(screenBox(camera, points, width, height, maxClearance), width, height, safe)) far = mid;
+    if (fitsSize(screenBox(camera, points, width, height, maxClearance), width, height, safe)) far = mid;
     else near = mid;
   }
   return far;
@@ -91,6 +101,12 @@ export function frame(camera: PerspectiveCamera, points: readonly FitPoint[], wi
     z += ((box.minY + box.maxY) / 2 - (safe.top + height - safe.bottom) / 2) * (perPx / tilt);
   }
   distance = closestDistance(camera, points, width, height, safe, x, z);
+  // The aim moved the box a little in perspective: back off a few percent until it sits inside.
+  for (let i = 0; i < 12; i++) {
+    placeCamera(camera, { x, z, distance });
+    if (fits(screenBox(camera, points, width, height, clearanceCap(height, safe)), width, height, safe)) break;
+    distance *= 1.02;
+  }
   const result = { x, z, distance };
   placeCamera(camera, result);
   return result;
