@@ -267,17 +267,17 @@
     padding: 8px 8px;
   }
   :root:root:root .market-card table {
-    font-size: 13px;
+    font-size: 12px;
   }
   :root:root:root .market-card th,
   :root:root:root .market-card td {
-    padding: 3px 4px;
+    padding: 3px 3px;
   }
   :root:root:root .market-card .broker {
     display: block;
   }
   :root:root:root .mk-scale {
-    width: 96px;
+    width: 70px;
   }
 }
 
@@ -295,14 +295,14 @@
 }
 
 /*
- * Everyone's islands (IslandReveal): tapping a card shows its rule text as a slip laid over the
+ * The island draft and everyone's islands (IslandDraft.tsx): tapping a card shows its rule text as a slip laid over the
  * card's lower part instead of under it, so the 2×2 grid never gets pushed apart.
  */
 @media (max-width: 640px) {
-  :root:root:root .isle-reveal .isle-holder {
+  :root:root:root .isle-deal .isle-holder {
     position: relative;
   }
-  :root:root:root .isle-reveal .isle-full {
+  :root:root:root .isle-deal .isle-full {
     position: absolute;
     right: -6px;
     bottom: -6px;
@@ -443,5 +443,45 @@
   }
   :root:root:root .event-card p {
     font-size: 14px;
+  }
+}
+
+/* A short phone: the four island cards of the reveal shrink with the window's height so 「開始」 stays on screen. */
+@media (max-width: 640px) and (max-height: 720px) {
+  :root:root:root .isle-holder:has(.small),
+  :root:root:root .isle-card.small {
+    --w: min(190px, calc((100vw - 60px) / 2), 21vh);
+  }
+}
+
+/* The narrowest phones (375 and under): the bar's three chips try to share one row, and the ship note drops clear of the plate above it. */
+@media (max-width: 400px) {
+  :root:root:root .inv-bar {
+    padding-right: 30px;
+    padding-left: 30px;
+  }
+  :root:root:root .inv-bar .bar-chips {
+    gap: 4px;
+  }
+  :root:root:root .inv-bar .bar-chips .chip {
+    gap: 3px;
+    font-size: 12px;
+  }
+  :root:root:root .beat3d-pin > .inv-note.side-right {
+    transform: translate(10px, calc(-50% + 30px));
+  }
+}
+
+/* A short phone: the event card is smaller again, so the tutorial's host card (top or bottom) fits beside it. */
+@media (max-width: 640px) and (max-height: 700px) {
+  :root:root:root .event-card {
+    width: min(220px, 100%);
+    padding: 10px 12px 10px;
+  }
+  :root:root:root .event-card strong {
+    font-size: 20px;
+  }
+  :root:root:root .event-card p {
+    font-size: 13px;
   }
 }

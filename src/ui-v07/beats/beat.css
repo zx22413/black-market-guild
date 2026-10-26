@@ -1992,7 +1992,7 @@ button.inv-stack:hover {
   background: rgb(245 236 212 / 0.98);
   color: #2b2116;
   box-shadow: 0 8px 20px rgb(0 0 0 / 0.3);
-  transform: translateX(-50%);
+  transform: translateX(calc(-50% + var(--tip-dx, 0px)));
   pointer-events: none;
 }
 .island-tip .draft-pro,

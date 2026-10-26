@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { IslandId, PlayerId } from '../../v07/game';
 import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
 import { MARKET_GROUND } from '../../ui/scene/marketDocks';
@@ -14,6 +14,8 @@ import { IslandIcon } from './IslandIcon';
 
 /** About how tall the tip is: it opens below the badge when there is not this much room above it. */
 const TIP_ROOM = 230;
+/** Room kept between the tip and the screen's sides, in px. */
+const TIP_EDGE = 8;
 
 /**
  * Whether the tip should open below the badge: above it would run under the market strip at the top
@@ -31,7 +33,21 @@ function TableBadge({ name, tip }: { readonly name: ReactNode; readonly tip: Rea
   const [open, setOpen] = useState(false);
   const [below, setBelow] = useState(false);
   const self = useRef<HTMLSpanElement>(null);
-  const place = () => setBelow(opensBelow(self.current));
+  const tipBox = useRef<HTMLSpanElement>(null);
+  // How far the tip is shifted sideways to stay inside the screen (a badge near an edge, a phone's width).
+  const [dx, setDx] = useState(0);
+  const place = () => {
+    setBelow(opensBelow(self.current));
+    requestAnimationFrame(() => {
+      const r = tipBox.current?.getBoundingClientRect();
+      if (!r || r.width === 0) return;
+      setDx((was) => {
+        const home = r.left - was;
+        const wanted = Math.min(Math.max(TIP_EDGE, home), Math.max(TIP_EDGE, window.innerWidth - TIP_EDGE - r.width));
+        return Math.round(wanted - home);
+      });
+    });
+  };
   useEffect(() => {
     if (!open) return;
     const close = (e: PointerEvent) => {
@@ -53,7 +69,7 @@ function TableBadge({ name, tip }: { readonly name: ReactNode; readonly tip: Rea
       >
         {name}
       </button>
-      <span className="island-tip" role="tooltip">
+      <span ref={tipBox} className="island-tip" role="tooltip" style={{ '--tip-dx': `${dx}px` } as CSSProperties}>
         {tip}
       </span>
     </span>
