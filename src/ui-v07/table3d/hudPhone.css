@@ -373,13 +373,18 @@
 @media (max-width: 640px) {
   :root:root:root .inv-bar {
     position: fixed;
-    padding-right: 36px;
-    padding-left: 36px;
+    padding-right: 44px;
+    padding-left: 44px;
   }
+  /* The ⓘ lives in the bar's side padding (the same width on both sides, so the seal stays centred), clear of the buttons. */
   :root:root:root .inv-bar > .bar-lock-wrap {
     position: absolute;
-    right: 14px;
+    right: 6px;
     bottom: 12px;
+  }
+  :root:root:root .inv-bar button.bar-lock {
+    min-width: 30px;
+    min-height: 30px;
   }
 }
 
@@ -511,8 +516,14 @@
 /* The narrowest phones (375 and under): the bar's three chips try to share one row, and the ship note drops clear of the plate above it. */
 @media (max-width: 400px) {
   :root:root:root .inv-bar {
-    padding-right: 30px;
-    padding-left: 30px;
+    padding-right: 38px;
+    padding-left: 38px;
+  }
+  :root:root:root .inv-bar > .bar-lock-wrap {
+    right: 2px;
+  }
+  :root:root:root .inv-bar button.bar-lock {
+    min-width: 28px;
   }
   :root:root:root .inv-bar .bar-chips {
     gap: 4px;
