@@ -60,6 +60,8 @@ export interface TablePin {
   readonly hidden?: boolean;
   /** Keep the whole label on screen, pushed in from an edge it would run past (a wide card such as the market's). */
   readonly clamp?: boolean;
+  /** On a phone-wide screen hang the label below its point instead of above it, off the model it stands before (a plate on the island's front rim). */
+  readonly drop?: boolean;
   /** Ease toward the position instead of jumping, for a label that follows something that glides (a pushed ship). */
   readonly glide?: boolean;
 }
@@ -147,6 +149,12 @@ export function islandPoint(angle: number, local: Vec3): Vec3 {
   return [hx + x * Math.cos(h) + z * Math.sin(h), ISLAND_PLATEAU + y, hz - x * Math.sin(h) + z * Math.cos(h)];
 }
 
+/** The CSS breakpoint of the phone layout (hudPhone.css). */
+const PHONE_WIDTH = 640;
+/** A side note's gap from its point (the CSS translate) and its room from the screen edge, in px. */
+const SIDE_GAP = 10;
+const SIDE_MARGIN = 8;
+
 function PinTracker({ pins, elements }: { readonly pins: readonly TablePin[]; readonly elements: RefObject<Map<string, HTMLElement>> }) {
   const camera = useThree((s) => s.camera);
   const { width, height } = useThree((s) => s.size);
@@ -166,7 +174,17 @@ function PinTracker({ pins, elements }: { readonly pins: readonly TablePin[]; re
         eased.current.set(pin.id, [x, y]);
       }
       const box = pin.clamp ? (el.firstElementChild as HTMLElement | null) : null;
-      if (box) [x, y] = clampPin(x, y, box.offsetWidth, box.offsetHeight, width, height);
+      const below = pin.drop === true && width <= PHONE_WIDTH;
+      el.classList.toggle('below', below);
+      if (box && below) {
+        // Hung below its point, the label's bottom edge is a height further down: clamp that edge, then lift back to the top.
+        const [cx, bottom] = clampPin(x, y + box.offsetHeight, box.offsetWidth, box.offsetHeight, width, height);
+        [x, y] = [cx, bottom - box.offsetHeight];
+      } else if (box) [x, y] = clampPin(x, y, box.offsetWidth, box.offsetHeight, width, height);
+      // A note hung beside its point (inv-note side-left / side-right) is pushed in from the screen edge it would run past.
+      const side = el.firstElementChild as HTMLElement | null;
+      if (side?.classList.contains('side-left')) x += Math.max(0, SIDE_MARGIN - (x - SIDE_GAP - side.offsetWidth));
+      else if (side?.classList.contains('side-right')) x -= Math.max(0, x + SIDE_GAP + side.offsetWidth - (width - SIDE_MARGIN));
       el.style.transform = `translate(${x}px, ${y}px)`;
     }
   });

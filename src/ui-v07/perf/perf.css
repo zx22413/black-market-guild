@@ -1,0 +1,48 @@
+/* On-device perf panel (?perf=1) and the CSS switches it flips. */
+.perf-panel {
+  position: fixed;
+  left: 6px;
+  bottom: calc(6px + env(safe-area-inset-bottom));
+  z-index: 9999;
+  max-width: min(340px, calc(100vw - 12px));
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgb(0 0 0 / 0.78);
+  color: #d8f0d0;
+  font: 11px/1.4 ui-monospace, Menlo, monospace;
+  pointer-events: auto;
+}
+.perf-head {
+  all: unset;
+  display: block;
+  font-weight: 700;
+  cursor: pointer;
+}
+.perf-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+.perf-btn {
+  all: unset;
+  padding: 3px 7px;
+  border: 1px solid #5c7a5c;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.perf-btn.on {
+  background: #d8f0d0;
+  color: #102010;
+}
+
+/* Switches: whatever blurs what is behind it, and the decorative filters and shadows. */
+.perf-no-blur * {
+  backdrop-filter: none !important;
+}
+.perf-no-fx *:not(.perf-panel):not(.perf-panel *) {
+  filter: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}

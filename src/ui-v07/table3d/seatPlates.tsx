@@ -41,6 +41,8 @@ export function seatPlates(
     return {
       id: `seat-${s.id}`,
       position: platePosition(angles[i]!),
+      // The far island's plate hangs to its left (plate-left); the others stay on the screen and, on a phone, below the island's rim.
+      ...(isFarSeat(angles[i]!) ? {} : { clamp: true, drop: true }),
       node: island ? (
         <span className="plate-stack">
           <IslandBadge island={island} />

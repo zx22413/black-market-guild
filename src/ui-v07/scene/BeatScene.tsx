@@ -440,7 +440,7 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, set
       ),
     pins: [
       // The tag follows where a push carries the ship, so its pointer keeps aiming at the hull.
-      { id: `tag-${beat.shipId}`, position: [shipAt.x + Math.sin(focusPose.heading) * kept.after.forward, TAG_HEIGHT, shipAt.z - TAG_BACK + Math.cos(focusPose.heading) * kept.after.forward], glide: true, node: tag, hidden: !(framing === 'ship' && view.showStart) },
+      { id: `tag-${beat.shipId}`, position: [shipAt.x + Math.sin(focusPose.heading) * kept.after.forward, TAG_HEIGHT, shipAt.z - TAG_BACK + Math.cos(focusPose.heading) * kept.after.forward], glide: true, clamp: true, node: tag, hidden: !(framing === 'ship' && view.showStart) },
       // A big word at the moment of impact, so what hit the ship is unmistakable.
       ...(hit && HIT_WORD[hit.kind]
         ? [{ id: `hit-${beat.shipId}-${hit.key}`, position: [p.x, 5, p.z] as const, node: (

@@ -217,3 +217,56 @@
     font-size: 11px;
   }
 }
+
+/* The market beat's card and the arrival tag stay inside the screen's width. */
+@media (max-width: 640px) {
+  :root:root:root .market-card {
+    min-width: 0;
+    max-width: calc(100vw - 16px);
+    padding: 8px 8px;
+  }
+  :root:root:root .market-card table {
+    font-size: 13px;
+  }
+  :root:root:root .market-card th,
+  :root:root:root .market-card td {
+    padding: 3px 4px;
+  }
+  :root:root:root .market-card .broker {
+    display: block;
+  }
+  :root:root:root .mk-scale {
+    width: 96px;
+  }
+}
+
+/* The warehouse and ship notes beside the stacks are narrow, so they wrap instead of running past the screen's edge. */
+@media (max-width: 640px) {
+  :root:root:root .inv-note {
+    max-width: 150px;
+    padding: 5px 8px;
+    font-size: 13px;
+  }
+  /* Clear of the plate that now hangs under the island next to it. */
+  :root:root:root .beat3d-pin > .inv-note.side-right {
+    transform: translate(10px, calc(-50% + 18px));
+  }
+}
+
+/*
+ * Everyone's islands (IslandReveal): tapping a card shows its rule text as a slip laid over the
+ * card's lower part instead of under it, so the 2×2 grid never gets pushed apart.
+ */
+@media (max-width: 640px) {
+  :root:root:root .isle-reveal .isle-holder {
+    position: relative;
+  }
+  :root:root:root .isle-reveal .isle-full {
+    position: absolute;
+    right: -6px;
+    bottom: -6px;
+    left: -6px;
+    z-index: 5;
+    width: auto;
+  }
+}

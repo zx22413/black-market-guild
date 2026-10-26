@@ -621,6 +621,9 @@
 .beat3d-pin > * {
   transform: translate(-50%, -100%);
 }
+.beat3d-pin.below > * {
+  transform: translate(-50%, 4px);
+}
 .beat3d-pin.hidden {
   visibility: hidden;
 }
