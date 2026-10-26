@@ -485,3 +485,29 @@
     font-size: 13px;
   }
 }
+
+/*
+ * The narrowest phones, while a broker bets: each price tag is one line (price and the two bets), so the
+ * market strip is two lines tall instead of four. The good's name and its demand make way (the icon says
+ * which good; the demand is on the tag's tooltip and returns when the betting is over).
+ */
+@media (max-width: 399px) {
+  :root:root:root .inv-market.betting {
+    grid-template-columns: 1fr 1fr;
+  }
+  :root:root:root .inv-market.betting > b {
+    display: none;
+  }
+  :root:root:root .inv-market.betting .inv-chip {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+  :root:root:root .inv-market.betting .inv-name,
+  :root:root:root .inv-market.betting .inv-line .need {
+    display: none;
+  }
+  :root:root:root .inv-market.betting .bet {
+    padding: 2px 5px;
+    font-size: 12px;
+  }
+}

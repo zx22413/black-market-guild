@@ -64,6 +64,8 @@ const TAG_BACK = 2;
 const ACTOR_TAG_HEIGHT = 3.2;
 /** The close-up shows this much sea around the ship: room for the pirates and guards beside it. */
 const CLOSE_UP_RADIUS = 15;
+/** On a phone-wide screen the close-up is tighter: the ship fills the free space instead of sharing it with the islands around it. */
+const CLOSE_UP_RADIUS_PHONE = 8;
 /** Room kept round the lighthouse's lamp while its beam is on the ship, so its glow is not cut off. */
 const LAMP_ROOM = 4;
 /** Pixels kept above the lamp for its glow. */
@@ -406,6 +408,7 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, set
     ...(raid ? around(raid.path[0]!, LAMP_ROOM) : []),
     ...(barrage ? [{ position: barrage.fort, clearance: LAMP_CLEARANCE }] : []),
   ];
+  const closeUp = typeof window !== 'undefined' && window.innerWidth <= 640 ? CLOSE_UP_RADIUS_PHONE : CLOSE_UP_RADIUS;
   const p = focusPose.position;
   // The tag goes where the ship is: pushed on during the steps, then in port once it arrives.
   const shipAt = view.showOutcome && beat.outcome !== 'sank' ? shipPose(angles[focusLane]!, 'arrived').position : p;
@@ -426,7 +429,7 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, set
   return {
     camera:
       framing === 'ship'
-        ? [...around([p.x, 0, p.z], CLOSE_UP_RADIUS), ...(shipAt === p ? [] : around([shipAt.x, 0, shipAt.z], CLOSE_UP_RADIUS / 2)), { position: [shipAt.x, TAG_HEIGHT, shipAt.z - TAG_BACK] as const, clearance: TAG_CLEARANCE }, ...sources]
+        ? [...around([p.x, 0, p.z], closeUp), ...(shipAt === p ? [] : around([shipAt.x, 0, shipAt.z], closeUp / 2)), { position: [shipAt.x, TAG_HEIGHT, shipAt.z - TAG_BACK] as const, clearance: TAG_CLEARANCE }, ...sources]
         : null,
     ringed: framing === 'ship' ? involved(beat) : new Set(),
     focusState: view.showOutcome ? (beat.outcome === 'sank' ? 'sunk' : 'arrived') : 'sailing',

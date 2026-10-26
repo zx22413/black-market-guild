@@ -113,7 +113,9 @@ export function overviewPoints(angles: readonly number[], islands: readonly (Isl
     const top = backdropTop(islands[i] ?? null, playerIslandHeading(a));
     return top ? [{ position: islandPoint(a, top) }] : [];
   });
-  return [...around([0, 0, 0], TARGET_ISLAND_RADIUS), ...angles.flatMap((a) => around(seatPosition(a), PLAYER_ISLAND_RADIUS + 1.5)), ...tops];
+  // On a phone the plates hang under their islands (a plate's height is roughly 3 units of table), so the lowest one is framed too.
+  const plates = typeof window !== 'undefined' && window.innerWidth <= PHONE_WIDTH ? angles.map((a): FitPoint => ({ position: [platePosition(a)[0], 0, platePosition(a)[2] + PLATE_DROP] })) : [];
+  return [...around([0, 0, 0], TARGET_ISLAND_RADIUS), ...angles.flatMap((a) => around(seatPosition(a), PLAYER_ISLAND_RADIUS + 1.5)), ...tops, ...plates];
 }
 
 /**
@@ -153,6 +155,8 @@ export function islandPoint(angle: number, local: Vec3): Vec3 {
 
 /** The CSS breakpoint of the phone layout (hudPhone.css). */
 const PHONE_WIDTH = 640;
+/** How far under its anchor a plate hung below an island reaches, in table units. */
+const PLATE_DROP = 3;
 /** A side note's gap from its point (the CSS translate) and its room from the screen edge, in px. */
 const SIDE_GAP = 10;
 const SIDE_MARGIN = 8;
