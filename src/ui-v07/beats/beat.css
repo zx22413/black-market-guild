@@ -1782,10 +1782,27 @@ button.inv-stack:hover {
 @media (max-width: 640px) {
   .result-row {
     grid-template-columns: 28px 1fr auto;
+    grid-template-areas:
+      'rank name wealth'
+      'sum sum sum';
+    gap: 4px 10px;
+    padding: 8px 12px;
+  }
+  .result-rank {
+    grid-area: rank;
+  }
+  .result-name {
+    grid-area: name;
+  }
+  .result-wealth {
+    grid-area: wealth;
   }
   .result-sum {
-    grid-column: 2 / -1;
+    grid-area: sum;
   }
+}
+.result-wealth {
+  white-space: nowrap;
 }
 /* A price that just changed in the market beat flashes once on the strip. */
 @keyframes price-flash {

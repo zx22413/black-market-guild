@@ -7,14 +7,27 @@ import type { SafeArea } from '../../ui/scene/CameraRig';
 
 const GAP = 12;
 const SIDE = 24;
+/**
+ * The camera keeps at least this share of the window height to frame the table in. When the HUD
+ * leaves less (a tall hand plus a long description on a short phone), the HUD may overlap the sea's
+ * outskirts instead: shrinking the safe area further would back the camera off until the islands
+ * are specks that cannot be tapped.
+ */
+const MIN_FREE_SHARE = 0.3;
 
 function measure(top: readonly RefObject<HTMLElement | null>[], bottom: readonly RefObject<HTMLElement | null>[]): SafeArea {
   const h = window.innerHeight;
   const tops = top.flatMap((r) => (r.current ? [r.current.getBoundingClientRect().bottom] : []));
   const bottoms = bottom.flatMap((r) => (r.current ? [r.current.getBoundingClientRect().top] : []));
+  const above = Math.max(GAP, ...tops.map((y) => y + GAP));
+  const below = Math.max(GAP, ...bottoms.map((y) => h - y + GAP));
+  document.documentElement.style.setProperty('--hud-top', `${Math.round(above - GAP)}px`);
+  const overflow = above + below - h * (1 - MIN_FREE_SHARE);
+  // Give the overflow back in proportion to what each side holds (but never below the gap).
+  const give = overflow > 0 ? overflow / (above + below) : 0;
   return {
-    top: Math.max(GAP, ...tops.map((y) => y + GAP)),
-    bottom: Math.max(GAP, ...bottoms.map((y) => h - y + GAP)),
+    top: Math.max(GAP, Math.round(above * (1 - give))),
+    bottom: Math.max(GAP, Math.round(below * (1 - give))),
     left: SIDE,
     right: SIDE,
   };

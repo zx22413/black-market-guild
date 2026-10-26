@@ -1,0 +1,219 @@
+/*
+ * The top HUD on a phone held upright (src/ui-v07/table3d/Table3DScreen.tsx, MarketStrip.tsx).
+ * Row 1 is one line: the weather chip on the left, the round, the standings and the buttons on the
+ * right. Row 2 is the market as a 2×2 block of price tags; while a broker is being deployed each tag
+ * opens a second line with its 漲／跌 buttons, so the strip stays two tags tall instead of four rows.
+ * The selectors are tripled (:root:root:root) so they win over the skin layer without depending on
+ * which stylesheet loads last.
+ */
+.inv-line,
+.inv-bets {
+  display: contents;
+}
+@media (max-width: 640px) {
+  :root:root:root .t3-menu {
+    top: max(8px, env(safe-area-inset-top));
+    right: 8px;
+    left: 8px;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    max-width: none;
+    gap: 4px;
+  }
+  :root:root:root .t3-menu .t3-round {
+    padding: 3px 9px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  :root:root:root .t3-menu button,
+  :root:root:root .t3-menu .rank-fold {
+    min-width: 32px;
+    min-height: 30px;
+    padding: 3px 7px;
+    white-space: nowrap;
+  }
+  :root:root:root .t3-menu .rank-fold {
+    position: static;
+    font-size: 13px;
+  }
+  :root:root:root .event-chip {
+    top: max(8px, env(safe-area-inset-top));
+    left: 8px;
+    padding: 3px 9px 3px 6px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  :root:root:root .inv-market {
+    top: calc(max(8px, env(safe-area-inset-top)) + 42px);
+    right: 8px;
+    left: 8px;
+    display: grid;
+    grid-template-columns: auto 1fr 1fr;
+    gap: 5px 6px;
+    align-items: stretch;
+    width: auto;
+    max-width: none;
+    padding: 6px 8px;
+    transform: none;
+  }
+  :root:root:root .inv-market > b {
+    grid-row: span 2;
+    align-self: center;
+    writing-mode: vertical-rl;
+    letter-spacing: 0.25em;
+    font-size: 13px;
+  }
+  :root:root:root .inv-market .inv-chip {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    white-space: nowrap;
+  }
+  :root:root:root .inv-market .inv-chip.wanted {
+    grid-column: 2 / -1;
+    text-align: center;
+  }
+  :root:root:root .inv-market .inv-line {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  :root:root:root .inv-market .inv-line .need {
+    margin-right: 6px;
+    margin-left: auto;
+  }
+  :root:root:root .inv-market .inv-bets {
+    display: flex;
+    gap: 6px;
+  }
+  :root:root:root .inv-market .bet {
+    flex: 1 0 auto;
+    min-height: 28px;
+    margin: 0;
+    padding: 2px 8px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  /* The standings open below the market, wherever its bottom edge is (useHudSafe sets --hud-top). */
+  :root:root:root .rank-rail {
+    top: calc(var(--hud-top, 124px) + 4px);
+    right: 8px;
+  }
+}
+@media (max-width: 380px) {
+  :root:root:root .event-chip b {
+    display: none;
+  }
+}
+
+/*
+ * The bottom of the table on a phone: the role description and the hand take less height, so the
+ * camera keeps room for the islands (the hand's own layout is reworked separately).
+ */
+@media (max-width: 640px) {
+  :root:root:root .dep-dock {
+    bottom: 92px;
+    gap: 4px;
+  }
+  :root:root:root .dep-strip {
+    min-height: 0;
+    padding: 6px 12px;
+  }
+  :root:root:root .dep-strip p {
+    margin-top: 2px;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  :root:root:root .dep-strip.idle p {
+    padding-top: 6px;
+  }
+}
+
+/* The hand: all six cards in one row, small, so nothing is off screen to scroll to. */
+@media (max-width: 640px) {
+  :root:root:root .dep-dock {
+    width: calc(100vw - 16px);
+  }
+  :root:root:root .dep-hand {
+    width: 100%;
+    gap: 4px;
+    overflow: visible;
+  }
+  :root:root:root .dep-card {
+    flex: 1 1 0;
+    gap: 2px;
+    width: auto;
+    min-width: 0;
+    height: auto;
+    padding: 4px 3px 5px;
+    border-radius: 8px;
+  }
+  :root:root:root .dep-card .dep-ic {
+    width: 100%;
+    height: 44px;
+    border-radius: 3px;
+  }
+  :root:root:root .dep-card .dep-ic img {
+    width: 100%;
+    height: 100%;
+  }
+  :root:root:root .dep-card b {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  :root:root:root .dep-card .dep-fee {
+    gap: 2px;
+    font-size: 12px;
+  }
+  :root:root:root .dep-card.on {
+    border-width: 3px;
+    outline-offset: -6px;
+    transform: translateY(-4px);
+  }
+  :root:root:root .dep-card-off {
+    top: 2px;
+    right: 2px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* The role description is two lines until it is tapped; the market's bets share the tag's line on wider phones. */
+@media (max-width: 640px) {
+  :root:root:root .dep-strip:not(.open) p:last-child {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+}
+/* A tag is about 190px wide from a 400px screen up: the bets fit beside the price. Narrower, they drop to a second line. */
+@media (min-width: 400px) and (max-width: 640px) {
+  :root:root:root .inv-market.betting .inv-chip {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+  /* The good's icon says which it is; the name makes way for the buttons. */
+  :root:root:root .inv-market.betting .inv-name {
+    display: none;
+  }
+}
+
+/* A short screen (an SE, or a phone under a browser's toolbars): the description is only its header until tapped, and the cards lose their art's height. */
+@media (max-width: 640px) and (max-height: 700px) {
+  :root:root:root .dep-strip:not(.open) p,
+  :root:root:root .dep-strip:not(.open) p:last-child {
+    display: none;
+  }
+  :root:root:root .dep-card .dep-ic {
+    height: 34px;
+  }
+  :root:root:root .inv-market .bet {
+    min-height: 24px;
+  }
+}
+@media (max-width: 380px) {
+  :root:root:root .dep-card b {
+    font-size: 11px;
+  }
+}

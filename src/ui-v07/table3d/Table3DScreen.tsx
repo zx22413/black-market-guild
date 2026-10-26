@@ -28,6 +28,7 @@ import { seatPlates } from './seatPlates';
 import type { StageEnv } from './stage';
 import { useDeployStep } from './useDeployStep';
 import { useHudSafe } from './useHudSafe';
+import './hudPhone.css';
 import { useInvestStep } from './useInvestStep';
 import { useIslandMoments } from './useIslandMoments';
 import { useRoundResolution } from './useRoundResolution';
@@ -374,18 +375,18 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
       </TableCanvas>
 
       <MarketStrip ref={marketRef} board={board} bets={step?.bets} prices={resolution.marketPrices} changed={resolution.changedGoods} />
-      {ready && board.round > 0 && (
-        <RankRail
-          seats={seats}
-          board={board}
-          rules={RULES_V07}
-          cashOf={(id) => (board.players[id]?.cash ?? 0) + (resolution.cashBonus[id] ?? 0)}
-          status={(id) => (deciding ? (waiting.has(id) ? '思考中' : '已決定') : '')}
-          rankStep={events.filter((e) => e.type === 'round-ended').length}
-        />
-      )}
       <div className="t3-menu">
         <span data-focus="round" className="t3-round">{board.round === 0 ? '選島' : `第 ${board.round}／${rounds} 回合`}</span>
+        {ready && board.round > 0 && (
+          <RankRail
+            seats={seats}
+            board={board}
+            rules={RULES_V07}
+            cashOf={(id) => (board.players[id]?.cash ?? 0) + (resolution.cashBonus[id] ?? 0)}
+            status={(id) => (deciding ? (waiting.has(id) ? '思考中' : '已決定') : '')}
+            rankStep={events.filter((e) => e.type === 'round-ended').length}
+          />
+        )}
         <button type="button" data-focus="rules" title="規則" aria-label="規則" aria-expanded={rulesOpen} onClick={() => setRulesOpen(true)}>
           <BookIcon />
         </button>

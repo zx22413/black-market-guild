@@ -39,12 +39,15 @@ export function MarketStrip({
       <b title="黑市：價格（G）與需求量">黑市</b>
       {GOODS.map((g) => (
         <span key={`${g}-${changed?.has(g) ? 'new' : 'old'}`} data-focus={`price-${g}`} className={`inv-chip good-${g} ${changed?.has(g) ? 'flash' : ''}`}>
-          <GoodIcon good={g} size="sm" /> {GOOD_LABELS[g]} <b>{stepLabel(g, (prices ?? board.prices)[g])}</b>{' '}
-          <span className="need" title={`需求 ${board.demand[g]}`}>
-            需{board.demand[g]}
+          <span className="inv-line">
+            <GoodIcon good={g} size="sm" /> <span className="inv-name">{GOOD_LABELS[g]}</span> <b>{stepLabel(g, (prices ?? board.prices)[g])}</b>{' '}
+            <span className="need" title={`需求 ${board.demand[g]}`}>
+              需{board.demand[g]}
+            </span>
           </span>
-          {bets &&
-            ([1, -1] as const).map((direction) => {
+          {bets && (
+            <span className="inv-bets">
+              {([1, -1] as const).map((direction) => {
               const bet = { good: g, direction };
               const offered = bets.offered.some((b) => same(b, bet));
               return (
@@ -62,6 +65,8 @@ export function MarketStrip({
                 </button>
               );
             })}
+            </span>
+          )}
         </span>
       ))}
       {board.wanted.length > 0 && <span className="inv-chip wanted">通緝中</span>}
