@@ -7,7 +7,7 @@ import { perfEnabled, publishMeasure } from './perfStore';
 
 /** How often the panel's numbers refresh, in ms. */
 const WINDOW_MS = 500;
-const ON = perfEnabled(window.location.search);
+const ON = typeof window !== 'undefined' && perfEnabled(window.location.search);
 const canvasSize = new Vector2();
 
 /**
