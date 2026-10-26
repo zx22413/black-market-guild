@@ -241,13 +241,67 @@
   }
 }
 
-/* A short screen (an SE, or a phone under a browser's toolbars): the manual page is two lines and the portraits are shorter. */
+/*
+ * A short screen (an SE, or a phone under a browser's toolbars): the role description is only its header
+ * line (with a ▾ to say there is more) until tapped; then it opens as a sheet over the table, above the
+ * hand, and a tap closes it. The portraits are shorter too.
+ */
 @media (max-width: 640px) and (max-height: 700px) {
-  :root:root:root .scroll-text {
-    max-height: 38px;
+  :root:root:root .dep-strip {
+    cursor: pointer;
+  }
+  :root:root:root .dep-strip header::after {
+    content: '▾ 說明';
+    margin-left: auto;
+    color: #8a4b12;
+    font-size: 12px;
+  }
+  :root:root:root .dep-strip.open header::after {
+    content: '▴ 收起';
+  }
+  :root:root:root .dep-strip:not(.open) .scroll-text-wrap,
+  :root:root:root .dep-strip:not(.open) > p {
+    display: none;
+  }
+  :root:root:root .dep-strip.open .scroll-text-wrap {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 6px);
+    left: 0;
+    z-index: 3;
+    padding: 8px 12px;
+    border-radius: 12px;
+    background: rgb(245 236 212 / 0.98);
+    box-shadow: 0 6px 18px rgb(0 0 0 / 0.35);
+  }
+  :root:root:root .dep-strip.open .scroll-text {
+    max-height: 120px;
+  }
+  /* Near-square cards: a short portrait window over a name-and-fee plate. */
+  :root:root:root .dep-card {
+    background: linear-gradient(0deg, #dcc994 0 30px, #f6ecd0 30px);
+  }
+  :root:root:root .dep-card.on {
+    background: linear-gradient(0deg, #f0c860 0 30px, #fff3c9 30px);
   }
   :root:root:root .dep-card .dep-ic {
-    height: 40px;
+    height: 34px;
+    margin-bottom: 2px;
+  }
+  :root:root:root .dep-card {
+    border-width: 2px;
+    outline-offset: -4px;
+  }
+  :root:root:root .dep-card b,
+  :root:root:root .dep-card .dep-fee {
+    height: 14px;
+    font-size: 11px;
+    line-height: 14px;
+  }
+  :root:root:root .dep-card .dep-fee .chip-ic,
+  :root:root:root .dep-card .dep-fee img {
+    width: 12px;
+    height: 12px;
   }
   :root:root:root .inv-market .bet {
     min-height: 24px;

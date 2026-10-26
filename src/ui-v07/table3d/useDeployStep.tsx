@@ -51,6 +51,8 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   const [reminding, setReminding] = useState<readonly string[] | null>(null);
   // The role card the pointer is on: the strip above the hand describes it (else the picked one).
   const [peek, setPeek] = useState<RolePick | null>(null);
+  // On a short phone the description is only its header line until tapped (hudPhone.css), then a sheet over the table.
+  const [stripOpen, setStripOpen] = useState(false);
 
   useEffect(() => {
     setChoice(EMPTY_DEPLOY);
@@ -173,7 +175,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   // hand, so the hand itself never moves.
   const strip =
     shown === null ? null : (
-      <div className="dep-strip" aria-live="polite">
+      <div className={`dep-strip ${stripOpen ? 'open' : ''}`} aria-live="polite" onClick={() => setStripOpen((v) => !v)}>
         {shown === 'none' && (
           <>
             <header>
