@@ -15,8 +15,8 @@ interface LockHintProps {
 export function LockHint({ text, icon = <LockIcon />, placement = 'up' }: LockHintProps) {
   const [open, setOpen] = useState(false);
   return (
-    <span className="bar-lock-wrap" onMouseLeave={() => setOpen(false)}>
-      <button type="button" className="bar-lock" aria-label={text} aria-expanded={open} onClick={() => setOpen((v) => !v)} onMouseEnter={() => setOpen(true)}>
+    <span className="bar-lock-wrap" onPointerLeave={(e) => e.pointerType === 'mouse' && setOpen(false)}>
+      <button type="button" className="bar-lock" aria-label={text} aria-expanded={open} onClick={() => setOpen((v) => !v)} onPointerEnter={(e) => e.pointerType === 'mouse' && setOpen(true)}>
         {icon}
       </button>
       {open && (

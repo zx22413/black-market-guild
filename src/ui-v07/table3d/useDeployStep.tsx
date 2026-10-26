@@ -49,7 +49,9 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   const options = useMemo(() => (context ? deployOptions(context) : []), [context]);
   const [choice, setChoice] = useState<DeployChoice>(EMPTY_DEPLOY);
   const [reminding, setReminding] = useState<readonly string[] | null>(null);
-  // The role card the pointer is on: the strip above the hand describes it (else the picked one).
+  // The role card the pointer is on: the strip above the hand describes it (else the picked one). Only a mouse peeks by
+  // hovering: on iOS a touch first counts as a hover, and a hover that adds to the page (the strip appearing) swallows the
+  // click, so the first tap on a card would pick nothing. A tap peeks through focus instead.
   const [peek, setPeek] = useState<RolePick | null>(null);
   // On a short phone the description is only its header line until tapped (hudPhone.css), then a sheet over the table.
   const [stripOpen, setStripOpen] = useState(false);
@@ -207,7 +209,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     );
 
   const hand = (
-    <div className={`dep-hand ${todo.role ? 'todo' : ''} ${choice.role !== null ? 'picked' : ''}`} onMouseLeave={() => setPeek(null)}>
+    <div className={`dep-hand ${todo.role ? 'todo' : ''} ${choice.role !== null ? 'picked' : ''}`} onPointerLeave={(e) => e.pointerType === 'mouse' && setPeek(null)}>
       {cards.map((c) => (
         <button
           key={c.id}
@@ -215,7 +217,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
           className={`dep-card ${choice.role === c.id ? 'on' : ''} ${c.legal ? '' : 'off'}`}
           data-role-card={c.id}
           data-done={choice.role === c.id}
-          onMouseEnter={() => setPeek(c.id)}
+          onPointerEnter={(e) => e.pointerType === 'mouse' && setPeek(c.id)}
           onFocus={() => setPeek(c.id)}
           onBlur={() => setPeek(null)}
           aria-disabled={!c.legal}
@@ -248,7 +250,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
         className={`dep-card none ${choice.role === 'none' ? 'on' : ''}`}
         data-role-card="none"
         data-done={choice.role === 'none'}
-        onMouseEnter={() => setPeek('none')}
+        onPointerEnter={(e) => e.pointerType === 'mouse' && setPeek('none')}
         onFocus={() => setPeek('none')}
         onBlur={() => setPeek(null)}
         onClick={() => pick('none')}

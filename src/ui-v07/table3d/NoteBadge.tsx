@@ -39,8 +39,8 @@ function Chip({ chip }: { readonly chip: NoteChip }) {
 export function NoteBadge({ chips, text, label }: { readonly chips: readonly NoteChip[]; readonly text: string; readonly label: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <span className="note-badge" onMouseLeave={() => setOpen(false)}>
-      <button type="button" aria-label={text} aria-expanded={open} onMouseEnter={() => setOpen(true)} onClick={() => setOpen((v) => !v)}>
+    <span className="note-badge" onPointerLeave={(e) => e.pointerType === 'mouse' && setOpen(false)}>
+      <button type="button" aria-label={text} aria-expanded={open} onPointerEnter={(e) => e.pointerType === 'mouse' && setOpen(true)} onClick={() => setOpen((v) => !v)}>
         {chips.map((chip, i) => (
           <Chip key={i} chip={chip} />
         ))}
