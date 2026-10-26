@@ -23,7 +23,7 @@ function Readout({ view }: { readonly view: PerfView }) {
       </div>
       <div>hitches (&gt;25ms) {f.hitches}</div>
       <div>
-        calls {r.calls} · tris {(r.triangles / 1000).toFixed(0)}k · geo {r.geometries} · tex {r.textures}
+        calls {r.calls} · tris {(r.triangles / 1000).toFixed(0)}k · geo {r.geometries} · tex {r.textures} · blank {r.blankFrames}
       </div>
       <div>
         canvas {r.width}×{r.height} @ {r.pixelRatio}x

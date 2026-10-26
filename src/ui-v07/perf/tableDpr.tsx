@@ -1,5 +1,5 @@
-import { useFrame } from '@react-three/fiber';
-import { useRef, useSyncExternalStore } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { perfFlags, subscribePerfFlags } from '../../ui/scene/perfFlags';
 import { WINDOW_MS, isPhone, judgeWindow, phoneDprLevels, startState, type DprState } from './dprPolicy';
 
@@ -30,6 +30,9 @@ const subscribe = (listener: () => void): (() => void) => {
   };
 };
 
+/** The ratio now wanted: the panel's forced value, else the phone's adaptive level, else react-three-fiber's usual range. */
+const wanted = (): number | [number, number] => perfFlags.dprCap ?? (phone ? phone.levels[phone.state.level]! : [1, 2]);
+
 /**
  * Pixel ratio for the table canvas: the perf panel's forced value if set, the phone's adaptive
  * level on a phone, otherwise react-three-fiber's usual range.
@@ -40,10 +43,19 @@ export function useTableDpr(): number | [number, number] {
   return forced ?? adaptive ?? [1, 2];
 }
 
-/** Inside the canvas: watches frame times and steps the phone's pixel ratio down (or back up). */
+/**
+ * Inside the canvas: applies a changed pixel ratio at once, and on a phone watches frame times to
+ * step it down (or back up).
+ *
+ * Resizing the canvas clears it. If that happens through the `dpr` prop, React does it after the
+ * frame was drawn but before it is shown, and the player sees one black frame (the table's labels
+ * stay, the sea and islands vanish). Done here, from inside `useFrame` (which runs before the
+ * frame is drawn), the same frame is drawn at the new size and nothing blank is ever shown.
+ */
 export function AdaptiveDpr() {
-  if (!phone) return null;
-  return <Watch phone={phone} />;
+  const setDpr = useThree((s) => s.setDpr);
+  useEffect(() => subscribe(() => setDpr(wanted())), [setDpr]);
+  return phone ? <Watch phone={phone} /> : null;
 }
 
 function Watch({ phone: p }: { readonly phone: Phone }) {

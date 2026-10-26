@@ -2,7 +2,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useRef } from 'react';
 import { Vector2, type DirectionalLight } from 'three';
 import { perfFlags } from '../../ui/scene/perfFlags';
-import { summarizeFrames } from './frameStats';
+import { isBlankFrame, summarizeFrames } from './frameStats';
 import { perfEnabled, publishMeasure } from './perfStore';
 
 /** How often the panel's numbers refresh, in ms. */
@@ -26,8 +26,14 @@ function Probe() {
   const since = useRef(0);
   const sun = useRef<DirectionalLight | null>(null);
   const applied = useRef({ shadowsOff: false });
+  const recentCalls = useRef<number[]>([]);
+  const blank = useRef(0);
 
   useFrame((_, delta) => {
+    // `info` still holds the previous frame's counts: it is reset when the next render starts.
+    const lastCalls = gl.info.render.calls;
+    if (isBlankFrame(lastCalls, recentCalls.current)) blank.current += 1;
+    else recentCalls.current = [...recentCalls.current.slice(-29), lastCalls];
     frames.current.push(delta * 1000);
     since.current += delta * 1000;
 
@@ -49,6 +55,7 @@ function Probe() {
       triangles: render.triangles,
       geometries: memory.geometries,
       textures: memory.textures,
+      blankFrames: blank.current,
       pixelRatio: gl.getPixelRatio(),
       width: Math.round(size.x),
       height: Math.round(size.y),

@@ -7,6 +7,17 @@ export interface FrameSummary {
   readonly hitches: number;
 }
 
+/**
+ * Whether a frame that issued `calls` draw calls was a blank one: the table is hundreds of draw
+ * calls, so a frame with a fraction of the recent median drew only the background (a canvas that was
+ * just resized, or a scene boundary that was hiding everything while it loaded).
+ */
+export function isBlankFrame(calls: number, recent: readonly number[]): boolean {
+  if (recent.length < 10) return false;
+  const median = [...recent].sort((a, b) => a - b)[Math.floor(recent.length / 2)]!;
+  return median > 150 && calls < median * 0.4;
+}
+
 /** Hitch threshold: a frame slower than this (ms) is a dropped one at 60Hz. */
 const HITCH_MS = 25;
 

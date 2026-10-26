@@ -7,6 +7,8 @@ export interface RenderStats {
   readonly triangles: number;
   readonly geometries: number;
   readonly textures: number;
+  /** Frames that drew almost nothing, since the page opened (see `isBlankFrame`). */
+  readonly blankFrames: number;
   readonly pixelRatio: number;
   readonly width: number;
   readonly height: number;
