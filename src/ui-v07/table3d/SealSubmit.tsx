@@ -10,13 +10,15 @@ export interface SealSubmitProps {
   readonly disabled?: boolean;
   /** Already submitted: shown on the bar while waiting, no longer pressable. */
   readonly sealed?: boolean;
+  /** Everything is settled: the seal glows to say it can be pressed. */
+  readonly glow?: boolean;
 }
 
-export function SealSubmit({ onClick, disabled = false, sealed = false }: SealSubmitProps) {
+export function SealSubmit({ onClick, disabled = false, sealed = false, glow = false }: SealSubmitProps) {
   return (
     <button
       type="button"
-      className={`seal-submit ${sealed ? 'sealed' : ''}`}
+      className={`seal-submit ${sealed ? 'sealed' : ''} ${glow && !disabled && !sealed ? 'glow' : ''}`}
       data-focus={sealed ? undefined : 'submit'}
       disabled={disabled || sealed}
       aria-label={sealed ? '已封（已提交）' : '提交'}

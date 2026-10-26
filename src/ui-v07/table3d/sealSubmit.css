@@ -60,6 +60,21 @@
   outline: 2px dashed #d9b25a;
   outline-offset: 2px;
 }
+/* Ready to press: a warm pulse (the seal's and the yellow continue key's). */
+@keyframes seal-glow {
+  0%, 100% { filter: drop-shadow(0 6px 6px rgb(0 0 0 / 0.3)) drop-shadow(0 0 4px rgb(255 140 120 / 0.35)); }
+  50% { filter: drop-shadow(0 6px 6px rgb(0 0 0 / 0.3)) drop-shadow(0 0 16px rgb(255 150 120 / 0.95)); }
+}
+@keyframes key-glow {
+  0%, 100% { filter: drop-shadow(0 0 3px rgb(255 205 90 / 0.35)); }
+  50% { filter: drop-shadow(0 0 14px rgb(255 205 90 / 0.95)); }
+}
+.inv-bar .seal-submit.glow:not(:hover) {
+  animation: seal-glow 1.6s ease-in-out infinite;
+}
+.inv-bar button.primary.glow:not(:disabled, :hover, :active) {
+  animation: key-glow 1.6s ease-in-out infinite;
+}
 /* The choices a seal closed, while the others decide (Table3DScreen). */
 .sealed-choice {
   display: contents;
@@ -77,6 +92,10 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .inv-bar .seal-submit.glow,
+  .inv-bar button.primary.glow {
+    animation: none;
+  }
   .inv-bar .seal-submit {
     transition: none;
   }

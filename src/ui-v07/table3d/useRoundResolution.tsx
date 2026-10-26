@@ -359,7 +359,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   const allRevealed = groupsShown >= groups.length;
   // Only a press the show waits for is what the tutorial lights: the event card moves on by itself.
   const go = (label: string, action: () => void, waits = true) => (
-    <button type="button" className="primary" {...(waits ? { 'data-focus': 'advance' } : {})} onClick={action}>
+    <button type="button" className="primary glow" {...(waits ? { 'data-focus': 'advance' } : {})} onClick={action}>
       {label}
     </button>
   );

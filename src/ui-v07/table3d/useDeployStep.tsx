@@ -299,7 +299,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     bar: (
       <>
         {chips}
-        <SealSubmit disabled={incomplete} onClick={submit} />
+        <SealSubmit disabled={incomplete} glow={choice.role !== null} onClick={submit} />
         <LockHint icon={<InfoIcon />} text="提交後不能更改；所有人都提交後，角色一起公開（情報商人重擲後再公開）。" />
       </>
     ),
