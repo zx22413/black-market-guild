@@ -131,13 +131,16 @@ export function marketBadgePin(): TablePin {
  * and dock; on an island at the side of the table, whose backdrop stands at that back edge, just past
  * its outer rim instead, clear of its buildings, so the badge never covers the backdrop (the mine's railway).
  */
-export function badgePosition(angle: number): Vec3 {
+export function badgePosition(angle: number, lift = 0): Vec3 {
   const [x, , z] = seatPosition(angle);
   const edge = PLAYER_ISLAND_RADIUS * 0.72;
   // Past the rim of a side island, over the sea, clear of the buildings near its edge.
   const outside = PLAYER_ISLAND_RADIUS * 1.1;
-  return Math.abs(x) > Math.abs(z) ? [x + Math.sign(x) * outside, 4, z] : [x, 4, z - edge];
+  return Math.abs(x) > Math.abs(z) ? [x + Math.sign(x) * outside, 4, z] : [x, 4, z - edge - lift];
 }
+
+/** On a phone a far island's badge sits further back, clear of the ship's 「＋」 at its dock. */
+const PHONE_BADGE_LIFT = 2.5;
 
 /**
  * An island at the side of the table: its badge would land on its own name plate (the plate hangs in
@@ -157,6 +160,6 @@ export function islandBadgePins(
   return seats.flatMap((s, i): TablePin[] => {
     const island = islandOf(s.id);
     if (!island || isSideSeat(angles[i]!)) return [];
-    return [{ id: `island-${s.id}`, position: badgePosition(angles[i]!), node: <IslandBadge island={island} /> }];
+    return [{ id: `island-${s.id}`, position: badgePosition(angles[i]!, typeof window !== 'undefined' && window.innerWidth <= 640 ? PHONE_BADGE_LIFT : 0), node: <IslandBadge island={island} /> }];
   });
 }

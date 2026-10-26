@@ -565,3 +565,56 @@
     font-size: 12px;
   }
 }
+
+/*
+ * Name plates and island badges on a phone: smaller type and chips, so a side island's plate is about
+ * 125px wide and the two side plates leave the middle of the table free for the near island's badge.
+ * The role description's header (name, fee, cooldown) lines its three items up on one centre line, the icons sized to the text.
+ */
+@media (max-width: 640px) {
+  :root:root:root .beat3d-plate {
+    padding: 2px 6px 2px 15px;
+    font-size: 12px;
+    line-height: 1.3;
+  }
+  :root:root:root .inv-plate .plate-cash {
+    margin-left: 3px;
+  }
+  :root:root:root .inv-plate .inv-stock {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 3px;
+    font-size: 11px;
+  }
+  :root:root:root .inv-plate .inv-stock .good-count {
+    gap: 1px;
+    margin-right: 0;
+  }
+  :root:root:root .inv-plate .inv-stock .good-ic {
+    width: 14px;
+    height: 14px;
+  }
+  :root:root:root .plate-stack {
+    gap: 2px;
+  }
+  :root:root:root .island-badge > button {
+    padding: 2px 10px 2px 6px;
+    font-size: 12px;
+  }
+  :root:root:root .dep-strip header {
+    align-items: center;
+    gap: 10px;
+  }
+  :root:root:root .dep-strip header .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    line-height: 1;
+  }
+  :root:root:root .dep-strip header .chip .chip-ic,
+  :root:root:root .dep-strip header .chip svg {
+    width: 16px;
+    height: 16px;
+    flex: none;
+  }
+}
