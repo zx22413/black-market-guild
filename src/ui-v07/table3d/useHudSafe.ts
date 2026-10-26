@@ -22,6 +22,7 @@ function measure(top: readonly RefObject<HTMLElement | null>[], bottom: readonly
   const above = Math.max(GAP, ...tops.map((y) => y + GAP));
   const below = Math.max(GAP, ...bottoms.map((y) => h - y + GAP));
   document.documentElement.style.setProperty('--hud-top', `${Math.round(above - GAP)}px`);
+  document.documentElement.style.setProperty('--hud-bottom', `${Math.round(below - GAP)}px`);
   const overflow = above + below - h * (1 - MIN_FREE_SHARE);
   // Give the overflow back in proportion to what each side holds (but never below the gap).
   const give = overflow > 0 ? overflow / (above + below) : 0;

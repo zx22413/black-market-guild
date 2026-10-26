@@ -328,3 +328,102 @@
     bottom: 12px;
   }
 }
+
+/*
+ * The building list on a phone: a sheet over the bottom of the table, above the decision bar, two
+ * cards across with their effect text printed on them; a short window scrolls it inside (a visible
+ * scrollbar, as the role manual has). useHudSafe sets --hud-top / --hud-bottom.
+ */
+@media (max-width: 640px) {
+  :root:root:root .inv-cards.sheet {
+    position: fixed;
+    right: 8px;
+    bottom: calc(var(--hud-bottom, 110px) + 8px);
+    left: 8px;
+    z-index: 22;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    max-height: calc(100dvh - var(--hud-top, 140px) - var(--hud-bottom, 110px) - 24px);
+    padding: 8px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 2px solid #5b3f12;
+    border-radius: 12px;
+    background: rgb(91 70 54 / 0.96);
+    box-shadow: 0 10px 24px rgb(0 0 0 / 0.35);
+    pointer-events: auto;
+  }
+  :root:root:root .inv-cards.sheet::-webkit-scrollbar {
+    width: 6px;
+  }
+  :root:root:root .inv-cards.sheet::-webkit-scrollbar-thumb {
+    border-radius: 3px;
+    background: #d9b25a;
+  }
+  :root:root:root .inv-cards.sheet .inv-card {
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    grid-template-areas:
+      'ic name'
+      'ic cost'
+      'effect effect'
+      'why why';
+    align-items: center;
+    gap: 2px 8px;
+    width: auto;
+    padding: 8px;
+    text-align: left;
+  }
+  /* "Not building" is a slim row across both columns. */
+  :root:root:root .inv-cards.sheet .inv-card:first-child {
+    grid-column: 1 / -1;
+    grid-template-areas: 'ic name';
+    align-items: center;
+  }
+  :root:root:root .inv-cards.sheet .inv-card:first-child .inv-ic {
+    width: 32px;
+    height: 32px;
+  }
+  :root:root:root .inv-cards.sheet .inv-card:first-child {
+    grid-template-columns: 32px 1fr;
+  }
+  :root:root:root .inv-cards.sheet .inv-ic {
+    grid-area: ic;
+    width: 52px;
+    height: 52px;
+    border-radius: 6px;
+  }
+  :root:root:root .inv-cards.sheet .inv-ic img {
+    width: 100%;
+    height: 100%;
+  }
+  :root:root:root .inv-cards.sheet .inv-card b {
+    grid-area: name;
+    font-size: 14px;
+  }
+  :root:root:root .inv-cards.sheet .inv-cost {
+    grid-area: cost;
+    justify-content: flex-start;
+    font-size: 13px;
+  }
+  :root:root:root .inv-cards.sheet .inv-why {
+    grid-area: why;
+    font-size: 12px;
+  }
+  :root:root:root .inv-cards.sheet .inv-effect {
+    position: static;
+    grid-area: effect;
+    display: block;
+    width: auto;
+    margin-top: 4px;
+    padding: 0;
+    justify-self: stretch;
+    background: none;
+    color: #5a4630;
+    text-align: left;
+    font-size: 12px;
+    line-height: 1.45;
+    transform: none;
+  }
+}

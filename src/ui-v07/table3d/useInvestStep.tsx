@@ -32,6 +32,7 @@ import { MINT_SECONDS } from '../scene/mintMath';
 import { NoteBadge } from './NoteBadge';
 import { ArrowIcon, CloseIcon, CrateIcon, Flow, HouseIcon, IconDisc, InfoIcon, tokenIconUrl } from './icons';
 import { LockHint } from './LockHint';
+import { usePhone } from './usePhone';
 import { SealSubmit } from './SealSubmit';
 import { soundEngine } from '../audio/soundEngine';
 import type { StageEnv, StageParts } from './stage';
@@ -68,6 +69,9 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const producing = useRef(false);
   const popping = useRef<readonly number[]>([]);
   const buildArea = useRef<HTMLDivElement>(null);
+  // On a phone the building list is a sheet over the bottom of the table (hudPhone.css), not a row on the island.
+  const phone = usePhone();
+  const sheet = useRef<HTMLDivElement>(null);
 
   // A new investment (next round) starts from scratch.
   useEffect(() => {
@@ -88,7 +92,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   useEffect(() => {
     if (!picking) return;
     const close = (e: PointerEvent) => {
-      if (!buildArea.current?.contains(e.target as Node)) setPicking(false);
+      const inside = [buildArea.current, sheet.current].some((el) => el?.contains(e.target as Node));
+      if (!inside) setPicking(false);
     };
     document.addEventListener('pointerdown', close);
     return () => document.removeEventListener('pointerdown', close);
@@ -178,6 +183,53 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       })
     : [];
 
+  const cards = picking ? (
+      <div ref={phone ? sheet : undefined} className={`inv-cards ${phone ? 'sheet' : ''}`}>
+        <button
+          type="button"
+          className={`inv-card ${choice.build === null && buildDecided ? 'sel' : ''}`}
+          title="不蓋，保留材料"
+          aria-label="不蓋，保留材料"
+          onClick={() => pickBuild(null)}
+        >
+          <span className="inv-ic none">
+            <CloseIcon />
+          </span>
+          <b>不蓋</b>
+        </button>
+        {builds.map((b) => (
+          <button
+            type="button"
+            key={b.id}
+            className={`inv-card ${b.legal ? '' : 'no'} ${choice.build === b.id ? 'sel' : ''}`}
+            data-focus={`build-${b.id}`}
+            data-done={choice.build === b.id}
+            disabled={!b.legal}
+            aria-label={`${BUILDING_LABELS[b.id]}：${BUILDING_TEXT[b.id]}`}
+            onClick={() => pickBuild(b.id)}
+          >
+            <span className="inv-ic">
+              <img src={cardArtUrl({ kind: 'building', id: b.id })} alt="" />
+            </span>
+            <b>{BUILDING_LABELS[b.id]}</b>
+            <span className="inv-cost">
+              <IconDisc src={tokenIconUrl('coin')} />
+              {b.cash}
+              {GOODS.filter((g) => b.goods[g] > 0).map((g) => (
+                <span key={g} className="inv-need">
+                  <GoodCount good={g} count={b.goods[g]} size="sm" />
+                </span>
+              ))}
+            </span>
+            {b.reason && <small className="inv-why">{b.reason}</small>}
+            <span className="inv-effect" role="tooltip">
+              {BUILDING_TEXT[b.id]}
+            </span>
+          </button>
+        ))}
+      </div>
+  ) : null;
+
   const pins: TablePin[] = [
     ...freshPins,
     {
@@ -190,52 +242,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
           <button type="button" data-focus="build-open" className={`${choice.build ? 'on' : ''} ${todo.build ? 'todo' : ''}`} title={canBuildAny(options) ? `已蓋 ${built} 棟，最多 ${maxBuilt} 棟` : '這回合不能蓋建築'} onClick={() => setPicking((v) => !v)}>
             {choice.build ? `${BUILDING_LABELS[choice.build]} ↻` : canBuildAny(options) ? `＋ 建築 ${built}/${maxBuilt}` : '不能蓋'}
           </button>
-          {picking && (
-            <div className="inv-cards">
-              <button
-                type="button"
-                className={`inv-card ${choice.build === null && buildDecided ? 'sel' : ''}`}
-                title="不蓋，保留材料"
-                aria-label="不蓋，保留材料"
-                onClick={() => pickBuild(null)}
-              >
-                <span className="inv-ic none">
-                  <CloseIcon />
-                </span>
-                <b>不蓋</b>
-              </button>
-              {builds.map((b) => (
-                <button
-                  type="button"
-                  key={b.id}
-                  className={`inv-card ${b.legal ? '' : 'no'} ${choice.build === b.id ? 'sel' : ''}`}
-                  data-focus={`build-${b.id}`}
-                  data-done={choice.build === b.id}
-                  disabled={!b.legal}
-                  aria-label={`${BUILDING_LABELS[b.id]}：${BUILDING_TEXT[b.id]}`}
-                  onClick={() => pickBuild(b.id)}
-                >
-                  <span className="inv-ic">
-                    <img src={cardArtUrl({ kind: 'building', id: b.id })} alt="" />
-                  </span>
-                  <b>{BUILDING_LABELS[b.id]}</b>
-                  <span className="inv-cost">
-                    <IconDisc src={tokenIconUrl('coin')} />
-                    {b.cash}
-                    {GOODS.filter((g) => b.goods[g] > 0).map((g) => (
-                      <span key={g} className="inv-need">
-                        <GoodCount good={g} count={b.goods[g]} size="sm" />
-                      </span>
-                    ))}
-                  </span>
-                  {b.reason && <small className="inv-why">{b.reason}</small>}
-                  <span className="inv-effect" role="tooltip">
-                    {BUILDING_TEXT[b.id]}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
+          {!phone && cards}
         </div>
       ),
     },
@@ -366,16 +373,21 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       </>
     ),
     sealedChips: chips,
-    overlay: reminding && (
-      <ReminderDialog
-        title="還沒做完"
-        lines={reminding}
-        onBack={() => setReminding(null)}
-        onConfirm={(skipNext) => {
-          if (skipNext) setReminderSkipped('invest-unfinished', true);
-          send();
-        }}
-      />
+    overlay: (
+      <>
+        {phone && cards}
+        {reminding && (
+          <ReminderDialog
+            title="還沒做完"
+            lines={reminding}
+            onBack={() => setReminding(null)}
+            onConfirm={(skipNext) => {
+              if (skipNext) setReminderSkipped('invest-unfinished', true);
+              send();
+            }}
+          />
+        )}
+      </>
     ),
   };
 }
