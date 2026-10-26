@@ -377,3 +377,39 @@
   font-family: var(--font-strong);
   letter-spacing: 0.2em;
 }
+
+/* The die picture on a phone: six faces and the formula fit across the screen. */
+@media (max-width: 640px) {
+  .die-diagram {
+    top: 60%;
+    padding: 14px 12px 12px;
+  }
+  .die-formula {
+    gap: 6px;
+    font-size: 14px;
+  }
+  .die-formula span {
+    padding: 3px 10px;
+  }
+  .die-strip {
+    gap: 6px;
+    margin-top: 14px;
+  }
+  .die-group {
+    gap: 6px;
+    padding: 10px 4px 8px;
+  }
+  .die-faces {
+    gap: 4px;
+  }
+  .die-faces i {
+    width: 34px;
+    height: 34px;
+    border-width: 2px;
+    border-radius: 8px;
+    font-size: 20px;
+  }
+  .die-group small {
+    font-size: 14px;
+  }
+}

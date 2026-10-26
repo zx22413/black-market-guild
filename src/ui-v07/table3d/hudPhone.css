@@ -427,3 +427,21 @@
     transform: none;
   }
 }
+
+/* The voyage event card is smaller on a phone: the tutorial's host card needs room above or below it. */
+@media (max-width: 640px) {
+  :root:root:root .event-card {
+    width: min(260px, 100%);
+    gap: 6px;
+    padding: 14px 14px 12px;
+  }
+  :root:root:root .event-card .event-card-emblem {
+    aspect-ratio: 16 / 9;
+  }
+  :root:root:root .event-card strong {
+    font-size: 24px;
+  }
+  :root:root:root .event-card p {
+    font-size: 14px;
+  }
+}
