@@ -22,6 +22,15 @@ if (new URLSearchParams(window.location.search).get('skin') === 'classic') {
   document.documentElement.classList.add('skin-classic');
 }
 
+// On-device perf panel (frame timing and switches to isolate a slow part): open any page with `?perf=1`.
+if (new URLSearchParams(window.location.search).get('perf') === '1') {
+  void import('./perf/PerfPanel').then(({ PerfPanel }) => {
+    const host = document.createElement('div');
+    document.body.append(host);
+    createRoot(host).render(<PerfPanel />);
+  });
+}
+
 // Dev-only full-resolution capture of the 3D canvas (`await window.bmgCapture()`, see src/ui/dev/capture.ts).
 if (import.meta.env.DEV) void import('../ui/dev/capture').then((m) => m.installCapture());
 

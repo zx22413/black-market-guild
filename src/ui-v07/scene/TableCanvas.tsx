@@ -23,6 +23,7 @@ const LANE_POINT: Readonly<Record<ShipState, number>> = { docked: 0, sailing: 0.
 import { CrestSpray, ShoreSpray } from '../../ui/scene/Spray';
 import { Storm } from '../../ui/scene/Storm';
 import { soundEngine } from '../audio/soundEngine';
+import { PerfProbe } from '../perf/PerfProbe';
 import { SwellProvider } from '../../ui/scene/SwellContext';
 import type { SceneShip, ShipState } from '../../ui/scene/tableModel';
 import { WEATHER, fillOf } from '../../ui/scene/weather';
@@ -278,6 +279,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
           </Suspense>
         </SwellProvider>
         <PinTracker pins={pins} elements={labels} />
+        <PerfProbe />
       </Canvas>
       {ready && (
         <div className="beat3d-labels">

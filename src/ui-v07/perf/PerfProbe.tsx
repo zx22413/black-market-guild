@@ -1,6 +1,6 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useRef } from 'react';
-import type { DirectionalLight } from 'three';
+import { Vector2, type DirectionalLight } from 'three';
 import { perfFlags } from '../../ui/scene/perfFlags';
 import { summarizeFrames } from './frameStats';
 import { perfEnabled, publishMeasure } from './perfStore';
@@ -8,6 +8,7 @@ import { perfEnabled, publishMeasure } from './perfStore';
 /** How often the panel's numbers refresh, in ms. */
 const WINDOW_MS = 500;
 const ON = perfEnabled(window.location.search);
+const canvasSize = new Vector2();
 
 /**
  * Inside the canvas: measures frame intervals and renderer counts for the perf panel and applies
@@ -47,7 +48,7 @@ function Probe() {
 
     if (since.current < WINDOW_MS) return;
     const { render, memory } = gl.info;
-    const size = gl.getSize({ x: 0, y: 0 } as never) as unknown as { x: number; y: number };
+    const size = gl.getSize(canvasSize);
     publishMeasure(summarizeFrames(frames.current), {
       calls: render.calls,
       triangles: render.triangles,

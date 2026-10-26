@@ -2,6 +2,7 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import { PlaneGeometry, type Mesh } from 'three';
 import type { SeaPoint } from './islandShape';
+import { perfFlags } from './perfFlags';
 import { createSeaMaterial, setShores } from './seaFoam';
 import { SEA_LEVEL, seaSink, waveHeight } from './seaWave';
 import { useSwell, useWavePhase } from './SwellContext';
@@ -54,6 +55,7 @@ export function Sea({ color, shores, vignette = 0, lines = 0, glow = 0 }: SeaPro
   const rest = useMemo(() => Float32Array.from(geometry.attributes.position!.array), [geometry]);
 
   useFrame(() => {
+    if (perfFlags.seaFrozen) return;
     const { height, foam } = swell.current;
     const t = phase.current;
     const position = geometry.attributes.position!;
