@@ -184,7 +184,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
       // Nothing pointed at yet: the strip still says what your ship carries, so a smuggler or a broker is chosen knowing it.
       <div className="dep-strip idle">
         <header>
-          <b>你的船</b>
+          <b>你的船上</b>
           <CargoChip cargo={cargo} />
         </header>
       </div>
