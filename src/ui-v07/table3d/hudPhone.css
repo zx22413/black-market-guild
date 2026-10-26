@@ -270,3 +270,28 @@
     width: auto;
   }
 }
+
+/*
+ * The submit seal sits in the middle of the bar: the ⓘ beside it moves to the bar's right end
+ * instead of pushing the seal off centre. Once a role is picked, the hand shrinks to names and fees
+ * (the picture already did its job) and gives the height back to the islands.
+ */
+@media (max-width: 640px) {
+  :root:root:root .inv-bar {
+    position: fixed;
+    padding-right: 36px;
+    padding-left: 36px;
+  }
+  :root:root:root .inv-bar > .bar-lock-wrap {
+    position: absolute;
+    right: 14px;
+    bottom: 12px;
+  }
+  :root:root:root .dep-hand.picked .dep-card .dep-ic {
+    display: none;
+  }
+  :root:root:root .dep-hand.picked .dep-card {
+    justify-content: center;
+    min-height: 46px;
+  }
+}

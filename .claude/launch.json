@@ -26,6 +26,20 @@
       "port": 8787
     },
     {
+      "name": "web-lan",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--host",
+        "--port",
+        "5175",
+        "--strictPort"
+      ],
+      "port": 5175
+    },
+    {
       "name": "web-alt",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
