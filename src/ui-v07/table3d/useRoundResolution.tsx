@@ -301,6 +301,8 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
         {
           id: `flight-${flying.key}`,
           position: placePoint(flying.to, placeCtx),
+          // A far-side island sits near the phone's edge and the chip is wider than its room: keep it on screen.
+          clamp: true,
           node: (
             <span key={flying.key} className={`flight-chip ${flying.amount !== null && flying.amount < 0 ? 'down' : ''}`} style={{ borderColor: colorOf(flying.playerId) }}>
               {flying.amount !== null && <b>{flying.amount >= 0 ? '+' : '−'}{Math.abs(flying.amount)} G</b>} {flying.playerId === viewer ? '你' : nameOf(flying.playerId)} · {withGoodIcons(flying.label)}
