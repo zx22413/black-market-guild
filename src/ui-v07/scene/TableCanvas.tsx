@@ -184,6 +184,15 @@ function PinTracker({ pins, elements }: { readonly pins: readonly TablePin[]; re
       } else if (box) [x, y] = clampPin(x, y, box.offsetWidth, box.offsetHeight, width, height);
       // A note hung beside its point (inv-note side-left / side-right) is pushed in from the screen edge it would run past.
       const side = el.firstElementChild as HTMLElement | null;
+      if (side?.classList.contains('plate-left')) {
+        // The far island's plate hangs to the left of its point (right edge at the point, centred on it); if that is off screen
+        // (a close-up of one island), it waits at the screen's edge just under the HUD instead of vanishing.
+        const top = Number.parseFloat(document.documentElement.style.getPropertyValue('--hud-top')) || 0;
+        const [w, h] = [side.offsetWidth, side.offsetHeight];
+        const inside = (at: number, low: number, high: number) => Math.min(high, Math.max(low, at));
+        x = inside(x - w, SIDE_MARGIN, width - SIDE_MARGIN - w) + w;
+        y = inside(y, top + SIDE_MARGIN + h / 2, height - SIDE_MARGIN - h / 2);
+      }
       if (side?.classList.contains('side-left')) x += Math.max(0, SIDE_MARGIN - (x - SIDE_GAP - side.offsetWidth));
       else if (side?.classList.contains('side-right')) x -= Math.max(0, x + SIDE_GAP + side.offsetWidth - (width - SIDE_MARGIN));
       el.style.transform = `translate(${x}px, ${y}px)`;

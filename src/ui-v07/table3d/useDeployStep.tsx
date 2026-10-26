@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { ScrollText } from './ScrollText';
 import type { Bet, ShipId } from '../../v07/game';
 import { soundEngine } from '../audio/soundEngine';
 import { ROLE_LABELS } from '../labels';
@@ -50,8 +51,6 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   const [reminding, setReminding] = useState<readonly string[] | null>(null);
   // The role card the pointer is on: the strip above the hand describes it (else the picked one).
   const [peek, setPeek] = useState<RolePick | null>(null);
-  // On a phone the description is two lines until tapped (see hudPhone.css).
-  const [stripOpen, setStripOpen] = useState(false);
 
   useEffect(() => {
     setChoice(EMPTY_DEPLOY);
@@ -174,7 +173,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   // hand, so the hand itself never moves.
   const strip =
     shown === null ? null : (
-      <div className={`dep-strip ${stripOpen ? 'open' : ''}`} aria-live="polite" aria-expanded={stripOpen} onClick={() => setStripOpen(!stripOpen)}>
+      <div className="dep-strip" aria-live="polite">
         {shown === 'none' && (
           <>
             <header>
@@ -196,8 +195,10 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
                 {shownCard.cooldown}
               </span>
             </header>
-            {shownCard.reason && <p className="why">{shownCard.reason}</p>}
-            <p>{roleDetail(shown, context.view.rules)}</p>
+            <ScrollText key={shown}>
+              {shownCard.reason && <p className="why">{shownCard.reason}</p>}
+              <p>{roleDetail(shown, context.view.rules)}</p>
+            </ScrollText>
           </>
         )}
       </div>

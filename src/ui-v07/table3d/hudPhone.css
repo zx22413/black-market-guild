@@ -107,32 +107,69 @@
 }
 
 /*
- * The bottom of the table on a phone: the role description and the hand take less height, so the
- * camera keeps room for the islands (the hand's own layout is reworked separately).
+ * The bottom of the table on a phone. The role description is a small manual: a fixed three-line
+ * page that scrolls (visible scrollbar, shadows at the cut edges, a ▾ mark while there is more) so
+ * the camera keeps room for the islands. The hand is six portrait cards in one row, each with a
+ * plate at its foot that carries the role's name and fee.
  */
 @media (max-width: 640px) {
   :root:root:root .dep-dock {
     bottom: 92px;
     gap: 4px;
+    width: calc(100vw - 16px);
   }
   :root:root:root .dep-strip {
+    position: relative;
     min-height: 0;
     padding: 6px 12px;
   }
   :root:root:root .dep-strip p {
-    margin-top: 2px;
+    margin: 2px 0 0;
     font-size: 13px;
     line-height: 1.45;
   }
   :root:root:root .dep-strip.idle p {
     padding-top: 6px;
   }
-}
-
-/* The hand: all six cards in one row, small, so nothing is off screen to scroll to. */
-@media (max-width: 640px) {
-  :root:root:root .dep-dock {
-    width: calc(100vw - 16px);
+  :root:root:root .scroll-text-wrap {
+    position: relative;
+  }
+  :root:root:root .scroll-text {
+    max-height: 58px;
+    padding-right: 10px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    background:
+      linear-gradient(#f5ecd4 30%, transparent) 0 0 / 100% 22px no-repeat local,
+      linear-gradient(transparent, #f5ecd4 70%) 0 100% / 100% 22px no-repeat local,
+      radial-gradient(farthest-side at 50% 0, rgb(80 50 10 / 0.35), transparent) 0 0 / 100% 8px no-repeat scroll,
+      radial-gradient(farthest-side at 50% 100%, rgb(80 50 10 / 0.35), transparent) 0 100% / 100% 8px no-repeat scroll,
+      #f5ecd4;
+  }
+  :root:root:root .scroll-text::-webkit-scrollbar {
+    width: 6px;
+  }
+  :root:root:root .scroll-text::-webkit-scrollbar-track {
+    border-radius: 3px;
+    background: rgb(120 85 30 / 0.18);
+  }
+  :root:root:root .scroll-text::-webkit-scrollbar-thumb {
+    border-radius: 3px;
+    background: #b9823a;
+  }
+  :root:root:root .scroll-more {
+    position: absolute;
+    right: 12px;
+    bottom: -2px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: #8a4b12;
+    color: #fff3c9;
+    font-size: 11px;
+    line-height: 16px;
+    pointer-events: none;
+    animation: scroll-bob 1.2s ease-in-out infinite;
   }
   :root:root:root .dep-hand {
     width: 100%;
@@ -141,16 +178,24 @@
   }
   :root:root:root .dep-card {
     flex: 1 1 0;
-    gap: 2px;
+    gap: 0;
     width: auto;
     min-width: 0;
     height: auto;
-    padding: 4px 3px 5px;
+    padding: 3px 3px 2px;
     border-radius: 8px;
+    background: linear-gradient(0deg, #dcc994 0 34px, #f6ecd0 34px);
+  }
+  :root:root:root .dep-card.on {
+    border-width: 3px;
+    outline-offset: -6px;
+    background: linear-gradient(0deg, #f0c860 0 34px, #fff3c9 34px);
+    transform: translateY(-4px);
   }
   :root:root:root .dep-card .dep-ic {
     width: 100%;
-    height: 44px;
+    height: 54px;
+    margin-bottom: 3px;
     border-radius: 3px;
   }
   :root:root:root .dep-card .dep-ic img {
@@ -159,16 +204,13 @@
   }
   :root:root:root .dep-card b {
     font-size: 12px;
+    line-height: 16px;
     white-space: nowrap;
   }
   :root:root:root .dep-card .dep-fee {
     gap: 2px;
     font-size: 12px;
-  }
-  :root:root:root .dep-card.on {
-    border-width: 3px;
-    outline-offset: -6px;
-    transform: translateY(-4px);
+    line-height: 16px;
   }
   :root:root:root .dep-card-off {
     top: 2px;
@@ -177,16 +219,16 @@
     height: 16px;
   }
 }
-
-/* The role description is two lines until it is tapped; the market's bets share the tag's line on wider phones. */
-@media (max-width: 640px) {
-  :root:root:root .dep-strip:not(.open) p:last-child {
-    display: -webkit-box;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+@keyframes scroll-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(2px);
   }
 }
+
 /* A tag is about 190px wide from a 400px screen up: the bets fit beside the price. Narrower, they drop to a second line. */
 @media (min-width: 400px) and (max-width: 640px) {
   :root:root:root .inv-market.betting .inv-chip {
@@ -199,14 +241,13 @@
   }
 }
 
-/* A short screen (an SE, or a phone under a browser's toolbars): the description is only its header until tapped, and the cards lose their art's height. */
+/* A short screen (an SE, or a phone under a browser's toolbars): the manual page is two lines and the portraits are shorter. */
 @media (max-width: 640px) and (max-height: 700px) {
-  :root:root:root .dep-strip:not(.open) p,
-  :root:root:root .dep-strip:not(.open) p:last-child {
-    display: none;
+  :root:root:root .scroll-text {
+    max-height: 38px;
   }
   :root:root:root .dep-card .dep-ic {
-    height: 34px;
+    height: 40px;
   }
   :root:root:root .inv-market .bet {
     min-height: 24px;
@@ -273,8 +314,7 @@
 
 /*
  * The submit seal sits in the middle of the bar: the ⓘ beside it moves to the bar's right end
- * instead of pushing the seal off centre. Once a role is picked, the hand shrinks to names and fees
- * (the picture already did its job) and gives the height back to the islands.
+ * instead of pushing the seal off centre.
  */
 @media (max-width: 640px) {
   :root:root:root .inv-bar {
@@ -286,12 +326,5 @@
     position: absolute;
     right: 14px;
     bottom: 12px;
-  }
-  :root:root:root .dep-hand.picked .dep-card .dep-ic {
-    display: none;
-  }
-  :root:root:root .dep-hand.picked .dep-card {
-    justify-content: center;
-    min-height: 46px;
   }
 }
