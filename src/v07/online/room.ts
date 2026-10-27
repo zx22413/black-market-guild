@@ -1,8 +1,11 @@
-import type { BotStrategy } from '../bots';
+import { createBot, type Bot, type BotStrategy, type DecisionContext } from '../bots';
 import { RULES_V07, type Action, type MatchEvent, type MatchResult, type PlayerId, type PrivateEvent } from '../game';
 import { botController, runMatch, setupFromSeats, type Controller, type SeatConfig } from '../match';
 import {
+  DECISION_SECONDS_CHOICES,
+  DEFAULT_DECISION_SECONDS,
   PROTOCOL_VERSION,
+  TAKEOVER_AFTER_TIMEOUTS,
   cleanName,
   type ClientMessage,
   type ErrorCode,
@@ -12,6 +15,7 @@ import {
   type RoomSnapshot,
   type ServerMessage,
 } from './protocol';
+import { timeoutAction } from './timeout';
 
 /** Bots that fill the seats nobody joined (V0.7 personalities). */
 const FILL_BOTS: readonly { readonly name: string; readonly strategy: BotStrategy }[] = [
@@ -21,24 +25,45 @@ const FILL_BOTS: readonly { readonly name: string; readonly strategy: BotStrateg
   { name: '凡德商行', strategy: 'cautious' },
 ];
 
+/** The bot that plays for a seat under takeover (docs/game-design.md §15.2). */
+const TAKEOVER_STRATEGY: BotStrategy = 'cautious';
+
 interface Member {
   readonly token: string;
   readonly name: string;
 }
 
+/** A decision a person owes; `deadline` is null while the match is paused. */
 interface Pending {
   readonly token: string;
-  readonly request: OnlineRequest;
+  readonly request: Omit<OnlineRequest, 'timeLeftMs'>;
   readonly resolve: (action: Action) => void;
+  readonly deadline: number | null;
+  readonly cancel: (() => void) | null;
 }
 
 interface MatchRecord {
+  readonly seed: number;
+  readonly decisionSeconds: number;
   readonly players: readonly { readonly id: PlayerId; readonly name: string; readonly token: string | null }[];
   readonly startingCash: number;
   events: readonly MatchEvent[];
   privateEvents: readonly PrivateEvent[];
   result: MatchResult | null;
   error: string | null;
+  takeover: ReadonlySet<PlayerId>;
+  /** Timeouts in a row per seat (§15.2). */
+  timeouts: Readonly<Record<PlayerId, number>>;
+  /** Takeover bots made so far; they keep hearing every public event once made. */
+  bots: ReadonlyMap<PlayerId, Bot>;
+  paused: boolean;
+}
+
+/** Time for decision limits; injected so the room stays free of host APIs and tests can fast-forward. */
+export interface RoomClock {
+  now(): number;
+  /** Runs `run` after `ms`; the returned function cancels it. */
+  after(ms: number, run: () => void): () => void;
 }
 
 export interface RoomOptions {
@@ -47,12 +72,14 @@ export interface RoomOptions {
   readonly send: (token: string, message: ServerMessage) => void;
   /** Tokens with at least one open connection. */
   readonly isOnline: (token: string) => boolean;
+  readonly clock: RoomClock;
 }
 
 /**
  * One online room: a lobby, then a match played with the match runner. People are known by a
  * random token their browser keeps, so a reload or a dropped phone connection gets the same
- * seat back. Nobody times out: a match waits for every seat (docs/architecture.md §7.2 is open).
+ * seat back. Every decision is timed, and a seat that times out twice in a row or drops goes to
+ * a bot until its person takes it back; with nobody connected the match pauses (docs/game-design.md §15).
  */
 export class Room {
   private phase: RoomPhase = 'lobby';
@@ -80,7 +107,10 @@ export class Room {
         this.join(token, message.name);
         return;
       case 'start':
-        this.start(token, message.seats, seed);
+        this.start(token, message.seats, message.decisionSeconds ?? DEFAULT_DECISION_SECONDS, seed);
+        return;
+      case 'resume':
+        this.resume(token);
         return;
       case 'rematch':
         this.rematch(token);
@@ -94,9 +124,25 @@ export class Room {
     }
   }
 
-  /** Lets everyone see who is connected right now. */
+  /** Lets everyone see who is connected right now; in a match, drops go to takeover or pause it. */
   presenceChanged(): void {
     if (this.phase === 'lobby') this.syncAll();
+    const match = this.match;
+    if (this.phase !== 'playing' || !match) return;
+    if (this.nobodyHere(match)) {
+      if (!match.paused) this.pause(match);
+      return;
+    }
+    const wasPaused = match.paused;
+    match.paused = false;
+    match.players.forEach((p) => {
+      if (p.token !== null && !this.options.isOnline(p.token)) this.enterTakeover(match, p.id);
+    });
+    this.pending.forEach((p) => {
+      if (wasPaused || match.takeover.has(p.request.context.decision.playerId)) this.dispatch(match, p);
+    });
+    this.broadcastSeats(match);
+    if (wasPaused) this.syncAll();
   }
 
   snapshotFor(token: string): RoomSnapshot {
@@ -126,8 +172,12 @@ export class Room {
       })),
       events: match.events,
       privateEvents: match.privateEvents.filter((e) => e.playerId === you),
-      requests: this.pending.filter((p) => p.token === token).map((p) => p.request),
+      requests: this.pending.filter((p) => p.token === token).map((p) => this.wire(p)),
       waitingOn: this.waitingOn(),
+      takeover: match.players.map((p) => p.id).filter((id) => match.takeover.has(id)),
+      paused: match.paused,
+      decisionSeconds: match.decisionSeconds,
+      timeouts: you === null ? 0 : (match.timeouts[you] ?? 0),
       startingCash: match.startingCash,
       result: match.result,
       error: match.error,
@@ -160,7 +210,7 @@ export class Room {
     this.syncAll();
   }
 
-  private start(token: string, seats: number, seed: number): void {
+  private start(token: string, seats: number, decisionSeconds: number, seed: number): void {
     if (token !== this.options.hostToken) {
       this.fail(token, 'not-host', '只有房主可以開始對局');
       return;
@@ -174,6 +224,10 @@ export class Room {
       this.fail(token, 'bad-seats', `座位數需介於 ${Math.max(min, this.members.length)} 到 ${max}`);
       return;
     }
+    if (!(DECISION_SECONDS_CHOICES as readonly number[]).includes(decisionSeconds)) {
+      this.fail(token, 'bad-time-limit', `限時只能選 ${DECISION_SECONDS_CHOICES.join('、')} 秒`);
+      return;
+    }
     const bots = FILL_BOTS.slice(0, seats - this.members.length);
     const seatConfigs: SeatConfig[] = [
       ...this.members.map((m): SeatConfig => ({ kind: 'remote', name: m.name })),
@@ -181,12 +235,18 @@ export class Room {
     ];
     const setup = setupFromSeats({ seed, seats: seatConfigs });
     const match: MatchRecord = {
+      seed,
+      decisionSeconds,
       players: setup.players.map((p, i) => ({ ...p, token: this.members[i]?.token ?? null })),
       startingCash: (setup.rules ?? RULES_V07).startingCash,
       events: [],
       privateEvents: [],
       result: null,
       error: null,
+      takeover: new Set(),
+      timeouts: {},
+      bots: new Map(),
+      paused: false,
     };
     this.match = match;
     this.phase = 'playing';
@@ -205,6 +265,7 @@ export class Room {
       onEvents: (events) => {
         match.events = [...match.events, ...events];
         this.broadcast({ type: 'events', events });
+        match.bots.forEach((bot) => bot.onEvents?.(events));
         inner.onEvents?.(events);
       },
     };
@@ -232,6 +293,17 @@ export class Room {
     this.syncAll();
   }
 
+  /** 「取消託管」: the seat's person decides again from the next decision on (§15.2). */
+  private resume(token: string): void {
+    const match = this.match;
+    const seat = match?.players.find((p) => p.token === token)?.id;
+    if (!match || seat === undefined || this.phase !== 'playing' || !match.takeover.has(seat)) return;
+    match.takeover = new Set([...match.takeover].filter((id) => id !== seat));
+    match.timeouts = { ...match.timeouts, [seat]: 0 };
+    this.broadcastSeats(match);
+    this.sync(token);
+  }
+
   private leave(token: string): void {
     if (this.phase !== 'lobby') {
       this.fail(token, 'already-started', '對局已經開始，座位會保留');
@@ -248,9 +320,9 @@ export class Room {
       decide: (context) =>
         new Promise<Action>((resolve) => {
           const request = { id: this.nextRequestId++, context };
-          this.pending = [...this.pending, { token, request, resolve }];
-          this.options.send(token, { type: 'request', request });
-          this.broadcast({ type: 'waiting', players: this.waitingOn() });
+          const entry: Pending = { token, request, resolve, deadline: null, cancel: null };
+          this.pending = [...this.pending, entry];
+          this.dispatch(match, entry);
         }),
       onPrivateEvent: (event) => {
         match.privateEvents = [...match.privateEvents, event];
@@ -274,15 +346,115 @@ export class Room {
       this.sync(token);
       return;
     }
-    this.pending = this.pending.filter((p) => p !== pending);
+    const seat = pending.request.context.decision.playerId;
+    if (this.match) this.match.timeouts = { ...this.match.timeouts, [seat]: 0 };
+    this.settle(pending, legal);
+  }
+
+  /**
+   * Routes an owed decision: nothing while paused, to the takeover bot for a seat under takeover or
+   * whose person is gone, otherwise to the person with a fresh full time limit.
+   */
+  private dispatch(match: MatchRecord, pending: Pending): void {
+    pending.cancel?.();
+    const seat = pending.request.context.decision.playerId;
+    if (match.paused) {
+      this.replace(pending, { ...pending, deadline: null, cancel: null });
+      return;
+    }
+    if (!this.options.isOnline(pending.token) && this.enterTakeover(match, seat)) this.broadcastSeats(match);
+    if (match.takeover.has(seat)) {
+      this.settle(pending, this.botAction(match, pending.request.context));
+      return;
+    }
+    const ms = match.decisionSeconds * 1000;
+    const fresh: Pending = {
+      ...pending,
+      deadline: this.options.clock.now() + ms,
+      cancel: this.options.clock.after(ms, () => this.timeOut(match, pending.request.id)),
+    };
+    this.replace(pending, fresh);
+    this.options.send(fresh.token, { type: 'request', request: this.wire(fresh) });
     this.broadcast({ type: 'waiting', players: this.waitingOn() });
-    pending.resolve(legal);
+  }
+
+  /** Time ran out: play the default, count it, and hand the seat to a bot after enough in a row. */
+  private timeOut(match: MatchRecord, requestId: number): void {
+    const pending = this.pending.find((p) => p.request.id === requestId);
+    if (!pending || this.match !== match) return;
+    const context = pending.request.context;
+    const seat = context.decision.playerId;
+    const timeouts = (match.timeouts[seat] ?? 0) + 1;
+    match.timeouts = { ...match.timeouts, [seat]: timeouts };
+    const action = timeoutAction(context.legalActions) ?? this.botAction(match, context);
+    const takeover = timeouts >= TAKEOVER_AFTER_TIMEOUTS;
+    if (takeover) {
+      this.enterTakeover(match, seat);
+      this.broadcastSeats(match);
+    }
+    this.options.send(pending.token, { type: 'timed-out', phase: context.decision.phase, takeover });
+    this.settle(pending, action);
+  }
+
+  private settle(pending: Pending, action: Action): void {
+    pending.cancel?.();
+    this.pending = this.pending.filter((p) => p.request.id !== pending.request.id);
+    this.broadcast({ type: 'waiting', players: this.waitingOn() });
+    pending.resolve(action);
+  }
+
+  /** True when the seat was not under takeover yet. */
+  private enterTakeover(match: MatchRecord, seat: PlayerId): boolean {
+    if (match.takeover.has(seat)) return false;
+    match.takeover = new Set([...match.takeover, seat]);
+    return true;
+  }
+
+  /** The takeover bot's choice; made on first use and told every public event so far. */
+  private botAction(match: MatchRecord, context: DecisionContext): Action {
+    const seat = context.decision.playerId;
+    let bot = match.bots.get(seat);
+    if (!bot) {
+      const index = match.players.findIndex((p) => p.id === seat);
+      bot = createBot(TAKEOVER_STRATEGY, (Math.imul(match.seed, 37) + index + 101) | 0);
+      if (match.events.length > 0) bot.onEvents?.(match.events);
+      match.bots = new Map([...match.bots, [seat, bot]]);
+    }
+    return bot.decide(context);
+  }
+
+  private nobodyHere(match: MatchRecord): boolean {
+    return !match.players.some((p) => p.token !== null && this.options.isOnline(p.token));
+  }
+
+  /** Nobody is connected: stop every clock and let no bot move until someone is back (§15.2). */
+  private pause(match: MatchRecord): void {
+    match.paused = true;
+    this.pending.forEach((p) => {
+      p.cancel?.();
+      this.replace(p, { ...p, deadline: null, cancel: null });
+    });
+  }
+
+  private replace(old: Pending, next: Pending): void {
+    this.pending = this.pending.map((p) => (p.request.id === old.request.id ? next : p));
+  }
+
+  private wire(pending: Pending): OnlineRequest {
+    const timeLeftMs = pending.deadline === null ? null : Math.max(0, pending.deadline - this.options.clock.now());
+    return { ...pending.request, timeLeftMs };
+  }
+
+  private broadcastSeats(match: MatchRecord): void {
+    const takeover = match.players.map((p) => p.id).filter((id) => match.takeover.has(id));
+    this.broadcast({ type: 'seats', takeover, paused: match.paused });
   }
 
   private end(match: MatchRecord, result: MatchResult | null, error: string | null): void {
     match.result = result;
     match.error = error;
     this.phase = 'finished';
+    this.pending.forEach((p) => p.cancel?.());
     this.pending = [];
     this.broadcast({ type: 'ended', result, error });
   }

@@ -1,13 +1,19 @@
 import type { DecisionContext } from '../bots';
-import type { Action, MatchEvent, MatchResult, PlayerId, PrivateEvent } from '../game';
+import type { Action, DecisionPhase, MatchEvent, MatchResult, PlayerId, PrivateEvent } from '../game';
 
-/** Bumped whenever messages change shape; a stale tab is told to reload. 2 = V0.7 rules, 3 = rematch. */
-export const PROTOCOL_VERSION = 3;
+/** Bumped whenever messages change shape; a stale tab is told to reload. 2 = V0.7 rules, 3 = rematch, 4 = timers and takeover. */
+export const PROTOCOL_VERSION = 4;
 
 /** Largest client message the server reads; actions are small JSON objects. */
 export const MAX_MESSAGE_BYTES = 16_384;
 
 export const NAME_MAX_LENGTH = 12;
+
+/** Decision time limits the host may pick (docs/game-design.md §15.1). */
+export const DECISION_SECONDS_CHOICES = [60, 120, 300] as const;
+export const DEFAULT_DECISION_SECONDS = 120;
+/** Timeouts in a row that put a seat under bot takeover (§15.2). */
+export const TAKEOVER_AFTER_TIMEOUTS = 2;
 
 /** Room codes avoid look-alike characters (0/O, 1/I/L) so they can be read aloud. */
 export const ROOM_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -31,6 +37,8 @@ export interface OnlinePlayer {
 export interface OnlineRequest {
   readonly id: number;
   readonly context: DecisionContext;
+  /** Milliseconds left when the server sent it; null while the match is paused. */
+  readonly timeLeftMs: number | null;
 }
 
 /** One seat's view of a running or finished match. */
@@ -45,6 +53,13 @@ export interface OnlineMatch {
   readonly requests: readonly OnlineRequest[];
   /** Seats (people only) still deciding the current phase. */
   readonly waitingOn: readonly PlayerId[];
+  /** Seats a bot is playing for (§15.2); public. */
+  readonly takeover: readonly PlayerId[];
+  /** No person is connected, so nothing is decided or timed (§15.2). */
+  readonly paused: boolean;
+  readonly decisionSeconds: number;
+  /** Timeouts in a row of `you`, so the table can warn before a takeover. */
+  readonly timeouts: number;
   readonly startingCash: number;
   readonly result: MatchResult | null;
   readonly error: string | null;
@@ -64,7 +79,10 @@ export interface RoomSnapshot {
 export type ClientMessage =
   | { readonly type: 'hello'; readonly token: string; readonly protocol: number }
   | { readonly type: 'join'; readonly name: string }
-  | { readonly type: 'start'; readonly seats: number }
+  /** `decisionSeconds` is one of DECISION_SECONDS_CHOICES; DEFAULT_DECISION_SECONDS when left out. */
+  | { readonly type: 'start'; readonly seats: number; readonly decisionSeconds?: number }
+  /** Takes the seat back from the bot (「取消託管」). */
+  | { readonly type: 'resume' }
   /** Host only, after the match ended: back to the lobby with the same people. */
   | { readonly type: 'rematch' }
   /** Gives up a seat in the lobby; a running match keeps its seats. */
@@ -77,6 +95,10 @@ export type ServerMessage =
   | { readonly type: 'private'; readonly event: PrivateEvent }
   | { readonly type: 'request'; readonly request: OnlineRequest }
   | { readonly type: 'waiting'; readonly players: readonly PlayerId[] }
+  /** Who is under takeover changed, or the match paused or went on. */
+  | { readonly type: 'seats'; readonly takeover: readonly PlayerId[]; readonly paused: boolean }
+  /** To the seat only: its time ran out and the default was played; `takeover` once a bot took over. */
+  | { readonly type: 'timed-out'; readonly phase: DecisionPhase; readonly takeover: boolean }
   | { readonly type: 'ended'; readonly result: MatchResult | null; readonly error: string | null }
   | { readonly type: 'error'; readonly code: ErrorCode; readonly message: string };
 
@@ -90,6 +112,7 @@ export type ErrorCode =
   | 'not-finished'
   | 'not-host'
   | 'bad-seats'
+  | 'bad-time-limit'
   | 'bad-name'
   | 'stale-request'
   | 'illegal-action';
@@ -140,7 +163,13 @@ export function parseClientMessage(raw: string): ClientMessage | null {
     case 'join':
       return typeof data.name === 'string' ? { type: 'join', name: data.name } : null;
     case 'start':
-      return Number.isInteger(data.seats) ? { type: 'start', seats: data.seats as number } : null;
+      if (!Number.isInteger(data.seats)) return null;
+      if (data.decisionSeconds === undefined) return { type: 'start', seats: data.seats as number };
+      return Number.isInteger(data.decisionSeconds)
+        ? { type: 'start', seats: data.seats as number, decisionSeconds: data.decisionSeconds as number }
+        : null;
+    case 'resume':
+      return { type: 'resume' };
     case 'rematch':
       return { type: 'rematch' };
     case 'leave':

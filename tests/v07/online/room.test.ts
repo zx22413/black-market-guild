@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_DECISION_SECONDS,
   PROTOCOL_VERSION,
   Room,
+  type RoomClock,
   cleanName,
   isRoomCode,
   parseClientMessage,
@@ -13,18 +15,54 @@ const HOST = 'host-token-0000000001';
 const GUEST = 'guest-token-000000002';
 const LATE = 'late-token-0000000003';
 
+/** A clock that only moves when a test says so. */
+function fakeClock() {
+  let now = 0;
+  let timers: { readonly at: number; readonly run: () => void; cancelled: boolean }[] = [];
+  const clock: RoomClock = {
+    now: () => now,
+    after: (ms, run) => {
+      const timer = { at: now + ms, run, cancelled: false };
+      timers = [...timers, timer];
+      return () => {
+        timer.cancelled = true;
+      };
+    },
+  };
+  /** Moves time on, firing every timer that comes due (including ones set while firing). */
+  const advance = (ms: number) => {
+    const end = now + ms;
+    for (;;) {
+      const due = timers.filter((t) => !t.cancelled && t.at <= end).sort((a, b) => a.at - b.at)[0];
+      if (!due) break;
+      now = due.at;
+      due.cancelled = true;
+      due.run();
+    }
+    now = end;
+  };
+  return { clock, advance };
+}
+
 function makeRoom() {
   const inbox = new Map<string, ServerMessage[]>();
   const online = new Set<string>([HOST, GUEST]);
+  const { clock, advance } = fakeClock();
   const room = new Room({
     hostToken: HOST,
     send: (token, message) => inbox.set(token, [...(inbox.get(token) ?? []), message]),
     isOnline: (token) => online.has(token),
+    clock,
   });
   const of = (token: string) => inbox.get(token) ?? [];
   const last = (token: string, type: ServerMessage['type']) => of(token).filter((m) => m.type === type).at(-1);
   const send = (token: string, message: Parameters<Room['receive']>[1]) => room.receive(token, message, 7);
-  return { room, inbox, of, last, send };
+  const setOnline = (token: string, isOnline: boolean) => {
+    if (isOnline) online.add(token);
+    else online.delete(token);
+    room.presenceChanged();
+  };
+  return { room, inbox, of, last, send, advance, setOnline };
 }
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -80,13 +118,13 @@ describe('V0.7 online room', () => {
     expect(events.at(-1)).toMatchObject({ type: 'match-ended' });
   });
 
-  it('speaks protocol 3 with V0.7 rules', () => {
-    expect(PROTOCOL_VERSION).toBe(3);
+  it('speaks protocol 4 with V0.7 rules', () => {
+    expect(PROTOCOL_VERSION).toBe(4);
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'hello', token: HOST, protocol: PROTOCOL_VERSION });
     const sync = ctx.last(HOST, 'sync');
     expect(sync?.type === 'sync' && [sync.room.minSeats, sync.room.maxSeats]).toEqual([3, 4]);
-    ctx.send(HOST, { type: 'hello', token: HOST, protocol: 2 });
+    ctx.send(HOST, { type: 'hello', token: HOST, protocol: 3 });
     expect(ctx.last(HOST, 'error')).toMatchObject({ code: 'outdated' });
   });
 
@@ -264,6 +302,13 @@ describe('protocol parsing', () => {
     expect(parseClientMessage(JSON.stringify({ type: 'start', seats: 3.5 }))).toBeNull();
     expect(parseClientMessage(JSON.stringify({ type: 'rematch' }))).toEqual({ type: 'rematch' });
     expect(parseClientMessage(JSON.stringify({ type: 'leave' }))).toEqual({ type: 'leave' });
+    expect(parseClientMessage(JSON.stringify({ type: 'resume' }))).toEqual({ type: 'resume' });
+    expect(parseClientMessage(JSON.stringify({ type: 'start', seats: 3, decisionSeconds: 60 }))).toEqual({
+      type: 'start',
+      seats: 3,
+      decisionSeconds: 60,
+    });
+    expect(parseClientMessage(JSON.stringify({ type: 'start', seats: 3, decisionSeconds: '60' }))).toBeNull();
     expect(parseClientMessage(JSON.stringify({ type: 'submit', requestId: 1, action: [] }))).toBeNull();
     expect(parseClientMessage(JSON.stringify({ type: 'join', name: 'x'.repeat(20_000) }))).toBeNull();
   });
@@ -273,5 +318,170 @@ describe('protocol parsing', () => {
     expect(cleanName('一二三四五六七八九十一二三四')).toBe('一二三四五六七八九十一二');
     expect(isRoomCode('ABC234')).toBe(true);
     expect(isRoomCode('ABC0O1')).toBe(false);
+  });
+});
+
+/** The open requests of a token not answered yet, newest last. */
+function openRequests(ctx: ReturnType<typeof makeRoom>, token: string): OnlineRequest[] {
+  const sync = ctx.last(token, 'sync');
+  const fromSync = sync?.type === 'sync' ? (sync.room.match?.requests ?? []) : [];
+  const sent = ctx.of(token).flatMap((m) => (m.type === 'request' ? [m.request] : []));
+  const waiting = ctx.last(token, 'waiting');
+  const stillOwed = new Set(waiting?.type === 'waiting' ? waiting.players : []);
+  return [...fromSync, ...sent].filter((r, i, all) => all.findIndex((o) => o.id === r.id) === i && stillOwed.has(r.context.decision.playerId));
+}
+
+function answer(ctx: ReturnType<typeof makeRoom>, token: string, request: OnlineRequest) {
+  ctx.send(token, { type: 'submit', requestId: request.id, action: structuredClone(request.context.legalActions[0]!) });
+}
+
+/** A one-person room (plus two bots) on the island draft, with the host deciding. */
+async function soloMatch(decisionSeconds?: number) {
+  const ctx = makeRoom();
+  ctx.send(HOST, { type: 'join', name: '房主' });
+  ctx.send(HOST, decisionSeconds === undefined ? { type: 'start', seats: 3 } : { type: 'start', seats: 3, decisionSeconds });
+  await tick();
+  return ctx;
+}
+
+const seatsOf = (ctx: ReturnType<typeof makeRoom>, token: string) => {
+  const seats = ctx.last(token, 'seats');
+  return seats?.type === 'seats' ? seats : null;
+};
+
+describe('decision time limits and takeover (game-design §15)', () => {
+  it('times each decision with the host-picked limit, two minutes by default', async () => {
+    const ctx = await soloMatch();
+    const [request] = openRequests(ctx, HOST);
+    expect(request?.timeLeftMs).toBe(DEFAULT_DECISION_SECONDS * 1000);
+    const sync = ctx.last(HOST, 'sync');
+    expect(sync?.type === 'sync' && sync.room.match?.decisionSeconds).toBe(120);
+
+    const fast = await soloMatch(60);
+    expect(openRequests(fast, HOST)[0]?.timeLeftMs).toBe(60_000);
+  });
+
+  it('refuses a time limit that is not on offer', () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'join', name: '房主' });
+    ctx.send(HOST, { type: 'start', seats: 3, decisionSeconds: 90 });
+    expect(ctx.last(HOST, 'error')).toMatchObject({ code: 'bad-time-limit' });
+  });
+
+  it('lets a bot pick the island when time runs out, and counts it as a timeout', async () => {
+    const ctx = await soloMatch(60);
+    ctx.advance(60_000);
+    await tick();
+    expect(ctx.last(HOST, 'timed-out')).toEqual({ type: 'timed-out', phase: 'island-choice', takeover: false });
+    const events = ctx.of(HOST).flatMap((m) => (m.type === 'events' ? m.events : []));
+    expect(events.some((e) => e.type === 'islands-chosen')).toBe(true);
+    const next = openRequests(ctx, HOST).at(-1);
+    expect(next?.context.decision.phase).toBe('invest');
+    ctx.send(HOST, { type: 'hello', token: HOST, protocol: PROTOCOL_VERSION });
+    const after = ctx.last(HOST, 'sync');
+    expect(after?.type === 'sync' && after.room.match?.timeouts).toBe(1);
+  });
+
+  it('stays in port when an invest decision times out', async () => {
+    const ctx = await soloMatch(60);
+    answer(ctx, HOST, openRequests(ctx, HOST)[0]!);
+    await tick();
+    expect(openRequests(ctx, HOST).at(-1)?.context.decision.phase).toBe('invest');
+    ctx.advance(60_000);
+    await tick();
+    expect(ctx.last(HOST, 'timed-out')).toEqual({ type: 'timed-out', phase: 'invest', takeover: false });
+    const events = ctx.of(HOST).flatMap((m) => (m.type === 'events' ? m.events : []));
+    const launch = events.find((e) => e.type === 'ships-launched');
+    expect(launch?.type === 'ships-launched' && launch.stayedInPort).toContain('p1');
+  });
+
+  it('hands the seat to a bot after two timeouts in a row, and the person can take it back', async () => {
+    const ctx = await soloMatch(60);
+    ctx.advance(60_000);
+    await tick();
+    ctx.advance(60_000);
+    await tick();
+    expect(ctx.last(HOST, 'timed-out')).toMatchObject({ takeover: true });
+    expect(seatsOf(ctx, HOST)).toEqual({ type: 'seats', takeover: ['p1'], paused: false });
+
+    // Under takeover the bot plays on without asking; the match runs to its end.
+    for (let i = 0; i < 50 && !ctx.last(HOST, 'ended'); i++) await tick();
+    expect(ctx.last(HOST, 'ended')).toMatchObject({ error: null });
+  });
+
+  it('resets the count when the person decides in between', async () => {
+    const ctx = await soloMatch(60);
+    ctx.advance(60_000);
+    await tick();
+    answer(ctx, HOST, openRequests(ctx, HOST).at(-1)!);
+    await tick();
+    ctx.advance(60_000);
+    await tick();
+    expect(ctx.last(HOST, 'timed-out')).toMatchObject({ takeover: false });
+    expect(seatsOf(ctx, HOST)?.takeover ?? []).toEqual([]);
+  });
+
+  it('gives the decisions back after 「取消託管」, with the count at zero', async () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'join', name: '房主' });
+    ctx.send(GUEST, { type: 'join', name: '客人' });
+    ctx.send(HOST, { type: 'start', seats: 3, decisionSeconds: 60 });
+    await tick();
+    // The guest drops: their draft goes to the bot and they are under takeover.
+    ctx.setOnline(GUEST, false);
+    await tick();
+    expect(seatsOf(ctx, HOST)).toEqual({ type: 'seats', takeover: ['p2'], paused: false });
+    expect(ctx.last(HOST, 'waiting')).toEqual({ type: 'waiting', players: ['p1'] });
+
+    ctx.setOnline(GUEST, true);
+    ctx.send(GUEST, { type: 'hello', token: GUEST, protocol: PROTOCOL_VERSION });
+    const back = ctx.last(GUEST, 'sync');
+    expect(back?.type === 'sync' && back.room.match?.takeover).toEqual(['p2']);
+
+    ctx.send(GUEST, { type: 'resume' });
+    expect(seatsOf(ctx, HOST)?.takeover).toEqual([]);
+    const resumed = ctx.last(GUEST, 'sync');
+    expect(resumed?.type === 'sync' && resumed.room.match?.timeouts).toBe(0);
+
+    // The host's draft settles the phase; the guest is asked to invest themself.
+    answer(ctx, HOST, openRequests(ctx, HOST)[0]!);
+    await tick();
+    expect(openRequests(ctx, GUEST).at(-1)?.context.decision).toEqual({ playerId: 'p2', phase: 'invest' });
+  });
+
+  it('pauses with nobody connected: no clock runs and no bot moves until someone is back', async () => {
+    const ctx = await soloMatch(60);
+    ctx.setOnline(HOST, false);
+    ctx.advance(10 * 60_000);
+    await tick();
+    expect(ctx.last(HOST, 'timed-out')).toBeUndefined();
+    const events = ctx.of(HOST).flatMap((m) => (m.type === 'events' ? m.events : []));
+    expect(events.some((e) => e.type === 'islands-chosen')).toBe(false);
+
+    // Back again: the match goes on and the host decides themself, with the full limit.
+    ctx.setOnline(HOST, true);
+    ctx.send(HOST, { type: 'hello', token: HOST, protocol: PROTOCOL_VERSION });
+    const sync = ctx.last(HOST, 'sync');
+    expect(sync?.type === 'sync' && sync.room.match?.paused).toBe(false);
+    expect(sync?.type === 'sync' && sync.room.match?.takeover).toEqual([]);
+    expect(sync?.type === 'sync' && sync.room.match?.requests[0]?.timeLeftMs).toBe(60_000);
+  });
+
+  it('gives a fresh full limit to a person still seated when the match goes on', async () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'join', name: '房主' });
+    ctx.send(GUEST, { type: 'join', name: '客人' });
+    ctx.send(HOST, { type: 'start', seats: 3, decisionSeconds: 60 });
+    await tick();
+    ctx.advance(30_000);
+    ctx.setOnline(HOST, false);
+    ctx.setOnline(GUEST, false);
+    ctx.advance(10 * 60_000);
+    ctx.setOnline(GUEST, true);
+    // The host left first, so a bot took their seat; the guest's leaving only paused the match.
+    expect(seatsOf(ctx, GUEST)?.takeover).toEqual(['p1']);
+    const sync = ctx.last(GUEST, 'sync');
+    const draft = sync?.type === 'sync' ? sync.room.match?.requests.find((r) => r.context.decision.phase === 'island-choice') : undefined;
+    expect(draft?.timeLeftMs).toBe(60_000);
   });
 });
