@@ -4,10 +4,10 @@
 /** Cloudflare's always-pass invisible test key; works on localhost only with the test secret in .dev.vars. */
 const TEST_SITE_KEY = '1x00000000000000000000BB';
 /**
- * The production site key from the Cloudflare dashboard (public, safe to commit). Empty until it
- * is created: rooms then open without a token, and the server must have no TURNSTILE_SECRET either.
+ * The production site key from the Cloudflare dashboard (public, safe to commit): the managed
+ * widget for black-market-guild.zx2241384.workers.dev. Its secret is the Worker secret TURNSTILE_SECRET.
  */
-const SITE_KEY = '';
+const SITE_KEY = '0x4AAAAAAFobuEIvPNME8gE2';
 
 const SCRIPT_URL = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
 const TIMEOUT_MS = 20_000;

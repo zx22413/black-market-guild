@@ -106,7 +106,7 @@
 | 房主管理 | 開局前可「移出」別人（不能再入座這間房）、「鎖房」不讓新的人入座 | `src/v07/online/room.ts` |
 | 房間到期 | 沒人連線滿 1 小時、或建立滿 24 小時刪除 | `game-design.md` 第 15.3 節 |
 
-**上線前要使用者做的事：** 在 Cloudflare 後台建立 Turnstile 小工具，把公開的 site key 填進 `turnstile.ts` 的 `SITE_KEY`，私密金鑰用 `npx wrangler secret put TURNSTILE_SECRET` 存成 Worker secret。兩者要一起設：只設其中一個，建房會全部失敗或完全不驗證。舊的 `HOST_KEY` secret 已經不用，可以刪掉（`npx wrangler secret delete HOST_KEY`）。
+**上線前要使用者做的事：** Turnstile 小工具已建立（2026-10-28，Managed 模式，site key 已填進 `turnstile.ts` 的 `SITE_KEY`）；還要把私密金鑰用 `npx wrangler secret put TURNSTILE_SECRET` 存成 Worker secret。兩者要一起設：只設其中一個，建房會全部失敗或完全不驗證。舊的 `HOST_KEY` secret 已經不用，可以刪掉（`npx wrangler secret delete HOST_KEY`）。
 
 **已知限制：** 房間的禁止名單和鎖房狀態只存在記憶體，部署或房間被回收時會消失（與對局本身相同，見第 6 節）。「打完一局單人局才出現邀請朋友」的想法沒有採用，建房不設門檻。
 

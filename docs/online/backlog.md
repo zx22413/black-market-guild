@@ -11,7 +11,7 @@
 | 正式網址 | https://black-market-guild.zx2241384.workers.dev（Cloudflare Worker：`dist/` 靜態檔＋`/api` 房間，每個房間一個 Durable Object） |
 | 舊備案 | https://black-market-guild.pages.dev（Cloudflare Pages，2026-10-03 的純單機版，**沒有線上房間**，不會自動更新） |
 | 部署 | 手動 `npm run deploy`（build＋`wrangler deploy`）。**push 到 main 不會自動部署**，這是刻意的，原因見第 1 節第 1 項 |
-| 開房 | 任何人都能開（2026-10-28 起）。Turnstile secret 是 Worker secret `TURNSTILE_SECRET`（本機 `.dev.vars` 用 Cloudflare 的測試 secret），site key 在 `src/ui-v07/online/turnstile.ts`；正式金鑰尚未申請。舊的 `HOST_KEY` 已不用 |
+| 開房 | 任何人都能開（2026-10-28 起）。Turnstile secret 是 Worker secret `TURNSTILE_SECRET`（本機 `.dev.vars` 用 Cloudflare 的測試 secret），site key 在 `src/ui-v07/online/turnstile.ts`（2026-10-28 建立，Managed 模式）。舊的 `HOST_KEY` 已不用 |
 | 本機測試 | `npm run build` 後 `npm run server:dev`（port 8787，`.claude/launch.json` 的 `online` 設定）；`npm run dev` 會把 `/api` 轉到 8787 |
 | 協定版本 | `PROTOCOL_VERSION`（`src/online/protocol.ts`），訊息格式變動時要加 1，舊分頁會被要求重新整理 |
 
