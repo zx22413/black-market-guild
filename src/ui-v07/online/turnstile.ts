@@ -10,7 +10,8 @@ const TEST_SITE_KEY = '1x00000000000000000000BB';
 const SITE_KEY = '0x4AAAAAAFobuEIvPNME8gE2';
 
 const SCRIPT_URL = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-const TIMEOUT_MS = 20_000;
+/** Long enough for someone Cloudflare asks to tick the box (managed mode), not only for the silent check. */
+const TIMEOUT_MS = 120_000;
 
 interface TurnstileApi {
   render(
