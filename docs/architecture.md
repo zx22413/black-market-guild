@@ -176,6 +176,6 @@ interface Controller {
 
 `TODO`（臨時版的限制）：
 - 對局只存在記憶體，**重新部署或 Durable Object 被回收都會中斷進行中的對局**。之後可把座位設定與行動紀錄存進 Durable Object storage，以 `replayMatch` 重建（Bot 的記憶也需重播事件）。
-- 沒有觀戰與中途加入；超時與代打規則已定案、尚待實作（見 7.2）。
+- 沒有觀戰與中途加入。超時與託管見 7.2；房間沒人連線滿 1 小時或建立滿 24 小時由 Durable Object alarm 刪除（`game-design.md` 第 15.3 節）。
 - 房主密碼是單一共用密碼，沒有帳號系統。
 

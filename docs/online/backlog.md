@@ -20,11 +20,11 @@
 ## 1. 連線功能還沒做完（依建議優先順序）
 
 1. **對局撐過部署與回收**：對局只存在 Durable Object 的記憶體，重新部署或物件被回收（沒人連線一段時間）就會中斷，大廳成員也會消失（客戶端會自動重新加入）。做法：開局時把座位設定、seed 存進 Durable Object storage，每個被接受的行動也追加存入；喚醒時用 `replayMatch` 重建狀態、事件與私有事件，再接回 `runMatch`。注意 Bot 有記憶（`onEvents`），重建時也要依序重播事件給 Bot，確認結果和原本一致（寫測試：同一 seed＋行動紀錄，重建前後的 `MatchLog` 相同）。相關：`server/worker.ts`、`src/online/room.ts`、`src/match/runner.ts`。
-2. **斷線與超時規則**：2026-10-28 定案於 `game-design.md` 第 15 節（限時、託管、無人在線時暫停）。伺服器端已完成（`src/v07/online/room.ts`、`timeout.ts`）；介面（倒數、託管橫幅、取消託管）與房間到期清除尚待完成。
+2. ~~**斷線與超時規則**~~：2026-10-28 完成，規則在 `game-design.md` 第 15 節（限時、託管、暫停），伺服器在 `src/v07/online/room.ts`、`timeout.ts`，介面在 `src/ui-v07/online/MatchClock.tsx`，規則書有「連線」章。
 3. **自動部署**：等第 1 項完成、部署不會中斷對局之後再考慮。選項：Cloudflare Workers Builds 連 GitHub（使用者要在 Cloudflare 後台授權），或只在 push 到 `release` 分支時部署。直接「push main 就部署」不建議，因為使用者與其他 session 常常推 main。
 4. **換裝置回到座位**：座位以瀏覽器 `localStorage` 的隨機 token 辨識，換手機、換瀏覽器或用無痕模式就回不去。可考慮「房主把座位重新指派給新連線」或座位專屬的重連連結。
 5. **房間管理**：沒有離開座位、踢人、房主轉移、觀戰、中途加入。（「再來一局」回同一個大廳已完成，2026-10-23。）
-6. **房間清理**：Durable Object storage 的 `host` 紀錄永遠不會刪，房號理論上會越用越少（31^6 個，實際上不用擔心）。之後可用 alarm 在一段時間沒人後清掉。
+6. ~~**房間清理**~~：2026-10-28 完成。房間沒人連線滿 1 小時、或建立滿 24 小時，由 Durable Object alarm 刪除（`game-design.md` 第 15.3 節；判斷在 `src/v07/online/expiry.ts`，alarm 在 `server/rooms.ts`）。之前建立的舊房間，下次有人連線時才開始計時。
 7. **速率限制**：開房需要房主密碼；WebSocket 訊息有大小上限（16 KB），但沒有頻率限制。
 8. **對局結束後把完整紀錄存到 R2**（接在第 1 項之後做）：每局結束時把座位設定、seed、規則版本、行動紀錄與結果存成一個 JSON 檔，放進 R2（Cloudflare 物件儲存，下載流量不收費，帳號已開通；現有的 `lbdog-os-blueprint-content` 是別的專案的，要另開一個 bucket）。用途：以 `replayMatch` 重播或分享對局、賽後覆盤、收集真人對局數據，和 `docs/simulations/` 的 Bot 模擬對照平衡。注意：
    - 進行中的對局狀態要存在 Durable Object storage（第 1 項），不要用 R2；R2 只放結束後不再變動的整份紀錄。

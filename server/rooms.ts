@@ -28,6 +28,11 @@ export interface OnlineModule<M extends ClientMessageLike = ClientMessageLike> {
   isRoomCode(code: unknown): code is string;
   isValidToken(token: unknown): token is string;
   parseClientMessage(raw: string): M | null;
+  /** When the room is deleted, from when it opened and when it went quiet (docs/game-design.md §15.3). */
+  checkExpiry(
+    room: { readonly createdAt: number; readonly idleSince: number | null },
+    now: number,
+  ): { readonly kind: 'expire' } | { readonly kind: 'check-at'; readonly at: number };
   createRoom(options: {
     readonly hostToken: string;
     readonly send: (token: string, message: unknown) => void;
@@ -98,7 +103,8 @@ export function createWorker(online: OnlineModule): ExportedHandler<Env> {
 /**
  * One room per Durable Object; subclasses pick the protocol version. Sockets use the plain
  * accept() API rather than hibernation, so the object (and the match running in memory) stays
- * alive while anyone is connected.
+ * alive while anyone is connected. An alarm deletes the room once it has been quiet for long
+ * enough or is too old (OnlineModule.checkExpiry); storage keeps `createdAt` and `idleSince`.
  * TODO: the match is not persisted; a redeploy or an eviction ends running matches.
  */
 export abstract class RoomObjectBase extends DurableObject<Env> {
@@ -109,8 +115,44 @@ export abstract class RoomObjectBase extends DurableObject<Env> {
   /** Reserves this room for a host; false if the code is already taken. */
   async claim(hostToken: string): Promise<boolean> {
     if (await this.ctx.storage.get<string>('host')) return false;
-    await this.ctx.storage.put('host', hostToken);
+    const now = Date.now();
+    await this.ctx.storage.put({ host: hostToken, createdAt: now, idleSince: now });
+    await this.scheduleExpiry();
     return true;
+  }
+
+  /** Sets the alarm for the room's next expiry check, or deletes it right away. */
+  private async scheduleExpiry(): Promise<void> {
+    const now = Date.now();
+    let createdAt = await this.ctx.storage.get<number>('createdAt');
+    if (createdAt === undefined) {
+      // A room opened before rooms expired: its age counts from now.
+      createdAt = now;
+      await this.ctx.storage.put('createdAt', createdAt);
+    }
+    const stored = (await this.ctx.storage.get<number>('idleSince')) ?? null;
+    const idleSince = this.sockets.size > 0 ? null : (stored ?? now);
+    const check = this.online.checkExpiry({ createdAt, idleSince }, now);
+    if (check.kind === 'expire') await this.expire();
+    else await this.ctx.storage.setAlarm(check.at);
+  }
+
+  override async alarm(): Promise<void> {
+    if (!(await this.ctx.storage.get<string>('host'))) return;
+    await this.scheduleExpiry();
+  }
+
+  /** Deletes the room: everyone is told it is gone and the code is free again. */
+  private async expire(): Promise<void> {
+    const gone = serverError('no-room', '房間已過期或不存在');
+    this.sockets.forEach((_, socket) => {
+      socket.send(gone);
+      socket.close(4410, 'room expired');
+    });
+    this.sockets.clear();
+    this.room = null;
+    await this.ctx.storage.deleteAlarm();
+    await this.ctx.storage.deleteAll();
   }
 
   private async loadRoom(): Promise<ServerRoom<ClientMessageLike> | null> {
@@ -144,11 +186,13 @@ export abstract class RoomObjectBase extends DurableObject<Env> {
     const { 0: client, 1: server } = new WebSocketPair();
     server.accept();
     if (!room) {
-      server.send(serverError('no-room', '找不到這個房間'));
+      server.send(serverError('no-room', '房間已過期或不存在'));
       server.close(4404, 'no room');
       return new Response(null, { status: 101, webSocket: client });
     }
     this.sockets.set(server, null);
+    await this.ctx.storage.delete('idleSince');
+    await this.scheduleExpiry();
     server.addEventListener('message', (event) => {
       const raw = typeof event.data === 'string' ? event.data : '';
       const message = raw.length <= this.online.MAX_MESSAGE_BYTES ? this.online.parseClientMessage(raw) : null;
@@ -165,7 +209,11 @@ export abstract class RoomObjectBase extends DurableObject<Env> {
       room.receive(helloToken ?? owner!, message, randomSeed());
     });
     const drop = () => {
-      if (this.sockets.delete(server)) room.presenceChanged();
+      if (!this.sockets.delete(server)) return;
+      room.presenceChanged();
+      if (this.sockets.size === 0) {
+        void this.ctx.storage.put('idleSince', Date.now()).then(() => this.scheduleExpiry());
+      }
     };
     server.addEventListener('close', drop);
     server.addEventListener('error', drop);
