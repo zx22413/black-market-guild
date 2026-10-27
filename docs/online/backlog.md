@@ -11,7 +11,7 @@
 | 正式網址 | https://black-market-guild.zx2241384.workers.dev（Cloudflare Worker：`dist/` 靜態檔＋`/api` 房間，每個房間一個 Durable Object） |
 | 舊備案 | https://black-market-guild.pages.dev（Cloudflare Pages，2026-10-03 的純單機版，**沒有線上房間**，不會自動更新） |
 | 部署 | 手動 `npm run deploy`（build＋`wrangler deploy`）。**push 到 main 不會自動部署**，這是刻意的，原因見第 1 節第 1 項 |
-| 房主密碼 | Worker secret `HOST_KEY`；正式的存在專案根目錄 `.host-key`，本機 `wrangler dev` 用 `.dev.vars`，兩者都不進版本控制。換密碼：`npx wrangler secret put HOST_KEY` |
+| 開房 | 任何人都能開（2026-10-28 起）。Turnstile secret 是 Worker secret `TURNSTILE_SECRET`（本機 `.dev.vars` 用 Cloudflare 的測試 secret），site key 在 `src/ui-v07/online/turnstile.ts`；正式金鑰尚未申請。舊的 `HOST_KEY` 已不用 |
 | 本機測試 | `npm run build` 後 `npm run server:dev`（port 8787，`.claude/launch.json` 的 `online` 設定）；`npm run dev` 會把 `/api` 轉到 8787 |
 | 協定版本 | `PROTOCOL_VERSION`（`src/online/protocol.ts`），訊息格式變動時要加 1，舊分頁會被要求重新整理 |
 
@@ -25,7 +25,7 @@
 4. **換裝置回到座位**：座位以瀏覽器 `localStorage` 的隨機 token 辨識，換手機、換瀏覽器或用無痕模式就回不去。可考慮「房主把座位重新指派給新連線」或座位專屬的重連連結。
 5. **房間管理**：沒有離開座位、踢人、房主轉移、觀戰、中途加入。（「再來一局」回同一個大廳已完成，2026-10-23。）
 6. ~~**房間清理**~~：2026-10-28 完成。房間沒人連線滿 1 小時、或建立滿 24 小時，由 Durable Object alarm 刪除（`game-design.md` 第 15.3 節；判斷在 `src/v07/online/expiry.ts`，alarm 在 `server/rooms.ts`）。之前建立的舊房間，下次有人連線時才開始計時。
-7. **速率限制**：開房需要房主密碼；WebSocket 訊息有大小上限（16 KB），但沒有頻率限制。
+7. ~~**速率限制**~~：2026-10-28 完成：開放建房，加上 Turnstile、每 IP 建房與連線頻率、每間房連線數、每條連線訊息頻率上限、來源檢查（`server/limits.ts`，說明見 `public-launch-plan.md` 第 5 節）。
 8. **對局結束後把完整紀錄存到 R2**（接在第 1 項之後做）：每局結束時把座位設定、seed、規則版本、行動紀錄與結果存成一個 JSON 檔，放進 R2（Cloudflare 物件儲存，下載流量不收費，帳號已開通；現有的 `lbdog-os-blueprint-content` 是別的專案的，要另開一個 bucket）。用途：以 `replayMatch` 重播或分享對局、賽後覆盤、收集真人對局數據，和 `docs/simulations/` 的 Bot 模擬對照平衡。注意：
    - 進行中的對局狀態要存在 Durable Object storage（第 1 項），不要用 R2；R2 只放結束後不再變動的整份紀錄。
    - 紀錄裡有玩家名稱，公開分享或拿去分析前要決定保存多久、是否匿名化，**要先問使用者**。
@@ -41,7 +41,7 @@
 
 ## 3. 待使用者決定
 
-- ~~「線上房間」按鈕對所有人都看得到~~：2026-10-23 決定並完成，「建立房間」只在存過房主密碼的瀏覽器（或 `?host` 頁面）出現，其他人看到的是輸入房號。開放給陌生人時再改成速率限制＋Turnstile＋房間過期，拿掉密碼。
+- ~~「線上房間」按鈕對所有人都看得到~~：2026-10-28 起任何人都能建房，房主密碼已拿掉（Q-09）。
 - **自訂網域**：使用者有 `lbdog.uk`，可接成子網域（例如 `bmg.lbdog.uk`）。目前選擇先用免費網址。
 - **舊的 Pages 備案**（`black-market-guild.pages.dev`）要保留還是刪掉。
 

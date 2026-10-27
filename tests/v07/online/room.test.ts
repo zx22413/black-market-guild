@@ -555,3 +555,54 @@ describe('decision time limits and takeover (game-design §15)', () => {
     expect(sync?.type === 'sync' && sync.room.match?.requests[0]?.timeLeftMs).toBe(20_000);
   });
 });
+
+describe('the host managing the lobby', () => {
+  it('sends someone out for good, and only the host may', () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'join', name: '房主' });
+    ctx.send(GUEST, { type: 'join', name: '客人' });
+    ctx.send(GUEST, { type: 'kick', member: 0 });
+    expect(ctx.last(GUEST, 'error')).toMatchObject({ code: 'not-host' });
+
+    ctx.send(HOST, { type: 'kick', member: 1 });
+    expect(ctx.last(GUEST, 'error')).toMatchObject({ code: 'kicked' });
+    const lobby = ctx.last(HOST, 'sync');
+    expect(lobby?.type === 'sync' && lobby.room.members.map((m) => m.name)).toEqual(['房主']);
+    expect(ctx.last(GUEST, 'sync')).toMatchObject({ room: { joined: false } });
+
+    ctx.send(GUEST, { type: 'join', name: '又來了' });
+    const after = ctx.last(HOST, 'sync');
+    expect(after?.type === 'sync' && after.room.members.map((m) => m.name)).toEqual(['房主']);
+    // The host cannot send themself out.
+    ctx.send(HOST, { type: 'kick', member: 0 });
+    expect(ctx.last(HOST, 'sync')).toMatchObject({ room: { joined: true } });
+  });
+
+  it('closes the lobby to newcomers but keeps those already seated', () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'join', name: '房主' });
+    ctx.send(GUEST, { type: 'join', name: '客人' });
+    ctx.send(GUEST, { type: 'lock', locked: true });
+    expect(ctx.last(GUEST, 'error')).toMatchObject({ code: 'not-host' });
+
+    ctx.send(HOST, { type: 'lock', locked: true });
+    expect(ctx.last(GUEST, 'sync')).toMatchObject({ room: { locked: true } });
+    ctx.send(LATE, { type: 'join', name: '晚到' });
+    expect(ctx.last(LATE, 'error')).toMatchObject({ code: 'locked' });
+    ctx.send(GUEST, { type: 'join', name: '改名' });
+    const renamed = ctx.last(HOST, 'sync');
+    expect(renamed?.type === 'sync' && renamed.room.members.map((m) => m.name)).toEqual(['房主', '改名']);
+
+    ctx.send(HOST, { type: 'lock', locked: false });
+    ctx.send(LATE, { type: 'join', name: '晚到' });
+    const open = ctx.last(HOST, 'sync');
+    expect(open?.type === 'sync' && open.room.members).toHaveLength(3);
+  });
+
+  it('parses kick and lock messages', () => {
+    expect(parseClientMessage(JSON.stringify({ type: 'kick', member: 1 }))).toEqual({ type: 'kick', member: 1 });
+    expect(parseClientMessage(JSON.stringify({ type: 'kick', member: '1' }))).toBeNull();
+    expect(parseClientMessage(JSON.stringify({ type: 'lock', locked: true }))).toEqual({ type: 'lock', locked: true });
+    expect(parseClientMessage(JSON.stringify({ type: 'lock', locked: 1 }))).toBeNull();
+  });
+});

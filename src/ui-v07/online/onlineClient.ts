@@ -29,6 +29,10 @@ export interface OnlineClient {
   resume(): void;
   /** Host only, after the match: everyone goes back to this room's lobby. */
   rematch(): void;
+  /** Host only, in the lobby: sends a member (by their place in the list) out for good. */
+  kick(member: number): void;
+  /** Host only, in the lobby: closes or reopens the lobby to newcomers. */
+  lock(locked: boolean): void;
   /** Gives up this browser's lobby seat and stops sitting down again on its own. */
   leave(): void;
   /** The running match as a GameSession for the table screen; null before the start. */
@@ -75,8 +79,6 @@ export function playerToken(): string {
 
 export const savedName = (): string => storageGet('bmg7.name') ?? '';
 export const saveName = (name: string): void => storageSet('bmg7.name', name);
-export const savedHostKey = (): string => storageGet('bmg7.hostKey') ?? '';
-export const saveHostKey = (key: string): void => storageSet('bmg7.hostKey', key);
 
 /** The room this browser last sat in, offered on the main menu as "back to the room". */
 export const lastRoom = (): string | null => storageGet('bmg7.lastRoom');
@@ -86,12 +88,12 @@ export function forgetLastRoom(code?: string): void {
   storageRemove('bmg7.lastRoom');
 }
 
-/** Asks the server for a new room; only works with the host key. */
-export async function createRoom(hostKey: string): Promise<string> {
+/** Asks the server for a new room; anyone may, with the Turnstile token when the page has one. */
+export async function createRoom(turnstile: string | null): Promise<string> {
   const response = await fetch(`${API_BASE}/rooms`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ hostKey, hostToken: playerToken() }),
+    body: JSON.stringify({ hostToken: playerToken(), ...(turnstile === null ? {} : { turnstile }) }),
   });
   const body = (await response.json().catch(() => ({}))) as { room?: string; error?: string };
   if (!response.ok || !body.room) {
@@ -212,6 +214,11 @@ export function connectRoom(code: string): OnlineClient {
     if (message.type === 'error') {
       const fatal = message.code === 'no-room' || message.code === 'outdated';
       if (message.code === 'no-room') forgetLastRoom(code);
+      // Sent out by the host: stop sitting down again on reconnects.
+      if (message.code === 'kicked') {
+        storageRemove(`bmg7.joined.${code}`);
+        forgetLastRoom(code);
+      }
       update({ notice: message.message, fatal: state.fatal || fatal });
       return;
     }
@@ -282,6 +289,8 @@ export function connectRoom(code: string): OnlineClient {
     start: (seats, decisionSeconds) => send({ type: 'start', seats, decisionSeconds }),
     resume: () => send({ type: 'resume' }),
     rematch: () => send({ type: 'rematch' }),
+    kick: (member) => send({ type: 'kick', member }),
+    lock: (locked) => send({ type: 'lock', locked }),
     leave: () => {
       storageRemove(`bmg7.joined.${code}`);
       send({ type: 'leave' });

@@ -94,6 +94,9 @@ export class Room {
   private members: readonly Member[] = [];
   private match: MatchRecord | null = null;
   private pending: readonly Pending[] = [];
+  /** People the host sent out; they may watch but never sit down in this room again. */
+  private banned: ReadonlySet<string> = new Set();
+  private locked = false;
   /** Everyone who said hello, members or not, so watchers also learn when the lobby reopens. */
   private seen: ReadonlySet<string> = new Set();
   private nextRequestId = 1;
@@ -122,6 +125,12 @@ export class Room {
         return;
       case 'shown':
         this.shown(token, message.requestId);
+        return;
+      case 'kick':
+        this.kick(token, message.member);
+        return;
+      case 'lock':
+        this.lock(token, message.locked);
         return;
       case 'rematch':
         this.rematch(token);
@@ -162,6 +171,7 @@ export class Room {
       })),
       joined: this.members.some((m) => m.token === token),
       isHost: token === this.options.hostToken,
+      locked: this.locked,
       minSeats: RULES_V07.players.min,
       maxSeats: RULES_V07.players.max,
       match: this.match ? this.matchFor(token, this.match) : null,
@@ -207,6 +217,14 @@ export class Room {
     }
     if (this.phase !== 'lobby') {
       this.fail(token, 'already-started', '對局已經開始，無法加入');
+      return;
+    }
+    if (this.banned.has(token)) {
+      this.fail(token, 'kicked', '房主已將你移出這個房間');
+      return;
+    }
+    if (this.locked) {
+      this.fail(token, 'locked', '房主已鎖房，無法入座');
       return;
     }
     if (this.members.length >= RULES_V07.players.max) {
@@ -314,6 +332,32 @@ export class Room {
     }
     this.broadcastSeats(match);
     this.sync(token);
+  }
+
+  /** The host sends a lobby member out; they cannot sit down here again. */
+  private kick(token: string, member: number): void {
+    if (token !== this.options.hostToken) {
+      this.fail(token, 'not-host', '只有房主可以移出別人');
+      return;
+    }
+    const target = this.members[member];
+    if (this.phase !== 'lobby' || !target || target.token === token) return;
+    this.members = this.members.filter((m) => m !== target);
+    this.banned = new Set([...this.banned, target.token]);
+    this.syncAll();
+    if (!this.knownTokens().includes(target.token)) this.sync(target.token);
+    // Last, so the notice is not cleared by the sync that shows them out of the seats.
+    this.fail(target.token, 'kicked', '房主已將你移出這個房間');
+  }
+
+  private lock(token: string, locked: boolean): void {
+    if (token !== this.options.hostToken) {
+      this.fail(token, 'not-host', '只有房主可以鎖房');
+      return;
+    }
+    if (this.phase !== 'lobby') return;
+    this.locked = locked;
+    this.syncAll();
   }
 
   private leave(token: string): void {

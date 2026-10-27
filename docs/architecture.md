@@ -12,7 +12,7 @@
 - 自訂座位：玩家數 3～4 人（核心規則），每個座位可自由指定為真人或 Bot，Bot 可選不同策略。
 - 2 人模式（1v1）：規則需要中立船，尚未定案（見 `open-questions.md` Q-05）；座位設定需保留擴充空間，但在規則定案前不實作。
 - 全 Bot 模擬：不含 UI，大量執行以驗證平衡（對應 `game-design.md` 第 11 節）。
-- 多人連線：臨時版已實作（房主開房、連結邀請、空位由 Bot 補上），見第 8 節。
+- 多人連線：已實作（任何人都能開房、連結邀請、空位由 Bot 補上），見第 8 節。
 
 ## 2. 核心原則：引擎只認識座位
 
@@ -167,7 +167,7 @@ interface Controller {
 
 部署在 Cloudflare：同一個 Worker 提供建置後的遊戲（`dist/`）與 `/api/*`，每個房間是一個 Durable Object（設定見 `wrangler.jsonc`）。
 
-- **開房：** `POST /api/rooms`，需附房主密碼（Worker secret `HOST_KEY`）。只有房主能開房與開始對局；其他人點 `/?room=房號` 連結加入。
+- **開房：** `POST /api/rooms`，任何人都能開（2026-10-28 起，不再需要房主密碼），先過 Turnstile 機器人驗證與每 IP 頻率限制（`server/limits.ts`，計數在 `LimiterObject`）。開房的人是房主，只有房主能開始對局、移出別人、鎖房；其他人點 `/?room=房號` 連結加入。WebSocket 也有來源檢查、每 IP 連線頻率、每間房連線數與每條連線的訊息頻率上限，見 `docs/online/public-launch-plan.md` 第 5 節。
 - **連線：** `/api/rooms/:code/ws`。客戶端第一則訊息是 `hello`（瀏覽器的隨機 token＋協定版本），之後才可 `join`、`start`、`submit`。協定與驗證在 `src/online/protocol.ts`。
 - **權威結算：** 房間在伺服器上用 `runMatch` 執行整局；客戶端送出的行動必須與伺服器提供的某個合法行動完全相同才會被接受。每個連線只收到公開事件、自己的私有事件與自己的待決定事項。
 - **等待中的座位：** 伺服器在待決定事項變動時廣播 `waiting`（還沒決定的真人座位），牌桌在這些商會的名牌上標「決定中」。誰已送出本來就是公開資訊（`PlayerView.submittedPlayerIds`），選擇內容不會外洩。
@@ -177,5 +177,5 @@ interface Controller {
 `TODO`（臨時版的限制）：
 - 對局只存在記憶體，**重新部署或 Durable Object 被回收都會中斷進行中的對局**。之後可把座位設定與行動紀錄存進 Durable Object storage，以 `replayMatch` 重建（Bot 的記憶也需重播事件）。
 - 沒有觀戰與中途加入。超時與託管見 7.2；房間沒人連線滿 1 小時或建立滿 24 小時由 Durable Object alarm 刪除（`game-design.md` 第 15.3 節）。
-- 房主密碼是單一共用密碼，沒有帳號系統。
+- 沒有帳號系統；身分只是瀏覽器保存的隨機 token。
 

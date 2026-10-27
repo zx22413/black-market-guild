@@ -506,6 +506,32 @@
 .menu-seat .menu-offline {
   color: var(--m-wax);
 }
+/* The host's 「移出」, tucked into the card's corner. */
+.menu-seat {
+  position: relative;
+}
+.menu-seat .menu-kick {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 2px 8px;
+  border: 1px solid var(--m-wood);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--m-wax);
+  font-size: var(--fs-note);
+  cursor: pointer;
+}
+.menu-lock[aria-pressed='true'] {
+  color: var(--m-wax);
+}
+/* Turnstile's box, empty (and so taking no room) unless Cloudflare asks for a click. */
+.menu-challenge:empty {
+  display: none;
+}
+.menu-challenge {
+  margin-bottom: 8px;
+}
 
 /* ---------- tutorial list inside the panel ---------- */
 .menu-panel .tut-lesson {

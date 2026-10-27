@@ -75,6 +75,8 @@ export interface RoomSnapshot {
   readonly members: readonly RoomMemberInfo[];
   readonly joined: boolean;
   readonly isHost: boolean;
+  /** The host closed the lobby to newcomers. */
+  readonly locked: boolean;
   readonly minSeats: number;
   readonly maxSeats: number;
   readonly match: OnlineMatch | null;
@@ -87,6 +89,10 @@ export type ClientMessage =
   | { readonly type: 'start'; readonly seats: number; readonly decisionSeconds?: number }
   /** Takes the seat back from the bot (「取消託管」). */
   | { readonly type: 'resume' }
+  /** Host only, in the lobby: sends someone (by their place in `members`) out for good. */
+  | { readonly type: 'kick'; readonly member: number }
+  /** Host only, in the lobby: closes or reopens the lobby to newcomers. */
+  | { readonly type: 'lock'; readonly locked: boolean }
   /** The table now shows this decision: its clock may start. */
   | { readonly type: 'shown'; readonly requestId: number }
   /** Host only, after the match ended: back to the lobby with the same people. */
@@ -121,6 +127,9 @@ export type ErrorCode =
   | 'not-host'
   | 'bad-seats'
   | 'bad-time-limit'
+  | 'kicked'
+  | 'locked'
+  | 'busy'
   | 'bad-name'
   | 'stale-request'
   | 'illegal-action';
@@ -178,6 +187,10 @@ export function parseClientMessage(raw: string): ClientMessage | null {
         : null;
     case 'resume':
       return { type: 'resume' };
+    case 'kick':
+      return Number.isInteger(data.member) ? { type: 'kick', member: data.member as number } : null;
+    case 'lock':
+      return typeof data.locked === 'boolean' ? { type: 'lock', locked: data.locked } : null;
     case 'shown':
       return Number.isInteger(data.requestId) ? { type: 'shown', requestId: data.requestId as number } : null;
     case 'rematch':

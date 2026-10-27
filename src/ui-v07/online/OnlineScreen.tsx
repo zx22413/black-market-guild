@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState, useSyncExternalStore, type CSSProperties, type FormEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type FormEvent } from 'react';
 import { DECISION_SECONDS_CHOICES, DEFAULT_DECISION_SECONDS, ROOM_CODE_LENGTH, isRoomCode } from '../../v07/online';
 import { PLAYER_COLORS } from '../../ui/scene/tableModel';
 import { MatchView } from '../table/MatchView';
@@ -8,13 +8,12 @@ import type { MenuView } from '../menu/menuSeats';
 import { seatCards, type SeatCard } from './lobbySeats';
 import { MatchClock } from './MatchClock';
 import { limitLabel } from './clockText';
+import { turnstileToken } from './turnstile';
 import { useCountSound } from '../audio/useUiSounds';
 import {
   connectRoom,
   createRoom,
   forgetLastRoom,
-  saveHostKey,
-  savedHostKey,
   savedName,
   type OnlineClient,
   type OnlineState,
@@ -33,13 +32,6 @@ function setRoomInUrl(code: string | null): void {
   else url.searchParams.delete('room');
   history.replaceState(null, '', url);
 }
-
-/**
- * Only the host opens rooms (server/rooms.ts checks the host key). The button shows in a browser
- * that has the key saved, or on a page opened with `?host` to enter it the first time; everyone
- * else joins with a code or a link.
- */
-const canHost = (): boolean => savedHostKey() !== '' || new URLSearchParams(location.search).has('host');
 
 function JoinByCode({ onRoom }: { readonly onRoom: (code: string) => void }) {
   const [code, setCode] = useState('');
@@ -72,35 +64,29 @@ function JoinByCode({ onRoom }: { readonly onRoom: (code: string) => void }) {
   );
 }
 
+/** Anyone may open a room (open-questions Q-09); Turnstile checks for bots first, mostly unseen. */
 function HostRoom({ onRoom }: { readonly onRoom: (code: string) => void }) {
-  const [key, setKey] = useState(savedHostKey);
-  const [askKey, setAskKey] = useState(() => savedHostKey() === '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Turnstile draws here only when Cloudflare wants a click.
+  const challenge = useRef<HTMLDivElement>(null);
   const open = async () => {
     setBusy(true);
     setError(null);
     try {
-      const code = await createRoom(key);
-      saveHostKey(key);
-      onRoom(code);
+      const token = challenge.current ? await turnstileToken(challenge.current) : null;
+      onRoom(await createRoom(token));
     } catch (e) {
       setError(e instanceof Error ? e.message : '無法開房');
-      setAskKey(true);
     } finally {
       setBusy(false);
     }
   };
   return (
     <section className="menu-host">
-      {askKey && (
-        <label className="menu-field">
-          房主密碼
-          <input type="password" value={key} autoComplete="off" onChange={(e) => setKey(e.target.value)} />
-        </label>
-      )}
+      <div ref={challenge} className="menu-challenge" />
       {error && <p className="menu-error">{error}</p>}
-      <button type="button" className="menu-action" disabled={busy || key.length === 0} onClick={open}>
+      <button type="button" className="menu-action" disabled={busy} onClick={open}>
         {busy ? '開房中…' : '建立房間'}
         <small>空位由電腦補上</small>
       </button>
@@ -121,7 +107,7 @@ function OnlineHome({ onRoom, onBack, onView }: OnlineHomeProps) {
       <h2>線上房間</h2>
       <JoinByCode onRoom={onRoom} />
       <p className="menu-note">朋友傳來的邀請連結，點開就會直接進房。</p>
-      {canHost() && <HostRoom onRoom={onRoom} />}
+      <HostRoom onRoom={onRoom} />
       <div className="menu-foot">
         <button type="button" className="menu-small" onClick={onBack}>
           返回
@@ -172,7 +158,13 @@ function seatRibbon(index: number): CSSProperties {
   return { '--seat': PLAYER_COLORS[index % PLAYER_COLORS.length] } as CSSProperties;
 }
 
-function Seats({ cards }: { readonly cards: readonly SeatCard[] }) {
+interface SeatsProps {
+  readonly cards: readonly SeatCard[];
+  /** The host's 「移出」 on everyone else's card; null for other people. */
+  readonly onKick: ((member: number) => void) | null;
+}
+
+function Seats({ cards, onKick }: SeatsProps) {
   return (
     <ol className="menu-seats">
       {cards.map((card, i) =>
@@ -183,6 +175,11 @@ function Seats({ cards }: { readonly cards: readonly SeatCard[] }) {
             </small>
             <strong>{card.name}</strong>
             <small className={card.online ? 'menu-online' : 'menu-offline'}>{card.online ? '在線' : '離線'}</small>
+            {onKick && !card.isHost && (
+              <button type="button" className="menu-kick" onClick={() => onKick(i)} aria-label={`移出 ${card.name}`}>
+                移出
+              </button>
+            )}
           </li>
         ) : (
           <li key={i} className="menu-seat empty">
@@ -238,7 +235,14 @@ function Lobby({ code, client, state, onLeave, onView }: LobbyProps) {
 
       {room?.phase === 'lobby' && (
         <>
-          <Seats cards={cards} />
+          <Seats cards={cards} onKick={room.isHost ? (member) => client.kick(member) : null} />
+          {room.isHost ? (
+            <button type="button" className="menu-small menu-lock" aria-pressed={room.locked} onClick={() => client.lock(!room.locked)}>
+              {room.locked ? '已鎖房：按一下開放入座' : '鎖房（不讓新的人入座）'}
+            </button>
+          ) : (
+            room.locked && <p className="menu-note">房主已鎖房，新的人無法入座。</p>
+          )}
           <NameRow client={client} joined={joined} connected={connected} />
           {room.isHost ? (
             <div className="menu-foot">

@@ -1,5 +1,7 @@
 // Cloudflare Worker: serves the built game (dist/) and the online rooms under /api.
-// Deploy with `npm run deploy`; set the host key once with `npx wrangler secret put HOST_KEY`.
+// Deploy with `npm run deploy`. Anyone may open a room; set the Turnstile secret once with
+// `npx wrangler secret put TURNSTILE_SECRET` (without it, room creation skips the bot check).
+// LIMITS counts room openings and connections per IP address (server/limits.ts).
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "black-market-guild",
@@ -11,7 +13,13 @@
     "run_worker_first": ["/api/*"]
   },
   "durable_objects": {
-    "bindings": [{ "name": "ROOMS", "class_name": "RoomObject" }]
+    "bindings": [
+      { "name": "ROOMS", "class_name": "RoomObject" },
+      { "name": "LIMITS", "class_name": "LimiterObject" }
+    ]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["RoomObject"] }]
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["RoomObject"] },
+    { "tag": "v2", "new_sqlite_classes": ["LimiterObject"] }
+  ]
 }

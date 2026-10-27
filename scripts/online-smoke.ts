@@ -4,7 +4,8 @@
  * mid-match. Checks that each client only receives its own requests and private events.
  * Usage: npm run build && npm run server:dev   (in another terminal)
  *        npm run online:smoke -- [--url http://localhost:8787]
- * The host key comes from HOST_KEY or .dev.vars.
+ * Anyone may open a room; the Turnstile token is Cloudflare's dummy test token (accepted by the
+ * test secret in .dev.vars) unless TURNSTILE_TOKEN is set. A server without TURNSTILE_SECRET ignores it.
  */
 import { createBot, type Bot } from '../src/v07/bots';
 import { PROTOCOL_VERSION, type ClientMessage, type ServerMessage } from '../src/v07/online';
@@ -15,10 +16,6 @@ interface Process {
   readonly env: Readonly<Record<string, string | undefined>>;
   exit(code: number): never;
 }
-interface Fs {
-  readFileSync(path: string, encoding: 'utf8'): string;
-}
-const NODE_FS = 'node:fs';
 const process = (globalThis as unknown as { process: Process }).process;
 
 const TIMEOUT_MS = 120_000;
@@ -30,18 +27,8 @@ function option(name: string, fallback: string): string {
   return i >= 0 ? (process.argv[i + 1] ?? fallback) : fallback;
 }
 
-async function hostKey(): Promise<string> {
-  const fromEnv = process.env.HOST_KEY;
-  if (fromEnv) return fromEnv;
-  const fs = (await import(NODE_FS)) as Fs;
-  const line = fs
-    .readFileSync('.dev.vars', 'utf8')
-    .split('\n')
-    .find((l) => l.startsWith('HOST_KEY='));
-  const key = line?.slice('HOST_KEY='.length).trim().replace(/^"|"$/g, '');
-  if (!key) throw new Error('set HOST_KEY or add it to .dev.vars');
-  return key;
-}
+/** Cloudflare's dummy Turnstile token, which only the test secret accepts. */
+const turnstileToken = (): string => process.env.TURNSTILE_TOKEN ?? 'XXXX.DUMMY.TOKEN.XXXX';
 
 interface Client {
   readonly name: string;
@@ -96,7 +83,7 @@ async function main(): Promise<void> {
   const created = await fetch(`${base}/api/rooms`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ hostKey: await hostKey(), hostToken: host.token }),
+    body: JSON.stringify({ hostToken: host.token, turnstile: turnstileToken() }),
   });
   const { room, error } = (await created.json()) as { room?: string; error?: string };
   if (!room) throw new Error(`cannot create a room: ${error ?? created.status}`);
