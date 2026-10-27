@@ -427,8 +427,11 @@ describe('decision time limits and takeover (game-design §15)', () => {
     ctx.send(GUEST, { type: 'join', name: '客人' });
     ctx.send(HOST, { type: 'start', seats: 3, decisionSeconds: 60 });
     await tick();
-    // The guest drops: their draft goes to the bot and they are under takeover.
+    // The guest drops: after the grace period their draft goes to the bot and they are under takeover.
     ctx.setOnline(GUEST, false);
+    ctx.advance(14_000);
+    expect(seatsOf(ctx, HOST)).toBeNull();
+    ctx.advance(1_000);
     await tick();
     expect(seatsOf(ctx, HOST)).toEqual({ type: 'seats', takeover: ['p2'], paused: false });
     expect(ctx.last(HOST, 'waiting')).toEqual({ type: 'waiting', players: ['p1'] });
@@ -478,10 +481,30 @@ describe('decision time limits and takeover (game-design §15)', () => {
     ctx.setOnline(GUEST, false);
     ctx.advance(10 * 60_000);
     ctx.setOnline(GUEST, true);
-    // The host left first, so a bot took their seat; the guest's leaving only paused the match.
-    expect(seatsOf(ctx, GUEST)?.takeover).toEqual(['p1']);
+    // Both left inside the grace period, so the pause kept both out of takeover; the host, still
+    // gone, gets a fresh grace period and then a bot.
+    expect(seatsOf(ctx, GUEST)?.takeover).toEqual([]);
     const sync = ctx.last(GUEST, 'sync');
     const draft = sync?.type === 'sync' ? sync.room.match?.requests.find((r) => r.context.decision.phase === 'island-choice') : undefined;
     expect(draft?.timeLeftMs).toBe(60_000);
+    ctx.advance(15_000);
+    expect(seatsOf(ctx, GUEST)?.takeover).toEqual(['p1']);
+  });
+
+  it('keeps a seat out of takeover when its person is back within the grace period', async () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'join', name: '房主' });
+    ctx.send(GUEST, { type: 'join', name: '客人' });
+    ctx.send(HOST, { type: 'start', seats: 3, decisionSeconds: 60 });
+    await tick();
+    ctx.setOnline(GUEST, false);
+    ctx.advance(10_000);
+    ctx.setOnline(GUEST, true);
+    ctx.advance(30_000);
+    expect(seatsOf(ctx, HOST)?.takeover ?? []).toEqual([]);
+    // Their decision kept counting meanwhile: 20 s of the minute are left.
+    ctx.send(GUEST, { type: 'hello', token: GUEST, protocol: PROTOCOL_VERSION });
+    const sync = ctx.last(GUEST, 'sync');
+    expect(sync?.type === 'sync' && sync.room.match?.requests[0]?.timeLeftMs).toBe(20_000);
   });
 });

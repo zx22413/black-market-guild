@@ -14,6 +14,8 @@ export const DECISION_SECONDS_CHOICES = [60, 120, 300] as const;
 export const DEFAULT_DECISION_SECONDS = 120;
 /** Timeouts in a row that put a seat under bot takeover (§15.2). */
 export const TAKEOVER_AFTER_TIMEOUTS = 2;
+/** A dropped connection goes to takeover only after this long, so a reload does not (§15.2). */
+export const DISCONNECT_GRACE_SECONDS = 15;
 
 /** Room codes avoid look-alike characters (0/O, 1/I/L) so they can be read aloud. */
 export const ROOM_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';

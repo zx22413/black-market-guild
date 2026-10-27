@@ -4,6 +4,7 @@ import { botController, runMatch, setupFromSeats, type Controller, type SeatConf
 import {
   DECISION_SECONDS_CHOICES,
   DEFAULT_DECISION_SECONDS,
+  DISCONNECT_GRACE_SECONDS,
   PROTOCOL_VERSION,
   TAKEOVER_AFTER_TIMEOUTS,
   cleanName,
@@ -56,6 +57,8 @@ interface MatchRecord {
   timeouts: Readonly<Record<PlayerId, number>>;
   /** Takeover bots made so far; they keep hearing every public event once made. */
   bots: ReadonlyMap<PlayerId, Bot>;
+  /** Seats whose person dropped and is inside the grace period; each cancels its timer. */
+  grace: ReadonlyMap<PlayerId, () => void>;
   paused: boolean;
 }
 
@@ -78,7 +81,7 @@ export interface RoomOptions {
 /**
  * One online room: a lobby, then a match played with the match runner. People are known by a
  * random token their browser keeps, so a reload or a dropped phone connection gets the same
- * seat back. Every decision is timed, and a seat that times out twice in a row or drops goes to
+ * seat back. Every decision is timed, and a seat that times out twice in a row or stays dropped goes to
  * a bot until its person takes it back; with nobody connected the match pauses (docs/game-design.md §15).
  */
 export class Room {
@@ -136,13 +139,15 @@ export class Room {
     const wasPaused = match.paused;
     match.paused = false;
     match.players.forEach((p) => {
-      if (p.token !== null && !this.options.isOnline(p.token)) this.enterTakeover(match, p.id);
+      if (p.token === null) return;
+      if (this.options.isOnline(p.token)) this.endGrace(match, p.id);
+      else this.startGrace(match, p.id);
     });
-    this.pending.forEach((p) => {
-      if (wasPaused || match.takeover.has(p.request.context.decision.playerId)) this.dispatch(match, p);
-    });
-    this.broadcastSeats(match);
-    if (wasPaused) this.syncAll();
+    if (wasPaused) {
+      this.pending.forEach((p) => this.dispatch(match, p));
+      this.broadcastSeats(match);
+      this.syncAll();
+    }
   }
 
   snapshotFor(token: string): RoomSnapshot {
@@ -246,6 +251,7 @@ export class Room {
       takeover: new Set(),
       timeouts: {},
       bots: new Map(),
+      grace: new Map(),
       paused: false,
     };
     this.match = match;
@@ -362,7 +368,7 @@ export class Room {
       this.replace(pending, { ...pending, deadline: null, cancel: null });
       return;
     }
-    if (!this.options.isOnline(pending.token) && this.enterTakeover(match, seat)) this.broadcastSeats(match);
+    if (!this.options.isOnline(pending.token)) this.startGrace(match, seat);
     if (match.takeover.has(seat)) {
       this.settle(pending, this.botAction(match, pending.request.context));
       return;
@@ -423,6 +429,23 @@ export class Room {
     return bot.decide(context);
   }
 
+  /** A seat's person dropped: after the grace period, if still gone, a bot takes the seat (§15.2). */
+  private startGrace(match: MatchRecord, seat: PlayerId): void {
+    if (match.takeover.has(seat) || match.grace.has(seat)) return;
+    const cancel = this.options.clock.after(DISCONNECT_GRACE_SECONDS * 1000, () => {
+      match.grace = new Map([...match.grace].filter(([id]) => id !== seat));
+      if (this.match !== match || match.paused || !this.enterTakeover(match, seat)) return;
+      this.broadcastSeats(match);
+      this.pending.filter((p) => p.request.context.decision.playerId === seat).forEach((p) => this.dispatch(match, p));
+    });
+    match.grace = new Map([...match.grace, [seat, cancel]]);
+  }
+
+  private endGrace(match: MatchRecord, seat: PlayerId): void {
+    match.grace.get(seat)?.();
+    match.grace = new Map([...match.grace].filter(([id]) => id !== seat));
+  }
+
   private nobodyHere(match: MatchRecord): boolean {
     return !match.players.some((p) => p.token !== null && this.options.isOnline(p.token));
   }
@@ -430,6 +453,8 @@ export class Room {
   /** Nobody is connected: stop every clock and let no bot move until someone is back (§15.2). */
   private pause(match: MatchRecord): void {
     match.paused = true;
+    match.grace.forEach((cancel) => cancel());
+    match.grace = new Map();
     this.pending.forEach((p) => {
       p.cancel?.();
       this.replace(p, { ...p, deadline: null, cancel: null });
@@ -456,6 +481,8 @@ export class Room {
     this.phase = 'finished';
     this.pending.forEach((p) => p.cancel?.());
     this.pending = [];
+    match.grace.forEach((cancel) => cancel());
+    match.grace = new Map();
     this.broadcast({ type: 'ended', result, error });
   }
 
