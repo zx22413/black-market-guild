@@ -38,6 +38,8 @@ export interface GameSession {
   subscribe(listener: () => void): () => void;
   /** Answers a pending request; the action must be one of its legal actions. */
   submit(requestId: number, action: Action): void;
+  /** The table now shows this request's decision (online rooms start its clock then, docs/game-design.md §15.1). */
+  decisionShown?(requestId: number): void;
 }
 
 export interface SessionOptions {

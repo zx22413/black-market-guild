@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DECISION_SHOW_CAP_SECONDS,
   DEFAULT_DECISION_SECONDS,
   PROTOCOL_VERSION,
   Room,
@@ -303,6 +304,8 @@ describe('protocol parsing', () => {
     expect(parseClientMessage(JSON.stringify({ type: 'rematch' }))).toEqual({ type: 'rematch' });
     expect(parseClientMessage(JSON.stringify({ type: 'leave' }))).toEqual({ type: 'leave' });
     expect(parseClientMessage(JSON.stringify({ type: 'resume' }))).toEqual({ type: 'resume' });
+    expect(parseClientMessage(JSON.stringify({ type: 'shown', requestId: 3 }))).toEqual({ type: 'shown', requestId: 3 });
+    expect(parseClientMessage(JSON.stringify({ type: 'shown', requestId: 'x' }))).toBeNull();
     expect(parseClientMessage(JSON.stringify({ type: 'start', seats: 3, decisionSeconds: 60 }))).toEqual({
       type: 'start',
       seats: 3,
@@ -344,21 +347,47 @@ async function soloMatch(decisionSeconds?: number) {
   return ctx;
 }
 
+/** The table shows every open decision of `token`. */
+function showOpen(ctx: ReturnType<typeof makeRoom>, token: string) {
+  openRequests(ctx, token).forEach((r) => ctx.send(token, { type: 'shown', requestId: r.id }));
+}
+
+/** The open decision of `token` shows and its one-minute limit runs out. */
+async function expire(ctx: ReturnType<typeof makeRoom>, token: string) {
+  showOpen(ctx, token);
+  ctx.advance(60_000);
+  await tick();
+}
+
 const seatsOf = (ctx: ReturnType<typeof makeRoom>, token: string) => {
   const seats = ctx.last(token, 'seats');
   return seats?.type === 'seats' ? seats : null;
 };
 
 describe('decision time limits and takeover (game-design §15)', () => {
-  it('times each decision with the host-picked limit, two minutes by default', async () => {
+  it('starts the host-picked limit (two minutes by default) once the table shows the decision', async () => {
     const ctx = await soloMatch();
     const [request] = openRequests(ctx, HOST);
-    expect(request?.timeLeftMs).toBe(DEFAULT_DECISION_SECONDS * 1000);
+    expect(request?.timeLeftMs).toBeNull();
     const sync = ctx.last(HOST, 'sync');
     expect(sync?.type === 'sync' && sync.room.match?.decisionSeconds).toBe(120);
+    ctx.advance(30_000);
+    ctx.send(HOST, { type: 'shown', requestId: request!.id });
+    expect(ctx.last(HOST, 'clock')).toEqual({ type: 'clock', requestId: request!.id, timeLeftMs: DEFAULT_DECISION_SECONDS * 1000 });
 
     const fast = await soloMatch(60);
-    expect(openRequests(fast, HOST)[0]?.timeLeftMs).toBe(60_000);
+    showOpen(fast, HOST);
+    expect(fast.last(HOST, 'clock')).toMatchObject({ timeLeftMs: 60_000 });
+  });
+
+  it('starts the clock anyway when the table has not shown the decision within the cap', async () => {
+    const ctx = await soloMatch(60);
+    ctx.advance(DECISION_SHOW_CAP_SECONDS * 1000 - 1);
+    expect(ctx.last(HOST, 'clock')).toBeUndefined();
+    ctx.advance(1);
+    expect(ctx.last(HOST, 'clock')).toMatchObject({ timeLeftMs: 60_000 });
+    await expire(ctx, HOST);
+    expect(ctx.last(HOST, 'timed-out')).toMatchObject({ phase: 'island-choice' });
   });
 
   it('refuses a time limit that is not on offer', () => {
@@ -370,8 +399,7 @@ describe('decision time limits and takeover (game-design §15)', () => {
 
   it('lets a bot pick the island when time runs out, and counts it as a timeout', async () => {
     const ctx = await soloMatch(60);
-    ctx.advance(60_000);
-    await tick();
+    await expire(ctx, HOST);
     expect(ctx.last(HOST, 'timed-out')).toEqual({ type: 'timed-out', phase: 'island-choice', takeover: false });
     const events = ctx.of(HOST).flatMap((m) => (m.type === 'events' ? m.events : []));
     expect(events.some((e) => e.type === 'islands-chosen')).toBe(true);
@@ -387,8 +415,7 @@ describe('decision time limits and takeover (game-design §15)', () => {
     answer(ctx, HOST, openRequests(ctx, HOST)[0]!);
     await tick();
     expect(openRequests(ctx, HOST).at(-1)?.context.decision.phase).toBe('invest');
-    ctx.advance(60_000);
-    await tick();
+    await expire(ctx, HOST);
     expect(ctx.last(HOST, 'timed-out')).toEqual({ type: 'timed-out', phase: 'invest', takeover: false });
     const events = ctx.of(HOST).flatMap((m) => (m.type === 'events' ? m.events : []));
     const launch = events.find((e) => e.type === 'ships-launched');
@@ -397,10 +424,8 @@ describe('decision time limits and takeover (game-design §15)', () => {
 
   it('hands the seat to a bot after two timeouts in a row, and the person can take it back', async () => {
     const ctx = await soloMatch(60);
-    ctx.advance(60_000);
-    await tick();
-    ctx.advance(60_000);
-    await tick();
+    await expire(ctx, HOST);
+    await expire(ctx, HOST);
     expect(ctx.last(HOST, 'timed-out')).toMatchObject({ takeover: true });
 
     // The only person is under takeover: nobody decides, so the match pauses instead of the bots
@@ -411,7 +436,8 @@ describe('decision time limits and takeover (game-design §15)', () => {
     ctx.send(HOST, { type: 'resume' });
     expect(seatsOf(ctx, HOST)).toEqual({ type: 'seats', takeover: [], paused: false });
     await tick();
-    expect(openRequests(ctx, HOST).at(-1)?.timeLeftMs).toBe(60_000);
+    showOpen(ctx, HOST);
+    expect(ctx.last(HOST, 'clock')).toMatchObject({ timeLeftMs: 60_000 });
   });
 
   it('lets the bot play a taken-over seat while another person still decides', async () => {
@@ -421,11 +447,9 @@ describe('decision time limits and takeover (game-design §15)', () => {
     ctx.send(HOST, { type: 'start', seats: 3, decisionSeconds: 60 });
     await tick();
     answer(ctx, GUEST, openRequests(ctx, GUEST)[0]!);
-    ctx.advance(60_000);
-    await tick();
+    await expire(ctx, HOST);
     answer(ctx, GUEST, openRequests(ctx, GUEST).at(-1)!);
-    ctx.advance(60_000);
-    await tick();
+    await expire(ctx, HOST);
     expect(seatsOf(ctx, GUEST)).toEqual({ type: 'seats', takeover: ['p1'], paused: false });
     // The host's next decisions are made at once: only the guest is waited on.
     expect(ctx.last(GUEST, 'waiting')).toEqual({ type: 'waiting', players: ['p2'] });
@@ -433,12 +457,10 @@ describe('decision time limits and takeover (game-design §15)', () => {
 
   it('resets the count when the person decides in between', async () => {
     const ctx = await soloMatch(60);
-    ctx.advance(60_000);
-    await tick();
+    await expire(ctx, HOST);
     answer(ctx, HOST, openRequests(ctx, HOST).at(-1)!);
     await tick();
-    ctx.advance(60_000);
-    await tick();
+    await expire(ctx, HOST);
     expect(ctx.last(HOST, 'timed-out')).toMatchObject({ takeover: false });
     expect(seatsOf(ctx, HOST)?.takeover ?? []).toEqual([]);
   });
@@ -476,6 +498,7 @@ describe('decision time limits and takeover (game-design §15)', () => {
 
   it('pauses with nobody connected: no clock runs and no bot moves until someone is back', async () => {
     const ctx = await soloMatch(60);
+    showOpen(ctx, HOST);
     ctx.setOnline(HOST, false);
     ctx.advance(10 * 60_000);
     await tick();
@@ -498,6 +521,7 @@ describe('decision time limits and takeover (game-design §15)', () => {
     ctx.send(GUEST, { type: 'join', name: '客人' });
     ctx.send(HOST, { type: 'start', seats: 3, decisionSeconds: 60 });
     await tick();
+    showOpen(ctx, GUEST);
     ctx.advance(30_000);
     ctx.setOnline(HOST, false);
     ctx.setOnline(GUEST, false);
@@ -519,6 +543,7 @@ describe('decision time limits and takeover (game-design §15)', () => {
     ctx.send(GUEST, { type: 'join', name: '客人' });
     ctx.send(HOST, { type: 'start', seats: 3, decisionSeconds: 60 });
     await tick();
+    showOpen(ctx, GUEST);
     ctx.setOnline(GUEST, false);
     ctx.advance(10_000);
     ctx.setOnline(GUEST, true);

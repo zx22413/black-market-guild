@@ -3,6 +3,7 @@ import { RULES_V07, type Action, type MatchEvent, type MatchResult, type PlayerI
 import { botController, runMatch, setupFromSeats, type Controller, type SeatConfig } from '../match';
 import {
   DECISION_SECONDS_CHOICES,
+  DECISION_SHOW_CAP_SECONDS,
   DEFAULT_DECISION_SECONDS,
   DISCONNECT_GRACE_SECONDS,
   PROTOCOL_VERSION,
@@ -34,11 +35,15 @@ interface Member {
   readonly name: string;
 }
 
-/** A decision a person owes; `deadline` is null while the match is paused. */
+/**
+ * A decision a person owes. `deadline` is null while its clock does not run: before the table
+ * showed it (`shown`), or while the match is paused. `cancel` stops whichever timer is pending.
+ */
 interface Pending {
   readonly token: string;
   readonly request: Omit<OnlineRequest, 'timeLeftMs'>;
   readonly resolve: (action: Action) => void;
+  readonly shown: boolean;
   readonly deadline: number | null;
   readonly cancel: (() => void) | null;
 }
@@ -114,6 +119,9 @@ export class Room {
         return;
       case 'resume':
         this.resume(token);
+        return;
+      case 'shown':
+        this.shown(token, message.requestId);
         return;
       case 'rematch':
         this.rematch(token);
@@ -324,7 +332,7 @@ export class Room {
       decide: (context) =>
         new Promise<Action>((resolve) => {
           const request = { id: this.nextRequestId++, context };
-          const entry: Pending = { token, request, resolve, deadline: null, cancel: null };
+          const entry: Pending = { token, request, resolve, shown: false, deadline: null, cancel: null };
           this.pending = [...this.pending, entry];
           this.dispatch(match, entry);
         }),
@@ -371,15 +379,45 @@ export class Room {
       this.settle(pending, this.botAction(match, pending.request.context));
       return;
     }
-    const ms = match.decisionSeconds * 1000;
-    const fresh: Pending = {
-      ...pending,
-      deadline: this.options.clock.now() + ms,
-      cancel: this.options.clock.after(ms, () => this.timeOut(match, pending.request.id)),
-    };
+    // The clock starts once the table shows the decision, or after the cap at the latest (§15.1).
+    const fresh: Pending = pending.shown
+      ? this.running(match, pending)
+      : { ...pending, deadline: null, cancel: this.options.clock.after(DECISION_SHOW_CAP_SECONDS * 1000, () => this.startClock(match, pending.request.id)) };
     this.replace(pending, fresh);
     this.options.send(fresh.token, { type: 'request', request: this.wire(fresh) });
     this.broadcast({ type: 'waiting', players: this.waitingOn() });
+  }
+
+  /** The pending decision with its full limit running from now. */
+  private running(match: MatchRecord, pending: Pending): Pending {
+    const ms = match.decisionSeconds * 1000;
+    return {
+      ...pending,
+      shown: true,
+      deadline: this.options.clock.now() + ms,
+      cancel: this.options.clock.after(ms, () => this.timeOut(match, pending.request.id)),
+    };
+  }
+
+  /** The table showed a decision (or the cap passed): start its clock and tell its person. */
+  private startClock(match: MatchRecord, requestId: number): void {
+    const pending = this.pending.find((p) => p.request.id === requestId);
+    if (!pending || this.match !== match || pending.shown) return;
+    pending.cancel?.();
+    if (match.paused) {
+      // Shown during a pause: it gets its full limit as soon as the match goes on.
+      this.replace(pending, { ...pending, shown: true, deadline: null, cancel: null });
+      return;
+    }
+    const next = this.running(match, pending);
+    this.replace(pending, next);
+    this.options.send(next.token, { type: 'clock', requestId, timeLeftMs: match.decisionSeconds * 1000 });
+  }
+
+  private shown(token: string, requestId: number): void {
+    const match = this.match;
+    if (!match || !this.pending.some((p) => p.request.id === requestId && p.token === token)) return;
+    this.startClock(match, requestId);
   }
 
   /** Time ran out: play the default, count it, and hand the seat to a bot after enough in a row. */

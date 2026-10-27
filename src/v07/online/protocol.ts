@@ -14,6 +14,8 @@ export const DECISION_SECONDS_CHOICES = [60, 120, 300] as const;
 export const DEFAULT_DECISION_SECONDS = 120;
 /** Timeouts in a row that put a seat under bot takeover (§15.2). */
 export const TAKEOVER_AFTER_TIMEOUTS = 2;
+/** The clock starts when the table shows a decision, or this long after it was sent at the latest (§15.1). */
+export const DECISION_SHOW_CAP_SECONDS = 90;
 /** A dropped connection goes to takeover only after this long, so a reload does not (§15.2). */
 export const DISCONNECT_GRACE_SECONDS = 15;
 
@@ -39,7 +41,7 @@ export interface OnlinePlayer {
 export interface OnlineRequest {
   readonly id: number;
   readonly context: DecisionContext;
-  /** Milliseconds left when the server sent it; null while the match is paused. */
+  /** Milliseconds left when the server sent it; null while its clock is not running (not shown yet, or paused). */
   readonly timeLeftMs: number | null;
 }
 
@@ -85,6 +87,8 @@ export type ClientMessage =
   | { readonly type: 'start'; readonly seats: number; readonly decisionSeconds?: number }
   /** Takes the seat back from the bot (「取消託管」). */
   | { readonly type: 'resume' }
+  /** The table now shows this decision: its clock may start. */
+  | { readonly type: 'shown'; readonly requestId: number }
   /** Host only, after the match ended: back to the lobby with the same people. */
   | { readonly type: 'rematch' }
   /** Gives up a seat in the lobby; a running match keeps its seats. */
@@ -99,6 +103,8 @@ export type ServerMessage =
   | { readonly type: 'waiting'; readonly players: readonly PlayerId[] }
   /** Who is under takeover changed, or the match paused or went on. */
   | { readonly type: 'seats'; readonly takeover: readonly PlayerId[]; readonly paused: boolean }
+  /** To the seat only: the clock of one of its decisions started. */
+  | { readonly type: 'clock'; readonly requestId: number; readonly timeLeftMs: number }
   /** To the seat only: its time ran out and the default was played; `takeover` once a bot took over. */
   | { readonly type: 'timed-out'; readonly phase: DecisionPhase; readonly takeover: boolean }
   | { readonly type: 'ended'; readonly result: MatchResult | null; readonly error: string | null }
@@ -172,6 +178,8 @@ export function parseClientMessage(raw: string): ClientMessage | null {
         : null;
     case 'resume':
       return { type: 'resume' };
+    case 'shown':
+      return Number.isInteger(data.requestId) ? { type: 'shown', requestId: data.requestId as number } : null;
     case 'rematch':
       return { type: 'rematch' };
     case 'leave':

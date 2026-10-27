@@ -136,6 +136,11 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
 
   const phase = request?.context.decision.phase;
   const free = !holding && !showIslands && unlocked && !autoplay;
+  // The decision is on screen now: an online room starts its clock from here, not from when it was sent.
+  const shownId = free && ready && request ? request.id : null;
+  useEffect(() => {
+    if (shownId !== null) session.decisionShown?.(shownId);
+  }, [shownId, session]);
   const drafting = free && phase === 'island-choice' ? request : null;
   const rerolling = free && phase === 'intel-reroll' ? request : null;
   const [rerollShown, setRerollShown] = useState<{ readonly request: HumanRequest; readonly shipId: ShipId } | null>(null);

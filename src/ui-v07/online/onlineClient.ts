@@ -109,8 +109,10 @@ function applyMessage(room: RoomSnapshot | null, message: ServerMessage): RoomSn
       return { ...room, match: { ...match, events: [...match.events, ...message.events] } };
     case 'private':
       return { ...room, match: { ...match, privateEvents: [...match.privateEvents, message.event] } };
-    case 'request':
-      return { ...room, match: { ...match, requests: [...match.requests, message.request].sort((a, b) => a.id - b.id) } };
+    case 'request': {
+      const others = match.requests.filter((r) => r.id !== message.request.id);
+      return { ...room, match: { ...match, requests: [...others, message.request].sort((a, b) => a.id - b.id) } };
+    }
     case 'waiting':
       // A decision the server settled without us (time ran out, or the takeover bot) is gone.
       return {
@@ -137,6 +139,7 @@ function nextDeadlines(
 ): OnlineState['deadlines'] {
   const at = (request: OnlineRequest) => (request.timeLeftMs === null ? null : Date.now() + request.timeLeftMs);
   if (message.type === 'request') return { ...deadlines, [message.request.id]: at(message.request) };
+  if (message.type === 'clock') return { ...deadlines, [message.requestId]: Date.now() + message.timeLeftMs };
   if (message.type === 'sync') return Object.fromEntries((message.room.match?.requests ?? []).map((r) => [r.id, at(r)]));
   return deadlines;
 }
@@ -169,6 +172,8 @@ export function connectRoom(code: string): OnlineClient {
   let lastMatch: RoomSnapshot['match'] = null;
   let sessionSnapshot: SessionSnapshot | null = null;
   let session: GameSession | null = null;
+  /** The decision on screen, reported again after a reconnect in case the report was lost. */
+  let onScreen: number | null = null;
 
   const update = (patch: Partial<OnlineState>): void => {
     state = { ...state, ...patch };
@@ -233,6 +238,7 @@ export function connectRoom(code: string): OnlineClient {
       attempt = 0;
       update({ connection: 'open' });
       send({ type: 'hello', token, protocol: PROTOCOL_VERSION });
+      if (onScreen !== null) send({ type: 'shown', requestId: onScreen });
     });
     ws.addEventListener('message', onMessage);
     ws.addEventListener('close', () => {
@@ -289,6 +295,10 @@ export function connectRoom(code: string): OnlineClient {
           return () => listeners.delete(listener);
         },
         submit,
+        decisionShown: (requestId) => {
+          onScreen = requestId;
+          send({ type: 'shown', requestId });
+        },
       };
       return session;
     },
