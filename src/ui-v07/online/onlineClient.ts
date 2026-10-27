@@ -1,5 +1,5 @@
-import type { Action } from '../../v07/game';
-import { PROTOCOL_VERSION, type ClientMessage, type RoomSnapshot, type ServerMessage } from '../../v07/online';
+import type { Action, DecisionPhase } from '../../v07/game';
+import { PROTOCOL_VERSION, type ClientMessage, type OnlineRequest, type RoomSnapshot, type ServerMessage } from '../../v07/online';
 import type { GameSession, SessionSnapshot } from '../session/gameSession';
 
 /** The Worker's room API; in development Vite forwards it to `npm run server:dev` (vite.config.ts). */
@@ -14,13 +14,19 @@ export interface OnlineState {
   readonly notice: string | null;
   /** The room cannot be used any more (missing room or outdated page); no reconnects. */
   readonly fatal: boolean;
+  /** When each open request of this seat runs out, in this browser's clock (null while paused). */
+  readonly deadlines: Readonly<Record<number, number | null>>;
+  /** The last time this seat's time ran out (docs/game-design.md §15.1); `at` tells repeats apart. */
+  readonly lastTimeout: { readonly phase: DecisionPhase; readonly takeover: boolean; readonly at: number } | null;
 }
 
 export interface OnlineClient {
   getState(): OnlineState;
   subscribe(listener: () => void): () => void;
   join(name: string): void;
-  start(seats: number): void;
+  start(seats: number, decisionSeconds: number): void;
+  /** 「取消託管」: take this seat back from the bot. */
+  resume(): void;
   /** Host only, after the match: everyone goes back to this room's lobby. */
   rematch(): void;
   /** Gives up this browser's lobby seat and stops sitting down again on its own. */
@@ -106,12 +112,33 @@ function applyMessage(room: RoomSnapshot | null, message: ServerMessage): RoomSn
     case 'request':
       return { ...room, match: { ...match, requests: [...match.requests, message.request].sort((a, b) => a.id - b.id) } };
     case 'waiting':
-      return { ...room, match: { ...match, waitingOn: message.players } };
+      // A decision the server settled without us (time ran out, or the takeover bot) is gone.
+      return {
+        ...room,
+        match: {
+          ...match,
+          waitingOn: message.players,
+          requests: match.requests.filter((r) => message.players.includes(r.context.decision.playerId)),
+        },
+      };
+    case 'seats':
+      return { ...room, match: { ...match, takeover: message.takeover, paused: message.paused } };
     case 'ended':
       return { ...room, phase: 'finished', match: { ...match, requests: [], waitingOn: [], result: message.result, error: message.error } };
     default:
       return room;
   }
+}
+
+/** Turns the server's "time left" into deadlines on this browser's clock, so no clock sync is needed. */
+function nextDeadlines(
+  deadlines: OnlineState['deadlines'],
+  message: ServerMessage,
+): OnlineState['deadlines'] {
+  const at = (request: OnlineRequest) => (request.timeLeftMs === null ? null : Date.now() + request.timeLeftMs);
+  if (message.type === 'request') return { ...deadlines, [message.request.id]: at(message.request) };
+  if (message.type === 'sync') return Object.fromEntries((message.room.match?.requests ?? []).map((r) => [r.id, at(r)]));
+  return deadlines;
 }
 
 function toSessionSnapshot(room: RoomSnapshot): SessionSnapshot | null {
@@ -134,7 +161,7 @@ function toSessionSnapshot(room: RoomSnapshot): SessionSnapshot | null {
 export function connectRoom(code: string): OnlineClient {
   const token = playerToken();
   const listeners = new Set<() => void>();
-  let state: OnlineState = { connection: 'connecting', room: null, notice: null, fatal: false };
+  let state: OnlineState = { connection: 'connecting', room: null, notice: null, fatal: false, deadlines: {}, lastTimeout: null };
   let socket: WebSocket | null = null;
   let attempt = 0;
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -183,8 +210,12 @@ export function connectRoom(code: string): OnlineClient {
       update({ notice: message.message, fatal: state.fatal || fatal });
       return;
     }
+    if (message.type === 'timed-out') {
+      update({ lastTimeout: { phase: message.phase, takeover: message.takeover, at: Date.now() } });
+      return;
+    }
     const room = applyMessage(state.room, message);
-    update({ room, ...(message.type === 'sync' ? { notice: null } : {}) });
+    update({ room, deadlines: nextDeadlines(state.deadlines, message), ...(message.type === 'sync' ? { notice: null } : {}) });
     if (room?.joined) saveLastRoom(code);
     // After a server restart the lobby forgets people; rejoin whoever had joined this room.
     if (message.type === 'sync' && !room?.joined && room?.phase === 'lobby' && storageGet(`bmg7.joined.${code}`)) {
@@ -242,7 +273,8 @@ export function connectRoom(code: string): OnlineClient {
       storageSet(`bmg7.joined.${code}`, '1');
       send({ type: 'join', name });
     },
-    start: (seats) => send({ type: 'start', seats }),
+    start: (seats, decisionSeconds) => send({ type: 'start', seats, decisionSeconds }),
+    resume: () => send({ type: 'resume' }),
     rematch: () => send({ type: 'rematch' }),
     leave: () => {
       storageRemove(`bmg7.joined.${code}`);

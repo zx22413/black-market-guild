@@ -1,0 +1,108 @@
+/* The online match's clock and takeover notices (MatchClock.tsx), over the 3D table. */
+.mc-layer {
+  position: fixed;
+  inset: 0;
+  /* Above the island draft's backdrop (65): the clock runs during the draft too. */
+  z-index: 66;
+  pointer-events: none;
+}
+.mc-layer > * {
+  pointer-events: auto;
+}
+
+.mc-clock {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--hud-bottom, 96px) + 10px);
+  transform: translateX(-50%);
+  min-width: 4.5em;
+  padding: 4px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 196, 120, 0.55);
+  background: rgba(24, 16, 10, 0.82);
+  color: #f3e3bf;
+  font-size: var(--fs-body);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  pointer-events: none;
+}
+.mc-clock.urgent {
+  border-color: var(--bad, #d9533b);
+  color: #ffd2c4;
+  animation: mc-pulse 1s ease-in-out infinite;
+}
+@keyframes mc-pulse {
+  50% {
+    box-shadow: 0 0 0 4px rgba(217, 83, 59, 0.35);
+  }
+}
+
+.mc-toast {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--hud-bottom, 96px) + 52px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: min(92vw, 420px);
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: rgba(24, 16, 10, 0.9);
+  color: #f3e3bf;
+  font-size: var(--fs-note);
+  text-align: center;
+  pointer-events: none;
+}
+.mc-toast strong {
+  font-size: var(--fs-body);
+}
+
+.mc-takeover {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--hud-top, 56px) + 8px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(94vw, 460px);
+  padding: 8px 10px 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(232, 196, 120, 0.6);
+  background: rgba(24, 16, 10, 0.92);
+  color: #f3e3bf;
+  font-size: var(--fs-body);
+}
+.mc-resume {
+  flex: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #e8c478;
+  background: #e8c478;
+  color: #2a1a0c;
+  font-size: var(--fs-body);
+  cursor: pointer;
+}
+
+.mc-others {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--hud-top, 56px) + 8px);
+  transform: translateX(-50%);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(24, 16, 10, 0.75);
+  color: #d8c7a3;
+  font-size: var(--fs-note);
+  pointer-events: none;
+}
+.mc-takeover + .mc-others {
+  top: calc(var(--hud-top, 56px) + 60px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-clock.urgent {
+    animation: none;
+  }
+}

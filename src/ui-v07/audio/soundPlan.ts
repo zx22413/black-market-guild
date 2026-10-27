@@ -73,6 +73,8 @@ export type SfxId =
   | 'ui-turn'
   | 'ui-join'
   | 'ui-leave'
+  // The last seconds of an online decision's time limit (online/MatchClock).
+  | 'ui-tick'
   // Picking a role card from the hand (useDeployStep).
   | 'role-pick'
   // A production count popping up over a warehouse stack (useInvestStep), higher for each next one.
@@ -173,6 +175,7 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   'ui-turn': 'sfx-ui-turn.ogg',
   'ui-join': 'sfx-ui-join.ogg',
   'ui-leave': 'sfx-ui-leave.ogg',
+  'ui-tick': 'sfx-ui-tick.ogg',
   'role-pick': 'sfx-role-pick.ogg',
   bubble: 'sfx-bubble.ogg',
   'island-pop': 'sfx-island-pop.ogg',

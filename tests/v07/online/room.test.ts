@@ -402,11 +402,33 @@ describe('decision time limits and takeover (game-design §15)', () => {
     ctx.advance(60_000);
     await tick();
     expect(ctx.last(HOST, 'timed-out')).toMatchObject({ takeover: true });
-    expect(seatsOf(ctx, HOST)).toEqual({ type: 'seats', takeover: ['p1'], paused: false });
 
-    // Under takeover the bot plays on without asking; the match runs to its end.
-    for (let i = 0; i < 50 && !ctx.last(HOST, 'ended'); i++) await tick();
-    expect(ctx.last(HOST, 'ended')).toMatchObject({ error: null });
+    // The only person is under takeover: nobody decides, so the match pauses instead of the bots
+    // racing to the end. 「取消託管」 lets it go on, with the full limit.
+    expect(seatsOf(ctx, HOST)).toEqual({ type: 'seats', takeover: ['p1'], paused: true });
+    for (let i = 0; i < 20; i++) await tick();
+    expect(ctx.last(HOST, 'ended')).toBeUndefined();
+    ctx.send(HOST, { type: 'resume' });
+    expect(seatsOf(ctx, HOST)).toEqual({ type: 'seats', takeover: [], paused: false });
+    await tick();
+    expect(openRequests(ctx, HOST).at(-1)?.timeLeftMs).toBe(60_000);
+  });
+
+  it('lets the bot play a taken-over seat while another person still decides', async () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'join', name: '房主' });
+    ctx.send(GUEST, { type: 'join', name: '客人' });
+    ctx.send(HOST, { type: 'start', seats: 3, decisionSeconds: 60 });
+    await tick();
+    answer(ctx, GUEST, openRequests(ctx, GUEST)[0]!);
+    ctx.advance(60_000);
+    await tick();
+    answer(ctx, GUEST, openRequests(ctx, GUEST).at(-1)!);
+    ctx.advance(60_000);
+    await tick();
+    expect(seatsOf(ctx, GUEST)).toEqual({ type: 'seats', takeover: ['p1'], paused: false });
+    // The host's next decisions are made at once: only the guest is waited on.
+    expect(ctx.last(GUEST, 'waiting')).toEqual({ type: 'waiting', players: ['p2'] });
   });
 
   it('resets the count when the person decides in between', async () => {

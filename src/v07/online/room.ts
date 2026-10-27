@@ -132,22 +132,16 @@ export class Room {
     if (this.phase === 'lobby') this.syncAll();
     const match = this.match;
     if (this.phase !== 'playing' || !match) return;
-    if (this.nobodyHere(match)) {
+    if (this.nobodyDeciding(match)) {
       if (!match.paused) this.pause(match);
       return;
     }
-    const wasPaused = match.paused;
-    match.paused = false;
     match.players.forEach((p) => {
       if (p.token === null) return;
       if (this.options.isOnline(p.token)) this.endGrace(match, p.id);
       else this.startGrace(match, p.id);
     });
-    if (wasPaused) {
-      this.pending.forEach((p) => this.dispatch(match, p));
-      this.broadcastSeats(match);
-      this.syncAll();
-    }
+    if (match.paused) this.goOn(match);
   }
 
   snapshotFor(token: string): RoomSnapshot {
@@ -306,6 +300,10 @@ export class Room {
     if (!match || seat === undefined || this.phase !== 'playing' || !match.takeover.has(seat)) return;
     match.takeover = new Set([...match.takeover].filter((id) => id !== seat));
     match.timeouts = { ...match.timeouts, [seat]: 0 };
+    if (match.paused) {
+      this.goOn(match);
+      return;
+    }
     this.broadcastSeats(match);
     this.sync(token);
   }
@@ -396,6 +394,7 @@ export class Room {
     const takeover = timeouts >= TAKEOVER_AFTER_TIMEOUTS;
     if (takeover) {
       this.enterTakeover(match, seat);
+      if (this.nobodyDeciding(match)) this.pause(match);
       this.broadcastSeats(match);
     }
     this.options.send(pending.token, { type: 'timed-out', phase: context.decision.phase, takeover });
@@ -435,6 +434,7 @@ export class Room {
     const cancel = this.options.clock.after(DISCONNECT_GRACE_SECONDS * 1000, () => {
       match.grace = new Map([...match.grace].filter(([id]) => id !== seat));
       if (this.match !== match || match.paused || !this.enterTakeover(match, seat)) return;
+      if (this.nobodyDeciding(match)) this.pause(match);
       this.broadcastSeats(match);
       this.pending.filter((p) => p.request.context.decision.playerId === seat).forEach((p) => this.dispatch(match, p));
     });
@@ -446,11 +446,20 @@ export class Room {
     match.grace = new Map([...match.grace].filter(([id]) => id !== seat));
   }
 
-  private nobodyHere(match: MatchRecord): boolean {
-    return !match.players.some((p) => p.token !== null && this.options.isOnline(p.token));
+  /** No person is connected and deciding for themself (all gone or all under takeover). */
+  private nobodyDeciding(match: MatchRecord): boolean {
+    return !match.players.some((p) => p.token !== null && this.options.isOnline(p.token) && !match.takeover.has(p.id));
   }
 
-  /** Nobody is connected: stop every clock and let no bot move until someone is back (§15.2). */
+  /** Someone decides again: every owed decision is routed afresh (full limits), and everyone resyncs. */
+  private goOn(match: MatchRecord): void {
+    match.paused = false;
+    this.pending.forEach((p) => this.dispatch(match, p));
+    this.broadcastSeats(match);
+    this.syncAll();
+  }
+
+  /** Nobody decides for themself: stop every clock and let no bot move until someone does (§15.2). */
   private pause(match: MatchRecord): void {
     match.paused = true;
     match.grace.forEach((cancel) => cancel());

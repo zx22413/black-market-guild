@@ -1,11 +1,13 @@
 import { useEffect, useLayoutEffect, useState, useSyncExternalStore, type CSSProperties, type FormEvent } from 'react';
-import { ROOM_CODE_LENGTH, isRoomCode } from '../../v07/online';
+import { DECISION_SECONDS_CHOICES, DEFAULT_DECISION_SECONDS, ROOM_CODE_LENGTH, isRoomCode } from '../../v07/online';
 import { PLAYER_COLORS } from '../../ui/scene/tableModel';
 import { MatchView } from '../table/MatchView';
 import type { Rematch } from '../table3d/ResultCard';
 import { useLaunchOnStart } from '../menu/launch';
 import type { MenuView } from '../menu/menuSeats';
 import { seatCards, type SeatCard } from './lobbySeats';
+import { MatchClock } from './MatchClock';
+import { limitLabel } from './clockText';
 import { useCountSound } from '../audio/useUiSounds';
 import {
   connectRoom,
@@ -205,6 +207,7 @@ interface LobbyProps {
 function Lobby({ code, client, state, onLeave, onView }: LobbyProps) {
   const room = state.room;
   const [seats, setSeats] = useState(4);
+  const [decisionSeconds, setDecisionSeconds] = useState<number>(DEFAULT_DECISION_SECONDS);
   const joined = room?.joined ?? false;
   const connected = state.connection === 'open';
   const members = room?.members ?? [];
@@ -246,12 +249,19 @@ function Lobby({ code, client, state, onLeave, onView }: LobbyProps) {
                   </button>
                 ))}
               </div>
-              <button type="button" className="menu-go" disabled={!joined || !connected} onClick={() => client.start(chosenSeats)}>
+              <div className="menu-kind" role="radiogroup" aria-label="每個決定的限時">
+                {DECISION_SECONDS_CHOICES.map((n) => (
+                  <button key={n} type="button" role="radio" aria-checked={n === decisionSeconds} className={n === decisionSeconds ? 'on' : ''} onClick={() => setDecisionSeconds(n)}>
+                    {limitLabel(n)}
+                  </button>
+                ))}
+              </div>
+              <button type="button" className="menu-go" disabled={!joined || !connected} onClick={() => client.start(chosenSeats, decisionSeconds)}>
                 開始對局
               </button>
             </div>
           ) : (
-            <p className="menu-note">{joined ? '等房主開始對局…' : '輸入名稱後按「入座」'}</p>
+            <p className="menu-note">{joined ? '等房主開始對局…（每個決定的限時由房主選）' : '輸入名稱後按「入座」'}</p>
           )}
         </>
       )}
@@ -323,6 +333,7 @@ function RoomView({ code, client, onLeave, onView }: RoomViewProps) {
         {state.connection !== 'open' && <div className="v7-banner">{CONNECTION_LABELS[state.connection]}</div>}
         {/* Leaving mid-match keeps the room on the main menu as "back to the room". */}
         <MatchView key={matchKey(session)} session={session} onExit={() => onLeave(finished)} rematch={rematch} />
+        <MatchClock state={state} client={client} />
       </>
     );
   }
