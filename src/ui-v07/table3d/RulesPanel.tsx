@@ -11,13 +11,14 @@ import { CloseIcon, IconDisc } from './icons';
 import { IslandGlance } from './IslandGlance';
 import { roleIconUrl } from './RoleBadges';
 import { RulesPageTurn, type PageTurn } from './RulesPageTurn';
+import { onlineRules } from '../online/clockText';
 import './rulesBook.css';
 
 // The rules, for looking things up, as a ship's handbook: one chapter per kind of thing, and the
 // book's thumb-index tabs are the chapter tabs (rulesBook.css). Every sentence comes from the texts
 // the table already uses (labels.ts, roleText.ts, goodText.ts), so the book can never say something else.
 
-export type RulesTab = 'roles' | 'islands' | 'buildings' | 'goods' | 'events' | 'score';
+export type RulesTab = 'roles' | 'islands' | 'buildings' | 'goods' | 'events' | 'score' | 'online';
 
 export const RULES_TABS: readonly { readonly id: RulesTab; readonly label: string }[] = [
   { id: 'roles', label: '角色' },
@@ -26,6 +27,7 @@ export const RULES_TABS: readonly { readonly id: RulesTab; readonly label: strin
   { id: 'goods', label: '貨品' },
   { id: 'events', label: '事件' },
   { id: 'score', label: '計分' },
+  { id: 'online', label: '連線' },
 ];
 
 const keysOf = <K extends string>(record: Readonly<Record<K, unknown>>): K[] => Object.keys(record) as K[];
@@ -107,6 +109,17 @@ export function RulesEntries({ tab }: { readonly tab: RulesTab }) {
           <b>總財富</b>
           <p>{WEALTH_RULE_TEXT}</p>
         </li>
+      );
+    case 'online':
+      return (
+        <>
+          {onlineRules().map((rule) => (
+            <li key={rule.title}>
+              <b>{rule.title}</b>
+              <p>{rule.text}</p>
+            </li>
+          ))}
+        </>
       );
   }
 }
