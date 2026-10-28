@@ -20,5 +20,7 @@ export function Round3DPreview() {
   const autoplay = params.has('autoplay');
   const [run, setRun] = useState(0);
   const session = useMemo(() => startGameSession({ seed: seed + run, seats: SEATS }), [seed, run]);
-  return <Table3DScreen key={run} session={session} autoplay={autoplay} onExit={() => setRun((n) => n + 1)} />;
+  // The result card's buttons as the single-player app shows them (「邀請朋友一起玩」 only logs here).
+  const rematch = { kind: 'now', onRematch: () => setRun((n) => n + 1), onInvite: () => console.info('invite a friend') } as const;
+  return <Table3DScreen key={run} session={session} autoplay={autoplay} rematch={rematch} onExit={() => setRun((n) => n + 1)} />;
 }

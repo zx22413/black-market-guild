@@ -31,7 +31,9 @@ export function MainMenu({ lastRoom, onRejoin, onLocal, onOnline, onTutorial }: 
           </h1>
           <CinnabarChop className="menu-title-chop" />
         </span>
-        <p>V0.7 試玩版</p>
+        {/* What the game is, for someone who just arrived (the same words as the link preview's cover). */}
+        <p className="menu-pitch">各懷鬼胎，讓骰子決定命運</p>
+        <p>單人對電腦一局約 10 分鐘・免註冊・V0.7 試玩版</p>
       </header>
       <nav className="menu-actions" aria-label="主選單">
         {lastRoom && (

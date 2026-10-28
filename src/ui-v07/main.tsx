@@ -15,6 +15,8 @@ const IslandCardsPreview = import.meta.env.DEV ? lazy(() => import('./dev/Island
 const MarketPreview = import.meta.env.DEV ? lazy(() => import('./dev/MarketPreview').then((m) => ({ default: m.MarketPreview }))) : null;
 // Richer UI looks next to the current ones (bar, panel, buttons): /v07.html?dev=skin-lab.
 const SkinLabPreview = import.meta.env.DEV ? lazy(() => import('./dev/SkinLabPreview').then((m) => ({ default: m.SkinLabPreview }))) : null;
+// The link preview card (Open Graph image, 1200×630): /v07.html?dev=og-card (&shot=night).
+const OgCardPreview = import.meta.env.DEV ? lazy(() => import('./dev/OgCardPreview').then((m) => ({ default: m.OgCardPreview }))) : null;
 const devPage = import.meta.env.DEV ? new URLSearchParams(window.location.search).get('dev') : null;
 
 // Trial skin (src/ui-v07/skin/layers.css): `?skin=classic` shows the previous look to compare.
@@ -40,7 +42,11 @@ if (!container) {
 }
 createRoot(container).render(
   <StrictMode>
-    {devPage === 'skin-lab' && SkinLabPreview ? (
+    {devPage === 'og-card' && OgCardPreview ? (
+      <Suspense fallback={null}>
+        <OgCardPreview />
+      </Suspense>
+    ) : devPage === 'skin-lab' && SkinLabPreview ? (
       <Suspense fallback={null}>
         <SkinLabPreview />
       </Suspense>

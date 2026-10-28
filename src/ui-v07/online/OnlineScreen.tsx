@@ -67,7 +67,7 @@ function JoinByCode({ onRoom }: { readonly onRoom: (code: string) => void }) {
 }
 
 /** Anyone may open a room (open-questions Q-09); Turnstile checks for bots first, mostly unseen. */
-function HostRoom({ onRoom }: { readonly onRoom: (code: string) => void }) {
+function HostRoom({ onRoom, autoStart = false }: { readonly onRoom: (code: string) => void; readonly autoStart?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Turnstile draws here only when Cloudflare wants a click.
@@ -86,6 +86,15 @@ function HostRoom({ onRoom }: { readonly onRoom: (code: string) => void }) {
       setBusy(false);
     }
   };
+  // Coming from 「邀請朋友一起玩」: open the room right away (once, even under StrictMode).
+  const started = useRef(false);
+  useEffect(() => {
+    if (!autoStart || started.current) return;
+    started.current = true;
+    void open();
+    // `open` is rebuilt every render; this runs once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart]);
   return (
     <section className="menu-host">
       <div ref={challenge} className="menu-challenge" />
@@ -100,18 +109,20 @@ function HostRoom({ onRoom }: { readonly onRoom: (code: string) => void }) {
 
 interface OnlineHomeProps {
   readonly onRoom: (code: string) => void;
+  readonly autoCreate: boolean;
   readonly onBack: () => void;
   readonly onView: (view: MenuView | null) => void;
 }
 
-function OnlineHome({ onRoom, onBack, onView }: OnlineHomeProps) {
+function OnlineHome({ onRoom, autoCreate, onBack, onView }: OnlineHomeProps) {
   useLayoutEffect(() => onView({ stage: 'online' }), [onView]);
   return (
     <main className="menu-panel menu-page">
       <h2>線上房間</h2>
       <JoinByCode onRoom={onRoom} />
       <p className="menu-note">朋友傳來的邀請連結，點開就會直接進房。</p>
-      <HostRoom onRoom={onRoom} />
+      {autoCreate && <p className="menu-note">正在建立房間，進大廳後按「複製邀請連結」傳給朋友，空位由電腦補上。</p>}
+      <HostRoom onRoom={onRoom} autoStart={autoCreate} />
       <div className="menu-foot">
         <button type="button" className="menu-small" onClick={onBack}>
           返回
@@ -395,13 +406,15 @@ function RoomView({ code, viaLink, client, onLeave, onView }: RoomViewProps) {
 
 interface OnlineScreenProps {
   readonly initialRoom: string | null;
+  /** Open a new room at once (from the single-player result card). */
+  readonly autoCreate?: boolean;
   readonly onExit: () => void;
   /** What the menu table behind should show; null while a match has the screen (the table stops). */
   readonly onView: (view: MenuView | null) => void;
 }
 
 /** Online play: join a room by code or link; the host also opens rooms. */
-export function OnlineScreen({ initialRoom, onExit, onView }: OnlineScreenProps) {
+export function OnlineScreen({ initialRoom, autoCreate = false, onExit, onView }: OnlineScreenProps) {
   const [code, setCode] = useState(initialRoom);
   // Also when coming back from the main menu's "back to the room": a reload stays in the room.
   useEffect(() => {
@@ -412,6 +425,6 @@ export function OnlineScreen({ initialRoom, onExit, onView }: OnlineScreenProps)
     setRoomInUrl(null);
     onExit();
   };
-  if (!code) return <OnlineHome onRoom={setCode} onBack={() => leave(false)} onView={onView} />;
+  if (!code) return <OnlineHome onRoom={setCode} autoCreate={autoCreate} onBack={() => leave(false)} onView={onView} />;
   return <Room key={code} code={code} viaLink={code === initialRoom} onLeave={leave} onView={onView} />;
 }

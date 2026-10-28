@@ -34,7 +34,8 @@ type Mode =
   | { readonly kind: 'launching'; readonly options: SessionOptions }
   /** `options` again with a new seed is the result card's "play again". */
   | { readonly kind: 'local'; readonly session: GameSession; readonly options: SessionOptions }
-  | { readonly kind: 'online'; readonly room: string | null }
+  /** `create` opens a new room at once (the single-player result card's 「邀請朋友一起玩」). */
+  | { readonly kind: 'online'; readonly room: string | null; readonly create?: boolean }
   | { readonly kind: 'tutorial-menu' }
   /** `run` changes to replay the same lesson from the start. */
   | { readonly kind: 'tutorial'; readonly id: TutorialId; readonly run: number };
@@ -166,7 +167,7 @@ function Screen({ mode, setMode, home, launchLocal, startLocal, onView }: Screen
       );
     }
     case 'online':
-      return <OnlineScreen initialRoom={mode.room} onExit={home} onView={onView} />;
+      return <OnlineScreen initialRoom={mode.room} autoCreate={mode.create === true} onExit={home} onView={onView} />;
     case 'local': {
       const { options } = mode;
       return (
@@ -174,7 +175,14 @@ function Screen({ mode, setMode, home, launchLocal, startLocal, onView }: Screen
           key={options.seed}
           session={mode.session}
           onExit={home}
-          rematch={{ kind: 'now', onRematch: () => startLocal({ ...options, seed: randomSeed() }) }}
+          rematch={{
+            kind: 'now',
+            onRematch: () => startLocal({ ...options, seed: randomSeed() }),
+            onInvite: () => {
+              track('menu_pick', { pick: 'invite-after-match' });
+              setMode({ kind: 'online', room: null, create: true });
+            },
+          }}
         />
       );
     }

@@ -62,7 +62,13 @@ const SPARKS = Array.from({ length: 16 }, (_, i) => {
  * What the card offers after the reveal besides going back to the menu: play again at once
  * (single player, or the host of an online room), or wait for the host to (online guests).
  */
-export type Rematch = { readonly kind: 'now'; readonly onRematch: () => void } | { readonly kind: 'host-decides' };
+/**
+ * The result card's way on: play again now (and, after a single-player match, invite a friend into
+ * a new online room), or wait for an online room's host.
+ */
+export type Rematch =
+  | { readonly kind: 'now'; readonly onRematch: () => void; readonly onInvite?: () => void }
+  | { readonly kind: 'host-decides' };
 
 function useCountUp(target: number, running: boolean): number {
   const [value, setValue] = useState(0);
@@ -208,6 +214,11 @@ export function ResultCard({ rows, nameOf, colorOf, viewer, rounds, onRestart, r
           {done && (
             <button type="button" className={rematch?.kind === 'now' ? '' : 'primary'} onClick={onRestart}>
               回主選單
+            </button>
+          )}
+          {done && rematch?.kind === 'now' && rematch.onInvite && (
+            <button type="button" onClick={rematch.onInvite}>
+              邀請朋友一起玩
             </button>
           )}
           {done && rematch?.kind === 'now' && (
