@@ -1,5 +1,6 @@
 // The /stats dashboard's numbers (docs/online/public-launch-plan.md §4.4), read from the D1
 // statistics. Only for whoever holds the Worker secret ADMIN_KEY.
+import { LIVE_LOOKBACK_MS, liveReport, type OpenMatchRow } from '../src/analytics/live';
 import type { WindowRule } from './limits';
 
 interface StatsEnv {
@@ -32,6 +33,27 @@ async function one(db: D1Database, sql: string, ...args: unknown[]): Promise<num
 }
 
 const distinctClients = (db: D1Database, name: string) => one(db, 'SELECT COUNT(DISTINCT client) AS n FROM events WHERE name = ?', name);
+
+/** Each player's latest online match in the lookback that has no end, with their latest event since. */
+async function openOnlineMatches(db: D1Database, now: number): Promise<OpenMatchRow[]> {
+  const rows = await all(
+    db,
+    `WITH starts AS (
+       SELECT client, MAX(at) AS started FROM events
+        WHERE name = 'match_start' AND json_extract(data, '$.mode') = 'online' AND at > ?
+        GROUP BY client
+     )
+     SELECT s.client AS client, s.started AS started,
+            (SELECT MAX(e.at) FROM events e WHERE e.client = s.client AND e.at >= s.started) AS last,
+            (SELECT MAX(json_extract(e.data, '$.round')) FROM events e
+               WHERE e.client = s.client AND e.name = 'round_end' AND e.at >= s.started) AS round
+       FROM starts s
+      WHERE NOT EXISTS (SELECT 1 FROM events e WHERE e.client = s.client AND e.at >= s.started
+                          AND e.name IN ('match_end', 'match_quit', 'online_end'))`,
+    now - LIVE_LOOKBACK_MS,
+  );
+  return rows.map((r) => ({ client: String(r.client), started: Number(r.started), last: Number(r.last ?? r.started), round: r.round === null ? null : Number(r.round) }));
+}
 
 async function collect(db: D1Database, since: string) {
   const [visitors, started, finished, again, invited, guestsFinished] = await Promise.all([
@@ -80,7 +102,9 @@ async function collect(db: D1Database, since: string) {
          FROM events WHERE name IN ('match_start', 'match_end') GROUP BY mode`,
     ),
   ]);
+  const now = Date.now();
   return {
+    live: liveReport(await openOnlineMatches(db, now), now),
     funnel: { visitors, started, finished, again, invited, guestsFinished },
     daily,
     quits,

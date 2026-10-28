@@ -20,7 +20,7 @@ npm run match:log -- 42 4                # 隨機選擇跑一局並印出中文�
 npm run simulate -- --matches 2000 --players 4 [--lineup a,b,c,d] [--seed 1]  # V0.7 策略 Bot 批量模擬（src/v07），輸出 Markdown 平衡報表
 npm run server:dev                       # 本機模擬 Cloudflare Worker，跑 V0.7 房間（先 npm run build；port 8787，`npm run dev` 會把 /api 轉過去）
 npm run online:smoke                     # 對 server:dev（V0.7 房間）跑一局無頭連線測試（兩個連線＋兩個 Bot 座位、中途重連）
-npm run deploy                           # build + wrangler deploy（會中斷進行中的線上對局）
+npm run deploy                           # build + wrangler deploy（會中斷進行中的線上對局：先看 /stats 最上面的「目前線上對局」）
 npm run simulate -- --summary --set roles.pirate.loot=200 --set roles.fees.guard=60  # 覆寫任意規則數值試算，只輸出一行關鍵指標（比較方案用）
 ```
 

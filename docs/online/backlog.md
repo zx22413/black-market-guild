@@ -19,7 +19,13 @@
 
 ## 1. 連線功能還沒做完（依建議優先順序）
 
-1. **對局撐過部署與回收**：對局只存在 Durable Object 的記憶體，重新部署或物件被回收（沒人連線一段時間）就會中斷，大廳成員也會消失（客戶端會自動重新加入）。做法：開局時把座位設定、seed 存進 Durable Object storage，每個被接受的行動也追加存入；喚醒時用 `replayMatch` 重建狀態、事件與私有事件，再接回 `runMatch`。注意 Bot 有記憶（`onEvents`），重建時也要依序重播事件給 Bot，確認結果和原本一致（寫測試：同一 seed＋行動紀錄，重建前後的 `MatchLog` 相同）。相關：`server/worker.ts`、`src/online/room.ts`、`src/match/runner.ts`。
+1. **對局撐過部署與回收**（2026-10-29 決定：先記下來，等流量起來再做；暫時用 `/stats` 最上面的「目前線上對局」在部署前檢查，那是由統計推算的估計，關閉匿名統計的人看不到）。要一起處理的：
+   - **對局本身**：見下面原本的做法（存 seed＋行動紀錄，喚醒時 `replayMatch` 重建，Bot 記憶也要重播）。
+   - **第 15 節的狀態**：託管名單、連續逾時次數、暫停、每個決定的截止時間與「畫面已出現」標記；計時器要改用 Durable Object alarm（記憶體裡的 `setTimeout` 撐不過回收）。
+   - **大廳狀態**：被移出的名單、鎖房（`public-launch-plan.md` 第 5 節的已知限制）。
+   - **改用 Hibernation API**：持久化做完才能換；換了之後沒人說話的連線不再持續計費（`server/rooms.ts` 開頭的說明）。
+   - **測試**：同一個 seed＋行動紀錄，重建前後的 `MatchLog` 相同；模擬回收後託管、逾時、截止時間都正確。
+   原本的做法：對局只存在 Durable Object 的記憶體，重新部署或物件被回收（沒人連線一段時間）就會中斷，大廳成員也會消失（客戶端會自動重新加入）。做法：開局時把座位設定、seed 存進 Durable Object storage，每個被接受的行動也追加存入；喚醒時用 `replayMatch` 重建狀態、事件與私有事件，再接回 `runMatch`。注意 Bot 有記憶（`onEvents`），重建時也要依序重播事件給 Bot，確認結果和原本一致（寫測試：同一 seed＋行動紀錄，重建前後的 `MatchLog` 相同）。相關：`server/rooms.ts`、`src/v07/online/room.ts`、`src/v07/match/runner.ts`。
 2. ~~**斷線與超時規則**~~：2026-10-28 完成，規則在 `game-design.md` 第 15 節（限時、託管、暫停），伺服器在 `src/v07/online/room.ts`、`timeout.ts`，介面在 `src/ui-v07/online/MatchClock.tsx`，規則書有「連線」章。
 3. **自動部署**：等第 1 項完成、部署不會中斷對局之後再考慮。選項：Cloudflare Workers Builds 連 GitHub（使用者要在 Cloudflare 後台授權），或只在 push 到 `release` 分支時部署。直接「push main 就部署」不建議，因為使用者與其他 session 常常推 main。
 4. **換裝置回到座位**：座位以瀏覽器 `localStorage` 的隨機 token 辨識，換手機、換瀏覽器或用無痕模式就回不去。可考慮「房主把座位重新指派給新連線」或座位專屬的重連連結。

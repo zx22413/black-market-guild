@@ -5,8 +5,15 @@ import './stats.css';
 
 type Row = Record<string, unknown>;
 
+interface LiveMatch {
+  readonly startedMinutesAgo: number;
+  readonly lastMinutesAgo: number;
+  readonly round: number | null;
+}
+
 interface Stats {
   readonly since: string;
+  readonly live: { readonly active: readonly LiveMatch[]; readonly quiet: readonly LiveMatch[] };
   readonly funnel: Readonly<Record<'visitors' | 'started' | 'finished' | 'again' | 'invited' | 'guestsFinished', number>>;
   readonly daily: readonly Row[];
   readonly quits: readonly Row[];
@@ -111,6 +118,26 @@ function dailyChart(rows: readonly Row[], since: string): Node {
   return el('div', {}, svg, legend);
 }
 
+/** Before a deploy: online matches that are probably running (a deploy would end them). */
+function liveCard(live: Stats['live']): HTMLElement {
+  const count = live.active.length;
+  const row = (m: LiveMatch) =>
+    el('tr', {}, el('td', {}, `${m.startedMinutesAgo} 分鐘前開局`), el('td', {}, m.round === null ? '第 1 回合前' : `打完第 ${m.round} 回合`), el('td', {}, `最後動作 ${m.lastMinutesAgo} 分鐘前`));
+  const verdict = el('p', { class: `live-verdict ${count > 0 ? 'busy' : 'clear'}` }, count > 0 ? `大概有 ${count} 局正在進行，部署會中斷它們` : '目前看起來沒有人在線上對局，可以部署');
+  return card(
+    '目前線上對局（部署前看這裡）',
+    el(
+      'div',
+      {},
+      verdict,
+      ...(count > 0 ? [el('table', {}, ...live.active.map(row))] : []),
+      ...(live.quiet.length > 0 ? [el('p', { class: 'sub' }, `另有 ${live.quiet.length} 局開了沒結束、但已超過 15 分鐘沒動作（多半已離開）`)] : []),
+      el('p', { class: 'sub' }, '由統計推算：關閉「匿名統計」的人看不到，只能當參考。單機對局在瀏覽器裡跑，部署通常不影響。'),
+    ),
+    true,
+  );
+}
+
 function render(stats: Stats): void {
   const f = stats.funnel;
   const funnel = bars([
@@ -146,6 +173,7 @@ function render(stats: Stats): void {
     el(
       'div',
       { class: 'grid' },
+      liveCard(stats.live),
       card('漏斗', funnel),
       card('一鍵評分', el('div', {}, bars([{ label: '👍 好玩', value: likes }, { label: '👎 不太行', value: dislikes }]), el('p', { class: 'sub' }, `好評 ${pct(likes, likes + dislikes)}`))),
       card('每日進站人數', dailyChart(stats.daily, stats.since), true),

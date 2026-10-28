@@ -158,6 +158,17 @@ button {
   font: inherit;
   cursor: pointer;
 }
+.live-verdict {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+.live-verdict.clear {
+  color: var(--good);
+}
+.live-verdict.busy {
+  color: var(--bad);
+}
 .error {
   color: var(--bad);
 }
