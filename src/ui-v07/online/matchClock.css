@@ -12,9 +12,9 @@
 
 .mc-clock {
   position: absolute;
-  left: 50%;
+  /* Right edge, not centered: your own player tag sits centered just above the dock. */
+  right: 12px;
   bottom: calc(var(--hud-bottom, 96px) + 10px);
-  transform: translateX(-50%);
   min-width: 4.5em;
   padding: 4px 14px;
   border-radius: 999px;
