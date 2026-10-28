@@ -68,7 +68,7 @@ async function collect(db: D1Database, since: string) {
          (SELECT client FROM events WHERE name = 'room_join' AND json_extract(data, '$.role') = 'guest')`,
     ),
   ]);
-  const [daily, quits, tutorials, chapters, likes, comments, errors, ready, modes] = await Promise.all([
+  const [daily, quits, tutorials, chapters, likes, comments, errors, ready, modes, sources] = await Promise.all([
     all(
       db,
       `SELECT day, json_extract(data, '$.device') AS device, COUNT(DISTINCT client) AS n FROM events
@@ -101,6 +101,12 @@ async function collect(db: D1Database, since: string) {
       `SELECT json_extract(data, '$.mode') AS mode, SUM(name = 'match_start') AS started, SUM(name = 'match_end') AS finished
          FROM events WHERE name IN ('match_start', 'match_end') GROUP BY mode`,
     ),
+    // Where visitors came from: the `?src=` tag of a shared link, or the referring domain.
+    all(
+      db,
+      `SELECT json_extract(data, '$.from') AS source, COUNT(DISTINCT client) AS n FROM events
+         WHERE name = 'visit' GROUP BY source ORDER BY n DESC LIMIT 15`,
+    ),
   ]);
   const now = Date.now();
   return {
@@ -115,6 +121,7 @@ async function collect(db: D1Database, since: string) {
     errors,
     ready,
     modes,
+    sources,
   };
 }
 

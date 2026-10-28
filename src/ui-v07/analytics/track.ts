@@ -105,12 +105,16 @@ export function trackVisit(): void {
   const now = Date.now();
   const first = storageGet(FIRST_KEY);
   if (first === null) storageSet(FIRST_KEY, String(now));
-  let from = '';
-  try {
-    const referrer = document.referrer ? new URL(document.referrer).hostname : '';
-    from = referrer === location.hostname ? '' : referrer;
-  } catch {
-    from = '';
+  // Where the person came from: a `?src=ptt` tag on the shared link (in-app browsers often send
+  // no referrer), else the referring site's domain.
+  let from = (new URLSearchParams(location.search).get('src') ?? '').replace(/[^\w.-]/g, '').slice(0, 40);
+  if (from === '') {
+    try {
+      const referrer = document.referrer ? new URL(document.referrer).hostname : '';
+      from = referrer === location.hostname ? '' : referrer;
+    } catch {
+      from = '';
+    }
   }
   const phone = window.matchMedia?.('(pointer: coarse)').matches || window.innerWidth < 768;
   track('visit', {

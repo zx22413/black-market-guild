@@ -24,6 +24,7 @@ interface Stats {
   readonly errors: readonly Row[];
   readonly ready: readonly Row[];
   readonly modes: readonly Row[];
+  readonly sources: readonly Row[];
 }
 
 const KEY = 'bmg7.admin.key';
@@ -177,6 +178,7 @@ function render(stats: Stats): void {
       card('漏斗', funnel),
       card('一鍵評分', el('div', {}, bars([{ label: '👍 好玩', value: likes }, { label: '👎 不太行', value: dislikes }]), el('p', { class: 'sub' }, `好評 ${pct(likes, likes + dislikes)}`))),
       card('每日進站人數', dailyChart(stats.daily, stats.since), true),
+      card('從哪裡來（人數）', bars(stats.sources.map((s) => ({ label: String(s.source ?? '') || '直接開網址', value: num(s.n) })))),
       card('中途離開時的回合', bars(stats.quits.map((q) => ({ label: num(q.round) === 0 ? '開局前' : `第 ${num(q.round)} 回合`, value: num(q.n) })))),
       card(
         '各模式完成率',
