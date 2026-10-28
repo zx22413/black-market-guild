@@ -76,6 +76,8 @@ export interface Table3DScreenProps {
   readonly onStarted?: (round: number) => void;
   /** Told whether your decision is up with nothing still playing in front of it. */
   readonly onCalm?: (calm: boolean) => void;
+  /** Online rooms: the resolution's presses (「開始航程」, the bill) go on by themselves after this many seconds. */
+  readonly autoAdvanceSeconds?: number;
   /** Told when a round's voyage has shown the result of a player's ship. */
   readonly onVoyage?: (round: number, owner: PlayerId) => void;
   /** Hold the voyage on the ship being shown (the tutorial host is talking about it). */
@@ -90,7 +92,7 @@ export interface Table3DScreenProps {
   readonly hideEvent?: boolean;
 }
 
-export function Table3DScreen({ session, onExit, rematch, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, skipIslandMoments = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdShow = false, holdVoyage = false, onVoyage, onStarted, onCalm }: Table3DScreenProps) {
+export function Table3DScreen({ session, onExit, rematch, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, skipIslandMoments = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdShow = false, holdVoyage = false, onVoyage, onStarted, onCalm, autoAdvanceSeconds }: Table3DScreenProps) {
   const snap = useSession(session);
   const [ready, setReady] = useState(false);
 
@@ -183,6 +185,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     nameOf,
     weather: weatherEvent?.type === 'voyage-event-revealed' ? weatherEvent.event : null,
     onFinish: () => setDismissed(resolvingRound ?? 0),
+    ...(autoAdvanceSeconds === undefined ? {} : { autoAdvanceSeconds }),
   });
   const events = useMemo(() => snap.events.slice(0, resolution.cutoff), [snap.events, resolution.cutoff]);
   useEffect(() => {

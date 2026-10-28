@@ -9,6 +9,7 @@ import { seatCards, type SeatCard } from './lobbySeats';
 import { MatchClock } from './MatchClock';
 import { limitLabel } from './clockText';
 import { turnstileToken } from './turnstile';
+import { RESOLUTION_AUTO_SECONDS } from '../table3d/useAutoAdvance';
 import { useCountSound } from '../audio/useUiSounds';
 import {
   connectRoom,
@@ -336,7 +337,7 @@ function RoomView({ code, client, onLeave, onView }: RoomViewProps) {
       <>
         {state.connection !== 'open' && <div className="v7-banner">{CONNECTION_LABELS[state.connection]}</div>}
         {/* Leaving mid-match keeps the room on the main menu as "back to the room". */}
-        <MatchView key={matchKey(session)} session={session} onExit={() => onLeave(finished)} rematch={rematch} />
+        <MatchView key={matchKey(session)} session={session} onExit={() => onLeave(finished)} rematch={rematch} autoAdvanceSeconds={RESOLUTION_AUTO_SECONDS} />
         <MatchClock state={state} client={client} />
       </>
     );

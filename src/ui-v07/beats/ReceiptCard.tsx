@@ -12,11 +12,13 @@ export interface ReceiptCardProps {
   readonly lines: readonly ReceiptLine[];
   readonly net: number;
   readonly onClose?: () => void;
+  /** Online: whole seconds until the card closes by itself, shown on the hint. */
+  readonly autoCloseIn?: number | null;
 }
 
 const money = (n: number): string => `${n >= 0 ? '+' : '−'}${Math.abs(n)} G`;
 
-export function ReceiptCard({ round, lines, net, onClose }: ReceiptCardProps) {
+export function ReceiptCard({ round, lines, net, onClose, autoCloseIn = null }: ReceiptCardProps) {
   return (
     <div className="beat-backdrop" onClick={onClose} role="dialog" aria-label={`第 ${round} 回合帳單`}>
       <div className="beat-card receipt">
@@ -44,7 +46,7 @@ export function ReceiptCard({ round, lines, net, onClose }: ReceiptCardProps) {
       {/* The card has no button: say how to go on, once the total is in. */}
       {onClose && (
         <p className="tap-hint" data-focus="tap" style={{ animationDelay: `${lines.length * 120 + 700}ms` }}>
-          點任意處繼續
+          {autoCloseIn === null ? '點任意處繼續' : `點任意處繼續（${autoCloseIn}）`}
         </p>
       )}
     </div>

@@ -5,6 +5,7 @@ import { TARGET_ISLAND_RADIUS } from '../../ui/scene/layout';
 import { shipPose } from '../../ui/scene/Ships';
 import type { ShipState } from '../../ui/scene/tableModel';
 import { BeatTag } from '../beats/BeatTag';
+import { countdownLabel, useAutoAdvance } from './useAutoAdvance';
 import { ReceiptCard } from '../beats/ReceiptCard';
 import { buildReceipt, buildShipBeat, resolvedShips, type ShipBeat } from '../beats/shipBeat';
 import { useBeatSounds } from '../audio/useBeatSounds';
@@ -79,6 +80,8 @@ export interface ResolutionInput {
   readonly nameOf: (id: PlayerId) => string;
   readonly weather: VoyageEventId | null;
   readonly onFinish: () => void;
+  /** Online rooms: seconds the two presses (「開始航程」, the bill) wait before going on by themselves. */
+  readonly autoAdvanceSeconds?: number;
 }
 
 export interface Resolution {
@@ -150,7 +153,7 @@ export function stageShipState(stage: ResolutionStage, beatIndex: number, voyage
 }
 
 export function useRoundResolution(input: ResolutionInput): Resolution {
-  const { events, privateEvents, round, paused, seats, angles, laneOf, viewer, nameOf, weather, onFinish, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdVoyage = false } = input;
+  const { events, privateEvents, round, paused, seats, angles, laneOf, viewer, nameOf, weather, onFinish, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdVoyage = false, autoAdvanceSeconds } = input;
   // Who is wanted this round (§9.6, marked at the round's start): a red flag goes up on their
   // islands for a moment, then the voyage event's card (§5 step 5), then the roles are revealed.
   const wantedIds = useMemo(() => events.flatMap((e) => (e.type === 'wanted-marked' && e.round === round ? e.players : [])), [events, round]);
@@ -257,6 +260,14 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   const layer = beat ? beatLayer({ beat, view: playback.view, angles, laneOf, weather, tag, seats, settled: beats.slice(0, voyageIndex), hold: holdVoyage }) : null;
   const shipState = (id: ShipId): ShipState =>
     stageShipState(stage, beats.findIndex((b) => b.shipId === id), voyageIndex, restingState(id), layer?.focusState ?? null);
+
+  // The two stops that wait for a press go on by themselves online, so no one holds the table.
+  // (A hook, so it stays above the early return below.)
+  const waitingAt = autoAdvanceSeconds === undefined || paused ? null : stage === 'reveal' && groupsShown >= groups.length ? 'reveal' : stage === 'receipt' && viewer !== null ? 'receipt' : null;
+  const secondsLeft = useAutoAdvance(waitingAt === null ? null : `${round}-${waitingAt}`, autoAdvanceSeconds ?? 0, () => {
+    if (waitingAt === 'reveal') setStage(beats.length > 0 ? 'voyage' : 'market');
+    else if (waitingAt === 'receipt') finish();
+  });
 
   if (!active) {
     return { stage: null, stageRound: null, cutoff: events.length, cashBonus: {}, shipState: () => 'docked', camera: null, ringed: undefined, marketDone: false, outcomeOf: null, wrapShip: undefined, pins: [], scene: null, bar: null, overlay: null, onTableClick: undefined, marketPrices: undefined, changedGoods: undefined };
@@ -380,7 +391,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
       ) : stage === 'reveal' ? (
         <>
           {groups.length === 0 ? <span className="chip muted">沒有人部署角色</span> : <RevealChips groups={groups} shown={groupsShown} />}
-          {allRevealed ? go(beats.length > 0 ? '開始航程' : '繼續', () => setStage(beats.length > 0 ? 'voyage' : 'market')) : <SkipButton label="全部揭露" disabled={lockSkips} onClick={() => setGroupsShown(groups.length)} />}
+          {allRevealed ? go(countdownLabel(beats.length > 0 ? '開始航程' : '繼續', waitingAt === 'reveal' ? secondsLeft : null), () => setStage(beats.length > 0 ? 'voyage' : 'market')) : <SkipButton label="全部揭露" disabled={lockSkips} onClick={() => setGroupsShown(groups.length)} />}
         </>
       ) : stage === 'voyage' ? (
         <>
@@ -447,7 +458,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
         {stage === 'wanted' && <WantedBanner seats={wantedSeats} />}
         {weather && stage !== 'wanted' && stage !== 'event' && stage !== 'receipt' && <VoyageEventChip event={weather} />}
         {weather && stage === 'event' && <VoyageEventCard key={round} event={weather} held={holdEvent} hidden={hideEvent} onDone={() => setStage('reveal')} />}
-        {stage === 'receipt' && viewer !== null ? <ReceiptCard round={round!} viewer={viewer} lines={receipt.lines} net={receipt.net} onClose={finish} /> : null}
+        {stage === 'receipt' && viewer !== null ? <ReceiptCard round={round!} viewer={viewer} lines={receipt.lines} net={receipt.net} onClose={finish} autoCloseIn={waitingAt === 'receipt' ? secondsLeft : null} /> : null}
       </>
     ),
     onTableClick: stage === 'voyage' && !holdVoyage ? () => (playback.next() ? undefined : nextShip()) : undefined,

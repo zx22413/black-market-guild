@@ -17,13 +17,15 @@ interface MatchViewProps {
   readonly session: GameSession;
   readonly onExit: () => void;
   readonly rematch?: Rematch | undefined;
+  /** Online rooms: the resolution's presses go on by themselves after this many seconds. */
+  readonly autoAdvanceSeconds?: number;
 }
 
-export function MatchView({ session, onExit, rematch }: MatchViewProps) {
+export function MatchView({ session, onExit, rematch, autoAdvanceSeconds }: MatchViewProps) {
   if (panelUi()) return <TableScreen session={session} onExit={onExit} />;
   return (
     <Suspense fallback={<div style={LOADING_STYLE}>整理港口中…</div>}>
-      <Table3DScreen session={session} onExit={onExit} rematch={rematch} />
+      <Table3DScreen session={session} onExit={onExit} rematch={rematch} {...(autoAdvanceSeconds === undefined ? {} : { autoAdvanceSeconds })} />
     </Suspense>
   );
 }
