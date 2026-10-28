@@ -12,6 +12,8 @@ export const CREATE_RULE: WindowRule = { limit: 5, windowMs: 10 * 60 * 1000 };
 export const CONNECT_RULE: WindowRule = { limit: 30, windowMs: 60 * 1000 };
 /** Messages one connection may send; past it the connection is closed. */
 export const MESSAGE_RULE: WindowRule = { limit: 50, windowMs: 10 * 1000 };
+/** Statistics batches one IP address may send (the game sends one every 30 seconds at most). */
+export const EVENTS_RULE: WindowRule = { limit: 20, windowMs: 60 * 1000 };
 /** Connections one room holds at once: four seats with room for reloads and second tabs. */
 export const MAX_ROOM_SOCKETS = 8;
 

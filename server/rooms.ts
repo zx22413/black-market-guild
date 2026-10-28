@@ -1,5 +1,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { CONNECT_RULE, CREATE_RULE, MAX_ROOM_SOCKETS, MESSAGE_RULE, hit, originAllowed, type WindowRule } from './limits';
+import { recordEvents } from './analytics';
+import { serveStats } from './stats';
 
 // Shared Worker and Durable Object code for online rooms. Each rules version supplies its room
 // module (src/online for V0.6, src/v07/online for V0.7); the HTTP and WebSocket plumbing,
@@ -14,6 +16,10 @@ export interface Env {
    * challenge only when it is set. Local development uses Cloudflare's always-pass test secret.
    */
   readonly TURNSTILE_SECRET?: string;
+  /** Anonymous play statistics (server/analytics.ts). */
+  readonly ANALYTICS: D1Database;
+  /** Opens the /stats dashboard (`wrangler secret put ADMIN_KEY`); without it the dashboard is closed. */
+  readonly ADMIN_KEY?: string;
 }
 
 /** A parsed client message; every protocol version starts with `hello`. */
@@ -113,6 +119,12 @@ export function createWorker(online: OnlineModule): ExportedHandler<Env> {
       const url = new URL(request.url);
       if (url.pathname === '/api/rooms' && request.method === 'POST') {
         return createRoom(online, request, env);
+      }
+      if (url.pathname === '/api/stats' && request.method === 'GET') {
+        return serveStats(request, env, (key, rule) => allowed(env, key, rule), clientIp(request));
+      }
+      if (url.pathname === '/api/events' && request.method === 'POST') {
+        return recordEvents(request, env, (key, rule) => allowed(env, key, rule), clientIp(request));
       }
       const match = /^\/api\/rooms\/([^/]+)\/ws$/.exec(url.pathname);
       if (match && online.isRoomCode(match[1])) {

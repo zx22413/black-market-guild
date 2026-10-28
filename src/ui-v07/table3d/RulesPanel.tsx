@@ -12,6 +12,7 @@ import { IslandGlance } from './IslandGlance';
 import { roleIconUrl } from './RoleBadges';
 import { RulesPageTurn, type PageTurn } from './RulesPageTurn';
 import { onlineRules } from '../online/clockText';
+import { track } from '../analytics/track';
 import './rulesBook.css';
 
 // The rules, for looking things up, as a ship's handbook: one chapter per kind of thing, and the
@@ -124,8 +125,16 @@ export function RulesEntries({ tab }: { readonly tab: RulesTab }) {
   }
 }
 
-export function RulesPanel({ onClose: close }: { readonly onClose: () => void }) {
+interface RulesPanelProps {
+  readonly onClose: () => void;
+  /** Where the book was opened, for the statistics: the main menu or a match table. */
+  readonly where?: 'menu' | 'table';
+}
+
+export function RulesPanel({ onClose: close, where = 'table' }: RulesPanelProps) {
   const [tab, setTab] = useState<RulesTab>('roles');
+  // Which chapters people look up: a hint at what confuses them.
+  useEffect(() => track('rules_open', { chapter: tab, where }), [tab, where]);
   // The book opens, turns to a chapter and shuts with the sounds of a real one.
   const onClose = useCallback(() => {
     soundEngine.playSfx('book-close');

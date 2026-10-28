@@ -1,4 +1,5 @@
 import { Suspense, lazy } from 'react';
+import { useMatchAnalytics } from '../analytics/useMatchAnalytics';
 import type { GameSession } from '../session/gameSession';
 import type { Rematch } from '../table3d/ResultCard';
 import { TableScreen } from './TableScreen';
@@ -22,10 +23,11 @@ interface MatchViewProps {
 }
 
 export function MatchView({ session, onExit, rematch, autoAdvanceSeconds }: MatchViewProps) {
+  const { onReady } = useMatchAnalytics(session);
   if (panelUi()) return <TableScreen session={session} onExit={onExit} />;
   return (
     <Suspense fallback={<div style={LOADING_STYLE}>整理港口中…</div>}>
-      <Table3DScreen session={session} onExit={onExit} rematch={rematch} {...(autoAdvanceSeconds === undefined ? {} : { autoAdvanceSeconds })} />
+      <Table3DScreen session={session} onExit={onExit} rematch={rematch} onReady={onReady} {...(autoAdvanceSeconds === undefined ? {} : { autoAdvanceSeconds })} />
     </Suspense>
   );
 }

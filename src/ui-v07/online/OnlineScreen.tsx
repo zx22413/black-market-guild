@@ -9,6 +9,7 @@ import { seatCards, type SeatCard } from './lobbySeats';
 import { MatchClock } from './MatchClock';
 import { limitLabel } from './clockText';
 import { turnstileToken } from './turnstile';
+import { track } from '../analytics/track';
 import { RESOLUTION_AUTO_SECONDS } from '../table3d/useAutoAdvance';
 import { useCountSound } from '../audio/useUiSounds';
 import {
@@ -76,7 +77,9 @@ function HostRoom({ onRoom }: { readonly onRoom: (code: string) => void }) {
     setError(null);
     try {
       const token = challenge.current ? await turnstileToken(challenge.current) : null;
-      onRoom(await createRoom(token));
+      const code = await createRoom(token);
+      track('room_create');
+      onRoom(code);
     } catch (e) {
       setError(e instanceof Error ? e.message : '無法開房');
     } finally {
@@ -122,6 +125,7 @@ function CopyLink({ code }: { readonly code: string }) {
   const [copied, setCopied] = useState(false);
   const link = `${location.origin}${location.pathname}?room=${code}`;
   const copy = async () => {
+    track('invite_copy');
     try {
       await navigator.clipboard.writeText(link);
       setCopied(true);
@@ -136,13 +140,24 @@ function CopyLink({ code }: { readonly code: string }) {
   );
 }
 
-function NameRow({ client, joined, connected }: { readonly client: OnlineClient; readonly joined: boolean; readonly connected: boolean }) {
+interface NameRowProps {
+  readonly client: OnlineClient;
+  readonly joined: boolean;
+  readonly connected: boolean;
+  /** For the statistics: sitting down as the host, and whether the room came from a link. */
+  readonly code: string;
+  readonly isHost: boolean;
+  readonly viaLink: boolean;
+}
+
+function NameRow({ client, joined, connected, code, isHost, viaLink }: NameRowProps) {
   const [name, setName] = useState(savedName);
   return (
     <form
       className="menu-row"
       onSubmit={(e) => {
         e.preventDefault();
+        if (!joined) track('room_join', { role: isHost ? 'host' : 'guest', link: viaLink, room: code });
         client.join(name);
       }}
     >
@@ -196,13 +211,14 @@ function Seats({ cards, onKick }: SeatsProps) {
 
 interface LobbyProps {
   readonly code: string;
+  readonly viaLink: boolean;
   readonly client: OnlineClient;
   readonly state: OnlineState;
   readonly onLeave: () => void;
   readonly onView: (view: MenuView | null) => void;
 }
 
-function Lobby({ code, client, state, onLeave, onView }: LobbyProps) {
+function Lobby({ code, viaLink, client, state, onLeave, onView }: LobbyProps) {
   const room = state.room;
   const [seats, setSeats] = useState(4);
   const [decisionSeconds, setDecisionSeconds] = useState<number>(DEFAULT_DECISION_SECONDS);
@@ -244,7 +260,7 @@ function Lobby({ code, client, state, onLeave, onView }: LobbyProps) {
           ) : (
             room.locked && <p className="menu-note">房主已鎖房，新的人無法入座。</p>
           )}
-          <NameRow client={client} joined={joined} connected={connected} />
+          <NameRow client={client} joined={joined} connected={connected} code={code} isHost={room.isHost} viaLink={viaLink} />
           {room.isHost ? (
             <div className="menu-foot">
               <div className="menu-kind" role="radiogroup" aria-label="座位數">
@@ -282,11 +298,12 @@ function Lobby({ code, client, state, onLeave, onView }: LobbyProps) {
 
 interface RoomProps {
   readonly code: string;
+  readonly viaLink: boolean;
   readonly onLeave: (forget: boolean) => void;
   readonly onView: (view: MenuView | null) => void;
 }
 
-function Room({ code, onLeave, onView }: RoomProps) {
+function Room({ code, viaLink, onLeave, onView }: RoomProps) {
   // Created inside the effect so React StrictMode's mount-unmount-mount does not leave a closed client.
   const [client, setClient] = useState<OnlineClient | null>(null);
   useEffect(() => {
@@ -295,11 +312,12 @@ function Room({ code, onLeave, onView }: RoomProps) {
     return () => next.close();
   }, [code]);
   if (!client) return null;
-  return <RoomView code={code} client={client} onLeave={onLeave} onView={onView} />;
+  return <RoomView code={code} viaLink={viaLink} client={client} onLeave={onLeave} onView={onView} />;
 }
 
 interface RoomViewProps {
   readonly code: string;
+  readonly viaLink: boolean;
   readonly client: OnlineClient;
   readonly onLeave: (forget: boolean) => void;
   readonly onView: (view: MenuView | null) => void;
@@ -317,8 +335,26 @@ function matchKey(session: object): number {
   return key;
 }
 
-function RoomView({ code, client, onLeave, onView }: RoomViewProps) {
+function RoomView({ code, viaLink, client, onLeave, onView }: RoomViewProps) {
   const state = useSyncExternalStore(client.subscribe, client.getState);
+  // Statistics: how an online match went for this seat, once it ends.
+  // Once per match: the flag drops when the room goes back to its lobby.
+  const endTracked = useRef(false);
+  const finishedMatch = state.room?.phase === 'finished' ? (state.room.match ?? null) : null;
+  useEffect(() => {
+    if (!finishedMatch) {
+      endTracked.current = false;
+      return;
+    }
+    if (endTracked.current || !finishedMatch.you || !finishedMatch.result) return;
+    endTracked.current = true;
+    track('online_end', {
+      room: code,
+      humans: finishedMatch.players.filter((p) => p.kind !== 'bot').length,
+      timeouts: state.timeoutCount,
+      takeover: state.wasTakenOver,
+    });
+  }, [finishedMatch, code, state.timeoutCount, state.wasTakenOver]);
   const session = state.room?.match?.you ? client.getSession() : null;
   // A match started while we watched the lobby: the menu table sends the ships out first.
   const launching = useLaunchOnStart(state.room?.phase ?? null) && session !== null;
@@ -345,6 +381,7 @@ function RoomView({ code, client, onLeave, onView }: RoomViewProps) {
   return (
     <Lobby
       code={code}
+      viaLink={viaLink}
       client={client}
       state={state}
       onView={onView}
@@ -376,5 +413,5 @@ export function OnlineScreen({ initialRoom, onExit, onView }: OnlineScreenProps)
     onExit();
   };
   if (!code) return <OnlineHome onRoom={setCode} onBack={() => leave(false)} onView={onView} />;
-  return <Room key={code} code={code} onLeave={leave} onView={onView} />;
+  return <Room key={code} code={code} viaLink={code === initialRoom} onLeave={leave} onView={onView} />;
 }

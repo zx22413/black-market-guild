@@ -2,6 +2,7 @@ import { Suspense, lazy, useState } from 'react';
 import { SoundToggle } from '../audio/SoundToggle';
 import { CinnabarChop, GameTitle } from '../skin/titleMark';
 import { isLessonDone } from '../tutorial/progress';
+import { PrivacyNote } from '../analytics/PrivacyNote';
 
 // The title panel over the live table: one big "back to the room" when this browser was in an
 // online room, then single player, online, and the tutorial (marked as the place to start until
@@ -57,9 +58,10 @@ export function MainMenu({ lastRoom, onRejoin, onLocal, onOnline, onTutorial }: 
           規則書
         </button>
       </footer>
+      <PrivacyNote />
       {rules && (
         <Suspense fallback={null}>
-          <RulesPanel onClose={() => setRules(false)} />
+          <RulesPanel onClose={() => setRules(false)} where="menu" />
         </Suspense>
       )}
     </main>

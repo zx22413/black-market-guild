@@ -18,6 +18,9 @@ export interface OnlineState {
   readonly deadlines: Readonly<Record<number, number | null>>;
   /** The last time this seat's time ran out (docs/game-design.md §15.1); `at` tells repeats apart. */
   readonly lastTimeout: { readonly phase: DecisionPhase; readonly takeover: boolean; readonly at: number } | null;
+  /** For the statistics: this seat's timeouts in the match, and whether a bot ever took it over. */
+  readonly timeoutCount: number;
+  readonly wasTakenOver: boolean;
 }
 
 export interface OnlineClient {
@@ -166,7 +169,7 @@ function toSessionSnapshot(room: RoomSnapshot): SessionSnapshot | null {
 export function connectRoom(code: string): OnlineClient {
   const token = playerToken();
   const listeners = new Set<() => void>();
-  let state: OnlineState = { connection: 'connecting', room: null, notice: null, fatal: false, deadlines: {}, lastTimeout: null };
+  let state: OnlineState = { connection: 'connecting', room: null, notice: null, fatal: false, deadlines: {}, lastTimeout: null, timeoutCount: 0, wasTakenOver: false };
   let socket: WebSocket | null = null;
   let attempt = 0;
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -184,8 +187,12 @@ export function connectRoom(code: string): OnlineClient {
     if (match !== lastMatch) {
       lastMatch = match;
       sessionSnapshot = state.room ? toSessionSnapshot(state.room) : null;
-      // Back in the lobby (rematch): the next match gets a fresh session for a fresh table.
-      if (sessionSnapshot === null) session = null;
+      // Back in the lobby (rematch): the next match gets a fresh session for a fresh table, and
+      // fresh statistics.
+      if (sessionSnapshot === null) {
+        session = null;
+        state = { ...state, timeoutCount: 0, wasTakenOver: false };
+      }
     }
     listeners.forEach((listener) => listener());
   };
@@ -223,8 +230,16 @@ export function connectRoom(code: string): OnlineClient {
       return;
     }
     if (message.type === 'timed-out') {
-      update({ lastTimeout: { phase: message.phase, takeover: message.takeover, at: Date.now() } });
+      update({
+        lastTimeout: { phase: message.phase, takeover: message.takeover, at: Date.now() },
+        timeoutCount: state.timeoutCount + 1,
+        wasTakenOver: state.wasTakenOver || message.takeover,
+      });
       return;
+    }
+    const you = state.room?.match?.you ?? null;
+    if (message.type === 'seats' && you !== null && message.takeover.includes(you) && !state.wasTakenOver) {
+      update({ wasTakenOver: true });
     }
     const room = applyMessage(state.room, message);
     update({ room, deadlines: nextDeadlines(state.deadlines, message), ...(message.type === 'sync' ? { notice: null } : {}) });

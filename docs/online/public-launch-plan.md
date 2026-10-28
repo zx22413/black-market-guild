@@ -51,7 +51,7 @@
 
 邀請朋友的原則：**不強制**。被邀請的人不需要先通關教學才能進房（與 [`tutorial-outline.md`](../tutorial-outline.md) 第 1 節「建議、不強制」一致）。
 
-## 4. 行為分析（2026-10-28 定案，實作中）
+## 4. 行為分析（2026-10-28 定案並實作）
 
 ### 4.1 要回答的問題
 
@@ -94,6 +94,10 @@
 - **不增加執行期依賴：** 不接第三方分析服務；儀表板的圖自己用 SVG 畫。
 
 ### 4.4 儲存與查看
+
+**實作位置：** 事件與欄位白名單 `src/analytics/events.ts`（瀏覽器與伺服器共用）；瀏覽器端 `src/ui-v07/analytics/`（`track.ts` 佇列與開關、`useMatchAnalytics.ts` 對局、`PrivacyNote.tsx` 註腳、`FeedbackBox.tsx` 評分）；伺服器 `server/analytics.ts`（寫入）、`server/stats.ts`（儀表板資料）；資料表 `migrations/0001_events.sql`；儀表板頁 `stats.html`＋`src/stats/`。D1 資料庫 `contrabay-analytics` 已建立，資料表已套用到正式環境。
+
+**上線前要使用者做的事：** 用 `npx wrangler secret put ADMIN_KEY` 設一把管理密碼，部署後到 `/stats` 輸入它。外部問卷建好後，把連結填進 `FeedbackBox.tsx` 的 `SURVEY_URL`。
 
 - **儲存：** Cloudflare D1（SQL 資料庫）。免費額度每天寫入 10 萬列，初期流量遠低於此。**先不設保存期限**。
 - **儀表板：** 遊戲 Worker 上的 `/stats` 頁面，打開就是最新數字；用 Worker secret `ADMIN_KEY` 保護，第一次輸入後存在瀏覽器。初版內容：漏斗（進站 → 開始對局 → 打完 → 再玩一局 → 邀請 → 朋友玩完）、每日進站（手機與電腦分開）、第一局在第幾回合離開、教學各課完成率、規則書常翻的章節、👍／👎 比例與最新留言、錯誤次數與 3D 桌面載入時間。

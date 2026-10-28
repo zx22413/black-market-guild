@@ -3486,3 +3486,39 @@ button .info-tip-anchor {
   opacity: 0.35;
   cursor: not-allowed;
 }
+
+/* The result card's 「這局好玩嗎？」 (analytics/FeedbackBox.tsx), between the standings and the buttons. */
+.feedback-box {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 4px;
+  padding: 10px 12px;
+  border: 1px dashed rgb(138 100 32 / 0.5);
+  border-radius: 10px;
+  font-size: var(--fs-note);
+  text-align: center;
+}
+.feedback-box p {
+  margin: 0;
+  font-size: var(--fs-body);
+}
+.feedback-choices,
+.feedback-send {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+.feedback-choices button.on {
+  outline: 2px solid currentColor;
+}
+.feedback-box textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: none;
+  font: inherit;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+.feedback-box a {
+  color: inherit;
+}

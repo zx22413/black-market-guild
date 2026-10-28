@@ -3,6 +3,12 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   plugins: [react()],
+  // The game, and the private /stats dashboard (src/stats, docs/online/public-launch-plan.md §4.4).
+  build: {
+    rollupOptions: {
+      input: { main: 'index.html', stats: 'stats.html' },
+    },
+  },
   // Online rooms live in the Worker (`npm run server:dev`, port 8787); the dev server forwards to it.
   server: {
     proxy: {

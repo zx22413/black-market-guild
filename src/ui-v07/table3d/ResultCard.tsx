@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { FeedbackBox } from '../analytics/FeedbackBox';
+import type { MatchMode } from '../analytics/matchStats';
 import type React from 'react';
 import { soundEngine } from '../audio/soundEngine';
 import { useSoundOnce } from '../audio/useUiSounds';
@@ -135,9 +137,11 @@ export interface ResultCardProps {
   /** Back to the main menu. */
   readonly onRestart: () => void;
   readonly rematch?: Rematch | undefined;
+  /** Asks 「這局好玩嗎？」 under the standings (FeedbackBox); left out where nobody should be asked. */
+  readonly feedbackMode?: MatchMode | undefined;
 }
 
-export function ResultCard({ rows, nameOf, colorOf, viewer, rounds, onRestart, rematch }: ResultCardProps) {
+export function ResultCard({ rows, nameOf, colorOf, viewer, rounds, onRestart, rematch, feedbackMode }: ResultCardProps) {
   // Reveal from the last row up; the winner(s) last, after a pause.
   const [revealed, setRevealed] = useState(0);
   useEffect(() => {
@@ -193,6 +197,7 @@ export function ResultCard({ rows, nameOf, colorOf, viewer, rounds, onRestart, r
             />
           ))}
         </ol>
+        {done && feedbackMode && <FeedbackBox mode={feedbackMode} />}
         <footer className="beat-foot">
           {!done && (
             <button type="button" onClick={() => setRevealed(rows.length)}>

@@ -288,6 +288,51 @@
 .menu-icon:hover {
   border-color: var(--m-wood);
 }
+/* The statistics footnote: the quietest thing on the panel, pressed only by those who look for it. */
+.menu-privacy {
+  position: relative;
+  margin-top: 6px;
+}
+.menu-privacy-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--m-soft);
+  font-size: 0.7rem;
+  opacity: 0.6;
+  text-decoration: underline dotted;
+  cursor: pointer;
+}
+.menu-privacy-link:hover {
+  opacity: 1;
+}
+.menu-privacy-card {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 5;
+  display: grid;
+  gap: 8px;
+  width: min(320px, 80vw);
+  padding: 12px 14px;
+  border: 1px solid var(--m-wood);
+  border-radius: 10px;
+  background: var(--m-on);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.35);
+  font-size: var(--fs-note);
+  line-height: 1.6;
+}
+.menu-privacy-card p {
+  margin: 0;
+}
+.menu-privacy-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.menu-privacy-card .menu-small {
+  justify-self: end;
+}
 .menu-foot {
   display: flex;
   align-items: center;

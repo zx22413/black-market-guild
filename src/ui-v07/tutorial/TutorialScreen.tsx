@@ -6,6 +6,7 @@ import { CoachCard, type CoachEndAction } from './CoachCard';
 import { FocusMask } from './FocusMask';
 import { placeCard, type Hole } from './focus';
 import { markLessonDone } from './progress';
+import { track } from '../analytics/track';
 import './tutorial.css';
 
 // One lesson on the ordinary 3D table, with the host's card beside it. Remounted (by key) to replay.
@@ -80,6 +81,22 @@ export function TutorialScreen({ script, next, onReplay, onNext, onExit }: Tutor
 
   useEffect(() => {
     if (ended) markLessonDone(script.id);
+  }, [ended, script.id]);
+
+  // Statistics: the lesson's start, its end (with the time it took), or the step it was left at.
+  const lessonStats = useRef({ startedAt: Date.now(), ended: false, step: 0 });
+  lessonStats.current.step = coach.number;
+  useEffect(() => {
+    track('tutorial_start', { lesson: script.id });
+    const stats = lessonStats.current;
+    return () => {
+      if (!stats.ended) track('tutorial_quit', { lesson: script.id, step: stats.step });
+    };
+  }, [script.id]);
+  useEffect(() => {
+    if (!ended || lessonStats.current.ended) return;
+    lessonStats.current.ended = true;
+    track('tutorial_done', { lesson: script.id, seconds: Math.round((Date.now() - lessonStats.current.startedAt) / 1000) });
   }, [ended, script.id]);
 
   const endActions: CoachEndAction[] = [

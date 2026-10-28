@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { matchMode } from '../analytics/matchStats';
 import { GOODS, RULES_V07, type Action, type Goods, type PlayerId, type ShipId } from '../../v07/game';
 import type { SafeArea } from '../../ui/scene/CameraRig';
 import { soundEngine } from '../audio/soundEngine';
@@ -452,7 +453,18 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
           }}
         />
       )}
-      {resultUp && <ResultCard rows={rows} nameOf={nameOf} colorOf={colorOf} viewer={hotSeat ? null : viewer} rounds={rounds} onRestart={onExit} rematch={rematch} />}
+      {resultUp && (
+        <ResultCard
+          rows={rows}
+          nameOf={nameOf}
+          colorOf={colorOf}
+          viewer={hotSeat ? null : viewer}
+          rounds={rounds}
+          onRestart={onExit}
+          rematch={rematch}
+          feedbackMode={autoplay ? undefined : matchMode(snap.players)}
+        />
+      )}
 
       {ready && handoffTo && (
         <div className="beat-backdrop handoff-backdrop" role="dialog" aria-modal="true" aria-label="換人">

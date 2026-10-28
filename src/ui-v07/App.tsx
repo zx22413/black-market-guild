@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { track, trackErrors, trackVisit } from './analytics/track';
 import { isRoomCode } from '../v07/online';
 import { useSoundtrack } from './audio/useSoundtrack';
 import { useUiClicks } from './audio/useUiSounds';
@@ -84,6 +85,14 @@ export function App() {
   // A menu panel that has to scroll says so (a fade and a chevron at its foot).
   useEffect(() => watchMenuPanels(), []);
 
+  // Anonymous statistics: one visit per tab, and uncaught errors with the screen they happened on.
+  const screen = useRef(mode.kind);
+  screen.current = mode.kind;
+  useEffect(() => {
+    trackVisit();
+    trackErrors(() => screen.current);
+  }, []);
+
   useEffect(() => {
     if (mode.kind !== 'launching') return;
     const timer = setTimeout(() => startLocal(mode.options), launchMs());
@@ -118,10 +127,22 @@ function Screen({ mode, setMode, home, launchLocal, startLocal, onView }: Screen
       return (
         <MainMenu
           lastRoom={lastRoom()}
-          onRejoin={(room) => setMode({ kind: 'online', room })}
-          onLocal={() => setMode({ kind: 'local-setup' })}
-          onOnline={() => setMode({ kind: 'online', room: null })}
-          onTutorial={() => setMode({ kind: 'tutorial-menu' })}
+          onRejoin={(room) => {
+            track('menu_pick', { pick: 'rejoin' });
+            setMode({ kind: 'online', room });
+          }}
+          onLocal={() => {
+            track('menu_pick', { pick: 'local' });
+            setMode({ kind: 'local-setup' });
+          }}
+          onOnline={() => {
+            track('menu_pick', { pick: 'online' });
+            setMode({ kind: 'online', room: null });
+          }}
+          onTutorial={() => {
+            track('menu_pick', { pick: 'tutorial' });
+            setMode({ kind: 'tutorial-menu' });
+          }}
         />
       );
     case 'local-setup':

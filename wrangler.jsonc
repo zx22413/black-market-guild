@@ -2,6 +2,8 @@
 // Deploy with `npm run deploy`. Anyone may open a room; set the Turnstile secret once with
 // `npx wrangler secret put TURNSTILE_SECRET` (without it, room creation skips the bot check).
 // LIMITS counts room openings and connections per IP address (server/limits.ts).
+// The /stats dashboard needs `npx wrangler secret put ADMIN_KEY`; schema changes go in migrations/
+// (`npx wrangler d1 migrations apply contrabay-analytics --remote`).
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "black-market-guild",
@@ -18,6 +20,10 @@
       { "name": "LIMITS", "class_name": "LimiterObject" }
     ]
   },
+  // Anonymous play statistics (docs/online/public-launch-plan.md §4); schema in migrations/.
+  "d1_databases": [
+    { "binding": "ANALYTICS", "database_name": "contrabay-analytics", "database_id": "fb9ede9f-a382-4c9b-8add-86f399a60560" }
+  ],
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["RoomObject"] },
     { "tag": "v2", "new_sqlite_classes": ["LimiterObject"] }

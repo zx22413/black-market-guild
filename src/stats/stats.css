@@ -1,0 +1,170 @@
+/* The /stats dashboard: plain, readable in light and dark. */
+:root {
+  --bg: #f6f1e6;
+  --card: #fffdf8;
+  --ink: #2a1d10;
+  --soft: #7a6852;
+  --line: #e2d6bf;
+  --a: #2f6f8f;
+  --b: #c8792a;
+  --good: #3b7d2b;
+  --bad: #b2412b;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141b1f;
+    --card: #1c252a;
+    --ink: #ece4d4;
+    --soft: #9fb0b5;
+    --line: #2c3a40;
+    --a: #6cb6d8;
+    --b: #e6a25e;
+    --good: #7cc46a;
+    --bad: #e57a62;
+    color-scheme: dark;
+  }
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.55 system-ui, -apple-system, 'PingFang TC', 'Noto Sans TC', sans-serif;
+}
+#stats {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 20px 16px 48px;
+}
+h1 {
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+}
+.sub {
+  margin: 0 0 18px;
+  color: var(--soft);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+}
+.card {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+.card.wide {
+  grid-column: 1 / -1;
+}
+.card h2 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+.empty {
+  color: var(--soft);
+}
+.bars {
+  display: grid;
+  gap: 6px;
+}
+.bar {
+  display: grid;
+  grid-template-columns: 7.5em 1fr 7em;
+  align-items: center;
+  gap: 8px;
+}
+.bar .track {
+  height: 14px;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: hidden;
+}
+.bar .fill {
+  height: 100%;
+  background: var(--a);
+}
+.bar .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.bar .label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.legend {
+  display: flex;
+  gap: 14px;
+  margin-top: 6px;
+  color: var(--soft);
+  font-size: 0.85rem;
+}
+.legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+  border-radius: 2px;
+}
+svg text {
+  fill: var(--soft);
+  font-size: 11px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+td,
+th {
+  padding: 5px 6px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.like {
+  color: var(--good);
+}
+.dislike {
+  color: var(--bad);
+}
+form.login {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 420px;
+}
+form.login input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+}
+button {
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.error {
+  color: var(--bad);
+}
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
