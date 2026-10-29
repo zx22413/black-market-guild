@@ -5,8 +5,8 @@ import type { MatchMode } from './matchStats';
 // The result screen's one-tap question (docs/online/public-launch-plan.md §4.4): 👍／👎, an
 // optional line, and the outside survey once its link exists. Asked until answered once.
 
-/** The outside survey (a Google form); empty until there is one, and then the link stays hidden. */
-export const SURVEY_URL = '';
+/** The outside survey (a Google form, docs/promo/survey.md); when empty the link stays hidden. */
+export const SURVEY_URL = 'https://forms.gle/ZYxcUvH2yiC6Yysr8';
 
 const ANSWERED_KEY = 'bmg7.feedback.answered';
 const TEXT_MAX = 200;

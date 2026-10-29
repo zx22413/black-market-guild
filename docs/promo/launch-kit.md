@@ -223,7 +223,7 @@ node --experimental-websocket --import tsx scripts/trailer/make.ts --format tall
 
 ## 7. 還沒準備好的
 
-- 外部問卷連結（`FeedbackBox.tsx` 的 `SURVEY_URL`）還是空的（問卷設計見 [`survey.md`](survey.md)，建好後填入）。
+- 外部問卷（<https://forms.gle/ZYxcUvH2yiC6Yysr8>，設計見 [`survey.md`](survey.md)）已發布，連結已填進 `FeedbackBox.tsx` 的 `SURVEY_URL`，**要部署後玩家才看得到**；部署前先看 `/stats` 的「目前線上對局」。
 - 英文介面沒有；英文平台的轉換率會受影響，先觀察 `?src=reddit` 帶來的人有沒有玩完。
 - 桌遊板（巴哈 bsn=60537）、FB 社團、Dcard、Threads、Reddit 還沒發（第二波，看完 `/stats` 再決定）。
 

@@ -1,6 +1,6 @@
 # 暗潮商戰｜遊玩問卷（Google 表單）
 
-**狀態：** 推廣與回饋用的草稿，**不是規則來源**。連結建好後填入 `src/ui-v07/analytics/FeedbackBox.tsx` 的 `SURVEY_URL`，結算畫面在玩家按完 👍／👎 之後才顯示「想多說一點？填 1 分鐘的問卷」。
+**狀態：** 推廣與回饋用的草稿，**不是規則來源**。表單已發布（<https://forms.gle/ZYxcUvH2yiC6Yysr8>），連結已填在 `src/ui-v07/analytics/FeedbackBox.tsx` 的 `SURVEY_URL`（部署後生效），結算畫面在玩家按完 👍／👎 之後才顯示「想多說一點？填 1 分鐘的問卷」。
 
 **設計原則：**
 - 約 1 分鐘、9 題，只有 3 題必填，其餘選填。
