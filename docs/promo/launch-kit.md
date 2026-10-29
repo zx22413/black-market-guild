@@ -223,6 +223,33 @@ node --experimental-websocket --import tsx scripts/trailer/make.ts --format tall
 
 ## 7. 還沒準備好的
 
-- itch.io 帳號與頁面要你建立。
-- 外部問卷連結（`FeedbackBox.tsx` 的 `SURVEY_URL`）還是空的。
+- 外部問卷連結（`FeedbackBox.tsx` 的 `SURVEY_URL`）還是空的（問卷設計見 [`survey.md`](survey.md)，建好後填入）。
 - 英文介面沒有；英文平台的轉換率會受影響，先觀察 `?src=reddit` 帶來的人有沒有玩完。
+- 桌遊板（巴哈 bsn=60537）、FB 社團、Dcard、Threads、Reddit 還沒發（第二波，看完 `/stats` 再決定）。
+
+## 8. 發佈記錄（2026-10-30）
+
+**今天發出去的：** itch.io 頁面、巴哈獨立遊戲板、YouTube、IG 限動、FB 限動。
+
+| 管道 | 做法 | `?src=` |
+| --- | --- | --- |
+| itch.io | <https://lbdog.itch.io/contrabay>，今天改為公開 | `itch` |
+| 巴哈（獨立遊戲板） | bsn=60603、文章 snA=584；子板「綜合討論」、標題框「情報」；沒勾「此為 AI 創作」 | `bahamut-indie` |
+| YouTube | 宣傳片；結尾 QR Code 是 `video`，說明欄連結用的標記**未記錄**（請自行補上） | `video`（QR Code） |
+| IG 限動、FB 限動 | 兩邊用同一個連結，`/stats` 會合併成一筆 | `ig` |
+
+**itch.io 頁面的實際做法（與第 3 節的建議不同）：**
+- 專案類型是 **HTML**，上傳的壓縮檔只有一個 `index.html`（原始碼在 [`itch-launcher/index.html`](itch-launcher/index.html)）：一顆「開始遊戲」按鈕，連到 `https://contrabay.lbdog.uk/?src=itch`，`target="_blank"` 在新分頁開啟。這樣頁面有「Run game」按鈕、可進 itch.io 的「瀏覽器可玩」篩選，遊戲本體仍在自己的網域，線上房間不受影響。嵌入尺寸 640×360。
+- 沒有採用「增加外部檔案」：該功能在實測時一直轉圈。**上傳任何檔案前，itch.io 帳號必須先驗證 email**，否則會顯示「Please verify your email address before uploading a file」。
+- 介紹最上方放試玩連結，中文在前、英文在後；標籤共 9 個（`bluffing`、`board-game`、`browser`、`chinese`、`low-poly`、`multiplayer`、`pirates`、`singleplayer`、`trading`），類型 Strategy，價錢「沒有付款」。
+- 專案網址的 slug 不能以 `-` 或 `_` 開頭或結尾。
+- AI 揭露已勾選圖像、聲音、文字、程式。
+
+**巴哈的做法與限制：**
+- 發文前帳號要完成**手機認證**（`user.gamer.com.tw/mobile_verify.php`），否則所有板都無法發文。
+- 獨立遊戲板（bsn=60603）整頁都是「【情報】【自製遊戲】…」格式的自製遊戲介紹；板規沒有禁止推廣，也沒有要求標示 AI。標題框選「情報」，標題自己加「【自製遊戲】」。
+- 桌遊板（bsn=60537）板規較嚴：不得要求 GP／巴幣／推文（第 22 條）、同串每天只能自推一次（第 18 條）、不得重複發文（第 12 條，所以兩個板要改寫成不同版本）、有獎勵或收集個資的問卷要向站方申請（第 23 條）。
+- 「此為 AI 創作」勾選框的規定：作品「全部或大部分由 AI 生成」才須勾，勾了會帶「AI 生成」標籤且不開放贊助。遊戲介紹文沒有勾。
+- 內文只用一句話說明 AI：「開發過程有使用 AI 工具輔助（程式、部分圖像與音訊）」。
+
+**之後：** 發完隔天看 `/stats` 的「從哪裡來」（`itch`、`bahamut-indie`、`video`、`ig`）、第一局在第幾回合離開、評分與留言，再決定修什麼與第二波發哪裡。
