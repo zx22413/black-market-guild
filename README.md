@@ -6,7 +6,7 @@
 
 ## 線上遊玩
 
-- 正式網址：<https://black-market-guild.zx2241384.workers.dev>（Cloudflare Worker，含線上房間）。
+- 正式網址：<https://contrabay.lbdog.uk>（Cloudflare Worker，含線上房間）。
 - 開房需要房主密碼，朋友用房間連結加入；單人對 Bot 不需要密碼。
 
 ## 專案狀態

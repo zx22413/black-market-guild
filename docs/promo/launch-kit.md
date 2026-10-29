@@ -2,7 +2,7 @@
 
 **狀態：** 推廣用的草稿，**不是規則來源**。文案裡提到的玩法都是 `game-design.md`（V0.7）已定案的內容；改規則時要回頭檢查這裡的說法。方向見 [`../online/public-launch-plan.md`](../online/public-launch-plan.md) 第 9 節。
 
-網址：<https://black-market-guild.zx2241384.workers.dev/>
+網址：<https://contrabay.lbdog.uk/>
 
 ## 1. 對外的事實與賣點
 
@@ -26,7 +26,7 @@
 
 | 平台 | 連結 |
 | --- | --- |
-| itch.io | `https://black-market-guild.zx2241384.workers.dev/?src=itch` |
+| itch.io | `https://contrabay.lbdog.uk/?src=itch` |
 | PTT | `…/?src=ptt` |
 | 巴哈姆特 | `…/?src=bahamut` |
 | Dcard | `…/?src=dcard` |
@@ -107,7 +107,7 @@
 ‧ 可以開房間找朋友，空位由電腦補上
 ‧ 瀏覽器、手機都能玩，免費、免註冊
 
-網址：https://black-market-guild.zx2241384.workers.dev/?src=ptt
+網址：https://contrabay.lbdog.uk/?src=ptt
 
 特別想知道：
 1. 第一局有沒有看不懂、卡住的地方？
@@ -134,7 +134,7 @@
 
 單人對電腦 10 分鐘一局，也能開房間揪朋友。
 瀏覽器、手機都能玩，免費免註冊👇
-https://black-market-guild.zx2241384.workers.dev/?src=dcard
+https://contrabay.lbdog.uk/?src=dcard
 
 很想知道大家第一局卡在哪裡，留言或在遊戲結算畫面回饋都可以！
 ```
@@ -149,7 +149,7 @@ https://black-market-guild.zx2241384.workers.dev/?src=dcard
 
 一個人做的線上航海商戰，所有人同時秘密下注，揭曉那一刻才知道誰在搞你。
 瀏覽器免費玩，一局 10 分鐘 ⚓
-https://black-market-guild.zx2241384.workers.dev/?src=threads
+https://contrabay.lbdog.uk/?src=threads
 ```
 
 ```
@@ -187,7 +187,7 @@ https://black-market-guild.zx2241384.workers.dev/?src=threads
 
 ```
 做了一款線上航海商戰：誰在護航？誰在打劫？所有人同時秘密下注，揭曉才知道誰在搞你。
-單人 10 分鐘一局，也能開房揪朋友，瀏覽器免費玩 → https://black-market-guild.zx2241384.workers.dev/?src=discord
+單人 10 分鐘一局，也能開房揪朋友，瀏覽器免費玩 → https://contrabay.lbdog.uk/?src=discord
 ```
 
 ## 5. 宣傳片、封面與截圖
@@ -196,8 +196,8 @@ https://black-market-guild.zx2241384.workers.dev/?src=threads
 
 | 檔案 | 規格 | 用在哪裡 |
 | --- | --- | --- |
-| `trailer-v5.mp4` | 1920×1080、60fps、約 32 秒 | itch.io、Reddit、Discord、YouTube |
-| `trailer-tall-v1.mp4` | 1080×1920、手機版介面 | IG 限動、Threads（限動在結尾加連結貼紙，網址用 `?src=ig`） |
+| `trailer-v6.mp4` | 1920×1080、60fps、約 32 秒 | itch.io、Reddit、Discord、YouTube |
+| `trailer-tall-v2.mp4` | 1080×1920、手機版介面 | IG 限動、Threads（限動在結尾加連結貼紙，網址用 `?src=ig`） |
 | `cover-itch-1260x1000.jpg` | itch.io 封面（630×500 的 2 倍） | itch.io 封面圖 |
 | `cover-wide-1920x1080.jpg` | 橫幅 | 開發日誌、YouTube 縮圖、社群貼文配圖 |
 | `screenshots/01～07` | 1920×1080 | itch.io 截圖（依序：黑市崩價、部署角色、角色揭曉、護航、雷擊、結果畫面、無介面的雷擊） |

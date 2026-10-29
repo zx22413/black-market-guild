@@ -5,7 +5,7 @@
 const TEST_SITE_KEY = '1x00000000000000000000BB';
 /**
  * The production site key from the Cloudflare dashboard (public, safe to commit): the managed
- * widget for black-market-guild.zx2241384.workers.dev. Its secret is the Worker secret TURNSTILE_SECRET.
+ * widget, whose hostnames must list contrabay.lbdog.uk (and the old workers.dev address). Its secret is the Worker secret TURNSTILE_SECRET.
  */
 const SITE_KEY = '0x4AAAAAAFobuEIvPNME8gE2';
 
