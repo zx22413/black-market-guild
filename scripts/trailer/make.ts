@@ -1,11 +1,13 @@
 import { SFX_GAIN, SOUND_FILES, type SfxId } from '../../src/ui-v07/audio/soundPlan';
 import { args, childProcess, fs } from './node';
-import { BEDS, CARDS, CARRY_ON, HITS, ORDER, SHOTS, SKIP_SOUNDS, TAKES, type CutTime, type Shot, type TakeId } from './plan';
+import { BEDS, CARDS, CARRY_ON, HITS, ORDER, SHOTS, SKIP_SOUNDS, TAKE_IDS, shotIn, takeOf, type CutTime, type Format, type Shot } from './plan';
 
 // Makes the trailer from plan.ts: films the takes (capture.ts), saves the overlays (still.ts),
 // then cuts, captions and scores it with ffmpeg. Needs the dev server (npm run dev):
 //
-//   node --experimental-websocket --import tsx scripts/trailer/make.ts --work <dir> --out trailer.mp4 [--skip-film] [--skip-cards]
+//   node --experimental-websocket --import tsx scripts/trailer/make.ts --work <dir> --out trailer.mp4 [--format tall] [--skip-film] [--skip-cards]
+//
+// --format tall makes the portrait cut (1080×1920, phone layout) for IG stories and Threads.
 //
 // --skip-film / --skip-cards reuse what an earlier run left in <work> (to retime the edit only).
 
@@ -20,22 +22,23 @@ const opts = args();
 const work = opts.get('work')?.[0];
 const out = opts.get('out')?.[0];
 if (!work || !out) throw new Error('--work and --out are required');
+const format: Format = opts.get('format')?.[0] === 'tall' ? 'tall' : 'wide';
 const run = (file: string, list: readonly string[]): void => void childProcess.execFileSync(file, list, { stdio: 'inherit' });
 const tsx = (script: string, list: readonly string[]): void => run('node', ['--experimental-websocket', '--import', 'tsx', `scripts/trailer/${script}`, ...list]);
 
 const shot = (name: string): Shot => {
   const s = SHOTS.find((x) => x.name === name);
   if (!s) throw new Error(`no shot ${name}`);
-  return s;
+  return shotIn(s, format);
 };
 
 // 1. Film every take: its shots are its clips.
 if (!opts.has('skip-film')) {
-  for (const take of Object.keys(TAKES) as TakeId[]) {
+  for (const take of TAKE_IDS) {
     const dir = `${work}/takes/${take}`;
     fs.rmSync(dir, { recursive: true, force: true });
-    const clips = SHOTS.filter((s) => s.take === take).flatMap((s) => ['--clip', `${s.name}:${s.from}-${s.to}:${s.slow}`]);
-    const { page, size, scale } = TAKES[take];
+    const clips = SHOTS.filter((s) => s.take === take).map((s) => shotIn(s, format)).flatMap((s) => ['--clip', `${s.name}:${s.from}-${s.to}:${s.slow}`]);
+    const { page, size, scale } = takeOf(take, format);
     tsx('capture.ts', ['--page', page, '--out', dir, '--fps', String(FPS), '--size', size, '--scale', String(scale), ...clips]);
   }
 }
@@ -45,8 +48,9 @@ const cardFile = (i: number): string => `${work}/cards/card-${i}.png`;
 if (!opts.has('skip-cards')) {
   fs.mkdirSync(`${work}/cards`, { recursive: true });
   CARDS.forEach((c, i) => {
-    const query = `dev=trailer&part=card&card=${c.card}${c.text ? `&text=${encodeURIComponent(c.text)}` : ''}${c.place ? `&place=${c.place}` : ''}`;
-    tsx('still.ts', ['--page', query, '--out', cardFile(i)]);
+    const query = `dev=trailer&part=card${format === 'tall' ? '&format=tall' : ''}&card=${c.card}${c.text ? `&text=${encodeURIComponent(c.text)}` : ''}${c.place ? `&place=${c.place}` : ''}`;
+    const { size, scale } = takeOf('open', format);
+    tsx('still.ts', ['--page', query, '--out', cardFile(i), '--size', size, '--scale', String(scale)]);
   });
 }
 
@@ -93,7 +97,7 @@ interface Cue {
   readonly sound: string;
   readonly at: number;
 }
-const cuesOf = (take: TakeId): readonly Cue[] => (JSON.parse(fs.readFileSync(`${work}/takes/${take}/marks.json`, 'utf8')) as { cues: Cue[] }).cues;
+const cuesOf = (take: Shot['take']): readonly Cue[] => (JSON.parse(fs.readFileSync(`${work}/takes/${take}/marks.json`, 'utf8')) as { cues: Cue[] }).cues;
 const fileOf = (sound: string): string | null => {
   const entry = SOUND_FILES[sound as SfxId] as string | { licensed: string; fallback: string | null } | undefined;
   // The licensed cuts stay out of the trailer (their licence covers the game); their generated stand-ins go in.

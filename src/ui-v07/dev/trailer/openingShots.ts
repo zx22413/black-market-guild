@@ -14,6 +14,8 @@ export const CRANE = { start: 2.2, length: 3.2 } as const;
 
 /** High over the near side of the table, looking down at the market: every island in the frame. */
 export const OVERVIEW: Shot = { position: [0, 118, 150], target: [0, 0, -6] };
+/** The same on a portrait screen, which is far narrower: much higher and further back. */
+export const OVERVIEW_TALL: Shot = { position: [0, 250, 240], target: [0, 0, -8] };
 
 export const smooth = (x: number): number => x * x * (3 - 2 * x);
 const mix = (a: Vec3, b: Vec3, k: number): Vec3 => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
@@ -23,19 +25,21 @@ const mix = (a: Vec3, b: Vec3, k: number): Vec3 => [a[0] + (b[0] - a[0]) * k, a[
  * where the crane began) up to the overview, eased at both ends, the aim leaving the ship a little
  * later than the camera does so the ship stays in the frame on the way up.
  */
-export function shotAt(s: number, craneFrom: Shot, chase: Shot): Shot {
+export function shotAt(s: number, craneFrom: Shot, chase: Shot, overview: Shot = OVERVIEW): Shot {
   if (s <= CRANE.start) return chase;
   const k = Math.min(1, (s - CRANE.start) / CRANE.length);
   const up = smooth(k);
   const aim = smooth(Math.max(0, (k - 0.15) / 0.85));
-  return { position: mix(craneFrom.position, OVERVIEW.position, up), target: mix(craneFrom.target, OVERVIEW.target, aim) };
+  return { position: mix(craneFrom.position, overview.position, up), target: mix(craneFrom.target, overview.target, aim) };
 }
 
 /**
  * The end card's sky: high over the table, drifting slowly sideways, aimed left of the market so
- * the table sits right of center, clear of the title on the left.
+ * the table sits right of center, clear of the title on the left. On a portrait screen the card
+ * fills the top, so the camera aims beyond the market and the table sits in the lower half.
  */
-export function endShot(s: number): Shot {
+export function endShot(s: number, tall = false): Shot {
   const drift = s * 2.4;
+  if (tall) return { position: [drift, 250, 250], target: [drift, 0, -96] };
   return { position: [-26 + drift, 124, 166 - drift * 0.3], target: [-52 + drift, 0, -8] };
 }

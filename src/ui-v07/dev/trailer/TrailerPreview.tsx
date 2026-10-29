@@ -25,14 +25,18 @@ soundEngine.setEventBed = (bed) => {
 };
 
 export function TrailerPreview() {
-  const part = new URLSearchParams(location.search).get('part') ?? 'game';
+  const q = new URLSearchParams(location.search);
+  const part = q.get('part') ?? 'game';
+  // &format=tall: the portrait cut (IG stories, Threads); the pages frame and lay out for it.
+  const tall = q.get('format') === 'tall';
+  if (tall) document.documentElement.classList.add('trailer-tall');
   switch (part) {
     case 'open':
-      return <TrailerOpening />;
+      return <TrailerOpening tall={tall} />;
     case 'strike':
       return <TrailerStrike />;
     case 'end':
-      return <TrailerOpening ending />;
+      return <TrailerOpening ending tall={tall} />;
     case 'card':
       document.documentElement.classList.add('trailer-card-page');
       return <TrailerCard />;

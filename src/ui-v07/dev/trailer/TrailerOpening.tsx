@@ -12,7 +12,7 @@ import type { BeatSeat } from '../../scene/beatStage';
 import { TableCanvas } from '../../scene/TableCanvas';
 import { MENU_BERTH } from '../../menu/menuMotion';
 import { markReady } from './director';
-import { CRANE, endShot, shotAt, smooth, type Shot } from './openingShots';
+import { CRANE, OVERVIEW, OVERVIEW_TALL, endShot, shotAt, smooth, type Shot } from './openingShots';
 
 // The trailer's opening (/v07.html?dev=trailer&part=open): the trailer match's four islands in a
 // storm, every ship setting out at once. The camera rides the waves beside your ship, then cranes
@@ -87,22 +87,22 @@ function chaseShot(angle: number, s: number): Shot {
   };
 }
 
-function EndCamera() {
+function EndCamera({ tall }: { readonly tall: boolean }) {
   const camera = useThree((st) => st.camera);
   useFrame(() => {
-    const shot = endShot(story());
+    const shot = endShot(story(), tall);
     camera.position.set(...shot.position);
     camera.lookAt(...shot.target);
   });
   return null;
 }
 
-function DirectorCamera({ angle }: { readonly angle: number }) {
+function DirectorCamera({ angle, tall }: { readonly angle: number; readonly tall: boolean }) {
   const camera = useThree((st) => st.camera);
   const swell = useSwell();
   useFrame(() => {
     const s = story();
-    const shot = shotAt(s, chaseShot(angle, Math.min(s, CRANE.start)), chaseShot(angle, s));
+    const shot = shotAt(s, chaseShot(angle, Math.min(s, CRANE.start)), chaseShot(angle, s), tall ? OVERVIEW_TALL : OVERVIEW);
     // The chase camera rides the swell; the bob fades as it climbs.
     const ride = 1 - smooth(Math.min(1, Math.max(0, (s - CRANE.start) / 0.8)));
     camera.position.set(shot.position[0], shot.position[1] + Math.sin(s * 1.9) * 0.45 * swell.current.height * ride, shot.position[2]);
@@ -111,7 +111,8 @@ function DirectorCamera({ angle }: { readonly angle: number }) {
   return null;
 }
 
-export function TrailerOpening({ ending = false }: { readonly ending?: boolean }) {
+/** `tall`: framed for a portrait screen (&format=tall). */
+export function TrailerOpening({ ending = false, tall = false }: { readonly ending?: boolean; readonly tall?: boolean }) {
   const angles = useMemo(() => seatAngles(SEATS.length), []);
   startAt = ending ? END_START : START;
   return (
@@ -129,7 +130,7 @@ export function TrailerOpening({ ending = false }: { readonly ending?: boolean }
         markReady();
       }}
     >
-      {ending ? <EndCamera /> : <DirectorCamera angle={angles[0] ?? 0} />}
+      {ending ? <EndCamera tall={tall} /> : <DirectorCamera angle={angles[0] ?? 0} tall={tall} />}
       {angles.map((angle, i) => (
         <SailingShip key={i} angle={angle} index={i} />
       ))}

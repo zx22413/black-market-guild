@@ -38,7 +38,10 @@ function Genre() {
   return (
     <div className="trailer-card genre">
       <p className="genre-kind">
-        3～4 人的<em>航運貿易</em> × <em>心理博弈</em>
+        <span>3～4 人的</span>
+        <span>
+          <em>航運貿易</em> × <em>心理博弈</em>
+        </span>
       </p>
     </div>
   );
@@ -54,7 +57,12 @@ function End() {
           <CinnabarChop className="end-chop" />
         </div>
         <p className="end-hook">{END_LINES.hook}</p>
-        <p className="end-facts">{END_LINES.facts}</p>
+        <p className="end-facts">
+          {/* One line on a wide screen; on a portrait one it breaks after the first fact. */}
+          <span>{END_LINES.facts.slice(0, END_LINES.facts.indexOf('・'))}</span>
+          <span className="end-sep">・</span>
+          <span>{END_LINES.facts.slice(END_LINES.facts.indexOf('・') + 1)}</span>
+        </p>
         <figure className="end-qr">
           <img src={qrUrl} alt="" />
           <figcaption>{END_LINES.scan}</figcaption>

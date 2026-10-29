@@ -159,3 +159,78 @@ html.trailer-card-page #app {
   letter-spacing: 0.12em;
   writing-mode: vertical-rl;
 }
+
+/*
+ * The portrait cut (&format=tall): 432×768 CSS px filmed at 2.5× (1080×1920). IG stories cover
+ * about the top 100 and bottom 136 CSS px with their own bars, so the words stay between, and the
+ * end card leaves the lower part open for a link sticker.
+ */
+html.trailer-tall .trailer-card.caption {
+  padding-bottom: 156px;
+}
+
+html.trailer-tall .trailer-card.caption.top {
+  padding: 150px 0 0;
+}
+
+html.trailer-tall .trailer-card.caption p {
+  padding: 8px 18px 10px;
+  font-size: 24px;
+  white-space: nowrap;
+}
+
+html.trailer-tall .trailer-card.genre .genre-kind span,
+html.trailer-tall .end-facts span {
+  display: block;
+}
+
+html.trailer-tall .end-facts .end-sep {
+  display: none;
+}
+
+html.trailer-tall .trailer-card.genre .genre-kind {
+  max-width: 400px;
+  font-size: 34px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+html.trailer-tall .trailer-card.end {
+  align-items: flex-start;
+  justify-content: center;
+  padding: 118px 0 0;
+  background: linear-gradient(180deg, rgb(8 20 26 / 0.9) 0%, rgb(8 20 26 / 0.7) 46%, rgb(8 20 26 / 0) 64%);
+}
+
+html.trailer-tall .end-copy {
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+html.trailer-tall .end-title,
+html.trailer-tall .end-title .title-stencil {
+  width: 250px;
+}
+
+html.trailer-tall .end-chop {
+  width: 46px;
+}
+
+html.trailer-tall .end-hook {
+  font-size: 25px;
+}
+
+html.trailer-tall .end-facts {
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+html.trailer-tall .end-qr img {
+  width: 120px;
+  height: 120px;
+}
+
+html.trailer-tall .end-qr figcaption {
+  font-size: 20px;
+}

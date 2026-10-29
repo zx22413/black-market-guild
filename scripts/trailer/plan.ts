@@ -3,18 +3,37 @@
 // music. Page times are ms after the page said it was ready; the game take's moments come from its
 // marks.json (the TRAILER script always plays the same way, src/v07/tutorial/trailer.ts).
 
-/** Each take is one filming of a trailer page (src/ui-v07/dev/trailer); every one comes out 1920×1080. */
-export const TAKES = {
-  open: { page: 'dev=trailer&part=open', size: '1280x720', scale: 1.5 },
-  // The match on a narrower page, scaled up: its interface reads bigger on a phone, and the rank
-  // rail stays folded (it opens from 1100 px).
-  game: { page: 'dev=trailer&part=game', size: '1088x612', scale: 1920 / 1088 },
+/** Landscape (1920×1080: itch.io, Reddit, Discord) or portrait (1080×1920: IG stories, Threads). */
+export type Format = 'wide' | 'tall';
+
+const PAGES = {
+  open: 'dev=trailer&part=open',
+  game: 'dev=trailer&part=game',
   // The bolt on 凡德商行's ship with no labels, from two of the montage's angles.
-  'strike-low': { page: 'dev=trailer&part=strike&angle=low', size: '1280x720', scale: 1.5 },
-  'strike-close': { page: 'dev=trailer&part=strike&angle=close', size: '1280x720', scale: 1.5 },
-  end: { page: 'dev=trailer&part=end', size: '1280x720', scale: 1.5 },
+  'strike-low': 'dev=trailer&part=strike&angle=low',
+  'strike-close': 'dev=trailer&part=strike&angle=close',
+  end: 'dev=trailer&part=end',
 } as const;
-export type TakeId = keyof typeof TAKES;
+export type TakeId = keyof typeof PAGES;
+
+export interface Take {
+  readonly page: string;
+  /** CSS px of the page, and its pixel ratio: every take comes out 1920×1080 (wide) or 1080×1920 (tall). */
+  readonly size: string;
+  readonly scale: number;
+}
+
+/**
+ * Wide: the match on a narrower page than the rest, scaled up, so its interface reads bigger on a
+ * phone and the rank rail stays folded (it opens from 1100 px). Tall: every page is phone-sized,
+ * so the match is the phone layout the viewer will see; the 3D pages get `format=tall` and frame
+ * for a portrait screen.
+ */
+export function takeOf(id: TakeId, format: Format): Take {
+  if (format === 'tall') return { page: `${PAGES[id]}&format=tall`, size: '432x768', scale: 2.5 };
+  return id === 'game' ? { page: PAGES[id], size: '1088x612', scale: 1920 / 1088 } : { page: PAGES[id], size: '1280x720', scale: 1.5 };
+}
+export const TAKE_IDS = Object.keys(PAGES) as TakeId[];
 
 export interface Shot {
   readonly name: string;
@@ -24,7 +43,12 @@ export interface Shot {
   readonly to: number;
   /** Frames per page frame: 2 is half-speed slow motion, 0.5 twice as fast. */
   readonly slow: number;
+  /** Ms later on the phone layout (its camera moves take a little longer, so its moments come later). */
+  readonly tall?: number;
 }
+
+/** The shot as filmed in `format`. */
+export const shotIn = (shot: Shot, format: Format): Shot => (format === 'tall' && shot.tall ? { ...shot, from: shot.from + shot.tall, to: shot.to + shot.tall } : shot);
 
 /** In cut order. Filmed in page-time order per take, so a take's shots must not overlap. */
 export const SHOTS: readonly Shot[] = [
@@ -33,23 +57,23 @@ export const SHOTS: readonly Shot[] = [
   // Round 1: you load wood and spice and seal it.
   { name: 'invest', take: 'game', from: 900, to: 3600, slow: 0.75 },
   // The market card: everyone brought wood and spice, both prices fall.
-  { name: 'market', take: 'game', from: 34000, to: 37000, slow: 0.7 },
+  { name: 'market', take: 'game', from: 34000, to: 37000, slow: 0.7, tall: 117 },
   // Round 2: your guard on your own ship, sealed.
-  { name: 'deploy', take: 'game', from: 51300, to: 54000, slow: 0.75 },
+  { name: 'deploy', take: 'game', from: 51300, to: 54000, slow: 0.75, tall: 200 },
   // The voyage event: a storm.
-  { name: 'storm', take: 'game', from: 54900, to: 56100, slow: 1 },
+  { name: 'storm', take: 'game', from: 54900, to: 56100, slow: 1, tall: 200 },
   // The reveal: every role at the table is on your ship.
-  { name: 'reveal', take: 'game', from: 58300, to: 63600, slow: 0.45 },
+  { name: 'reveal', take: 'game', from: 58300, to: 63600, slow: 0.45, tall: 250 },
   // Your ship: 4, guard +1, pirate −1, storm −1, arrives on a 3.
-  { name: 'yours', take: 'game', from: 67000, to: 74400, slow: 0.75 },
+  { name: 'yours', take: 'game', from: 67000, to: 74400, slow: 0.75, tall: 267 },
   // 凡德商行's ship: the die on the table, then the montage with no labels (the strike page's bolt
   // lands at 2950 ms): close on the hull, the bolt from low on the water in slow motion, the wreck
   // going down; back to the table for its 「沉沒」.
-  { name: 'rival-die', take: 'game', from: 78300, to: 79900, slow: 1 },
+  { name: 'rival-die', take: 'game', from: 78300, to: 79900, slow: 1, tall: 283 },
   { name: 'montage-wait', take: 'strike-close', from: 2250, to: 2900, slow: 1 },
   { name: 'montage-bolt', take: 'strike-low', from: 2900, to: 3500, slow: 2 },
   { name: 'montage-wreck', take: 'strike-close', from: 4300, to: 5500, slow: 1 },
-  { name: 'rival-sink', take: 'game', from: 81100, to: 82300, slow: 1 },
+  { name: 'rival-sink', take: 'game', from: 81100, to: 82300, slow: 1, tall: 283 },
   // Clear sky under the end card, held on it.
   { name: 'end', take: 'end', from: 0, to: 6000, slow: 1 },
 ];
