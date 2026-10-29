@@ -1,5 +1,5 @@
-import type { Action, DecisionPhase } from '../../v07/game';
-import { PROTOCOL_VERSION, type ClientMessage, type OnlineRequest, type RoomSnapshot, type ServerMessage } from '../../v07/online';
+import type { Action, DecisionPhase, PlayerId } from '../../v07/game';
+import { PROTOCOL_VERSION, type ClientMessage, type OnlineRequest, type RoomSnapshot, type SeatClock, type ServerMessage } from '../../v07/online';
 import type { GameSession, SessionSnapshot } from '../session/gameSession';
 
 /** The Worker's room API; in development Vite forwards it to `npm run server:dev` (vite.config.ts). */
@@ -16,6 +16,8 @@ export interface OnlineState {
   readonly fatal: boolean;
   /** When each open request of this seat runs out, in this browser's clock (null while paused). */
   readonly deadlines: Readonly<Record<number, number | null>>;
+  /** When each seat still deciding runs out, in this browser's clock; null while its clock does not run (§15.1). */
+  readonly seatDeadlines: Readonly<Record<PlayerId, number | null>>;
   /** The last time this seat's time ran out (docs/game-design.md §15.1); `at` tells repeats apart. */
   readonly lastTimeout: { readonly phase: DecisionPhase; readonly takeover: boolean; readonly at: number } | null;
   /** For the statistics: this seat's timeouts in the match, and whether a bot ever took it over. */
@@ -27,7 +29,9 @@ export interface OnlineClient {
   getState(): OnlineState;
   subscribe(listener: () => void): () => void;
   join(name: string): void;
-  start(seats: number, decisionSeconds: number): void;
+  start(seats: number): void;
+  /** Host only, in the lobby: picks the decision limit everyone sees. */
+  setLimit(decisionSeconds: number): void;
   /** 「取消託管」: take this seat back from the bot. */
   resume(): void;
   /** Host only, after the match: everyone goes back to this room's lobby. */
@@ -128,6 +132,8 @@ function applyMessage(room: RoomSnapshot | null, message: ServerMessage): RoomSn
           requests: match.requests.filter((r) => message.players.includes(r.context.decision.playerId)),
         },
       };
+    case 'clocks':
+      return { ...room, match: { ...match, clocks: message.clocks } };
     case 'seats':
       return { ...room, match: { ...match, takeover: message.takeover, paused: message.paused } };
     case 'ended':
@@ -146,6 +152,15 @@ function nextDeadlines(
   if (message.type === 'request') return { ...deadlines, [message.request.id]: at(message.request) };
   if (message.type === 'clock') return { ...deadlines, [message.requestId]: Date.now() + message.timeLeftMs };
   if (message.type === 'sync') return Object.fromEntries((message.room.match?.requests ?? []).map((r) => [r.id, at(r)]));
+  return deadlines;
+}
+
+/** Same idea for the public clocks of the seats still deciding. */
+function nextSeatDeadlines(deadlines: OnlineState['seatDeadlines'], message: ServerMessage): OnlineState['seatDeadlines'] {
+  const from = (clocks: readonly SeatClock[]) =>
+    Object.fromEntries(clocks.map((c) => [c.seat, c.timeLeftMs === null ? null : Date.now() + c.timeLeftMs]));
+  if (message.type === 'clocks') return from(message.clocks);
+  if (message.type === 'sync') return from(message.room.match?.clocks ?? []);
   return deadlines;
 }
 
@@ -169,7 +184,7 @@ function toSessionSnapshot(room: RoomSnapshot): SessionSnapshot | null {
 export function connectRoom(code: string): OnlineClient {
   const token = playerToken();
   const listeners = new Set<() => void>();
-  let state: OnlineState = { connection: 'connecting', room: null, notice: null, fatal: false, deadlines: {}, lastTimeout: null, timeoutCount: 0, wasTakenOver: false };
+  let state: OnlineState = { connection: 'connecting', room: null, notice: null, fatal: false, deadlines: {}, seatDeadlines: {}, lastTimeout: null, timeoutCount: 0, wasTakenOver: false };
   let socket: WebSocket | null = null;
   let attempt = 0;
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -242,7 +257,7 @@ export function connectRoom(code: string): OnlineClient {
       update({ wasTakenOver: true });
     }
     const room = applyMessage(state.room, message);
-    update({ room, deadlines: nextDeadlines(state.deadlines, message), ...(message.type === 'sync' ? { notice: null } : {}) });
+    update({ room, deadlines: nextDeadlines(state.deadlines, message), seatDeadlines: nextSeatDeadlines(state.seatDeadlines, message), ...(message.type === 'sync' ? { notice: null } : {}) });
     if (room?.joined) saveLastRoom(code);
     // After a server restart the lobby forgets people; rejoin whoever had joined this room.
     if (message.type === 'sync' && !room?.joined && room?.phase === 'lobby' && storageGet(`bmg7.joined.${code}`)) {
@@ -301,7 +316,8 @@ export function connectRoom(code: string): OnlineClient {
       storageSet(`bmg7.joined.${code}`, '1');
       send({ type: 'join', name });
     },
-    start: (seats, decisionSeconds) => send({ type: 'start', seats, decisionSeconds }),
+    start: (seats) => send({ type: 'start', seats }),
+    setLimit: (decisionSeconds) => send({ type: 'limit', decisionSeconds }),
     resume: () => send({ type: 'resume' }),
     rematch: () => send({ type: 'rematch' }),
     kick: (member) => send({ type: 'kick', member }),

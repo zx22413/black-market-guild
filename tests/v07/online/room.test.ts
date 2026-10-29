@@ -119,8 +119,8 @@ describe('V0.7 online room', () => {
     expect(events.at(-1)).toMatchObject({ type: 'match-ended' });
   });
 
-  it('speaks protocol 4 with V0.7 rules', () => {
-    expect(PROTOCOL_VERSION).toBe(4);
+  it('speaks protocol 5 with V0.7 rules', () => {
+    expect(PROTOCOL_VERSION).toBe(5);
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'hello', token: HOST, protocol: PROTOCOL_VERSION });
     const sync = ctx.last(HOST, 'sync');
@@ -312,6 +312,9 @@ describe('protocol parsing', () => {
       decisionSeconds: 60,
     });
     expect(parseClientMessage(JSON.stringify({ type: 'start', seats: 3, decisionSeconds: '60' }))).toBeNull();
+    expect(parseClientMessage(JSON.stringify({ type: 'limit', decisionSeconds: 60 }))).toEqual({ type: 'limit', decisionSeconds: 60 });
+    expect(parseClientMessage(JSON.stringify({ type: 'limit', decisionSeconds: 1.5 }))).toBeNull();
+    expect(parseClientMessage(JSON.stringify({ type: 'limit' }))).toBeNull();
     expect(parseClientMessage(JSON.stringify({ type: 'submit', requestId: 1, action: [] }))).toBeNull();
     expect(parseClientMessage(JSON.stringify({ type: 'join', name: 'x'.repeat(20_000) }))).toBeNull();
   });
@@ -604,5 +607,79 @@ describe('the host managing the lobby', () => {
     expect(parseClientMessage(JSON.stringify({ type: 'kick', member: '1' }))).toBeNull();
     expect(parseClientMessage(JSON.stringify({ type: 'lock', locked: true }))).toEqual({ type: 'lock', locked: true });
     expect(parseClientMessage(JSON.stringify({ type: 'lock', locked: 1 }))).toBeNull();
+  });
+});
+
+const syncOf = (ctx: ReturnType<typeof makeRoom>, token: string) => {
+  const sync = ctx.last(token, 'sync');
+  return sync?.type === 'sync' ? sync.room : null;
+};
+
+describe('lobby time limit is shared (game-design §15.1)', () => {
+  it('shows the host-picked limit to everyone and starts the match with it', async () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'join', name: '房主' });
+    ctx.send(GUEST, { type: 'hello', token: GUEST, protocol: PROTOCOL_VERSION });
+    ctx.send(GUEST, { type: 'join', name: '客人' });
+    expect(syncOf(ctx, GUEST)?.decisionSeconds).toBe(DEFAULT_DECISION_SECONDS);
+    ctx.send(HOST, { type: 'limit', decisionSeconds: 300 });
+    expect(syncOf(ctx, GUEST)?.decisionSeconds).toBe(300);
+    expect(syncOf(ctx, HOST)?.decisionSeconds).toBe(300);
+    ctx.send(HOST, { type: 'start', seats: 3 });
+    await tick();
+    expect(syncOf(ctx, GUEST)?.match?.decisionSeconds).toBe(300);
+  });
+
+  it('refuses a limit from a guest, an unlisted value, or outside the lobby', async () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'join', name: '房主' });
+    ctx.send(GUEST, { type: 'join', name: '客人' });
+    ctx.send(GUEST, { type: 'limit', decisionSeconds: 60 });
+    expect(ctx.last(GUEST, 'error')).toMatchObject({ code: 'not-host' });
+    ctx.send(HOST, { type: 'limit', decisionSeconds: 90 });
+    expect(ctx.last(HOST, 'error')).toMatchObject({ code: 'bad-time-limit' });
+    expect(syncOf(ctx, HOST)?.decisionSeconds).toBe(DEFAULT_DECISION_SECONDS);
+    ctx.send(HOST, { type: 'start', seats: 3 });
+    await tick();
+    ctx.send(HOST, { type: 'limit', decisionSeconds: 60 });
+    expect(syncOf(ctx, HOST)?.match?.decisionSeconds).toBe(DEFAULT_DECISION_SECONDS);
+  });
+});
+
+const clocksOf = (ctx: ReturnType<typeof makeRoom>, token: string) => {
+  const m = ctx.last(token, 'clocks');
+  return m?.type === 'clocks' ? m.clocks : null;
+};
+
+describe('everyone sees the remaining time of seats still deciding (game-design §15.1)', () => {
+  it('shows waiting before the table shows it, then the time left, to the other seat too', async () => {
+    const ctx = makeRoom();
+    ctx.send(GUEST, { type: 'hello', token: GUEST, protocol: PROTOCOL_VERSION });
+    ctx.send(HOST, { type: 'join', name: '房主' });
+    ctx.send(HOST, { type: 'start', seats: 3, decisionSeconds: 60 });
+    await tick();
+    expect(clocksOf(ctx, GUEST)).toEqual([{ seat: 'p1', timeLeftMs: null }]);
+    showOpen(ctx, HOST);
+    expect(clocksOf(ctx, GUEST)).toEqual([{ seat: 'p1', timeLeftMs: 60_000 }]);
+    ctx.advance(20_000);
+    ctx.send(GUEST, { type: 'hello', token: GUEST, protocol: PROTOCOL_VERSION });
+    expect(syncOf(ctx, GUEST)?.match?.clocks).toEqual([{ seat: 'p1', timeLeftMs: 40_000 }]);
+  });
+
+  it('drops a seat once it has decided, and shows a pause as no clock', async () => {
+    const ctx = makeRoom();
+    ctx.send(GUEST, { type: 'hello', token: GUEST, protocol: PROTOCOL_VERSION });
+    ctx.send(HOST, { type: 'join', name: '房主' });
+    ctx.send(HOST, { type: 'start', seats: 3, decisionSeconds: 60 });
+    await tick();
+    showOpen(ctx, HOST);
+    ctx.setOnline(HOST, false);
+    expect(clocksOf(ctx, GUEST)).toEqual([{ seat: 'p1', timeLeftMs: null }]);
+    ctx.setOnline(HOST, true);
+    showOpen(ctx, HOST);
+    expect(clocksOf(ctx, GUEST)).toEqual([{ seat: 'p1', timeLeftMs: 60_000 }]);
+    answer(ctx, HOST, openRequests(ctx, HOST)[0]!);
+    await tick();
+    expect(clocksOf(ctx, GUEST)?.find((c) => c.seat === 'p1' && c.timeLeftMs === 60_000)).toBeUndefined();
   });
 });

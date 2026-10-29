@@ -97,6 +97,36 @@
   font-size: var(--fs-note);
   pointer-events: none;
 }
+.mc-waits {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--hud-top, 56px) + 36px);
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+.mc-waits li {
+  display: flex;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(24, 16, 10, 0.75);
+  color: #d8c7a3;
+  font-size: var(--fs-note);
+}
+.mc-waits li.urgent .mc-wait-time {
+  color: #ff9a7a;
+}
+.mc-wait-time {
+  font-variant-numeric: tabular-nums;
+}
+.mc-takeover ~ .mc-waits {
+  top: calc(var(--hud-top, 56px) + 88px);
+}
 .mc-takeover + .mc-others {
   top: calc(var(--hud-top, 56px) + 60px);
 }

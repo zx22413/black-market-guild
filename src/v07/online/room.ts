@@ -15,6 +15,7 @@ import {
   type OnlineRequest,
   type RoomPhase,
   type RoomSnapshot,
+  type SeatClock,
   type ServerMessage,
 } from './protocol';
 import { timeoutAction } from './timeout';
@@ -97,6 +98,8 @@ export class Room {
   /** People the host sent out; they may watch but never sit down in this room again. */
   private banned: ReadonlySet<string> = new Set();
   private locked = false;
+  /** The limit the host picked in the lobby; shown to everyone and used by the next start. */
+  private lobbySeconds = DEFAULT_DECISION_SECONDS;
   /** Everyone who said hello, members or not, so watchers also learn when the lobby reopens. */
   private seen: ReadonlySet<string> = new Set();
   private nextRequestId = 1;
@@ -118,7 +121,10 @@ export class Room {
         this.join(token, message.name);
         return;
       case 'start':
-        this.start(token, message.seats, message.decisionSeconds ?? DEFAULT_DECISION_SECONDS, seed);
+        this.start(token, message.seats, message.decisionSeconds ?? this.lobbySeconds, seed);
+        return;
+      case 'limit':
+        this.setLimit(token, message.decisionSeconds);
         return;
       case 'resume':
         this.resume(token);
@@ -172,6 +178,7 @@ export class Room {
       joined: this.members.some((m) => m.token === token),
       isHost: token === this.options.hostToken,
       locked: this.locked,
+      decisionSeconds: this.lobbySeconds,
       minSeats: RULES_V07.players.min,
       maxSeats: RULES_V07.players.max,
       match: this.match ? this.matchFor(token, this.match) : null,
@@ -194,6 +201,7 @@ export class Room {
       takeover: match.players.map((p) => p.id).filter((id) => match.takeover.has(id)),
       paused: match.paused,
       decisionSeconds: match.decisionSeconds,
+      clocks: this.clocks(),
       timeouts: you === null ? 0 : (match.timeouts[you] ?? 0),
       startingCash: match.startingCash,
       result: match.result,
@@ -232,6 +240,20 @@ export class Room {
       return;
     }
     this.members = [...this.members, { token, name }];
+    this.syncAll();
+  }
+
+  private setLimit(token: string, decisionSeconds: number): void {
+    if (token !== this.options.hostToken) {
+      this.fail(token, 'not-host', '只有房主可以設定限時');
+      return;
+    }
+    if (!(DECISION_SECONDS_CHOICES as readonly number[]).includes(decisionSeconds)) {
+      this.fail(token, 'bad-time-limit', `限時只能選 ${DECISION_SECONDS_CHOICES.join('、')} 秒`);
+      return;
+    }
+    if (this.phase !== 'lobby') return;
+    this.lobbySeconds = decisionSeconds;
     this.syncAll();
   }
 
@@ -430,6 +452,7 @@ export class Room {
     this.replace(pending, fresh);
     this.options.send(fresh.token, { type: 'request', request: this.wire(fresh) });
     this.broadcast({ type: 'waiting', players: this.waitingOn() });
+    this.broadcastClocks();
   }
 
   /** The pending decision with its full limit running from now. */
@@ -456,6 +479,7 @@ export class Room {
     const next = this.running(match, pending);
     this.replace(pending, next);
     this.options.send(next.token, { type: 'clock', requestId, timeLeftMs: match.decisionSeconds * 1000 });
+    this.broadcastClocks();
   }
 
   private shown(token: string, requestId: number): void {
@@ -487,6 +511,7 @@ export class Room {
     pending.cancel?.();
     this.pending = this.pending.filter((p) => p.request.id !== pending.request.id);
     this.broadcast({ type: 'waiting', players: this.waitingOn() });
+    this.broadcastClocks();
     pending.resolve(action);
   }
 
@@ -550,6 +575,7 @@ export class Room {
       p.cancel?.();
       this.replace(p, { ...p, deadline: null, cancel: null });
     });
+    this.broadcastClocks();
   }
 
   private replace(old: Pending, next: Pending): void {
@@ -559,6 +585,21 @@ export class Room {
   private wire(pending: Pending): OnlineRequest {
     const timeLeftMs = pending.deadline === null ? null : Math.max(0, pending.deadline - this.options.clock.now());
     return { ...pending.request, timeLeftMs };
+  }
+
+  /** Remaining time per seat still deciding, in seat order; public (§15.1). */
+  private clocks(): readonly SeatClock[] {
+    return (this.match?.players ?? []).flatMap((p) => {
+      const owed = this.pending.filter((e) => e.request.context.decision.playerId === p.id);
+      if (owed.length === 0) return [];
+      const times = owed.map((e) => (e.deadline === null ? null : Math.max(0, e.deadline - this.options.clock.now())));
+      const running = times.filter((t): t is number => t !== null);
+      return [{ seat: p.id, timeLeftMs: running.length > 0 ? Math.min(...running) : null }];
+    });
+  }
+
+  private broadcastClocks(): void {
+    this.broadcast({ type: 'clocks', clocks: this.clocks() });
   }
 
   private broadcastSeats(match: MatchRecord): void {

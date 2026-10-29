@@ -1,8 +1,8 @@
 import type { DecisionContext } from '../bots';
 import type { Action, DecisionPhase, MatchEvent, MatchResult, PlayerId, PrivateEvent } from '../game';
 
-/** Bumped whenever messages change shape; a stale tab is told to reload. 2 = V0.7 rules, 3 = rematch, 4 = timers and takeover. */
-export const PROTOCOL_VERSION = 4;
+/** Bumped whenever messages change shape; a stale tab is told to reload. 2 = V0.7 rules, 3 = rematch, 4 = timers and takeover, 5 = shared lobby limit and public clocks. */
+export const PROTOCOL_VERSION = 5;
 
 /** Largest client message the server reads; actions are small JSON objects. */
 export const MAX_MESSAGE_BYTES = 16_384;
@@ -45,6 +45,12 @@ export interface OnlineRequest {
   readonly timeLeftMs: number | null;
 }
 
+/** A seat still deciding; `timeLeftMs` is null while its clock does not run (not shown yet, or paused). */
+export interface SeatClock {
+  readonly seat: PlayerId;
+  readonly timeLeftMs: number | null;
+}
+
 /** One seat's view of a running or finished match. */
 export interface OnlineMatch {
   /** The receiving seat; null for someone who did not join before the start. */
@@ -62,6 +68,8 @@ export interface OnlineMatch {
   /** No person is connected, so nothing is decided or timed (§15.2). */
   readonly paused: boolean;
   readonly decisionSeconds: number;
+  /** Remaining time of each seat still deciding; public (§15.1). */
+  readonly clocks: readonly SeatClock[];
   /** Timeouts in a row of `you`, so the table can warn before a takeover. */
   readonly timeouts: number;
   readonly startingCash: number;
@@ -77,6 +85,8 @@ export interface RoomSnapshot {
   readonly isHost: boolean;
   /** The host closed the lobby to newcomers. */
   readonly locked: boolean;
+  /** The decision limit the host picked in the lobby, shown to everyone (§15.1). */
+  readonly decisionSeconds: number;
   readonly minSeats: number;
   readonly maxSeats: number;
   readonly match: OnlineMatch | null;
@@ -87,6 +97,8 @@ export type ClientMessage =
   | { readonly type: 'join'; readonly name: string }
   /** `decisionSeconds` is one of DECISION_SECONDS_CHOICES; DEFAULT_DECISION_SECONDS when left out. */
   | { readonly type: 'start'; readonly seats: number; readonly decisionSeconds?: number }
+  /** Host only, in the lobby: picks the decision limit (one of DECISION_SECONDS_CHOICES) for everyone to see. */
+  | { readonly type: 'limit'; readonly decisionSeconds: number }
   /** Takes the seat back from the bot (「取消託管」). */
   | { readonly type: 'resume' }
   /** Host only, in the lobby: sends someone (by their place in `members`) out for good. */
@@ -109,6 +121,8 @@ export type ServerMessage =
   | { readonly type: 'waiting'; readonly players: readonly PlayerId[] }
   /** Who is under takeover changed, or the match paused or went on. */
   | { readonly type: 'seats'; readonly takeover: readonly PlayerId[]; readonly paused: boolean }
+  /** Public: the remaining time of every seat still deciding (§15.1). */
+  | { readonly type: 'clocks'; readonly clocks: readonly SeatClock[] }
   /** To the seat only: the clock of one of its decisions started. */
   | { readonly type: 'clock'; readonly requestId: number; readonly timeLeftMs: number }
   /** To the seat only: its time ran out and the default was played; `takeover` once a bot took over. */
@@ -185,6 +199,8 @@ export function parseClientMessage(raw: string): ClientMessage | null {
       return Number.isInteger(data.decisionSeconds)
         ? { type: 'start', seats: data.seats as number, decisionSeconds: data.decisionSeconds as number }
         : null;
+    case 'limit':
+      return Number.isInteger(data.decisionSeconds) ? { type: 'limit', decisionSeconds: data.decisionSeconds as number } : null;
     case 'resume':
       return { type: 'resume' };
     case 'kick':

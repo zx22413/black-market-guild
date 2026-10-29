@@ -232,7 +232,7 @@ interface LobbyProps {
 function Lobby({ code, viaLink, client, state, onLeave, onView }: LobbyProps) {
   const room = state.room;
   const [seats, setSeats] = useState(4);
-  const [decisionSeconds, setDecisionSeconds] = useState<number>(DEFAULT_DECISION_SECONDS);
+  const decisionSeconds = room?.decisionSeconds ?? DEFAULT_DECISION_SECONDS;
   const joined = room?.joined ?? false;
   const connected = state.connection === 'open';
   const members = room?.members ?? [];
@@ -283,17 +283,17 @@ function Lobby({ code, viaLink, client, state, onLeave, onView }: LobbyProps) {
               </div>
               <div className="menu-kind" role="radiogroup" aria-label="每個決定的限時">
                 {DECISION_SECONDS_CHOICES.map((n) => (
-                  <button key={n} type="button" role="radio" aria-checked={n === decisionSeconds} className={n === decisionSeconds ? 'on' : ''} onClick={() => setDecisionSeconds(n)}>
+                  <button key={n} type="button" role="radio" aria-checked={n === decisionSeconds} className={n === decisionSeconds ? 'on' : ''} onClick={() => client.setLimit(n)}>
                     {limitLabel(n)}
                   </button>
                 ))}
               </div>
-              <button type="button" className="menu-go" disabled={!joined || !connected} onClick={() => client.start(chosenSeats, decisionSeconds)}>
+              <button type="button" className="menu-go" disabled={!joined || !connected} onClick={() => client.start(chosenSeats)}>
                 開始對局
               </button>
             </div>
           ) : (
-            <p className="menu-note">{joined ? '等房主開始對局…（每個決定的限時由房主選）' : '輸入名稱後按「入座」'}</p>
+            <p className="menu-note">{joined ? `等房主開始對局…（每個決定限時 ${limitLabel(decisionSeconds)}，由房主選）` : '輸入名稱後按「入座」'}</p>
           )}
         </>
       )}
