@@ -245,3 +245,13 @@ html.trailer-tall .end-qr figcaption {
   /* A store tile is small: the title card reads at a glance. */
   zoom: 1.25;
 }
+
+/* The portrait cover (Shorts thumbnail): the card shrinks to its text and sits low, so the islands show above it. */
+.trailer-tall .trailer-cover-panel {
+  top: auto;
+  bottom: 9%;
+  translate: none;
+  min-height: 0;
+  height: auto;
+  zoom: 1;
+}
