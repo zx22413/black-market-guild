@@ -17,6 +17,8 @@ const MarketPreview = import.meta.env.DEV ? lazy(() => import('./dev/MarketPrevi
 const SkinLabPreview = import.meta.env.DEV ? lazy(() => import('./dev/SkinLabPreview').then((m) => ({ default: m.SkinLabPreview }))) : null;
 // The link preview card (Open Graph image, 1200×630): /v07.html?dev=og-card (&shot=night).
 const OgCardPreview = import.meta.env.DEV ? lazy(() => import('./dev/OgCardPreview').then((m) => ({ default: m.OgCardPreview }))) : null;
+// The promo trailer's pages, filmed frame by frame by scripts/trailer/capture.ts: /v07.html?dev=trailer&part=game.
+const TrailerPreview = import.meta.env.DEV ? lazy(() => import('./dev/trailer/TrailerPreview').then((m) => ({ default: m.TrailerPreview }))) : null;
 const devPage = import.meta.env.DEV ? new URLSearchParams(window.location.search).get('dev') : null;
 
 // Trial skin (src/ui-v07/skin/layers.css): `?skin=classic` shows the previous look to compare.
@@ -42,7 +44,11 @@ if (!container) {
 }
 createRoot(container).render(
   <StrictMode>
-    {devPage === 'og-card' && OgCardPreview ? (
+    {devPage === 'trailer' && TrailerPreview ? (
+      <Suspense fallback={null}>
+        <TrailerPreview />
+      </Suspense>
+    ) : devPage === 'og-card' && OgCardPreview ? (
       <Suspense fallback={null}>
         <OgCardPreview />
       </Suspense>

@@ -5,7 +5,8 @@ import type { Action, Bet, BuildingId, DecisionPhase, GoodId, Goods, IslandId, P
 // and whose bots follow a plan, so every lesson plays out as written. A script never sets anything
 // public (cash, stock, prices): those still come from real actions through the engine.
 
-export type TutorialId = 'basics' | 'guard' | 'pirate' | 'intel' | 'smuggler' | 'arms-cover' | 'broker' | 'islands';
+/** `trailer` is not a lesson: the promo video's scripted match (src/ui-v07/dev/trailer), never in TUTORIALS. */
+export type TutorialId = 'basics' | 'guard' | 'pirate' | 'intel' | 'smuggler' | 'arms-cover' | 'broker' | 'islands' | 'trailer';
 
 /** One seat's choices for one round; anything left out means: stay in port, deploy nothing. */
 export interface SeatPlan {

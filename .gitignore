@@ -29,3 +29,6 @@ temp/
 # Licensed sound cuts (Sonniss GDC bundles): the licence forbids handing them out as files
 # and this repository is public. Kept in iCloud; see public/audio/SOURCES.md.
 public/audio/licensed/
+
+# Rendered promo videos and screenshots (scripts/trailer): big files, remade from the scripts
+promo-out/

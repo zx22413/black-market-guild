@@ -9,6 +9,7 @@ export type { CoachMoment, CoachView } from './coach';
 export { allowedFor, isReady, playTutorial, scriptedAction, tutorialSetup, youChoose } from './play';
 export { tutorialStage } from './stage';
 export { BASICS } from './basics';
+export { TRAILER } from './trailer';
 export { ISLANDS } from './islandsLesson';
 export { ARMS_COVER, BROKER, GUARD, INTEL, PIRATE, ROLE_SCENARIOS, SMUGGLER } from './roleScenarios';
 export * from './types';

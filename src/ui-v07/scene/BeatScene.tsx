@@ -88,6 +88,10 @@ export interface BeatSceneProps {
   readonly tag: ReactNode;
   /** A click on the table (to play the next step). */
   readonly onClick?: () => void;
+  /** Replaces the framing camera (the promo trailer films the beat from its own angles). */
+  readonly camera?: ReactNode;
+  /** No labels on the table at all: plates, tags and hit words (the trailer's clean shots). */
+  readonly bare?: boolean;
 }
 
 /** The shallows and moored boats round an island: boats keep this far outside its shore. */
@@ -505,7 +509,7 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, set
   };
 }
 
-export function BeatScene({ seats, ships, beat, view, weather, safe, onReady, tag, onClick }: BeatSceneProps) {
+export function BeatScene({ seats, ships, beat, view, weather, safe, onReady, tag, onClick, camera, bare = false }: BeatSceneProps) {
   const { angles, laneOf } = useTableLayout(seats);
   const layer = beatLayer({ beat, view, angles, laneOf, weather, tag, seats });
   // Keyed by the islands' ids, so the framing is recomputed only when an island is chosen.
@@ -536,10 +540,11 @@ export function BeatScene({ seats, ships, beat, view, weather, safe, onReady, ta
       weather={weather}
       ships={tableShips}
       cameraPoints={layer.camera ?? overview}
+      {...(camera ? { camera } : {})}
       safe={safe}
       ringed={layer.ringed}
       wrapShip={layer.wrapShip}
-      pins={pins}
+      pins={bare ? [] : pins}
       onReady={onReady}
       {...(onClick ? { onClick } : {})}
     >
