@@ -11,15 +11,21 @@
 - 被問到 AI 的使用範圍，照實回答：程式與規則實作用 Claude Code；插畫是 Claude 寫的 SVG；音樂與部分音效用 Stable Audio 3（audio-studio-mcp）。專案裡沒有 AI 生成點陣圖的紀錄，不要說有。
 - 《富饒之城》《馬尼拉》的類比是依機制判斷，措辭保留彈性，不要寫成「就是某某遊戲」。
 
-## 圖片建議
+## 影片與圖片
+
+三個社團都放影片 `promo-out/trailer-v6.mp4`（1920×1080、約 32 秒、28 MB），直接在貼文裡**原生上傳**，不要貼 YouTube 連結，原生上傳在 FB 的觸及通常比外連好。字幕已燒進畫面，靜音自動播放也看得懂。
+
+- 影片裡結尾的 QR Code 是 `?src=video`，不分社團；要分社團請讓大家點貼文內文的連結。
+- 手機版直式影片 `trailer-tall-v2.mp4`（24 MB）在手機動態上佔的畫面較大，可以在其中一個社團試試看，比較兩邊反應。
+- FB 一則貼文通常是影片或多張圖二選一。截圖改放第一則留言（自己留言），或等有人問再貼。
+
+| 社團 | 影片之外，留言可補的截圖 |
+| --- | --- |
+| 獨立遊戲 | `screenshots/05-lightning.jpg`、`01-market-crash.jpg`、`03-reveal.jpg` |
+| 桌遊 | `02-deploy-roles.jpg`、`03-reveal.jpg`、`06-result.jpg` |
+| AI | `03-reveal.jpg`、`05-lightning.jpg` |
 
 素材在 `promo-out/`（不進版本控制，可依 launch-kit 第 5 節重做）。
-
-| 社團 | 素材 |
-| --- | --- |
-| 獨立遊戲 | `trailer-v6.mp4`（原生上傳）、`screenshots/05-lightning.jpg`、`01-market-crash.jpg`、`03-reveal.jpg` |
-| 桌遊 | `cover-wide-1920x1080.jpg`、`02-deploy-roles.jpg`、`03-reveal.jpg`、`06-result.jpg` |
-| AI | `cover-wide-1920x1080.jpg`、`03-reveal.jpg`、`05-lightning.jpg` |
 
 ## 1. 獨立遊戲開發社團
 
