@@ -190,36 +190,28 @@ https://black-market-guild.zx2241384.workers.dev/?src=threads
 單人 10 分鐘一局，也能開房揪朋友，瀏覽器免費玩 → https://black-market-guild.zx2241384.workers.dev/?src=discord
 ```
 
-## 5. 短影片與截圖
+## 5. 宣傳片、封面與截圖
 
-**最重要的一支（10～15 秒）：同時揭曉 → 船的結果。** 這是遊戲最獨特的瞬間。
+全部由腳本從實機畫面產生，檔案放在 `promo-out/`（不進版本控制，可隨時重做）。宣傳片是 `TRAILER` 劇本局（`src/v07/tutorial/trailer.ts`），骰值、事件與角色固定，畫面上每個結果都是引擎真的算出來的；分鏡、字幕與配樂在 `scripts/trailer/plan.ts`。
 
-| 秒數 | 畫面 | 字幕 |
+| 檔案 | 規格 | 用在哪裡 |
 | --- | --- | --- |
-| 0～2 | 部署角色，手牌選海盜、點對手的船 | 你押它沉…… |
-| 2～4 | 封蠟章蓋下，等其他人 | 所有人同時秘密下注 |
-| 4～8 | 角色揭曉，箭頭飛向各艘船 | 揭曉！ |
-| 8～13 | 航程：骰值、修正、船抵達或沉沒 | 誰在護航？誰在打劫？ |
-| 13～15 | 結尾放標題字樣 | 暗潮商戰・瀏覽器免費玩 |
+| `trailer-v5.mp4` | 1920×1080、60fps、約 32 秒 | itch.io、Reddit、Discord、YouTube |
+| `trailer-tall-v1.mp4` | 1080×1920、手機版介面 | IG 限動、Threads（限動在結尾加連結貼紙，網址用 `?src=ig`） |
+| `cover-itch-1260x1000.jpg` | itch.io 封面（630×500 的 2 倍） | itch.io 封面圖 |
+| `cover-wide-1920x1080.jpg` | 橫幅 | 開發日誌、YouTube 縮圖、社群貼文配圖 |
+| `screenshots/01～07` | 1920×1080 | itch.io 截圖（依序：黑市崩價、部署角色、角色揭曉、護航、雷擊、結果畫面、無介面的雷擊） |
 
-**另外兩支（各 5～8 秒，可做成循環）：**
+**宣傳片分鏡（約 32 秒）：** 暴風雨開場、鏡頭升空看四座島（「3～4 人的航運貿易 × 心理博弈」）→ 裝貨 → 黑市崩價 → 秘密派角色 → 暴風雨事件卡 → 所有角色盯上你的船 → 凡德商行的船：骰子、無介面的雷擊蒙太奇、沉沒 → 你的船 4 → 5 → 4 → 3 驚險抵達 → 晴天結尾卡（標題、一句話介紹、QR Code 連到 `?src=video`）。開場只有暴風雨聲，封面音樂從裝貨起，暴風雨段壓低讓雷聲優先，結尾淡出換勝利號角。
 
-- **揚帆出港：** 主選單按「開始對局」時，船隊同時出港、鏡頭跟著你的船。
-- **黑市崩價：** 市場卡上價格一格一格往下掉，字幕「大家都運木材，價格就崩了」。
+**重做（要先開 `npm run dev`）：**
 
-**錄影方式：**
+```bash
+node --experimental-websocket --import tsx scripts/trailer/make.ts --work /tmp/trailer --out promo-out/trailer.mp4
+node --experimental-websocket --import tsx scripts/trailer/make.ts --format tall --work /tmp/trailer-tall --out promo-out/trailer-tall.mp4
+```
 
-- Mac：`Cmd + Shift + 5` 選「錄製選取部分」。
-- 直式（Threads、IG）用手機錄，或把瀏覽器視窗縮成直式；橫式（Reddit、itch.io、Discord）用電腦錄。
-- 用 `/v07.html?dev=round3d`（開發模式）可以直接開一局，不用從主選單一路點進去。
-
-**itch.io 截圖清單（橫式，至少 3 張）：**
-
-1. 角色揭曉，箭頭指向船。
-2. 部署角色：手牌與目標船。
-3. 市場結算卡：價格漲跌。
-4. 選島：兩張島嶼卡。
-5. 結果畫面：排名與總財富。
+封面是開發頁 `/v07.html?dev=trailer&part=cover`（大廳的標題卡，沒有按鈕），截圖是 `part=game` 的劇本局在固定時間點的畫面，都用 `scripts/trailer/capture.ts` 以單格拍下（`--clip 名稱:毫秒-毫秒+17`）。
 
 ## 6. 發文節奏與追蹤
 
@@ -230,7 +222,6 @@ https://black-market-guild.zx2241384.workers.dev/?src=threads
 
 ## 7. 還沒準備好的
 
-- 截圖與短影片還沒錄（第 5 節）。
 - itch.io 帳號與頁面要你建立。
 - 外部問卷連結（`FeedbackBox.tsx` 的 `SURVEY_URL`）還是空的。
 - 英文介面沒有；英文平台的轉換率會受影響，先觀察 `?src=reddit` 帶來的人有沒有玩完。

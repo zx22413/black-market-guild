@@ -234,3 +234,14 @@ html.trailer-tall .end-qr img {
 html.trailer-tall .end-qr figcaption {
   font-size: 20px;
 }
+
+/* The store cover (TrailerCover): the lobby's title card, vertically centered, without buttons. */
+.trailer-cover-panel {
+  position: fixed;
+  top: 50%;
+  margin: 0 0 0 clamp(16px, 5vw, 64px);
+  translate: 0 -50%;
+  transform-origin: left center;
+  /* A store tile is small: the title card reads at a glance. */
+  zoom: 1.25;
+}

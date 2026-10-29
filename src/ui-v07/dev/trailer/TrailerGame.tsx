@@ -54,7 +54,8 @@ export function TrailerGame() {
       <Table3DScreen
         session={session}
         onExit={() => undefined}
-        showResult={false}
+        // The result card closes the match (the store screenshots use it; the trailer cuts away before).
+        showResult
         rounds={TRAILER.rules.rounds}
         skipIslandReveal
         skipIslandMoments

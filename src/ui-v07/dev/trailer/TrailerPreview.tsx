@@ -1,6 +1,7 @@
 import { soundEngine } from '../../audio/soundEngine';
 import { cue } from './director';
 import { TrailerCard } from './TrailerCard';
+import { TrailerCover } from './TrailerCover';
 import { TrailerGame } from './TrailerGame';
 import { TrailerOpening } from './TrailerOpening';
 import { TrailerStrike } from './TrailerStrike';
@@ -8,7 +9,7 @@ import './trailer.css';
 
 // Dev-only: the trailer's pages (docs/promo/launch-kit.md §5), each filmed frame by frame by
 // scripts/trailer/capture.ts: /v07.html?dev=trailer&part=open is the storm opening, &part=game
-// the scripted match, &part=strike&angle=… the bolt striking the rival's ship with no labels, &part=end the clear sky under the end card; &part=card&card=… the overlays
+// the scripted match, &part=strike&angle=… the bolt striking the rival's ship with no labels, &part=end the clear sky under the end card, &part=cover the store cover (the lobby); &part=card&card=… the overlays
 // (TrailerCard, saved by scripts/trailer/still.ts).
 
 // Every one-shot and every event bed the table asks for is noted, so the edit lays the real
@@ -33,6 +34,8 @@ export function TrailerPreview() {
   switch (part) {
     case 'open':
       return <TrailerOpening tall={tall} />;
+    case 'cover':
+      return <TrailerCover />;
     case 'strike':
       return <TrailerStrike />;
     case 'end':
