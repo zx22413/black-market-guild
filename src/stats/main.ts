@@ -25,6 +25,7 @@ interface Stats {
   readonly ready: readonly Row[];
   readonly modes: readonly Row[];
   readonly sources: readonly Row[];
+  readonly welcome: readonly Row[];
 }
 
 const KEY = 'bmg7.admin.key';
@@ -188,6 +189,7 @@ function render(stats: Stats): void {
         '教學完成率',
         bars(stats.tutorials.map((t) => ({ label: LESSONS[String(t.lesson)] ?? String(t.lesson), value: num(t.done), note: `${num(t.done)}/${num(t.started)}` }))),
       ),
+      card('第一次遊玩提示', welcomeBars(stats.welcome)),
       card('規則書最常翻的章節', bars(stats.chapters.map((c) => ({ label: CHAPTERS[String(c.chapter)] ?? String(c.chapter), value: num(c.n) })))),
       card(
         '3D 桌面載入時間（平均）',
@@ -196,6 +198,24 @@ function render(stats: Stats): void {
       card('最新留言', comments, true),
       card('錯誤（最近 30 天）', errors, true),
     ),
+  );
+}
+
+/** The first-visit prompt: who saw it, what they chose, and how many tutorial takers finished the basics lesson. */
+function welcomeBars(rows: readonly Row[]): Node {
+  const row = (pick: string): Row | undefined => rows.find((r) => r.pick === pick);
+  const shown = num(row('welcome-shown')?.n);
+  const tutorial = row('welcome-tutorial');
+  return el(
+    'div',
+    {},
+    bars([
+      { label: '看到提示', value: shown },
+      { label: '進入新手教學', value: num(tutorial?.n), note: `${num(tutorial?.n)}（${pct(num(tutorial?.n), shown)}）` },
+      { label: '我已經熟練', value: num(row('welcome-skip')?.n), note: `${num(row('welcome-skip')?.n)}（${pct(num(row('welcome-skip')?.n), shown)}）` },
+      { label: '選教學後完成基礎課', value: num(tutorial?.basics), note: `${num(tutorial?.basics)}/${num(tutorial?.n)}` },
+    ]),
+    el('p', { class: 'sub' }, '人數以瀏覽器計；看到提示但沒回答就離開的人，是「看到」減去兩個答案。'),
   );
 }
 

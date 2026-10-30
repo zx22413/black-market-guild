@@ -68,7 +68,7 @@ async function collect(db: D1Database, since: string) {
          (SELECT client FROM events WHERE name = 'room_join' AND json_extract(data, '$.role') = 'guest')`,
     ),
   ]);
-  const [daily, quits, tutorials, chapters, likes, comments, errors, ready, modes, sources] = await Promise.all([
+  const [daily, quits, tutorials, chapters, likes, comments, errors, ready, modes, sources, welcome] = await Promise.all([
     all(
       db,
       `SELECT day, json_extract(data, '$.device') AS device, COUNT(DISTINCT client) AS n FROM events
@@ -107,6 +107,16 @@ async function collect(db: D1Database, since: string) {
       `SELECT json_extract(data, '$.from') AS source, COUNT(DISTINCT client) AS n FROM events
          WHERE name = 'visit' GROUP BY source ORDER BY n DESC LIMIT 15`,
     ),
+    // The first-visit tutorial prompt: browsers that saw it, what they answered, and who of the
+    // "tutorial" answerers went on to finish the basics lesson.
+    all(
+      db,
+      `SELECT json_extract(data, '$.pick') AS pick, COUNT(DISTINCT client) AS n,
+              COUNT(DISTINCT CASE WHEN client IN
+                (SELECT client FROM events WHERE name = 'tutorial_done' AND json_extract(data, '$.lesson') = 'basics')
+                THEN client END) AS basics
+         FROM events WHERE name = 'menu_pick' AND json_extract(data, '$.pick') LIKE 'welcome-%' GROUP BY pick`,
+    ),
   ]);
   const now = Date.now();
   return {
@@ -122,6 +132,7 @@ async function collect(db: D1Database, since: string) {
     ready,
     modes,
     sources,
+    welcome,
   };
 }
 

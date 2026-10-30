@@ -75,7 +75,7 @@
 | 分類 | 事件 | 附帶資料 |
 | --- | --- | --- |
 | 進站 | `visit` | 手機或電腦、是否第一次來、距離第一次來幾天、來源網域（只記網域） |
-| 進站 | `menu_pick` | 在主選單點了什麼（單機、線上、教學、規則書） |
+| 進站 | `menu_pick` | 在主選單點了什麼（單機、線上、教學、規則書；首次提示是 `welcome-shown`／`welcome-tutorial`／`welcome-skip`，儀表板有專屬卡片） |
 | 教學 | `tutorial_start`／`tutorial_done`／`tutorial_quit` | 哪一課；完成花幾分鐘；放棄時停在第幾步 |
 | 對局 | `match_start` | 模式（單機、同機輪流、線上）、幾人局、這是他的第幾局 |
 | 對局 | `round_end` | 第幾回合、自己的現金與名次 |

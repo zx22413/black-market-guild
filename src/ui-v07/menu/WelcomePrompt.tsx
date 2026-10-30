@@ -1,3 +1,6 @@
+import { useEffect } from 'react';
+import { track } from '../analytics/track';
+
 // The one-time question over the main menu for a first-time visitor: take the tutorial, or already
 // know the game (tutorial/welcome.ts remembers the answer).
 
@@ -7,6 +10,8 @@ interface WelcomePromptProps {
 }
 
 export function WelcomePrompt({ onTutorial, onSkip }: WelcomePromptProps) {
+  // Counted apart from the answers so the stats can tell who left without choosing.
+  useEffect(() => track('menu_pick', { pick: 'welcome-shown' }), []);
   return (
     <div className="menu-welcome" role="dialog" aria-modal="true" aria-labelledby="menu-welcome-title">
       <div className="menu-panel menu-welcome-card">
