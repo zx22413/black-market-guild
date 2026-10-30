@@ -34,6 +34,13 @@ async function one(db: D1Database, sql: string, ...args: unknown[]): Promise<num
 
 const distinctClients = (db: D1Database, name: string) => one(db, 'SELECT COUNT(DISTINCT client) AS n FROM events WHERE name = ?', name);
 
+/**
+ * Browsers that could not create a WebGL context are almost always headless crawlers or link
+ * previewers (no GPU), never players: they never reach the table. Visit-based numbers leave
+ * them out so they do not dilute the funnel.
+ */
+const NOT_A_PLAYER = `client NOT IN (SELECT client FROM events WHERE name = 'client_error' AND json_extract(data, '$.message') LIKE '%Error creating WebGL context%')`;
+
 /** Each player's latest online match in the lookback that has no end, with their latest event since. */
 async function openOnlineMatches(db: D1Database, now: number): Promise<OpenMatchRow[]> {
   const rows = await all(
@@ -56,8 +63,8 @@ async function openOnlineMatches(db: D1Database, now: number): Promise<OpenMatch
 }
 
 async function collect(db: D1Database, since: string) {
-  const [visitors, started, finished, again, invited, guestsFinished] = await Promise.all([
-    distinctClients(db, 'visit'),
+  const [visitors, started, finished, again, invited, guestsFinished, bots] = await Promise.all([
+    one(db, `SELECT COUNT(DISTINCT client) AS n FROM events WHERE name = 'visit' AND ${NOT_A_PLAYER}`),
     distinctClients(db, 'match_start'),
     distinctClients(db, 'match_end'),
     one(db, "SELECT COUNT(*) AS n FROM (SELECT client FROM events WHERE name = 'match_start' GROUP BY client HAVING COUNT(*) >= 2)"),
@@ -67,12 +74,13 @@ async function collect(db: D1Database, since: string) {
       `SELECT COUNT(DISTINCT client) AS n FROM events WHERE name = 'online_end' AND client IN
          (SELECT client FROM events WHERE name = 'room_join' AND json_extract(data, '$.role') = 'guest')`,
     ),
+    one(db, `SELECT COUNT(DISTINCT client) AS n FROM events WHERE name = 'visit' AND NOT (${NOT_A_PLAYER})`),
   ]);
   const [daily, quits, tutorials, chapters, likes, comments, errors, ready, modes, sources, welcome] = await Promise.all([
     all(
       db,
       `SELECT day, json_extract(data, '$.device') AS device, COUNT(DISTINCT client) AS n FROM events
-         WHERE name = 'visit' AND day >= ? GROUP BY day, device ORDER BY day`,
+         WHERE name = 'visit' AND day >= ? AND ${NOT_A_PLAYER} GROUP BY day, device ORDER BY day`,
       since,
     ),
     all(db, `SELECT json_extract(data, '$.round') AS round, COUNT(*) AS n FROM events WHERE name = 'match_quit' GROUP BY round ORDER BY round`),
@@ -105,7 +113,7 @@ async function collect(db: D1Database, since: string) {
     all(
       db,
       `SELECT json_extract(data, '$.from') AS source, COUNT(DISTINCT client) AS n FROM events
-         WHERE name = 'visit' GROUP BY source ORDER BY n DESC LIMIT 15`,
+         WHERE name = 'visit' AND ${NOT_A_PLAYER} GROUP BY source ORDER BY n DESC LIMIT 15`,
     ),
     // The first-visit tutorial prompt: browsers that saw it, what they answered, and who of the
     // "tutorial" answerers went on to finish the basics lesson.
@@ -122,6 +130,7 @@ async function collect(db: D1Database, since: string) {
   return {
     live: liveReport(await openOnlineMatches(db, now), now),
     funnel: { visitors, started, finished, again, invited, guestsFinished },
+    bots,
     daily,
     quits,
     tutorials,
