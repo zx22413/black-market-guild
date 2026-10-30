@@ -2,6 +2,9 @@ import { Suspense, lazy, useState } from 'react';
 import { SoundToggle } from '../audio/SoundToggle';
 import { CinnabarChop, GameTitle } from '../skin/titleMark';
 import { isLessonDone } from '../tutorial/progress';
+import { markTutorialAsked, shouldAskTutorial } from '../tutorial/welcome';
+import { track } from '../analytics/track';
+import { WelcomePrompt } from './WelcomePrompt';
 import { PrivacyNote } from '../analytics/PrivacyNote';
 
 // The title panel over the live table: one big "back to the room" when this browser was in an
@@ -22,6 +25,13 @@ interface MainMenuProps {
 export function MainMenu({ lastRoom, onRejoin, onLocal, onOnline, onTutorial }: MainMenuProps) {
   const [rules, setRules] = useState(false);
   const newcomer = !isLessonDone('basics');
+  const [welcome, setWelcome] = useState(() => shouldAskTutorial(!newcomer));
+  const answer = (pick: string, then?: () => void) => {
+    markTutorialAsked();
+    track('menu_pick', { pick });
+    setWelcome(false);
+    then?.();
+  };
   return (
     <main className="menu-panel menu-title">
       <header className="menu-logo">
@@ -61,6 +71,7 @@ export function MainMenu({ lastRoom, onRejoin, onLocal, onOnline, onTutorial }: 
         </button>
       </footer>
       <PrivacyNote />
+      {welcome && <WelcomePrompt onTutorial={() => answer('welcome-tutorial', onTutorial)} onSkip={() => answer('welcome-skip')} />}
       {rules && (
         <Suspense fallback={null}>
           <RulesPanel onClose={() => setRules(false)} where="menu" />

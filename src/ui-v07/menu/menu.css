@@ -680,3 +680,18 @@
     animation: none;
   }
 }
+
+/* ---------- first-visit question over the title panel ---------- */
+.menu-welcome {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(5 20 25 / 0.55);
+}
+.menu-panel.menu-welcome-card {
+  margin: 0;
+  text-align: center;
+}
