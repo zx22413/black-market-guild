@@ -34,6 +34,7 @@ export const F = {
   target: (player: PlayerId): FocusTarget => ({ kind: 'target', player }),
   bet: (good: GoodId, direction: 1 | -1): FocusTarget => ({ kind: 'bet', good, direction }),
   crate: (good: GoodId, count = 1): FocusTarget => ({ kind: 'crate', good, count }),
+  restock: (good: GoodId): FocusTarget => ({ kind: 'restock', good }),
   rank: { kind: 'rank' },
   log: { kind: 'log' },
   round: { kind: 'round' },

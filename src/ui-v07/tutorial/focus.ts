@@ -23,6 +23,8 @@ export function focusSelector(target: FocusTarget): string {
       return `[data-bet="${target.good}${target.direction === 1 ? '+' : '-'}"]`;
     case 'crate':
       return `[data-crate="${target.good}"]`;
+    case 'restock':
+      return `[data-restock="${target.good}"]`;
     case 'price':
       return `[data-focus="price-${target.good}"]`;
     case 'island':

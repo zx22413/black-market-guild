@@ -10,6 +10,7 @@ describe('tutorial focus', () => {
   it('names each target by its data-focus mark', () => {
     expect(focusSelector({ kind: 'market' })).toBe('[data-focus="market"]');
     expect(focusSelector({ kind: 'price', good: 'wood' })).toBe('[data-focus="price-wood"]');
+    expect(focusSelector({ kind: 'restock', good: 'spice' })).toBe('[data-restock="spice"]');
     expect(focusSelector({ kind: 'island', player: 'p2' })).toBe('[data-focus="island-p2"]');
     expect(focusSelector({ kind: 'plate', player: 'p1' })).toBe('[data-focus="plate-p1"]');
     expect(focusSelector({ kind: 'advance' })).toBe('[data-focus="advance"]');

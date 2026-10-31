@@ -715,3 +715,25 @@
     height: 12px;
   }
 }
+
+/*
+ * The decision bar's ⓘ sits inside the bar's top right, in the parchment colour (dark on the wooden bar it looked
+ * misplaced, half over the frame); the bar keeps a little more room above its chips and seal for it.
+ */
+@media (max-width: 640px) {
+  :root:root:root .inv-bar {
+    padding-top: 20px;
+  }
+  :root:root:root .inv-bar > .bar-lock-wrap {
+    top: 2px;
+    right: 14px;
+    bottom: auto;
+  }
+  :root:root:root .inv-bar button.bar-lock {
+    width: 22px;
+    min-width: 22px;
+    height: 22px;
+    min-height: 22px;
+    color: #f3e6c3;
+  }
+}
