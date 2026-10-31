@@ -26,7 +26,7 @@ import { resultRows } from './resultModel';
 import { RulesPanel } from './RulesPanel';
 import { SealSubmit } from './SealSubmit';
 import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
-import { OWN_PLATE_REACH } from './stage';
+import { OWN_BADGE_LIFT, OWN_PLATE_REACH } from './stage';
 import { rivalPlates, seatPlates } from './seatPlates';
 import type { StageEnv } from './stage';
 import { useDeployStep } from './useDeployStep';
@@ -300,7 +300,9 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const stepAside = (pin: TablePin): TablePin => {
     if (!closeUp) return pin;
     if (pin.id === `seat-${viewerId}`) return { ...pin, position: [ownX, 1, ownZ + PLAYER_ISLAND_RADIUS * OWN_PLATE_REACH] };
-    return pin.id !== `island-${viewerId}` ? { ...pin, hidden: true } : pin;
+    // The player's own island badge steps back past the stacks' labels and clocks.
+    if (pin.id === `island-${viewerId}`) return { ...pin, position: [pin.position[0], pin.position[1], pin.position[2] - OWN_BADGE_LIFT] };
+    return { ...pin, hidden: true };
   };
   const pins = [...plates.map(stepAside), marketBadgePin(), ...badgesNow.map(stepAside), ...moments.pins, ...(step?.pins ?? []), ...resolution.pins, ...marks];
   const camera = step?.camera ?? resolution.camera ?? overviewPoints(angles, seats.map((s) => s.island));

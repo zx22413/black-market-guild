@@ -70,3 +70,6 @@ export function shipName(board: Board, id: ShipId, viewer: PlayerId, nameOf: (id
 
 /** In a close shot the player's own plate sits on the island this far (a share of its radius) toward the camera, under the build button. */
 export const OWN_PLATE_REACH = 0.78;
+
+/** In a close shot the player's own island badge moves this far (scene units) away from the camera, past the stacks' labels and clocks. */
+export const OWN_BADGE_LIFT = 4.5;

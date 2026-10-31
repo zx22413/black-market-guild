@@ -715,38 +715,3 @@
     height: 12px;
   }
 }
-
-/* The warehouse note under the crate row is one line, so it fits between the crates' clocks and the build button. */
-@media (max-width: 640px) {
-  :root:root:root .inv-note.under {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 6px;
-    max-width: none;
-    padding: 3px 8px;
-    white-space: nowrap;
-  }
-}
-
-/*
- * A phone's stack labels stand on top of their crates (below them the chosen building's preview would be hidden):
- * one line, the good's icon and the count, with the restock clock above; the warehouse note above those.
- */
-@media (max-width: 640px) {
-  :root:root:root .beat3d-pin > .inv-stack.up {
-    flex-direction: row;
-    gap: 2px;
-    padding: 1px 5px 1px 3px;
-    border-bottom-width: 2px;
-    transform: translate(-50%, -100%);
-  }
-  :root:root:root .inv-stack.up .good-ic {
-    width: 14px;
-    height: 14px;
-  }
-  /* The warehouse note hangs under the player's own plate (the plate is about 32px tall), on the island's front. */
-  :root:root:root .beat3d-pin > .inv-note.under {
-    transform: translate(-50%, 42px);
-  }
-}

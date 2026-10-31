@@ -3573,3 +3573,33 @@ button .info-tip-anchor {
   min-width: 0;
   pointer-events: auto;
 }
+
+/*
+ * The loading step's stack labels stand on top of their crates (hung under them they would hide the chosen building's
+ * preview): one line, the good's icon and the count, with the restock clock above. The warehouse note is one line under
+ * the player's own plate, on the island's front.
+ */
+:root:root:root .beat3d-pin > .inv-stack.up {
+  flex-direction: row;
+  gap: 2px;
+  padding: 1px 5px 1px 3px;
+  border-bottom-width: 2px;
+  transform: translate(-50%, -100%);
+}
+:root:root:root .inv-stack.up .good-ic {
+  width: 14px;
+  height: 14px;
+}
+:root:root:root .inv-note.under {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  max-width: none;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+/* The plate is about 32px tall. */
+:root:root:root .beat3d-pin > .inv-note.under {
+  transform: translate(-50%, 42px);
+}
