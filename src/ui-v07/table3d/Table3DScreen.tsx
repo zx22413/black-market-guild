@@ -9,7 +9,7 @@ import { useCountSound } from '../audio/useUiSounds';
 import { eventLine } from '../log';
 import { beatSeats } from '../scene/beatStage';
 import { ShipCargo } from '../scene/InvestIsland';
-import { TableCanvas, overviewPoints, useTableLayout, type TableShip } from '../scene/TableCanvas';
+import { TableCanvas, overviewPoints, useTableLayout, type TablePin, type TableShip } from '../scene/TableCanvas';
 import { marketShow } from '../scene/marketShow';
 import { buildBoard } from '../session/board';
 import type { GameSession, HumanRequest } from '../session/gameSession';
@@ -288,7 +288,11 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const marks = useMemo(() => (islandMarks ? islandMarkPins(seats.map((s) => ({ id: s.id, angle: angles[laneOf(s.id)]! }))) : []), [islandMarks, seats, angles, laneOf]);
   // While the wanted flag stands (its pole reaches up over the island's name badge), the island badges step aside.
   const badgesNow = resolution.stage === 'wanted' ? islandBadges.map((pin) => ({ ...pin, hidden: true })) : islandBadges;
-  const pins = [...plates, marketBadgePin(), ...badgesNow, ...moments.pins, ...(step?.pins ?? []), ...resolution.pins, ...marks];
+  // A shot too close for the other islands to be on screen: the standings carry their cash, goods and status.
+  const closeShot = step?.closeShot === true;
+  const viewerId = seats.find((s) => s.isViewer)?.id;
+  const stepAside = (pin: TablePin) => (closeShot && pin.id !== `seat-${viewerId}` && pin.id !== `island-${viewerId}` ? { ...pin, hidden: true } : pin);
+  const pins = [...plates.map(stepAside), marketBadgePin(), ...badgesNow.map(stepAside), ...moments.pins, ...(step?.pins ?? []), ...resolution.pins, ...marks];
   const camera = step?.camera ?? resolution.camera ?? overviewPoints(angles, seats.map((s) => s.island));
 
   const marketRef = useRef<HTMLDivElement>(null);
@@ -398,6 +402,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
             cashOf={(id) => (board.players[id]?.cash ?? 0) + (resolution.cashBonus[id] ?? 0)}
             status={(id) => (deciding ? (waiting.has(id) ? '思考中' : '已決定') : '')}
             rankStep={events.filter((e) => e.type === 'round-ended').length}
+            forceOpen={closeShot}
           />
         )}
         <button type="button" data-focus="rules" title="規則" aria-label="規則" aria-expanded={rulesOpen} onClick={() => setRulesOpen(true)}>

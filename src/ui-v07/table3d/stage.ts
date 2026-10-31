@@ -50,6 +50,11 @@ export interface StageParts {
    * so the few things you can click now stand out.
    */
   readonly dim?: boolean;
+  /**
+   * A shot so close that the other islands are off screen: their plates and badges (which would be
+   * pushed onto the screen's edge in a heap) give way to the standings, which open.
+   */
+  readonly closeShot?: boolean;
 }
 
 /** "你的船" / "黑潮會的船". */

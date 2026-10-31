@@ -32,6 +32,8 @@ export interface RankRailProps {
   readonly status: (id: PlayerId) => string;
   /** Bumps when a round ends: the ranking is only re-sorted then. */
   readonly rankStep: number;
+  /** Opens the rail whenever this turns true (a close shot that leaves no room for the plates); the player can still fold it. */
+  readonly forceOpen?: boolean;
 }
 
 /** The order shown and the rank each guild had when it was set (the figures move on, these wait for the round's end). */
@@ -70,12 +72,15 @@ function BuildingMark({ building, rules }: { readonly building: BuildingId; read
   );
 }
 
-export function RankRail({ seats, board, rules, cashOf, status, rankStep }: RankRailProps) {
+export function RankRail({ seats, board, rules, cashOf, status, rankStep, forceOpen = false }: RankRailProps) {
   const standings = standingsOf(
     seats.map((s) => ({ id: s.id, cash: cashOf(s.id), buildings: board.players[s.id]?.buildings ?? [] })),
     rules,
   );
   const [open, setOpen] = useState(() => window.innerWidth >= WIDE);
+  useEffect(() => {
+    if (forceOpen) setOpen(true);
+  }, [forceOpen]);
   const [shown, setShown] = useState<Shown>(() => shownOf(standings));
   const { order, ranks } = shown;
   const lastStep = useRef(rankStep);

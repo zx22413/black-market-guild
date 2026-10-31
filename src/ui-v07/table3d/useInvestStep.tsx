@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { GOODS, producedFor, type BuildingId, type GoodId } from '../../v07/game';
 import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
+import type { FitPoint } from '../../ui/scene/CameraRig';
 import { shipPose } from '../../ui/scene/Ships';
 import { BUILDING_LABELS, BUILDING_TEXT, GOOD_LABELS } from '../labels';
 import { around } from '../scene/focusMath';
@@ -144,10 +145,17 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     setPicking(false);
   };
 
-  // Medium shot: your island, your ship at the dock and the edge of the harbor beyond it.
   const [hx, , hz] = seatPosition(home);
   const dock = shipPose(home, 'docked').position;
-  const camera = [...around([hx, 0, hz], PLAYER_ISLAND_RADIUS + 4), ...around([dock.x, 0, dock.z], 6), ...around([0, 0, 0], 6)];
+  // The nameplate hangs on the outer side of the island, away from the harbor: keep it in the shot too.
+  const reach = Math.hypot(hx, hz) || 1;
+  const plate: FitPoint = { position: [hx + (hx / reach) * 4, 0, hz + (hz / reach) * 4] };
+  // Close shot: your island and your ship at the dock, so the crates are big enough to tell apart.
+  // A phone screen is as narrow as the island is wide, so closing in only crops the island there:
+  // it keeps the medium shot, with the edge of the harbor beyond the dock.
+  const camera = phone
+    ? [...around([hx, 0, hz], PLAYER_ISLAND_RADIUS + 4), ...around([dock.x, 0, dock.z], 6), ...around([0, 0, 0], 6)]
+    : [...around([hx, 0, hz], PLAYER_ISLAND_RADIUS), ...around([dock.x, 0, dock.z], 7), plate];
 
   // Notes sit beside what they are about: the warehouse note on the outer side of the crate row,
   // the ship note beside the ship, never on top of them.
@@ -345,6 +353,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   return {
     pins,
     camera,
+    ...(phone ? {} : { closeShot: true }),
     scene: (
       <>
         <Warehouse
