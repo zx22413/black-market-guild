@@ -31,6 +31,8 @@ import { GoodCount, GoodIcon } from './GoodIcon';
 import { CRATE_SIZE } from '../scene/CrateModel';
 import { MINT_SECONDS } from '../scene/mintMath';
 import { NoteBadge } from './NoteBadge';
+import { RestockTag } from './RestockTag';
+import { nextProductionRound } from '../table/restock';
 import { ArrowIcon, CloseIcon, CrateIcon, Flow, HouseIcon, IconDisc, InfoIcon, tokenIconUrl } from './icons';
 import { LockHint } from './LockHint';
 import { usePhone } from './usePhone';
@@ -286,6 +288,17 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
             {label}
           </span>
         ),
+      };
+    }),
+    // A clock under each stack, shown even when the stack is empty: how many rounds until the island makes more.
+    // Not on a phone: its crates are too small for a second label under each, and the warehouse note already crowds them.
+    ...GOODS.map((g, column): TablePin => {
+      const [x, , z] = warehouseLocal(column);
+      return {
+        id: `restock-${g}`,
+        position: islandPoint(home, [x, 0, z - 3.6]),
+        hidden: picking || phone,
+        node: <RestockTag good={g} next={nextProductionRound(context.view.rules, me?.island ?? null, g, board.round)} round={board.round} />,
       };
     }),
     {

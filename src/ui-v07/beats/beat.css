@@ -1006,6 +1006,28 @@
   font-weight: 700;
   font-family: var(--font-strong);
 }
+/* How many rounds until the island makes more of a good: the role cards' clock, under each stack. */
+.restock-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 5px 1px 3px;
+  border-radius: 999px;
+  background: rgb(245 236 212 / 0.9);
+  color: #2b2116;
+  font-size: var(--fs-note);
+  font-weight: 700;
+  font-family: var(--font-strong);
+  line-height: 1;
+  cursor: help;
+}
+.restock-tag svg {
+  width: 12px;
+  height: 12px;
+}
+.restock-tag.none {
+  opacity: 0.55;
+}
 .inv-stack.good-wood { border-color: var(--wood); }
 .inv-stack.good-iron { border-color: var(--iron); }
 .inv-stack.good-spice { border-color: var(--spice); }
