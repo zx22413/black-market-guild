@@ -225,7 +225,7 @@ node --experimental-websocket --import tsx scripts/trailer/make.ts --format tall
 
 - 外部問卷（<https://forms.gle/ZYxcUvH2yiC6Yysr8>，設計見 [`survey.md`](survey.md)）已發布，連結已填進 `FeedbackBox.tsx` 的 `SURVEY_URL`，**要部署後玩家才看得到**；部署前先看 `/stats` 的「目前線上對局」。
 - 英文介面沒有；英文平台的轉換率會受影響，先觀察 `?src=reddit` 帶來的人有沒有玩完。
-- 桌遊板（巴哈 bsn=60537）、FB 社團、Dcard、Threads、Reddit 還沒發（第二波，看完 `/stats` 再決定）。
+- FB 社團、Dcard、Threads、Reddit 還沒發（第二波，看完 `/stats` 再決定）。巴哈桌遊板（bsn=60537）已在 2026-10-31 發出，見第 8 節。
 
 ## 8. 發佈記錄（2026-10-30）
 
@@ -252,4 +252,12 @@ node --experimental-websocket --import tsx scripts/trailer/make.ts --format tall
 - 「此為 AI 創作」勾選框的規定：作品「全部或大部分由 AI 生成」才須勾，勾了會帶「AI 生成」標籤且不開放贊助。遊戲介紹文沒有勾。
 - 內文只用一句話說明 AI：「開發過程有使用 AI 工具輔助（程式、部分圖像與音訊）」。
 
-**之後：** 發完隔天看 `/stats` 的「從哪裡來」（`itch`、`bahamut-indie`、`video`、`ig`）、第一局在第幾回合離開、評分與留言，再決定修什麼與第二波發哪裡。
+**桌遊板的發文（2026-10-31）：**
+- bsn=60537、文章 snA=4425；子板「綜合討論」、標題框「討論」，標題自己加了機制討論的口吻（不放遊戲名），沒勾「此為 AI 創作」；連結用 `?src=bahamut-bg`（與獨立板的 `bahamut-indie` 分開統計）。
+- 內文是機制討論版，跟獨立板的遊戲介紹不重複（第 12 條）：最上面一行超連結，接封面圖與 GIF，再寫機制與三個問題。
+- **單張圖片上限 600KB**：宣傳片剪的 GIF 要壓到 440 寬、7fps、約 6 秒才進得去（4.7MB 會被拒絕）。
+- **列表縮圖取文章第一張靜態圖**：第一張如果是 GIF，列表會用預設縮圖；所以封面 JPG（`promo-out/bahamut-cover.jpg`，1600 寬、約 146KB）放第一張，GIF 排第二。
+- 用 Chrome 上傳圖片時，要先開「插入圖片」視窗再找 file input；視窗開多次會累積重複的 input，傳不進去時重新載入頁面再做一次。
+- 編輯文章在主文右下角「⋮」選單的「編輯文章」。
+
+**之後：** 發完隔天看 `/stats` 的「從哪裡來」（`itch`、`bahamut-indie`、`bahamut-bg`、`video`、`ig`）、第一局在第幾回合離開、評分與留言，再決定修什麼與第二波發哪裡。
