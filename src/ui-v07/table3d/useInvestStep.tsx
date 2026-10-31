@@ -151,18 +151,21 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const dock = shipPose(home, 'docked').position;
   // The nameplate hangs on the outer side of the island, away from the harbor: keep it in the shot too.
   const reach = Math.hypot(hx, hz) || 1;
-  const plate: FitPoint = { position: [hx + (hx / reach) * 4, 0, hz + (hz / reach) * 4] };
+  // (On a phone the plate hangs below its point, so the point goes farther out.)
+  const out = phone ? 9.5 : 4;
+  const plate: FitPoint = { position: [hx + (hx / reach) * out, 0, hz + (hz / reach) * out] };
   // Close shot: your island and your ship at the dock, so the crates are big enough to tell apart.
-  // A phone screen is as narrow as the island is wide, so closing in only crops the island there:
-  // it keeps the medium shot, with the edge of the harbor beyond the dock.
+  // A phone is as narrow as the island is wide, so it crops the island's far sides to bring the
+  // crates up to size; the stack labels, clocks and note hang from the crates and spread with it.
   const camera = phone
-    ? [...around([hx, 0, hz], PLAYER_ISLAND_RADIUS + 4), ...around([dock.x, 0, dock.z], 6), ...around([0, 0, 0], 6)]
+    ? [...around([hx, 0, hz], PLAYER_ISLAND_RADIUS - 3), ...around([dock.x, 0, dock.z], 5), plate]
     : [...around([hx, 0, hz], PLAYER_ISLAND_RADIUS), ...around([dock.x, 0, dock.z], 7), plate];
 
   // Notes sit beside what they are about: the warehouse note on the outer side of the crate row,
   // the ship note beside the ship, never on top of them.
   const rowEnds = [islandPoint(home, [warehouseLocal(0)[0] - 1.6, 0, warehouseLocal(0)[2]]), islandPoint(home, [warehouseLocal(3)[0] + 1.6, 0, warehouseLocal(3)[2]])] as const;
   const leftEnd = rowEnds[0][0] < rowEnds[1][0] ? rowEnds[0] : rowEnds[1];
+  const underRow = islandPoint(home, [(warehouseLocal(0)[0] + warehouseLocal(3)[0]) / 2, 0, warehouseLocal(0)[2]]);
   const maxBuilt = context.view.rules.buildings.maxPerPlayer;
   const built = me ? me.buildings.length : 0;
   const at = (where: 'warehouse' | 'ship') => notes.filter((n) => n.at === where).map((n) => <NoteBadge key={n.text} chips={n.chips} text={n.text} label={n.label} />);
@@ -291,22 +294,27 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       };
     }),
     // A clock under each stack, shown even when the stack is empty: how many rounds until the island makes more.
-    // Not on a phone: its crates are too small for a second label under each, and the warehouse note already crowds them.
     ...GOODS.map((g, column): TablePin => {
       const [x, , z] = warehouseLocal(column);
       return {
         id: `restock-${g}`,
-        position: islandPoint(home, [x, 0, z - 3.6]),
-        hidden: picking || phone,
-        node: <RestockTag good={g} next={nextProductionRound(context.view.rules, me?.island ?? null, g, board.round)} round={board.round} />,
+        // The stack label's own point: the slot drops the clock a few px below it, however close the camera is.
+        position: islandPoint(home, warehouseLocal(column)),
+        hidden: picking,
+        node: (
+          <span className="restock-slot">
+            <RestockTag good={g} next={nextProductionRound(context.view.rules, me?.island ?? null, g, board.round)} round={board.round} />
+          </span>
+        ),
       };
     }),
     {
       id: 'warehouse-note',
-      position: leftEnd,
+      // Beside the crate row, or on a phone (no room at its side without covering the first stack) under it.
+      position: phone ? underRow : leftEnd,
       hidden: picking,
       node: (
-        <div className="inv-note side-left" data-focus={`island-${viewer}`}>
+        <div className={`inv-note ${phone ? 'below' : 'side-left'}`} data-focus={`island-${viewer}`}>
           <span className="note-title" title="倉庫">
             <CrateIcon />
             倉庫
@@ -366,7 +374,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   return {
     pins,
     camera,
-    ...(phone ? {} : { closeShot: true }),
+    ...(phone ? { rivalRow: true } : { closeShot: true }),
     scene: (
       <>
         <Warehouse

@@ -55,6 +55,11 @@ export interface StageParts {
    * pushed onto the screen's edge in a heap) give way to the standings, which open.
    */
   readonly closeShot?: boolean;
+  /**
+   * The other players' plates as one row under the market strip instead of on their islands (a phone,
+   * where the plates beside each island would cut up the harbor).
+   */
+  readonly rivalRow?: boolean;
 }
 
 /** "你的船" / "黑潮會的船". */

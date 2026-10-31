@@ -25,7 +25,7 @@ import { ResultCard, type Rematch } from './ResultCard';
 import { resultRows } from './resultModel';
 import { RulesPanel } from './RulesPanel';
 import { SealSubmit } from './SealSubmit';
-import { seatPlates } from './seatPlates';
+import { rivalPlates, seatPlates } from './seatPlates';
 import type { StageEnv } from './stage';
 import { useDeployStep } from './useDeployStep';
 import { useHudSafe } from './useHudSafe';
@@ -290,15 +290,31 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const badgesNow = resolution.stage === 'wanted' ? islandBadges.map((pin) => ({ ...pin, hidden: true })) : islandBadges;
   // A shot too close for the other islands to be on screen: the standings carry their cash, goods and status.
   const closeShot = step?.closeShot === true;
+  const rivalRow = step?.rivalRow === true;
   const viewerId = seats.find((s) => s.isViewer)?.id;
-  const stepAside = (pin: TablePin) => (closeShot && pin.id !== `seat-${viewerId}` && pin.id !== `island-${viewerId}` ? { ...pin, hidden: true } : pin);
+  const stepAside = (pin: TablePin) => ((closeShot || rivalRow) && pin.id !== `seat-${viewerId}` && pin.id !== `island-${viewerId}` ? { ...pin, hidden: true } : pin);
   const pins = [...plates.map(stepAside), marketBadgePin(), ...badgesNow.map(stepAside), ...moments.pins, ...(step?.pins ?? []), ...resolution.pins, ...marks];
   const camera = step?.camera ?? resolution.camera ?? overviewPoints(angles, seats.map((s) => s.island));
 
   const marketRef = useRef<HTMLDivElement>(null);
   const dockRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
-  const topHud = useMemo(() => [marketRef], []);
+  const rivalRef = useRef<HTMLDivElement>(null);
+  const topHud = useMemo(() => [marketRef, rivalRef], []);
+  // The rivals' row hangs from the market strip's bottom edge (--hud-top also counts the row itself).
+  useEffect(() => {
+    const update = () => {
+      const bottom = marketRef.current?.getBoundingClientRect().bottom;
+      if (bottom !== undefined) document.documentElement.style.setProperty('--market-bottom', `${Math.round(bottom)}px`);
+    };
+    update();
+    const timer = setInterval(update, 300);
+    window.addEventListener('resize', update);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('resize', update);
+    };
+  }, []);
   const bottomHud = useMemo(() => [dockRef, barRef], []);
   const safe = useHudSafe(topHud, bottomHud, SAFE);
 
@@ -392,6 +408,16 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
       </TableCanvas>
 
       <MarketStrip ref={marketRef} board={board} bets={step?.bets} prices={resolution.marketPrices} changed={resolution.changedGoods} />
+      {ready && rivalRow && (
+        <div ref={rivalRef} className="rival-row" data-focus="rivals">
+          {rivalPlates(
+            seats,
+            board,
+            (id) => (deciding ? (waiting.has(id) ? '思考中' : '已決定') : ''),
+            (id) => (board.players[id]?.cash ?? 0) + (resolution.cashBonus[id] ?? 0),
+          )}
+        </div>
+      )}
       <div className="t3-menu">
         <span data-focus="round" className="t3-round">{board.round === 0 ? '選島' : `第 ${board.round}／${rounds} 回合`}</span>
         {ready && board.round > 0 && (

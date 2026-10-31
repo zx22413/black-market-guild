@@ -659,3 +659,72 @@
   line-height: 14px;
   pointer-events: none;
 }
+
+/*
+ * The decision bar on a phone: its chips and the seal share one row when they fit (they wrap onto a second
+ * only on the narrowest screens), and the ⓘ floats on the bar's upper edge instead of taking side padding.
+ */
+@media (max-width: 640px) {
+  :root:root:root .inv-bar {
+    padding: 8px 10px;
+    gap: 6px 10px;
+  }
+  :root:root:root .inv-bar > .bar-lock-wrap {
+    top: -14px;
+    right: 8px;
+    bottom: auto;
+  }
+  :root:root:root .inv-bar .bar-chips {
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+  :root:root:root .inv-bar .bar-chips .chip {
+    gap: 3px;
+    padding: 3px 8px;
+    font-size: 12px;
+  }
+}
+
+/* The rivals' plates share one row: name, cash and status on a line, their goods under it, all a little smaller (the colour ribbon keeps its room on the left). */
+@media (max-width: 640px) {
+  :root:root:root .rival-row .beat3d-plate {
+    display: block;
+    padding: 2px 3px 2px 13px;
+    font-size: 10px;
+  }
+  :root:root:root .rival-row .plate-head {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0 2px;
+    white-space: nowrap;
+  }
+  :root:root:root .rival-row .inv-plate .plate-cash {
+    margin-left: 0;
+  }
+  :root:root:root .rival-row .status-mark svg {
+    width: 12px;
+    height: 12px;
+  }
+  :root:root:root .rival-row .inv-stock {
+    gap: 2px;
+    font-size: 10.5px;
+  }
+  :root:root:root .rival-row .inv-stock .good-ic {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* The warehouse note under the crate row is one line, so it fits between the crates' clocks and the build button. */
+@media (max-width: 640px) {
+  :root:root:root .inv-note.below {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
+    max-width: none;
+    padding: 3px 8px;
+    white-space: nowrap;
+  }
+}
