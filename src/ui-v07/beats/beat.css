@@ -911,6 +911,10 @@
   display: inline-block;
   transform: translate(-50%, 56px);
 }
+/* On a phone the clock stands on top of its stack instead, above the stack's small count label. */
+.restock-slot.up {
+  transform: translate(-50%, calc(-100% - 22px));
+}
 .beat3d-pin > .inv-build {
   transform: translate(-50%, -50%);
 }

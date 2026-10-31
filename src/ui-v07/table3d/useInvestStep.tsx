@@ -162,9 +162,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   // the ship note beside the ship, never on top of them.
   const rowEnds = [islandPoint(home, [warehouseLocal(0)[0] - 1.6, 0, warehouseLocal(0)[2]]), islandPoint(home, [warehouseLocal(3)[0] + 1.6, 0, warehouseLocal(3)[2]])] as const;
   const leftEnd = rowEnds[0][0] < rowEnds[1][0] ? rowEnds[0] : rowEnds[1];
-  // On a phone the note sits above the tallest stack (below the crates it would lie across the building's lot).
-  const tallest = Math.max(...GOODS.map((g) => Math.max(1, context.view.myStock[g] - choice.load[g])));
-  const aboveRow = islandPoint(home, [(warehouseLocal(0)[0] + warehouseLocal(3)[0]) / 2, stackTop(0, tallest)[1], warehouseLocal(0)[2]]);
+  // On a phone the note sits under the player's own plate (Table3DScreen puts it on the island, under the build button): beside or under the crates it would lie across the building's lot.
+  const underPlate: readonly [number, number, number] = [hx, 1, hz + PLAYER_ISLAND_RADIUS * OWN_PLATE_REACH];
   const maxBuilt = context.view.rules.buildings.maxPerPlayer;
   const built = me ? me.buildings.length : 0;
   const at = (where: 'warehouse' | 'ship') => notes.filter((n) => n.at === where).map((n) => <NoteBadge key={n.text} chips={n.chips} text={n.text} label={n.label} />);
@@ -271,13 +270,13 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       );
       return {
         id: `stack-${g}`,
-        // At the foot of the stack, so the count never covers the icon on the crate lid.
-        position: islandPoint(home, warehouseLocal(column)),
+        // At the foot of the stack, so the count never covers the icon on the crate lid (on a phone a small label on top of it: under the stacks the chosen building's preview rises into that space).
+        position: phone ? islandPoint(home, stackTop(column, context.view.myStock[g] - choice.load[g])) : islandPoint(home, warehouseLocal(column)),
         hidden: picking || context.view.myStock[g] - choice.load[g] <= 0,
         node: loadable ? (
           <button
             type="button"
-            className={`inv-stack good-${g} ${todo.cargo ? 'todo' : ''}`}
+            className={`inv-stack good-${g} ${phone ? 'up' : ''} ${todo.cargo ? 'todo' : ''}`}
             title={`裝一箱${GOOD_LABELS[g]}上船`}
             data-crate={g}
             data-loaded={choice.load[g]}
@@ -286,7 +285,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
             {label}
           </button>
         ) : (
-          <span className={`inv-stack good-${g}`} title={GOOD_LABELS[g]}>
+          <span className={`inv-stack good-${g} ${phone ? 'up' : ''}`} title={GOOD_LABELS[g]}>
             {label}
           </span>
         ),
@@ -298,10 +297,11 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       return {
         id: `restock-${g}`,
         // The stack label's own point: the slot drops the clock a few px below it, however close the camera is.
-        position: islandPoint(home, warehouseLocal(column)),
+        // On a phone the clock stands on top of its stack: under the stacks the chosen building's preview rises into that space.
+        position: phone ? islandPoint(home, stackTop(column, context.view.myStock[g] - choice.load[g])) : islandPoint(home, warehouseLocal(column)),
         hidden: picking,
         node: (
-          <span className="restock-slot">
+          <span className={`restock-slot ${phone ? 'up' : ''}`}>
             <RestockTag good={g} next={nextProductionRound(context.view.rules, me?.island ?? null, g, board.round)} round={board.round} />
           </span>
         ),
@@ -310,10 +310,10 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     {
       id: 'warehouse-note',
       // Beside the crate row, or on a phone (no room at its side without covering the first stack) under it.
-      position: phone ? aboveRow : leftEnd,
+      position: phone ? underPlate : leftEnd,
       hidden: picking,
       node: (
-        <div className={`inv-note ${phone ? 'above' : 'side-left'}`} data-focus={`island-${viewer}`}>
+        <div className={`inv-note ${phone ? 'under' : 'side-left'}`} data-focus={`island-${viewer}`}>
           <span className="note-title" title="倉庫">
             <CrateIcon />
             倉庫
