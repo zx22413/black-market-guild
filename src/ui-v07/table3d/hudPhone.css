@@ -718,7 +718,7 @@
 
 /* The warehouse note under the crate row is one line, so it fits between the crates' clocks and the build button. */
 @media (max-width: 640px) {
-  :root:root:root .inv-note.below {
+  :root:root:root .inv-note.above {
     display: flex;
     flex-wrap: nowrap;
     align-items: center;

@@ -67,3 +67,6 @@ export function shipName(board: Board, id: ShipId, viewer: PlayerId, nameOf: (id
   const owner = board.ships.find((s) => s.id === id)?.owner;
   return owner === viewer ? '你的船' : `${owner ? nameOf(owner) : '?'}的船`;
 }
+
+/** In a close shot the player's own plate sits on the island this far (a share of its radius) toward the camera, under the build button. */
+export const OWN_PLATE_REACH = 0.78;

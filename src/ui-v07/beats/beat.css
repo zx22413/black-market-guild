@@ -906,15 +906,10 @@
 .beat3d-pin > .inv-note.side-right {
   transform: translate(10px, -50%);
 }
-/* On a phone the warehouse note hangs under the crate row, centred on it. */
-.beat3d-pin > .inv-note.below {
-  /* Pins hang down from their point: under the stack labels (45px), then their restock clocks (14px) and a gap, in px so it holds at any zoom. */
-  transform: translate(-50%, 73px);
-}
 /* The restock clock hangs centred under its stack's label (which starts 6px below the pin's point and is 45px tall), in px so it stays close at any zoom. */
 .restock-slot {
   display: inline-block;
-  transform: translate(-50%, 53px);
+  transform: translate(-50%, 56px);
 }
 .beat3d-pin > .inv-build {
   transform: translate(-50%, -50%);
@@ -3558,13 +3553,13 @@ button .info-tip-anchor {
 /* The other players' plates in one row under the market strip (a phone's loading step). */
 .rival-row {
   position: absolute;
-  top: calc(var(--market-bottom, 56px) + 6px);
+  top: calc(var(--market-bottom, 56px) + 10px);
   left: 50%;
   z-index: 3;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  gap: 4px;
+  gap: 10px;
   width: calc(100vw - 16px);
   transform: translateX(-50%);
   pointer-events: none;

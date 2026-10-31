@@ -25,6 +25,8 @@ import { ResultCard, type Rematch } from './ResultCard';
 import { resultRows } from './resultModel';
 import { RulesPanel } from './RulesPanel';
 import { SealSubmit } from './SealSubmit';
+import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
+import { OWN_PLATE_REACH } from './stage';
 import { rivalPlates, seatPlates } from './seatPlates';
 import type { StageEnv } from './stage';
 import { useDeployStep } from './useDeployStep';
@@ -292,7 +294,14 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const closeShot = step?.closeShot === true;
   const rivalRow = step?.rivalRow === true;
   const viewerId = seats.find((s) => s.isViewer)?.id;
-  const stepAside = (pin: TablePin) => ((closeShot || rivalRow) && pin.id !== `seat-${viewerId}` && pin.id !== `island-${viewerId}` ? { ...pin, hidden: true } : pin);
+  const closeUp = closeShot || rivalRow;
+  // In a close shot the island's front rim is under the decision bar: the player's own plate sits on the island, below the build button.
+  const [ownX, , ownZ] = viewerId ? seatPosition(angles[laneOf(viewerId)]!) : [0, 0, 0];
+  const stepAside = (pin: TablePin): TablePin => {
+    if (!closeUp) return pin;
+    if (pin.id === `seat-${viewerId}`) return { ...pin, position: [ownX, 1, ownZ + PLAYER_ISLAND_RADIUS * OWN_PLATE_REACH] };
+    return pin.id !== `island-${viewerId}` ? { ...pin, hidden: true } : pin;
+  };
   const pins = [...plates.map(stepAside), marketBadgePin(), ...badgesNow.map(stepAside), ...moments.pins, ...(step?.pins ?? []), ...resolution.pins, ...marks];
   const camera = step?.camera ?? resolution.camera ?? overviewPoints(angles, seats.map((s) => s.island));
 

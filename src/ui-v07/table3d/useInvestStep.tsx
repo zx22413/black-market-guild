@@ -5,7 +5,7 @@ import type { FitPoint } from '../../ui/scene/CameraRig';
 import { shipPose } from '../../ui/scene/Ships';
 import { BUILDING_LABELS, BUILDING_TEXT, GOOD_LABELS } from '../labels';
 import { around } from '../scene/focusMath';
-import { BuildingPreview, ShipCargo, Warehouse, deckSlot, warehouseLocal } from '../scene/InvestIsland';
+import { BuildingPreview, ShipCargo, Warehouse, deckSlot, stackTop, warehouseLocal } from '../scene/InvestIsland';
 import { ISLAND_PLATEAU, islandPoint, type TablePin } from '../scene/TableCanvas';
 import {
   EMPTY_CHOICE,
@@ -38,7 +38,7 @@ import { LockHint } from './LockHint';
 import { usePhone } from './usePhone';
 import { SealSubmit } from './SealSubmit';
 import { soundEngine } from '../audio/soundEngine';
-import type { StageEnv, StageParts } from './stage';
+import { OWN_PLATE_REACH, type StageEnv, type StageParts } from './stage';
 import { cardArtUrl } from './cardArt';
 
 // The investment on your own island (docs/ui/v07-event-presentation.md §1.3): building cards,
@@ -149,11 +149,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
 
   const [hx, , hz] = seatPosition(home);
   const dock = shipPose(home, 'docked').position;
-  // The nameplate hangs on the outer side of the island, away from the harbor: keep it in the shot too.
-  const reach = Math.hypot(hx, hz) || 1;
-  // (On a phone the plate hangs below its point, so the point goes farther out.)
-  const out = phone ? 9.5 : 4;
-  const plate: FitPoint = { position: [hx + (hx / reach) * out, 0, hz + (hz / reach) * out] };
+  // In a close shot the player's own plate sits on the island under the build button (Table3DScreen): keep it, and the label below it, in the shot.
+  const plate: FitPoint = { position: [hx, 0, hz + PLAYER_ISLAND_RADIUS * OWN_PLATE_REACH + 3] };
   // Close shot: your island and your ship at the dock, so the crates are big enough to tell apart.
   // A phone is as narrow as the island is wide, so it crops the island's far sides to bring the
   // crates up to size; the stack labels, clocks and note hang from the crates and spread with it.
@@ -165,7 +162,9 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   // the ship note beside the ship, never on top of them.
   const rowEnds = [islandPoint(home, [warehouseLocal(0)[0] - 1.6, 0, warehouseLocal(0)[2]]), islandPoint(home, [warehouseLocal(3)[0] + 1.6, 0, warehouseLocal(3)[2]])] as const;
   const leftEnd = rowEnds[0][0] < rowEnds[1][0] ? rowEnds[0] : rowEnds[1];
-  const underRow = islandPoint(home, [(warehouseLocal(0)[0] + warehouseLocal(3)[0]) / 2, 0, warehouseLocal(0)[2]]);
+  // On a phone the note sits above the tallest stack (below the crates it would lie across the building's lot).
+  const tallest = Math.max(...GOODS.map((g) => Math.max(1, context.view.myStock[g] - choice.load[g])));
+  const aboveRow = islandPoint(home, [(warehouseLocal(0)[0] + warehouseLocal(3)[0]) / 2, stackTop(0, tallest)[1], warehouseLocal(0)[2]]);
   const maxBuilt = context.view.rules.buildings.maxPerPlayer;
   const built = me ? me.buildings.length : 0;
   const at = (where: 'warehouse' | 'ship') => notes.filter((n) => n.at === where).map((n) => <NoteBadge key={n.text} chips={n.chips} text={n.text} label={n.label} />);
@@ -311,10 +310,10 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     {
       id: 'warehouse-note',
       // Beside the crate row, or on a phone (no room at its side without covering the first stack) under it.
-      position: phone ? underRow : leftEnd,
+      position: phone ? aboveRow : leftEnd,
       hidden: picking,
       node: (
-        <div className={`inv-note ${phone ? 'below' : 'side-left'}`} data-focus={`island-${viewer}`}>
+        <div className={`inv-note ${phone ? 'above' : 'side-left'}`} data-focus={`island-${viewer}`}>
           <span className="note-title" title="倉庫">
             <CrateIcon />
             倉庫
