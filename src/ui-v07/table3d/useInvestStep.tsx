@@ -239,7 +239,6 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   ) : null;
 
   const pins: TablePin[] = [
-    ...freshPins,
     {
       id: 'build',
       // On the island's front edge as seen on screen, whichever way the island is turned, so it
@@ -350,6 +349,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
         </div>
       ),
     },
+    // Last, so the "+n" bubble paints in front of the stack labels and clocks it rises over.
+    ...freshPins,
   ];
 
   // What a submit seals: kept on the bar under the seal while the others decide.
