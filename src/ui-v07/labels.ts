@@ -106,6 +106,8 @@ export const CASH_REASON_LABELS: Readonly<Record<CashReason, string>> = {
   'broker-bet': '莊家獎金',
   'broker-control': '莊家壓價差額',
   'broker-lift': '莊家抬價（銀行補貼）',
+  'diplomat-take': '外交官猜中（向對手拿錢）',
+  'diplomat-refund': '外交官猜錯（退還部署費）',
 };
 
 /** A good's price-track cell to G per unit: the display of §7.1 (each good has its own track). */

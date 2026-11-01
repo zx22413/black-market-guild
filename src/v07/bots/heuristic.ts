@@ -13,6 +13,7 @@ import { choose } from './choose';
 import {
   SMUGGLER_GUARDED_CHANCE,
   ARMS_SEIZURE_RISK,
+  DIPLOMAT_HIT,
   OTHERS_LOAD_SHARE,
   arriveChance,
   expectedLoot,
@@ -114,7 +115,29 @@ function aimValue(view: PlayerView, action: Deploy, chance: number): number {
   return bet.direction < 0 ? worth * (1 + lead) : -worth * 0.5;
 }
 
+/**
+ * Experiment (splitCustoms): the 'broker' id is a diplomat guessing which role an opponent aims at its own ship. A right
+ * guess saves part of what that role would take and wins `take` G; a wrong one gets part of the fee back.
+ */
+function scoreDiplomat(view: PlayerView, action: Deploy): number {
+  const { rules } = view;
+  const ship = view.ships.find((s) => s.id === action.targetShipId);
+  const guess = action.guessRole;
+  if (ship === undefined || guess === undefined || guess === null) {
+    return 0;
+  }
+  const fee = roleFee(rules, me(view).island, 'broker');
+  const hit = DIPLOMAT_HIT[guess] ?? 0;
+  const stake = stakeOn(view, ship);
+  const saved = guess === 'pirate' ? stake * 0.3 : guess === 'smuggler' ? rules.roles.smuggler.goodsValue * 0.7 : guess === 'intel' ? stake * 0.25 : 0;
+  const { take, refundPercent } = rules.roles.diplomat;
+  return -fee + (1 - hit) * fee * (refundPercent / 100) + hit * (saved + take);
+}
+
 function scoreDeploy(view: PlayerView, action: Deploy, persona: Personality): number {
+  if (action.role === 'broker' && view.rules.roles.splitCustoms === 1) {
+    return scoreDiplomat(view, action);
+  }
   if (action.role === 'broker') {
     return scoreBet(view, action);
   }
@@ -133,9 +156,11 @@ function scoreDeploy(view: PlayerView, action: Deploy, persona: Personality): nu
       const boost =
         rules.roles.guard.modifier + trait.guardModifier;
       const guarded = arriveChance(rules, boost);
-      const seizure = expectedSeizure(view, ship);
+      // Experiment (namedGood): the guard names the good its action carries; otherwise it is arms.
+      const named = rules.roles.guard.namedGood === 1 ? (action.bet?.good ?? 'arms') : 'arms';
+      const seizure = expectedSeizure(view, ship, named);
       // §9.4: confiscating arms forfeits the escort fee, which is only paid for others' ships.
-      const forfeit = seizure === 0 ? 0 : Math.min(1, seizure / currentPrice(view, 'arms'));
+      const forfeit = seizure === 0 ? 0 : Math.min(1, seizure / currentPrice(view, named));
       const escort = ship.owner !== view.playerId ? rules.roles.guard.escortFee * guarded * (1 - forfeit) : 0;
       return (guarded - base) * stake + escort + seizure * guarded - fee;
     }
@@ -154,6 +179,10 @@ function scoreDeploy(view: PlayerView, action: Deploy, persona: Personality): nu
       return base * ((1 - SMUGGLER_GUARDED_CHANCE) * goodsValue - SMUGGLER_GUARDED_CHANCE * fine) - fee;
     }
     case 'intel': {
+      if (rules.roles.splitCustoms === 1) {
+        // Experiment (splitCustoms): 'intel' stands in for customs, which names a good and takes it if the ship arrives.
+        return expectedSeizure(view, ship, action.bet?.good ?? 'arms') * base - fee;
+      }
       const peek = view.ships.find((s) => s.id === action.peekShipId);
       return (stake + (peek === undefined ? 0 : stakeOn(view, peek))) * (1 - base) * base * 0.5 - fee;
     }

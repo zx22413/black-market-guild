@@ -62,14 +62,65 @@ export interface Rules {
   readonly demand: Readonly<Record<number, { readonly min: Goods; readonly max: Goods }>>;
   readonly capacity: { readonly base: number; readonly shipyardBonus: number };
   readonly shipCost: number;
-  readonly sailing: { readonly dieMin: number; readonly dieMax: number; readonly successMin: number };
+  readonly sailing: {
+    readonly dieMin: number;
+    readonly dieMax: number;
+    readonly successMin: number;
+    /**
+     * Experiment (docs/proposals/2026-11-playtest-feedback-and-direction.md, not a decided rule): the
+     * percent of its sale income an arrived ship is paid, keyed by the ship's final value (§9.1).
+     * 100 everywhere is today's behaviour. Arrival volume and prices are not affected.
+     * TODO(open question): what the percents should be, and whether a cut share is lost or goes elsewhere.
+     */
+    readonly arrivalIncomePercent: Readonly<Record<number, number>>;
+  };
   readonly roles: {
+    /**
+     * Experiment (docs/proposals/2026-11-role-function-inventory.md, not a decided rule): 1 splits the guard in two.
+     * 'guard' only guards the player's own ship (+1); the 'intel' role id stands in for a customs officer who names
+     * a good and confiscates it on another player's ship (and catches smugglers); there is no intel reroll and no
+     * smuggler cover. 0 = today. A real implementation would add proper role ids.
+     */
+    readonly splitCustoms: number;
+    /**
+     * Experiment (splitCustoms): the 'broker' id stands in for a diplomat on its own ship that guesses the role an
+     * opponent aims at it. A right guess voids that role's deployment on the ship and takes up to `take` G from each
+     * of its players; a wrong guess refunds `refundPercent` of the fee. TODO(open question): the real numbers.
+     */
+    readonly diplomat: { readonly take: number; readonly refundPercent: number };
     readonly fees: Readonly<Record<RoleId, number>>;
     /** A role used in round r is unavailable until round r + cooldown + 1 (§9.3). */
     readonly cooldown: number;
-    readonly guard: { readonly modifier: number; readonly escortFee: number };
+    readonly guard: {
+      readonly modifier: number;
+      readonly escortFee: number;
+      /**
+       * Experiment (docs/proposals/2026-11-role-function-inventory.md, not a decided rule): 1 = the escort
+       * fee comes out of the escorted ship's sale income (capped at it) instead of the bank. 0 = today.
+       * TODO(open question): who really pays role incomes, and whether the owner may refuse.
+       */
+      readonly escortFromOwner: number;
+      /**
+       * Experiment (docs/proposals/2026-11-role-function-inventory.md, not a decided rule): 1 = a guard deployed on a
+       * ship names one good (its bet's good) and confiscates only that good, if it is aboard; smugglers no longer
+       * cover. 0 = today: guards confiscate arms and a smuggler aboard covers them.
+       * TODO(open question): whether the named good is public, and what covers a ship once cover leaves the smuggler.
+       */
+      readonly namedGood: number;
+    };
     /** `loot` is keyed by the sunk ship's final value (§9.4): a final value with no entry pays nothing. */
-    readonly pirate: { readonly modifier: number; readonly loot: Readonly<Record<number, number>> };
+    readonly pirate: {
+      readonly modifier: number;
+      readonly loot: Readonly<Record<number, number>>;
+      /**
+       * Experiment (not a decided rule): keyed by the targeted ship's final value (§9.1), the percent of its cargo's
+       * value pirates take. Any entry above 0 turns it on and replaces the `loot` table: a sunk ship pays that percent of
+       * its lost cargo's value at the new prices; an arrived ship pays it out of its sale income (the owner keeps the rest).
+       * All 0 = today.
+       * TODO(open question): whether a final value with no pirate aboard is also cut.
+       */
+      readonly lootPercentByFinal: Readonly<Record<number, number>>;
+    };
     readonly smuggler: { readonly goodsValue: number; readonly fine: number };
     /**
      * §9.4: the broker also names a ship; when the bet is right, that ship sells the bet's good
@@ -153,12 +204,14 @@ export const RULES_V07: Rules = {
   },
   capacity: { base: 3, shipyardBonus: 1 }, // §8
   shipCost: 100, // §8
-  sailing: { dieMin: 1, dieMax: 6, successMin: 3 }, // §9.1
+  sailing: { dieMin: 1, dieMax: 6, successMin: 3, arrivalIncomePercent: { 1: 100, 2: 100, 3: 100, 4: 100, 5: 100, 6: 100 } }, // §9.1
   roles: {
+    splitCustoms: 0,
+    diplomat: { take: 75, refundPercent: 50 },
     fees: { intel: 50, guard: 50, pirate: 50, smuggler: 0, broker: 75 }, // §9.2
     cooldown: 2, // §9.3
-    guard: { modifier: 1, escortFee: 75 }, // §9.4
-    pirate: { modifier: -1, loot: { 1: 250, 2: 100 } }, // §9.4
+    guard: { modifier: 1, escortFee: 75, escortFromOwner: 0, namedGood: 0 }, // §9.4
+    pirate: { modifier: -1, loot: { 1: 250, 2: 100 }, lootPercentByFinal: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 } }, // §9.4
     smuggler: { goodsValue: 100, fine: 100 }, // §9.5
     broker: { shift: 1, payout: 100, targetSteps: 2, targetOwnUp: 1 }, // §9.4
   },
@@ -201,6 +254,21 @@ export const RULES_V07: Rules = {
     blackMarketRushGoodsValue: 150,
   },
 };
+
+/** Experiment (rules.roles.splitCustoms): the role id that confiscates and catches smugglers. */
+export function inspectorRole(rules: Rules): RoleId {
+  return rules.roles.splitCustoms === 1 ? 'intel' : 'guard';
+}
+
+/** Experiment: whether the confiscating role names the good it takes (split customs, or guards naming goods). */
+export function namesGood(rules: Rules): boolean {
+  return rules.roles.splitCustoms === 1 || rules.roles.guard.namedGood === 1;
+}
+
+/** Experiment: the percent of its sale income an arrived ship is paid at this final value (100 when unlisted). */
+export function arrivalIncomePercent(rules: Rules, finalValue: number): number {
+  return rules.sailing.arrivalIncomePercent[finalValue] ?? 100;
+}
 
 /** §9.4: the loot the bank pays pirates for a ship that sank with this final value (before the wanted bonus). */
 export function pirateLoot(rules: Rules, finalValue: number): number {

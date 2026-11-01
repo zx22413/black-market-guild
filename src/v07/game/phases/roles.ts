@@ -20,11 +20,11 @@ export function resolveDeployment(state: MatchState): Step {
   const deployments: Deployment[] = state.players.flatMap(({ id }) => {
     const action = submissions[id];
     return action?.type === 'deploy-role' && action.role !== null
-      ? [{ playerId: id, role: action.role, targetShipId: action.targetShipId, bet: action.bet, peekShipId: action.peekShipId }]
+      ? [{ playerId: id, role: action.role, targetShipId: action.targetShipId, bet: action.bet, peekShipId: action.peekShipId, ...(action.guessRole ? { guessRole: action.guessRole } : {}) }]
       : [];
   });
   const privateEvents: PrivateEvent[] = deployments
-    .filter((d) => d.role === 'intel')
+    .filter((d) => d.role === 'intel' && state.rules.roles.splitCustoms !== 1)
     .flatMap((d) =>
       [d.targetShipId, d.peekShipId]
         .filter((id): id is string => id !== null)
@@ -76,9 +76,10 @@ export function revealRoles(state: MatchState): Step {
   });
   const revealed: MatchState = { ...state, players, roundState: { ...state.roundState, rolesRevealed: true } };
   const rerolledShipIds = ships.filter((s) => s.rerolledRoll !== null).map((s) => s.id);
-  return chain(
-    revealed,
-    ROLE_IDS.map((role) => (current: MatchState): Step => {
+  return chain(revealed, [...ROLE_IDS.map(revealGroup), applyDiplomats]);
+
+  function revealGroup(role: (typeof ROLE_IDS)[number]) {
+    return (current: MatchState): Step => {
       const group = deployments.filter((d) => d.role === role);
       const fees = chain(
         current,
@@ -94,6 +95,45 @@ export function revealRoles(state: MatchState): Step {
           ...fees.events,
         ],
       };
-    }),
-  );
+    };
+  }
 }
+
+/**
+ * Experiment (rules.roles.splitCustoms), after every fee is paid: each diplomat's guess either voids the
+ * guessed role's deployments on its ship (taking up to `take` G from each of their players) or, if no one
+ * aimed that role at it, gets part of its fee back. Voided deployments leave the round so nothing later sees them.
+ */
+const applyDiplomats = (current: MatchState): Step => {
+  if (current.rules.roles.splitCustoms !== 1) {
+    return { state: current, events: [] };
+  }
+  const { deployments } = current.roundState;
+  const { take, refundPercent } = current.rules.roles.diplomat;
+  const voided = new Set<Deployment>();
+  const steps: ((state: MatchState) => Step)[] = [];
+  for (const d of deployments.filter((x) => x.role === 'broker' && x.guessRole)) {
+    const hits = deployments.filter((x) => x.role === d.guessRole && x.targetShipId === d.targetShipId && x.playerId !== d.playerId);
+    if (hits.length === 0) {
+      steps.push((state) => {
+        const refund = Math.floor((roleFee(state.rules, playerOf(state, d.playerId).island, 'broker') * refundPercent) / 100);
+        return refund > 0 ? changeCash(state, d.playerId, refund, 'diplomat-refund', d.targetShipId) : { state, events: [] };
+      });
+      continue;
+    }
+    for (const hit of hits) {
+      voided.add(hit);
+      steps.push((state) => {
+        const amount = Math.min(playerOf(state, hit.playerId).cash, take);
+        return amount > 0
+          ? chain(state, [
+              (s) => changeCash(s, hit.playerId, -amount, 'diplomat-take', d.targetShipId),
+              (s) => changeCash(s, d.playerId, amount, 'diplomat-take', d.targetShipId),
+            ])
+          : { state, events: [] };
+      });
+    }
+  }
+  const paid = chain(current, steps);
+  return { state: { ...paid.state, roundState: { ...paid.state.roundState, deployments: deployments.filter((x) => !voided.has(x)) } }, events: paid.events };
+};

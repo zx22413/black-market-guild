@@ -127,7 +127,7 @@ export function getPlayerView(state: MatchState, playerId: PlayerId): PlayerView
 }
 
 function intelKnowledge(state: MatchState, playerId: PlayerId): IntelKnowledge[] {
-  const d = state.roundState.deployments.find((x) => x.playerId === playerId && x.role === 'intel');
+  const d = state.rules.roles.splitCustoms === 1 ? undefined : state.roundState.deployments.find((x) => x.playerId === playerId && x.role === 'intel');
   if (d === undefined) {
     return [];
   }

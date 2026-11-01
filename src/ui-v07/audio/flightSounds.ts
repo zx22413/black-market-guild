@@ -11,6 +11,8 @@ const FLIGHT_SOUND: Readonly<Record<Flight['kind'], SfxId | null>> = {
   'broker-bet': 'settle-coins',
   'broker-lift': 'settle-coins',
   'broker-control': 'settle-coins',
+  'diplomat-take': 'settle-coins',
+  'diplomat-refund': 'settle-coins',
   'exchange-commission': 'settle-tick',
   smuggling: 'settle-smuggle',
   'smuggling-confiscated': 'settle-caught',

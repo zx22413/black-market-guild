@@ -58,6 +58,8 @@ export type Action =
       readonly bet: Bet | null;
       /** Lighthouse intel only: a second ship to look at (§11.2). */
       readonly peekShipId: ShipId | null;
+      /** Experiment (rules.roles.splitCustoms), diplomat only: the role guessed to aim at the player's own ship. */
+      readonly guessRole?: RoleId | null;
     }
   /** Reroll one ship the intel merchant looked at, or none (§9.4). */
   | { readonly type: 'intel-reroll'; readonly playerId: PlayerId; readonly rerollShipId: ShipId | null };
@@ -91,6 +93,8 @@ export interface Deployment {
   readonly targetShipId: ShipId | null;
   readonly bet: Bet | null;
   readonly peekShipId: ShipId | null;
+  /** Experiment (rules.roles.splitCustoms), diplomat only: the role guessed to aim at the player's own ship. */
+  readonly guessRole?: RoleId | null;
 }
 
 export interface PlayerState {
@@ -174,7 +178,9 @@ export type CashReason =
   | 'exchange-commission'
   | 'broker-bet'
   | 'broker-control'
-  | 'broker-lift';
+  | 'broker-lift'
+  | 'diplomat-take'
+  | 'diplomat-refund';
 
 /** Public resolution summary for one ship (§4 結算起始骰值與修正, §9.1). */
 export interface VoyageModifier {
