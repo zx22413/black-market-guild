@@ -120,15 +120,15 @@ describe('§8 sailing and §10.1 building', () => {
     expect(getLegalActions(state, 'p2').some((a) => a.type === 'invest' && a.build === 'exchange')).toBe(true);
   });
 
-  it('still opens role deployment when nobody sails, with only the broker to deploy (§9.2)', () => {
+  it('still opens role deployment when nobody sails, with only "no role" to choose (§9.2)', () => {
     let state = stocked(plain(3));
     for (const p of state.players) {
       state = apply(state, { type: 'invest', playerId: p.id, build: null, load: G(0) }).state;
     }
     expect(state.phase).toBe('role-deployment');
     const roles = new Set(getLegalActions(state, 'p1').map((a) => (a.type === 'deploy-role' ? a.role : 'x')));
-    expect(roles).toEqual(new Set([null, 'broker']));
-    const { state: next } = playRound(stocked(plain(3)), { bets: { p1: { good: 'spice', direction: 1 } } });
+    expect(roles).toEqual(new Set([null]));
+    const { state: next } = playRound(stocked(plain(3)));
     expect(next.round).toBe(2);
   });
 

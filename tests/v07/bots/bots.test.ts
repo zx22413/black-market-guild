@@ -85,7 +85,7 @@ describe('V0.7 bot factory and helpers', () => {
   });
 
   it('choose picks the best option at temperature 0 and samples otherwise', () => {
-    const options: Action[] = [null, 'r1-p1'].map((rerollShipId) => ({ type: 'intel-reroll', playerId: 'p1', rerollShipId }));
+    const options: Action[] = [null, 'r1-p1'].map((targetShipId) => ({ type: 'deploy-role', playerId: 'p1', role: targetShipId === null ? null : 'guard', targetShipId, namedGood: null }));
     expect(choose(options, [0, 5], 0, createRng(1))).toBe(options[1]);
     const picks = new Set(Array.from({ length: 50 }, (_, i) => choose(options, [0, 1], 100, createRng(i))));
     expect(picks.size).toBe(2);
@@ -96,10 +96,10 @@ describe('V0.7 bot factory and helpers', () => {
     expect(state.phase).toBe('game-over');
   });
 
-  it('arrival chance follows §9.1 (3-6 arrives, clamped to 1-6)', () => {
-    expect(arriveChance(RULES_V07, 0)).toBeCloseTo(4 / 6);
-    expect(arriveChance(RULES_V07, 1)).toBeCloseTo(5 / 6);
-    expect(arriveChance(RULES_V07, -4)).toBe(0);
+  it('arrival chance follows §9.1 (2-6 arrives, clamped to 1-6)', () => {
+    expect(arriveChance(RULES_V07, 0)).toBeCloseTo(5 / 6);
+    expect(arriveChance(RULES_V07, 1)).toBe(1);
+    expect(arriveChance(RULES_V07, -5)).toBe(0);
     expect(arriveChance(RULES_V07, 5)).toBe(1);
   });
 });
@@ -133,7 +133,7 @@ describe('V0.7 bot decisions', () => {
     expect(scoreAction(view, ship, persona)).toBeGreaterThan(scoreAction(view, stay, persona));
   });
 
-  it('only bets as a broker when nobody sails', () => {
+  it('only passes when nobody sails', () => {
     let state = start(3);
     for (const p of state.players) {
       state = apply(state, { type: 'invest', playerId: p.id, build: null, load: G(0) }).state;
@@ -141,23 +141,22 @@ describe('V0.7 bot decisions', () => {
     expect(state.phase).toBe('role-deployment');
     const legalActions = getLegalActions(state, 'p1');
     const action = createHeuristicBot('balanced', 5).decide({ view: getPlayerView(state, 'p1'), decision: { playerId: 'p1', phase: 'role-deployment' }, legalActions });
-    expect(action.type === 'deploy-role' && (action.role === null || action.role === 'broker')).toBe(true);
+    expect(action.type === 'deploy-role' && action.role === null).toBe(true);
   });
 
-  it('values guards, pirates, smugglers and intel by ship and island', () => {
+  it('values guards, pirates, smugglers and customs by ship and island', () => {
     let state = start(3, undefined, { p1: 'mine', p2: 'mine', p3: 'smuggler-port' });
     state = edit(edit(state, 'p3', { stock: G(0, 0, 0, 2) }), 'p1', { stock: G(1, 2) });
     for (const [id, load] of [['p1', G(1, 2)], ['p2', G(1)], ['p3', G(0, 0, 0, 2)]] as const) {
       state = apply(state, { type: 'invest', playerId: id, build: null, load }).state;
     }
     const persona = PERSONALITIES.balanced;
-    const deploy = (playerId: string, role: 'guard' | 'pirate' | 'smuggler' | 'intel', owner: string): Action => ({
+    const deploy = (playerId: string, role: 'guard' | 'pirate' | 'smuggler' | 'customs', owner: string): Action => ({
       type: 'deploy-role',
       playerId,
       role,
       targetShipId: `r1-${owner}`,
-      bet: null,
-      peekShipId: null,
+      namedGood: role === 'customs' ? 'arms' : null,
     });
     const p1 = getPlayerView(state, 'p1');
     const p3 = getPlayerView(state, 'p3');
@@ -166,43 +165,9 @@ describe('V0.7 bot decisions', () => {
     // Attacking my own ship is worse than attacking a rival's.
     expect(scoreAction(p1, deploy('p1', 'pirate', 'p2'), persona)).toBeGreaterThan(scoreAction(p1, deploy('p1', 'pirate', 'p1'), persona));
     expect(scoreAction(p1, deploy('p1', 'smuggler', 'p2'), persona)).toBeGreaterThan(0);
-    expect(scoreAction(p1, deploy('p1', 'intel', 'p1'), persona)).toBeGreaterThan(scoreAction(p1, deploy('p1', 'intel', 'p2'), persona));
-    // Smuggler Port's arms cannot be covered (§11.2), so covering them is worthless.
-    expect(scoreAction(p3, deploy('p3', 'smuggler', 'p3'), persona)).toBeCloseTo(0);
-    expect(scoreAction(p3, { type: 'deploy-role', playerId: 'p3', role: null, targetShipId: null, bet: null, peekShipId: null }, persona)).toBe(0);
-  });
-
-  it('covers its own arms with a smuggler where cover works', () => {
-    let state = start(3, undefined, { p1: 'mine', p2: 'mine', p3: 'mine' });
-    state = edit(state, 'p1', { stock: G(0, 0, 0, 2) });
-    for (const [id, load] of [['p1', G(0, 0, 0, 2)], ['p2', G(1)], ['p3', G(0)]] as const) {
-      state = apply(state, { type: 'invest', playerId: id, build: null, load }).state;
-    }
-    const cover: Action = { type: 'deploy-role', playerId: 'p1', role: 'smuggler', targetShipId: 'r1-p1', bet: null, peekShipId: null };
-    expect(scoreAction(getPlayerView(state, 'p1'), cover, PERSONALITIES.balanced)).toBeGreaterThan(0);
-  });
-
-  it('rerolls a looked-at ship carrying its cargo only when the roll would sink it', () => {
-    const rerollChoice = (roll: number) => {
-      let state = start(3, undefined, { p1: 'mine', p2: 'mine', p3: 'mine' });
-      for (const [id, load] of [['p1', G(1)], ['p2', G(1)], ['p3', G(0)]] as const) {
-        state = apply(state, { type: 'invest', playerId: id, build: null, load }).state;
-      }
-      state = { ...state, roundState: { ...state.roundState, ships: state.roundState.ships.map((s) => ({ ...s, rawRoll: roll })) } };
-      state = apply(state, { type: 'deploy-role', playerId: 'p1', role: 'intel', targetShipId: 'r1-p1', bet: null, peekShipId: null }).state;
-      for (const id of ['p2', 'p3']) {
-        state = apply(state, { type: 'deploy-role', playerId: id, role: null, targetShipId: null, bet: null, peekShipId: null }).state;
-      }
-      expect(state.phase).toBe('intel-reroll');
-      const action = createHeuristicBot('balanced', 1).decide({
-        view: getPlayerView(state, 'p1'),
-        decision: { playerId: 'p1', phase: 'intel-reroll' },
-        legalActions: getLegalActions(state, 'p1'),
-      });
-      return action.type === 'intel-reroll' ? action.rerollShipId : 'other';
-    };
-    expect(rerollChoice(2)).toBe('r1-p1');
-    expect(rerollChoice(5)).toBeNull();
+    // Customs seizing the smuggler port's arms is worth more than a ship with nothing to seize.
+    expect(scoreAction(p1, deploy('p1', 'customs', 'p3'), persona)).toBeGreaterThan(scoreAction(p1, deploy('p1', 'customs', 'p2'), persona));
+    expect(scoreAction(p3, { type: 'deploy-role', playerId: 'p3', role: null, targetShipId: null, namedGood: null }, persona)).toBe(0);
   });
 
   it('plays a scripted round without errors from the helpers', () => {

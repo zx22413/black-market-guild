@@ -2,46 +2,34 @@ import { chain, changeCash, holds, payAll, playerOf, updatePlayer, type StepFn }
 import { addGoods, mapGoods, nextPriceStep, only, priceAt, units } from './goods';
 import { traitOf } from './islands';
 import { voyageModifier } from './resolution';
-import { arrivalIncomePercent, inspectorRole, namesGood, pirateLoot } from './rules';
-import { GOODS, type Bet, type GoodId, type Goods, type MatchEvent, type MatchState, type PlayerId, type RoleId, type Ship, type ShipId, type Step } from './types';
+import { arrivalIncomePercent } from './rules';
+import { GOODS, type GoodId, type Goods, type MatchEvent, type MatchState, type PlayerId, type RoleId, type Ship, type Step } from './types';
 
 interface Prices {
   readonly before: Goods;
   readonly after: Goods;
 }
 
-interface PlayerBet extends Bet {
-  readonly playerId: PlayerId;
-  /** Experiment: the opponent's ship this bet is aimed at. */
-  readonly targetShipId: ShipId | null;
-}
-
 /**
- * §5 step 8, §7.3: the new price is set by arrivals against demand (shifted by broker bets) and
- * applies to this round's sales. Then, in order: arrivals (arms confiscation, smuggling, sales) →
- * sinkings (loot, seized goods) → escort fees → exchange commission → insurance → salvage →
- * broker bets → spice spoils.
+ * §5 step 7, §7.3: the new price is set by arrivals against demand and applies to this round's
+ * sales. Then, in order: arrivals (customs confiscation, smuggling, pirate loot, sales) → sinkings
+ * (loot, seized goods) → exchange commission → insurance → salvage → spice spoils.
  */
 export function settleMarket(state: MatchState): Step {
   const { rules } = state;
   const { ships } = state.roundState;
-  const bets: PlayerBet[] = state.roundState.deployments.flatMap((d) => (d.role === 'broker' && d.bet !== null ? [{ playerId: d.playerId, ...d.bet, targetShipId: d.targetShipId }] : []));
-  const demand = mapGoods((g) =>
-    Math.max(0, state.roundState.demand[g] + bets.filter((b) => b.good === g).reduce((sum, b) => sum + b.direction * rules.roles.broker.shift, 0)),
-  );
+  const { demand } = state.roundState;
   const arrivedShips = ships.filter((s) => s.outcome === 'arrived');
   const sunkShips = ships.filter((s) => s.outcome === 'sank');
   const arrived = arrivedShips.reduce((sum, s) => addGoods(sum, s.cargo), mapGoods(() => 0));
   const prices: Prices = { before: state.prices, after: mapGoods((g) => nextPriceStep(rules, g, state.prices[g], arrived[g], demand[g])) };
   const settled: MatchEvent = { type: 'market-settled', round: state.round, demand, arrived, priceBefore: prices.before, priceAfter: prices.after };
   const result = chain({ ...state, prices: prices.after }, [
-    ...arrivedShips.map((ship) => settleArrival(ship, prices, bets)),
+    ...arrivedShips.map((ship) => settleArrival(ship, prices)),
     ...sunkShips.map((ship) => settleSinking(ship, prices)),
-    payEscortFees,
     payCommission,
     payInsurance,
     salvage(sunkShips, prices.after),
-    payBets(bets, prices),
     spoilSpice,
   ]);
   return { state: result.state, events: [settled, ...result.events] };
@@ -71,77 +59,39 @@ function takers(state: MatchState, ship: Ship): PlayerId[] {
 
 interface Seizure {
   readonly good: GoodId;
-  readonly guards: readonly PlayerId[];
+  readonly customs: readonly PlayerId[];
 }
 
-/**
- * §9.5: other players' guards confiscate the ship's arms unless a smuggler covers them. Experiment
- * (rules.roles.guard.namedGood): each guard confiscates only the good it names, when aboard, and
- * smugglers do not cover.
- */
+/** §9.5: the owner's own smuggler aboard covers the ship's goods from customs, except arms at the smuggler port. */
+const covered = (state: MatchState, ship: Ship, good: GoodId): boolean =>
+  deployed(state, ship, 'smuggler').includes(ship.owner) && !(good === 'arms' && traitOf(state.rules, playerOf(state, ship.owner).island).armsUncoverable === 1);
+
+/** §9.4: each customs officer on this ship takes the good it names, if that good is aboard and not covered. */
 function seizures(state: MatchState, ship: Ship): Seizure[] {
-  const others = state.roundState.deployments.filter((d) => d.role === inspectorRole(state.rules) && d.targetShipId === ship.id && d.playerId !== ship.owner);
-  if (namesGood(state.rules)) {
-    return GOODS.flatMap((good) => {
-      const guards = others.filter((d) => d.bet?.good === good).map((d) => d.playerId);
-      return guards.length > 0 && ship.cargo[good] > 0 ? [{ good, guards }] : [];
-    });
-  }
-  const coverable = traitOf(state.rules, playerOf(state, ship.owner).island).armsUncoverable !== 1;
-  if (ship.cargo.arms === 0 || (coverable && deployed(state, ship, 'smuggler').length > 0) || others.length === 0) {
-    return [];
-  }
-  return [{ good: 'arms', guards: others.map((d) => d.playerId) }];
+  const officers = state.roundState.deployments.filter((d) => d.role === 'customs' && d.targetShipId === ship.id && d.playerId !== ship.owner);
+  return GOODS.flatMap((good) => {
+    if (covered(state, ship, good)) {
+      return [];
+    }
+    const named = officers.filter((d) => d.namedGood === good).map((d) => d.playerId);
+    return named.length > 0 && ship.cargo[good] > 0 ? [{ good, customs: named }] : [];
+  });
 }
 
-/** The guards that confiscated something from this ship. */
-const confiscators = (found: readonly Seizure[]): PlayerId[] => [...new Set(found.flatMap((s) => s.guards))];
-
-/** §9.4: a bet is right when its good's price really moved the bet's way. */
-const betWon = (bet: Bet, prices: Prices): boolean => Math.sign(prices.after[bet.good] - prices.before[bet.good]) === bet.direction;
-
-/**
- * Experiment (rules.roles.broker.targetSteps): every right bet aimed at this ship moves the sale
- * price of the bet's good by `targetSteps` steps (kept on the track) for this ship only. Down: the
- * owner's lost difference goes to the broker (at most the proceeds left). Up: the bank pays the
- * owner the difference. Returns the owner's remaining proceeds and the payments to make.
- */
-function aimedBets(state: MatchState, ship: Ship, sold: Goods, prices: Prices, bets: readonly PlayerBet[], proceeds: number): { proceeds: number; payments: StepFn[] } {
-  const { rules } = state;
-  return bets
-    .filter((b) => b.targetShipId === ship.id && betWon(b, prices))
-    .reduce<{ proceeds: number; payments: StepFn[] }>(
-      (acc, b) => {
-        const price = salePrice(state, ship.owner, b.good, prices);
-        const room = b.direction < 0 ? price - priceAt(rules, b.good, 0) : priceAt(rules, b.good, rules.price.steps - 1) - price;
-        const gap = Math.min(rules.roles.broker.targetSteps * rules.price.tracks[b.good].step, room) * sold[b.good];
-        if (b.direction < 0) {
-          const take = Math.min(gap, acc.proceeds);
-          return { proceeds: acc.proceeds - take, payments: [...acc.payments, ...payAll([{ playerId: b.playerId, amount: take }], 'broker-control', ship.id)] };
-        }
-        return { ...acc, payments: [...acc.payments, ...payAll([{ playerId: ship.owner, amount: gap }], 'broker-lift', ship.id)] };
-      },
-      { proceeds, payments: [] },
-    );
-}
-
-function settleArrival(ship: Ship, prices: Prices, bets: readonly PlayerBet[]): StepFn {
+/** §9.4, §9.5: the owner's sale income is the cargo value left after customs, scaled by the final value; pirates then take a share of it. */
+function settleArrival(ship: Ship, prices: Prices): StepFn {
   return (state) => {
     const found = seizures(state, ship);
-    const confiscating = confiscators(found);
     const sold = found.reduce<Goods>((left, s) => ({ ...left, [s.good]: 0 }), ship.cargo);
     const full = GOODS.reduce((sum, g) => sum + sold[g] * salePrice(state, ship.owner, g, prices), 0);
-    const gross = Math.floor((full * arrivalIncomePercent(state.rules, voyageModifier(state, ship).final)) / 100);
-    const aimed = aimedBets(state, ship, sold, prices, bets, gross);
-    const guards = deployed(state, ship, 'guard');
-    const customs = deployed(state, ship, inspectorRole(state.rules));
-    const escorts = state.rules.roles.guard.escortFromOwner === 1 ? guards.filter((id) => id !== ship.owner && !confiscating.includes(id)) : [];
-    const escortEach = escorts.length === 0 ? 0 : Math.floor(Math.min(state.rules.roles.guard.escortFee * escorts.length, aimed.proceeds) / escorts.length);
-    const afterEscort = aimed.proceeds - escortEach * escorts.length;
-    const pirates = lootByFinalOn(state) ? deployed(state, ship, 'pirate').filter((id) => id !== ship.owner) : [];
-    const lootShare = pirates.length === 0 ? 0 : Math.floor((afterEscort * (state.rules.roles.pirate.lootPercentByFinal[voyageModifier(state, ship).final] ?? 0)) / 100);
-    const lootEach = pirates.length === 0 ? 0 : Math.floor(lootShare / pirates.length);
-    const proceeds = afterEscort - lootEach * pirates.length;
+    const final = voyageModifier(state, ship).final;
+    const gross = Math.floor((full * arrivalIncomePercent(state.rules, final)) / 100);
+    const customs = deployed(state, ship, 'customs');
+    const pirates = deployed(state, ship, 'pirate').filter((id) => id !== ship.owner);
+    const lootShare = pirates.length === 0 ? 0 : Math.min(gross, Math.floor((gross * (state.rules.roles.pirate.lootPercentByFinal[final] ?? 0)) / 100));
+    const bonus = pirates.length > 0 && lootShare > 0 ? wantedBonus(state, ship) : 0;
+    const lootEach = pirates.length === 0 ? 0 : Math.floor((lootShare + bonus) / pirates.length);
+    const proceeds = gross - lootShare;
     const smugglers = takers(state, ship);
     return chain(state, [
       ...confiscateGoods(ship, found, prices),
@@ -150,15 +100,16 @@ function settleArrival(ship: Ship, prices: Prices, bets: readonly PlayerBet[]): 
         : customs.length > 0
           ? [...catchSmugglers(ship, smugglers, customs), ...payAll([{ playerId: ship.owner, amount: proceeds }], 'sale', ship.id)]
           : [smuggle(ship, smugglers, proceeds)]),
-      ...payAll(escorts.map((playerId) => ({ playerId, amount: escortEach })), 'escort-fee', ship.id),
       ...payAll(pirates.map((playerId) => ({ playerId, amount: lootEach })), 'pirate-loot', ship.id),
-      ...aimed.payments,
     ]);
   };
 }
 
+/** §9.6: pirates hitting a wanted owner's ship get the bank's bonus on top. */
+const wantedBonus = (state: MatchState, ship: Ship): number => (state.roundState.wanted.includes(ship.owner) ? state.rules.wanted.lootBonus : 0);
+
 /**
- * The value a guard takes of `good` on this ship: all of it, scaled by the same arrival ratio as the owner's own
+ * The value customs takes of `good` on this ship: all of it, scaled by the same arrival ratio as the owner's own
  * income (rules.sailing.arrivalIncomePercent), so customs and the owner split the ship's value between them.
  */
 function seizedValue(state: MatchState, ship: Ship, good: GoodId, prices: Prices): number {
@@ -166,15 +117,15 @@ function seizedValue(state: MatchState, ship: Ship, good: GoodId, prices: Prices
 }
 
 function confiscateGoods(ship: Ship, found: readonly Seizure[], prices: Prices): StepFn[] {
-  return found.map(({ good, guards }): StepFn => (state) => {
-    const each = Math.floor(seizedValue(state, ship, good, prices) / guards.length);
-    const paid = chain(state, payAll(guards.map((playerId) => ({ playerId, amount: each })), 'arms-confiscated', ship.id));
-    return { state: paid.state, events: [{ type: 'arms-confiscated', round: state.round, shipId: ship.id, units: ship.cargo[good], guards }, ...paid.events] };
+  return found.map(({ good, customs }): StepFn => (state) => {
+    const each = Math.floor(seizedValue(state, ship, good, prices) / customs.length);
+    const paid = chain(state, payAll(customs.map((playerId) => ({ playerId, amount: each })), 'goods-confiscated', ship.id));
+    return { state: paid.state, events: [{ type: 'goods-confiscated', round: state.round, shipId: ship.id, good, units: ship.cargo[good], customs }, ...paid.events] };
   });
 }
 
-/** §9.5 caught: each smuggler is fined (capped at their cash); the guards split the goods value. */
-function catchSmugglers(ship: Ship, smugglers: readonly PlayerId[], guards: readonly PlayerId[]): StepFn[] {
+/** §9.5 caught: each smuggler is fined (capped at their cash); customs splits the goods value. */
+function catchSmugglers(ship: Ship, smugglers: readonly PlayerId[], customs: readonly PlayerId[]): StepFn[] {
   const announce: StepFn = (state) => ({
     state,
     events: [{ type: 'smuggling-settled', round: state.round, shipId: ship.id, smugglers, result: 'caught' }],
@@ -184,8 +135,8 @@ function catchSmugglers(ship: Ship, smugglers: readonly PlayerId[], guards: read
     return amount > 0 ? changeCash(state, playerId, -amount, 'smuggling-fine', ship.id) : { state, events: [] };
   });
   const reward: StepFn = (state) => {
-    const each = Math.floor(goodsValue(state) / guards.length) * smugglers.length;
-    return chain(state, payAll(guards.map((playerId) => ({ playerId, amount: each })), 'smuggling-confiscated', ship.id));
+    const each = Math.floor(goodsValue(state) / customs.length) * smugglers.length;
+    return chain(state, payAll(customs.map((playerId) => ({ playerId, amount: each })), 'smuggling-confiscated', ship.id));
   };
   return [announce, ...fines, reward];
 }
@@ -203,10 +154,7 @@ function smuggle(ship: Ship, smugglers: readonly PlayerId[], proceeds: number): 
   };
 }
 
-/** Experiment (rules.roles.pirate.lootPercentByFinal): any share above 0 replaces the loot table. */
-const lootByFinalOn = (state: MatchState): boolean => Object.values(state.rules.roles.pirate.lootPercentByFinal).some((percent) => percent > 0);
-
-/** §9.4, §9.5, §9.6: pirates split the loot (set by the ship's final value; wanted bonus included) and any smuggled goods aboard. */
+/** §9.4, §9.5, §9.6: pirates split a share of the lost cargo's value (set by the ship's final value; wanted bonus included) and any smuggled goods aboard. */
 function settleSinking(ship: Ship, prices: Prices): StepFn {
   return (state) => {
     const pirates = deployed(state, ship, 'pirate');
@@ -216,11 +164,10 @@ function settleSinking(ship: Ship, prices: Prices): StepFn {
     if (pirates.length === 0) {
       return { state, events: lost };
     }
-    const bonus = state.roundState.wanted.includes(ship.owner) ? state.rules.wanted.lootBonus : 0;
     const final = voyageModifier(state, ship).final;
     const cargoValue = GOODS.reduce((sum, g) => sum + ship.cargo[g] * priceAt(state.rules, g, prices.after[g]), 0);
-    const base = lootByFinalOn(state) ? Math.floor((cargoValue * (state.rules.roles.pirate.lootPercentByFinal[final] ?? 0)) / 100) : pirateLoot(state.rules, final);
-    const loot = Math.floor((base + bonus) / pirates.length);
+    const share = Math.floor((cargoValue * (state.rules.roles.pirate.lootPercentByFinal[final] ?? 0)) / 100);
+    const loot = Math.floor((share + wantedBonus(state, ship)) / pirates.length);
     const seized = Math.floor(goodsValue(state) / pirates.length) * smugglers.length;
     const paid = chain(state, [
       ...payAll(pirates.map((playerId) => ({ playerId, amount: loot })), 'pirate-loot', ship.id),
@@ -229,22 +176,6 @@ function settleSinking(ship: Ship, prices: Prices): StepFn {
     return { state: paid.state, events: [...lost, ...paid.events] };
   };
 }
-
-/** §9.4: a guard on someone else's ship that arrived earns the escort fee, unless it confiscated arms there. */
-const payEscortFees: StepFn = (state) =>
-  chain(
-    state,
-    state.roundState.deployments.flatMap((d) => {
-      if (state.rules.roles.guard.escortFromOwner === 1) {
-        return []; // Experiment: already taken from the ship's sale income in settleArrival.
-      }
-      const ship = state.roundState.ships.find((s) => s.id === d.targetShipId);
-      if (d.role !== 'guard' || ship?.outcome !== 'arrived' || ship.owner === d.playerId || confiscators(seizures(state, ship)).includes(d.playerId)) {
-        return [];
-      }
-      return payAll([{ playerId: d.playerId, amount: state.rules.roles.guard.escortFee }], 'escort-fee', ship.id);
-    }),
-  );
 
 /** §10.2: the exchange earns a commission per unit of other players' goods that arrived, capped. */
 const payCommission: StepFn = (state) => {
@@ -307,17 +238,6 @@ function salvage(sunk: readonly Ship[], after: Goods): StepFn {
       { state, events: [] },
     );
   };
-}
-
-/** §9.4: a broker whose good's price moved the way they bet is paid by the bank. */
-function payBets(bets: readonly PlayerBet[], prices: Prices): StepFn {
-  return (state) =>
-    chain(
-      state,
-      bets
-        .filter((b) => betWon(b, prices))
-        .flatMap((b) => payAll([{ playerId: b.playerId, amount: state.rules.roles.broker.payout }], 'broker-bet', null)),
-    );
 }
 
 /** §6.3: spice left in a warehouse spoils at the end of the round, except on the spice isles. */

@@ -1,7 +1,7 @@
 import { playerOf } from './cash';
 import { covers, enumerateGoods, subtractGoods, units } from './goods';
-import { capacityFor, cooldownFor, roleFee, shipCostFor, traitOf } from './islands';
-import { inspectorRole, namesGood, type Rules } from './rules';
+import { capacityFor, cooldownFor, roleFee, shipCostFor } from './islands';
+import type { Rules } from './rules';
 import {
   BUILDING_IDS,
   GOODS,
@@ -15,7 +15,6 @@ import {
   type PlayerId,
   type PlayerState,
   type RoleId,
-  type Ship,
 } from './types';
 
 export function buildingCost(rules: Rules, building: BuildingId): Goods {
@@ -28,11 +27,9 @@ export function getDeciders(state: MatchState, phase: DecisionPhase): PlayerId[]
   switch (phase) {
     case 'island-choice':
     case 'invest':
-    // §9.2: players who stay in port may still deploy; with no ships only the broker remains.
+    // §9.2: players who stay in port may still deploy.
     case 'role-deployment':
       return state.players.map((p) => p.id);
-    case 'intel-reroll':
-      return state.rules.roles.splitCustoms === 1 ? [] : state.roundState.deployments.filter((d) => d.role === 'intel').map((d) => d.playerId);
   }
 }
 
@@ -59,8 +56,6 @@ export function getLegalActions(state: MatchState, playerId: PlayerId): Action[]
       return investOptions(state, playerId);
     case 'role-deployment':
       return deployOptions(state, playerId);
-    case 'intel-reroll':
-      return rerollOptions(state, playerId);
   }
 }
 
@@ -95,84 +90,43 @@ export function roleAvailable(state: MatchState, player: PlayerState, role: Role
   return last === undefined || state.round - last > cooldownFor(state.rules, player.island, role);
 }
 
-/**
- * §9.4, §9.5: smugglers board other players' ships, or their own ship only to cover their arms;
- * never their own ship when their arms cannot be covered at all (the smuggler port, §11.2).
- */
-export function smugglerMayTarget(ship: Ship, playerId: PlayerId, armsUncoverable: boolean, noCover = false): boolean {
-  return ship.owner !== playerId || (!noCover && ship.cargo.arms > 0 && !armsUncoverable);
-}
+/** The roles a diplomat can guess are aimed at its ship (§9.4). */
+export const GUESSABLE_ROLES = ['guard', 'pirate', 'smuggler', 'customs'] as const;
 
 /** §9.2-9.4: no role, or any affordable, available role with a valid target. */
 function deployOptions(state: MatchState, playerId: PlayerId): Action[] {
   const player = playerOf(state, playerId);
   const { ships } = state.roundState;
-  const none: Action = { type: 'deploy-role', playerId, role: null, targetShipId: null, bet: null, peekShipId: null };
+  const none: Action = { type: 'deploy-role', playerId, role: null, targetShipId: null, namedGood: null };
   const options: Action[] = [none];
   for (const role of ROLE_IDS) {
     if (player.cash < roleFee(state.rules, player.island, role) || !roleAvailable(state, player, role)) {
       continue;
     }
-    if (role === 'broker' && state.rules.roles.splitCustoms === 1) {
-      // Experiment (splitCustoms): the broker id is a diplomat; it sits on its own ship and guesses an opposing role.
-      ships
-        .filter((s) => s.owner === playerId)
-        .forEach((ship) =>
-          (['guard', 'pirate', 'smuggler', 'intel'] as const).forEach((guessRole) =>
-            options.push({ type: 'deploy-role', playerId, role, targetShipId: ship.id, bet: null, peekShipId: null, guessRole }),
-          ),
-        );
-      continue;
+    const own = ships.filter((s) => s.owner === playerId);
+    const others = ships.filter((s) => s.owner !== playerId);
+    switch (role) {
+      case 'diplomat':
+        // §9.4: the diplomat sits on its own ship and guesses an opposing role.
+        own.forEach((ship) => GUESSABLE_ROLES.forEach((guessRole) => options.push({ type: 'deploy-role', playerId, role, targetShipId: ship.id, namedGood: null, guessRole })));
+        break;
+      case 'customs':
+        // §9.4: customs boards another player's ship and names the good it takes.
+        others.forEach((ship) => GOODS.forEach((good) => options.push({ type: 'deploy-role', playerId, role, targetShipId: ship.id, namedGood: good })));
+        break;
+      case 'guard':
+        own.forEach((ship) => options.push({ type: 'deploy-role', playerId, role, targetShipId: ship.id, namedGood: null }));
+        break;
+      case 'pirate':
+        ships.forEach((ship) => options.push({ type: 'deploy-role', playerId, role, targetShipId: ship.id, namedGood: null }));
+        break;
+      case 'smuggler':
+        // §9.5: other players' ships to smuggle, or its own ship to cover it from customs.
+        ships.forEach((ship) => options.push({ type: 'deploy-role', playerId, role, targetShipId: ship.id, namedGood: null }));
+        break;
     }
-    if (role === 'broker') {
-      // Experiment (targetSteps): the bet also names an opponent's ship, whenever one is at sea.
-      const { targetSteps, targetOwnUp } = state.rules.roles.broker;
-      const aimsFor = (direction: 1 | -1): string[] =>
-        targetSteps === 0 ? [] : ships.filter((s) => (targetOwnUp === 1 && direction > 0 ? s.owner === playerId : s.owner !== playerId)).map((s) => s.id);
-      GOODS.forEach((good) =>
-        ([1, -1] as const).forEach((direction) =>
-          (aimsFor(direction).length === 0 ? [null] : aimsFor(direction)).forEach((targetShipId) =>
-            options.push({ type: 'deploy-role', playerId, role, targetShipId, bet: { good, direction }, peekShipId: null }),
-          ),
-        ),
-      );
-      continue;
-    }
-    const uncoverable = traitOf(state.rules, player.island).armsUncoverable === 1;
-    const split = state.rules.roles.splitCustoms === 1;
-    // Experiment (splitCustoms): a guard only guards its own ship; the customs stand-in ('intel') boards others'.
-    const targets =
-      role === 'smuggler'
-        ? ships.filter((s) => smugglerMayTarget(s, playerId, uncoverable, namesGood(state.rules)))
-        : split && role === 'guard'
-          ? ships.filter((s) => s.owner === playerId)
-          : split && role === 'intel'
-            ? ships.filter((s) => s.owner !== playerId)
-            : ships;
-    const peeks = role === 'intel' && !split && traitOf(state.rules, player.island).intelPeeks > 0;
-    const names = role === inspectorRole(state.rules) && namesGood(state.rules);
-    targets.forEach((ship) => {
-      if (names) {
-        // Experiment (namedGood): the guard names the good it will confiscate.
-        GOODS.forEach((good) => options.push({ type: 'deploy-role', playerId, role, targetShipId: ship.id, bet: { good, direction: 1 }, peekShipId: null }));
-        return;
-      }
-      options.push({ type: 'deploy-role', playerId, role, targetShipId: ship.id, bet: null, peekShipId: null });
-      if (peeks) {
-        ships
-          .filter((other) => other.id !== ship.id)
-          .forEach((other) => options.push({ type: 'deploy-role', playerId, role, targetShipId: ship.id, bet: null, peekShipId: other.id }));
-      }
-    });
   }
   return options;
-}
-
-/** §9.4: reroll none, the target, or (lighthouse) the second ship looked at. */
-function rerollOptions(state: MatchState, playerId: PlayerId): Action[] {
-  const d = state.roundState.deployments.find((x) => x.playerId === playerId && x.role === 'intel');
-  const looked = [d?.targetShipId ?? null, d?.peekShipId ?? null].filter((id): id is string => id !== null);
-  return [null, ...looked].map((rerollShipId): Action => ({ type: 'intel-reroll', playerId, rerollShipId }));
 }
 
 /** Canonical identity of an action, used to compare against legal options. */
@@ -183,10 +137,7 @@ export function actionKey(action: Action): string {
     case 'invest':
       return `${action.type}|${action.playerId}|${action.build}|${GOODS.map((g) => action.load[g]).join(',')}`;
     case 'deploy-role': {
-      const bet = action.bet === null ? 'none' : `${action.bet.good}${action.bet.direction}`;
-      return `${action.type}|${action.playerId}|${action.role}|${action.targetShipId}|${bet}|${action.peekShipId}|${action.guessRole ?? 'none'}`;
+      return `${action.type}|${action.playerId}|${action.role}|${action.targetShipId}|${action.namedGood ?? 'none'}|${action.guessRole ?? 'none'}`;
     }
-    case 'intel-reroll':
-      return `${action.type}|${action.playerId}|${action.rerollShipId}`;
   }
 }

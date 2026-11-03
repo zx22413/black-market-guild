@@ -1,4 +1,4 @@
-import { betOn, roleOn, rerollOrKeep } from './allow';
+import { customsNaming, diplomatGuessing, roleOn } from './allow';
 import { BOT, F, R, SEATS, fee, goods, nameOf, shortRules } from './seats';
 import type { CoachStep, CoachTrigger, FocusTarget, GuideStep, TutorialScript } from './types';
 
@@ -8,7 +8,8 @@ import type { CoachStep, CoachTrigger, FocusTarget, GuideStep, TutorialScript } 
 const ROUND1_DEMAND = goods({ wood: 2, iron: 1, spice: 2, arms: 1 });
 const vande = nameOf(BOT.vande);
 const tide = nameOf(BOT.tide);
-const { guard, pirate, smuggler, broker } = R.roles;
+const { guard, pirate, smuggler, diplomat } = R.roles;
+const lootPct = (final: number): number => pirate.lootPercentByFinal[final] ?? 0;
 
 const DEPLOY: CoachTrigger = { kind: 'decision', round: 1, phase: 'role-deployment' };
 const RESOLVING: CoachTrigger = { kind: 'resolution', round: 1 };
@@ -50,13 +51,13 @@ const scenario = (script: Omit<TutorialScript, 'rules' | 'seats'>): TutorialScri
 export const GUARD: TutorialScript = scenario({
   id: 'guard',
   title: '護衛',
-  summary: '守住一艘船：骰值 +1，抵達時還能領護航費。',
+  summary: '守住自己的船：骰值 +1。',
   seed: 70201,
   rounds: [
     {
       demand: ROUND1_DEMAND,
       event: 'calm-seas',
-      rolls: { p1: 2, [BOT.vande]: 5 },
+      rolls: { p1: 1, [BOT.vande]: 5 },
       bots: { [BOT.vande]: { load: { iron: 1 } } },
       you: {
         invest: { demo: { load: { wood: 1, spice: 1 } }, choose: false },
@@ -72,15 +73,14 @@ export const GUARD: TutorialScript = scenario({
       '護衛',
       [F.hand, F.island('p1')],
       [
-        `護衛守一艘船，讓它的航行骰 +${guard.modifier}。你看不到自己的骰值，派護衛是押注：抵達的機會從三分之二提高到六分之五。`,
-        `守別人的船、而那艘船抵達時，還能從銀行拿 ${guard.escortFee} G 護航費。`,
+        `護衛只能守自己的船，讓它的航行骰 +${guard.modifier}。你看不到自己的骰值，派護衛是押注：只有最終值 1 會沉，加成讓沉船的機會從六分之一降到零，也讓抵達後的收入比例往上跳一級。`,
       ],
       `派護衛守自己的船（部署費 ${fee('guard')} G）。`,
       [F.role('guard'), F.target('p1')],
     ),
     watch([], '角色一次全部揭露，接著看你的船：起始骰值、護衛的加成，再判定抵達或沉沒。'),
     step(voyaged(['p1']), '差一點就沉了', [F.beat], [
-      `你的船原始骰值只有 2，護衛 +${guard.modifier} 後變 3，剛好抵達。`,
+      `你的船原始骰值只有 1，會沉；護衛 +${guard.modifier} 後變 2，剛好抵達。`,
       '小心航海事件「月黑風高」：被護衛守著的船 −1，正好抵銷護衛。',
     ]),
     done('下一課：海盜。'),
@@ -90,13 +90,13 @@ export const GUARD: TutorialScript = scenario({
 export const PIRATE: TutorialScript = scenario({
   id: 'pirate',
   title: '海盜',
-  summary: '擊沉對手的船，分走戰利品。',
+  summary: '攔截對手的船，分走一部分貨值。',
   seed: 70202,
   rounds: [
     {
       demand: ROUND1_DEMAND,
       event: 'calm-seas',
-      rolls: { [BOT.vande]: 3, [BOT.tide]: 6 },
+      rolls: { [BOT.vande]: 2, [BOT.tide]: 6 },
       bots: { [BOT.vande]: { load: { wood: 2 } }, [BOT.tide]: { load: { iron: 1 } } },
       you: {
         invest: { demo: {}, choose: false },
@@ -112,60 +112,59 @@ export const PIRATE: TutorialScript = scenario({
       '海盜',
       [F.hand, F.island(BOT.vande)],
       [
-        `海盜鎖定一艘船，讓它 ${pirate.modifier}。那艘船沉沒時，銀行付戰利品，由鎖定它的海盜平分：最終值 2 付 ${pirate.loot[2]} G，最終值 1 付 ${pirate.loot[1]} G。`,
-        `船上載著通緝者的貨時，戰利品再多 ${R.wanted.lootBonus} G。`,
+        `海盜鎖定一艘船，讓它 ${pirate.modifier}。最終值 1 的船沉沒，海盜平分貨值的 ${lootPct(1)}%；最終值 2 的船勉強抵達，海盜從船東的收入裡平分 ${lootPct(2)}%。`,
+        `最終值 3 以上海盜什麼都拿不到。船上載著通緝者的貨時，海盜再多拿 ${R.wanted.lootBonus} G（銀行付）。`,
       ],
       `派海盜鎖定${vande}的船（部署費 ${fee('pirate')} G）。`,
       [F.role('pirate'), F.target(BOT.vande)],
     ),
     watch([], `看${vande}的船：海盜的 ${pirate.modifier} 會不會讓它沉下去。`),
     step(voyaged([BOT.vande]), '擊沉', [F.beat], [
-      `${vande}的船原始骰值 3，海盜 ${pirate.modifier} 後變 2，沉沒，戰利品歸你。`,
+      `${vande}的船原始骰值 2，海盜 ${pirate.modifier} 後變 1，沉沒，貨值的 ${lootPct(1)}% 歸你。`,
       '小心航海事件「海霧」：被海盜鎖定的船 +1，海盜反而幫了對手。',
     ]),
-    done('下一課：情報商人。'),
+    done('下一課：海關。'),
   ],
 });
 
-export const INTEL: TutorialScript = scenario({
-  id: 'intel',
-  title: '情報商人',
-  summary: '唯一看得到骰值的角色：看完再決定要不要重擲。',
+export const CUSTOMS: TutorialScript = scenario({
+  id: 'customs',
+  title: '海關',
+  summary: '指名對手船上的一種貨，抵達時優先拿走。',
   seed: 70203,
   rounds: [
     {
       demand: ROUND1_DEMAND,
       event: 'calm-seas',
-      rolls: { p1: 2, [BOT.vande]: 5 },
-      rerolls: { p1: 5 },
-      bots: { [BOT.vande]: { load: { iron: 1 } } },
+      rolls: { [BOT.vande]: 6 },
+      bots: { [BOT.vande]: { load: { arms: 1, wood: 1 } } },
       you: {
-        invest: { demo: { load: { wood: 1, spice: 1 } }, choose: false },
-        'role-deployment': { demo: { role: ['intel', 'p1'] }, choose: true, allow: roleOn('intel', ['p1']) },
-        'intel-reroll': { demo: { reroll: 'p1' }, choose: true, allow: rerollOrKeep },
+        invest: { demo: {}, choose: false },
+        'role-deployment': {
+          demo: { role: ['customs', BOT.vande], named: 'arms' },
+          choose: true,
+          allow: roleOn('customs', [BOT.vande]),
+          ready: customsNaming('arms', BOT.vande),
+        },
       },
     },
   ],
   coach: [
-    step(DEPLOY, '你的船已經出航', [F.island('p1')], ['這一課你的船裝著 1 木材、1 香料出航。']),
+    step(DEPLOY, '你這回合不出航', [F.island(BOT.vande)], [`這一課你留在港裡。${vande}載著貨出航了。`]),
     deployIntro,
     step(
       DEPLOY,
-      '情報商人',
-      [F.hand, F.island('p1')],
-      ['情報商人鎖定一艘船，看它的原始骰值，再決定要不要重擲；重擲就必須接受新結果。', '做決定時，你還不知道航海事件，也不知道別人派了什麼角色。'],
-      `派情報商人看自己的船（部署費 ${fee('intel')} G）。`,
-      [F.role('intel'), F.target('p1')],
+      '海關',
+      [F.hand, F.island(BOT.vande)],
+      [
+        `海關只能鎖定別人的船，並指名其中一種貨，部署費 ${fee('customs')} G。船抵達時，海關優先拿走指名那種貨縮放後的整塊價值，指名的貨沒上船就什麼都拿不到。`,
+        `海關也會抓走私商人：罰款 ${smuggler.fine} G，私貨的價值歸海關。你可以從公開的倉庫猜他載了什麼。`,
+      ],
+      `派海關鎖定${vande}的船，指名軍火（部署費 ${fee('customs')} G）。`,
+      [F.role('customs'), F.target(BOT.vande)],
     ),
-    step(
-      { kind: 'decision', round: 1, phase: 'intel-reroll' },
-      '只有你看得到',
-      [F.reroll],
-      ['你的船原始骰值是 2，照這樣會沉。要不要重擲，由你決定。'],
-      '選擇重擲，或維持原本的骰值。',
-    ),
-    watch([], '角色揭露時，大家都看得到哪艘船被重擲，但原本的骰值永遠只有你知道。'),
-    step(voyaged(['p1']), '重擲的結果', [F.beat], ['重擲的話新骰值是 5，船抵達；維持 2 的話就沉了。']),
+    watch([], `看${vande}的船：抵達後，軍火的價值先歸海關。`),
+    step(voyaged([BOT.vande]), '沒收', [F.beat], [`${vande}的船抵達，軍火被你指名沒收；船東只拿到木材的收入。`]),
     done('下一課：走私商人。'),
   ],
 });
@@ -173,14 +172,14 @@ export const INTEL: TutorialScript = scenario({
 export const SMUGGLER: TutorialScript = scenario({
   id: 'smuggler',
   title: '走私商人',
-  summary: '搭別人的船夾帶私貨；遇到護衛就會被抓。',
+  summary: '搭別人的船夾帶私貨；遇到海關就會被抓。',
   seed: 70204,
   rounds: [
     {
       demand: ROUND1_DEMAND,
       event: 'black-market-rush',
       rolls: { [BOT.vande]: 5, [BOT.tide]: 5 },
-      bots: { [BOT.vande]: { load: { wood: 2 } }, [BOT.tide]: { load: { iron: 1 }, role: ['guard', BOT.tide] } },
+      bots: { [BOT.vande]: { load: { wood: 2 } }, [BOT.tide]: { load: { iron: 1 } }, [BOT.anchor]: { role: ['customs', BOT.tide], named: 'iron' } },
       you: {
         invest: { demo: {}, choose: false },
         'role-deployment': {
@@ -200,148 +199,61 @@ export const SMUGGLER: TutorialScript = scenario({
       '走私商人',
       [F.hand, F.island(BOT.vande), F.island(BOT.tide)],
       [
-        `走私商人搭別人的船夾帶私貨，不必自己出航，部署費 ${fee('smuggler')} G。船抵達、船上沒有護衛時，你從船東的賣貨收入抽走 ${smuggler.goodsValue} G。`,
-        `船上有任何人的護衛，你就被抓，罰款 ${smuggler.fine} G；船沉了又遇到海盜，私貨被搶走。`,
+        `走私商人搭別人的船夾帶私貨，不必自己出航，部署費 ${fee('smuggler')} G。船抵達、船上沒有海關時，你從船東的賣貨收入抽走 ${smuggler.goodsValue} G。`,
+        `船上有任何人的海關，你就被抓，罰款 ${smuggler.fine} G；船沉了又遇到海盜，私貨被搶走。`,
       ],
       '選一艘對手的船夾帶私貨。',
       [F.role('smuggler'), [F.target(BOT.vande), F.target(BOT.tide)]],
     ),
-    watch([], '角色揭露時，看看你搭的那艘船上有沒有護衛。'),
+    watch([], '角色揭露時，看看你搭的那艘船上有沒有海關。'),
     step(voyaged([BOT.vande, BOT.tide]), '揭曉', [F.beat], [
-      `${tide}派了護衛守自己的船：選那艘就被抓了。${vande}的船沒有護衛，走私成功。`,
+      `金錨公會派了海關上${tide}的船：選那艘就被抓了。${vande}的船沒有海關，走私成功。`,
       `這回合的航海事件是「黑市熱絡」：私貨價值從 ${smuggler.goodsValue} G 提高到 ${R.voyageEvents.blackMarketRushGoodsValue} G。`,
     ]),
-    done('下一課：軍火掩護。'),
+    done('下一課：外交官。'),
   ],
 });
 
-export const ARMS_COVER: TutorialScript = scenario({
-  id: 'arms-cover',
-  title: '軍火掩護',
-  summary: '軍火會被別人的護衛沒收；派自己的走私商人上船掩護。',
+export const DIPLOMAT: TutorialScript = scenario({
+  id: 'diplomat',
+  title: '外交官',
+  summary: '猜哪個角色會衝著你的船來；猜中就作廢它並向對手拿錢。',
   seed: 70205,
   rounds: [
     {
       demand: ROUND1_DEMAND,
       event: 'calm-seas',
       rolls: { p1: 5 },
-      bots: { [BOT.vande]: { role: ['guard', 'p1'] } },
+      bots: { [BOT.tide]: { role: ['pirate', 'p1'] } },
       you: {
-        invest: { demo: { load: { wood: 1, arms: 1 } }, choose: false },
-        'role-deployment': { demo: { role: ['smuggler', 'p1'] }, choose: true, allow: roleOn('smuggler', ['p1'], true), ready: roleOn('smuggler', ['p1']) },
+        invest: { demo: { load: { wood: 1, spice: 1 } }, choose: false },
+        'role-deployment': {
+          demo: { role: ['diplomat', 'p1'], guess: 'pirate' },
+          choose: true,
+          allow: roleOn('diplomat', ['p1']),
+          ready: diplomatGuessing('pirate', 'p1'),
+        },
       },
     },
   ],
   coach: [
-    step(DEPLOY, '你的船載著軍火', [F.island('p1')], ['這一課你的船裝著 1 木材、1 軍火出航。']),
-    step(DEPLOY, '軍火會被沒收', [F.price('arms'), F.island('p1')], [
-      '軍火賣得貴，但船抵達時，只要有別人的護衛守在船上，船上的軍火全部被沒收，價值歸那些護衛。',
-      '你不知道有沒有人派護衛來守你的船。',
-    ]),
+    step(DEPLOY, '你的船已經出航', [F.island('p1')], ['這一課你的船裝著 1 木材、1 香料出航。']),
+    deployIntro,
     step(
       DEPLOY,
-      '掩護',
+      '外交官',
       [F.hand, F.island('p1')],
-      ['把自己的走私商人派上自己載著軍火的船，軍火就不會被沒收。他不賺錢，被護衛撞見也不罰款。', '走私港的玩家不能這樣做：他的軍火不能被掩護。'],
-      '派走私商人上自己的船掩護軍火，或不派，看看會怎樣。',
-      [F.role('smuggler'), F.target('p1')],
+      [
+        `外交官只能守自己的船，部署費 ${fee('diplomat')} G。你要猜一個角色：護衛、海盜、走私商人或海關，會不會被派來針對你的船。`,
+        `猜中：那個角色在你船上的部署全部作廢（部署費不退），你向每位被作廢的對手拿 ${diplomat.take} G。猜錯：退你一半部署費。`,
+      ],
+      `派外交官守自己的船，猜海盜（部署費 ${fee('diplomat')} G）。`,
+      [F.role('diplomat'), F.target('p1')],
     ),
-    watch([], '角色揭露時，看看有沒有人派護衛守你的船。'),
-    step(voyaged(['p1']), '揭曉', [F.beat], [
-      `${vande}派了護衛守你的船，想沒收你的軍火。有掩護的話軍火照常賣出；沒掩護就被他拿走了。`,
-      `他守的是別人的船、船又抵達，沒收不到軍火時，就改拿 ${guard.escortFee} G 護航費。`,
-    ]),
-    done('下一課：莊家。'),
+    watch([], '角色揭露時，看看有沒有人真的派海盜來。'),
+    step(voyaged(['p1']), '猜中了', [F.beat], [`${tide}派海盜鎖定你的船，被你的外交官作廢：海盜的 ${pirate.modifier} 沒有生效，你還向他拿了 ${diplomat.take} G。`]),
+    done('角色教學到這裡結束。'),
   ],
 });
 
-/** Wood: the broker's bull bet raises its demand, so the one crate that arrives is below it. */
-const BROKER_DEMAND = goods({ wood: 1, iron: 1, spice: 2, arms: 1 });
-/** Round 2, iron: the bear bet takes its demand from 1 to 0, so the one crate that arrives is above it. */
-const BROKER_BEAR_DEMAND = goods({ wood: 2, iron: 1, spice: 2, arms: 1 });
-
-const DEPLOY2: CoachTrigger = { kind: 'decision', round: 2, phase: 'role-deployment' };
-const RESOLVING2: CoachTrigger = { kind: 'resolution', round: 2 };
-const MARKET1: CoachTrigger = { kind: 'market', round: 1 };
-
-export const BROKER: TutorialScript = {
-  ...scenario({
-    id: 'broker',
-    title: '莊家',
-    summary: '押一種貨的漲或跌；押對了拿獎金，指定的船還能多賣或少賣。',
-    seed: 70206,
-    rounds: [
-      {
-        demand: BROKER_DEMAND,
-        event: 'calm-seas',
-        rolls: { p1: 5, [BOT.vande]: 5 },
-        bots: { [BOT.vande]: { load: { iron: 1 } } },
-        you: {
-          invest: { demo: { load: { wood: 1, spice: 1 } }, choose: false },
-          'role-deployment': {
-            demo: { bet: { good: 'wood', direction: 1, aim: 'p1' } },
-            choose: true,
-            allow: betOn({ good: 'wood', direction: 1 }, 'p1'),
-          },
-        },
-      },
-      {
-        demand: BROKER_BEAR_DEMAND,
-        event: 'calm-seas',
-        rolls: { p1: 5, [BOT.vande]: 5 },
-        bots: { [BOT.vande]: { load: { iron: 1 } } },
-        you: {
-          invest: { demo: { load: { wood: 1 } }, choose: false },
-          'role-deployment': {
-            demo: { bet: { good: 'iron', direction: -1, aim: BOT.vande } },
-            choose: true,
-            allow: betOn({ good: 'iron', direction: -1 }, BOT.vande),
-          },
-        },
-      },
-    ],
-    coach: [
-      step(DEPLOY, '你的船已經出航', [F.island('p1')], ['這一課你的船裝著 1 木材、1 香料出航。']),
-      step(DEPLOY, '部署角色', [F.hand], [
-        '投資之後，所有人同時、秘密選一個角色派出去，也可以不派。角色在大家都決定後一次揭露。',
-        `每個角色有部署費，用過之後要冷卻 ${R.roles.cooldown} 回合才能再派；這一課為了讓你連續練兩種押法，莊家不用冷卻。`,
-        '手牌上方的「你的船上」會列出你這回合裝了什麼貨，選角色之前可以先看一眼。',
-      ]),
-      step(DEPLOY, '莊家', [F.hand], [
-        `莊家押一種貨會漲或會跌，部署費 ${fee('broker')} G。押下去之後，這回合那種貨的需求就往你押的方向調 ${broker.shift}。`,
-        `結算時價格真的往你押的方向動，銀行付你 ${broker.payout} G；不動或反向就沒有獎金。`,
-      ]),
-      step(
-        DEPLOY,
-        '押漲：指定自己的船',
-        [F.hand, F.island('p1')],
-        [
-          '押漲要指定自己的船。押對時，那艘船賣這種貨的單價再往上多動 2 格，多賣的錢由銀行補給你。',
-          '這回合木材的需求只有 1，你的船上有 1 木材。',
-        ],
-        `選莊家，點自己的船，再在船旁的清單押木材會漲（部署費 ${fee('broker')} G）。`,
-        [F.role('broker'), F.target('p1'), F.bet('wood', 1)],
-      ),
-      watch([F.price('wood')], '看木材：需求加上你押的 +1 之後，到港量夠不夠。'),
-      step(MARKET1, '押對了', [F.marketCard], [
-        '你押漲讓木材需求從 1 變 2，只到港 1 木材，價格上漲：你拿到獎金。',
-        '你的船賣木材時再多漲 2 格，多賣的錢由銀行補給你。',
-      ]),
-      step(DEPLOY2, '押跌：指定對手的船', [F.hand, F.island(BOT.vande)], [
-        `押跌要指定對手出航的船。這回合 ${vande}的船載著 1 鐵礦，鐵礦的需求也只有 1。`,
-        '押跌讓需求從 1 變 0；他的鐵礦到港就比需求多，價格會跌。',
-      ],
-      `選莊家，點${vande}的船，再在船旁的清單押鐵礦會跌（莊家這課不用冷卻）。`,
-      [F.role('broker'), F.target(BOT.vande), F.bet('iron', -1)]),
-      watch([F.price('iron')], '看鐵礦：需求減掉你押的 1 之後，到港的 1 鐵礦夠不夠賣。', RESOLVING2),
-      step({ kind: 'market', round: 2 }, '押跌也賺錢', [F.marketCard], [
-        '押跌讓鐵礦需求變 0，到港 1 鐵礦比需求多，價格下跌：銀行付你獎金。',
-        `押跌時，${vande}的船賣鐵礦的單價再往下多動 2 格，少賣的差額由你拿走（最多拿到他的賣貨收入）。`,
-      ]),
-      done('角色教學到這裡結束。'),
-    ],
-  }),
-  rules: { ...shortRules(2), roles: { ...R.roles, cooldown: 0 } },
-};
-
-export const ROLE_SCENARIOS: readonly TutorialScript[] = [GUARD, PIRATE, INTEL, SMUGGLER, ARMS_COVER, BROKER];
+export const ROLE_SCENARIOS: readonly TutorialScript[] = [GUARD, PIRATE, CUSTOMS, SMUGGLER, DIPLOMAT];

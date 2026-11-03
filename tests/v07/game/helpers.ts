@@ -2,7 +2,6 @@ import {
   applyAction,
   createMatch,
   type Action,
-  type Bet,
   type BuildingId,
   type GoodId,
   type Goods,
@@ -84,23 +83,17 @@ export function plain(players = 3, rules?: Rules): MatchState {
   return { ...state, players: state.players.map((p) => ({ ...p, island: null })) };
 }
 
-type ShipRole = Exclude<RoleId, 'broker'>;
-
 export interface RoundPlan {
   readonly loads?: Readonly<Record<string, Goods>>;
   readonly builds?: Readonly<Record<string, BuildingId>>;
   /** Raw roll per owner; unlisted ships roll 6. */
   readonly rolls?: Readonly<Record<string, number>>;
-  /** Ship roles by owner of the target ship: [role, target owner, optional peek owner]. */
-  readonly roles?: Readonly<Record<string, readonly [ShipRole, string, string?]>>;
-  /** Experiment (splitCustoms): a diplomat (the 'broker' id) on its own ship, by player: the role it guesses. */
+  /** Roles by player: [role, owner of the target ship]. */
+  readonly roles?: Readonly<Record<string, readonly [RoleId, string]>>;
+  /** A diplomat on its own ship, by player: the role it guesses. */
   readonly diplomats?: Readonly<Record<string, RoleId>>;
-  /** Experiment: the good a customs guard names (rules.roles.guard.namedGood), by player. */
+  /** The good a customs officer names, by player. */
   readonly named?: Readonly<Record<string, GoodId>>;
-  /** Broker bets by player; `aim` is the owner of the ship the bet names (§9.4), none for a plain bet. */
-  readonly bets?: Readonly<Record<string, Bet & { readonly aim?: string }>>;
-  /** Intel rerolls: player → owner of the ship to reroll. */
-  readonly rerolls?: Readonly<Record<string, string>>;
   readonly voyageEvent?: VoyageEventId;
 }
 
@@ -123,43 +116,23 @@ export function playRound(state: MatchState, plan: RoundPlan = {}): Played {
   const owner = (shipId: string) => shipId.split('-')[1]!;
   current = {
     ...current,
-    voyageDeck: [plan.voyageEvent ?? 'calm-seas', ...current.voyageDeck],
-    roundState: { ...current.roundState, ships: current.roundState.ships.map((s) => ({ ...s, rawRoll: plan.rolls?.[owner(s.id)] ?? 6 })) },
+    roundState: { ...current.roundState, voyageEvent: plan.voyageEvent ?? 'calm-seas', ships: current.roundState.ships.map((s) => ({ ...s, rawRoll: plan.rolls?.[owner(s.id)] ?? 6 })) },
   };
   if (current.phase === 'role-deployment') {
     for (const p of current.players) {
       const role = plan.roles?.[p.id];
-      const bet = plan.bets?.[p.id];
       const guess = plan.diplomats?.[p.id];
-      if (guess !== undefined) {
-        step({ type: 'deploy-role', playerId: p.id, role: 'broker', targetShipId: shipOf(current, p.id), bet: null, peekShipId: null, guessRole: guess });
-        continue;
-      }
       step(
-        bet !== undefined
-          ? {
-              type: 'deploy-role',
-              playerId: p.id,
-              role: 'broker',
-              targetShipId: bet.aim === undefined ? null : shipOf(current, bet.aim),
-              bet: { good: bet.good, direction: bet.direction },
-              peekShipId: null,
-            }
+        guess !== undefined
+          ? { type: 'deploy-role', playerId: p.id, role: 'diplomat', targetShipId: shipOf(current, p.id), namedGood: null, guessRole: guess }
           : {
               type: 'deploy-role',
               playerId: p.id,
               role: role?.[0] ?? null,
               targetShipId: role === undefined ? null : shipOf(current, role[1]),
-              bet: plan.named?.[p.id] === undefined ? null : { good: plan.named[p.id]!, direction: 1 },
-              peekShipId: role?.[2] === undefined ? null : shipOf(current, role[2]),
+              namedGood: plan.named?.[p.id] ?? null,
             },
       );
-    }
-  }
-  if (current.phase === 'intel-reroll') {
-    for (const d of current.roundState.deployments.filter((x) => x.role === 'intel')) {
-      const target = plan.rerolls?.[d.playerId];
-      step({ type: 'intel-reroll', playerId: d.playerId, rerollShipId: target === undefined ? null : shipOf(current, target) });
     }
   }
   return { state: current, events, privateEvents };

@@ -179,13 +179,10 @@ function roleSection(s: SimStats): string[] {
       [...ROLE_IDS.map((r) => [ROLE_LABELS[r]!, s.roles[r] ?? 0, pct(s.roles[r] ?? 0, s.playerRounds)]), ['不部署', s.playerRounds - deployments(s), pct(s.playerRounds - deployments(s), s.playerRounds)]],
     ),
     '',
-    `- 護衛守別人的船：${pct(s.guardOthers, s.roles.guard ?? 0)}；護航費總額 ${s.escortFees} G。`,
-    `- 走私商人：掩護自己軍火 ${s.smugglerCovers} 次、上別人船走私 ${(s.roles.smuggler ?? 0) - s.smugglerCovers} 次（被抓 ${s.smugglersCaught} 人次，抽走 ${s.smuggled} G）；載軍火的船中有走私商人 ${pct(
-      s.coveredArmsShips,
-      s.armsShips,
-    )}；軍火被沒收 ${s.armsConfiscatedUnits} 單位、${s.armsConfiscatedCash} G。`,
+    `- 走私商人：上別人船走私 ${s.roles.smuggler ?? 0} 次（被抓 ${s.smugglersCaught} 人次，抽走 ${s.smuggled} G）。`,
+    `- 海關：部署 ${s.roles.customs ?? 0} 次；沒收 ${s.armsConfiscatedUnits} 單位、${s.armsConfiscatedCash} G。`,
     `- 海盜：目標沉沒率 ${pct(s.pirateSinks, s.roles.pirate ?? 0)}；每次平均淨收益 ${pirateNet(s).toFixed(0)} G。`,
-    `- 莊家：押注 ${s.roles.broker ?? 0} 次，押中 ${pct(s.betsWon, s.roles.broker ?? 0)}。情報商人重擲 ${s.intelRerolls} 艘（部署 ${s.roles.intel ?? 0} 次）。`,
+    `- 外交官：部署 ${s.roles.diplomat ?? 0} 次，向對手拿走 ${s.diplomatTake} G。`,
     `- 保險理賠 ${s.insurancePaid} G；打撈 ${s.salvaged} 單位；交易所佣金 ${s.commission} G。`,
   ];
 }

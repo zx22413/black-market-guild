@@ -10,7 +10,7 @@ describe('§4 information', () => {
     for (const p of state.players) {
       state = apply(state, { type: 'invest', playerId: p.id, build: null, load: p.id === 'p1' ? G(1) : G(0) }).state;
     }
-    state = apply(state, { type: 'deploy-role', playerId: 'p2', role: 'pirate', targetShipId: 'r1-p1', bet: null, peekShipId: null }).state;
+    state = apply(state, { type: 'deploy-role', playerId: 'p2', role: 'pirate', targetShipId: 'r1-p1', namedGood: null }).state;
     const view = getPlayerView(state, 'p1');
     expect(view.submittedPlayerIds).toEqual(['p2']);
     expect(view.mySubmission).toBeNull();
@@ -18,10 +18,14 @@ describe('§4 information', () => {
     expect(view.revealedRoles).toEqual([]);
     expect(view.pendingDecision).toBe('role-deployment');
     // Cooldowns only start at the reveal, so locked roles do not leak through lastUsed.
-    state = apply(state, { type: 'deploy-role', playerId: 'p1', role: null, targetShipId: null, bet: null, peekShipId: null }).state;
-    state = apply(state, { type: 'deploy-role', playerId: 'p3', role: 'intel', targetShipId: 'r1-p1', bet: null, peekShipId: null }).state;
-    expect(state.phase).toBe('intel-reroll');
+    state = apply(state, { type: 'deploy-role', playerId: 'p1', role: null, targetShipId: null, namedGood: null }).state;
     expect(getPlayerView(state, 'p1').players.find((p) => p.id === 'p2')?.lastUsed).toEqual({});
+  });
+
+  it('shows the voyage event from the start of the round, before anyone invests (§5)', () => {
+    const state = ready();
+    expect(state.phase).toBe('invest');
+    expect(getPlayerView(state, 'p1').voyageEvent).not.toBeNull();
   });
 
   it('reveals every role, cargo and outcome after the round', () => {

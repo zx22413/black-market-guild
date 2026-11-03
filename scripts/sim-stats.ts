@@ -26,23 +26,19 @@ export interface SimStats {
   unsoldUnits: number;
   unsoldByGood: Record<string, number>;
   roles: Record<string, number>;
-  guardOthers: number;
-  smugglerCovers: number;
   armsShips: number;
   coveredArmsShips: number;
   pirateIncome: number;
   pirateFees: number;
   pirateSinks: number;
-  escortFees: number;
   insurancePaid: number;
   salvaged: number;
   smuggled: number;
   smugglersCaught: number;
   commission: number;
-  betsWon: number;
+  diplomatTake: number;
   armsConfiscatedUnits: number;
   armsConfiscatedCash: number;
-  intelRerolls: number;
 }
 
 const units = (goods: Goods) => GOODS.reduce((sum, g) => sum + goods[g], 0);
@@ -66,23 +62,19 @@ export function emptyStats(steps: number): SimStats {
     unsoldUnits: 0,
     unsoldByGood: Object.fromEntries(GOODS.map((g) => [g, 0])),
     roles: Object.fromEntries(ROLE_IDS.map((r) => [r, 0])),
-    guardOthers: 0,
-    smugglerCovers: 0,
     armsShips: 0,
     coveredArmsShips: 0,
     pirateIncome: 0,
     pirateFees: 0,
     pirateSinks: 0,
-    escortFees: 0,
     insurancePaid: 0,
     salvaged: 0,
     smuggled: 0,
     smugglersCaught: 0,
     commission: 0,
-    betsWon: 0,
+    diplomatTake: 0,
     armsConfiscatedUnits: 0,
     armsConfiscatedCash: 0,
-    intelRerolls: 0,
   };
 }
 
@@ -136,12 +128,8 @@ export function addMatch(stats: SimStats, log: MatchLog, strategyOf: (playerId: 
         }
         break;
       case 'roles-revealed':
-        stats.intelRerolls += event.rerolledShipIds.length;
         for (const d of event.deployments) {
           stats.roles[d.role] = (stats.roles[d.role] ?? 0) + 1;
-          const own = d.targetShipId !== null && owners.get(d.targetShipId) === d.playerId;
-          stats.guardOthers += d.role === 'guard' && !own ? 1 : 0;
-          stats.smugglerCovers += d.role === 'smuggler' && own ? 1 : 0;
           if (d.role === 'smuggler' && d.targetShipId !== null) {
             smuggled.add(d.targetShipId);
           }
@@ -156,7 +144,7 @@ export function addMatch(stats: SimStats, log: MatchLog, strategyOf: (playerId: 
           stats.demandVsArrived[arrived < demand ? 'under' : arrived > demand ? 'over' : 'exact'] += 1;
         }
         break;
-      case 'arms-confiscated':
+      case 'goods-confiscated':
         stats.armsConfiscatedUnits += event.units;
         break;
       case 'smuggling-settled':
@@ -178,11 +166,9 @@ export function addMatch(stats: SimStats, log: MatchLog, strategyOf: (playerId: 
 function addCash(stats: SimStats, reason: string, amount: number): void {
   if (reason === 'pirate-loot' || reason === 'smuggling-seized') {
     stats.pirateIncome += amount;
-  } else if (reason === 'escort-fee') {
-    stats.escortFees += amount;
-  } else if (reason === 'broker-bet') {
-    stats.betsWon += 1;
-  } else if (reason === 'arms-confiscated') {
+  } else if (reason === 'diplomat-take') {
+    stats.diplomatTake += amount > 0 ? amount : 0;
+  } else if (reason === 'goods-confiscated') {
     stats.armsConfiscatedCash += amount;
   } else if (reason === 'insurance') {
     stats.insurancePaid += amount;

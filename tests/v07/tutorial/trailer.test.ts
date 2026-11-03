@@ -32,7 +32,7 @@ describe('the trailer script', () => {
   });
 
   it('sinks 凡德商行 to the storm alone in round 2', () => {
-    expect(modifier(2, 'p2')).toMatchObject({ base: 3, guard: 0, pirate: 0, event: -1, final: 2 });
+    expect(modifier(2, 'p2')).toMatchObject({ base: 2, guard: 0, pirate: 0, event: -1, final: 1 });
     expect(outcome(2, 'p2')).toBe('sank');
   });
 });

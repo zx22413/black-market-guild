@@ -1,7 +1,6 @@
 import {
   GOODS,
   buildingCost,
-  capacityFor,
   createRng,
   roleFee,
   shipCostFor,
@@ -12,7 +11,6 @@ import {
 import { choose } from './choose';
 import {
   SMUGGLER_GUARDED_CHANCE,
-  ARMS_SEIZURE_RISK,
   DIPLOMAT_HIT,
   OTHERS_LOAD_SHARE,
   arriveChance,
@@ -24,11 +22,9 @@ import {
   expectedPrice,
   expectedSeizure,
   me,
-  othersExpectedArrivals,
-  ownArmsValue,
+  guessedCargoValue,
   perUnitCost,
   seizureRisk,
-  shiftValue,
   stakeOn,
 } from './estimates';
 import { islandWorth } from './islands';
@@ -37,7 +33,6 @@ import type { Bot } from './types';
 
 type Invest = Extract<Action, { type: 'invest' }>;
 type Deploy = Extract<Action, { type: 'deploy-role' }>;
-type Reroll = Extract<Action, { type: 'intel-reroll' }>;
 
 function scoreInvest(view: PlayerView, action: Invest, persona: Personality): number {
   const { rules } = view;
@@ -71,52 +66,7 @@ function scoreInvest(view: PlayerView, action: Invest, persona: Personality): nu
 }
 
 /**
- * Broker bet: the payout times a rough chance the price moves the bet's way (arrivals guessed
- * against the shifted demand), plus the shift's effect on my landed units and on rivals.
- */
-function scoreBet(view: PlayerView, action: Deploy): number {
-  const { rules } = view;
-  const bet = action.bet;
-  if (bet === null) {
-    return 0;
-  }
-  const p = arriveChance(rules, 0);
-  const mine = view.ships.reduce((sum, s) => sum + (s.owner === view.playerId ? (s.cargo?.[bet.good] ?? 0) : 0), 0);
-  const shift = bet.direction * rules.roles.broker.shift;
-  const gap = view.demand[bet.good] + shift - (othersExpectedArrivals(view, bet.good) + mine * p);
-  const step = view.prices[bet.good];
-  const room = bet.direction > 0 ? step < rules.price.steps - 1 : step > 0;
-  const chance = room ? Math.min(0.95, Math.max(0.05, 0.45 + 0.25 * gap * bet.direction)) : 0;
-  return (
-    rules.roles.broker.payout * chance + shiftValue(view, bet.good, shift, mine) + aimValue(view, action, chance) - roleFee(rules, me(view).island, 'broker')
-  );
-}
-
-/**
- * Experiment (targetSteps): a right bet aimed at an opponent's ship is worth the price difference on
- * the units of that good the ship is guessed to carry (their public stock, half loaded): a bear bet
- * pays me the difference, a bull bet hands it to them. Richer rivals are preferred.
- */
-function aimValue(view: PlayerView, action: Deploy, chance: number): number {
-  const { rules } = view;
-  const bet = action.bet;
-  const ship = view.ships.find((s) => s.id === action.targetShipId);
-  const owner = view.players.find((p) => p.id === ship?.owner);
-  if (bet === null || ship === undefined || owner === undefined || rules.roles.broker.targetSteps === 0) {
-    return 0;
-  }
-  const own = owner.id === view.playerId;
-  const units = own ? (ship.cargo?.[bet.good] ?? 0) : Math.min(owner.stock[bet.good], capacityFor(rules, owner.buildings, owner.island)) * OTHERS_LOAD_SHARE;
-  const worth = chance * arriveChance(rules, 0) * units * rules.roles.broker.targetSteps * rules.price.tracks[bet.good].step;
-  if (own) {
-    return bet.direction > 0 ? worth : 0;
-  }
-  const lead = Math.min(0.5, Math.max(-0.3, (owner.cash - me(view).cash) / 400));
-  return bet.direction < 0 ? worth * (1 + lead) : -worth * 0.5;
-}
-
-/**
- * Experiment (splitCustoms): the 'broker' id is a diplomat guessing which role an opponent aims at its own ship. A right
+ * The diplomat guesses which role an opponent aims at its own ship. A right
  * guess saves part of what that role would take and wins `take` G; a wrong one gets part of the fee back.
  */
 function scoreDiplomat(view: PlayerView, action: Deploy): number {
@@ -126,20 +76,17 @@ function scoreDiplomat(view: PlayerView, action: Deploy): number {
   if (ship === undefined || guess === undefined || guess === null) {
     return 0;
   }
-  const fee = roleFee(rules, me(view).island, 'broker');
+  const fee = roleFee(rules, me(view).island, 'diplomat');
   const hit = DIPLOMAT_HIT[guess] ?? 0;
   const stake = stakeOn(view, ship);
-  const saved = guess === 'pirate' ? stake * 0.3 : guess === 'smuggler' ? rules.roles.smuggler.goodsValue * 0.7 : guess === 'intel' ? stake * 0.25 : 0;
+  const saved = guess === 'pirate' ? stake * 0.3 : guess === 'smuggler' ? rules.roles.smuggler.goodsValue * 0.7 : guess === 'customs' ? stake * 0.25 : 0;
   const { take, refundPercent } = rules.roles.diplomat;
   return -fee + (1 - hit) * fee * (refundPercent / 100) + hit * (saved + take);
 }
 
 function scoreDeploy(view: PlayerView, action: Deploy, persona: Personality): number {
-  if (action.role === 'broker' && view.rules.roles.splitCustoms === 1) {
+  if (action.role === 'diplomat') {
     return scoreDiplomat(view, action);
-  }
-  if (action.role === 'broker') {
-    return scoreBet(view, action);
   }
   const ship = view.ships.find((s) => s.id === action.targetShipId);
   if (action.role === null || ship === undefined) {
@@ -153,53 +100,27 @@ function scoreDeploy(view: PlayerView, action: Deploy, persona: Personality): nu
   const fee = roleFee(rules, player.island, action.role);
   switch (action.role) {
     case 'guard': {
-      const boost =
-        rules.roles.guard.modifier + trait.guardModifier;
-      const guarded = arriveChance(rules, boost);
-      // Experiment (namedGood): the guard names the good its action carries; otherwise it is arms.
-      const named = rules.roles.guard.namedGood === 1 ? (action.bet?.good ?? 'arms') : 'arms';
-      const seizure = expectedSeizure(view, ship, named);
-      // §9.4: confiscating arms forfeits the escort fee, which is only paid for others' ships.
-      const forfeit = seizure === 0 ? 0 : Math.min(1, seizure / currentPrice(view, named));
-      const escort = ship.owner !== view.playerId ? rules.roles.guard.escortFee * guarded * (1 - forfeit) : 0;
-      return (guarded - base) * stake + escort + seizure * guarded - fee;
+      const guarded = arriveChance(rules, rules.roles.guard.modifier + trait.guardModifier);
+      return (guarded - base) * stake - fee;
     }
     case 'pirate': {
-      const attacked = arriveChance(rules, rules.roles.pirate.modifier + trait.pirateModifier);
-      const loot = expectedLoot(rules, rules.roles.pirate.modifier + trait.pirateModifier, carriesWanted(view, ship) ? rules.wanted.lootBonus : 0);
+      const modifier = rules.roles.pirate.modifier + trait.pirateModifier;
+      const attacked = arriveChance(rules, modifier);
+      const loot = expectedLoot(rules, modifier, guessedCargoValue(view, ship), carriesWanted(view, ship) ? rules.wanted.lootBonus : 0);
       const salvage = player.buildings.includes('salvage') && stake === 0 ? (base - attacked) * averagePrice(view) * base : 0;
       return loot * persona.aggression + salvage - (base - attacked) * stake - fee;
     }
     case 'smuggler': {
       if (ship.owner === view.playerId) {
-        // Covering my own arms (§9.5): worth it only if another guard would board; Smuggler Port cannot be covered.
-        return trait.armsUncoverable === 1 ? -fee : ownArmsValue(view, ship) * ARMS_SEIZURE_RISK * base - fee;
+        // §9.5: covering my own ship; worth it for the share of its cargo customs might name (the smuggler port cannot cover arms).
+        return stake * 0.15 * base * (trait.armsUncoverable === 1 ? 0.5 : 1) - fee;
       }
       const { goodsValue, fine } = rules.roles.smuggler;
       return base * ((1 - SMUGGLER_GUARDED_CHANCE) * goodsValue - SMUGGLER_GUARDED_CHANCE * fine) - fee;
     }
-    case 'intel': {
-      if (rules.roles.splitCustoms === 1) {
-        // Experiment (splitCustoms): 'intel' stands in for customs, which names a good and takes it if the ship arrives.
-        return expectedSeizure(view, ship, action.bet?.good ?? 'arms') * base - fee;
-      }
-      const peek = view.ships.find((s) => s.id === action.peekShipId);
-      return (stake + (peek === undefined ? 0 : stakeOn(view, peek))) * (1 - base) * base * 0.5 - fee;
-    }
+    case 'customs':
+      return expectedSeizure(view, ship, action.namedGood ?? 'arms') * base - fee;
   }
-}
-
-/** Reroll the first looked-at ship carrying my cargo whose roll would sink it, else none (§9.4). */
-function wantedReroll(view: PlayerView): string | null {
-  const want = view.intel.find(({ shipId, rawRoll, rerolledRoll }) => {
-    const ship = view.ships.find((s) => s.id === shipId);
-    return ship !== undefined && stakeOn(view, ship) > 0 && (rerolledRoll ?? rawRoll) < view.rules.sailing.successMin;
-  });
-  return want?.shipId ?? null;
-}
-
-function scoreReroll(view: PlayerView, action: Reroll): number {
-  return action.rerollShipId === wantedReroll(view) ? 1 : 0;
 }
 
 export function scoreAction(view: PlayerView, action: Action, persona: Personality): number {
@@ -210,8 +131,6 @@ export function scoreAction(view: PlayerView, action: Action, persona: Personali
       return scoreInvest(view, action, persona);
     case 'deploy-role':
       return scoreDeploy(view, action, persona);
-    case 'intel-reroll':
-      return scoreReroll(view, action);
   }
 }
 
@@ -225,9 +144,7 @@ export function createHeuristicBot(personality: PersonalityName | Personality, s
         throw new Error(`${view.playerId} has no legal action in ${view.phase}`);
       }
       const scores = legalActions.map((a) => scoreAction(view, a, persona));
-      // The reroll is a plain rule of thumb, not an estimate in G: always follow it.
-      const temperature = view.phase === 'intel-reroll' ? 0 : persona.temperature;
-      return choose(legalActions, scores, temperature, rng);
+      return choose(legalActions, scores, persona.temperature, rng);
     },
   };
 }

@@ -1,4 +1,4 @@
-import { ISLAND_IDS, createRngFromState, type MatchState, type PrivateEvent, type RngState, type Transition } from '../game';
+import { ISLAND_IDS, type MatchState, type PrivateEvent, type Transition } from '../game';
 import type { RoundScript, TutorialScript } from './types';
 
 // Fixes the tutorial's hidden draws (docs/tutorial-outline.md §9.1): only what no seat has seen
@@ -35,27 +35,11 @@ function stageOpening(script: TutorialScript, t: Transition): Transition {
   };
 }
 
-/** The rng state whose next die is `value` (the reroll is drawn inside the transition that shows it). */
-export function rngForDie(value: number, min: number, max: number): RngState {
-  for (let s = 0; s < 10_000; s += 1) {
-    if (createRngFromState(s).int(min, max) === value) return s;
-  }
-  throw new Error(`no rng state rolls ${value}`);
-}
-
 function stageRound(round: RoundScript, state: MatchState): MatchState {
-  const owner = (shipId: string) => state.roundState.ships.find((s) => s.id === shipId)?.owner ?? '';
   if (state.phase === 'role-deployment') {
     // The dice were rolled when the investments came in; no one has seen them yet (§4).
     const ships = state.roundState.ships.map((s) => ({ ...s, rawRoll: round.rolls?.[s.owner] ?? 6 }));
     return { ...state, roundState: { ...state.roundState, ships } };
-  }
-  if (state.phase === 'intel-reroll' && round.rerolls) {
-    const rerolled = state.roundState.deployments.find((d) => d.role === 'intel' && d.targetShipId !== null && round.rerolls?.[owner(d.targetShipId)] !== undefined);
-    const value = rerolled?.targetShipId ? round.rerolls[owner(rerolled.targetShipId)] : undefined;
-    if (value !== undefined) {
-      return { ...state, rng: rngForDie(value, state.rules.sailing.dieMin, state.rules.sailing.dieMax) };
-    }
   }
   return state;
 }

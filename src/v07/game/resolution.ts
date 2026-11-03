@@ -2,7 +2,7 @@ import { holds, playerOf } from './cash';
 import { traitOf } from './islands';
 import type { Deployment, MatchState, Ship, Step, VoyageModifier, VoyageOutcome } from './types';
 
-/** §5 step 5: draws and reveals the voyage event once rerolls are decided. */
+/** §5 step 1: draws and reveals the voyage event as the round opens. */
 export function revealVoyageEvent(state: MatchState): Step {
   const [card, ...rest] = state.voyageDeck;
   if (card === undefined) {
@@ -37,11 +37,11 @@ function eventModifier(state: MatchState, ship: Ship): number {
   }
 }
 
-/** §9.1: roll → reroll → guards → pirates → voyage event → island → clamp. */
+/** §9.1: roll → guards → pirates → voyage event → island → clamp. */
 export function voyageModifier(state: MatchState, ship: Ship): VoyageModifier {
   const { rules } = state;
   const trait = (playerId: string) => traitOf(rules, playerOf(state, playerId).island);
-  const base = ship.rerolledRoll ?? ship.rawRoll;
+  const base = ship.rawRoll;
   const guard = targeting(state, ship, 'guard').reduce(
     (sum, d) =>
       sum + rules.roles.guard.modifier + trait(d.playerId).guardModifier,

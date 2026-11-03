@@ -12,9 +12,9 @@ const ROLE_USE_SHARE = 0.5;
 /** Chance a good's price rises in a given round. */
 const RISE_CHANCE = 0.4;
 /** Share of spice that would have spoiled but can be shipped later instead. */
+const COVER_SHARE = 0.1;
 const KEPT_SPICE_SHARE = 0.3;
 /** Share of produced arms a bot would have covered with its own smuggler. */
-const COVER_SHARE = 0.1;
 
 /** Expected net value of one more unit of a good: its sale minus its share of the ship cost. */
 function unitValue(rules: Rules, price: number, good: GoodId, persona: Personality): number {
@@ -69,12 +69,11 @@ function roleUseValue(view: PlayerView, island: IslandId | null, role: RoleId, c
     case 'pirate': {
       // §9.6: assume the target carries a wanted player's goods 1 time in N players.
       const bonus = rules.wanted.lootBonus / view.players.length;
-      return expectedLoot(rules, rules.roles.pirate.modifier + t.pirateModifier, bonus) * persona.aggression - fee;
+      return expectedLoot(rules, rules.roles.pirate.modifier + t.pirateModifier, cargo * 0.5, bonus) * persona.aggression - fee;
     }
-    case 'intel':
-      return (1 + t.intelPeeks) * cargo * (1 - p) * p * 0.5 - fee;
+    case 'customs':
     case 'smuggler':
-    case 'broker':
+    case 'diplomat':
       return -fee;
   }
 }
@@ -103,6 +102,7 @@ export function islandWorth(view: PlayerView, island: IslandId, persona: Persona
     0,
   );
   const spice = t.keepsSpice === 1 ? rules.rounds * perRound(rules, island, 'spice') * Math.max(0, price * p - perUnitCost(rules)) * KEPT_SPICE_SHARE : 0;
+
   const cover = t.armsUncoverable === 1 ? rules.rounds * perRound(rules, island, 'arms') * price * ARMS_SEIZURE_RISK * COVER_SHARE : 0;
 
   return productionWorth(rules, island, price, persona) + sailing + roles + spice - halfRiseCost(rules, island) - cover;

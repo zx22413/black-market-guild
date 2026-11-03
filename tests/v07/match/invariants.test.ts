@@ -17,9 +17,6 @@ function watchedBot(inner: Bot, violations: string[]): Bot {
       if (JSON.stringify(view.ships).includes('Roll')) {
         violations.push(`round ${view.round}: dice visible in public ships`);
       }
-      if (view.intel.length > 0 && view.myDeployment?.role !== 'intel') {
-        violations.push(`round ${view.round}: intel knowledge without an intel deployment`);
-      }
       if (view.ships.some((s) => s.owner !== view.playerId && s.outcome === null && s.cargo !== null)) {
         violations.push(`round ${view.round}: another player's cargo visible before resolution`);
       }

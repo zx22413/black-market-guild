@@ -38,13 +38,6 @@ export interface ViewShip {
   readonly cargo: Goods | null;
 }
 
-/** What this player's intel merchant knows about one ship it looked at. */
-export interface IntelKnowledge {
-  readonly shipId: ShipId;
-  readonly rawRoll: number;
-  readonly rerolledRoll: number | null;
-}
-
 /**
  * Everything one player is allowed to know (§4). UI and bots must render and decide from this
  * view only, never from MatchState.
@@ -71,7 +64,6 @@ export interface PlayerView {
   readonly myDeployment: Deployment | null;
   /** Roles I may deploy this round under the cooldown (§9.3), regardless of cash. */
   readonly myAvailableRoles: readonly RoleId[];
-  readonly intel: readonly IntelKnowledge[];
   readonly voyageDeckRemaining: number;
   /** Players who already submitted in the current phase; their choices stay hidden. */
   readonly submittedPlayerIds: readonly PlayerId[];
@@ -117,22 +109,10 @@ export function getPlayerView(state: MatchState, playerId: PlayerId): PlayerView
     revealedRoles: roundState.rolesRevealed ? ROLE_IDS.flatMap((role) => roundState.deployments.filter((d) => d.role === role)) : [],
     myDeployment: roundState.deployments.find((d) => d.playerId === playerId) ?? null,
     myAvailableRoles: state.round > 0 ? ROLE_IDS.filter((role) => roleAvailable(state, me, role)) : [],
-    intel: intelKnowledge(state, playerId),
     voyageDeckRemaining: state.voyageDeck.length,
     submittedPlayerIds: state.players.map((p) => p.id).filter((id) => submissions[id] !== undefined),
     mySubmission: submissions[playerId] ?? null,
     pendingDecision: getPendingDecisions(state).find((d) => d.playerId === playerId)?.phase ?? null,
     result: state.result,
   };
-}
-
-function intelKnowledge(state: MatchState, playerId: PlayerId): IntelKnowledge[] {
-  const d = state.rules.roles.splitCustoms === 1 ? undefined : state.roundState.deployments.find((x) => x.playerId === playerId && x.role === 'intel');
-  if (d === undefined) {
-    return [];
-  }
-  return [d.targetShipId, d.peekShipId].flatMap((shipId) => {
-    const ship = state.roundState.ships.find((s) => s.id === shipId);
-    return ship === undefined ? [] : [{ shipId: ship.id, rawRoll: ship.rawRoll, rerolledRoll: ship.rerolledRoll }];
-  });
 }

@@ -7,8 +7,8 @@ import { GOODS, capacityFor, priceAt, type BuildingId, type GoodId, type PlayerV
 export const OTHERS_LOAD_SHARE = 0.5;
 /** Assumed chance that another player's guard boards a ship carrying arms. */
 export const ARMS_SEIZURE_RISK = 0.5;
-/** Experiment (splitCustoms): assumed chance an opponent aims each role at my ship, for a diplomat's guess. */
-export const DIPLOMAT_HIT: Readonly<Partial<Record<string, number>>> = { pirate: 0.25, smuggler: 0.2, intel: 0.2, guard: 0 };
+/** Assumed chance an opponent aims each role at my ship, for a diplomat's guess (§9.4). */
+export const DIPLOMAT_HIT: Readonly<Partial<Record<string, number>>> = { pirate: 0.25, smuggler: 0.2, customs: 0.2, guard: 0 };
 /** Assumed chance a smuggler's chosen ship has a guard on board. */
 export const SMUGGLER_GUARDED_CHANCE = 0.25;
 
@@ -24,15 +24,19 @@ export function arriveChance(rules: Rules, modifier: number): number {
   return hits / (dieMax - dieMin + 1);
 }
 
-/** Expected pirate loot from a ship under a known total modifier: 0 when it arrives, else the loot of its final value (§9.4). */
-export function expectedLoot(rules: Rules, modifier: number, bonus = 0): number {
+/**
+ * Expected pirate take from a ship worth `cargoValue` under a known total modifier (§9.4): a share of the
+ * cargo's value at a sinking, or of its scaled sale income when it arrives with a low final value.
+ */
+export function expectedLoot(rules: Rules, modifier: number, cargoValue: number, bonus = 0): number {
   const { dieMin, dieMax, successMin } = rules.sailing;
   let total = 0;
   for (let face = dieMin; face <= dieMax; face += 1) {
     const final = Math.min(dieMax, Math.max(dieMin, face + modifier));
-    if (final < successMin) {
-      total += (rules.roles.pirate.loot[final] ?? 0) + bonus;
-    }
+    const pct = (rules.roles.pirate.lootPercentByFinal[final] ?? 0) / 100;
+    const income = final < successMin ? 1 : (rules.sailing.arrivalIncomePercent[final] ?? 100) / 100;
+    const take = cargoValue * income * pct;
+    total += take > 0 ? take + bonus : 0;
   }
   return total / (dieMax - dieMin + 1);
 }
@@ -50,7 +54,7 @@ export function averagePrice(view: PlayerView): number {
   return GOODS.reduce((sum, g) => sum + currentPrice(view, g), 0) / GOODS.length;
 }
 
-/** §9.5: only arms can be confiscated (bots do not anticipate a customs guard naming another good). */
+/** §9.4: bots only anticipate customs naming arms. */
 export function seizureRisk(good: GoodId): number {
   return good === 'arms' ? ARMS_SEIZURE_RISK : 0;
 }
@@ -132,12 +136,19 @@ export function stakeOn(view: PlayerView, ship: ViewShip): number {
   return cargo === null ? 0 : GOODS.reduce((sum, g) => sum + cargo[g] * currentPrice(view, g), 0);
 }
 
-/** Value of my own arms on a ship at current prices. */
-export function ownArmsValue(view: PlayerView, ship: ViewShip): number {
-  return (myCargo(view, ship)?.arms ?? 0) * currentPrice(view, 'arms');
+/** Value of the cargo on a ship at current prices: mine exactly, an opponent's guessed from their public warehouse. */
+export function guessedCargoValue(view: PlayerView, ship: ViewShip): number {
+  if (ship.owner === view.playerId) {
+    return stakeOn(view, ship);
+  }
+  const owner = view.players.find((p) => p.id === ship.owner);
+  if (owner === undefined) {
+    return 0;
+  }
+  return GOODS.reduce((sum, g) => sum + Math.min(owner.stock[g], capacityFor(view.rules, owner.buildings, owner.island)) * OTHERS_LOAD_SHARE * currentPrice(view, g), 0);
 }
 
-/** Value of another owner's `good` (arms unless a customs guard names another) my guard could confiscate, guessed from their public warehouse. */
+/** Value of another owner's `good`  customs could confiscate, guessed from their public warehouse. */
 export function expectedSeizure(view: PlayerView, ship: ViewShip, good: GoodId = 'arms'): number {
   const owner = view.players.find((p) => p.id === ship.owner);
   if (owner === undefined || owner.id === view.playerId) {
@@ -146,7 +157,7 @@ export function expectedSeizure(view: PlayerView, ship: ViewShip, good: GoodId =
   return owner.stock[good] * OTHERS_LOAD_SHARE * currentPrice(view, good) * seizureShare(view.rules);
 }
 
-/** Experiment (arrivalIncomePercent): the average arrival ratio over the finals that arrive; customs' take is scaled by it. */
+/** The average arrival ratio over the finals that arrive; customs' take is scaled by it. */
 export function seizureShare(rules: Rules): number {
   const { dieMax, successMin } = rules.sailing;
   const finals = Array.from({ length: dieMax - successMin + 1 }, (_, i) => successMin + i);

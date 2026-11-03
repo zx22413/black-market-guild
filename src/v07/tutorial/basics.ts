@@ -43,26 +43,26 @@ export const BASICS: TutorialScript = {
   seats: SEATS,
   rounds: [
     {
-      // Round 1: little crowding, your ship arrives (5) and you end the richest.
+      // Round 1: little crowding, your ship arrives (6) and you end the richest.
       demand: goods({ wood: 2, iron: 1, spice: 2, arms: 1 }),
       event: 'calm-seas',
-      rolls: { p1: 5 },
+      rolls: { p1: 6 },
       bots: { [BOT.vande]: { load: { iron: 1 } } },
       you: { invest: { demo: { load: { wood: 1, spice: 1 } }, choose: true, allow: loadWithin({ wood: 1, spice: 1 }) } },
     },
     {
-      // Round 2: two bots crowd wood past the demand; the storm turns your 3 into a 2.
+      // Round 2: two bots crowd wood past the demand; the storm turns your 2 into a 1.
       demand: goods({ wood: 1, iron: 2, spice: 1, arms: 1 }),
       event: 'storm',
-      rolls: { p1: 3 },
+      rolls: { p1: 2 },
       bots: { [BOT.vande]: { load: { wood: 2 } }, [BOT.tide]: { load: { wood: 1 } } },
       you: { invest: { demo: { load: { wood: 1, arms: 1 } }, choose: true, allow: loadWithin({ wood: 1, arms: 1 }) } },
     },
     {
-      // Round 3: you build the shipyard; a tailwind lifts your 2 to a 3.
+      // Round 3: you build the shipyard; a tailwind lifts your 1 to a 2.
       demand: goods({ wood: 1, iron: 1, spice: 2, arms: 2 }),
       event: 'tailwind',
-      rolls: { p1: 2 },
+      rolls: { p1: 1 },
       bots: { [BOT.anchor]: { load: { arms: 2 } } },
       you: {
         invest: {
@@ -108,7 +108,7 @@ export const BASICS: TutorialScript = {
       diagram: { kind: 'die', successMin, dieMax },
     },
     step(resolving(1), '航海事件', [F.event], [
-      '每回合還會翻開一張航海事件，在大家決定之後才公開，影響所有船的最終值。',
+      '每回合開始時還會翻開一張航海事件，投資和部署角色之前就公開，影響所有船的最終值。',
       '這回合是「風平浪靜」，沒有效果。',
     ]),
     step(resolving(1), '看結算', [F.log, F.rank], [
@@ -116,30 +116,30 @@ export const BASICS: TutorialScript = {
       '頂部的日誌鈕可以回看每一筆收支；右上角的排行是目前的總財富。',
     ]),
     step(market(1), '價格怎麼動', [F.marketCard], [
-      '你的船擲出 5，平安抵達。木材和香料到港的量都比需求少，所以漲價（香料一次漲兩格）；鐵礦到港量剛好等於需求，價格不變。',
+      '你的船擲出 6，平安抵達，拿到全部貨值（最終值越低，拿到的比例越少：2 只拿 30%）。木材和香料到港的量都比需求少，所以漲價（香料一次漲兩格）；鐵礦到港量剛好等於需求，價格不變。',
       '抵達的貨都用變動後的新價格賣出。',
     ]),
 
     // ── Round 2: wanted, goods, a storm ──
     step(invest(2), '通緝令', [F.plate('p1'), F.market], [
       '每回合開始時，現金最多的玩家被通緝。你上回合賺最多，所以這回合你被通緝了。',
-      `載著通緝者貨物的船被海盜擊沉時，海盜多拿 ${R.wanted.lootBonus} G 戰利品。海盜在角色單課裡介紹。`,
+      `海盜攔下通緝者的船時，多拿 ${R.wanted.lootBonus} G（銀行付）。海盜在角色單課裡介紹。`,
     ]),
     step(
       invest(2),
       '四種貨',
       [F.restock('wood'), F.restock('iron'), F.restock('spice'), F.restock('arms')],
-      ['木材、鐵礦可以蓋建築，也可以賣；香料和軍火只能賣。', '香料放不住：回合結束時還在倉庫裡就壞掉，而且只在第 1、3、5 回合生產。軍火賣得最貴，但可能被別人的護衛沒收。',
+      ['木材、鐵礦可以蓋建築，也可以賣；香料和軍火只能賣。', '香料放不住：回合結束時還在倉庫裡就壞掉，而且只在第 1、3、5 回合生產。軍火賣得最貴，海關可能指名沒收它。',
         '每疊貨箱上的小時鐘，數字是「還有幾回合這座島會再生產」：1 是下回合就補，2 是兩回合後；滑過去（手機點一下）會說是第幾回合。'],
       '再裝木材、軍火出航一次。',
       [F.crate('wood'), F.crate('arms')],
     ),
     step(resolving(2), '暴風雨', [F.event], [
-      `這回合翻到暴風雨：所有船 ${R.voyageEvents.storm}。航海事件在大家決定之後才公開，誰都來不及調整。`,
+      `這回合翻到暴風雨：所有船 ${R.voyageEvents.storm}。航海事件在回合開始就公開，投資前就能依它調整裝多少、裝什麼。`,
       '看看你的船撐不撐得住。',
     ]),
     step(voyage(2), '沉船', [F.beat], [
-      `你的船原始骰值是 3，本來能抵達，暴風雨 ${R.voyageEvents.storm} 後變 2，沉了。沉沒的船貨全沒了，出航成本也不退。`,
+      `你的船原始骰值是 2，本來能抵達，暴風雨 ${R.voyageEvents.storm} 後變 1，沉了：只有最終值 1 會沉船。沉沒的船貨全沒了，出航成本也不退。`,
     ]),
     step(market(2), '大家都運木材', [F.marketCard], [
       `${vande}和${tide}都運了木材，到港量超過需求，木材跌價。`,
@@ -161,7 +161,7 @@ export const BASICS: TutorialScript = {
     ),
     step(resolving(3), '順風', [F.event], [`這回合是順風：所有船 +${R.voyageEvents.tailwind}。`]),
     step(voyage(3), '順風救了你', [F.beat], [
-      `有出航的話，你的船原始骰值只有 2，靠順風 +${R.voyageEvents.tailwind} 變成 3 才抵達。`,
+      `有出航的話，你的船原始骰值只有 1，靠順風 +${R.voyageEvents.tailwind} 變成 2 才抵達。`,
     ]),
     step({ kind: 'end' }, '總財富', [F.rank], [
       `對局結束時比總財富：現金＋持有建築現金成本的 ${R.buildings.valueRatio * 100}%。倉庫裡剩下的材料不計分。`,

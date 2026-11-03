@@ -1,23 +1,23 @@
 import type { DecisionContext } from '../bots';
-import type { Action, Bet, BuildingId, DecisionPhase, GoodId, Goods, IslandId, PlayerId, RoleId, Rules, VoyageEventId } from '../game';
+import type { Action, BuildingId, DecisionPhase, GoodId, Goods, IslandId, PlayerId, RoleId, Rules, VoyageEventId } from '../game';
 
 // The beginner tutorial (docs/tutorial-outline.md): a scripted match whose hidden draws are fixed
 // and whose bots follow a plan, so every lesson plays out as written. A script never sets anything
 // public (cash, stock, prices): those still come from real actions through the engine.
 
 /** `trailer` is not a lesson: the promo video's scripted match (src/ui-v07/dev/trailer), never in TUTORIALS. */
-export type TutorialId = 'basics' | 'guard' | 'pirate' | 'intel' | 'smuggler' | 'arms-cover' | 'broker' | 'islands' | 'trailer';
+export type TutorialId = 'basics' | 'guard' | 'pirate' | 'customs' | 'smuggler' | 'diplomat' | 'islands' | 'trailer';
 
 /** One seat's choices for one round; anything left out means: stay in port, deploy nothing. */
 export interface SeatPlan {
   readonly build?: BuildingId;
   readonly load?: Partial<Goods>;
   /** A role and the owner of the ship it targets. */
-  readonly role?: readonly [Exclude<RoleId, 'broker'>, PlayerId];
-  /** The broker instead: a bet, and the owner of the ship it names (none for a plain bet). */
-  readonly bet?: Bet & { readonly aim?: PlayerId };
-  /** Intel only: reroll the ship of this owner. */
-  readonly reroll?: PlayerId;
+  readonly role?: readonly [RoleId, PlayerId];
+  /** Customs only: the good it names. */
+  readonly named?: GoodId;
+  /** Diplomat only: the role it guesses is aimed at its ship. */
+  readonly guess?: RoleId;
 }
 
 /** What the person at the tutorial does in one decision phase. */
@@ -38,8 +38,6 @@ export interface RoundScript {
   readonly event: VoyageEventId;
   /** Raw 1d6 per ship owner; owners left out roll 6. */
   readonly rolls?: Readonly<Record<PlayerId, number>>;
-  /** The new roll of a ship an intel merchant rerolls, by ship owner. */
-  readonly rerolls?: Readonly<Record<PlayerId, number>>;
   /** Bot seats' choices by player id. */
   readonly bots?: Readonly<Record<PlayerId, SeatPlan>>;
   /** Your decisions; phases left out are played for you with an empty plan. */
@@ -86,15 +84,12 @@ export type FocusTarget =
   | { readonly kind: 'bar' }
   /** The role cards. */
   | { readonly kind: 'hand' }
-  | { readonly kind: 'reroll' }
   /** The decision's submit button, lit once your choice is complete. */
   | { readonly kind: 'submit' }
   /** A role card in the hand ('none' is 「不部署」). */
   | { readonly kind: 'role'; readonly role: RoleId | 'none' }
   /** The 「＋」 over a player's ship, to send the picked role there. */
   | { readonly kind: 'target'; readonly player: PlayerId }
-  /** A broker's 漲／跌 button on the market strip. */
-  | { readonly kind: 'bet'; readonly good: GoodId; readonly direction: 1 | -1 }
   /** A warehouse stack, until `count` of its crates are on the ship. */
   | { readonly kind: 'crate'; readonly good: GoodId; readonly count: number }
   /** The clock over a warehouse stack: how many rounds until the island next makes that good. */

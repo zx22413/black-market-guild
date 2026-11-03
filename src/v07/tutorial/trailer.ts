@@ -9,7 +9,7 @@ import type { TutorialScript } from './types';
 // Round 1: everyone ships wood and spice past the demand, and both prices fall.
 // Round 2, in a storm: every role at the table lands on your ship. Your 4 takes your own guard
 // (+1), a pirate (−1) and the storm (−1) and arrives on a 3, catching the smuggler aboard; 凡德商行's
-// 3 is struck by lightning down to a 2 and sinks.
+// 2 is struck by lightning down to a 1 and sinks.
 
 export const TRAILER: TutorialScript = {
   id: 'trailer',
@@ -33,9 +33,9 @@ export const TRAILER: TutorialScript = {
     {
       demand: goods({ wood: 1, iron: 1, spice: 2, arms: 2 }),
       event: 'storm',
-      rolls: { p1: 4, [BOT.vande]: 3, [BOT.tide]: 6, [BOT.anchor]: 5 },
+      rolls: { p1: 4, [BOT.vande]: 2, [BOT.tide]: 6, [BOT.anchor]: 5 },
       bots: {
-        [BOT.vande]: { load: { iron: 2 }, role: ['intel', 'p1'] },
+        [BOT.vande]: { load: { iron: 2 }, role: ['customs', 'p1'], named: 'iron' },
         [BOT.tide]: { load: { spice: 2 }, role: ['pirate', 'p1'] },
         [BOT.anchor]: { load: { arms: 2 }, role: ['smuggler', 'p1'] },
       },

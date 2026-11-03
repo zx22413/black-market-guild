@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyAction, getLegalActions, getPlayerView, type MatchState } from '../../../src/v07/game';
-import { G, apply, cash, edit, find, plain, playRound, withDemand, withPrices, withWanted } from './helpers';
+import { G, apply, cash, edit, find, plain, playRound, withDemand, withWanted } from './helpers';
 
 const ready = (players = 3) => withDemand(plain(players).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(players)), G(2, 2, 2, 1));
 
@@ -8,35 +8,40 @@ function modifiers(events: ReturnType<typeof playRound>['events'], owner: string
   return find(events, 'voyage-modifiers')[0]!.modifiers.find((m) => m.shipId.endsWith(`-${owner}`))!;
 }
 
-/** Everyone invests; p1 and p2 sail one wood each, so the role phase opens. */
-function rolePhase(state: MatchState): MatchState {
+/** Everyone invests; every player in `sailing` sends one wood, so the role phase opens. */
+function rolePhase(state: MatchState, sailing: readonly string[] = ['p1', 'p2']): MatchState {
   let current = state;
   for (const p of current.players) {
-    current = apply(current, { type: 'invest', playerId: p.id, build: null, load: p.id === 'p3' ? G(0) : G(1) }).state;
+    current = apply(current, { type: 'invest', playerId: p.id, build: null, load: sailing.includes(p.id) ? G(1) : G(0) }).state;
   }
   return current;
 }
 
 describe('§9.1 voyage modifiers', () => {
-  it('adds guards, pirates, the voyage event and the lighthouse, then clamps', () => {
+  it('adds guard, pirate, the voyage event and the lighthouse, then clamps', () => {
     let state = ready(4);
     state = edit(state, 'p4', { island: 'lighthouse' });
     const { events } = playRound(state, {
       loads: { p1: G(1), p4: G(1) },
-      rolls: { p1: 2, p4: 2 },
-      roles: { p2: ['guard', 'p1'], p3: ['pirate', 'p1'] },
+      rolls: { p1: 2, p4: 1 },
+      roles: { p1: ['guard', 'p1'], p3: ['pirate', 'p1'] },
       voyageEvent: 'storm',
     });
     expect(modifiers(events, 'p1')).toMatchObject({ base: 2, guard: 1, pirate: -1, event: -1, island: 0, final: 1 });
-    expect(modifiers(events, 'p4')).toMatchObject({ base: 2, event: -1, island: 1, final: 2 });
+    expect(modifiers(events, 'p4')).toMatchObject({ base: 1, event: -1, island: 1, final: 1 });
     expect(find(events, 'ship-resolved').map((e) => e.outcome)).toEqual(['sank', 'sank']);
+  });
+
+  it('sinks only a final value of 1: a 2 arrives (§9.1)', () => {
+    const { events } = playRound(ready(3), { loads: { p1: G(1), p2: G(1) }, rolls: { p1: 2, p2: 1 } });
+    expect(find(events, 'ship-resolved').map((e) => e.outcome)).toEqual(['arrived', 'sank']);
   });
 
   it('applies fortress guards +2 and pirate cove pirates -2 (§11.2)', () => {
     let state = edit(ready(3), 'p2', { island: 'fortress' });
     state = edit(state, 'p3', { island: 'pirate-cove' });
-    const { events } = playRound(state, { loads: { p1: G(1) }, rolls: { p1: 4 }, roles: { p2: ['guard', 'p1'], p3: ['pirate', 'p1'] } });
-    expect(modifiers(events, 'p1')).toMatchObject({ guard: 2, pirate: -2, final: 4 });
+    const { events } = playRound(state, { loads: { p2: G(1) }, rolls: { p2: 4 }, roles: { p2: ['guard', 'p2'], p3: ['pirate', 'p2'] } });
+    expect(modifiers(events, 'p2')).toMatchObject({ guard: 2, pirate: -2, final: 4 });
   });
 
   it.each([
@@ -47,8 +52,21 @@ describe('§9.1 voyage modifiers', () => {
     ['black-market-rush', 0],
     ['calm-seas', 0],
   ] as const)('%s changes a guarded, pirated ship by %i (§12)', (voyageEvent, expected) => {
-    const { events } = playRound(ready(3), { loads: { p1: G(1) }, rolls: { p1: 3 }, roles: { p2: ['pirate', 'p1'], p3: ['guard', 'p1'] }, voyageEvent });
+    const { events } = playRound(ready(3), { loads: { p1: G(1) }, rolls: { p1: 3 }, roles: { p2: ['pirate', 'p1'], p1: ['guard', 'p1'] }, voyageEvent });
     expect(modifiers(events, 'p1').event).toBe(expected);
+  });
+});
+
+describe('§9.1 the ship dice table', () => {
+  it.each([
+    [2, 75],
+    [3, 112],
+    [4, 150],
+    [5, 187],
+    [6, 250],
+  ])('a ship with a final value of %i earns %i G from 2 wood worth 250 G', (roll, sale) => {
+    const { events } = playRound(ready(3), { loads: { p1: G(2) }, rolls: { p1: roll } });
+    expect(cash(events, 'sale', 'p1')).toBe(sale);
   });
 });
 
@@ -58,176 +76,104 @@ describe('§9.2 fees and §9.3 cooldowns', () => {
     state = edit(state, 'p3', { island: 'lighthouse' });
     state = edit(state, 'p4', { island: 'fortress' });
     const { events } = playRound(state, {
-      loads: { p1: G(1) },
-      roles: { p1: ['pirate', 'p1'], p2: ['guard', 'p1'], p3: ['intel', 'p1'], p4: ['pirate', 'p1'] },
+      loads: { p1: G(1), p2: G(1) },
+      roles: { p1: ['pirate', 'p1'], p2: ['guard', 'p2'], p3: ['customs', 'p1'], p4: ['pirate', 'p1'] },
+      named: { p3: 'wood' },
     });
     expect(cash(events, 'role-fee', 'p1')).toBe(-50);
-    expect(cash(events, 'role-fee', 'p2')).toBe(-75);
-    expect(cash(events, 'role-fee', 'p3')).toBe(0);
+    expect(cash(events, 'role-fee', 'p2')).toBe(-50); // guard 25 + pirate cove 25
+    expect(cash(events, 'role-fee', 'p3')).toBe(0); // the lighthouse customs is free
     expect(cash(events, 'role-fee', 'p4')).toBe(-75);
-    expect(find(events, 'roles-revealed').map((e) => e.role)).toEqual(['intel', 'guard', 'pirate', 'smuggler', 'broker']);
+    expect(find(events, 'roles-revealed').map((e) => e.role)).toEqual(['customs', 'guard', 'pirate', 'smuggler', 'diplomat']);
   });
 
   it('hides unaffordable roles', () => {
-    const state = rolePhase(edit(ready(3), 'p3', { cash: 60 }));
+    const state = rolePhase(edit(ready(3), 'p3', { cash: 30 }));
     const roles = new Set(getLegalActions(state, 'p3').map((a) => (a.type === 'deploy-role' ? a.role : 'x')));
-    expect(roles).toEqual(new Set([null, 'intel', 'guard', 'pirate', 'smuggler']));
+    expect(roles).toEqual(new Set([null, 'customs', 'smuggler']));
   });
 
   it('cools a role down for two rounds, the fortress guard for one', () => {
     let state = edit(ready(3), 'p3', { island: 'fortress' });
-    state = playRound(state, { loads: { p1: G(1) }, roles: { p2: ['guard', 'p1'], p3: ['guard', 'p1'] } }).state;
-    const can = (s: MatchState, id: string) => getLegalActions(rolePhase(s), id).some((a) => a.type === 'deploy-role' && a.role === 'guard');
-    const r2 = state.players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), state);
+    const all = ['p1', 'p2', 'p3'];
+    const loads = { p1: G(1), p2: G(1), p3: G(1) };
+    state = playRound(state, { loads, roles: { p2: ['guard', 'p2'], p3: ['guard', 'p3'] } }).state;
+    const can = (s: MatchState, id: string) => getLegalActions(rolePhase(s, all), id).some((a) => a.type === 'deploy-role' && a.role === 'guard');
+    const stocked = (s: MatchState) => s.players.reduce((acc, p) => edit(acc, p.id, { stock: G(3, 3, 1, 1) }), s);
+    const r2 = stocked(state);
     expect(can(r2, 'p2')).toBe(false);
     expect(can(r2, 'p3')).toBe(false);
-    expect(getPlayerView(rolePhase(r2), 'p2').myAvailableRoles).not.toContain('guard');
-    const r3 = playRound(r2, { loads: { p1: G(1) } }).state;
-    const r3s = r3.players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), r3);
-    expect(can(r3s, 'p2')).toBe(false);
-    expect(can(r3s, 'p3')).toBe(true);
-    const r4 = playRound(r3s, { loads: { p1: G(1) } }).state;
-    expect(can(r4.players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), r4), 'p2')).toBe(true);
+    expect(getPlayerView(rolePhase(r2, all), 'p2').myAvailableRoles).not.toContain('guard');
+    const r3 = stocked(playRound(r2, { loads }).state);
+    expect(can(r3, 'p2')).toBe(false);
+    expect(can(r3, 'p3')).toBe(true);
+    const r4 = stocked(playRound(r3, { loads }).state);
+    expect(can(r4, 'p2')).toBe(true);
   });
 });
 
 describe('§9.4 roles', () => {
-  it('shows the intel merchant the raw roll privately and rerolls on request', () => {
-    let state = rolePhase(ready(3));
-    state = { ...state, roundState: { ...state.roundState, ships: state.roundState.ships.map((s) => ({ ...s, rawRoll: 2 })) } };
-    const deploy = apply(state, { type: 'deploy-role', playerId: 'p3', role: 'intel', targetShipId: 'r1-p1', bet: null, peekShipId: null });
-    let current = apply(deploy.state, { type: 'deploy-role', playerId: 'p1', role: null, targetShipId: null, bet: null, peekShipId: null }).state;
-    const locked = apply(current, { type: 'deploy-role', playerId: 'p2', role: null, targetShipId: null, bet: null, peekShipId: null });
-    current = locked.state;
-    expect(current.phase).toBe('intel-reroll');
-    expect(locked.privateEvents).toEqual([{ playerId: 'p3', type: 'intel-report', round: 1, shipId: 'r1-p1', rawRoll: 2 }]);
-    expect(getPlayerView(current, 'p3').intel).toEqual([{ shipId: 'r1-p1', rawRoll: 2, rerolledRoll: null }]);
-    expect(getPlayerView(current, 'p1').intel).toEqual([]);
-    expect(getLegalActions(current, 'p3').map((a) => (a.type === 'intel-reroll' ? a.rerollShipId : 'x'))).toEqual([null, 'r1-p1']);
-    const rerolled = apply(current, { type: 'intel-reroll', playerId: 'p3', rerollShipId: 'r1-p1' });
-    const result = rerolled.privateEvents.find((e) => e.type === 'intel-reroll-result');
-    expect(result).toMatchObject({ playerId: 'p3', shipId: 'r1-p1' });
-    expect(find(rerolled.events, 'roles-revealed')[0]!.rerolledShipIds).toEqual(['r1-p1']);
-    expect(find(rerolled.events, 'voyage-modifiers')[0]!.modifiers[0]!.base).toBe(result?.type === 'intel-reroll-result' ? result.rerolledRoll : -1);
-  });
-
-  it('lets the lighthouse intel look at a second ship and reroll it instead (§11.2)', () => {
-    let state = rolePhase(edit(ready(3), 'p3', { island: 'lighthouse' }));
-    const peeks = getLegalActions(state, 'p3').filter((a) => a.type === 'deploy-role' && a.role === 'intel' && a.peekShipId !== null);
-    expect(peeks).toHaveLength(2);
-    expect(getLegalActions(state, 'p1').every((a) => a.type === 'deploy-role' && a.peekShipId === null)).toBe(true);
-    const deploy = apply(state, { type: 'deploy-role', playerId: 'p3', role: 'intel', targetShipId: 'r1-p1', bet: null, peekShipId: 'r1-p2' });
-    state = apply(deploy.state, { type: 'deploy-role', playerId: 'p1', role: null, targetShipId: null, bet: null, peekShipId: null }).state;
-    const locked = apply(state, { type: 'deploy-role', playerId: 'p2', role: null, targetShipId: null, bet: null, peekShipId: null });
-    expect(locked.privateEvents.map((e) => (e.type === 'intel-report' ? e.shipId : ''))).toEqual(['r1-p1', 'r1-p2']);
-    const rerolled = apply(locked.state, { type: 'intel-reroll', playerId: 'p3', rerollShipId: 'r1-p2' });
-    expect(find(rerolled.events, 'roles-revealed')[0]!.rerolledShipIds).toEqual(['r1-p2']);
-  });
-
-  it('pays guards an escort fee only on someone else ship that arrives', () => {
-    const { events } = playRound(ready(3), { loads: { p1: G(1), p2: G(1) }, rolls: { p2: 1 }, roles: { p1: ['guard', 'p1'], p3: ['guard', 'p2'] } });
-    expect(cash(events, 'escort-fee', 'p1')).toBe(0);
-    const ok = playRound(ready(3), { loads: { p1: G(1) }, roles: { p3: ['guard', 'p1'] } });
-    expect(cash(ok.events, 'escort-fee', 'p3')).toBe(75);
-  });
-
-  it('pays pirates loot on a sink, with the wanted bonus (§9.6)', () => {
-    const state = withWanted(ready(3), ['p1']);
-    const { events } = playRound(state, { loads: { p1: G(1) }, rolls: { p1: 3 }, roles: { p2: ['pirate', 'p1'], p3: ['pirate', 'p1'] } });
-    // Two pirates: 3 - 2 = final 1, 250 G + 100 G wanted bonus, split in two.
-    expect(cash(events, 'pirate-loot', 'p2')).toBe(175);
-    expect(cash(events, 'pirate-loot', 'p3')).toBe(175);
-    // One pirate: 3 - 1 = final 2 pays 100 G; a raw 2 makes it final 1, which pays 250 G.
-    const plainLoot = playRound(ready(3), { loads: { p1: G(1) }, rolls: { p1: 3 }, roles: { p2: ['pirate', 'p1'] } });
-    expect(cash(plainLoot.events, 'pirate-loot', 'p2')).toBe(100);
-    const deepLoot = playRound(ready(3), { loads: { p1: G(1) }, rolls: { p1: 2 }, roles: { p2: ['pirate', 'p1'] } });
-    expect(cash(deepLoot.events, 'pirate-loot', 'p2')).toBe(250);
-  });
-
-  it('pays brokers whose price moved their way, after shifting demand', () => {
-    const state = withDemand(ready(3), G(1, 1, 1, 0));
-    const { events } = playRound(state, {
-      loads: { p1: G(1) },
-      bets: { p2: { good: 'wood', direction: 1 }, p3: { good: 'iron', direction: -1, aim: 'p1' } },
-    });
-    const settled = find(events, 'market-settled')[0]!;
-    // Wood demand 1 + 1 = 2 > 1 arrived: up. Iron demand 1 - 1 = 0 = 0 arrived: flat.
-    expect(settled.demand).toMatchObject({ wood: 2, iron: 0 });
-    expect(cash(events, 'broker-bet', 'p2')).toBe(100);
-    expect(cash(events, 'broker-bet', 'p3')).toBe(0);
-    expect(cash(events, 'role-fee', 'p2')).toBe(-75);
-  });
-
-  it('offers broker bets on every good in both directions, each with the ship it may name', () => {
+  it('lets a guard defend only its own ship and customs board only others', () => {
     const state = rolePhase(ready(3));
-    const bets = (id: string) => getLegalActions(state, id).filter((a) => a.type === 'deploy-role' && a.role === 'broker');
-    // p3 has no ship: a bull bet has nothing to aim at, so it is a plain bet; a bear bet aims at p1's or p2's ship.
-    expect(bets('p3').filter((a) => a.type === 'deploy-role' && a.bet?.direction === 1).map((a) => a.type === 'deploy-role' && a.targetShipId)).toEqual([null, null, null, null]);
-    expect(bets('p3').filter((a) => a.type === 'deploy-role' && a.bet?.direction === -1)).toHaveLength(8);
-    // p1 sails: a bull bet aims only at its own ship, a bear bet only at p2's.
-    const ships = (id: string, direction: number) => new Set(bets(id).flatMap((a) => (a.type === 'deploy-role' && a.bet?.direction === direction ? [a.targetShipId] : [])));
-    expect(ships('p1', 1)).toEqual(new Set(['r1-p1']));
-    expect(ships('p1', -1)).toEqual(new Set(['r1-p2']));
-    expect(applyAction(state, { type: 'deploy-role', playerId: 'p3', role: 'broker', targetShipId: null, bet: { good: 'wood', direction: 1 }, peekShipId: null }).ok).toBe(true);
-    // Naming the wrong side's ship is not on the list.
-    expect(applyAction(state, { type: 'deploy-role', playerId: 'p1', role: 'broker', targetShipId: 'r1-p1', bet: { good: 'wood', direction: -1 }, peekShipId: null }).ok).toBe(false);
+    const targets = (id: string, role: string) =>
+      getLegalActions(state, id).flatMap((a) => (a.type === 'deploy-role' && a.role === role ? [a.targetShipId] : []));
+    expect(new Set(targets('p1', 'guard'))).toEqual(new Set(['r1-p1']));
+    expect(new Set(targets('p1', 'customs'))).toEqual(new Set(['r1-p2']));
+    expect(new Set(targets('p3', 'customs'))).toEqual(new Set(['r1-p1', 'r1-p2']));
+    expect(targets('p3', 'guard')).toEqual([]);
+    expect(targets('p3', 'diplomat')).toEqual([]);
+    // Customs must name a good, and nothing else may.
+    expect(applyAction(state, { type: 'deploy-role', playerId: 'p3', role: 'customs', targetShipId: 'r1-p1', namedGood: null }).ok).toBe(false);
+    expect(applyAction(state, { type: 'deploy-role', playerId: 'p3', role: 'customs', targetShipId: 'r1-p1', namedGood: 'wood' }).ok).toBe(true);
+    expect(applyAction(state, { type: 'deploy-role', playerId: 'p3', role: 'pirate', targetShipId: 'r1-p1', namedGood: 'wood' }).ok).toBe(false);
   });
 
-  describe('the ship a broker names (§9.4)', () => {
-    const paid = (events: ReturnType<typeof playRound>['events'], reason: string, id: string) => cash(events, reason, id);
-    // Wood on cell 3 (150 G) as the arithmetic below assumes; the match itself starts wood on cell 2 (§7.1).
-    const mid = (players = 3) => withPrices(ready(players), G(3, 3, 3, 3));
+  it('takes the named good first, scaled by the final value, and leaves the rest to the owner', () => {
+    // Arms 200 G and one wood 150 G (arrivals 1 < demand 2 lifts wood one step); the lighthouse is not involved.
+    const full = playRound(ready(3), { loads: { p1: G(1, 0, 0, 1) }, rolls: { p1: 6 }, roles: { p2: ['customs', 'p1'] }, named: { p2: 'arms' } });
+    expect(cash(full.events, 'goods-confiscated', 'p2')).toBe(200);
+    expect(cash(full.events, 'sale', 'p1')).toBe(150);
+    expect(find(full.events, 'goods-confiscated')).toEqual([{ type: 'goods-confiscated', round: 1, shipId: 'r1-p1', good: 'arms', units: 1, customs: ['p2'] }]);
+    expect(find(full.events, 'market-settled')[0]!.arrived.arms).toBe(1);
+    const low = playRound(ready(3), { loads: { p1: G(1, 0, 0, 1) }, rolls: { p1: 2 }, roles: { p2: ['customs', 'p1'] }, named: { p2: 'arms' } });
+    expect(cash(low.events, 'goods-confiscated', 'p2')).toBe(60);
+    expect(cash(low.events, 'sale', 'p1')).toBe(45);
+  });
 
-    it('a right bear bet cuts the opponent ship sale by 2 steps and gives the difference to the broker', () => {
-      // Wood demand 2 - 1 (the bet) = 1 against 2 landed: down to 125 G. p1 sells 2 wood: 250 G, minus 2 x 50 G.
-      const { events } = playRound(mid(), { loads: { p1: G(2) }, bets: { p2: { good: 'wood', direction: -1, aim: 'p1' } } });
-      expect(paid(events, 'broker-bet', 'p2')).toBe(100);
-      expect(paid(events, 'broker-control', 'p2')).toBe(100);
-      expect(paid(events, 'sale', 'p1')).toBe(150);
-    });
+  it('takes nothing for a good that is not aboard, but still charges the fee', () => {
+    const { events } = playRound(ready(3), { loads: { p1: G(1) }, roles: { p2: ['customs', 'p1'] }, named: { p2: 'arms' } });
+    expect(find(events, 'goods-confiscated')).toEqual([]);
+    expect(cash(events, 'role-fee', 'p2')).toBe(-25);
+  });
 
-    it('a right bull bet on your own ship is topped up by the bank', () => {
-      // Wood demand 2 + 1 = 3 against 1 landed: up to 175 G, and 50 G more on the one wood.
-      const { events } = playRound(mid(), { loads: { p1: G(1) }, bets: { p1: { good: 'wood', direction: 1, aim: 'p1' } } });
-      expect(paid(events, 'broker-bet', 'p1')).toBe(100);
-      expect(paid(events, 'broker-lift', 'p1')).toBe(50);
-      expect(paid(events, 'sale', 'p1')).toBe(175);
+  it('splits one good between customs officers who name it', () => {
+    const { events } = playRound(ready(4), {
+      loads: { p1: G(0, 0, 0, 1) },
+      roles: { p2: ['customs', 'p1'], p3: ['customs', 'p1'] },
+      named: { p2: 'arms', p3: 'arms' },
     });
+    expect(cash(events, 'goods-confiscated', 'p2')).toBe(100);
+    expect(cash(events, 'goods-confiscated', 'p3')).toBe(100);
+  });
 
-    it('moves the named ship by two cells of that good\'s own track: 70 G a unit for arms', () => {
-      // Arms demand 1 + 1 = 2 against 1 landed: up from cell 3 (200 G) to cell 4 (235 G), and two arms cells (2 x 35 G) more.
-      const { events } = playRound(ready(3), { loads: { p1: G(0, 0, 0, 1) }, bets: { p1: { good: 'arms', direction: 1, aim: 'p1' } } });
-      expect(paid(events, 'sale', 'p1')).toBe(235);
-      expect(paid(events, 'broker-lift', 'p1')).toBe(70);
-    });
+  it('lets pirates take a share of a sunk ship, with the wanted bonus (§9.4, §9.6)', () => {
+    // Nothing arrives against a demand of 2, so wood rises to 150 G: 2 wood are worth 300 G, and final value 1 pays 70% of it.
+    const sunk = playRound(ready(3), { loads: { p1: G(2) }, rolls: { p1: 2 }, roles: { p2: ['pirate', 'p1'] } });
+    expect(cash(sunk.events, 'pirate-loot', 'p2')).toBe(210);
+    // Two pirates split it; a wanted owner adds the bank's 100 G first.
+    const wanted = playRound(withWanted(ready(3), ['p1']), { loads: { p1: G(2) }, rolls: { p1: 3 }, roles: { p2: ['pirate', 'p1'], p3: ['pirate', 'p1'] } });
+    expect(cash(wanted.events, 'pirate-loot', 'p2')).toBe(155);
+    expect(cash(wanted.events, 'pirate-loot', 'p3')).toBe(155);
+  });
 
-    it('does nothing when the bet is wrong, or the ship sinks', () => {
-      // Wood demand 2 - 1 = 1 equals the 1 landed: flat, so the bear bet is wrong.
-      const wrong = playRound(ready(3), { loads: { p1: G(1) }, bets: { p2: { good: 'wood', direction: -1, aim: 'p1' } } });
-      expect(paid(wrong.events, 'broker-bet', 'p2')).toBe(0);
-      expect(paid(wrong.events, 'broker-control', 'p2')).toBe(0);
-      const sunk = playRound(ready(3), { loads: { p1: G(2) }, rolls: { p1: 2 }, bets: { p2: { good: 'wood', direction: -1, aim: 'p1' } } });
-      expect(paid(sunk.events, 'broker-control', 'p2')).toBe(0);
-    });
-
-    it('stays on the price track: no bank top-up past the top step, and never more than the sale', () => {
-      const top = playRound(withPrices(ready(3), G(5, 5, 5, 5)), { loads: { p1: G(1) }, bets: { p1: { good: 'wood', direction: 1, aim: 'p1' } } });
-      // The price rises from step 5 to the top (225 G); there is no room for two more steps.
-      expect(paid(top.events, 'broker-lift', 'p1')).toBe(0);
-      const floor = playRound(withPrices(ready(3), G(1, 1, 1, 1)), { loads: { p1: G(2) }, bets: { p2: { good: 'wood', direction: -1, aim: 'p1' } } });
-      // Down from step 1 (100 G) to step 0 (75 G): only 0 steps of room remain, so nothing is taken.
-      expect(paid(floor.events, 'broker-control', 'p2')).toBe(0);
-    });
-
-    it('adds up when two brokers name the same ship', () => {
-      const { events } = playRound(mid(4), {
-        loads: { p1: G(2) },
-        bets: { p2: { good: 'wood', direction: -1, aim: 'p1' }, p3: { good: 'wood', direction: -1, aim: 'p1' } },
-      });
-      expect(paid(events, 'broker-control', 'p2')).toBe(100);
-      expect(paid(events, 'broker-control', 'p3')).toBe(100);
-      // Wood demand 2 - 2 = 0 against 2 landed: down one step to 125 G, 250 G in all, minus 100 G each.
-      expect(paid(events, 'sale', 'p1')).toBe(50);
-    });
+  it('lets pirates take 50% of the income of a ship that just arrives on a 2, and nothing on a 3', () => {
+    const two = playRound(ready(3), { loads: { p1: G(2) }, rolls: { p1: 3 }, roles: { p2: ['pirate', 'p1'] } });
+    expect(modifiers(two.events, 'p1').final).toBe(2);
+    // 250 G x 30% = 75 G; pirates take half (37), the owner keeps the rest.
+    expect(cash(two.events, 'pirate-loot', 'p2')).toBe(37);
+    expect(cash(two.events, 'sale', 'p1')).toBe(38);
+    const three = playRound(ready(3), { loads: { p1: G(2) }, rolls: { p1: 4 }, roles: { p2: ['pirate', 'p1'] } });
+    expect(modifiers(three.events, 'p1').final).toBe(3);
+    expect(cash(three.events, 'pirate-loot', 'p2')).toBe(0);
   });
 });

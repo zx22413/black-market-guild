@@ -4,19 +4,18 @@ import { producedFor } from './islands';
 import { settleMarket } from './market';
 import { resolveIslandDraft } from './phases/draft';
 import { resolveInvest } from './phases/invest';
-import { resolveDeployment, resolveIntelRerolls, revealRoles } from './phases/roles';
+import { resolveDeployment, revealRoles } from './phases/roles';
 import { resolveVoyages, revealVoyageEvent } from './resolution';
 import { computeResult } from './scoring';
 import type { Action, DecisionPhase, Goods, MatchEvent, MatchState, PlayerId, PrivateEvent, RoundState, Step, Transition } from './types';
 
 type RoundStep = { readonly kind: 'decision'; readonly phase: DecisionPhase } | { readonly kind: 'auto'; readonly run: (state: MatchState) => Step };
 
-/** One round after its opening (§5 steps 2-8). */
+/** One round after its opening (§5 steps 1-7): the voyage event is public before anyone invests. */
 const ROUND_SEQUENCE: readonly RoundStep[] = [
+  { kind: 'auto', run: revealVoyageEvent },
   { kind: 'decision', phase: 'invest' },
   { kind: 'decision', phase: 'role-deployment' },
-  { kind: 'decision', phase: 'intel-reroll' },
-  { kind: 'auto', run: revealVoyageEvent },
   { kind: 'auto', run: revealRoles },
   { kind: 'auto', run: resolveVoyages },
   { kind: 'auto', run: settleMarket },
@@ -107,8 +106,6 @@ function resolvePhase(state: MatchState, phase: DecisionPhase): Step {
       return resolveInvest(state);
     case 'role-deployment':
       return resolveDeployment(state);
-    case 'intel-reroll':
-      return resolveIntelRerolls(state);
   }
 }
 

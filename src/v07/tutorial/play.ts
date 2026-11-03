@@ -21,20 +21,12 @@ export function fitsPlan(context: DecisionContext, plan: SeatPlan, action: Actio
     case 'invest':
       return action.build === (plan.build ?? null) && sameGoods(action.load, fullGoods(plan.load));
     case 'deploy-role':
-      if (plan.bet !== undefined) {
-        const { good, direction, aim } = plan.bet;
-        return (
-          action.role === 'broker' &&
-          action.bet?.good === good &&
-          action.bet.direction === direction &&
-          action.targetShipId === (aim === undefined ? null : shipOf(context, aim))
-        );
-      }
       return plan.role === undefined
         ? action.role === null
-        : action.role === plan.role[0] && action.targetShipId === shipOf(context, plan.role[1]) && action.peekShipId === null;
-    case 'intel-reroll':
-      return action.rerollShipId === (plan.reroll === undefined ? null : shipOf(context, plan.reroll));
+        : action.role === plan.role[0] &&
+            action.targetShipId === shipOf(context, plan.role[1]) &&
+            action.namedGood === (plan.named ?? null) &&
+            (action.guessRole ?? null) === (plan.guess ?? null);
     case 'choose-island':
       return false;
   }

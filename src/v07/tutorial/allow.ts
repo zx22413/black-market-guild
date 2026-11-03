@@ -1,5 +1,5 @@
 import type { DecisionContext } from '../bots';
-import { GOODS, type Action, type Bet, type BuildingId, type Goods, type PlayerId, type RoleId } from '../game';
+import { GOODS, type Action, type GoodId, type BuildingId, type Goods, type PlayerId, type RoleId } from '../game';
 import { shipOf } from './play';
 
 // Which of your legal actions a tutorial step keeps. Load limits keep every smaller load too, so
@@ -24,23 +24,16 @@ export const buildThen =
 
 /** Deploy `role` on the ship of one of `owners`; `orNone` also keeps deploying nothing. */
 export const roleOn =
-  (role: Exclude<RoleId, 'broker'>, owners: readonly PlayerId[], orNone = false) =>
+  (role: RoleId, owners: readonly PlayerId[], orNone = false) =>
   (action: Action, context: DecisionContext): boolean =>
     action.type === 'deploy-role' &&
-    ((orNone && action.role === null) || (action.role === role && action.peekShipId === null && owners.some((o) => shipOf(context, o) === action.targetShipId)));
+    ((orNone && action.role === null) || (action.role === role && owners.some((o) => shipOf(context, o) === action.targetShipId)));
 
-/** Either reroll or keep the roll. */
-export const rerollOrKeep = (action: Action): boolean => action.type === 'intel-reroll';
-
-/** The broker's bet on `bet`, naming the ship of `aim`. */
-export const betOn =
-  (bet: Bet, aim: PlayerId) =>
+/** Customs naming `good` on the ship of `aim`. */
+export const customsNaming =
+  (good: GoodId, aim: PlayerId) =>
   (action: Action, context: DecisionContext): boolean =>
-    action.type === 'deploy-role' &&
-    action.role === 'broker' &&
-    action.bet?.good === bet.good &&
-    action.bet.direction === bet.direction &&
-    action.targetShipId === shipOf(context, aim);
+    action.type === 'deploy-role' && action.role === 'customs' && action.namedGood === good && action.targetShipId === shipOf(context, aim);
 
 /** Invest without building, with a load `test` accepts (the empty load means staying in port). */
 export const loadWhere =
@@ -49,3 +42,9 @@ export const loadWhere =
     action.type === 'invest' && action.build === null && test(action.load);
 
 export const unitsOf = units;
+
+/** Diplomat guessing that `role` is aimed at the ship of `owner`. */
+export const diplomatGuessing =
+  (role: RoleId, owner: PlayerId) =>
+  (action: Action, context: DecisionContext): boolean =>
+    action.type === 'deploy-role' && action.role === 'diplomat' && action.guessRole === role && action.targetShipId === shipOf(context, owner);
