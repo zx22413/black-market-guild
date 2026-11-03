@@ -63,7 +63,6 @@ export function MarketCard({ rows, shown }: { readonly rows: readonly MarketRow[
                 </th>
                 <td>
                   需 {r.demand}
-                  {r.brokerShift !== 0 && <small className="broker">（莊家 {r.brokerShift > 0 ? `+${r.brokerShift}` : `−${-r.brokerShift}`}）</small>}
                 </td>
                 <td>到 {r.arrived}</td>
                 <td>

@@ -1,12 +1,12 @@
 import type { Deployment, MatchEvent, PlayerId, RoleId } from '../../v07/game';
 import { seatPosition, type Vec3 } from '../../ui/scene/layout';
 import { shipPose } from '../../ui/scene/Ships';
-import { GOOD_LABELS, ROLE_LABELS } from '../labels';
-import { betLabel } from '../table/deployChoice';
+import { ROLE_LABELS } from '../labels';
+import { deploymentNote } from '../table/deployChoice';
 
 // The role reveal as arrows (docs/ui/v07-event-presentation.md §1.5): each deployed role is an
 // arrow in its player's color from that player's island to its target, group by group in reveal
-// order. The lighthouse intel's extra look is a faint arrow with no label, kept low-key.
+// order.
 
 export interface RevealGroup {
   readonly role: RoleId;
@@ -28,15 +28,14 @@ export interface RoleArrow {
   readonly control: Vec3;
   readonly to: Vec3;
   readonly faint: boolean;
-  /** Text at the middle of the arrow; empty for the faint extra look. */
+  /** Text at the middle of the arrow. */
   readonly label: string;
-  /** The ship it points at; null for the broker (the harbor). */
+  /** The ship it points at. */
   readonly targetShipId: string | null;
 }
 
 const ISLAND_HEIGHT = 5;
 const SHIP_HEIGHT = 3;
-const HARBOR: Vec3 = [0, 9, 0];
 const ARC = 12;
 
 function arc(from: Vec3, to: Vec3): Vec3 {
@@ -68,18 +67,13 @@ export function revealArrows(
   };
   return group.deployments.flatMap((d): RoleArrow[] => {
     const from = islandOf(d.playerId);
-    const main = d.role === 'broker' ? HARBOR : d.targetShipId ? shipAt(d.targetShipId) : null;
+    const main = d.targetShipId ? shipAt(d.targetShipId) : null;
     const arrows: RoleArrow[] = [];
     if (main) {
-      const label = d.role === 'broker' && d.bet ? `${ROLE_LABELS.broker} 押${betLabel(d.bet)}` : ROLE_LABELS[d.role];
-      arrows.push({ key: `${d.playerId}-${d.role}`, playerId: d.playerId, role: d.role, from, control: arc(from, main), to: main, faint: false, label, targetShipId: d.role === 'broker' ? null : d.targetShipId });
+      const note = deploymentNote(d);
+      const label = note ? `${ROLE_LABELS[d.role]} ${note}` : ROLE_LABELS[d.role];
+      arrows.push({ key: `${d.playerId}-${d.role}`, playerId: d.playerId, role: d.role, from, control: arc(from, main), to: main, faint: false, label, targetShipId: d.targetShipId });
     }
-    const aimAt = d.role === 'broker' && d.targetShipId ? shipAt(d.targetShipId) : null;
-    if (aimAt && d.bet) {
-      arrows.push({ key: `${d.playerId}-aim`, playerId: d.playerId, role: d.role, from, control: arc(from, aimAt), to: aimAt, faint: false, label: `${ROLE_LABELS.broker} ${d.bet.direction > 0 ? '抬' : '壓'}${GOOD_LABELS[d.bet.good]}`, targetShipId: d.targetShipId });
-    }
-    const peek = d.peekShipId ? shipAt(d.peekShipId) : null;
-    if (peek) arrows.push({ key: `${d.playerId}-peek`, playerId: d.playerId, role: d.role, from, control: arc(from, peek), to: peek, faint: true, label: '', targetShipId: d.peekShipId });
     return arrows;
   });
 }
@@ -88,9 +82,6 @@ export function revealArrows(
 export interface PickedRole {
   readonly role: RoleId;
   readonly target: string | null;
-  readonly peek: string | null;
-  /** Broker only: a bet is chosen (the arrow to the harbor). */
-  readonly bet: Deployment['bet'];
 }
 
 export function pickArrows(
@@ -102,23 +93,10 @@ export function pickArrows(
 ): RoleArrow[] {
   const [x, , z] = seatPosition(angles[laneOf(playerId)]!);
   const from: Vec3 = [x, ISLAND_HEIGHT, z];
-  // Before the voyage event the ships still sit at the dock (the same spot the ship tags hang on).
-  const shipAt = (shipId: string | null): Vec3 | null => {
-    const owner = shipId === null ? undefined : shipOwner(shipId);
-    if (owner === undefined) return null;
-    const p = shipPose(angles[laneOf(owner)]!, 'docked').position;
-    return [p.x, SHIP_HEIGHT, p.z];
-  };
-  const make = (key: string, to: Vec3, faint: boolean): RoleArrow => ({ key, playerId, role: picked.role, from, control: arc(from, to), to, faint, label: '', targetShipId: null });
-  const arrows: RoleArrow[] = [];
-  const target = shipAt(picked.target);
-  if (picked.role === 'broker') {
-    if (picked.bet) arrows.push(make('pick-harbor', HARBOR, false));
-    if (picked.bet && target) arrows.push(make('pick-aim', target, false));
-  } else if (target) {
-    arrows.push(make('pick-target', target, false));
-  }
-  const peek = shipAt(picked.peek);
-  if (peek) arrows.push(make('pick-peek', peek, true));
-  return arrows;
+  // Before the voyage the ships still sit at the dock (the same spot the ship tags hang on).
+  const owner = picked.target === null ? undefined : shipOwner(picked.target);
+  if (owner === undefined) return [];
+  const p = shipPose(angles[laneOf(owner)]!, 'docked').position;
+  const to: Vec3 = [p.x, SHIP_HEIGHT, p.z];
+  return [{ key: 'pick-target', playerId, role: picked.role, from, control: arc(from, to), to, faint: false, label: '', targetShipId: null }];
 }

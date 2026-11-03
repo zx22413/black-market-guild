@@ -32,6 +32,7 @@ export const F = {
   build: (building: BuildingId): FocusTarget => ({ kind: 'build', building }),
   role: (role: RoleId | 'none'): FocusTarget => ({ kind: 'role', role }),
   target: (player: PlayerId): FocusTarget => ({ kind: 'target', player }),
+  naming: (value: string): FocusTarget => ({ kind: 'naming', value }),
   crate: (good: GoodId, count = 1): FocusTarget => ({ kind: 'crate', good, count }),
   restock: (good: GoodId): FocusTarget => ({ kind: 'restock', good }),
   rank: { kind: 'rank' },

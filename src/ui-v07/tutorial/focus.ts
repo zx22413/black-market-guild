@@ -19,8 +19,8 @@ export function focusSelector(target: FocusTarget): string {
       return `[data-role-card="${target.role}"]`;
     case 'target':
       return `[data-target="${target.player}"]`;
-    case 'bet':
-      return `[data-bet="${target.good}${target.direction === 1 ? '+' : '-'}"]`;
+    case 'naming':
+      return `[data-bet="${target.value}"]`;
     case 'crate':
       return `[data-crate="${target.good}"]`;
     case 'restock':

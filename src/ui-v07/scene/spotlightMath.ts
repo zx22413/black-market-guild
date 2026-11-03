@@ -4,17 +4,13 @@ import type { Vec3 } from '../../ui/scene/layout';
 import { shipPose } from '../../ui/scene/Ships';
 import type { BeatView } from '../beats/beatTimeline';
 import type { ShipBeat } from '../beats/shipBeat';
-import { revealGroups } from '../table3d/revealModel';
 import { beaconAt } from './islandScenery';
 import { islandPoint } from './TableCanvas';
 import { SHOW_TEMPO, slowed } from './showTempo';
 
 // The lighthouse island at work (docs/game-design.md §11.2), as plain data: the table goes dark
 // and the lighthouse's beam swings onto the ship it helps. On its owner's ship that is the island
-// step of the ship beat (+1); for its intel merchant it is the private look at two ships' dice
-// (only the lighthouse's player sees it), the role reveal, where both beams fall on the two ships
-// and close onto the one that was rerolled, and the start of that ship's beat, where the changed
-// die is shown under the beam.
+// step of the ship beat (+1).
 
 export interface SpotlightCue {
   /** Changes with every new moment, so the same cue twice in a row still replays. */
@@ -32,7 +28,7 @@ export interface SpotlightCue {
 }
 
 /** How long the dark lasts: a beat step is short, the reveal has two beams to follow and close. */
-export const SPOTLIGHT_HOLD = slowed({ voyage: 1.4, reveal: 2.6 });
+export const SPOTLIGHT_HOLD = slowed({ voyage: 1.4 });
 
 /** The island's beacon lamp on the table, for the seat at `angle`; null if its island has none. */
 export function lampPoint(island: IslandId | null, angle: number): Vec3 | null {
@@ -53,76 +49,18 @@ export interface SeatLookup {
 }
 
 /**
- * The beam on the ship during its beat: on its start die when the lighthouse's intel rerolled it
- * (from that merchant's lamp), and on the island step when the owner's island has a beacon.
+ * The beam on the ship during its beat: on the island step when the owner's island has a beacon.
  */
 export function voyageSpotlight(beat: ShipBeat, view: BeatView, seats: SeatLookup): SpotlightCue | null {
   if (!view.showStart || view.showOutcome) return null;
   const angle = seats.angleOf(beat.owner);
   const beam = (lamp: Vec3 | null): SpotlightCue | null =>
     lamp ? { key: `spot-${beat.shipId}-${view.stepsShown}`, lamp, targets: [shipPoint(angle)], settle: null, hold: SPOTLIGHT_HOLD.voyage } : null;
-  if (view.stepsShown === 0) {
-    const spotter = beat.rerollSpotter;
-    return spotter === null ? null : beam(lampPoint(seats.islandOf(spotter), seats.angleOf(spotter)));
-  }
+  if (view.stepsShown === 0) return null;
   const step = beat.steps[view.stepsShown - 1]!;
   return step.kind === 'island' ? beam(lampPoint(step.source as IslandId, angle)) : null;
 }
 
-/** A closing private look starts this long before its beams close: dark and locked already, past the lock's flash. */
-const PEEK_LEAD = 0.2 * SHOW_TEMPO;
-
-/**
- * The private look of the lighthouse's intel merchant (§11.2), for its own player only: beams on
- * the ships it looked at, held while it decides. Once it picks a ship to reroll (`rerolled`), the
- * beams start out locked and close onto that ship at once. Null if its island has no beacon.
- */
-export function peekSpotlight(
-  key: string,
-  island: IslandId | null,
-  angle: number,
-  ships: readonly Vec3[],
-  rerolled: number | null,
-): SpotlightCue | null {
-  const lamp = lampPoint(island, angle);
-  if (!lamp || ships.length === 0) return null;
-  return rerolled === null
-    ? { key, lamp, targets: ships, settle: null, hold: Number.POSITIVE_INFINITY }
-    : { key: `${key}-closed`, lamp, targets: ships, settle: rerolled, hold: Number.POSITIVE_INFINITY, skip: SPOT_TIME.closeFrom - PEEK_LEAD };
-}
-
-
-/**
- * The intel merchant of a beacon island that looked at a second ship (§11.2), at its reveal: the
- * reveal group it belongs to and its beams. They close onto the ship that was rerolled when that is
- * exactly one of the two; when neither (or both, another merchant's reroll) was, they stay apart.
- */
-export function revealSpotlight(
-  events: readonly MatchEvent[],
-  round: number,
-  angles: readonly number[],
-  laneOf: (id: PlayerId) => number,
-  shipOwner: (shipId: ShipId) => PlayerId | undefined,
-): { readonly group: number; readonly cue: SpotlightCue } | null {
-  const chosen = events.find((e) => e.type === 'islands-chosen');
-  const islandOf = (id: PlayerId): IslandId | null => (chosen?.type === 'islands-chosen' ? (chosen.islands[id] ?? null) : null);
-  const group = revealGroups(events, round).findIndex((g) => g.role === 'intel');
-  const intel = events.find((e) => e.type === 'roles-revealed' && e.round === round && e.role === 'intel');
-  if (group < 0 || intel?.type !== 'roles-revealed') return null;
-  for (const d of intel.deployments) {
-    const angle = angles[laneOf(d.playerId)]!;
-    const lamp = lampPoint(islandOf(d.playerId), angle);
-    if (!lamp || !d.targetShipId || !d.peekShipId) continue;
-    const looked = [d.targetShipId, d.peekShipId];
-    const owners = looked.map(shipOwner);
-    if (owners.some((o) => o === undefined)) continue;
-    const rerolled = looked.map((id) => intel.rerolledShipIds.includes(id));
-    const settle = rerolled.filter(Boolean).length === 1 ? rerolled.indexOf(true) : null;
-    const targets = owners.map((o) => shipPoint(angles[laneOf(o!)]!));
-    return { group, cue: { key: `reveal-${round}-${d.playerId}`, lamp, targets, settle, hold: SPOTLIGHT_HOLD.reveal } };
-  }
-  return null;
-}
 
 /** When each part of the spotlight happens, in seconds from its start. */
 export const SPOT_TIME = slowed({ darkIn: 0.35, swingFrom: 0.25, lock: 1, closeFrom: 1.7, closeTo: 2.3, fade: 0.5, flare: 0.5 });
@@ -173,6 +111,3 @@ export function spotlightFrame(cue: SpotlightCue, elapsed: number): SpotlightFra
   const flare = Math.max(spike(t, SPOT_TIME.lock), settled ? spike(t, SPOT_TIME.closeTo) : 0) * (1 - fadeOut);
   return { dark, beams, flare };
 }
-
-/** How long the private look plays before the reroll card comes up, and how long the closing takes before it returns (ms). */
-export const PEEK_PACE = { intro: (SPOT_TIME.lock + 0.5 * SHOW_TEMPO) * 1000, close: (SPOT_TIME.closeTo - SPOT_TIME.closeFrom + PEEK_LEAD + 0.5 * SHOW_TEMPO) * 1000 } as const;

@@ -25,7 +25,6 @@ import { RevealChips, SkipButton, StageSteps, WantedBanner, WantedChips } from '
 import { WantedFlag } from '../scene/WantedFlag';
 import { RoleArrows } from './RoleArrows';
 import { Spotlight } from '../scene/Spotlight';
-import { SPOTLIGHT_HOLD, SPOT_TIME, revealSpotlight } from '../scene/spotlightMath';
 import { RoleBadges } from './RoleBadges';
 import { roleKey, roleResults } from './roleResults';
 import { cashSoFar, marketRows, settlementFlights } from './settlementModel';
@@ -39,8 +38,7 @@ import { VoyageEventCard, VoyageEventChip } from './VoyageEventCard';
 export type ResolutionStage = 'wanted' | 'event' | 'reveal' | 'voyage' | 'market' | 'settle' | 'receipt';
 
 /** Pace of each part, in ms (initial values to tune in play). */
-const PACE = { wanted: 3000, revealGroup: 1600, revealSpotlight: (SPOTLIGHT_HOLD.reveal + SPOT_TIME.fade) * 1000 + 400, nextShip: 1000, marketRow: 1000, afterMarket: 5000, flight: 1100, afterSettle: 900 } as const;
-const HARBOR_BADGES = [-(TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2, 0, (TARGET_ISLAND_RADIUS + 3) * Math.SQRT1_2] as const;
+const PACE = { wanted: 3000, revealGroup: 1600, nextShip: 1000, marketRow: 1000, afterMarket: 5000, flight: 1100, afterSettle: 900 } as const;
 /**
  * The market card stands on the sea off the market island's front right, a bearing no seat's lane
  * takes with three or four players, so it covers neither the island's price board nor a berth.
@@ -186,12 +184,11 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   }, [roundEvents]);
   const outcomes = useMemo(() => new Map(roundEvents.flatMap((e) => (e.type === 'ship-resolved' ? [[e.shipId, e.outcome] as const] : []))), [roundEvents]);
 
-  // Reveal: role groups one by one; the group with the lighthouse intel waits for its beams.
+  // Reveal: role groups one by one.
   const groups = useMemo(() => (round === null ? [] : revealGroups(events, round)), [events, round]);
-  const spotlight = useMemo(() => (round === null ? null : revealSpotlight(events, round, angles, laneOf, (id) => owners.get(id))), [events, round, angles, laneOf, owners]);
   const [groupsShown, setGroupsShown] = useTicker(
     groups.length,
-    (shown) => (spotlight && shown - 1 === spotlight.group ? PACE.revealSpotlight : PACE.revealGroup),
+    () => PACE.revealGroup,
     active && stage === 'reveal' && !paused,
     round,
   );
@@ -204,7 +201,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   const beats = useMemo(() => (round === null ? [] : resolvedShips(events, round).flatMap((id) => buildShipBeat(events, id) ?? [])), [events, round]);
   // With no one viewing (hot-seat) every ship plays at full pace: each concerns someone at the table.
   const mine = (b: ShipBeat) =>
-    viewer === null || b.owner === viewer || groups.some((g) => g.deployments.some((d) => d.playerId === viewer && (d.targetShipId === b.shipId || d.peekShipId === b.shipId)));
+    viewer === null || b.owner === viewer || groups.some((g) => g.deployments.some((d) => d.playerId === viewer && d.targetShipId === b.shipId));
   const [voyageIndex, setVoyageIndex] = useState(0);
   useEffect(() => setVoyageIndex(0), [round]);
   const beat = stage === 'voyage' ? (beats[voyageIndex] ?? null) : null;
@@ -247,10 +244,8 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   const cutoff = useMemo(() => {
     if (round === null) return events.length;
     const revealEnd = lastIndex(events, (e) => e.type === 'roles-revealed' && e.round === round) + 1;
-    // Before the event is announced the table does not know it yet: stop just short of it.
-    const eventAt = lastIndex(events, (e) => e.type === 'voyage-event-revealed' && e.round === round);
-    if (stage === 'wanted') return eventAt >= 0 ? eventAt : revealEnd;
-    if (stage === 'event' || stage === 'reveal' || stage === 'voyage') return revealEnd;
+    // The voyage event is public from the round's start (§5), so the table already knows it at every stage.
+    if (stage === 'wanted' || stage === 'event' || stage === 'reveal' || stage === 'voyage') return revealEnd;
     if (stage === 'market' || stage === 'settle') return lastIndex(events, (e) => e.type === 'market-settled' && e.round === round) + 1;
     return lastIndex(events, (e) => e.type === 'round-ended' && e.round === round) + 1;
   }, [events, round, stage]);
@@ -279,31 +274,6 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   // During the voyage only the arrows at the ship being played stay: the rest would cross the close-up.
   // Once the outcome is out the ship sails on to port or goes down, and they would point at empty water.
   const shownArrows: readonly RoleArrow[] = stage === 'voyage' ? arrows.filter((a) => beat !== null && !playback.view.showOutcome && a.targetShipId === beat.shipId) : arrows;
-  // Only your intel merchant's dice, low-key, while the reveal is on (§4).
-  const intelPins: TablePin[] = [];
-  if (stage === 'reveal') {
-    const seen = new Map<string, { raw: number | null; rerolled: number | null }>();
-    for (const e of privateEvents) {
-      if (e.playerId !== viewer || (e.type !== 'intel-report' && e.type !== 'intel-reroll-result') || e.round !== round) continue;
-      const known = seen.get(e.shipId) ?? { raw: null, rerolled: null };
-      seen.set(e.shipId, e.type === 'intel-report' ? { ...known, raw: e.rawRoll } : { ...known, rerolled: e.rerolledRoll });
-    }
-    for (const [shipId, k] of seen) {
-      const owner = owners.get(shipId);
-      if (!owner) continue;
-      const p = shipPose(angles[laneOf(owner)]!, 'sailing').position;
-      intelPins.push({
-        id: `intel-${shipId}`,
-        position: [p.x, 0, p.z + 4],
-        node: (
-          <span className="secret-chip" title="只有你知道">
-            {k.rerolled !== null ? <Flow from={k.raw ?? '?'} to={<b>{k.rerolled}</b>} /> : `原始骰值 ${k.raw ?? '?'}`}
-          </span>
-        ),
-      });
-    }
-  }
-
   // Settlement: the flight in the air and its label at the destination.
   const placeCtx: PlaceContext = { angles, laneOf, ships: new Map([...owners].map(([id, owner]) => [id, { owner, state: restingState(id) }])) };
   const flying = stage === 'settle' && flightsShown > 0 ? flights[flightsShown - 1]! : null;
@@ -328,11 +298,9 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   const badgeGroups = stage === 'reveal' ? groups.slice(0, groupsShown) : stage === 'receipt' || stage === 'wanted' || stage === 'event' ? [] : groups;
   const badgeCtx: PlaceContext = { angles, laneOf, ships: new Map([...owners].map(([id, owner]) => [id, { owner, state: shipState(id) }])) };
   const onShips = new Map<ShipId, Deployment[]>();
-  const onHarbor: Deployment[] = [];
   for (const g of badgeGroups) {
     for (const d of g.deployments) {
-      if (d.role === 'broker') onHarbor.push(d);
-      else if (d.targetShipId) onShips.set(d.targetShipId, [...(onShips.get(d.targetShipId) ?? []), d]);
+      if (d.targetShipId) onShips.set(d.targetShipId, [...(onShips.get(d.targetShipId) ?? []), d]);
     }
   }
   const nameOrYou = (id: PlayerId) => (id === viewer ? '你' : nameOf(id));
@@ -355,7 +323,6 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     }),
     // Brokers bet on the market: their badges hang at the harbor, on its front-left diagonal where
     // no lane runs (so they never look like they sit on a ship).
-    ...(onHarbor.length > 0 ? [{ id: 'badges-harbor', position: HARBOR_BADGES, node: <RoleBadges deployments={onHarbor} colorOf={colorOf} nameOf={nameOrYou} stamp={stamp} /> }] : []),
   ];
 
   const marketPins: TablePin[] =
@@ -442,12 +409,11 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     camera,
     ringed: layer?.ringed,
     wrapShip: layer?.wrapShip,
-    pins: [...badgePins, ...intelPins, ...(layer?.pins ?? []), ...marketPins, ...flightPins],
+    pins: [...badgePins, ...(layer?.pins ?? []), ...marketPins, ...flightPins],
     scene: (
       <>
         {stage === 'wanted' && wantedIds.map((id) => <WantedFlag key={`${round}-${id}`} angle={angles[laneOf(id)]!} />)}
         {showArrows && <RoleArrows arrows={shownArrows} colorOf={colorOf} dimmed={(a) => olderArrows.has(a.key)} />}
-        {stage === 'reveal' && spotlight && groupsShown - 1 === spotlight.group && <Spotlight key={spotlight.cue.key} cue={spotlight.cue} />}
         {layer?.scene}
         {flying && <Flights key={flying.key} flights={[flying]} ctx={placeCtx} />}
       </>

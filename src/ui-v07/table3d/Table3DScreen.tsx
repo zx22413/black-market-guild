@@ -20,8 +20,8 @@ import { islandMarkPins } from './islandMarks';
 import { IslandDraft, IslandReveal } from './IslandDraft';
 import { MarketStrip } from './MarketStrip';
 import { RankRail } from './RankRail';
-import { RerollCard } from './RerollCard';
 import { ResultCard, type Rematch } from './ResultCard';
+import { VoyageEventChip } from './VoyageEventCard';
 import { resultRows } from './resultModel';
 import { RulesPanel } from './RulesPanel';
 import { SealSubmit } from './SealSubmit';
@@ -35,8 +35,6 @@ import './hudPhone.css';
 import { useInvestStep } from './useInvestStep';
 import { useIslandMoments } from './useIslandMoments';
 import { useRoundResolution } from './useRoundResolution';
-import { lanePoint, usePeekSpotlight } from './usePeekSpotlight';
-import { Spotlight } from '../scene/Spotlight';
 
 // The V0.7 match on the 3D table (docs/ui/v07-event-presentation.md): one table that stays
 // mounted from the island draft to the result. Works for every kind of session the app has:
@@ -147,8 +145,6 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     if (shownId !== null) session.decisionShown?.(shownId);
   }, [shownId, session]);
   const drafting = free && phase === 'island-choice' ? request : null;
-  const rerolling = free && phase === 'intel-reroll' ? request : null;
-  const [rerollShown, setRerollShown] = useState<{ readonly request: HumanRequest; readonly shipId: ShipId } | null>(null);
   // Who still has to confirm the device before their decision shows (hot-seat).
   const handoffTo = hotSeat && request && !unlocked && !holding && !showIslands && !autoplay ? seatOnScreen : null;
 
@@ -174,7 +170,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     events: snap.events,
     privateEvents: snap.privateEvents,
     round: autoplay ? null : resolvingRound,
-    paused: rerollShown !== null || holdShow,
+    paused: holdShow,
     holdMarket,
     holdEvent,
     lockSkips,
@@ -216,7 +212,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const moments = useIslandMoments({
     events: snap.events,
     board,
-    free: ready && !holding && !showIslands && !autoplay && rerollShown === null,
+    free: ready && !holding && !showIslands && !autoplay,
     angleOf: (id) => angles[laneOf(id)]!,
     skipFirstOpening: islandMarks,
     skip: skipIslandMoments,
@@ -260,10 +256,10 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     if (hasStep || holding) setSealed(null);
   }, [hasStep, holding]);
 
-  // Ships: at the dock until the voyage event is out, then at sea; the resolution moves them on.
+  // Ships: at the dock while the round is decided; the resolution moves them out to sea.
   const ships: TableShip[] = board.ships.map((s) => {
-    // While the reroll card (or the lighthouse's beams around it) is up, the ships stay at the dock.
-    const base: TableShip = { id: s.id, owner: s.owner, state: rerollShown ? 'docked' : holding ? resolution.shipState(s.id) : board.voyageEvent ? 'sailing' : 'docked' };
+    // The ships stay at the dock until the resolution sends them out.
+    const base: TableShip = { id: s.id, owner: s.owner, state: holding ? resolution.shipState(s.id) : 'docked' };
     return step?.ship ? step.ship(base) : base;
   });
   const stateOf = (id: ShipId) => ships.find((x) => x.id === id)?.state;
@@ -329,24 +325,8 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const bottomHud = useMemo(() => [dockRef, barRef], []);
   const safe = useHudSafe(topHud, bottomHud, SAFE);
 
-  const rerollResult = rerollShown
-    ? snap.privateEvents.find((e) => e.type === 'intel-reroll-result' && e.playerId === rerollShown.request.context.decision.playerId && e.shipId === rerollShown.shipId && e.round === rerollShown.request.context.view.round)
-    : undefined;
-  const cardRequest = rerollShown?.request ?? rerolling;
-  // The lighthouse intel's private look: beams on the ships it looked at, before and around the card.
-  const peek = usePeekSpotlight({
-    request: cardRequest,
-    rerolledShip: rerollShown?.shipId ?? null,
-    islandOf: (id) => board.players[id]?.island ?? null,
-    angleOf: (id) => angles[laneOf(id)]!,
-    shipAt: (id) => {
-      const owner = board.ships.find((s) => s.id === id)?.owner;
-      return lanePoint(owner, (o) => angles[laneOf(o)]!, stateOf(id) === 'docked' ? 'docked' : 'sailing');
-    },
-  });
-
-  // The decision is really up (its islands' moments played, the reroll card dealt) for the tutorial host to talk about it.
-  const calm = ready && !holding && !showIslands && !autoplay && !moments.blocking && (phase !== 'intel-reroll' || peek.cardShown);
+  // The decision is really up (its islands' moments played) for the tutorial host to talk about it.
+  const calm = ready && !holding && !showIslands && !autoplay && !moments.blocking;
   useEffect(() => onCalm?.(calm), [onCalm, calm]);
 
   const finished = !holding && snap.result !== null;
@@ -376,7 +356,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const logLines = events.flatMap((e) => eventLine(e, { nameOf, shipOf: shipOwnerName })?.split('\n') ?? []);
 
   const waitingNames = snap.waitingOn.filter((id) => id !== seatOnScreen).map(nameOf);
-  const idle = !holding && !step && !cardRequest && !finished && !drafting && !showIslands && !handoffTo && !moments.blocking;
+  const idle = !holding && !step && !finished && !drafting && !showIslands && !handoffTo && !moments.blocking;
 
   return (
     <div className="beat-preview">
@@ -415,10 +395,9 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
             />
           ))}
         {resolution.scene}
-        {peek.cue && <Spotlight key={peek.cue.key} cue={peek.cue} />}
       </TableCanvas>
 
-      <MarketStrip ref={marketRef} board={board} bets={step?.bets} prices={resolution.marketPrices} changed={resolution.changedGoods} />
+      <MarketStrip ref={marketRef} board={board} prices={resolution.marketPrices} changed={resolution.changedGoods} />
       {ready && rivalRow && (
         <div ref={rivalRef} className="rival-row" data-focus="rivals">
           {rivalPlates(
@@ -463,7 +442,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
       {ready && (
         <div ref={barRef} data-focus="bar" className="inv-bar">
           {step?.bar}
-          {holding && !rerollShown && resolution.bar}
+          {holding && resolution.bar}
           {idle && sealed !== null && (
             <>
               <span className="sealed-choice">{sealed}</span>
@@ -476,25 +455,11 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
       )}
 
       {ready && step?.overlay}
-      {/* The round's show waits behind the private reroll moment (its card or the beams closing). */}
-      {ready && !rerollShown && resolution.overlay}
+      {ready && resolution.overlay}
+      {/* The voyage event is public from the round's start (§5): it stays in view while investing and deploying. */}
+      {ready && !holding && !finished && board.round > 0 && board.voyageEvent && <VoyageEventChip event={board.voyageEvent} />}
       {ready && drafting && <IslandDraft key={drafting.id} context={drafting.context} onSubmit={(a) => session.submit(drafting.id, a)} />}
       {ready && showIslands && chosen?.type === 'islands-chosen' && <IslandReveal islands={chosen.islands} seats={seats} onClose={() => setIslandsSeen(true)} />}
-      {ready && cardRequest && peek.cardShown && (
-        <RerollCard
-          context={cardRequest.context}
-          board={board}
-          viewer={cardRequest.context.decision.playerId}
-          nameOf={nameOf}
-          rerolled={rerollShown ? { shipId: rerollShown.shipId, value: rerollResult?.type === 'intel-reroll-result' ? rerollResult.rerolledRoll : null } : null}
-          onClose={() => setRerollShown(null)}
-          onSubmit={(a) => {
-            if (!rerolling) return;
-            if (a.type === 'intel-reroll' && a.rerollShipId !== null) setRerollShown({ request: rerolling, shipId: a.rerollShipId });
-            session.submit(rerolling.id, a);
-          }}
-        />
-      )}
       {resultUp && (
         <ResultCard
           rows={rows}

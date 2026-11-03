@@ -46,14 +46,10 @@ function cashFlight(e: Extract<MatchEvent, { type: 'cash-changed' }>, i: number)
     'smuggling-fine': { from: island(e.playerId), to: HARBOR },
     'smuggling-confiscated': { from: fromShip, to: island(e.playerId) },
     'smuggling-seized': { from: fromShip, to: island(e.playerId) },
-    'arms-confiscated': { from: fromShip, to: island(e.playerId), good: 'arms' },
+    'goods-confiscated': { from: fromShip, to: island(e.playerId) },
     'pirate-loot': { from: fromShip, to: island(e.playerId) },
     insurance: { from: HARBOR, to: building(e.playerId, 'insurance'), building: 'insurance' },
-    'escort-fee': { from: HARBOR, to: island(e.playerId) },
     'exchange-commission': { from: HARBOR, to: building(e.playerId, 'exchange'), building: 'exchange' },
-    'broker-bet': { from: HARBOR, to: island(e.playerId) },
-    'broker-control': { from: fromShip, to: island(e.playerId) },
-    'broker-lift': { from: HARBOR, to: island(e.playerId) },
   };
   const route = routes[e.reason];
   if (!route) return null;
@@ -99,7 +95,6 @@ export interface MarketRow {
   readonly good: GoodId;
   readonly demand: number;
   /** Change the brokers' bets made to the demand card (§9.4). */
-  readonly brokerShift: number;
   readonly arrived: number;
   readonly before: number;
   readonly after: number;
@@ -112,7 +107,6 @@ export function marketRows(events: readonly MatchEvent[], round: number, cardDem
   return GOODS.map((good) => ({
     good,
     demand: e.demand[good],
-    brokerShift: e.demand[good] - cardDemand[good],
     arrived: e.arrived[good],
     before: e.priceBefore[good],
     after: e.priceAfter[good],

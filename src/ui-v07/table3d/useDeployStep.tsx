@@ -1,20 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollText } from './ScrollText';
-import { GOODS, type Bet, type GoodId, type Goods, type ShipId } from '../../v07/game';
+import { type GoodId, type Goods, type RoleId, type ShipId } from '../../v07/game';
 import { soundEngine } from '../audio/soundEngine';
 import { ROLE_LABELS } from '../labels';
 import { besideShip, type TablePin, type TableShip } from '../scene/TableCanvas';
 import {
-  betsAtShip,
   blockedReason,
-  brokerAims,
   deployActionFor,
   deployOptions,
   deployTodo,
   EMPTY_DEPLOY,
-  looseBets,
+  goodsAtShip,
+  guessesAtShip,
+  needsNaming,
   needsTarget,
-  peeksFor,
   pickRole,
   roleCards,
   targetsFor,
@@ -37,7 +36,7 @@ import { shipName, type StageEnv, type StageParts } from './stage';
 import { cardArtUrl } from './cardArt';
 
 // Role deployment on the whole table (docs/ui/v07-event-presentation.md §1.4): pick a role card
-// from the hand, then click the ship it goes to (or, for the broker, 漲／跌 on the market strip).
+// from the hand, then click the ship it goes to (customs then names a good, a diplomat guesses a role, in a list at the ship).
 // What is still needed breathes gold; the submit button says what is being submitted.
 
 const TAG_HEIGHT = 3;
@@ -75,14 +74,10 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   if (!active || !context) return null;
   const { board, seats, angles, laneOf, viewer, nameOf, submit: submitAction } = active;
   const cargo = active.cargo ?? NO_CARGO;
-  const aboard: ReadonlySet<GoodId> = new Set(GOODS.filter((g) => cargo[g] > 0));
   const cards = roleCards(context, options);
-  const aims = brokerAims(options, choice.bet);
-  const todo = deployTodo(choice, aims);
-  // The broker picks the ship first and the bet at that ship, so every ship some bet may name stays on offer.
+  const todo = deployTodo(choice);
+  const naming = needsNaming(choice.role);
   const targets = new Set(targetsFor(options, choice.role));
-  const loose = looseBets(options);
-  const peeks = new Set(choice.role === 'intel' && choice.target ? peeksFor(options, choice) : []);
   const action = deployActionFor(options, choice);
   const noDeploy = options.find((a) => a.role === null);
   const ownerOf = (id: ShipId) => board.ships.find((s) => s.id === id)?.owner;
@@ -92,17 +87,13 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     if (role !== choice.role) soundEngine.playSfx('role-pick');
     setChoice(pickRole(role));
   };
-  // Click a ship to send the role there; click it again to take the role back. A lighthouse intel
-  // merchant's next click on another ship is the optional second look (§11.2).
+  // Click a ship to send the role there; click it again to take the role back.
   const clickShip = (id: ShipId) => {
-    if (id === choice.target) setChoice({ ...choice, target: null, peek: null, bet: null });
-    else if (choice.target !== null && peeks.has(id)) setChoice({ ...choice, peek: choice.peek === id ? null : id });
-    else if (targets.has(id)) setChoice({ ...choice, target: id, peek: null, bet: keepBet(id) });
+    if (id === choice.target) setChoice({ ...choice, target: null, good: null, guess: null });
+    else if (targets.has(id)) setChoice({ ...choice, target: id, good: null, guess: null });
   };
-  // A bet picked on another ship stays only when this ship may name it too.
-  const keepBet = (id: ShipId): Bet | null => (choice.bet !== null && betsAtShip(options, id).some((b) => b.good === choice.bet!.good && b.direction === choice.bet!.direction) ? choice.bet : null);
-  const broker = choice.role === 'broker';
-  const pickBet = (bet: Bet, id: ShipId | null) => setChoice({ ...choice, bet: choice.bet?.good === bet.good && choice.bet.direction === bet.direction ? null : bet, target: id });
+  const nameGood = (good: GoodId) => setChoice({ ...choice, good: choice.good === good ? null : good });
+  const guessRole = (role: RoleId) => setChoice({ ...choice, guess: choice.guess === role ? null : role });
 
   const send = (a = action) => {
     if (!a) return;
@@ -118,14 +109,12 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   };
 
   // A round button over every ship: a "+" on the ones you may pick (the owner's color on its rim),
-  // the role's badge on the one picked (click it to take the role back), a faint "+" for the
-  // lighthouse's extra look, and a "no entry" sign on the ones the role cannot go to, saying why on
+  // the role's badge on the one picked (click it to take the role back), and a "no entry" sign on the ones the role cannot go to, saying why on
   // hover or tap. The ship's name shows on hover and is read out for screen readers. Each counts as
   // part of its owner's island for a highlight (the tutorial's focus).
   const pins: TablePin[] = board.ships.map((ship) => {
-    const blocked = blockedReason(context, options, { ...choice, bet: null }, ship.id);
-    const peekable = choice.target !== null && peeks.has(ship.id);
-    const pickable = targets.has(ship.id) && !peekable;
+    const blocked = blockedReason(context, options, choice, ship.id);
+    const pickable = targets.has(ship.id);
     const chosen = choice.target === ship.id;
     const label = shipName(board, ship.id, viewer, nameOf);
     const rim = seats[laneOf(ship.owner)]?.color ?? '#e0a63c';
@@ -133,27 +122,39 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
       id: `ship-${ship.id}`,
       position: besideShip(angles[laneOf(ship.owner)]!, 'docked', 7, TAG_HEIGHT),
       node:
-        broker && chosen ? (
+        chosen && naming === 'good' ? (
           <ShipBets
+            kind="good"
             label={label}
             owner={ship.owner}
             rim={rim}
-            badge={roleIconUrl('broker')}
-            offered={betsAtShip(options, ship.id)}
-            side={ship.owner === viewer ? 1 : -1}
-            chosen={choice.bet}
-            todo={todo.bet}
-            aboard={ship.owner === viewer ? aboard : undefined}
-            onBet={(bet) => pickBet(bet, ship.id)}
+            badge={roleIconUrl('customs')}
+            offered={goodsAtShip(options, ship.id)}
+            chosen={choice.good}
+            todo={todo.naming}
+            onPick={nameGood}
             onBack={() => clickShip(ship.id)}
           />
-        ) : pickable || peekable ? (
+        ) : chosen && naming === 'guess' ? (
+          <ShipBets
+            kind="guess"
+            label={label}
+            owner={ship.owner}
+            rim={rim}
+            badge={roleIconUrl('diplomat')}
+            offered={guessesAtShip(options, ship.id)}
+            chosen={choice.guess}
+            todo={todo.naming}
+            onPick={guessRole}
+            onBack={() => clickShip(ship.id)}
+          />
+        ) : pickable ? (
           <button
             type="button"
-            className={`dep-ship ${chosen || choice.peek === ship.id ? 'on' : ''} ${(todo.target && pickable) ? 'todo' : ''} ${peekable ? 'peek' : ''}`}
-            style={{ borderColor: peekable ? undefined : rim }}
-            data-label={peekable ? `多看 ${label}（可不選）` : chosen ? `${label}・點一下取消` : `派到${label}`}
-            aria-label={peekable ? `多看 ${label}` : `派到${label}`}
+            className={`dep-ship ${chosen ? 'on' : ''} ${todo.target ? 'todo' : ''}`}
+            style={{ borderColor: rim }}
+            data-label={chosen ? `${label}・點一下取消` : `派到${label}`}
+            aria-label={`派到${label}`}
             data-focus={`island-${ship.owner}`}
             data-target={ship.owner}
             data-done={chosen}
@@ -181,7 +182,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   // picked, else it shows the cargo alone.
   const strip =
     shown === null ? (
-      // Nothing pointed at yet: the strip still says what your ship carries, so a smuggler or a broker is chosen knowing it.
+      // Nothing pointed at yet: the strip still says what your ship carries, so a smuggler is chosen knowing it.
       <div className="dep-strip idle">
         <header>
           <b>你的船上</b>
@@ -283,8 +284,9 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     <span className="bar-chips">
       <DeployChips
         role={choice.role}
-        bet={choice.bet}
-        needsShip={needsTarget(choice.role, aims)}
+        good={choice.good}
+        guess={choice.guess}
+        needsShip={needsTarget(choice.role)}
         target={targetOwner === undefined ? null : { name: nameOf(targetOwner), color: seats[laneOf(targetOwner)]?.color ?? '#999' }}
       />
     </span>
@@ -292,15 +294,13 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   return {
     pins,
     camera: null,
-    ship: (ship: TableShip): TableShip => ({ ...ship, selectable: targets.has(ship.id) || peeks.has(ship.id), chosen: choice.target === ship.id || choice.peek === ship.id }),
+    ship: (ship: TableShip): TableShip => ({ ...ship, selectable: targets.has(ship.id), chosen: choice.target === ship.id }),
     onSelectShip: clickShip,
     dim: true,
-    // Bets that name no ship (nobody to name) are the only ones left on the market strip.
-    ...(broker && loose.length > 0 ? { bets: { offered: loose, chosen: choice.bet, todo: todo.bet && choice.target === null, aboard, onBet: (bet: Bet) => pickBet(bet, null) } } : {}),
     scene:
       choice.role !== null && choice.role !== 'none' ? (
         <DashedArrows
-          arrows={pickArrows(viewer, { role: choice.role, target: choice.target, peek: choice.peek, bet: choice.bet }, angles, laneOf, ownerOf)}
+          arrows={pickArrows(viewer, { role: choice.role, target: choice.target }, angles, laneOf, ownerOf)}
           color={seats[laneOf(viewer)]?.color ?? '#e0a63c'}
         />
       ) : null,
@@ -314,7 +314,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
       <>
         {chips}
         <SealSubmit disabled={incomplete} glow={choice.role !== null} onClick={submit} />
-        <LockHint icon={<InfoIcon />} text="提交後不能更改；所有人都提交後，角色一起公開（情報商人重擲後再公開）。" />
+        <LockHint icon={<InfoIcon />} text="提交後不能更改；所有人都提交後，角色一起公開。" />
       </>
     ),
     sealedChips: chips,

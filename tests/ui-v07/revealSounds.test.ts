@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { revealSound } from '../../src/ui-v07/audio/revealSounds';
 
-const groups = [{ role: 'intel' }, { role: 'guard' }, { role: 'pirate' }, { role: 'smuggler' }, { role: 'broker' }] as const;
+const groups = [{ role: 'customs' }, { role: 'guard' }, { role: 'pirate' }, { role: 'smuggler' }, { role: 'diplomat' }] as const;
 
 describe('sound of each role group as it is revealed', () => {
   it('gives every role its own sound', () => {

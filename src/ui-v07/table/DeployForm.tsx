@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { GOODS, ROLE_IDS, cooldownFor, roleFee, type Bet, type RoleId, type ShipId } from '../../v07/game';
+import { GOODS, ROLE_IDS, cooldownFor, roleFee, type GoodId, type RoleId, type ShipId } from '../../v07/game';
 import { GOOD_LABELS, ROLE_LABELS, ROLE_TEXT } from '../labels';
 import { goodsText } from '../log';
+import { ALL_GUESSES } from './deployChoice';
 import { legalOf, type FormProps } from './forms';
 
 type Choice = RoleId | 'none';
 
 /**
  * §5 step 3, §9: pick one role (or none) with its target. Roles on cooldown or beyond your cash
- * stay visible but gray, with the reason; the legal actions decide what can be confirmed.
+ * stay visible but gray, with the reason; the legal actions decide what can be confirmed. Customs
+ * also names a good, a diplomat also guesses a role.
  */
 export function DeployForm({ context, nameOf, onSubmit }: FormProps) {
   const { view } = context;
@@ -17,13 +19,12 @@ export function DeployForm({ context, nameOf, onSubmit }: FormProps) {
   const legal = legalOf(context, 'deploy-role');
   const [choice, setChoice] = useState<Choice | null>(null);
   const [target, setTarget] = useState<ShipId | null>(null);
-  const [peek, setPeek] = useState<ShipId | null>(null);
-  const [bet, setBet] = useState<Bet | null>(null);
+  const [good, setGood] = useState<GoodId | null>(null);
+  const [guess, setGuess] = useState<RoleId | null>(null);
 
   const role = choice === 'none' ? null : choice;
   const roleLegal = legal.filter((a) => a.role === role);
   const targets = [...new Set(roleLegal.flatMap((a) => (a.targetShipId ? [a.targetShipId] : [])))];
-  const peeks = [...new Set(roleLegal.filter((a) => a.targetShipId === target).flatMap((a) => (a.peekShipId ? [a.peekShipId] : [])))];
   const shipLabel = (id: ShipId) => {
     const ship = view.ships.find((s) => s.id === id);
     if (!ship) return id;
@@ -44,8 +45,8 @@ export function DeployForm({ context, nameOf, onSubmit }: FormProps) {
   const pick = (next: Choice) => {
     setChoice(next);
     setTarget(null);
-    setPeek(null);
-    setBet(null);
+    setGood(null);
+    setGuess(null);
   };
 
   const action =
@@ -54,14 +55,14 @@ export function DeployForm({ context, nameOf, onSubmit }: FormProps) {
       : legal.find(
           (a) =>
             a.role === role &&
-            a.targetShipId === (role === 'broker' ? null : target) &&
-            (role === 'broker' ? a.bet?.good === bet?.good && a.bet?.direction === bet?.direction : true) &&
-            a.peekShipId === peek,
+            a.targetShipId === target &&
+            a.namedGood === (role === 'customs' ? good : null) &&
+            (a.guessRole ?? null) === (role === 'diplomat' ? guess : null),
         );
 
   return (
     <div className="v7-form">
-      <p className="v7-muted">所有人同時、秘密選擇；角色在情報重擲後一次公開。可以不部署。</p>
+      <p className="v7-muted">所有人同時、秘密選擇；角色在大家都決定後一次公開。可以不部署。</p>
       <div className="v7-role-grid">
         {ROLE_IDS.map((r) => {
           const why = reasonUnavailable(r);
@@ -85,51 +86,49 @@ export function DeployForm({ context, nameOf, onSubmit }: FormProps) {
         </button>
       </div>
 
-      {role !== null && role !== 'broker' && (
+      {role !== null && (
         <>
           <h3>選目標船</h3>
           <div className="v7-choice-grid">
             {targets.map((id) => (
-              <button key={id} className={`v7-choice${target === id ? ' on' : ''}`} onClick={() => { setTarget(id); setPeek(null); }}>
+              <button
+                key={id}
+                className={`v7-choice${target === id ? ' on' : ''}`}
+                onClick={() => {
+                  setTarget(id);
+                  setGood(null);
+                  setGuess(null);
+                }}
+              >
                 {shipLabel(id)}
               </button>
             ))}
           </div>
-          {role === 'intel' && target !== null && (
-            <>
-              <h3>
-                多看一艘 <small>燈塔島特權，可不選</small>
-              </h3>
-              <div className="v7-choice-grid">
-                <button className={`v7-choice${peek === null ? ' on' : ''}`} onClick={() => setPeek(null)}>
-                  只看這一艘
-                </button>
-                {peeks.map((id) => (
-                  <button key={id} className={`v7-choice${peek === id ? ' on' : ''}`} onClick={() => setPeek(id)}>
-                    {shipLabel(id)}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
         </>
       )}
 
-      {role === 'broker' && (
+      {role === 'customs' && target !== null && (
         <>
-          <h3>押注商品與方向</h3>
-          <div className="v7-bet-grid">
-            {GOODS.flatMap((good) =>
-              ([1, -1] as const).map((direction) => (
-                <button
-                  key={`${good}${direction}`}
-                  className={`v7-choice${bet?.good === good && bet.direction === direction ? ' on' : ''}`}
-                  onClick={() => setBet({ good, direction })}
-                >
-                  {GOOD_LABELS[good]}{direction === 1 ? ' 漲 ▲' : ' 跌 ▼'}
-                </button>
-              )),
-            )}
+          <h3>指名一種貨</h3>
+          <div className="v7-choice-grid">
+            {GOODS.map((g) => (
+              <button key={g} className={`v7-choice${good === g ? ' on' : ''}`} onClick={() => setGood(g)}>
+                {GOOD_LABELS[g]}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {role === 'diplomat' && target !== null && (
+        <>
+          <h3>猜哪個角色會針對你的船</h3>
+          <div className="v7-choice-grid">
+            {ALL_GUESSES.map((r) => (
+              <button key={r} className={`v7-choice${guess === r ? ' on' : ''}`} onClick={() => setGuess(r)}>
+                {ROLE_LABELS[r]}
+              </button>
+            ))}
           </div>
         </>
       )}

@@ -1,5 +1,6 @@
 import { ROLE_IDS, type Deployment, type Goods, type PlayerId, type ShipId } from '../../v07/game';
 import { GOOD_LABELS, ROLE_LABELS } from '../labels';
+import { deploymentNote } from './deployChoice';
 import type { Board, BoardShip } from '../session/board';
 import { GoodsList } from './parts';
 
@@ -33,8 +34,6 @@ function deploymentsOn(board: Board, shipId: ShipId): Deployment[] {
 
 /** This round's ships (§4: owner public, cargo hidden until resolved) and the roles revealed on them. */
 export function ShipsPanel({ board, nameOf, myCargo, viewerId }: ShipsPanelProps) {
-  const brokers = board.revealedRoles.filter((d) => d.role === 'broker');
-  const peeks = board.revealedRoles.filter((d) => d.role === 'intel' && d.peekShipId !== null);
   if (!board.launched) {
     return <p className="v7-muted">本回合還沒有出航的船。</p>;
   }
@@ -51,43 +50,29 @@ export function ShipsPanel({ board, nameOf, myCargo, viewerId }: ShipsPanelProps
             <header>
               <strong>{nameOf(ship.owner)}的船{ship.owner === viewerId && <em>（你）</em>}</strong>
               {ship.outcome && <span className={`v7-outcome ${ship.outcome}`}>{ship.outcome === 'arrived' ? '抵達' : '沉沒'}</span>}
-              {ship.rerolled && <span className="v7-badge">被重擲</span>}
             </header>
             <div className="v7-ship-cargo">
               <span className="v7-muted">{ship.cargo ? '貨物' : cargo ? '你的貨' : '貨物'}</span>{' '}
               {cargo ? <GoodsList goods={cargo} /> : <span className="v7-muted">保密到結算</span>}
-              {ship.confiscatedArms > 0 && <span className="v7-note">（{ship.confiscatedArms} 軍火被沒收）</span>}
+              {ship.confiscated.map((c) => (
+                <span key={c.good} className="v7-note">（{c.units} {GOOD_LABELS[c.good]}被沒收）</span>
+              ))}
             </div>
             {roles.length > 0 && (
               <div className="v7-ship-roles">
                 {roles.map((d) => (
                   <span key={`${d.role}-${d.playerId}`} className={`v7-role r-${d.role}`}>
                     {ROLE_LABELS[d.role]}・{nameOf(d.playerId)}
+                    {deploymentNote(d) && `（${deploymentNote(d)}）`}
                   </span>
                 ))}
               </div>
             )}
-            {ship.smuggling && <div className="v7-note">走私：{{ taken: '成功抽成', caught: '被護衛抓到', seized: '被海盜搶走', lost: '隨船沉沒' }[ship.smuggling]}</div>}
+            {ship.smuggling && <div className="v7-note">走私：{{ taken: '成功抽成', caught: '被海關抓到', seized: '被海盜搶走', lost: '隨船沉沒' }[ship.smuggling]}</div>}
             <Modifier ship={ship} />
           </article>
         );
       })}
-      {brokers.length > 0 && (
-        <div className="v7-brokers">
-          {brokers.map((d) => (
-            <span key={d.playerId} className="v7-role r-broker">
-              莊家・{nameOf(d.playerId)}押 {d.bet ? GOOD_LABELS[d.bet.good] : ''}
-              {d.bet?.direction === 1 ? '漲' : '跌'}
-            </span>
-          ))}
-        </div>
-      )}
-      {/* The lighthouse intel merchant's second look is public but kept understated. */}
-      {peeks.length > 0 && (
-        <p className="v7-peek">
-          {peeks.map((d) => `${nameOf(d.playerId)}也看了${nameOf(board.ships.find((s) => s.id === d.peekShipId)?.owner ?? '')}的船`).join('；')}
-        </p>
-      )}
     </div>
   );
 }

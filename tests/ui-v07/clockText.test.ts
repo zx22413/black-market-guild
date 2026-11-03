@@ -11,7 +11,7 @@ describe('online decision clock text', () => {
 
   it('names the host choices in minutes and every phase default', () => {
     expect([60, 120, 300].map(limitLabel)).toEqual(['1 分鐘', '2 分鐘', '5 分鐘']);
-    expect(Object.keys(TIMEOUT_DEFAULT).sort()).toEqual(['intel-reroll', 'invest', 'island-choice', 'role-deployment']);
+    expect(Object.keys(TIMEOUT_DEFAULT).sort()).toEqual(['invest', 'island-choice', 'role-deployment']);
   });
 
   it('writes the online rules chapter from the protocol numbers', () => {

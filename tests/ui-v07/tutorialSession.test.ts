@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { startTutorialSession } from '../../src/ui-v07/session/tutorialSession';
-import { BASICS, INTEL, scriptedAction } from '../../src/v07/tutorial';
+import { BASICS, CUSTOMS, scriptedAction } from '../../src/v07/tutorial';
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -73,32 +73,29 @@ describe('tutorial session', () => {
   });
 
   it('plays your investment for you in a role lesson and waits at the role decision', async () => {
-    const session = startTutorialSession(INTEL);
+    const session = startTutorialSession(CUSTOMS);
     session.setCalm(true);
     await settle();
-    INTEL.coach.filter((s) => s.trigger.kind === 'decision' && s.trigger.phase === 'role-deployment').forEach(() => session.read());
+    CUSTOMS.coach.filter((s) => s.trigger.kind === 'decision' && s.trigger.phase === 'role-deployment').forEach(() => session.read());
     const request = session.getSnapshot().requests[0]!;
     expect(request.context.decision.phase).toBe('role-deployment');
-    expect(session.getSnapshot().privateEvents.some((e) => e.type === 'cargo-loaded' && e.playerId === 'p1')).toBe(true);
-    session.submit(request.id, scriptedAction(INTEL, request.context));
+    // You stay in port in this lesson, so no cargo is yours to see.
+    expect(session.getSnapshot().privateEvents.some((e) => e.type === 'cargo-loaded' && e.playerId === 'p1')).toBe(false);
+    session.submit(request.id, scriptedAction(CUSTOMS, request.context));
     await settle();
-    // The reroll decision waits for its own host step.
-    expect(session.getCoach()).toMatchObject({ holdsDecision: true, step: { trigger: { phase: 'intel-reroll' } } });
-    session.read();
-    const reroll = session.getSnapshot().requests[0]!;
-    expect(reroll.context.decision.phase).toBe('intel-reroll');
-    expect(session.getSnapshot().privateEvents.find((e) => e.type === 'intel-report')).toMatchObject({ rawRoll: 2 });
+    // The roles are revealed and the round resolves: the next decision is round 2's or the lesson's end.
+    expect(session.getSnapshot().requests[0]?.context.decision.phase).not.toBe('role-deployment');
   });
 
   it('reaches the end step once the table has shown the last round', async () => {
-    const session = startTutorialSession(INTEL);
+    const session = startTutorialSession(CUSTOMS);
     session.setCalm(true);
     session.setStarted(9);
     await settle();
     for (let guard = 0; guard < 20; guard += 1) {
       const request = session.getSnapshot().requests[0];
       if (session.getCoach().step) session.read();
-      else if (request) session.submit(request.id, scriptedAction(INTEL, request.context));
+      else if (request) session.submit(request.id, scriptedAction(CUSTOMS, request.context));
       await settle();
     }
     expect(session.getSnapshot().status).toBe('finished');

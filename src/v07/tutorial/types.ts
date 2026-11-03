@@ -94,6 +94,8 @@ export type FocusTarget =
   | { readonly kind: 'crate'; readonly good: GoodId; readonly count: number }
   /** The clock over a warehouse stack: how many rounds until the island next makes that good. */
   | { readonly kind: 'restock'; readonly good: GoodId }
+  /** A choice in the list at your ship after it is picked: a good customs names, a role a diplomat guesses. */
+  | { readonly kind: 'naming'; readonly value: string }
   /** A building's card in the building list, or the button that opens the list while it is closed. */
   | { readonly kind: 'build'; readonly building: BuildingId }
   /** The market card of a resolution: how each price moved. */

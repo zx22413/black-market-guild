@@ -10,7 +10,7 @@ function play(seed: number): MatchEvent[] {
   return runMatchSync(setup, setup.bots).events as MatchEvent[];
 }
 
-const SETTLED_REASONS = new Set(['sale', 'smuggling', 'smuggling-fine', 'smuggling-confiscated', 'smuggling-seized', 'arms-confiscated', 'pirate-loot', 'insurance', 'escort-fee', 'exchange-commission', 'broker-bet', 'broker-control', 'broker-lift']);
+const SETTLED_REASONS = new Set(['sale', 'smuggling', 'smuggling-fine', 'smuggling-confiscated', 'smuggling-seized', 'goods-confiscated', 'pirate-loot', 'insurance', 'exchange-commission']);
 
 describe('settlement flights', () => {
   it.each([1, 2, 3, 7, 11])('move exactly the money of the settlement, every payment once (seed %i)', (seed) => {
@@ -40,7 +40,7 @@ describe('settlement flights', () => {
   });
 
   it('salvage and insurance go to the building that does the work', () => {
-    const events = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].flatMap((seed) => [play(seed)]);
+    const events = Array.from({ length: 40 }, (_, i) => i + 1).map((seed) => play(seed));
     const all = events.flatMap((ev) => [1, 2, 3, 4, 5, 6].flatMap((r) => settlementFlights(ev, r)));
     const salvage = all.filter((f) => f.label.startsWith('打撈'));
     expect(salvage.length).toBeGreaterThan(0);
@@ -59,7 +59,7 @@ describe('market rows', () => {
     for (const r of rows) {
       expect(r.arrived).toBe(settled.arrived[r.good]);
       expect(r.after).toBe(settled.priceAfter[r.good]);
-      expect(r.demand - r.brokerShift).toBe(demand[r.good]);
+      expect(r.demand).toBe(demand[r.good]);
     }
   });
 });

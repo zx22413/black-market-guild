@@ -16,11 +16,11 @@
 | icons/ship-joint.svg | Joint-venture ship (larger galleon) | https://game-icons.net/1x1/lorc/galleon.html | https://game-icons.net/icons/ffffff/000000/1x1/lorc/galleon.svg | Lorc | CC BY 3.0 | 2026-09-28 |
 | icons/ship-sunk.svg | Sunk ship | https://game-icons.net/1x1/delapouite/sinking-ship.html | https://game-icons.net/icons/ffffff/000000/1x1/delapouite/sinking-ship.svg | Delapouite | CC BY 3.0 | 2026-09-28 |
 | icons/ship-arrived.svg | Arrived ship / anchor | https://game-icons.net/1x1/lorc/anchor.html | https://game-icons.net/icons/ffffff/000000/1x1/lorc/anchor.svg | Lorc | CC BY 3.0 | 2026-09-28 |
-| icons/role-intel.svg | Role: intel merchant | https://game-icons.net/1x1/lorc/spyglass.html | https://game-icons.net/icons/ffffff/000000/1x1/lorc/spyglass.svg | Lorc | CC BY 3.0 | 2026-09-28 |
+| icons/role-customs.svg | Role: customs (V0.7.1; the former intel merchant's spyglass, placeholder until new art) | https://game-icons.net/1x1/lorc/spyglass.html | https://game-icons.net/icons/ffffff/000000/1x1/lorc/spyglass.svg | Lorc | CC BY 3.0 | 2026-09-28 |
 | icons/role-guard.svg | Role: guard | https://game-icons.net/1x1/lorc/cannon.html | https://game-icons.net/icons/ffffff/000000/1x1/lorc/cannon.svg | Lorc | CC BY 3.0 | 2026-09-28 |
 | icons/role-pirate.svg | Role: pirate | https://game-icons.net/1x1/delapouite/pirate-flag.html | https://game-icons.net/icons/ffffff/000000/1x1/delapouite/pirate-flag.svg | Delapouite | CC BY 3.0 | 2026-09-28 |
 | icons/role-smuggler.svg | Role: smuggler | https://game-icons.net/1x1/lorc/swap-bag.html | https://game-icons.net/icons/ffffff/000000/1x1/lorc/swap-bag.svg | Lorc | CC BY 3.0 | 2026-09-28 |
-| icons/role-broker.svg | Role: broker (V0.7; a rising price chart, chosen so it differs from the exchange's scales) | https://game-icons.net/1x1/delapouite/chart.html | https://game-icons.net/icons/ffffff/000000/1x1/delapouite/chart.svg | Delapouite | CC BY 3.0 | 2026-10-15 |
+| icons/role-diplomat.svg | Role: diplomat (V0.7.1; the former broker's chart, placeholder until new art) | https://game-icons.net/1x1/delapouite/chart.html | https://game-icons.net/icons/ffffff/000000/1x1/delapouite/chart.svg | Delapouite | CC BY 3.0 | 2026-10-15 |
 | icons/asset-shipyard.svg | Asset: shipyard (substitute: harbor dock) | https://game-icons.net/1x1/delapouite/harbor-dock.html | https://game-icons.net/icons/ffffff/000000/1x1/delapouite/harbor-dock.svg | Delapouite | CC BY 3.0 | 2026-09-28 |
 | icons/asset-insurance.svg | Asset: insurance | https://game-icons.net/1x1/delapouite/scroll-quill.html | https://game-icons.net/icons/ffffff/000000/1x1/delapouite/scroll-quill.svg | Delapouite | CC BY 3.0 | 2026-09-28 |
 | icons/asset-salvage.svg | Asset: salvage company | https://game-icons.net/1x1/delapouite/diving-helmet.html | https://game-icons.net/icons/ffffff/000000/1x1/delapouite/diving-helmet.svg | Delapouite | CC BY 3.0 | 2026-09-28 |
@@ -98,11 +98,11 @@ V0.7 的卡牌插圖（`cards/<種類>-<id>.svg`，400×300）與從插圖抽出
 | cards/building-insurance.svg | 碼頭上的保險行、掛著保單與羽毛筆的招牌、停泊的船、封蠟保單 | 封蠟保單卷軸 | 2026-10-19 |
 | cards/building-salvage.svg | 紅色打撈船、甲板上的黃銅潛水頭盔、從海底吊起的寶箱 | 黃銅潛水頭盔 | 2026-10-19 |
 | cards/building-exchange.svg | 有柱廊與金色天秤的交易所、屋頂旗幟、碼頭貨箱 | 金色天秤 | 2026-10-19 |
-| cards/role-intel.svg | 情報商人逆光剪影：寬簷帽、長外套，黃銅望遠鏡湊在眼前，綠圍巾被風吹起，背景是遠方的船 | 寬簷帽與望遠鏡的剪影頭像 | 2026-10-19 |
+| cards/role-customs.svg | （V0.7.1 暫用，原為情報商人，待換圖）海關逆光剪影：寬簷帽、長外套，黃銅望遠鏡湊在眼前，綠圍巾被風吹起，背景是遠方的船 | 寬簷帽與望遠鏡的剪影頭像 | 2026-10-19 |
 | cards/role-guard.svg | 護衛逆光剪影：高筒軍帽與紅羽、方肩、白色交叉肩帶、立在身側的火槍與刺刀，背景是甲板欄杆與商船 | 高筒軍帽的剪影頭像 | 2026-10-19 |
 | cards/role-pirate.svg | 海盜逆光剪影：三角帽、尖鬍子、一隻發光的眼睛、叉腰舉刀、紅腰帶與金扣，背景是黑帆船 | 三角帽與鬍子的剪影頭像 | 2026-10-19 |
 | cards/role-smuggler.svg | 走私商人逆光剪影：月光下的兜帽與破斗篷、肩上的麻袋、壓低的燈籠、兜帽裡發光的眼睛 | 兜帽與發光雙眼的剪影頭像 | 2026-10-19 |
-| cards/role-broker.svg | 莊家逆光剪影：高帽、圓肚子、紫背心與懷錶鏈、單片眼鏡、手杖，舉起閃亮的金幣，背景是黃昏的商館 | 高帽與單片眼鏡的剪影頭像 | 2026-10-19 |
+| cards/role-diplomat.svg | （V0.7.1 暫用，原為莊家，待換圖）外交官逆光剪影：高帽、圓肚子、紫背心與懷錶鏈、單片眼鏡、手杖，舉起閃亮的金幣，背景是黃昏的商館 | 高帽與單片眼鏡的剪影頭像 | 2026-10-19 |
 | cards/voyage-tailwind.svg | 滿帆前進的船與風線 | 三道風線 | 2026-10-19 |
 | cards/voyage-storm.svg | 閃電、雨、大浪中傾斜的船 | 烏雲與閃電 | 2026-10-19 |
 | cards/voyage-sea-fog.svg | 霧帶與半隱的船、燈籠 | 霧帶 | 2026-10-19 |

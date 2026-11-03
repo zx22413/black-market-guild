@@ -8,7 +8,7 @@ import './tutorial.css';
 
 export const TUTORIAL_GROUPS: readonly { readonly title: string; readonly ids: readonly TutorialId[] }[] = [
   { title: '基礎', ids: ['basics'] },
-  { title: '角色', ids: ['guard', 'pirate', 'intel', 'smuggler', 'arms-cover', 'broker'] },
+  { title: '角色', ids: ['guard', 'pirate', 'customs', 'smuggler', 'diplomat'] },
   { title: '開局', ids: ['islands'] },
 ];
 

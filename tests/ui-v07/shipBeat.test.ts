@@ -18,24 +18,6 @@ function play(seed: number) {
 const SEEDS = [1, 2, 3, 7, 11];
 
 describe('ship beat built from public events', () => {
-  it('names the lighthouse intel that rerolled a ship it looked at, and only then', () => {
-    let spotted = 0;
-    for (let seed = 1; seed <= 30; seed++) {
-      const events = play(seed).log.events as MatchEvent[];
-      for (const id of events.flatMap((e) => (e.type === 'ship-resolved' ? [e.shipId] : []))) {
-        const beat = buildShipBeat(events, id)!;
-        if (beat.rerollSpotter === null) continue;
-        spotted++;
-        expect(beat.rerolled).toBe(true);
-        const intel = events.find((e) => e.type === 'roles-revealed' && e.round === beat.round && e.role === 'intel');
-        const d = intel?.type === 'roles-revealed' ? intel.deployments.find((x) => x.playerId === beat.rerollSpotter) : undefined;
-        expect(d?.peekShipId).not.toBeNull();
-        expect([d?.targetShipId, d?.peekShipId]).toContain(id);
-      }
-    }
-    expect(spotted).toBeGreaterThan(0);
-  });
-
   it.each(SEEDS)('replays every ship exactly as the engine resolved it (seed %i)', (seed) => {
     const { log } = play(seed);
     const events = log.events as MatchEvent[];
@@ -47,7 +29,7 @@ describe('ship beat built from public events', () => {
         expect(beat.final).toBe(mod.final);
         // The running total of the steps ends on the final value (clamp included).
         expect(beat.steps.at(-1)?.value ?? beat.start).toBe(mod.final);
-        expect(beat.outcome).toBe(mod.final <= 2 ? 'sank' : 'arrived');
+        expect(beat.outcome).toBe(mod.final <= 1 ? 'sank' : 'arrived');
         const sum = (kind: string) => beat.steps.filter((s) => s.kind === kind).reduce((n, s) => n + s.delta, 0);
         expect(sum('guard')).toBe(mod.guard);
         expect(sum('pirate')).toBe(mod.pirate);
@@ -65,6 +47,9 @@ describe('ship beat built from public events', () => {
       for (const d of e.deployments) {
         if (!d.targetShipId) continue;
         const step = buildShipBeat(events, d.targetShipId)!.steps.find((s) => s.kind === e.role);
+        // A diplomat that guessed this role voids it: the deployment is public but no step is played.
+        const voided = events.some((x) => x.type === 'cash-changed' && x.reason === 'diplomat-take' && x.playerId === d.playerId && x.shipId === d.targetShipId && x.amount < 0);
+        if (voided && step === undefined) continue;
         expect(step?.actors).toContain(d.playerId);
       }
     }

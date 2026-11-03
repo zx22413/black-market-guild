@@ -42,7 +42,6 @@ export function BeatTag({ beat, view, names, viewer }: BeatTagProps) {
         </div>
       </div>
       <p className="beat-tag-trail">
-        {beat.rerolled && <em>重擲後 </em>}
         {beat.start}
         {beat.steps.slice(0, view.stepsShown).map((s, i) => (
           <span key={i}> {signed(s.delta)}</span>
@@ -56,11 +55,11 @@ export function BeatTag({ beat, view, names, viewer }: BeatTagProps) {
               <GoodIcon good={g} />
             </span>
           ))}
-          {beat.armsConfiscated > 0 && (
-            <small className="down">
-              <GoodIcon good="arms" size="sm" /> {beat.armsConfiscated} 被沒收
+          {beat.confiscated.map((c) => (
+            <small key={c.good} className="down">
+              <GoodIcon good={c.good} size="sm" /> {c.units} 被沒收
             </small>
-          )}
+          ))}
         </div>
       )}
       {view.cashShown + view.goodsShown > 0 && (

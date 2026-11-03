@@ -179,7 +179,7 @@ function roleSection(s: SimStats): string[] {
       [...ROLE_IDS.map((r) => [ROLE_LABELS[r]!, s.roles[r] ?? 0, pct(s.roles[r] ?? 0, s.playerRounds)]), ['不部署', s.playerRounds - deployments(s), pct(s.playerRounds - deployments(s), s.playerRounds)]],
     ),
     '',
-    `- 走私商人：上別人船走私 ${s.roles.smuggler ?? 0} 次（被抓 ${s.smugglersCaught} 人次，抽走 ${s.smuggled} G）。`,
+    `- 走私商人：掩護自己的船 ${s.smugglerCovers} 次、上別人船走私 ${(s.roles.smuggler ?? 0) - s.smugglerCovers} 次（被抓 ${s.smugglersCaught} 人次，抽走 ${s.smuggled} G）。`,
     `- 海關：部署 ${s.roles.customs ?? 0} 次；沒收 ${s.armsConfiscatedUnits} 單位、${s.armsConfiscatedCash} G。`,
     `- 海盜：目標沉沒率 ${pct(s.pirateSinks, s.roles.pirate ?? 0)}；每次平均淨收益 ${pirateNet(s).toFixed(0)} G。`,
     `- 外交官：部署 ${s.roles.diplomat ?? 0} 次，向對手拿走 ${s.diplomatTake} G。`,

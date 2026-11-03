@@ -144,7 +144,6 @@ export function BeatCard({ beat, playback, names, viewer, onDone }: BeatCardProp
         <span>第 {beat.round} 回合 · 航程結算</span>
         <strong>
           {beat.owner === viewer ? '你的船' : `${owner}的船`}
-          {beat.rerolled && <em className="beat-chip">情報商人重擲過</em>}
         </strong>
       </header>
 
@@ -193,11 +192,11 @@ export function BeatCard({ beat, playback, names, viewer, onDone }: BeatCardProp
               <GoodIcon good={g} />
             </span>
           ))}
-          {beat.armsConfiscated > 0 && (
-            <span className="beat-note down">
-              <GoodIcon good="arms" size="sm" /> {beat.armsConfiscated} 被沒收
+          {beat.confiscated.map((c) => (
+            <span key={c.good} className="beat-note down">
+              <GoodIcon good={c.good} size="sm" /> {c.units} 被沒收
             </span>
-          )}
+          ))}
         </div>
       )}
 

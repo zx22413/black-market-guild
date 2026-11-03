@@ -7,10 +7,6 @@ import type { SfxId } from './soundPlan';
 
 const FLIGHT_SOUND: Readonly<Record<Flight['kind'], SfxId | null>> = {
   sale: 'settle-sale',
-  'escort-fee': 'settle-coins',
-  'broker-bet': 'settle-coins',
-  'broker-lift': 'settle-coins',
-  'broker-control': 'settle-coins',
   'diplomat-take': 'settle-coins',
   'diplomat-refund': 'settle-coins',
   'exchange-commission': 'settle-tick',
@@ -20,7 +16,7 @@ const FLIGHT_SOUND: Readonly<Record<Flight['kind'], SfxId | null>> = {
   'smuggling-seized': 'settle-loot',
   'pirate-loot': 'settle-loot',
   insurance: 'settle-insurance',
-  'arms-confiscated': 'settle-arms',
+  'goods-confiscated': 'settle-arms',
   salvage: 'settle-salvage',
   spoil: 'settle-spoil',
   // Paid before the settlement, never a flight.

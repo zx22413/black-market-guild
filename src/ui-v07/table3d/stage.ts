@@ -5,7 +5,6 @@ import type { BeatSeat } from '../scene/beatStage';
 import type { TablePin, TableShip } from '../scene/TableCanvas';
 import type { Board } from '../session/board';
 import type { HumanRequest } from '../session/gameSession';
-import type { BetControls } from './MarketStrip';
 
 // One decision on the 3D table is a "step" (investment, role deployment, ...). A step hook takes
 // the shared environment and returns what it adds to the one table that stays mounted: pins,
@@ -43,10 +42,8 @@ export interface StageParts {
   /** Adjusts each launched ship (selectable, chosen). */
   readonly ship?: (ship: TableShip) => TableShip;
   readonly onSelectShip?: (id: ShipId) => void;
-  /** Broker bet buttons on the market strip. */
-  readonly bets?: BetControls;
   /**
-   * Dim what is not being operated (the 3D table, name plates, the market strip unless betting),
+   * Dim what is not being operated (the 3D table, name plates, the market strip),
    * so the few things you can click now stand out.
    */
   readonly dim?: boolean;

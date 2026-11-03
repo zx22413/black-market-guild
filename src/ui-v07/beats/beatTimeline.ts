@@ -21,8 +21,7 @@ export const BEAT_PACE = slowed({
   start: 900,
   step: 1000,
   /**
-   * The island's own step (the lighthouse's beam), and the start of a ship the lighthouse's intel
-   * rerolled: the table goes dark and the beam has to swing onto the ship.
+   * The island's own step (the lighthouse's beam): the table goes dark and the beam has to swing onto the ship.
    */
   island: 2000,
   outcome: 1300,
@@ -52,9 +51,7 @@ export function beatCues(beat: ShipBeat, speed = 1, money = true): Cue[] {
     at += DIE_CUES.has(kind) ? Math.max(scaled, hold) : scaled;
   };
   push('intro', 0, BEAT_PACE.intro);
-  // A die the lighthouse's intel changed gets the beam on it too, in full like the island step.
-  if (beat.rerollSpotter !== null) push('start', 0, BEAT_PACE.island, BEAT_PACE.island);
-  else push('start', 0, BEAT_PACE.start);
+  push('start', 0, BEAT_PACE.start);
   // An island at work (the lighthouse's step, the cove's raiders, the fortress's guns) plays in full.
   beat.steps.forEach((step, i) =>
     step.kind === 'island' || step.boosted.length > 0 ? push('step', i, BEAT_PACE.island, BEAT_PACE.island) : push('step', i, BEAT_PACE.step),

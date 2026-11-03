@@ -19,7 +19,7 @@ const flight = (kind: Flight['kind'], amount: number | null = 100): Flight => ({
 describe('sound of each settlement flight', () => {
   it('rings up sales louder than the other income', () => {
     expect(flightSound(flight('sale'))).toBe('settle-sale');
-    for (const kind of ['escort-fee', 'broker-bet', 'broker-lift', 'broker-control'] as const) expect(flightSound(flight(kind))).toBe('settle-coins');
+    for (const kind of ['diplomat-take', 'diplomat-refund'] as const) expect(flightSound(flight(kind))).toBe('settle-coins');
     expect(flightSound(flight('exchange-commission'))).toBe('settle-tick');
   });
 
@@ -31,8 +31,8 @@ describe('sound of each settlement flight', () => {
     expect(flightSound(flight('pirate-loot'))).toBe('settle-loot');
   });
 
-  it('sounds the goods: seized arms, insurance, salvaged cargo, spoiled spice', () => {
-    expect(flightSound(flight('arms-confiscated'))).toBe('settle-arms');
+  it('sounds the goods: confiscated goods, insurance, salvaged cargo, spoiled spice', () => {
+    expect(flightSound(flight('goods-confiscated'))).toBe('settle-arms');
     expect(flightSound(flight('insurance'))).toBe('settle-insurance');
     expect(flightSound(flight('salvage', null))).toBe('settle-salvage');
     expect(flightSound(flight('spoil', null))).toBe('settle-spoil');

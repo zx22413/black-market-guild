@@ -30,21 +30,17 @@ describe('role results (stamps)', () => {
             expect(results.get(roleKey({ playerId: id, role: 'smuggler' }))?.text).toBe(text);
           }
         }
-        if (e.type === 'arms-confiscated') {
-          for (const id of e.guards) expect(results.get(roleKey({ playerId: id, role: 'guard' }))?.text).toBe('沒收軍火');
+        if (e.type === 'goods-confiscated') {
+          for (const id of e.customs) expect(results.get(roleKey({ playerId: id, role: 'customs' }))?.text).toBe('沒收');
         }
         if (e.type === 'roles-revealed') {
           for (const d of e.deployments) {
             const result = results.get(roleKey(d));
-            // Every role but the intel merchant ends in a stamp; the broker's depends on the bank's bonus.
-            expect(result === undefined).toBe(d.role === 'intel');
-            if (d.role === 'broker') {
-              const won = roundEvents.some((x) => x.type === 'cash-changed' && x.reason === 'broker-bet' && x.playerId === d.playerId);
-              expect(result?.text).toBe(won ? '押中' : '落空');
-            }
+            // Every role ends in a stamp except a diplomat whose guess was voided by nothing (it gets its stamp from the cash it moved).
+            if (d.role !== 'diplomat') expect(result === undefined).toBe(false);
             if (d.role === 'pirate') {
-              const sank = roundEvents.some((x) => x.type === 'ship-resolved' && x.shipId === d.targetShipId && x.outcome === 'sank');
-              expect(result?.text).toBe(sank ? '劫得' : '落空');
+              const looted = roundEvents.some((x) => x.type === 'cash-changed' && x.reason === 'pirate-loot' && x.playerId === d.playerId && x.shipId === d.targetShipId && x.amount > 0);
+              expect(result?.text).toBe(looted ? '劫得' : '落空');
             }
           }
         }

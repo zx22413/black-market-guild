@@ -3,6 +3,7 @@ import {
   RULES_V07,
   buildingCost,
   type BuildingId,
+  type GoodId,
   type Deployment,
   type Goods,
   type IslandId,
@@ -25,10 +26,10 @@ export interface BoardShip {
   readonly outcome: VoyageOutcome | null;
   /** Public only once the ship is resolved (§4). */
   readonly cargo: Goods | null;
-  readonly rerolled: boolean;
   /** Announced just before the outcome (§4 結算起始骰值與修正). */
   readonly modifier: VoyageModifier | null;
-  readonly confiscatedArms: number;
+  /** Goods customs took off this ship (§9.4). */
+  readonly confiscated: readonly { readonly good: GoodId; readonly units: number }[];
   readonly smuggling: 'taken' | 'caught' | 'seized' | 'lost' | null;
 }
 
@@ -69,7 +70,6 @@ export interface Board {
   readonly revealedRoles: readonly Deployment[];
   /** Roles revealed so far; the reveal plays group by group. */
   readonly rolesShown: readonly RoleId[];
-  readonly rerolledShipIds: readonly ShipId[];
   readonly settlement: MarketSettlement | null;
   readonly result: MatchResult | null;
 }
@@ -89,7 +89,6 @@ export function initialBoard(playerIds: readonly PlayerId[], startingCash: numbe
     launched: false,
     revealedRoles: [],
     rolesShown: [],
-    rerolledShipIds: [],
     settlement: null,
     result: null,
   };
@@ -125,7 +124,6 @@ export function applyEvent(board: Board, event: MatchEvent, rules: Rules = RULES
         launched: false,
         revealedRoles: [],
         rolesShown: [],
-        rerolledShipIds: [],
         settlement: null,
       };
     case 'goods-produced':
@@ -154,9 +152,8 @@ export function applyEvent(board: Board, event: MatchEvent, rules: Rules = RULES
           owner: s.owner,
           outcome: s.outcome,
           cargo: null,
-          rerolled: false,
           modifier: null,
-          confiscatedArms: 0,
+          confiscated: [],
           smuggling: null,
         })),
       };
@@ -173,8 +170,6 @@ export function applyEvent(board: Board, event: MatchEvent, rules: Rules = RULES
         ...withUse,
         revealedRoles: [...board.revealedRoles, ...event.deployments],
         rolesShown: [...board.rolesShown, event.role],
-        rerolledShipIds: [...board.rerolledShipIds, ...event.rerolledShipIds],
-        ships: withUse.ships.map((s) => (event.rerolledShipIds.includes(s.id) ? { ...s, rerolled: true } : s)),
       };
     }
     case 'voyage-modifiers':
@@ -184,8 +179,8 @@ export function applyEvent(board: Board, event: MatchEvent, rules: Rules = RULES
       const owner = resolved.ships.find((s) => s.id === event.shipId)?.owner;
       return owner ? mapPlayer(resolved, owner, (p) => ({ ...p, stock: addTo(p.stock, event.cargo, -1) })) : resolved;
     }
-    case 'arms-confiscated':
-      return mapShip(board, event.shipId, (s) => ({ ...s, confiscatedArms: event.units }));
+    case 'goods-confiscated':
+      return mapShip(board, event.shipId, (s) => ({ ...s, confiscated: [...s.confiscated, { good: event.good, units: event.units }] }));
     case 'smuggling-settled':
       return mapShip(board, event.shipId, (s) => ({ ...s, smuggling: event.result }));
     case 'market-settled':

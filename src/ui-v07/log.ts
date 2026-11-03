@@ -49,8 +49,8 @@ export function eventLine(event: MatchEvent, ctx: LogContext): string | null {
         .join('\n');
     case 'ship-resolved':
       return `${shipOf(event.shipId)}${event.outcome === 'arrived' ? '抵達' : '沉沒'}（${goodsText(event.cargo)}）`;
-    case 'arms-confiscated':
-      return `${shipOf(event.shipId)}被沒收 ${event.units} 軍火`;
+    case 'goods-confiscated':
+      return `${shipOf(event.shipId)}被海關沒收 ${event.units} ${GOOD_LABELS[event.good]}`;
     case 'smuggling-settled':
       return `${shipOf(event.shipId)}的走私：${{ taken: '成功', caught: '被抓', seized: '被海盜搶走', lost: '隨船沉沒' }[event.result]}`;
     case 'market-settled':

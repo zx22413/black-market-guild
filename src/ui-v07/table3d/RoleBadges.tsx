@@ -1,9 +1,8 @@
 import type { Deployment, PlayerId, RoleId } from '../../v07/game';
 import { ROLE_LABELS, ROLE_TEXT } from '../labels';
-import { betLabel } from '../table/deployChoice';
+import { deploymentNote } from '../table/deployChoice';
 import { GoodIcon } from './GoodIcon';
 import { InfoTip } from './InfoTip';
-import { TrendIcon } from './icons';
 import { roleKey, type RoleResult } from './roleResults';
 import { cardIconUrl } from './cardArt';
 
@@ -28,14 +27,14 @@ export function RoleBadges({ deployments, colorOf, nameOf, stamp }: RoleBadgesPr
     <span className="role-badges">
       {deployments.map((d) => {
         const result = stamp?.(d) ?? null;
-        const what = `${ROLE_LABELS[d.role]}${d.bet ? ` 押${betLabel(d.bet)}` : ''} · ${nameOf(d.playerId)}${result ? `：${result.text}` : ''}`;
+        const what = `${ROLE_LABELS[d.role]}${deploymentNote(d) ? ` ${deploymentNote(d)}` : ''} · ${nameOf(d.playerId)}${result ? `：${result.text}` : ''}`;
         return (
           <InfoTip
             key={roleKey(d)}
             title={`${ROLE_LABELS[d.role]} · ${nameOf(d.playerId)}`}
             text={
               <>
-                {d.bet && <>押{betLabel(d.bet)}。</>}
+                {deploymentNote(d) && <>{deploymentNote(d)}。</>}
                 {ROLE_TEXT[d.role]}
                 {result && <> 結果：{result.text}。</>}
               </>
@@ -43,10 +42,9 @@ export function RoleBadges({ deployments, colorOf, nameOf, stamp }: RoleBadgesPr
           >
             <span className="role-badge" style={{ borderColor: colorOf(d.playerId) }} aria-label={what}>
               <img src={roleIconUrl(d.role)} alt="" />
-              {d.bet && (
+              {d.namedGood && (
                 <small>
-                  <GoodIcon good={d.bet.good} size="sm" tip={false} />
-                  <TrendIcon dir={d.bet.direction} />
+                  <GoodIcon good={d.namedGood} size="sm" tip={false} />
                 </small>
               )}
               {result && <b className={`role-stamp ${result.tone}`}>{result.text}</b>}

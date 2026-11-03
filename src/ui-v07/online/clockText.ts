@@ -26,7 +26,6 @@ export const TIMEOUT_DEFAULT: Readonly<Record<DecisionPhase, string>> = {
   'island-choice': '由電腦代選了島',
   invest: '這回合不出航、不建造',
   'role-deployment': '這回合不部署角色',
-  'intel-reroll': '不重擲',
 };
 
 /** The host's choices for the lobby, in minutes. */

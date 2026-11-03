@@ -37,7 +37,7 @@ export const ISLAND_GLANCE: Readonly<Record<IslandId, readonly GlanceItem[]>> = 
   ],
   'smuggler-port': [
     { sign: 1, icon: good('arms'), text: '每回合生產' },
-    { sign: -1, icon: good('arms'), text: '不能被掩護' },
+    { sign: -1, icon: good('arms'), text: '軍火不能被掩護' },
     { sign: -1, icon: role('guard'), text: '部署費 +50 G' },
   ],
   'free-port': [
@@ -50,7 +50,7 @@ export const ISLAND_GLANCE: Readonly<Record<IslandId, readonly GlanceItem[]>> = 
   ],
   lighthouse: [
     { sign: 1, icon: ship, text: '出航 +1' },
-    { sign: 1, icon: role('intel'), text: '免費・多看一艘' },
+    { sign: 1, icon: role('customs'), text: '海關免費' },
     { sign: -1, icon: ship, text: '出航成本 +50 G' },
   ],
 };

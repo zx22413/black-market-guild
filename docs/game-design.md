@@ -1,7 +1,7 @@
 # 暗潮商戰｜V0.7.1 當前規則快照
 
 **狀態：** gameplay 唯一有效規則來源（Current Rules Snapshot）。2026-11-03 由 V0.7 改版為 V0.7.1：航海事件前移到回合開始，移除情報商人與莊家，新增海關與外交官，並採用新的船骰規則與收入分配。V0.7 原文見 git 歷史（commit `e9b578d` 以前的 `docs/game-design.md`）。
-**實作狀態：** 規則引擎 `src/v07/game`、Bot（`src/v07/bots`）與測試已是 V0.7.1；**介面（`src/ui-v07`）尚未改版**，仍是 V0.7 的角色與流程，暫時無法編譯與遊玩。正式引擎 `src/game` 與 `src/ui` 是封存的 V0.6（原文見 [`archive/game-design-v0.6.md`](archive/game-design-v0.6.md)）。設計過程見 [`proposals/2026-10-economy-rework.md`](proposals/2026-10-economy-rework.md)、[`proposals/2026-11-role-function-inventory.md`](proposals/2026-11-role-function-inventory.md) 與 [`proposals/2026-11-v08-decision-index.md`](proposals/2026-11-v08-decision-index.md)，這些只是沿革，不是規則來源。
+**實作狀態：** 規則引擎 `src/v07/game`、Bot（`src/v07/bots`）與測試已是 V0.7.1；介面（`src/ui-v07`）已改接（部署時海關指名貨、外交官猜角色；航海事件在回合開始就顯示），但角色卡插圖暫用原本情報商人與莊家的圖，教學與新手說明未重看。正式引擎 `src/game` 與 `src/ui` 是封存的 V0.6（原文見 [`archive/game-design-v0.6.md`](archive/game-design-v0.6.md)）。設計過程見 [`proposals/2026-10-economy-rework.md`](proposals/2026-10-economy-rework.md)、[`proposals/2026-11-role-function-inventory.md`](proposals/2026-11-role-function-inventory.md) 與 [`proposals/2026-11-v08-decision-index.md`](proposals/2026-11-v08-decision-index.md)，這些只是沿革，不是規則來源。
 **V0.7.1 的位置：** 介於 V0.7 與 V0.8 之間。V0.8 決策索引中屬於「角色、骰值判定、航海事件時點」的部分已搬進本版；建築改成船艙系統（付費選船）仍在討論，**本版建築仍是 V0.7 的四種**。環境階段、推進事件、新事件與裝備屬於 V0.8，不在本版。
 **不屬於本文件的內容：** 尚未定案的事項列於 [open-questions.md](open-questions.md)，不得據此實作或推定規則。
 

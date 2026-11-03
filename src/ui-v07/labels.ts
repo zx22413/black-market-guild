@@ -1,6 +1,6 @@
 import { RULES_V07, priceAt, type BuildingId, type CashReason, type GoodId, type IslandId, type RoleId, type VoyageEventId } from '../v07/game';
 
-// Names and short texts below restate docs/game-design.md (V0.7): §6.1, §9.4, §10.2, §11.2, §12.
+// Names and short texts below restate docs/game-design.md (V0.7.1): §6.1, §9.4, §10.2, §11.2, §12.
 // Do not add rules here; change the design document first.
 
 /** The market island at the middle of the table (§1), where every ship sails to sell (§7). */
@@ -10,20 +10,20 @@ export const MARKET_ISLAND_TEXT = '所有出航的船都開往這裡賣貨；黑
 export const GOOD_LABELS: Readonly<Record<GoodId, string>> = { wood: '木材', iron: '鐵礦', spice: '香料', arms: '軍火' };
 
 export const ROLE_LABELS: Readonly<Record<RoleId, string>> = {
-  intel: '情報商人',
+  customs: '海關',
   guard: '護衛',
   pirate: '海盜',
   smuggler: '走私商人',
-  broker: '莊家',
+  diplomat: '外交官',
 };
 
 /** §9.4, one line per role. */
 export const ROLE_TEXT: Readonly<Record<RoleId, string>> = {
-  intel: '看到目標船的原始骰值，可選擇重擲（必須接受新結果）。',
-  guard: '目標船 +1。抵達時沒收別人的軍火、抓走私；守別人的船抵達可拿護航費。',
-  pirate: '目標船 −1。船沉沒時，戰利品由銀行支付，鎖定該船的海盜均分。',
-  smuggler: '搭別人的船夾帶私貨；平安抵達又沒有護衛時，抽走船東的賣貨收入。',
-  broker: '押一種商品的價格漲或跌，再指定一艘船：押對時從銀行拿獎金，那艘船的賣價也跟著動。',
+  customs: '指名別人船上的一種貨；船抵達時優先拿走該貨的價值，也抓走私商人。',
+  guard: '只守自己的船：目標船 +1。',
+  pirate: '目標船 −1。最終值 1 的船沉沒、最終值 2 的船勉強抵達時，鎖定它的海盜分走一部分價值。',
+  smuggler: '搭別人的船夾帶私貨，平安抵達又沒有海關時抽走船東的收入；派在自己的船上則掩護船上的貨不被海關沒收。',
+  diplomat: '守自己的船並猜一個角色：猜中則作廢它並向對手拿錢，猜錯退一半部署費。',
 };
 
 export const BUILDING_LABELS: Readonly<Record<BuildingId, string>> = {
@@ -64,10 +64,10 @@ export const ISLAND_TEXT: Readonly<Record<IslandId, { readonly pro: string; read
   'pirate-cove': { pro: '自己部署的海盜 −2（一般 −1）', con: '部署護衛 +25 G' },
   lumber: { pro: '木材第 1～5 回合每回合生產', con: '鐵礦只在第 1、4 回合生產' },
   mine: { pro: '鐵礦第 1～5 回合每回合生產', con: '木材只在第 1、4 回合生產' },
-  'smuggler-port': { pro: '軍火每回合生產', con: '自己的軍火不能被走私商人掩護（也不能派自己的走私商人上自己的船）；部署護衛 +50 G' },
+  'smuggler-port': { pro: '軍火每回合生產', con: '自己的軍火不能被走私商人掩護（海關指名軍火仍會沒收）；部署護衛 +50 G' },
   'free-port': { pro: '出航成本 50 G', con: '可裝貨量 −1' },
   fortress: { pro: '自己部署的護衛 +2（一般 +1）；護衛只冷卻 1 回合', con: '部署海盜 +25 G' },
-  lighthouse: { pro: '自己的船出航 +1；情報商人免部署費，且可多看一艘船、從兩艘中選一艘重擲', con: '出航成本 +50 G' },
+  lighthouse: { pro: '自己的船出航 +1；海關免部署費', con: '出航成本 +50 G' },
 };
 
 export const VOYAGE_EVENT_LABELS: Readonly<Record<VoyageEventId, string>> = {
@@ -98,14 +98,10 @@ export const CASH_REASON_LABELS: Readonly<Record<CashReason, string>> = {
   'smuggling-fine': '走私罰款',
   'smuggling-confiscated': '抓到走私（私貨價值）',
   'smuggling-seized': '搶走私貨',
-  'arms-confiscated': '沒收軍火',
+  'goods-confiscated': '海關沒收',
   'pirate-loot': '海盜戰利品',
   insurance: '航運保險理賠',
-  'escort-fee': '護航費',
   'exchange-commission': '交易所佣金',
-  'broker-bet': '莊家獎金',
-  'broker-control': '莊家壓價差額',
-  'broker-lift': '莊家抬價（銀行補貼）',
   'diplomat-take': '外交官猜中（向對手拿錢）',
   'diplomat-refund': '外交官猜錯（退還部署費）',
 };

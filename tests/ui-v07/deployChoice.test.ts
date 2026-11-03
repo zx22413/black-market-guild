@@ -3,15 +3,14 @@ import type { DecisionContext } from '../../src/v07/bots';
 import { applyAction, getLegalActions, getPendingDecisions, getPlayerView, type Action, type MatchState } from '../../src/v07/game';
 import {
   EMPTY_DEPLOY,
-  betsAtShip,
-  betsFor,
   blockedReason,
   deployActionFor,
   deployLabel,
   deployOptions,
   deployTodo,
-  looseBets,
-  peeksFor,
+  deploymentNote,
+  goodsAtShip,
+  guessesAtShip,
   pickRole,
   roleCards,
   targetsFor,
@@ -43,12 +42,12 @@ describe('role deployment choice (only legal actions)', () => {
     const context = contextOf(deploying());
     const options = deployOptions(context);
     const pirate = pickRole('pirate');
-    expect(deployTodo(pirate)).toEqual({ role: false, target: true, bet: false });
+    expect(deployTodo(pirate)).toEqual({ role: false, target: true, naming: false });
     expect(deployActionFor(options, pirate)).toBeUndefined();
     const target = targetsFor(options, 'pirate')[0]!;
     const chosen = { ...pirate, target };
     expect(deployActionFor(options, chosen)).toMatchObject({ role: 'pirate', targetShipId: target });
-    expect(deployTodo(chosen)).toEqual({ role: false, target: false, bet: false });
+    expect(deployTodo(chosen)).toEqual({ role: false, target: false, naming: false });
   });
 
   it('nothing picked glows the hand; "不部署" is a real, legal choice', () => {
@@ -59,42 +58,25 @@ describe('role deployment choice (only legal actions)', () => {
     expect(deployActionFor(options, pickRole('none'))).toMatchObject({ role: null });
   });
 
-  it('the broker bets on a good and a direction from the market (§9.4)', () => {
+  it('customs needs a ship and a good before it is a legal action (§9.4)', () => {
     const options = deployOptions(contextOf(deploying()));
-    const broker = pickRole('broker');
-    expect(deployTodo(broker).bet).toBe(true);
-    const bet = betsFor(options)[0]!;
-    // The bet also names a ship when one fits it (a bull bet: your own, a bear bet: an opponent's).
-    const target = targetsFor(options, 'broker', bet)[0] ?? null;
-    expect(deployActionFor(options, { ...broker, bet, target })).toMatchObject({ role: 'broker', bet, targetShipId: target });
-    expect(betsFor(options)).toHaveLength(new Set(betsFor(options).map((b) => `${b.good}${b.direction}`)).size);
+    const customs = pickRole('customs');
+    const target = targetsFor(options, 'customs')[0]!;
+    expect(target).not.toBe('r1-p1');
+    expect(deployTodo({ ...customs, target })).toEqual({ role: false, target: false, naming: true });
+    expect(deployActionFor(options, { ...customs, target })).toBeUndefined();
+    const good = goodsAtShip(options, target)[0]!;
+    expect(goodsAtShip(options, target)).toHaveLength(4);
+    expect(deployActionFor(options, { ...customs, target, good })).toMatchObject({ role: 'customs', targetShipId: target, namedGood: good });
   });
 
-  it('lists the bets at the ship picked first, and the ones that name no ship apart (§9.4)', () => {
+  it('a diplomat needs its own ship and a guess (§9.4)', () => {
     const options = deployOptions(contextOf(deploying()));
-    const own = 'r1-p1';
-    const other = 'r1-p2';
-    // Your own ship takes bull bets only, an opponent's takes bear bets only; each good once.
-    const atOwn = betsAtShip(options, own);
-    const atOther = betsAtShip(options, other);
-    expect(atOwn.length).toBeGreaterThan(0);
-    expect(atOwn.every((b) => b.direction === 1)).toBe(true);
-    expect(atOther.every((b) => b.direction === -1)).toBe(true);
-    // Every ship offered is a target before any bet is picked, and each bet picked there is a legal action.
-    const broker = { ...pickRole('broker'), target: own, bet: atOwn[0]! };
-    expect(deployActionFor(options, broker)).toMatchObject({ role: 'broker', bet: atOwn[0], targetShipId: own });
-    // With ships to name, no bet is left without one.
-    expect(looseBets(options)).toEqual([]);
-  });
-
-  it('a bet that names no ship stays a plain market bet when nobody sails', () => {
-    let state = start(3);
-    for (const id of ['p1', 'p2', 'p3']) state = apply(state, { type: 'invest', playerId: id, build: null, load: G(0) });
-    const options = deployOptions(contextOf(state));
-    expect(looseBets(options).length).toBeGreaterThan(0);
-    const bet = looseBets(options)[0]!;
-    expect(betsAtShip(options, 'r1-p1')).toEqual([]);
-    expect(deployActionFor(options, { ...pickRole('broker'), bet })).toMatchObject({ role: 'broker', bet, targetShipId: null });
+    const diplomat = pickRole('diplomat');
+    expect(targetsFor(options, 'diplomat')).toEqual(['r1-p1']);
+    expect(guessesAtShip(options, 'r1-p1').sort()).toEqual(['customs', 'guard', 'pirate', 'smuggler']);
+    expect(deployActionFor(options, { ...diplomat, target: 'r1-p1' })).toBeUndefined();
+    expect(deployActionFor(options, { ...diplomat, target: 'r1-p1', guess: 'pirate' })).toMatchObject({ role: 'diplomat', guessRole: 'pirate' });
   });
 
   it('greys out a role on cooldown with the round it comes back (§9.3)', () => {
@@ -108,16 +90,9 @@ describe('role deployment choice (only legal actions)', () => {
     expect(card.reason).toBe('冷卻中，第 4 回合可用');
   });
 
-  it('the lighthouse intel merchant may look at a second ship, optionally (§11.2)', () => {
-    const context = contextOf(deploying({ p1: 'lighthouse' }));
-    const options = deployOptions(context);
-    const target = targetsFor(options, 'intel')[0]!;
-    const choice = { ...pickRole('intel'), target };
-    const peeks = peeksFor(options, choice);
-    expect(peeks.length).toBeGreaterThan(0);
-    expect(peeks).not.toContain(target);
-    expect(deployActionFor(options, choice)).toBeDefined();
-    expect(deployActionFor(options, { ...choice, peek: peeks[0]! })).toMatchObject({ peekShipId: peeks[0] });
+  it('a smuggler may board any ship, its own to cover', () => {
+    const options = deployOptions(contextOf(deploying()));
+    expect(targetsFor(options, 'smuggler').sort()).toEqual(['r1-p1', 'r1-p2', 'r1-p3']);
   });
 
   it('says why a ship cannot be picked for the role, and nothing for the ships that can be', () => {
@@ -125,29 +100,13 @@ describe('role deployment choice (only legal actions)', () => {
     const options = deployOptions(context);
     const own = 'r1-p1';
     const other = 'r1-p2';
-    // Guards and pirates may go anywhere: no reason anywhere.
     expect(blockedReason(context, options, pickRole('pirate'), own)).toBeNull();
-    // A smuggler only boards its own ship to cover arms, and this one carries none.
-    expect(blockedReason(context, options, pickRole('smuggler'), own)).toContain('沒有載軍火');
-    expect(blockedReason(context, options, pickRole('smuggler'), other)).toBeNull();
-    // A broker's bet decides which side's ship it may name (before a bet, any ship some bet could name is offered).
-    expect(blockedReason(context, options, pickRole('broker'), own)).toBeNull();
-    const bull = betsFor(options).find((b) => b.direction === 1)!;
-    const bear = betsFor(options).find((b) => b.direction === -1)!;
-    expect(blockedReason(context, options, { ...pickRole('broker'), bet: bull }, other)).toBe('押漲只能指定自己的船。');
-    expect(blockedReason(context, options, { ...pickRole('broker'), bet: bear }, own)).toBe('押跌只能指定對手的船。');
-    // No role, or "不部署": nothing to explain.
+    expect(blockedReason(context, options, pickRole('customs'), own)).toContain('只能上別人的船');
+    expect(blockedReason(context, options, pickRole('customs'), other)).toBeNull();
+    expect(blockedReason(context, options, pickRole('guard'), other)).toContain('只能守自己的船');
+    expect(blockedReason(context, options, pickRole('diplomat'), other)).toContain('只能守自己的船');
     expect(blockedReason(context, options, EMPTY_DEPLOY, own)).toBeNull();
     expect(blockedReason(context, options, pickRole('none'), own)).toBeNull();
-  });
-
-  it('tells the smuggler port why its own arms ship is off the list (§11.2)', () => {
-    let state = start(3, undefined, { p1: 'smuggler-port' });
-    for (const id of ['p1', 'p2', 'p3']) state = edit(state, id, { stock: G(1, 1, 1, 1) });
-    state = apply(state, { type: 'invest', playerId: 'p1', build: null, load: G(0, 0, 0, 1) });
-    for (const id of ['p2', 'p3']) state = apply(state, { type: 'invest', playerId: id, build: null, load: G(1) });
-    const context = contextOf(state);
-    expect(blockedReason(context, deployOptions(context), pickRole('smuggler'), 'r1-p1')).toContain('走私港的軍火不能被掩護');
   });
 
   it('the button says what is submitted', () => {
@@ -155,47 +114,43 @@ describe('role deployment choice (only legal actions)', () => {
     expect(deployLabel(EMPTY_DEPLOY, owner, (id) => id, 'p1')).toBe('提交：不部署');
     expect(deployLabel({ ...pickRole('pirate'), target: 's1' }, owner, () => '黑潮會', 'p1')).toBe('部署：海盜 → 黑潮會的船');
     expect(deployLabel(pickRole('guard'), owner, () => '黑潮會', 'p1')).toBe('先點護衛要去的船');
+    expect(deployLabel({ ...pickRole('customs'), target: 's1' }, owner, () => '黑潮會', 'p1')).toBe('再選要指名的貨');
+    expect(deployLabel({ ...pickRole('customs'), target: 's1', good: 'arms' }, owner, () => '黑潮會', 'p1')).toBe('部署：海關 → 黑潮會的船，指名軍火');
+    expect(deployLabel({ ...pickRole('diplomat'), target: 's1', guess: 'pirate' }, () => 'p1', () => '你', 'p1')).toBe('部署：外交官 → 猜海盜');
+  });
+
+  it('notes what customs named and a diplomat guessed', () => {
+    expect(deploymentNote({ role: 'customs', namedGood: 'arms' })).toBe('指名軍火');
+    expect(deploymentNote({ role: 'diplomat', guessRole: 'pirate' })).toBe('猜海盜');
+    expect(deploymentNote({ role: 'pirate' })).toBeNull();
   });
 });
 
 describe('role reveal arrows', () => {
-  it('one arrow per deployed role, from its player to its target, in reveal order; the extra look is faint', () => {
-    let state = deploying({ p1: 'lighthouse' });
+  it('one arrow per deployed role, from its player to its target, in reveal order', () => {
+    let state = deploying();
     const p1 = contextOf(state, 'p1');
-    const target = targetsFor(deployOptions(p1), 'intel')[0]!;
-    const peek = peeksFor(deployOptions(p1), { ...pickRole('intel'), target })[0]!;
-    state = apply(state, deployActionFor(deployOptions(p1), { ...pickRole('intel'), target, peek })!);
+    const target = targetsFor(deployOptions(p1), 'customs')[0]!;
+    state = apply(state, deployActionFor(deployOptions(p1), { ...pickRole('customs'), target, good: 'wood' })!);
     const p2 = contextOf(state, 'p2');
-    const brokerBet = betsFor(deployOptions(p2))[0]!;
-    state = apply(state, deployActionFor(deployOptions(p2), { ...pickRole('broker'), bet: brokerBet, target: targetsFor(deployOptions(p2), 'broker', brokerBet)[0] ?? null })!);
+    state = apply(state, deployActionFor(deployOptions(p2), { ...pickRole('guard'), target: 'r1-p2' })!);
     const p3 = contextOf(state, 'p3');
     const result = applyAction(state, deployActionFor(deployOptions(p3), pickRole('none'))!);
     if (!result.ok) throw new Error(result.error.message);
-    let events = [...result.value.events];
-    let after = result.value.state;
-    // p1's intel merchant decides on the reroll; then the roles are revealed.
-    if (getPendingDecisions(after).length > 0) {
-      const r = applyAction(after, getLegalActions(after, 'p1')[0]!);
-      if (!r.ok) throw new Error(r.error.message);
-      events = [...events, ...r.value.events];
-      after = r.value.state;
-    }
+    const events = [...result.value.events];
     const groups = revealGroups(events, 1);
-    expect(groups.map((g) => g.role)).toEqual(['intel', 'broker']);
+    expect(groups.map((g) => g.role)).toEqual(['customs', 'guard']);
 
     const angles = [Math.PI / 2, Math.PI / 2 + (2 * Math.PI) / 3, Math.PI / 2 + (4 * Math.PI) / 3];
     const lanes: Record<string, number> = { p1: 0, p2: 1, p3: 2 };
-    const launched = state.roundState.ships;
-    const owners = Object.fromEntries(launched.map((s) => [s.id, s.owner]));
-    const intel = revealArrows(groups[0]!, angles, (id) => lanes[id]!, (id) => owners[id]);
-    expect(intel.map((a) => a.faint)).toEqual([false, true]);
-    expect(intel[0]!.label).toBe('情報商人');
-    expect(intel[1]!.label).toBe('');
-    const broker = revealArrows(groups[1]!, angles, (id) => lanes[id]!, (id) => owners[id]);
-    expect(broker[0]!.label).toMatch(/^莊家 押/);
-    expect(broker[0]!.to).toEqual([0, 9, 0]);
+    const owners = Object.fromEntries(state.roundState.ships.map((s) => [s.id, s.owner]));
+    const customs = revealArrows(groups[0]!, angles, (id) => lanes[id]!, (id) => owners[id]);
+    expect(customs).toHaveLength(1);
+    expect(customs[0]!.label).toBe('海關 指名木材');
+    const guard = revealArrows(groups[1]!, angles, (id) => lanes[id]!, (id) => owners[id]);
+    expect(guard[0]!.label).toBe('護衛');
     // The curve starts on the player's island and ends on the target.
-    expect(arrowPoint(intel[0]!, 0)).toEqual(intel[0]!.from);
-    expect(arrowPoint(intel[0]!, 1).map((v) => Math.round(v * 1000) / 1000)).toEqual(intel[0]!.to.map((v) => Math.round(v * 1000) / 1000));
+    expect(arrowPoint(customs[0]!, 0)).toEqual(customs[0]!.from);
+    expect(arrowPoint(customs[0]!, 1).map((v) => Math.round(v * 1000) / 1000)).toEqual(customs[0]!.to.map((v) => Math.round(v * 1000) / 1000));
   });
 });

@@ -30,7 +30,6 @@ describe('V0.7 simulation statistics', () => {
     LINEUP.forEach((st) => expect(stats.byStrategy[st]?.seats).toBe(matches));
     expect(stats.shipsArrived).toBeLessThanOrEqual(stats.ships);
     expect(stats.pirateSinks).toBeLessThanOrEqual(stats.roles.pirate!);
-    expect(stats.guardOthers).toBeLessThanOrEqual(stats.roles.guard!);
     expect(stats.smugglerCovers).toBeLessThanOrEqual(stats.roles.smuggler!);
     expect(stats.coveredArmsShips).toBeLessThanOrEqual(stats.armsShips);
     const { under, exact, over } = stats.demandVsArrived;

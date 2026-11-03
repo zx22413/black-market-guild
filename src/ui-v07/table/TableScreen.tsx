@@ -9,13 +9,12 @@ import { InvestForm } from './InvestForm';
 import { IslandForm } from './IslandForm';
 import { MarketPanel } from './MarketPanel';
 import { PlayersPanel } from './PlayersPanel';
-import { RerollForm } from './RerollForm';
 import { ResultPanel } from './ResultPanel';
 import { ShipsPanel } from './ShipsPanel';
 import { Card } from './parts';
 import type { FormProps } from './forms';
 
-const PHASE_LABELS = { 'island-choice': '選島', invest: '投資', 'role-deployment': '部署角色', 'intel-reroll': '情報重擲' } as const;
+const PHASE_LABELS = { 'island-choice': '選島', invest: '投資', 'role-deployment': '部署角色' } as const;
 
 interface TableScreenProps {
   readonly session: GameSession;
@@ -124,7 +123,6 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
               {phase === 'island-choice' && <IslandForm key={request.id} {...formProps} />}
               {phase === 'invest' && <InvestForm key={request.id} {...formProps} />}
               {phase === 'role-deployment' && <DeployForm key={request.id} {...formProps} />}
-              {phase === 'intel-reroll' && <RerollForm key={request.id} {...formProps} />}
             </Card>
           )}
 
@@ -189,24 +187,12 @@ function PrivateNotes({
   readonly notes: ReturnType<typeof usePlayback>['privateNotes'];
   readonly nameOf: (id: PlayerId) => string;
 }) {
-  const intel = notes.flatMap((n) => (n.type === 'intel-report' || n.type === 'intel-reroll-result' ? [n] : []));
-  const ownerOf = (shipId: ShipId) => nameOf(view.ships.find((s) => s.id === shipId)?.owner ?? '');
   return (
     <div className="v7-private-body">
       <p>
         你的島：<b>{island ? ISLAND_LABELS[island] : '尚未選定'}</b>
       </p>
-      {intel.length === 0 ? (
-        <p className="v7-muted">你的貨、情報骰值只會出現在這裡。</p>
-      ) : (
-        <ul>
-          {intel.map((n, i) => (
-            <li key={i}>
-              {ownerOf(n.shipId)}的船：{n.type === 'intel-report' ? `原始骰值 ${n.rawRoll}` : `重擲後 ${n.rerolledRoll}`}
-            </li>
-          ))}
-        </ul>
-      )}
+      <p className="v7-muted">你的貨只會出現在這裡。</p>
     </div>
   );
 }

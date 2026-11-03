@@ -1,11 +1,11 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import { GOODS, type Bet, type GoodId, type PlayerId } from '../../v07/game';
-import { GOOD_LABELS } from '../labels';
+import { GOODS, GUESSABLE_ROLES, type GoodId, type PlayerId, type RoleId } from '../../v07/game';
+import { GOOD_LABELS, ROLE_LABELS } from '../labels';
 import { GoodIcon } from './GoodIcon';
 
-// The broker's bet, where the ship was clicked (§9.4): once the ship is picked, its "+" turns into
-// the broker's badge (click it to take the pick back) and the goods are listed right above it with
-// the one direction that ship takes, 漲 on your own ship and 跌 on an opponent's. The list opens
+// What customs names or a diplomat guesses, where the ship was clicked (§9.4): once the ship is picked,
+// its "+" turns into the role's badge (click it to take the pick back) and the choices are listed right
+// above it: the four goods for customs, the four roles for a diplomat. The list opens
 // toward the middle of the table (up for the ship in front of you), so it stays off the name plates
 // that sit beside each island.
 
@@ -21,29 +21,23 @@ export function listSide(x: number, width: number, y = Infinity): Side {
   return y < ROOM_ABOVE ? 'down' : 'up';
 }
 
-export interface ShipBetsProps {
+export type NamingProps =
+  | { readonly kind: 'good'; readonly offered: readonly GoodId[]; readonly chosen: GoodId | null; readonly aboard?: ReadonlySet<GoodId> | undefined; readonly onPick: (good: GoodId) => void }
+  | { readonly kind: 'guess'; readonly offered: readonly RoleId[]; readonly chosen: RoleId | null; readonly aboard?: undefined; readonly onPick: (role: RoleId) => void };
+
+export type ShipBetsProps = NamingProps & {
   readonly label: string;
   readonly owner: PlayerId;
   readonly rim: string;
-  /** The broker's badge picture. */
+  /** The role's badge picture. */
   readonly badge: string;
-  /** Bets this ship may name; goods without one are listed greyed. */
-  readonly offered: readonly Bet[];
-  /** The direction a good without an offer would have (own ship: up, opponent's: down). */
-  readonly side: 1 | -1;
-  readonly chosen: Bet | null;
   /** Still to choose: the buttons breathe gold. */
   readonly todo: boolean;
-  /** Goods your own ship carries (on your own ship's list): ringed, so you remember what you may bet on. */
-  readonly aboard?: ReadonlySet<GoodId> | undefined;
-  readonly onBet: (bet: Bet) => void;
   readonly onBack: () => void;
-}
+};
 
-const same = (a: Bet | null, b: Bet) => a !== null && a.good === b.good && a.direction === b.direction;
-
-export function ShipBets({ label, owner, rim, badge, offered, side, chosen, todo, aboard, onBet, onBack }: ShipBetsProps) {
-  const betOf = (good: GoodId): Bet => offered.find((b) => b.good === good) ?? { good, direction: side };
+export function ShipBets(props: ShipBetsProps) {
+  const { label, owner, rim, badge, todo, onBack } = props;
   const badgeRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState<Side>('up');
   useLayoutEffect(() => {
@@ -58,27 +52,46 @@ export function ShipBets({ label, owner, rim, badge, offered, side, chosen, todo
   return (
     <div className="dep-bets" data-open={open}>
       <ul>
-        {GOODS.map((good) => {
-          const bet = betOf(good);
-          const can = offered.some((b) => same(b, bet));
-          const on = same(chosen, bet);
-          return (
-            <li key={good}>
-              <button
-                type="button"
-                className={`dep-bet good-${good} ${on ? 'on' : ''} ${todo && can ? 'todo' : ''} ${aboard?.has(good) ? 'aboard' : ''}`}
-                {...(aboard?.has(good) ? { title: '你的船上有這個貨' } : {})}
-                disabled={!can}
-                data-bet={`${good}${bet.direction === 1 ? '+' : '-'}`}
-                data-done={on}
-                aria-label={`押${GOOD_LABELS[good]}${bet.direction === 1 ? '漲' : '跌'}`}
-                onClick={() => onBet(bet)}
-              >
-                <GoodIcon good={good} size="sm" /> {GOOD_LABELS[good]} <b>{bet.direction === 1 ? '▲漲' : '▼跌'}</b>
-              </button>
-            </li>
-          );
-        })}
+        {props.kind === 'good'
+          ? GOODS.map((good) => {
+              const can = props.offered.includes(good);
+              const on = props.chosen === good;
+              return (
+                <li key={good}>
+                  <button
+                    type="button"
+                    className={`dep-bet good-${good} ${on ? 'on' : ''} ${todo && can ? 'todo' : ''} ${props.aboard?.has(good) ? 'aboard' : ''}`}
+                    {...(props.aboard?.has(good) ? { title: '你的船上有這個貨' } : {})}
+                    disabled={!can}
+                    data-bet={good}
+                    data-done={on}
+                    aria-label={`指名${GOOD_LABELS[good]}`}
+                    onClick={() => props.onPick(good)}
+                  >
+                    <GoodIcon good={good} size="sm" /> {GOOD_LABELS[good]}
+                  </button>
+                </li>
+              );
+            })
+          : GUESSABLE_ROLES.map((role) => {
+              const can = props.offered.includes(role);
+              const on = props.chosen === role;
+              return (
+                <li key={role}>
+                  <button
+                    type="button"
+                    className={`dep-bet ${on ? 'on' : ''} ${todo && can ? 'todo' : ''}`}
+                    disabled={!can}
+                    data-bet={role}
+                    data-done={on}
+                    aria-label={`猜${ROLE_LABELS[role]}`}
+                    onClick={() => props.onPick(role)}
+                  >
+                    猜{ROLE_LABELS[role]}
+                  </button>
+                </li>
+              );
+            })}
       </ul>
       <button
         ref={badgeRef}

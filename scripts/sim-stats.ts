@@ -37,6 +37,7 @@ export interface SimStats {
   smugglersCaught: number;
   commission: number;
   diplomatTake: number;
+  smugglerCovers: number;
   armsConfiscatedUnits: number;
   armsConfiscatedCash: number;
 }
@@ -73,6 +74,7 @@ export function emptyStats(steps: number): SimStats {
     smugglersCaught: 0,
     commission: 0,
     diplomatTake: 0,
+    smugglerCovers: 0,
     armsConfiscatedUnits: 0,
     armsConfiscatedCash: 0,
   };
@@ -130,6 +132,8 @@ export function addMatch(stats: SimStats, log: MatchLog, strategyOf: (playerId: 
       case 'roles-revealed':
         for (const d of event.deployments) {
           stats.roles[d.role] = (stats.roles[d.role] ?? 0) + 1;
+          const own = d.targetShipId !== null && owners.get(d.targetShipId) === d.playerId;
+          stats.smugglerCovers += d.role === 'smuggler' && own ? 1 : 0;
           if (d.role === 'smuggler' && d.targetShipId !== null) {
             smuggled.add(d.targetShipId);
           }

@@ -37,21 +37,16 @@ export interface ShipBeat {
   readonly round: number;
   readonly shipId: ShipId;
   readonly owner: PlayerId;
-  /** Starting die value of the resolution (§4): already the rerolled value when `rerolled`. */
+  /** Starting die value of the resolution (§4). */
   readonly start: number;
-  readonly rerolled: boolean;
-  /**
-   * The intel merchant that looked at two ships (the lighthouse's second look, §11.2) with this one
-   * among them, when this ship was rerolled: its beam shows the die was changed. Null otherwise.
-   */
-  readonly rerollSpotter: PlayerId | null;
   readonly steps: readonly BeatStep[];
   readonly final: number;
   readonly outcome: VoyageOutcome;
   readonly cargo: Goods;
   readonly smugglers: readonly PlayerId[];
   readonly smuggling: 'taken' | 'caught' | 'seized' | 'lost' | null;
-  readonly armsConfiscated: number;
+  /** Goods customs took off this ship (§9.4). */
+  readonly confiscated: readonly { readonly good: GoodId; readonly units: number }[];
   /** Money moved because of this ship, in event order (launch cost excluded: it was paid before). */
   readonly cash: readonly BeatCash[];
   /** Goods taken into a warehouse by salvage. */
@@ -110,20 +105,13 @@ export function buildShipBeat(events: readonly MatchEvent[], shipId: ShipId): Sh
   const voyageEvent = inRound.find((e) => e.type === 'voyage-event-revealed');
   const islands = events.find((e) => e.type === 'islands-chosen');
   const smuggling = inRound.find((e): e is Extract<MatchEvent, { type: 'smuggling-settled' }> => e.type === 'smuggling-settled' && e.shipId === shipId);
-  const confiscated = inRound.find((e): e is Extract<MatchEvent, { type: 'arms-confiscated' }> => e.type === 'arms-confiscated' && e.shipId === shipId);
-
-  const rerolled = inRound.some((e) => e.type === 'roles-revealed' && e.rerolledShipIds.includes(shipId));
-  const spotter = inRound
-    .flatMap((e) => (e.type === 'roles-revealed' && e.role === 'intel' ? e.deployments : []))
-    .find((d) => d.peekShipId !== null && (d.targetShipId === shipId || d.peekShipId === shipId));
+  const confiscated = inRound.filter((e): e is Extract<MatchEvent, { type: 'goods-confiscated' }> => e.type === 'goods-confiscated' && e.shipId === shipId);
 
   return {
     round,
     shipId,
     owner,
     start: mod.base,
-    rerolled,
-    rerollSpotter: rerolled && spotter ? spotter.playerId : null,
     steps: modifierSteps(
       mod,
       deployedOn(inRound, 'guard', shipId),
@@ -137,7 +125,7 @@ export function buildShipBeat(events: readonly MatchEvent[], shipId: ShipId): Sh
     cargo: resolved.cargo,
     smugglers: smuggling?.smugglers ?? [],
     smuggling: smuggling?.result ?? null,
-    armsConfiscated: confiscated?.units ?? 0,
+    confiscated: confiscated.map((c) => ({ good: c.good, units: c.units })),
     cash: inRound.flatMap((e) =>
       e.type === 'cash-changed' && e.shipId === shipId && e.reason !== 'ship-cost' ? [{ playerId: e.playerId, amount: e.amount, reason: e.reason }] : [],
     ),
