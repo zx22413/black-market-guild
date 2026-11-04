@@ -266,12 +266,16 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const dockShip: TableShip[] = step?.ownShip && viewer && !launched.some((s) => s.owner === viewer) ? [{ id: `dock-${viewer}` as ShipId, owner: viewer, state: 'docked' }] : [];
   const ships: TableShip[] = [...launched, ...dockShip];
   const stateOf = (id: ShipId) => ships.find((x) => x.id === id)?.state;
-  const market = marketShow({
-    events,
-    prices: resolution.marketPrices ?? board.prices,
-    weather: board.voyageEvent,
-    arrived: board.ships.filter((s) => stateOf(s.id) === 'arrived').map((s) => ({ shipId: s.id, owner: s.owner, angle: angles[laneOf(s.owner)]! })),
-  });
+  const market = {
+    ...marketShow({
+      events,
+      prices: resolution.marketPrices ?? board.prices,
+      weather: board.voyageEvent,
+      arrived: board.ships.filter((s) => stateOf(s.id) === 'arrived').map((s) => ({ shipId: s.id, owner: s.owner, angle: angles[laneOf(s.owner)]! })),
+    }),
+    // The side shots of your own ship would show the market pier at your berth a ship's length away.
+    ...(step?.sideShot && viewer ? { hiddenPiers: [angles[laneOf(viewer)]!] } : {}),
+  };
   const myCargo = cargoNow;
 
   const waiting = new Set(snap.waitingOn);

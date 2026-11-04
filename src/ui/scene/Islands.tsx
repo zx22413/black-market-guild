@@ -45,6 +45,9 @@ interface PlayerIslandProps {
   readonly annex?: IslandAnnex;
 }
 
+/** Where the dock model's legs end, below the sea's rest level (-0.3), so they stand in the water. */
+const DOCK_FOOT = -0.55;
+
 /** One guild's home island: dock toward the center, owned assets in fixed lots. */
 export function PlayerIsland({ seat, angle, seed, selectable = false, selected = false, onSelect, ground, scenery, annex }: PlayerIslandProps) {
   const home = seatPosition(angle);
@@ -82,7 +85,8 @@ export function PlayerIsland({ seat, angle, seed, selectable = false, selected =
         )}
         <Banner color={seat.color} position={[0, 0, 0.5]} />
       </group>
-      <Model name="structure-platform-dock" position={[0, 0.2, PLAYER_ISLAND_RADIUS + 0.4]} scale={[1.2, 1, 1.6]} />
+      {/* The model's legs start at its origin: standing it in the sea (rest level -0.3) puts its deck at about the market piers' (0.45). */}
+      <Model name="structure-platform-dock" position={[0, DOCK_FOOT, PLAYER_ISLAND_RADIUS + 0.4]} scale={[1.2, 1, 1.6]} />
       <Model name="rocks-sand-a" position={[-11, -0.6, 5.4]} scale={0.8} />
     </group>
   );

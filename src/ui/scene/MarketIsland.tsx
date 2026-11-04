@@ -76,6 +76,8 @@ export interface MarketShow {
   readonly bellKey?: string | null;
   /** A black market rush: crowds, bunting, a peal of the bell and the board's rims aglow. */
   readonly rush?: boolean;
+  /** Seat angles whose berth pier is left out (the side shots of your own ship, which would show it a ship's length away). */
+  readonly hiddenPiers?: readonly number[];
 }
 
 const OPENING_CELLS = [2, 2, 3, 3] as const;
@@ -473,7 +475,12 @@ export function MarketIsland({ seatAngles, show = DEFAULT_SHOW, night = false }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [key],
   );
-  const pierGeometry = useMemo(() => geometryFromParts([...docks.values()].flatMap((d) => d.parts)), [docks]);
+  const hiddenKey = (show.hiddenPiers ?? []).map((a) => a.toFixed(4)).join('|');
+  const pierGeometry = useMemo(
+    () => geometryFromParts([...docks].filter(([a]) => !(show.hiddenPiers ?? []).some((h) => Math.abs(h - a) < 1e-3)).flatMap(([, d]) => d.parts)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [docks, hiddenKey],
+  );
   useEffect(() => () => pierGeometry.dispose(), [pierGeometry]);
   const paths = useMemo(() => new Map([...docks].map(([a, d]) => [a, d.porterPath.map((p) => [...p] as [number, number, number])] as const)), [docks]);
   return (

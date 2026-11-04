@@ -445,6 +445,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     camera,
     ...(typed ? { ownShip: true } : {}),
     ...(shipPhase ? { bareShot: true } : {}),
+    ...(sideView ? { sideShot: true } : {}),
     ...(sideView ? { cameraRig: (safe: SafeArea) => <ShipSideCamera angle={home} shot={shipPhase ? 'ship' : 'cargo'} safe={phone ? safe : { ...safe, right: Math.max(safe.right, shipPhase ? SHIP_INFO_ROOM : RANK_RAIL_ROOM) }} /> } : {}),
     ...(phone ? { rivalRow: true } : { closeShot: true }),
     scene: (
