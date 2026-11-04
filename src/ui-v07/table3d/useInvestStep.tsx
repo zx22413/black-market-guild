@@ -42,7 +42,7 @@ import { ArrowIcon, CloseIcon, CrateIcon, Flow, HouseIcon, IconDisc, InfoIcon, t
 import { LockHint } from './LockHint';
 import { usePhone } from './usePhone';
 import { SealSubmit } from './SealSubmit';
-import { ShipPicker } from './ShipPicker';
+import { ShipHand, ShipInfo, type ShipPick } from './ShipPicker';
 import { soundEngine } from '../audio/soundEngine';
 import { OWN_PLATE_REACH, type StageEnv, type StageParts } from './stage';
 import { cardArtUrl } from './cardArt';
@@ -58,8 +58,10 @@ const ROUND_OPEN_MS = 650;
 const mintChipDelay = (column: number): number => 150 + column * 120;
 /** The ship-bay shots look from the sea side: the build button stands in island space this far out, between the warehouse and the dock. */
 const BUILD_BUTTON_Z = 9.5;
-/** The standings stand open at the right in a close shot (RankRail): the side shots keep the ship clear of them. */
+/** The standings stand open at the right in a close shot (RankRail): the loading shot keeps the ship clear of them. */
 const RANK_RAIL_ROOM = 215;
+/** The ship pick's info card stands in the free column at the right (shipPicker.css `.ship-info`, wide screens): the ship keeps clear of it. */
+const SHIP_INFO_ROOM = 260;
 /** Each next pop a little higher, like bubbles rising. */
 const BUBBLE_RISE = 0.12;
 
@@ -75,6 +77,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   // Ship-bay experiment (rules.ships): the ship is picked first, close up, then the cargo is loaded from further back.
   const [phase, setPhase] = useState<'ship' | 'cargo'>('ship');
   const [shipDecided, setShipDecided] = useState(false);
+  // The ship card the pointer is on: the info card describes it, else the one picked.
+  const [peekShip, setPeekShip] = useState<ShipPick>(null);
   const [reminding, setReminding] = useState<readonly string[] | null>(null);
   // Crates a change of building took off the ship, said beside the ship until the next change.
   const [unloaded, setUnloaded] = useState<string | null>(null);
@@ -96,6 +100,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     setBuildDecided(false);
     setPhase('ship');
     setShipDecided(false);
+    setPeekShip(null);
     setReminding(null);
     setUnloaded(null);
     setMinting(true);
@@ -432,12 +437,15 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       }}
     />
   );
+  const shipPicked: ShipPick = shipDecided ? (choice.shipType ?? 'none') : null;
+  const shipInfo = <ShipInfo cards={shipOptions} shown={peekShip ?? shipPicked} modifier={knownModifier(context)} layout={phone ? 'strip' : 'side'} />;
+  const shipHand = <ShipHand cards={shipOptions} picked={shipPicked} todo={!shipDecided} onPick={pickShip} onPeek={setPeekShip} />;
   return {
     pins: shipPhase ? [] : pins,
     camera,
     ...(typed ? { ownShip: true } : {}),
     ...(shipPhase ? { bareShot: true } : {}),
-    ...(sideView ? { cameraRig: (safe: SafeArea) => <ShipSideCamera angle={home} shot={shipPhase ? 'ship' : 'cargo'} safe={phone ? safe : { ...safe, right: Math.max(safe.right, RANK_RAIL_ROOM) }} /> } : {}),
+    ...(sideView ? { cameraRig: (safe: SafeArea) => <ShipSideCamera angle={home} shot={shipPhase ? 'ship' : 'cargo'} safe={phone ? safe : { ...safe, right: Math.max(safe.right, shipPhase ? SHIP_INFO_ROOM : RANK_RAIL_ROOM) }} /> } : {}),
     ...(phone ? { rivalRow: true } : { closeShot: true }),
     scene: (
       <>
@@ -459,11 +467,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
         {choice.build && !shipPhase && <BuildingPreview angle={home} building={choice.build} color={seats[laneOf(viewer)]!.color} />}
       </>
     ),
-    ...(shipPhase
-      ? {
-          dock: <ShipPicker cards={shipOptions} picked={shipDecided ? (choice.shipType ?? 'none') : null} todo={!shipDecided} modifier={knownModifier(context)} onPick={pickShip} />,
-        }
-      : {}),
+    // On a wide screen the info card stands beside the ship (the overlay) and the hand is alone at the bottom; on a phone the strip stays above the hand.
+    ...(shipPhase ? { dock: phone ? <>{shipInfo}{shipHand}</> : shipHand } : {}),
     bar: shipPhase ? (
       <>
         {chips}
@@ -482,6 +487,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     overlay: (
       <>
         {phone && cards}
+        {shipPhase && !phone && shipInfo}
         {reminding && (
           <ReminderDialog
             title="還沒做完"

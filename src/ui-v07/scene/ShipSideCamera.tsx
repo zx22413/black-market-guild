@@ -35,11 +35,13 @@ const FILL = 0.94;
  * How much taller than the free room the shot may be, as a share of that room: the pick shot is top-aligned under the
  * HUD and its hull goes behind the ship hand, so the mast and sails stay in view while the ship comes out bigger.
  */
-const OVERLAP: Readonly<Record<ShipShot, number>> = { ship: 0.3, cargo: 0 };
+const OVERLAP: Readonly<Record<ShipShot, number>> = { ship: 0.1, cargo: 0 };
+/** The closest the camera may stand, as a share of the rig's own distance: the loading shot keeps the tuned distance (the ship stays left of the standings), the pick shot may come as close as the room allows. */
+const MIN_BACK: Readonly<Record<ShipShot, number>> = { ship: 0.5, cargo: 1 };
 /** The gap (px) between the HUD above and the top of the ship in the pick shot. */
 const TOP_MARGIN = 8;
 /** The ship's box in scene units (half length along the hull, half width, mast height, depth under the water line): what has to fit. */
-const SHIP_BOX = { halfLength: 3.4, halfWidth: 1, height: 5, depth: 0.5 } as const;
+const SHIP_BOX = { halfLength: 3.4, halfWidth: 1, height: 5.6, depth: 0.5 } as const;
 /** The warehouse part kept in the loading shot: its two middle columns (half the row's width, a stack's height). */
 const WAREHOUSE_REACH = { halfWidth: 2.4, height: 4 } as const;
 
@@ -127,7 +129,7 @@ export function ShipSideCamera({ angle, shot, safe }: { readonly angle: number; 
     const freeWidth = Math.max(0.2 * width, width - (safe?.left ?? 0) - (safe?.right ?? 0));
     const freeHeight = Math.max(0.2 * height, height - (safe?.top ?? 0) - (safe?.bottom ?? 0));
     const needed = Math.max(((maxX - minX) / 2) * width / (freeWidth * FILL), ((maxY - minY) / 2) * height / (freeHeight * (1 + OVERLAP[shot]) * FILL));
-    const target = Math.min(2.8, Math.max(0.5, needed));
+    const target = Math.min(2.8, Math.max(MIN_BACK[shot], needed));
     const back = (backAt.current = backAt.current === null ? target : backAt.current + (target - backAt.current) * k);
 
     place(camera, back);

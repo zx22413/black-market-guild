@@ -152,8 +152,28 @@
     font-size: 11px;
     line-height: 16px;
   }
-  /* The header (name, fee, rest, modifier) is narrow here: the ability takes its own line, and every card's strip is as tall as the tallest. */
-  :root:root:root .ship-strip {
+  /*
+   * The strip is folded to its header line until tapped (a ▾ says there is more), so the ship keeps the height; opened,
+   * the ability takes its own line below the narrow header and the dice table follows.
+   */
+  :root:root:root .ship-strip:not(.idle) {
+    cursor: pointer;
+  }
+  :root:root:root .ship-strip:not(.open):not(.idle) .ship-dice,
+  :root:root:root .ship-strip:not(.open):not(.idle) > p:not(.why),
+  :root:root:root .ship-strip:not(.open) header .ship-ability {
+    display: none;
+  }
+  :root:root:root .ship-strip:not(.idle) header::after {
+    content: '▾ 骰值表';
+    margin-left: auto;
+    color: #8a4b12;
+    font-size: 12px;
+  }
+  :root:root:root .ship-strip.open header::after {
+    content: '▴ 收起';
+  }
+  :root:root:root .ship-strip.open {
     min-height: 108px;
   }
   :root:root:root .dep-strip header span.ship-ability {
@@ -178,4 +198,55 @@
     height: 14px;
     line-height: 14px;
   }
+}
+
+/*
+ * On a wide screen the info card stands beside the ship (ShipInfo layout "side"), in the free column on the right,
+ * so the dice table takes width and not the ship's height: the faces run down it, one per row.
+ */
+.ship-info {
+  position: fixed;
+  /* Under the folded standings button (RankRail) that sits at the right of the HUD. */
+  top: calc(var(--hud-top, 70px) + 56px);
+  right: 16px;
+  z-index: 20;
+  box-sizing: border-box;
+  width: 232px;
+  min-height: 0;
+}
+.ship-info.idle p {
+  padding-top: 0;
+}
+.ship-info header {
+  row-gap: 4px;
+}
+.ship-info .ship-ability-line {
+  margin: 6px 0 0;
+  font-size: var(--fs-note);
+  color: #3d2f1d;
+}
+.ship-info .ship-dice {
+  grid-template-columns: 1fr;
+  gap: 3px;
+  margin-top: 8px;
+}
+.ship-info .ship-dice li {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 10px;
+}
+.ship-info .ship-dice li small {
+  font-size: var(--fs-body);
+}
+.ship-info .ship-dice li b {
+  font-size: var(--fs-title);
+}
+.ship-info .ship-dice li.label {
+  padding: 0 10px;
+}
+.ship-info .ship-dice li.label small,
+.ship-info .ship-dice li.label b {
+  font-size: var(--fs-note);
+  line-height: 18px;
 }

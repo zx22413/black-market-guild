@@ -423,7 +423,8 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
             cashOf={(id) => (board.players[id]?.cash ?? 0) + (resolution.cashBonus[id] ?? 0)}
             status={(id) => (deciding ? (waiting.has(id) ? '思考中' : '已決定') : '')}
             rankStep={events.filter((e) => e.type === 'round-ended').length}
-            forceOpen={closeShot}
+            forceOpen={closeShot && step?.bareShot !== true}
+            forceClosed={step?.bareShot === true}
           />
         )}
         <button type="button" data-focus="rules" title="規則" aria-label="規則" aria-expanded={rulesOpen} onClick={() => setRulesOpen(true)}>
