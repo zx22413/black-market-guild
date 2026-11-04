@@ -3,8 +3,17 @@
 
 /* One more line under the fee: the sinking chance, and the rest time when the type has one. */
 .ship-hand .dep-card {
-  height: 158px;
-  padding-top: 8px;
+  height: 138px;
+  padding-top: 6px;
+  gap: 2px;
+}
+.ship-hand .dep-ic {
+  width: 50px;
+  height: 50px;
+}
+.ship-hand .dep-ic img {
+  width: 32px;
+  height: 32px;
 }
 .ship-odds {
   display: inline-flex;
@@ -22,18 +31,26 @@
   color: #6b5537;
 }
 
-/* The strip also holds the dice table, so it is a little taller than the role strip. */
+/* The strip also holds the dice table, so it is a little taller than the role strip; the ability stays on the header line, so the height is the same for every card. */
 .ship-strip {
-  min-height: 118px;
+  min-height: 92px;
+  padding-top: 6px;
+  padding-bottom: 6px;
 }
 .ship-strip.idle p {
-  padding-top: 36px;
+  padding-top: 22px;
+}
+.dep-strip header span.ship-ability {
+  margin-left: auto;
+  font-size: var(--fs-note);
+  font-weight: 400;
+  color: #3d2f1d;
 }
 .ship-dice {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 6px;
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -41,7 +58,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 3px 2px 4px;
+  padding: 1px 2px 2px;
   border: 1px solid #b9a77d;
   border-radius: 6px;
   background: rgb(43 33 22 / 0.06);
@@ -122,6 +139,14 @@
     background: rgb(245 236 212 / 0.95);
     font-size: 11px;
     line-height: 16px;
+  }
+  /* The header (name, fee, rest, modifier) is narrow here: the ability takes its own line, and every card's strip is as tall as the tallest. */
+  :root:root:root .ship-strip {
+    min-height: 108px;
+  }
+  :root:root:root .dep-strip header span.ship-ability {
+    flex-basis: 100%;
+    margin-left: 0;
   }
   :root:root:root .ship-dice {
     gap: 3px;

@@ -66,6 +66,7 @@ export function ShipPicker({ cards, picked, todo, modifier, onPick }: ShipPicker
                 {card.cooldown}
               </span>
               {modifierChip}
+              {SHIP_TYPE_TEXT[card.id] && <span className="ship-ability">{SHIP_TYPE_TEXT[card.id]}</span>}
             </header>
             <ol className="ship-dice" aria-label="骰值表">
               {card.rows.map((row) => (
@@ -76,7 +77,6 @@ export function ShipPicker({ cards, picked, todo, modifier, onPick }: ShipPicker
               ))}
             </ol>
             {card.reason && <p className="why">{card.reason}</p>}
-            {SHIP_TYPE_TEXT[card.id] && <p>{SHIP_TYPE_TEXT[card.id]}</p>}
           </>
         )}
       </div>

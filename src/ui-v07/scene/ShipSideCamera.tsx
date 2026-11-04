@@ -1,6 +1,6 @@
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useRef } from 'react';
-import type { PerspectiveCamera } from 'three';
+import { useEffect, useMemo, useRef } from 'react';
+import { PerspectiveCamera, Vector3 } from 'three';
 import type { SafeArea } from '../../ui/scene/CameraRig';
 import { playerIslandHeading } from '../../ui/scene/islandShape';
 import { seatPosition } from '../../ui/scene/layout';
@@ -22,9 +22,6 @@ interface Rig {
   readonly mix: number;
 }
 
-/** How wide (scene units) the shot has to show: the ship with its sails, or the warehouse and the ship together. */
-const SPAN: Readonly<Record<ShipShot, number>> = { ship: 11, cargo: 18 };
-
 const RIGS: Readonly<Record<ShipShot, Rig>> = {
   ship: { across: 13.5, along: -6, height: 4.2, aim: 1.6, mix: 0 },
   cargo: { across: 19, along: -8, height: 10, aim: 0.5, mix: 0.4 },
@@ -32,8 +29,19 @@ const RIGS: Readonly<Record<ShipShot, Rig>> = {
 const FOV = 40;
 /** How fast the camera glides to the next rig (per second, exponential). */
 const GLIDE = 3;
-/** The share of the screen's height the HUD leaves free that the rigs are set for; with less room the camera backs off so the ship still fits. */
-const DESIGN_ROOM = 0.55;
+/** What the camera keeps in view fills this much of the room the HUD leaves free (the rest is air around it). */
+const FILL = 0.94;
+/**
+ * How much taller than the free room the shot may be, as a share of that room: the pick shot is top-aligned under the
+ * HUD and its hull goes behind the ship hand, so the mast and sails stay in view while the ship comes out bigger.
+ */
+const OVERLAP: Readonly<Record<ShipShot, number>> = { ship: 0.3, cargo: 0 };
+/** The gap (px) between the HUD above and the top of the ship in the pick shot. */
+const TOP_MARGIN = 8;
+/** The ship's box in scene units (half length along the hull, half width, mast height, depth under the water line): what has to fit. */
+const SHIP_BOX = { halfLength: 3.4, halfWidth: 1, height: 5, depth: 0.5 } as const;
+/** The warehouse part kept in the loading shot: its two middle columns (half the row's width, a stack's height). */
+const WAREHOUSE_REACH = { halfWidth: 2.4, height: 4 } as const;
 
 /** The warehouse's middle in island space (InvestIsland's WAREHOUSE spot, the second column's centre). */
 const WAREHOUSE_MIDDLE = 5.8;
@@ -53,6 +61,10 @@ export function ShipSideCamera({ angle, shot, safe }: { readonly angle: number; 
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const { width, height } = useThree((s) => s.size);
   const at = useRef<Rig | null>(null);
+  const backAt = useRef<number | null>(null);
+  // A stand-in camera to measure how big the ship comes out on screen before the real one is placed.
+  const probe = useMemo(() => new PerspectiveCamera(FOV, 1, 0.1, 500), []);
+  const point = useMemo(() => new Vector3(), []);
   // The camera is shared with the framing camera: hand it back as it was.
   useEffect(() => () => camera.clearViewOffset(), [camera]);
   useFrame((_, delta) => {
@@ -69,30 +81,67 @@ export function ShipSideCamera({ angle, shot, safe }: { readonly angle: number; 
     at.current = next;
     const dock = shipPose(angle, 'docked');
     const house = warehouseCentre(angle);
-    // Back off when the HUD leaves little height, and on a narrow (portrait) screen where the span would not fit across.
-    const room = safe ? Math.max(0.25, (height - safe.top - safe.bottom) / height) : DESIGN_ROOM;
-    const freeWidth = safe ? Math.max(0.3, (width - safe.left - safe.right) / width) : 1;
-    const reach = Math.hypot(to.across, to.along, to.height - to.aim);
-    const seen = 2 * Math.tan((FOV * Math.PI) / 360) * reach * (width / height) * freeWidth;
-    const back = Math.min(2.6, Math.max(0.85, DESIGN_ROOM / room, SPAN[shot] / seen));
     const [ix, , iz] = seatPosition(angle);
     // Across the ship, on the side away from the island.
     const side = (ix - dock.position.x) * Math.cos(dock.heading) - (iz - dock.position.z) * Math.sin(dock.heading) > 0 ? -1 : 1;
     const ax = dock.position.x + (house.x - dock.position.x) * next.mix;
     const az = dock.position.z + (house.z - dock.position.z) * next.mix;
-    camera.position.set(
-      ax + side * Math.cos(dock.heading) * next.across * back + Math.sin(dock.heading) * next.along * back,
-      next.height * back,
-      az - side * Math.sin(dock.heading) * next.across * back + Math.cos(dock.heading) * next.along * back,
-    );
-    camera.lookAt(ax, next.aim, az);
+    const place = (cam: PerspectiveCamera, back: number) => {
+      cam.position.set(
+        ax + side * Math.cos(dock.heading) * next.across * back + Math.sin(dock.heading) * next.along * back,
+        next.height * back,
+        az - side * Math.sin(dock.heading) * next.across * back + Math.cos(dock.heading) * next.along * back,
+      );
+      cam.lookAt(ax, next.aim, az);
+      cam.updateMatrixWorld();
+    };
+
+    // How far back the camera has to stand for what must be seen to fill the free room: measured at the rig's own distance
+    // (size on screen falls with distance), so a short screen, a narrow one and a tall hand all get the biggest ship that fits.
+    probe.aspect = width / height;
+    probe.updateProjectionMatrix();
+    place(probe, 1);
+    const [fx, fz] = [Math.sin(dock.heading), Math.cos(dock.heading)];
+    const [px, pz] = [Math.cos(dock.heading), -Math.sin(dock.heading)];
+    const corners: [number, number, number][] = [];
+    for (const along of [-SHIP_BOX.halfLength, SHIP_BOX.halfLength]) {
+      for (const across of [-SHIP_BOX.halfWidth, SHIP_BOX.halfWidth]) {
+        for (const up of [-SHIP_BOX.depth, SHIP_BOX.height]) corners.push([dock.position.x + fx * along + px * across, up, dock.position.z + fz * along + pz * across]);
+      }
+    }
+    if (shot === 'cargo') {
+      // The row of stacks runs across the island's heading.
+      const h = playerIslandHeading(angle);
+      for (const along of [-WAREHOUSE_REACH.halfWidth, WAREHOUSE_REACH.halfWidth]) {
+        for (const up of [0, WAREHOUSE_REACH.height]) corners.push([house.x + Math.cos(h) * along, up, house.z - Math.sin(h) * along]);
+      }
+    }
+    let [minX, maxX, minY, maxY] = [Infinity, -Infinity, Infinity, -Infinity];
+    for (const c of corners) {
+      point.set(...c).project(probe);
+      minX = Math.min(minX, point.x);
+      maxX = Math.max(maxX, point.x);
+      minY = Math.min(minY, point.y);
+      maxY = Math.max(maxY, point.y);
+    }
+    const freeWidth = Math.max(0.2 * width, width - (safe?.left ?? 0) - (safe?.right ?? 0));
+    const freeHeight = Math.max(0.2 * height, height - (safe?.top ?? 0) - (safe?.bottom ?? 0));
+    const needed = Math.max(((maxX - minX) / 2) * width / (freeWidth * FILL), ((maxY - minY) / 2) * height / (freeHeight * (1 + OVERLAP[shot]) * FILL));
+    const target = Math.min(2.8, Math.max(0.5, needed));
+    const back = (backAt.current = backAt.current === null ? target : backAt.current + (target - backAt.current) * k);
+
+    place(camera, back);
+    // Where the ship's top comes out on screen at this distance (the pick shot puts it just under the HUD).
+    place(probe, back);
+    let topPx = Infinity;
+    for (const c of corners) topPx = Math.min(topPx, ((1 - point.set(...c).project(probe).y) / 2) * height);
     if (camera.fov !== FOV) {
       camera.fov = FOV;
       camera.updateProjectionMatrix();
     }
     // Moving the middle of the picture to the middle of the free room: a view offset of (x, y) pushes the picture by (−x, −y).
     const x = safe ? (safe.right - safe.left) / 2 : 0;
-    const y = safe ? (safe.bottom - safe.top) / 2 : 0;
+    const y = !safe ? 0 : shot === 'ship' ? topPx - (safe.top + TOP_MARGIN) : (safe.bottom - safe.top) / 2;
     if (camera.view?.offsetX !== x || camera.view?.offsetY !== y || camera.view?.fullWidth !== width || camera.view?.fullHeight !== height) {
       camera.setViewOffset(width, height, x, y, width, height);
     }
