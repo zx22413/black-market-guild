@@ -1135,11 +1135,16 @@ button.inv-stack:hover {
 .dep-strip header {
   display: flex;
   gap: 12px;
-  align-items: baseline;
+  /* Centred, not on the text baseline: the chips carry an icon, whose baseline sits lower than the name's. */
+  align-items: center;
   flex-wrap: wrap;
 }
 .dep-strip header b {
   font-size: var(--fs-title);
+  line-height: 1.2;
+}
+.dep-strip header .chip {
+  line-height: 1.2;
 }
 .dep-strip header span {
   font-size: var(--fs-body);

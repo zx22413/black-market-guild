@@ -19,11 +19,11 @@ const CRATE_SCALE = 0.6;
 const DECK_Y = 1.25;
 
 const SHIPS = [
-  { id: 'standard', name: '白板船', sink: 17, ability: '無特殊能力', fee: '免費', cooldown: '無冷卻', curve: [0, 30, 45, 60, 75, 100] },
+  { id: 'standard', name: '白板船', sink: 17, ability: '無特殊能力', fee: '0', cooldown: '無冷卻', curve: [0, 30, 45, 60, 75, 100] },
   { id: 'gambler', name: '賭徒船', sink: 67, ability: '無特殊能力', fee: '150 G', cooldown: '冷卻 1', curve: [0, 0, 0, 0, 125, 250] },
-  { id: 'freighter', name: '貨櫃船', sink: 0, ability: '載量 +2，下回合才抵達', fee: '免費', cooldown: '無冷卻', curve: [25, 35, 45, 55, 65, 75] },
+  { id: 'freighter', name: '貨櫃船', sink: 0, ability: '載量 +2，下回合才抵達', fee: '0', cooldown: '無冷卻', curve: [25, 35, 45, 55, 65, 75] },
   { id: 'hidden', name: '密艙船', sink: 17, ability: '海關指名無效', fee: '40 G', cooldown: '無冷卻', curve: [0, 30, 45, 60, 75, 100] },
-  { id: 'breaker', name: '破浪船', sink: 17, ability: '最終值不封頂', fee: '免費', cooldown: '無冷卻', curve: [0, 20, 35, 50, 70, 100] },
+  { id: 'breaker', name: '破浪船', sink: 17, ability: '最終值不封頂', fee: '0', cooldown: '無冷卻', curve: [0, 20, 35, 50, 70, 100] },
 ] as const;
 
 /** The crates on deck at a smaller scale, so they read as cargo on a ship and not as the ship itself. */

@@ -57,9 +57,9 @@ export function ShipPicker({ cards, picked, todo, modifier, onPick }: ShipPicker
           <>
             <header>
               <b>{SHIP_TYPE_LABELS[card.id]}</b>
-              <span className="chip" title={card.fee === 0 ? '免費' : `船費 ${card.fee} G`}>
+              <span className="chip" title={`船費 ${card.fee} G`}>
                 <IconDisc src={tokenIconUrl('coin')} />
-                {card.fee === 0 ? '免費' : card.fee}
+                {card.fee}
               </span>
               <span className="chip" title={card.cooldown === 0 ? '沒有冷卻' : `用過後冷卻 ${card.cooldown} 回合`}>
                 <ClockIcon />
@@ -68,10 +68,14 @@ export function ShipPicker({ cards, picked, todo, modifier, onPick }: ShipPicker
               {modifierChip}
               {SHIP_TYPE_TEXT[card.id] && <span className="ship-ability">{SHIP_TYPE_TEXT[card.id]}</span>}
             </header>
-            <ol className="ship-dice" aria-label="骰值表">
+            <ol className="ship-dice" aria-label="骰值表：擲出的點數，與這艘船拿到貨值的幾成">
+              <li className="label" aria-hidden="true">
+                <small>擲出</small>
+                <b>拿貨值</b>
+              </li>
               {card.rows.map((row) => (
-                <li key={row.roll} className={row.sinks ? 'sink' : row.percent > 100 ? 'win' : ''} title={`擲 ${row.roll}，最終值 ${row.final}`}>
-                  <small>擲 {row.roll}</small>
+                <li key={row.roll} className={row.sinks ? 'sink' : row.percent > 100 ? 'win' : ''} title={row.sinks ? `擲 ${row.roll}（最終值 ${row.final}）：沉，貨全損` : `擲 ${row.roll}（最終值 ${row.final}）：拿到貨值的 ${row.percent}%`}>
+                  <small>{row.roll}</small>
                   <b>{row.sinks ? '沉' : `${row.percent}%`}</b>
                 </li>
               ))}
@@ -107,15 +111,9 @@ export function ShipPicker({ cards, picked, todo, modifier, onPick }: ShipPicker
             <img src={tokenIconUrl('ship')} alt="" />
           </span>
           <b>{SHIP_TYPE_LABELS[c.id]}</b>
-          <span className="dep-fee" title={c.fee === 0 ? '免費' : `船費 ${c.fee} G`}>
-            {c.fee === 0 ? (
-              '免費'
-            ) : (
-              <>
-                <IconDisc src={tokenIconUrl('coin')} />
-                {c.fee}
-              </>
-            )}
+          <span className="dep-fee" title={`船費 ${c.fee} G`}>
+            <IconDisc src={tokenIconUrl('coin')} />
+            {c.fee}
           </span>
           <span className="ship-odds" title={`沉船機率 ${c.sinkPercent}%${c.cooldown > 0 ? `；用過後冷卻 ${c.cooldown} 回合` : ''}`}>
             <span>沉 {c.sinkPercent}%</span>

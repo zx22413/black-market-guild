@@ -204,9 +204,9 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
           <>
             <header>
               <b>{ROLE_LABELS[shown]}</b>
-              <span className="chip" title={shownCard.fee === 0 ? '免費' : `部署費 ${shownCard.fee} G`}>
+              <span className="chip" title={`部署費 ${shownCard.fee} G`}>
                 <IconDisc src={tokenIconUrl('coin')} />
-                {shownCard.fee === 0 ? '免費' : shownCard.fee}
+                {shownCard.fee}
               </span>
               <span className="chip" title={`用過後冷卻 ${shownCard.cooldown} 回合`}>
                 <ClockIcon />
@@ -248,15 +248,9 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
             <img src={cardArtUrl({ kind: 'role', id: c.id })} alt="" />
           </span>
           <b>{ROLE_LABELS[c.id]}</b>
-          <span className="dep-fee" title={c.fee === 0 ? '免費' : `部署費 ${c.fee} G`}>
-            {c.fee === 0 ? (
-              '免費'
-            ) : (
-              <>
-                <IconDisc src={tokenIconUrl('coin')} />
-                {c.fee}
-              </>
-            )}
+          <span className="dep-fee" title={`部署費 ${c.fee} G`}>
+            <IconDisc src={tokenIconUrl('coin')} />
+            {c.fee}
           </span>
         </button>
       ))}

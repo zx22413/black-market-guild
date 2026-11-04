@@ -48,7 +48,8 @@
 }
 .ship-dice {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  /* A label column ("擲出" over "拿貨值") and the six faces: the row says what the percentages are. */
+  grid-template-columns: 52px repeat(6, minmax(0, 1fr));
   gap: 6px;
   margin: 4px 0 0;
   padding: 0;
@@ -68,6 +69,17 @@
 .ship-dice li small {
   font-size: var(--fs-note);
   color: #6b5537;
+}
+.ship-dice li.label {
+  justify-content: center;
+  border-color: transparent;
+  background: none;
+}
+.ship-dice li.label b {
+  color: #6b5537;
+  font-size: var(--fs-note);
+  line-height: 24px;
+  white-space: nowrap;
 }
 .ship-dice li b {
   font-size: var(--fs-title);
