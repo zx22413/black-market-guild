@@ -1,4 +1,4 @@
-import { GOODS, capacityFor, priceAt, type BuildingId, type GoodId, type PlayerView, type PublicPlayer, type Rules, type ViewShip } from '../game';
+import { GOODS, capacityFor, priceAt, shipIncomePercent, shipSinks, type BuildingId, type GoodId, type PlayerView, type PublicPlayer, type Rules, type ShipTypeId, type ViewShip } from '../game';
 
 // Expected-value estimates from public information only (ported from src/proto/economy/bots).
 // They are deliberately rough: simulation results reflect this way of deciding, not real players.
@@ -39,6 +39,32 @@ export function expectedLoot(rules: Rules, modifier: number, cargoValue: number,
     total += take > 0 ? take + bonus : 0;
   }
   return total / (dieMax - dieMin + 1);
+}
+
+/**
+ * Experiment (rules.ships): the mean share of its cargo's value, and the chance of sinking, of a ship of `type` whose final
+ * value is a fair die plus a known modifier. The final is capped at the die's top face unless the type is uncapped.
+ */
+export function curveOutlook(rules: Rules, type: ShipTypeId, modifier: number): { readonly income: number; readonly sink: number } {
+  const { dieMin, dieMax } = rules.sailing;
+  const cap = rules.ships.types[type].uncapped === 1 ? Number.MAX_SAFE_INTEGER : dieMax;
+  let income = 0;
+  let sink = 0;
+  for (let face = dieMin; face <= dieMax; face += 1) {
+    const final = Math.min(cap, Math.max(dieMin, face + modifier));
+    income += shipIncomePercent(rules, type, final) / 100;
+    sink += shipSinks(rules, type, final) ? 1 : 0;
+  }
+  const faces = dieMax - dieMin + 1;
+  return { income: income / faces, sink: sink / faces };
+}
+
+/** The modifier a bot expects on its own ship this round: its island and the voyage event, which is public from the round's start (§5). */
+export function expectedOwnModifier(view: PlayerView, islandModifier: number, delayed = false): number {
+  const { voyageEvents } = view.rules;
+  // A ship that arrives next round meets next round's event, which nobody knows yet.
+  const event = delayed ? 0 : view.voyageEvent === 'tailwind' ? voyageEvents.tailwind : view.voyageEvent === 'storm' ? voyageEvents.storm : 0;
+  return islandModifier + event;
 }
 
 /** Price of a fractional step, interpolated along the track (§7.1). */

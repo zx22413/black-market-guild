@@ -1,6 +1,6 @@
 import { shuffle, type RngState } from './rng';
 import { NEUTRAL_TRAIT, type IslandTrait, type Rules } from './rules';
-import { ISLAND_IDS, type BuildingId, type GoodId, type Goods, type IslandId, type PlayerId, type RoleId } from './types';
+import { ISLAND_IDS, type BuildingId, type GoodId, type Goods, type IslandId, type PlayerId, type RoleId, type ShipTypeId } from './types';
 
 // Island traits (§11).
 
@@ -24,8 +24,9 @@ export function roleFee(rules: Rules, island: IslandId | null, role: RoleId): nu
   return rules.roles.fees[role] + traitOf(rules, island).feeDelta[role];
 }
 
-export function shipCostFor(rules: Rules, island: IslandId | null): number {
-  return rules.shipCost + traitOf(rules, island).shipCostDelta;
+export function shipCostFor(rules: Rules, island: IslandId | null, type: ShipTypeId = 'standard'): number {
+  const base = rules.ships.enabled === 1 ? rules.ships.types[type].fee : rules.shipCost;
+  return Math.max(0, base + traitOf(rules, island).shipCostDelta);
 }
 
 /** §8: base capacity, shipyard bonus (a shipyard built this round counts), island change. */

@@ -20,6 +20,13 @@ export type BuildingId = (typeof BUILDING_IDS)[number];
 export const ROLE_IDS = ['customs', 'guard', 'pirate', 'smuggler', 'diplomat'] as const;
 export type RoleId = (typeof ROLE_IDS)[number];
 
+/**
+ * Experiment (rules.ships, docs/proposals/2026-11-ship-bays.md, not a decided rule): the ship a player
+ * sails this round. Each type has its own payout curve over the final value.
+ */
+export const SHIP_TYPE_IDS = ['standard', 'gambler', 'freighter', 'hidden', 'breaker'] as const;
+export type ShipTypeId = (typeof SHIP_TYPE_IDS)[number];
+
 /** §11.2 */
 export const ISLAND_IDS = ['spice-isles', 'pirate-cove', 'lumber', 'mine', 'smuggler-port', 'free-port', 'fortress', 'lighthouse'] as const;
 export type IslandId = (typeof ISLAND_IDS)[number];
@@ -41,6 +48,8 @@ export type Action =
       readonly build: BuildingId | null;
       /** Cargo for this player's ship; nothing loaded means not sailing (§8). */
       readonly load: Goods;
+      /** Experiment (rules.ships.enabled): the ship type; present exactly when something is loaded. */
+      readonly shipType?: ShipTypeId;
     }
   | {
       readonly type: 'deploy-role';
@@ -69,6 +78,10 @@ export interface Ship {
   readonly owner: PlayerId;
   /** Secret until the ship is resolved (§4). */
   readonly cargo: Goods;
+  /** Experiment (rules.ships): the ship type; 'standard' when the experiment is off. */
+  readonly type: ShipTypeId;
+  /** The round the ship is resolved in: its launch round, plus the type's delay (rules.ships). */
+  readonly arriveRound: number;
   /** Hidden raw 1d6. */
   readonly rawRoll: number;
   readonly outcome: VoyageOutcome | null;
@@ -94,6 +107,8 @@ export interface PlayerState {
   readonly island: IslandId | null;
   /** Round each role was last deployed, for cooldowns (§9.3). */
   readonly lastUsed: Readonly<Partial<Record<RoleId, number>>>;
+  /** Experiment (rules.ships): round each ship type was last launched, for cooldowns. */
+  readonly lastShip: Readonly<Partial<Record<ShipTypeId, number>>>;
 }
 
 export interface Build {
@@ -138,6 +153,8 @@ export interface MatchState {
   readonly phase: Phase;
   readonly players: readonly PlayerState[];
   readonly rng: RngState;
+  /** Experiment (rules.ships): launched ships still at sea, resolved when their arriveRound opens. */
+  readonly transit: readonly Ship[];
   /** Remaining draw piles; index 0 is next. Hidden. */
   readonly demandDeck: readonly Goods[];
   readonly voyageDeck: readonly VoyageEventId[];
@@ -180,6 +197,7 @@ export interface VoyageModifier {
 export interface PublicShip {
   readonly id: ShipId;
   readonly owner: PlayerId;
+  readonly type: ShipTypeId;
   readonly outcome: VoyageOutcome | null;
 }
 
@@ -190,6 +208,8 @@ export type MatchEvent =
   | { readonly type: 'goods-produced'; readonly round: number; readonly produced: Readonly<Record<PlayerId, Goods>> }
   | { readonly type: 'demand-revealed'; readonly round: number; readonly demand: Goods; readonly prices: Goods }
   | { readonly type: 'wanted-marked'; readonly round: number; readonly players: readonly PlayerId[] }
+  /** Experiment (rules.ships): ships launched in an earlier round reach this round's voyage (their cargo stays secret). */
+  | { readonly type: 'ships-arriving'; readonly round: number; readonly ships: readonly PublicShip[] }
   | { readonly type: 'phase-started'; readonly round: number; readonly phase: DecisionPhase }
   | { readonly type: 'buildings-built'; readonly round: number; readonly builds: readonly Build[] }
   | { readonly type: 'ships-launched'; readonly round: number; readonly ships: readonly PublicShip[]; readonly stayedInPort: readonly PlayerId[] }

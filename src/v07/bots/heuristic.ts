@@ -18,6 +18,8 @@ import {
   averagePrice,
   buildingWorth,
   carriesWanted,
+  curveOutlook,
+  expectedOwnModifier,
   currentPrice,
   expectedPrice,
   expectedSeizure,
@@ -38,22 +40,34 @@ function scoreInvest(view: PlayerView, action: Invest, persona: Personality): nu
   const { rules } = view;
   const player = me(view);
   const trait = traitOf(rules, player.island);
-  const p = arriveChance(rules, trait.ownShipModifier);
   const insured = player.buildings.includes('insurance') || action.build === 'insurance';
   const cost = action.build === null ? null : buildingCost(rules, action.build);
   const lastRound = view.round >= rules.rounds;
   const shippedUnits = GOODS.reduce((sum, g) => sum + action.load[g], 0);
-  let score = shippedUnits > 0 ? -shipCostFor(rules, player.island) : 0;
+  let score = shippedUnits > 0 ? -shipCostFor(rules, player.island, action.shipType) : 0;
+  // Experiment (rules.ships): the ship type's payout curve replaces the plain arrive-or-sink odds.
+  const typed = action.shipType === undefined ? null : rules.ships.types[action.shipType];
+  const outlook = action.shipType === undefined ? null : curveOutlook(rules, action.shipType, expectedOwnModifier(view, trait.ownShipModifier, rules.ships.types[action.shipType].delay > 0));
+  const p = outlook === null ? arriveChance(rules, trait.ownShipModifier) : 1 - outlook.sink;
+  // What a unit kept for a later voyage is worth must not depend on this voyage's ship type.
+  // With ship types a later unit earns the standard ship's share of its value, not a plain arrival.
+  const keepP = outlook === null ? arriveChance(rules, trait.ownShipModifier) : curveOutlook(rules, 'standard', expectedOwnModifier(view, trait.ownShipModifier)).income;
+  const keepCost = outlook === null ? perUnitCost(rules) : 0;
   let cargoValue = 0;
   for (const g of GOODS) {
     const shipped = action.load[g];
     const price = expectedPrice(view, g, shipped);
     const atRisk = shipped * price * (1 - p);
-    score += shipped * price * p * (1 - seizureRisk(g)) - atRisk * persona.risk * (insured ? 0.5 : 1);
+    if (outlook !== null && typed !== null) {
+      const seized = typed.secret === 1 ? 0 : seizureRisk(g);
+      score += shipped * price * outlook.income * (1 - seized) - shipped * price * outlook.sink * persona.risk * (insured ? 0.5 : 1);
+    } else {
+      score += shipped * price * p * (1 - seizureRisk(g)) - atRisk * persona.risk * (insured ? 0.5 : 1);
+    }
     cargoValue += shipped * price;
     // §6.3: spice spoils at round end (Spice Isles excepted); leftovers are worthless after round 6.
     const spoils = lastRound || (g === 'spice' && trait.keepsSpice !== 1);
-    const keepEach = spoils ? 0 : Math.max(0, currentPrice(view, g) * p - perUnitCost(rules)) * persona.patience;
+    const keepEach = spoils ? 0 : Math.max(0, currentPrice(view, g) * keepP - keepCost) * persona.patience;
     score += (view.myStock[g] - (cost?.[g] ?? 0) - shipped) * keepEach;
   }
   if (insured && shippedUnits > 0) {

@@ -11,6 +11,7 @@ import {
   type PrivateEvent,
   type RoleId,
   type Rules,
+  type ShipTypeId,
   type VoyageEventId,
 } from '../../../src/v07/game';
 
@@ -92,6 +93,8 @@ export interface RoundPlan {
   readonly roles?: Readonly<Record<string, readonly [RoleId, string]>>;
   /** A diplomat on its own ship, by player: the role it guesses. */
   readonly diplomats?: Readonly<Record<string, RoleId>>;
+  /** Experiment (rules.ships): the ship type a sailing player picks (standard when unlisted). */
+  readonly shipTypes?: Readonly<Record<string, ShipTypeId>>;
   /** The good a customs officer names, by player. */
   readonly named?: Readonly<Record<string, GoodId>>;
   readonly voyageEvent?: VoyageEventId;
@@ -111,7 +114,10 @@ export function playRound(state: MatchState, plan: RoundPlan = {}): Played {
     privateEvents.push(...r.privateEvents);
   };
   for (const p of current.players) {
-    step({ type: 'invest', playerId: p.id, build: plan.builds?.[p.id] ?? null, load: plan.loads?.[p.id] ?? G(0) });
+    const load = plan.loads?.[p.id] ?? G(0);
+    const sails = load.wood + load.iron + load.spice + load.arms > 0;
+    const shipType = plan.shipTypes?.[p.id] ?? (sails && current.rules.ships.enabled === 1 ? 'standard' : undefined);
+    step({ type: 'invest', playerId: p.id, build: plan.builds?.[p.id] ?? null, load, ...(sails && shipType !== undefined ? { shipType } : {}) });
   }
   const owner = (shipId: string) => shipId.split('-')[1]!;
   current = {

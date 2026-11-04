@@ -1,11 +1,12 @@
 import { playerOf } from './cash';
 import { covers, enumerateGoods, subtractGoods, units } from './goods';
 import { capacityFor, cooldownFor, roleFee, shipCostFor } from './islands';
-import type { Rules } from './rules';
+import { shipDelay, shipTypeAvailable, type Rules } from './rules';
 import {
   BUILDING_IDS,
   GOODS,
   ROLE_IDS,
+  SHIP_TYPE_IDS,
   type Action,
   type BuildingId,
   type DecisionPhase,
@@ -14,6 +15,7 @@ import {
   type PendingDecision,
   type PlayerId,
   type PlayerState,
+  type ShipTypeId,
   type RoleId,
 } from './types';
 
@@ -73,14 +75,23 @@ function investOptions(state: MatchState, playerId: PlayerId): Action[] {
         covers(player.stock, buildingCost(rules, b)),
     ),
   ];
-  const shipCost = shipCostFor(rules, player.island);
+  const typed = rules.ships.enabled === 1;
   return builds.flatMap((build) => {
     const stock = build === null ? player.stock : subtractGoods(player.stock, buildingCost(rules, build));
     const cash = player.cash - (build === null ? 0 : rules.buildings.costs[build].cash);
     const capacity = capacityFor(rules, build === null ? player.buildings : [...player.buildings, build], player.island);
-    return enumerateGoods(stock, capacity)
-      .filter((load) => units(load) === 0 || cash >= shipCost)
-      .map((load): Action => ({ type: 'invest', playerId, build, load }));
+    const room = (shipType: ShipTypeId | undefined): number => capacity + (shipType === undefined ? 0 : rules.ships.types[shipType].capacity);
+    const widest = typed ? Math.max(...SHIP_TYPE_IDS.map((t) => room(t))) : capacity;
+    return enumerateGoods(stock, widest).flatMap((load): Action[] => {
+      if (units(load) === 0) {
+        return [{ type: 'invest', playerId, build, load }];
+      }
+      // Experiment (rules.ships): a sailing player also picks a ship type they can pay for and fill.
+      return (typed ? SHIP_TYPE_IDS : ([undefined] as const))
+        // A delayed ship must still arrive before the match ends.
+        .filter((shipType) => cash >= shipCostFor(rules, player.island, shipType) && units(load) <= room(shipType) && state.round + shipDelay(rules, shipType ?? 'standard') <= rules.rounds && shipTypeAvailable(rules, shipType ?? 'standard', player.lastShip[shipType ?? 'standard'], state.round))
+        .map((shipType): Action => (shipType === undefined ? { type: 'invest', playerId, build, load } : { type: 'invest', playerId, build, load, shipType }));
+    });
   });
 }
 
@@ -135,7 +146,7 @@ export function actionKey(action: Action): string {
     case 'choose-island':
       return `${action.type}|${action.playerId}|${action.island}`;
     case 'invest':
-      return `${action.type}|${action.playerId}|${action.build}|${GOODS.map((g) => action.load[g]).join(',')}`;
+      return `${action.type}|${action.playerId}|${action.build}|${GOODS.map((g) => action.load[g]).join(',')}|${action.shipType ?? 'none'}`;
     case 'deploy-role': {
       return `${action.type}|${action.playerId}|${action.role}|${action.targetShipId}|${action.namedGood ?? 'none'}|${action.guessRole ?? 'none'}`;
     }

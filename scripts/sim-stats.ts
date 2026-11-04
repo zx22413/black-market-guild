@@ -38,6 +38,8 @@ export interface SimStats {
   commission: number;
   diplomatTake: number;
   smugglerCovers: number;
+  /** Experiment (rules.ships): per ship type, how often it sailed, sank, and what its owners were paid for cargo (sale). */
+  shipTypes: Record<string, { count: number; sank: number; sales: number; units: number }>;
   armsConfiscatedUnits: number;
   armsConfiscatedCash: number;
 }
@@ -75,6 +77,7 @@ export function emptyStats(steps: number): SimStats {
     commission: 0,
     diplomatTake: 0,
     smugglerCovers: 0,
+    shipTypes: {},
     armsConfiscatedUnits: 0,
     armsConfiscatedCash: 0,
   };
@@ -112,6 +115,7 @@ export function addMatch(stats: SimStats, log: MatchLog, strategyOf: (playerId: 
   const cargo = new Map<ShipId, Goods>();
   const sank = new Set<ShipId>();
   const smuggled = new Set<ShipId>();
+  const typeOf = new Map<ShipId, string>();
   for (const event of log.events) {
     switch (event.type) {
       case 'buildings-built':
@@ -121,12 +125,23 @@ export function addMatch(stats: SimStats, log: MatchLog, strategyOf: (playerId: 
         });
         break;
       case 'ships-launched':
-        event.ships.forEach((s) => owners.set(s.id, s.owner));
+        event.ships.forEach((s) => {
+          owners.set(s.id, s.owner);
+          typeOf.set(s.id, s.type);
+          const entry = (stats.shipTypes[s.type] ??= { count: 0, sank: 0, sales: 0, units: 0 });
+          entry.count += 1;
+        });
         break;
       case 'ship-resolved':
         cargo.set(event.shipId, event.cargo);
+        {
+          const entry = stats.shipTypes[typeOf.get(event.shipId) ?? 'standard'];
+          if (entry) entry.units += GOODS.reduce((n, g) => n + event.cargo[g], 0);
+        }
         if (event.outcome === 'sank') {
           sank.add(event.shipId);
+          const entry = stats.shipTypes[typeOf.get(event.shipId) ?? 'standard'];
+          if (entry) entry.sank += 1;
         }
         break;
       case 'roles-revealed':
@@ -159,6 +174,10 @@ export function addMatch(stats: SimStats, log: MatchLog, strategyOf: (playerId: 
         break;
       case 'cash-changed':
         addCash(stats, event.reason, event.amount);
+        if (event.reason === 'sale' && event.shipId !== null) {
+          const entry = stats.shipTypes[typeOf.get(event.shipId) ?? 'standard'];
+          if (entry) entry.sales += event.amount;
+        }
         break;
       default:
         break;

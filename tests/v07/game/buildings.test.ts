@@ -61,9 +61,9 @@ describe('§13 final wealth', () => {
   it('counts buildings at half their cash cost and ignores leftover goods', () => {
     expect(buildingValue(RULES_V07, ['shipyard', 'exchange'])).toBe(125);
     const players = [
-      { id: 'a', name: 'a', cash: 1000, stock: G(9, 9, 9, 9), buildings: ['shipyard', 'exchange'] as const, island: null, lastUsed: {} },
-      { id: 'b', name: 'b', cash: 1125, stock: G(0), buildings: [] as const, island: null, lastUsed: {} },
-      { id: 'c', name: 'c', cash: 900, stock: G(0), buildings: [] as const, island: null, lastUsed: {} },
+      { id: 'a', name: 'a', cash: 1000, stock: G(9, 9, 9, 9), buildings: ['shipyard', 'exchange'] as const, island: null, lastUsed: {}, lastShip: {} },
+      { id: 'b', name: 'b', cash: 1125, stock: G(0), buildings: [] as const, island: null, lastUsed: {}, lastShip: {} },
+      { id: 'c', name: 'c', cash: 900, stock: G(0), buildings: [] as const, island: null, lastUsed: {}, lastShip: {} },
     ];
     const result = computeResult(players, RULES_V07);
     expect(result.standings.map((s) => [s.playerId, s.wealth, s.rank])).toEqual([

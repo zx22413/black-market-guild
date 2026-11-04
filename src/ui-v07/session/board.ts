@@ -142,6 +142,12 @@ export function applyEvent(board: Board, event: MatchEvent, rules: Rules = RULES
           })),
         board,
       );
+    case 'ships-arriving':
+      // Experiment (rules.ships), not yet shown by the interface: ships from an earlier round join this round's voyage.
+      return {
+        ...board,
+        ships: [...board.ships, ...event.ships.map((s) => ({ id: s.id, owner: s.owner, outcome: s.outcome, cargo: null, modifier: null, confiscated: [], smuggling: null }))],
+      };
     case 'ships-launched':
       return {
         ...board,

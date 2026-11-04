@@ -2,6 +2,7 @@ import { chain, changeCash, playerOf, updatePlayer, type StepFn } from '../cash'
 import { buildingCost } from '../decisions';
 import { subtractGoods, units } from '../goods';
 import { shipCostFor } from '../islands';
+import { shipDelay } from '../rules';
 import { nextInt, type RngState } from '../rng';
 import type { Action, Build, MatchState, PrivateEvent, Ship, Step } from '../types';
 
@@ -27,19 +28,28 @@ export function resolveInvest(state: MatchState): Step {
   const launched = chain({ ...built.state, roundState: { ...built.state.roundState, builds } }, sailing.map(sail));
   const rolled = rollDice(
     launched.state,
-    sailing.map((a) => ({ id: `r${state.round}-${a.playerId}`, owner: a.playerId, cargo: a.load, rawRoll: 0, rerolledRoll: null, outcome: null })),
+    sailing.map((a) => {
+      const type = a.shipType ?? 'standard';
+      return { id: `r${state.round}-${a.playerId}`, owner: a.playerId, cargo: a.load, type, arriveRound: state.round + shipDelay(state.rules, type), rawRoll: 0, outcome: null };
+    }),
   );
   const { ships } = rolled;
   const privateEvents: PrivateEvent[] = ships.map((s) => ({ playerId: s.owner, type: 'cargo-loaded', round: state.round, shipId: s.id, cargo: s.cargo }));
   return {
-    state: { ...launched.state, rng: rolled.rng, roundState: { ...launched.state.roundState, ships } },
+    // Experiment (rules.ships): a delayed ship goes to sea; the rest join the ships already arriving this round.
+    state: {
+      ...launched.state,
+      rng: rolled.rng,
+      transit: [...launched.state.transit, ...ships.filter((s) => s.arriveRound > state.round)],
+      roundState: { ...launched.state.roundState, ships: [...launched.state.roundState.ships, ...ships.filter((s) => s.arriveRound <= state.round)] },
+    },
     events: [
       ...built.events,
       ...(builds.length > 0 ? [{ type: 'buildings-built' as const, round: state.round, builds }] : []),
       {
         type: 'ships-launched',
         round: state.round,
-        ships: ships.map((s) => ({ id: s.id, owner: s.owner, outcome: null })),
+        ships: ships.map((s) => ({ id: s.id, owner: s.owner, type: s.type, outcome: null })),
         stayedInPort: state.players.map((p) => p.id).filter((id) => !ships.some((s) => s.owner === id)),
       },
       ...launched.events,
@@ -73,8 +83,12 @@ function build({ playerId, building }: Build): StepFn {
 
 function sail(action: Invest): StepFn {
   return (current) => {
-    const unloaded = updatePlayer(current, action.playerId, (p) => ({ ...p, stock: subtractGoods(p.stock, action.load) }));
-    const cost = shipCostFor(current.rules, playerOf(current, action.playerId).island);
+    const unloaded = updatePlayer(current, action.playerId, (p) => ({
+      ...p,
+      stock: subtractGoods(p.stock, action.load),
+      lastShip: { ...p.lastShip, [action.shipType ?? 'standard']: current.round },
+    }));
+    const cost = shipCostFor(current.rules, playerOf(current, action.playerId).island, action.shipType);
     return changeCash(unloaded, action.playerId, -cost, 'ship-cost', `r${current.round}-${action.playerId}`);
   };
 }

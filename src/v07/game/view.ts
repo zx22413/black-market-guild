@@ -14,6 +14,7 @@ import {
   type PlayerId,
   type RoleId,
   type ShipId,
+  type ShipTypeId,
   type VoyageEventId,
   type VoyageOutcome,
 } from './types';
@@ -28,6 +29,8 @@ export interface PublicPlayer {
   readonly stock: Goods;
   /** Round each role was last deployed; public through the role reveals (§9.3). */
   readonly lastUsed: Readonly<Partial<Record<RoleId, number>>>;
+  /** Experiment (rules.ships): round each ship type was last launched; ship types are public once launched (§4). */
+  readonly lastShip: Readonly<Partial<Record<ShipTypeId, number>>>;
 }
 
 /** A ship as this player sees it: cargo only for their own ship until it is resolved (§4). */
@@ -35,6 +38,8 @@ export interface ViewShip {
   readonly id: ShipId;
   readonly owner: PlayerId;
   readonly outcome: VoyageOutcome | null;
+  /** The ship type is public once the ships are launched (§4). */
+  readonly type: ShipTypeId;
   readonly cargo: Goods | null;
 }
 
@@ -59,6 +64,8 @@ export interface PlayerView {
   readonly wanted: readonly PlayerId[];
   readonly voyageEvent: VoyageEventId | null;
   readonly ships: readonly ViewShip[];
+  /** Experiment (rules.ships): ships still at sea, public (owner and type); their cargo is secret even from their owner's view here. */
+  readonly transit: readonly { readonly id: ShipId; readonly owner: PlayerId; readonly type: ShipTypeId; readonly arriveRound: number }[];
   /** Every deployment in reveal order, only after the reveal. */
   readonly revealedRoles: readonly Deployment[];
   readonly myDeployment: Deployment | null;
@@ -93,6 +100,7 @@ export function getPlayerView(state: MatchState, playerId: PlayerId): PlayerView
       island: p.island,
       stock: roundState.stockAtStart[p.id] ?? p.stock,
       lastUsed: p.lastUsed,
+      lastShip: p.lastShip,
     })),
     myStock: me.stock,
     myIslandOffers: state.islandOffers[playerId] ?? [],
@@ -104,8 +112,10 @@ export function getPlayerView(state: MatchState, playerId: PlayerId): PlayerView
       id: s.id,
       owner: s.owner,
       outcome: s.outcome,
+      type: s.type,
       cargo: s.owner === playerId || s.outcome !== null ? s.cargo : null,
     })),
+    transit: state.transit.map((s) => ({ id: s.id, owner: s.owner, type: s.type, arriveRound: s.arriveRound })),
     revealedRoles: roundState.rolesRevealed ? ROLE_IDS.flatMap((role) => roundState.deployments.filter((d) => d.role === role)) : [],
     myDeployment: roundState.deployments.find((d) => d.playerId === playerId) ?? null,
     myAvailableRoles: state.round > 0 ? ROLE_IDS.filter((role) => roleAvailable(state, me, role)) : [],

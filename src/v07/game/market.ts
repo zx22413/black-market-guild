@@ -2,7 +2,7 @@ import { chain, changeCash, holds, payAll, playerOf, updatePlayer, type StepFn }
 import { addGoods, mapGoods, nextPriceStep, only, priceAt, units } from './goods';
 import { traitOf } from './islands';
 import { voyageModifier } from './resolution';
-import { arrivalIncomePercent } from './rules';
+import { shipIncomePercent } from './rules';
 import { GOODS, type GoodId, type Goods, type MatchEvent, type MatchState, type PlayerId, type RoleId, type Ship, type Step } from './types';
 
 interface Prices {
@@ -68,7 +68,11 @@ const covered = (state: MatchState, ship: Ship, good: GoodId): boolean =>
 
 /** §9.4: each customs officer on this ship takes the good it names, if that good is aboard and not covered. */
 function seizures(state: MatchState, ship: Ship): Seizure[] {
-  const officers = state.roundState.deployments.filter((d) => d.role === 'customs' && d.targetShipId === ship.id && d.playerId !== ship.owner);
+  // Experiment (rules.ships): customs cannot confiscate from a secret ship.
+  const officers =
+    state.rules.ships.enabled === 1 && state.rules.ships.types[ship.type].secret === 1
+      ? []
+      : state.roundState.deployments.filter((d) => d.role === 'customs' && d.targetShipId === ship.id && d.playerId !== ship.owner);
   return GOODS.flatMap((good) => {
     if (covered(state, ship, good)) {
       return [];
@@ -85,7 +89,7 @@ function settleArrival(ship: Ship, prices: Prices): StepFn {
     const sold = found.reduce<Goods>((left, s) => ({ ...left, [s.good]: 0 }), ship.cargo);
     const full = GOODS.reduce((sum, g) => sum + sold[g] * salePrice(state, ship.owner, g, prices), 0);
     const final = voyageModifier(state, ship).final;
-    const gross = Math.floor((full * arrivalIncomePercent(state.rules, final)) / 100);
+    const gross = Math.floor((full * shipIncomePercent(state.rules, ship.type, final)) / 100);
     const customs = deployed(state, ship, 'customs');
     const pirates = deployed(state, ship, 'pirate').filter((id) => id !== ship.owner);
     const lootShare = pirates.length === 0 ? 0 : Math.min(gross, Math.floor((gross * (state.rules.roles.pirate.lootPercentByFinal[final] ?? 0)) / 100));
@@ -113,7 +117,7 @@ const wantedBonus = (state: MatchState, ship: Ship): number => (state.roundState
  * income (rules.sailing.arrivalIncomePercent), so customs and the owner split the ship's value between them.
  */
 function seizedValue(state: MatchState, ship: Ship, good: GoodId, prices: Prices): number {
-  return Math.floor((ship.cargo[good] * priceAt(state.rules, good, prices.after[good]) * arrivalIncomePercent(state.rules, voyageModifier(state, ship).final)) / 100);
+  return Math.floor((ship.cargo[good] * priceAt(state.rules, good, prices.after[good]) * shipIncomePercent(state.rules, ship.type, voyageModifier(state, ship).final)) / 100);
 }
 
 function confiscateGoods(ship: Ship, found: readonly Seizure[], prices: Prices): StepFn[] {
@@ -166,7 +170,9 @@ function settleSinking(ship: Ship, prices: Prices): StepFn {
     }
     const final = voyageModifier(state, ship).final;
     const cargoValue = GOODS.reduce((sum, g) => sum + ship.cargo[g] * priceAt(state.rules, g, prices.after[g]), 0);
-    const share = Math.floor((cargoValue * (state.rules.roles.pirate.lootPercentByFinal[final] ?? 0)) / 100);
+    // Experiment (rules.ships): any sunk ship pays pirates what a final value of 1 does.
+    const sunkAs = state.rules.ships.enabled === 1 ? 1 : final;
+    const share = Math.floor((cargoValue * (state.rules.roles.pirate.lootPercentByFinal[sunkAs] ?? 0)) / 100);
     const loot = Math.floor((share + wantedBonus(state, ship)) / pirates.length);
     const seized = Math.floor(goodsValue(state) / pirates.length) * smugglers.length;
     const paid = chain(state, [

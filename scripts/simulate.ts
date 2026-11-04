@@ -2,13 +2,13 @@
  * Runs many V0.7 bot-only matches and prints a Markdown balance report.
  * Usage: npm run simulate -- [--matches 1000] [--players 4] [--seed 1]
  *        [--lineup balanced,cautious,aggressive,builder]
- *        [--set roles.pirate.loot=150 ...] [--summary]
+ *        [--set roles.pirate.loot=150 ...] [--summary] [--ships]
  * `--set` overrides any numeric rule (repeatable) to test balance ideas without editing
  * the rules; `--summary` prints one Markdown table row of key metrics instead of a report.
  * Seats rotate every match so each strategy plays every seat position.
  */
 import { BOT_STRATEGIES, type BotStrategy } from '../src/v07/bots';
-import { BUILDING_IDS, GOODS, ROLE_IDS, RULES_V07, priceAt, type Rules } from '../src/v07/game';
+import { BUILDING_IDS, GOODS, ROLE_IDS, RULES_SHIPS, RULES_V07, priceAt, type Rules } from '../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../src/v07/match';
 import { addMatch, emptyStats, type SimStats } from './sim-stats';
 
@@ -60,7 +60,7 @@ function parseOptions(): Options {
     seed: Number.parseInt(get('seed') ?? '1', 10),
     lineup,
     overrides,
-    rules: applyOverrides(RULES_V07, overrides),
+    rules: applyOverrides(argv.includes('--ships') ? RULES_SHIPS : RULES_V07, overrides),
     summary: argv.includes('--summary'),
   };
   if (![options.matches, options.players, options.seed].every(Number.isInteger)) {
@@ -170,6 +170,16 @@ function marketSection(options: Options, s: SimStats): string[] {
   ];
 }
 
+/** Experiment (rules.ships): how often each ship type sailed, sank, and the average sale income it paid its owner. */
+function shipTypeLines(s: SimStats): string[] {
+  const types = Object.entries(s.shipTypes);
+  if (types.length <= 1) return [];
+  return [
+    '- 船型（實驗）：' +
+      types.map(([type, e]) => `${type} ${e.count} 艘（沉沒 ${pct(e.sank, e.count)}、平均每單位貨賣得 ${(e.sales / Math.max(1, e.units)).toFixed(0)} G、每艘裝 ${(e.units / Math.max(1, e.count)).toFixed(1)} 單位）`).join('；'),
+  ];
+}
+
 function roleSection(s: SimStats): string[] {
   return [
     '## 4. 角色',
@@ -183,6 +193,7 @@ function roleSection(s: SimStats): string[] {
     `- 海關：部署 ${s.roles.customs ?? 0} 次；沒收 ${s.armsConfiscatedUnits} 單位、${s.armsConfiscatedCash} G。`,
     `- 海盜：目標沉沒率 ${pct(s.pirateSinks, s.roles.pirate ?? 0)}；每次平均淨收益 ${pirateNet(s).toFixed(0)} G。`,
     `- 外交官：部署 ${s.roles.diplomat ?? 0} 次，向對手拿走 ${s.diplomatTake} G。`,
+    ...shipTypeLines(s),
     `- 保險理賠 ${s.insurancePaid} G；打撈 ${s.salvaged} 單位；交易所佣金 ${s.commission} G。`,
   ];
 }

@@ -1,4 +1,4 @@
-import type { BuildingId, GoodId, Goods, IslandId, RoleId, VoyageEventId } from './types';
+import type { BuildingId, GoodId, Goods, IslandId, RoleId, ShipTypeId, VoyageEventId } from './types';
 
 /**
  * All V0.7.1 rule numbers. Each value cites its section in docs/game-design.md, the source of
@@ -42,6 +42,24 @@ export interface PriceTrack {
   readonly start: number;
 }
 
+/** Experiment: one ship type's price, payout curve and special effect. */
+export interface ShipTypeRule {
+  /** Replaces the fixed ship cost while rules.ships.enabled is 1 (island changes still apply, never below 0). */
+  readonly fee: number;
+  /** Percent of the cargo's value paid by final value; a final above the last entry uses the last; 0 means the ship sank. */
+  readonly curve: Readonly<Record<number, number>>;
+  /** 1 = the final value is not capped at the die's top face (modifiers keep adding). */
+  readonly uncapped: number;
+  /** 1 = customs cannot confiscate from this ship. */
+  readonly secret: number;
+  /** Extra cargo units this ship carries on top of the base capacity (§8). */
+  readonly capacity: number;
+  /** Rounds the ship spends at sea before its voyage is resolved (0 = the round it launches). */
+  readonly delay: number;
+  /** Rounds the type rests after being launched, like a role's cooldown (§9.3); 0 = always available. */
+  readonly cooldown: number;
+}
+
 export interface Rules {
   readonly version: string;
   readonly players: { readonly min: number; readonly max: number };
@@ -78,6 +96,11 @@ export interface Rules {
     readonly pirate: { readonly modifier: number; readonly lootPercentByFinal: Readonly<Record<number, number>> };
     readonly smuggler: { readonly goodsValue: number; readonly fine: number };
   };
+  /**
+   * Experiment (docs/proposals/2026-11-ship-bays.md, not a decided rule): 1 = every sailing player also picks a ship type;
+   * its fee replaces the fixed ship cost and its curve replaces rules.sailing.arrivalIncomePercent. 0 = V0.7.1.
+   */
+  readonly ships: { readonly enabled: number; readonly types: Readonly<Record<ShipTypeId, ShipTypeRule>> };
   readonly wanted: { readonly lootBonus: number };
   readonly buildings: {
     readonly costs: Readonly<Record<BuildingId, BuildingRule>>;
@@ -156,6 +179,17 @@ export const RULES_V07: Rules = {
     pirate: { modifier: -1, lootPercentByFinal: { 1: 70, 2: 50, 3: 0, 4: 0, 5: 0, 6: 0 } }, // §9.4
     smuggler: { goodsValue: 100, fine: 25 }, // §9.5
   },
+  ships: {
+    enabled: 0,
+    // Test values (AI proposal): the standard ship's curve is the ship dice table of §9.1.
+    types: {
+      standard: { fee: 0, curve: { 1: 0, 2: 30, 3: 45, 4: 60, 5: 75, 6: 100 }, uncapped: 0, secret: 0, capacity: 0, delay: 0, cooldown: 0 },
+      gambler: { fee: 150, curve: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 125, 6: 250 }, uncapped: 0, secret: 0, capacity: 0, delay: 0, cooldown: 1 },
+      freighter: { fee: 0, curve: { 1: 25, 2: 35, 3: 45, 4: 55, 5: 65, 6: 75 }, uncapped: 0, secret: 0, capacity: 2, delay: 1, cooldown: 0 },
+      hidden: { fee: 40, curve: { 1: 0, 2: 30, 3: 45, 4: 60, 5: 75, 6: 100 }, uncapped: 0, secret: 1, capacity: 0, delay: 0, cooldown: 0 },
+      breaker: { fee: 0, curve: { 1: 0, 2: 20, 3: 35, 4: 50, 5: 70, 6: 100, 7: 175, 8: 250, 9: 300 }, uncapped: 1, secret: 0, capacity: 0, delay: 0, cooldown: 0 },
+    },
+  },
   wanted: { lootBonus: 100 }, // §9.6
   buildings: {
     // §10
@@ -199,4 +233,57 @@ export const RULES_V07: Rules = {
 /** §9.1: the percent of its cargo's value an arrived ship is worth at this final value (100 when unlisted). */
 export function arrivalIncomePercent(rules: Rules, finalValue: number): number {
   return rules.sailing.arrivalIncomePercent[finalValue] ?? 100;
+}
+
+/** Experiment (rules.ships): the percent of its cargo's value a ship of `type` pays at this final value. */
+export function shipIncomePercent(rules: Rules, type: ShipTypeId, finalValue: number): number {
+  if (rules.ships.enabled !== 1) {
+    return arrivalIncomePercent(rules, finalValue);
+  }
+  const curve = rules.ships.types[type].curve;
+  const top = Math.max(...Object.keys(curve).map(Number));
+  return curve[Math.min(finalValue, top)] ?? 0;
+}
+
+/** A ship sinks when it pays nothing (with the experiment off: a final value below the arrival threshold, §9.1). */
+export function shipSinks(rules: Rules, type: ShipTypeId, finalValue: number): boolean {
+  return rules.ships.enabled === 1 ? shipIncomePercent(rules, type, finalValue) === 0 : finalValue < rules.sailing.successMin;
+}
+
+/** The highest final value a ship of `type` can reach: the die's top face unless the type is uncapped. */
+export function shipFinalCap(rules: Rules, type: ShipTypeId): number {
+  return rules.ships.enabled === 1 && rules.ships.types[type].uncapped === 1 ? Number.MAX_SAFE_INTEGER : rules.sailing.dieMax;
+}
+
+/**
+ * Experiment (docs/proposals/2026-11-ship-bays.md, not a decided rule): the ship-bay candidate. Five ship types, and
+ * every good produced every round (the production islands one more of their good, their drawbacks kept), so a ship
+ * can actually be filled. Everything else is V0.7.1.
+ */
+export const RULES_SHIPS: Rules = {
+  ...RULES_V07,
+  version: 'V0.7.1-ships',
+  productionEvery: goods({ wood: 1, iron: 1, spice: 1, arms: 1 }),
+  // The shipyard goes: the freighter carries more instead.
+  capacity: { ...RULES_V07.capacity, shipyardBonus: 0 },
+  ships: { ...RULES_V07.ships, enabled: 1 },
+  islands: {
+    ...RULES_V07.islands,
+    traits: {
+      ...RULES_V07.islands.traits,
+      lumber: trait({ bonusProduction: goods({ wood: 1 }), productionEvery: goods({ iron: 3 }) }),
+      mine: trait({ bonusProduction: goods({ iron: 1 }), productionEvery: goods({ wood: 3 }) }),
+      'smuggler-port': trait({ bonusProduction: goods({ arms: 1 }), armsUncoverable: 1, feeDelta: { ...NO_ROLES, guard: 50 } }),
+    },
+  },
+};
+
+/** Experiment (rules.ships): rounds a ship of `type` spends at sea before its voyage is resolved. */
+export function shipDelay(rules: Rules, type: ShipTypeId): number {
+  return rules.ships.enabled === 1 ? rules.ships.types[type].delay : 0;
+}
+
+/** Experiment (rules.ships): a ship type launched in round r rests until round r + cooldown + 1. */
+export function shipTypeAvailable(rules: Rules, type: ShipTypeId, lastLaunched: number | undefined, round: number): boolean {
+  return rules.ships.enabled !== 1 || lastLaunched === undefined || round - lastLaunched > rules.ships.types[type].cooldown;
 }

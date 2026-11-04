@@ -31,6 +31,8 @@ export function eventLine(event: MatchEvent, ctx: LogContext): string | null {
       return event.players.length > 0 ? `通緝：${event.players.map(nameOf).join('、')}` : null;
     case 'buildings-built':
       return event.builds.map((b) => `${nameOf(b.playerId)}蓋了建築`).join('、');
+    case 'ships-arriving':
+      return `遠洋抵達：${event.ships.map((s) => nameOf(s.owner)).join('、')}`;
     case 'ships-launched':
       return event.ships.length > 0 ? `出航：${event.ships.map((s) => nameOf(s.owner)).join('、')}` : '本回合沒有人出航';
     case 'cash-changed':

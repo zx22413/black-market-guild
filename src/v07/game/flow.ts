@@ -51,19 +51,23 @@ export function openRound(base: MatchState, round: number): Transition {
   const produced: Record<PlayerId, Goods> = Object.fromEntries(base.players.map((p) => [p.id, producedFor(base.rules, p.island, round)]));
   const players = base.players.map((p) => ({ ...p, stock: addGoods(p.stock, produced[p.id] ?? NO_GOODS) }));
   const wanted = wantedPlayers(base);
+  const arriving = base.transit.filter((s) => s.arriveRound <= round);
   const state: MatchState = {
     ...base,
     round,
     phase: 'invest',
     players,
     demandDeck,
-    roundState: { ...emptyRound(), demand, wanted, stockAtStart: Object.fromEntries(players.map((p) => [p.id, p.stock])) },
+    // Experiment (rules.ships): ships launched earlier that reach this round's voyage.
+    transit: base.transit.filter((s) => s.arriveRound > round),
+    roundState: { ...emptyRound(), demand, wanted, stockAtStart: Object.fromEntries(players.map((p) => [p.id, p.stock])), ships: arriving },
   };
   return runFrom(state, 0, [
     { type: 'round-started', round },
     { type: 'goods-produced', round, produced },
     { type: 'demand-revealed', round, demand, prices: base.prices },
     { type: 'wanted-marked', round, players: wanted },
+    ...(arriving.length > 0 ? [{ type: 'ships-arriving' as const, round, ships: arriving.map((s) => ({ id: s.id, owner: s.owner, type: s.type, outcome: null })) }] : []),
   ]);
 }
 
