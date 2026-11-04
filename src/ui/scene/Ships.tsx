@@ -26,9 +26,22 @@ export function lanePose(angle: number, t: number, sideways = 0): LanePose {
   return { position: curve.getPoint(t).add(side), heading: headingOf(tangent) };
 }
 
+/**
+ * How far along its lane (scene units) a docked ship's middle lies. The lane starts at the dock's tip, 3.5 off the island's
+ * rim, and a ship is about 5.8 long: at the tip itself its stern would run into the island's rim and the pier.
+ */
+const DOCK_DISTANCE = 3;
+
 export function shipPose(angle: number, state: ShipState): LanePose {
+  if (state === 'docked') return lanePose(angle, DOCK_DISTANCE / laneCurve(angle).getLength());
   return lanePose(angle, LANE_T[state]);
 }
+
+/**
+ * How deep a ship's keel sits below the sea's rest level (scene units): the model's keel is at its origin, so
+ * at the rest level it would float above the water.
+ */
+export const DRAFT = 0.5;
 
 /** Where a ship's night lantern hangs, in ship space: up the mainmast. */
 const SHIP_LANTERN = [0, 3.4, 0] as const;
@@ -39,7 +52,7 @@ const WRECK_HEEL = { roll: 0.38, pitch: 0.18 } as const;
 const WRECK_DEPTH = -1.5;
 
 /** Eases a group toward a target pose every frame, so state changes read as sailing. */
-function useGlide(target: LanePose, sinkTo: number) {
+function useGlide(target: LanePose, sinkTo: number, afloat = sinkTo === 0) {
   const group = useRef<Group>(null);
   const swell = useSwell();
   const phase = useWavePhase();
@@ -60,7 +73,6 @@ function useGlide(target: LanePose, sinkTo: number) {
     // Bob, roll and pitch while afloat, harder in rough seas; phases use time only so a gliding
     // ship does not shimmer. Heading-first order keeps roll and pitch about the hull's own axes.
     // A wreck heels over and settles bow-down instead.
-    const afloat = sinkTo === 0;
     const sway = afloat ? swell.current.roll : 0;
     const t = clock.elapsedTime;
     heel.current += ((afloat ? 0 : 1) - heel.current) * ease;
@@ -91,7 +103,7 @@ export function VoyageShip({ ship, angle, selectable, chosen = false, onSelect, 
   // Where the ship first appears: its current pose, so a new ship is simply placed and only later
   // state changes sail. Kept in state because a changing position prop would snap the ship back.
   const [spawn] = useState(target);
-  const group = useGlide(target, ship.state === 'sunk' ? WRECK_DEPTH : 0);
+  const group = useGlide(target, ship.state === 'sunk' ? WRECK_DEPTH : -DRAFT, ship.state !== 'sunk');
   const model: ModelName = ship.state === 'sunk' ? 'ship-wreck' : ship.kind === 'joint' ? 'ship-large' : 'ship-medium';
   // Sinking scene only when the ship sinks on screen, not when an already sunk ship is redrawn.
   const [splash, setSplash] = useState(false);
@@ -108,7 +120,7 @@ export function VoyageShip({ ship, angle, selectable, chosen = false, onSelect, 
   return (
     <>
     {splash && <SinkEffect position={[target.position.x, 0, target.position.z]} />}
-    <group ref={group} position={spawn.position} rotation={[0, spawn.heading, 0]} onClick={click}>
+    <group ref={group} position={[spawn.position.x, ship.state === 'sunk' ? WRECK_DEPTH : -DRAFT, spawn.position.z]} rotation={[0, spawn.heading, 0]} onClick={click}>
       <Model name={model} scale={0.546} />
       {lantern && ship.state !== 'sunk' && (
         <group position={SHIP_LANTERN}>
