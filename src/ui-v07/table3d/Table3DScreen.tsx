@@ -257,11 +257,14 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   }, [hasStep, holding]);
 
   // Ships: at the dock while the round is decided; the resolution moves them out to sea.
-  const ships: TableShip[] = board.ships.map((s) => {
+  const launched: TableShip[] = board.ships.map((s) => {
     // The ships stay at the dock until the resolution sends them out.
     const base: TableShip = { id: s.id, owner: s.owner, state: holding ? resolution.shipState(s.id) : 'docked' };
     return step?.ship ? step.ship(base) : base;
   });
+  // The ship you are picking and loading (nothing is launched yet while the investment is decided).
+  const dockShip: TableShip[] = step?.ownShip && viewer && !launched.some((s) => s.owner === viewer) ? [{ id: `dock-${viewer}` as ShipId, owner: viewer, state: 'docked' }] : [];
+  const ships: TableShip[] = [...launched, ...dockShip];
   const stateOf = (id: ShipId) => ships.find((x) => x.id === id)?.state;
   const market = marketShow({
     events,
@@ -365,6 +368,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
         weather={board.voyageEvent}
         ships={ships}
         cameraPoints={camera}
+        {...(step?.cameraRig ? { camera: step.cameraRig(safe) } : {})}
         safe={safe}
         pins={pins}
         onReady={() => {

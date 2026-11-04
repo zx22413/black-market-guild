@@ -1,5 +1,5 @@
 import type { DecisionContext } from '../../v07/bots';
-import { BUILDING_IDS, GOODS, buildingCost, capacityFor, shipCostFor, traitOf, type BuildingId, type GoodId, type Goods, type RoleId } from '../../v07/game';
+import { BUILDING_IDS, GOODS, buildingCost, capacityFor, shipCostFor, traitOf, type BuildingId, type GoodId, type Goods, type RoleId, type ShipTypeId } from '../../v07/game';
 import { BUILDING_LABELS, GOOD_LABELS } from '../labels';
 import { legalOf, type ActionOf } from './forms';
 
@@ -12,6 +12,8 @@ export const NO_LOAD: Goods = { wood: 0, iron: 0, spice: 0, arms: 0 };
 export interface InvestChoice {
   readonly build: BuildingId | null;
   readonly load: Goods;
+  /** Ship-bay experiment (rules.ships): the ship type picked; null while none is picked (and always when the experiment is off). */
+  readonly shipType?: ShipTypeId | null;
 }
 
 export const EMPTY_CHOICE: InvestChoice = { build: null, load: NO_LOAD };
@@ -74,8 +76,11 @@ export function buildOptions(context: DecisionContext, options: readonly InvestA
 /** Can the player still build at all this round (offered at least one building)? */
 export const canBuildAny = (options: readonly InvestAction[]): boolean => options.some((a) => a.build !== null);
 
+/** A sailing action carries the ship type when the experiment is on; an empty ship (no sailing) has none. */
+const sameShip = (a: InvestAction, choice: InvestChoice): boolean => unitsOf(a.load) === 0 || a.shipType === (choice.shipType ?? undefined);
+
 export function actionFor(options: readonly InvestAction[], choice: InvestChoice): InvestAction | undefined {
-  return options.find((a) => a.build === choice.build && sameGoods(a.load, choice.load));
+  return options.find((a) => a.build === choice.build && sameGoods(a.load, choice.load) && sameShip(a, choice));
 }
 
 /**
@@ -83,12 +88,22 @@ export function actionFor(options: readonly InvestAction[], choice: InvestChoice
  * that no longer fit come off (the largest legal part of the cargo stays), never the whole ship.
  */
 export function withBuild(options: readonly InvestAction[], choice: InvestChoice, build: BuildingId | null): InvestChoice {
-  const kept = { build, load: choice.load };
+  return fitted(options, { ...choice, build }, choice.load);
+}
+
+/** Pick a ship type (null: not sailing). The cargo stays when it still fits; otherwise the largest legal part of it stays. */
+export function withShipType(options: readonly InvestAction[], choice: InvestChoice, shipType: ShipTypeId | null): InvestChoice {
+  return fitted(options, { ...choice, shipType }, choice.load);
+}
+
+/** `next` with `load` kept when it is a legal action, else the largest legal part of it. */
+function fitted(options: readonly InvestAction[], next: InvestChoice, load: Goods): InvestChoice {
+  const kept = { ...next, load };
   if (actionFor(options, kept)) return kept;
   const fits = options
-    .filter((a) => a.build === build && GOODS.every((g) => a.load[g] <= choice.load[g]))
+    .filter((a) => a.build === next.build && sameShip(a, next) && GOODS.every((g) => a.load[g] <= load[g]))
     .reduce<Goods>((best, a) => (unitsOf(a.load) > unitsOf(best) ? a.load : best), NO_LOAD);
-  return { build, load: fits };
+  return { ...next, load: fits };
 }
 
 /** The crates `after` no longer carries compared with `before` (what a change of building took off). */
@@ -98,7 +113,7 @@ export function unloadedBy(before: Goods, after: Goods): Goods {
 
 /** One more unit of `good` on the ship, if that is still a legal action. */
 export function canLoad(options: readonly InvestAction[], choice: InvestChoice, good: GoodId): boolean {
-  return actionFor(options, { build: choice.build, load: { ...choice.load, [good]: choice.load[good] + 1 } }) !== undefined;
+  return actionFor(options, { ...choice, load: { ...choice.load, [good]: choice.load[good] + 1 } }) !== undefined;
 }
 
 export function loadOne(options: readonly InvestAction[], choice: InvestChoice, good: GoodId): InvestChoice {
@@ -117,9 +132,11 @@ export function stockSplit(context: DecisionContext, choice: InvestChoice): { re
 }
 
 /** Ship capacity with the chosen building (a shipyard built now counts at once, §8). */
-export function capacityWith(context: DecisionContext, build: BuildingId | null): number {
+export function capacityWith(context: DecisionContext, build: BuildingId | null, shipType: ShipTypeId | null = null): number {
   const player = me(context);
-  return capacityFor(context.view.rules, build === null ? player.buildings : [...player.buildings, build], player.island);
+  const { rules } = context.view;
+  const bonus = rules.ships.enabled === 1 && shipType !== null ? rules.ships.types[shipType].capacity : 0;
+  return capacityFor(rules, build === null ? player.buildings : [...player.buildings, build], player.island) + bonus;
 }
 
 export interface InvestSummary {
@@ -137,9 +154,9 @@ export function investSummary(context: DecisionContext, choice: InvestChoice): I
   const { rules } = context.view;
   const loaded = unitsOf(choice.load);
   const buildCash = choice.build === null ? 0 : rules.buildings.costs[choice.build].cash;
-  const shipCost = shipCostFor(rules, player.island);
+  const shipCost = shipCostFor(rules, player.island, choice.shipType ?? undefined);
   const sails = loaded > 0;
-  return { buildCash, shipCost, sails, cashBefore: player.cash, cashAfter: player.cash - buildCash - (sails ? shipCost : 0), loaded, capacity: capacityWith(context, choice.build) };
+  return { buildCash, shipCost, sails, cashBefore: player.cash, cashAfter: player.cash - buildCash - (sails ? shipCost : 0), loaded, capacity: capacityWith(context, choice.build, choice.shipType ?? null) };
 }
 
 /** What a note shows as icons; the full sentence (`text`) opens on hover or tap. */

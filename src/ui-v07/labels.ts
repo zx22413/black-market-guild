@@ -1,4 +1,4 @@
-import { RULES_V07, priceAt, type BuildingId, type CashReason, type GoodId, type IslandId, type RoleId, type VoyageEventId } from '../v07/game';
+import { RULES_V07, priceAt, type BuildingId, type CashReason, type GoodId, type IslandId, type RoleId, type ShipTypeId, type VoyageEventId } from '../v07/game';
 
 // Names and short texts below restate docs/game-design.md (V0.7.1): §6.1, §9.4, §10.2, §11.2, §12.
 // Do not add rules here; change the design document first.
@@ -87,6 +87,18 @@ export const VOYAGE_EVENT_TEXT: Readonly<Record<VoyageEventId, string>> = {
   'moonless-night': '被護衛鎖定的船 −1。',
   'black-market-rush': '走私商人的私貨價值提高為 150 G。',
   'calm-seas': '無效果。',
+};
+
+/** Experiment (docs/proposals/2026-11-ship-bays.md, not a decided rule): the five ship types. */
+export const SHIP_TYPE_LABELS: Readonly<Record<ShipTypeId, string>> = { standard: '白板船', gambler: '賭徒船', freighter: '貨櫃船', hidden: '密艙船', breaker: '破浪船' };
+
+/** What sets a ship type apart besides its curve; null when nothing does. */
+export const SHIP_TYPE_TEXT: Readonly<Record<ShipTypeId, string | null>> = {
+  standard: null,
+  gambler: null,
+  freighter: '載量 +2；這回合出發，下回合才抵達並結算。',
+  hidden: '海關指名這艘船的貨無效。',
+  breaker: '最終值不封頂，加成越疊越賺。',
 };
 
 export const CASH_REASON_LABELS: Readonly<Record<CashReason, string>> = {

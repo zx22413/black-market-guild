@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
+import { RULES_SHIPS } from '../../v07/game';
 import type { SeatConfig } from '../../v07/match';
 import { startGameSession } from '../session/gameSession';
 import { Table3DScreen } from '../table3d/Table3DScreen';
 
 // Dev-only: a quick 3D match at /v07.html?dev=round3d (also ?dev=invest3d), &seed=3: you against
 // three bots on the same screen the app uses (src/ui-v07/table3d/Table3DScreen.tsx). &autoplay
-// answers your decisions with the first legal action and skips the shows (to reach the end fast).
+// answers your decisions with the first legal action and skips the shows (to reach the end fast). &ships=1 plays the
+// ship-bay experiment (RULES_SHIPS, docs/proposals/2026-11-ship-bays.md): you pick a ship type before loading it.
 
 const SEATS: SeatConfig[] = [
   { kind: 'local-human', name: '你' },
@@ -18,8 +20,9 @@ export function Round3DPreview() {
   const params = new URLSearchParams(location.search);
   const seed = Number(params.get('seed') ?? 3) || 3;
   const autoplay = params.has('autoplay');
+  const ships = params.has('ships');
   const [run, setRun] = useState(0);
-  const session = useMemo(() => startGameSession({ seed: seed + run, seats: SEATS }), [seed, run]);
+  const session = useMemo(() => startGameSession({ seed: seed + run, seats: SEATS, ...(ships ? { rules: RULES_SHIPS } : {}) }), [seed, run, ships]);
   // The result card's buttons as the single-player app shows them (「邀請朋友一起玩」 only logs here).
   const rematch = { kind: 'now', onRematch: () => setRun((n) => n + 1), onInvite: () => console.info('invite a friend') } as const;
   return <Table3DScreen key={run} session={session} autoplay={autoplay} rematch={rematch} onExit={() => setRun((n) => n + 1)} />;

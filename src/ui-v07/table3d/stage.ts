@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Action, Goods, PlayerId, ShipId } from '../../v07/game';
-import type { FitPoint } from '../../ui/scene/CameraRig';
+import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
 import type { BeatSeat } from '../scene/beatStage';
 import type { TablePin, TableShip } from '../scene/TableCanvas';
 import type { Board } from '../session/board';
@@ -39,6 +39,10 @@ export interface StageParts {
   readonly overlay?: ReactNode;
   /** What the camera frames; null for the whole table. */
   readonly camera: readonly FitPoint[] | null;
+  /** Replaces the framing camera with another rig (the ship-bay experiment's side shots of your ship), given the room the HUD leaves; `camera` still says what is framed meanwhile. */
+  readonly cameraRig?: (safe: SafeArea) => ReactNode;
+  /** A ship stands at the viewer's dock while they decide (the ship-bay experiment: the ship is what you pick and load). */
+  readonly ownShip?: boolean;
   /** Adjusts each launched ship (selectable, chosen). */
   readonly ship?: (ship: TableShip) => TableShip;
   readonly onSelectShip?: (id: ShipId) => void;

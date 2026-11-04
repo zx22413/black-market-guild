@@ -21,7 +21,7 @@ const COLUMN_GAP = 2.4;
 /** Warehouse spot in island space: on the dock side, close to the ship it loads onto. */
 const WAREHOUSE: Vec3 = [-3.6, 0, 5.8];
 /** Deck height and slot spacing of the docked ship (ship-medium at scale 0.546). */
-const DECK_Y = 1.25;
+export const DECK_Y = 1.25;
 const SLOT_GAP = 1.75;
 
 export const warehouseLocal = (column: number): Vec3 => [WAREHOUSE[0] + column * COLUMN_GAP, 0, WAREHOUSE[2]];

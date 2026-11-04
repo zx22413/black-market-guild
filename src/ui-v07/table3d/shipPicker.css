@@ -1,0 +1,144 @@
+/* The ship hand (ShipPicker.tsx) rides on the role hand's classes (.dep-hand, .dep-card, .dep-strip, beat.css and
+   skin/layers.css), so it wears the same card frame; only what a ship card adds is here. */
+
+/* One more line under the fee: the sinking chance, and the rest time when the type has one. */
+.ship-hand .dep-card {
+  height: 158px;
+  padding-top: 8px;
+}
+.ship-odds {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-note);
+  font-weight: 700;
+  font-family: var(--font-strong);
+  color: #8a241c;
+}
+.ship-rest {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: #6b5537;
+}
+
+/* The strip also holds the dice table, so it is a little taller than the role strip. */
+.ship-strip {
+  min-height: 118px;
+}
+.ship-strip.idle p {
+  padding-top: 36px;
+}
+.ship-dice {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.ship-dice li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3px 2px 4px;
+  border: 1px solid #b9a77d;
+  border-radius: 6px;
+  background: rgb(43 33 22 / 0.06);
+  color: #2b2116;
+  line-height: 1.25;
+}
+.ship-dice li small {
+  font-size: var(--fs-note);
+  color: #6b5537;
+}
+.ship-dice li b {
+  font-size: var(--fs-title);
+}
+.ship-dice li.sink {
+  border-color: #b4574d;
+  background: rgb(155 59 50 / 0.14);
+  color: #8a241c;
+}
+.ship-dice li.sink small {
+  color: #8a241c;
+}
+.ship-dice li.win {
+  border-color: #6f9a55;
+  background: rgb(80 130 60 / 0.16);
+  color: #2f5a22;
+}
+.ship-dice li.win small {
+  color: #2f5a22;
+}
+
+/* "換船" beside the ship while loading: a small token button like the other notes' buttons. */
+.inv-swap {
+  padding: 1px 10px;
+  border: 1px solid #b9a77d;
+  border-radius: 999px;
+  background: rgb(245 236 212 / 0.97);
+  color: #2b2116;
+  font: inherit;
+  font-size: var(--fs-note);
+  cursor: pointer;
+  pointer-events: auto;
+}
+.inv-swap:hover {
+  background: #fff3c9;
+}
+
+/*
+ * On a phone the hand is six portrait cards over a name-and-fee plate (hudPhone.css): the ship card's third line
+ * (sinking chance and rest time) makes the plate three lines tall, and the bar under the hand has two rows of
+ * chips and the button, so the hand stands a little higher.
+ */
+@media (max-width: 640px) {
+  :root:root:root .dep-dock:has(.ship-hand) {
+    bottom: 112px;
+  }
+  :root:root:root .ship-hand .dep-card {
+    background: linear-gradient(0deg, #dcc994 0 50px, #f6ecd0 50px);
+  }
+  :root:root:root .ship-hand .dep-card.on {
+    background: linear-gradient(0deg, #f0c860 0 50px, #fff3c9 50px);
+  }
+  :root:root:root .ship-hand .ship-odds {
+    justify-content: center;
+    gap: 3px;
+    height: 16px;
+    font-size: 11px;
+    line-height: 16px;
+    white-space: nowrap;
+  }
+  /* The rest time sits in the card's corner (where the "no entry" sign of a resting card also is not: that one is on the right). */
+  :root:root:root .ship-hand .ship-rest {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    z-index: 1;
+    padding: 0 3px;
+    border-radius: 8px;
+    background: rgb(245 236 212 / 0.95);
+    font-size: 11px;
+    line-height: 16px;
+  }
+  :root:root:root .ship-dice {
+    gap: 3px;
+  }
+  :root:root:root .ship-dice li b {
+    font-size: 14px;
+  }
+}
+@media (max-width: 640px) and (max-height: 700px) {
+  :root:root:root .ship-hand .dep-card {
+    background: linear-gradient(0deg, #dcc994 0 44px, #f6ecd0 44px);
+  }
+  :root:root:root .ship-hand .dep-card.on {
+    background: linear-gradient(0deg, #f0c860 0 44px, #fff3c9 44px);
+  }
+  :root:root:root .ship-hand .ship-odds {
+    height: 14px;
+    line-height: 14px;
+  }
+}

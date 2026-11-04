@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { GOODS, producedFor, type BuildingId, type GoodId } from '../../v07/game';
+import { GOODS, producedFor, type BuildingId, type GoodId, type ShipTypeId } from '../../v07/game';
 import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
-import type { FitPoint } from '../../ui/scene/CameraRig';
+import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
 import { shipPose } from '../../ui/scene/Ships';
-import { BUILDING_LABELS, BUILDING_TEXT, GOOD_LABELS } from '../labels';
+import { BUILDING_LABELS, BUILDING_TEXT, GOOD_LABELS, SHIP_TYPE_LABELS } from '../labels';
 import { around } from '../scene/focusMath';
-import { BuildingPreview, ShipCargo, Warehouse, deckSlot, stackTop, warehouseLocal } from '../scene/InvestIsland';
+import { BuildingPreview, DECK_Y, ShipCargo, Warehouse, deckSlot, stackTop, warehouseLocal } from '../scene/InvestIsland';
+import { ShipSideCamera, warehouseCentre } from '../scene/ShipSideCamera';
+import { SIDE_SCALE, scaledAbout } from '../scene/sideScale';
 import { ISLAND_PLATEAU, islandPoint, type TablePin } from '../scene/TableCanvas';
 import {
   EMPTY_CHOICE,
@@ -18,13 +20,16 @@ import {
   investSummary,
   investTodo,
   loadOne,
+  NO_LOAD,
   stockSplit,
   todoReminders,
   unloadOne,
   unloadedBy,
   withBuild,
+  withShipType,
   type InvestChoice,
 } from '../table/investChoice';
+import { knownModifier, shipCards } from '../table/shipChoice';
 import { ReminderDialog } from '../table/ReminderDialog';
 import { isHintSeen, isReminderSkipped, markHintSeen, setReminderSkipped } from '../table/reminderSettings';
 import { GoodCount, GoodIcon } from './GoodIcon';
@@ -37,6 +42,7 @@ import { ArrowIcon, CloseIcon, CrateIcon, Flow, HouseIcon, IconDisc, InfoIcon, t
 import { LockHint } from './LockHint';
 import { usePhone } from './usePhone';
 import { SealSubmit } from './SealSubmit';
+import { ShipPicker } from './ShipPicker';
 import { soundEngine } from '../audio/soundEngine';
 import { OWN_PLATE_REACH, type StageEnv, type StageParts } from './stage';
 import { cardArtUrl } from './cardArt';
@@ -50,6 +56,10 @@ import { cardArtUrl } from './cardArt';
 const ROUND_OPEN_MS = 650;
 /** When a stack's production count pops up (its column's place in the warehouse row staggers them). */
 const mintChipDelay = (column: number): number => 150 + column * 120;
+/** The ship-bay shots look from the sea side: the build button stands in island space this far out, between the warehouse and the dock. */
+const BUILD_BUTTON_Z = 9.5;
+/** The standings stand open at the right in a close shot (RankRail): the side shots keep the ship clear of them. */
+const RANK_RAIL_ROOM = 215;
 /** Each next pop a little higher, like bubbles rising. */
 const BUBBLE_RISE = 0.12;
 
@@ -62,6 +72,9 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const [picking, setPicking] = useState(false);
   // Picking a building or "不蓋" both count as dealing with the building; until then it glows.
   const [buildDecided, setBuildDecided] = useState(false);
+  // Ship-bay experiment (rules.ships): the ship is picked first, close up, then the cargo is loaded from further back.
+  const [phase, setPhase] = useState<'ship' | 'cargo'>('ship');
+  const [shipDecided, setShipDecided] = useState(false);
   const [reminding, setReminding] = useState<readonly string[] | null>(null);
   // Crates a change of building took off the ship, said beside the ship until the next change.
   const [unloaded, setUnloaded] = useState<string | null>(null);
@@ -81,6 +94,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     setChoice(EMPTY_CHOICE);
     setPicking(false);
     setBuildDecided(false);
+    setPhase('ship');
+    setShipDecided(false);
     setReminding(null);
     setUnloaded(null);
     setMinting(true);
@@ -146,9 +161,27 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     setBuildDecided(true);
     setPicking(false);
   };
+  // A ship card snaps into place like a role card; a smaller ship takes the crates that no longer fit off the deck.
+  const pickShip = (pick: ShipTypeId | 'none') => {
+    const type = pick === 'none' ? null : pick;
+    if (!shipDecided || type !== (choice.shipType ?? null)) soundEngine.playSfx('role-pick');
+    setChoice(withShipType(options, choice, type));
+    setShipDecided(true);
+  };
 
   const [hx, , hz] = seatPosition(home);
   const dock = shipPose(home, 'docked').position;
+  // The ship-bay experiment draws the warehouse and the deck cargo smaller (sideScale.ts) and places their labels to match.
+  const typed = context.view.rules.ships.enabled === 1;
+  const shipPhase = typed && phase === 'ship';
+  const shipOptions = typed ? shipCards(context) : [];
+  // The side shots: the ship pick everywhere, and the loading too except on a phone, where the island's own close shot
+  // (cropped to bring the crates up to size) stays, with the crates at their usual size.
+  const sideView = typed && (shipPhase || !phone);
+  const scale = sideView ? SIDE_SCALE : 1;
+  const house = warehouseCentre(home);
+  const aroundHouse = scaledAbout([house.x, ISLAND_PLATEAU, house.z], scale);
+  const aroundDeck = scaledAbout([dock.x, DECK_Y, dock.z], scale);
   // In a close shot the player's own plate sits on the island under the build button (Table3DScreen): keep it, and the label below it, in the shot.
   const plate: FitPoint = { position: [hx, 0, hz + PLAYER_ISLAND_RADIUS * OWN_PLATE_REACH + 3] };
   // Close shot: your island and your ship at the dock, so the crates are big enough to tell apart.
@@ -180,7 +213,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
         return [
           {
             id: `fresh-${good}`,
-            position: islandPoint(home, [x, shown * (CRATE_SIZE + 0.05) + 0.4, z]),
+            position: aroundHouse(islandPoint(home, [x, shown * (CRATE_SIZE + 0.05) + 0.4, z])),
             node: (
               <span className="mint-chip" title={`這回合生產 ${made} ${GOOD_LABELS[good]}`} style={{ animationDelay: `${mintChipDelay(column)}ms` }}>
                 +{made}
@@ -243,7 +276,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       id: 'build',
       // On the island's front edge as seen on screen, whichever way the island is turned, so it
       // never sits on the warehouse crates (side islands are turned a quarter round).
-      position: [hx, ISLAND_PLATEAU, hz + PLAYER_ISLAND_RADIUS * 0.62],
+      position: sideView ? islandPoint(home, [0, 0, BUILD_BUTTON_Z]) : [hx, ISLAND_PLATEAU, hz + PLAYER_ISLAND_RADIUS * 0.62],
       node: (
         <div className="inv-build" ref={buildArea}>
           <button type="button" data-focus="build-open" className={`${choice.build ? 'on' : ''} ${todo.build ? 'todo' : ''}`} title={canBuildAny(options) ? `已蓋 ${built} 棟，最多 ${maxBuilt} 棟` : '這回合不能蓋建築'} onClick={() => setPicking((v) => !v)}>
@@ -267,7 +300,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       return {
         id: `stack-${g}`,
         // At the foot of the stack, so the count never covers the icon on the crate lid (a small label on top of it: under the stacks the chosen building's preview rises into that space).
-        position: islandPoint(home, stackTop(column, context.view.myStock[g] - choice.load[g])),
+        position: aroundHouse(islandPoint(home, stackTop(column, context.view.myStock[g] - choice.load[g]))),
         hidden: picking || context.view.myStock[g] - choice.load[g] <= 0,
         node: loadable ? (
           <button
@@ -294,7 +327,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
         id: `restock-${g}`,
         // The stack label's own point: the slot drops the clock a few px below it, however close the camera is.
         // The clock stands on top of its stack, above its label.
-        position: islandPoint(home, stackTop(column, context.view.myStock[g] - choice.load[g])),
+        position: aroundHouse(islandPoint(home, stackTop(column, context.view.myStock[g] - choice.load[g]))),
         hidden: picking,
         node: (
           <span className="restock-slot up">
@@ -328,14 +361,20 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     },
     {
       id: 'ship-note',
-      position: [slot[0] + 5, slot[1], slot[2]],
+      position: sideView ? [dock.x, DECK_Y + 3, dock.z] : [slot[0] + 5, slot[1], slot[2]],
       hidden: picking,
       node: (
-        <div className="inv-note side-right" data-focus={`island-${viewer}`}>
+        <div className={`inv-note ${sideView ? 'side-left' : 'side-right'}`} data-focus={`island-${viewer}`}>
           <span className="note-title" title="船">
             <IconDisc src={tokenIconUrl('ship')} />
-            裝貨 {summary.loaded}/{summary.capacity}
+            {typed && (choice.shipType ? `${SHIP_TYPE_LABELS[choice.shipType]}　` : '不出航')}
+            {(!typed || choice.shipType) && <>裝貨 {summary.loaded}/{summary.capacity}</>}
           </span>
+          {typed && (
+            <button type="button" className="inv-swap" data-focus="ship-swap" onClick={() => setPhase('ship')}>
+              換船
+            </button>
+          )}
           {summary.loaded > 0 && !isHintSeen('unload-cargo') && (
             <span className="note-hint" title="點船上的貨卸下" aria-label="點船上的貨卸下">
               <IconDisc src={tokenIconUrl('ship')} />
@@ -360,7 +399,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
         <HouseIcon /> {choice.build ? `${BUILDING_LABELS[choice.build]} −${summary.buildCash}` : '不蓋'}
       </span>
       <span className="chip" title="出航">
-        <IconDisc src={tokenIconUrl('ship')} /> {summary.sails ? `${summary.loaded}/${summary.capacity} −${summary.shipCost}` : '不出航'}
+        <IconDisc src={tokenIconUrl('ship')} /> {summary.sails ? `${choice.shipType ? `${SHIP_TYPE_LABELS[choice.shipType]} ` : ''}${summary.loaded}/${summary.capacity} −${summary.shipCost}` : '不出航'}
       </span>
       <span className="chip cash" title="現金（G）">
         <IconDisc src={tokenIconUrl('coin')} />
@@ -368,31 +407,70 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       </span>
     </span>
   );
+  const warehouse = (
+    <Warehouse
+      angle={home}
+      stock={context.view.myStock}
+      forBuild={split.forBuild}
+      onShip={choice.load}
+      canLoad={(g: GoodId) => canLoad(options, choice, g)}
+      glow={todo.cargo && !shipPhase}
+      fresh={fresh}
+      onLoad={loadGood}
+    />
+  );
+  // While the ship is picked the deck is bare: the crates come on once the loading starts.
+  const cargo = (
+    <ShipCargo
+      angle={home}
+      load={shipPhase ? NO_LOAD : choice.load}
+      capacity={shipPhase ? 0 : summary.capacity}
+      onUnload={(g) => {
+        markHintSeen('unload-cargo');
+        setUnloaded(null);
+        setChoice((c) => unloadOne(c, g));
+      }}
+    />
+  );
   return {
-    pins,
+    pins: shipPhase ? [] : pins,
     camera,
+    ...(typed ? { ownShip: true } : {}),
+    ...(sideView ? { cameraRig: (safe: SafeArea) => <ShipSideCamera angle={home} shot={shipPhase ? 'ship' : 'cargo'} safe={phone ? safe : { ...safe, right: Math.max(safe.right, RANK_RAIL_ROOM) }} /> } : {}),
     ...(phone ? { rivalRow: true } : { closeShot: true }),
     scene: (
       <>
-        <Warehouse
-          angle={home}
-          stock={context.view.myStock}
-          forBuild={split.forBuild}
-          onShip={choice.load}
-          canLoad={(g: GoodId) => canLoad(options, choice, g)}
-          glow={todo.cargo}
-          fresh={fresh}
-          onLoad={loadGood}
-        />
-        <ShipCargo angle={home} load={choice.load} capacity={summary.capacity} onUnload={(g) => {
-          markHintSeen('unload-cargo');
-          setUnloaded(null);
-          setChoice((c) => unloadOne(c, g));
-        }} />
-        {choice.build && <BuildingPreview angle={home} building={choice.build} color={seats[laneOf(viewer)]!.color} />}
+        {typed ? (
+          <>
+            <group position={[house.x, ISLAND_PLATEAU, house.z]} scale={scale}>
+              <group position={[-house.x, -ISLAND_PLATEAU, -house.z]}>{warehouse}</group>
+            </group>
+            <group position={[dock.x, DECK_Y, dock.z]} scale={scale}>
+              <group position={[-dock.x, -DECK_Y, -dock.z]}>{cargo}</group>
+            </group>
+          </>
+        ) : (
+          <>
+            {warehouse}
+            {cargo}
+          </>
+        )}
+        {choice.build && !shipPhase && <BuildingPreview angle={home} building={choice.build} color={seats[laneOf(viewer)]!.color} />}
       </>
     ),
-    bar: (
+    ...(shipPhase
+      ? {
+          dock: <ShipPicker cards={shipOptions} picked={shipDecided ? (choice.shipType ?? 'none') : null} todo={!shipDecided} modifier={knownModifier(context)} onPick={pickShip} />,
+        }
+      : {}),
+    bar: shipPhase ? (
+      <>
+        {chips}
+        <button type="button" className="primary" disabled={!shipDecided} data-focus="ship-next" onClick={() => setPhase('cargo')}>
+          {choice.shipType ? '裝貨' : '繼續'}
+        </button>
+      </>
+    ) : (
       <>
         {chips}
         <SealSubmit disabled={!action} glow={todoReminders(todo).length === 0} onClick={submit} />
