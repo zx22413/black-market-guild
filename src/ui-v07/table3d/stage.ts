@@ -41,6 +41,8 @@ export interface StageParts {
   readonly camera: readonly FitPoint[] | null;
   /** Replaces the framing camera with another rig (the ship-bay experiment's side shots of your ship), given the room the HUD leaves; `camera` still says what is framed meanwhile. */
   readonly cameraRig?: (safe: SafeArea) => ReactNode;
+  /** The ship is the whole picture (picking a ship): the viewer's own plate and island badge step aside instead of lying over it. */
+  readonly bareShot?: boolean;
   /** A ship stands at the viewer's dock while they decide (the ship-bay experiment: the ship is what you pick and load). */
   readonly ownShip?: boolean;
   /** Adjusts each launched ship (selectable, chosen). */

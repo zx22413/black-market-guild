@@ -298,6 +298,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const [ownX, , ownZ] = viewerId ? seatPosition(angles[laneOf(viewerId)]!) : [0, 0, 0];
   const stepAside = (pin: TablePin): TablePin => {
     if (!closeUp) return pin;
+    if (step?.bareShot && (pin.id === `seat-${viewerId}` || pin.id === `island-${viewerId}`)) return { ...pin, hidden: true };
     if (pin.id === `seat-${viewerId}`) return { ...pin, position: [ownX, 1, ownZ + PLAYER_ISLAND_RADIUS * OWN_PLATE_REACH] };
     // The player's own island badge steps back past the stacks' labels and clocks.
     if (pin.id === `island-${viewerId}`) return { ...pin, position: [pin.position[0], pin.position[1], pin.position[2] - OWN_BADGE_LIFT] };
