@@ -104,6 +104,8 @@ export function buildShipBeat(events: readonly MatchEvent[], shipId: ShipId): Sh
   const mod = inRound.flatMap((e) => (e.type === 'voyage-modifiers' ? e.modifiers : [])).find((m) => m.shipId === shipId);
   if (!owner || !mod) return null;
 
+  // A freighter's guards and pirates may have been deployed the round before it arrived (game-design.md §8.1): their reveal is in that round's events.
+  const deployed = [...events.filter((e) => e.type === 'roles-revealed' && e.round === round - 1), ...inRound];
   const voyageEvent = inRound.find((e) => e.type === 'voyage-event-revealed');
   const islands = events.find((e) => e.type === 'islands-chosen');
   const smuggling = inRound.find((e): e is Extract<MatchEvent, { type: 'smuggling-settled' }> => e.type === 'smuggling-settled' && e.shipId === shipId);
@@ -116,8 +118,8 @@ export function buildShipBeat(events: readonly MatchEvent[], shipId: ShipId): Sh
     start: mod.base,
     steps: modifierSteps(
       mod,
-      deployedOn(inRound, 'guard', shipId),
-      deployedOn(inRound, 'pirate', shipId),
+      deployedOn(deployed, 'guard', shipId),
+      deployedOn(deployed, 'pirate', shipId),
       voyageEvent?.type === 'voyage-event-revealed' ? voyageEvent.event : null,
       islands?.type === 'islands-chosen' ? (islands.islands[owner] ?? null) : null,
       (id) => (islands?.type === 'islands-chosen' ? (islands.islands[id] ?? null) : null),

@@ -7,6 +7,7 @@ import {
   traitOf,
   type Action,
   type PlayerView,
+  type ViewShip,
 } from '../game';
 import { choose } from './choose';
 import {
@@ -79,13 +80,21 @@ function scoreInvest(view: PlayerView, action: Invest, persona: Personality): nu
   return score;
 }
 
+/** The ship a deployment aims at: one in this round's voyage, or a freighter still at sea (its cargo is secret, game-design.md §8.1). */
+function targetShip(view: PlayerView, id: string | null): ViewShip | undefined {
+  const ship = view.ships.find((s) => s.id === id);
+  if (ship !== undefined) return ship;
+  const sea = view.transit.find((s) => s.id === id && s.arriveRound > view.round);
+  return sea === undefined ? undefined : { id: sea.id, owner: sea.owner, type: sea.type, outcome: null, cargo: null };
+}
+
 /**
  * The diplomat guesses which role an opponent aims at its own ship. A right
  * guess saves part of what that role would take and wins `take` G; a wrong one gets part of the fee back.
  */
 function scoreDiplomat(view: PlayerView, action: Deploy): number {
   const { rules } = view;
-  const ship = view.ships.find((s) => s.id === action.targetShipId);
+  const ship = targetShip(view, action.targetShipId);
   const guess = action.guessRole;
   if (ship === undefined || guess === undefined || guess === null) {
     return 0;
@@ -102,7 +111,7 @@ function scoreDeploy(view: PlayerView, action: Deploy, persona: Personality): nu
   if (action.role === 'diplomat') {
     return scoreDiplomat(view, action);
   }
-  const ship = view.ships.find((s) => s.id === action.targetShipId);
+  const ship = targetShip(view, action.targetShipId);
   if (action.role === null || ship === undefined) {
     return 0;
   }

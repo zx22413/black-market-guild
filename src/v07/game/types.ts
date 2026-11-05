@@ -129,6 +129,11 @@ export interface RoundState {
   readonly ships: readonly Ship[];
   /** Secret until rolesRevealed. */
   readonly deployments: readonly Deployment[];
+  /**
+   * Roles deployed in an earlier round on a freighter that arrives in this one (public since they were revealed then):
+   * they take effect with this round's voyage, next to this round's own deployments (game-design.md §8.1).
+   */
+  readonly carried: readonly Deployment[];
   readonly rolesRevealed: boolean;
 }
 

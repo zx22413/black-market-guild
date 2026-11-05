@@ -1,6 +1,6 @@
 import type { DecisionContext } from '../../v07/bots';
 import { GOODS, GUESSABLE_ROLES, ROLE_IDS, cooldownFor, roleFee, traitOf, type Deployment, type GoodId, type PlayerId, type RoleId, type ShipId } from '../../v07/game';
-import { GOOD_LABELS, ROLE_LABELS, SHIP_TYPE_LABELS } from '../labels';
+import { GOOD_LABELS, ROLE_LABELS } from '../labels';
 import { legalOf, type ActionOf } from './forms';
 
 // The role deployment (§5 step 3, §9) as plain data, shared by the 2D form and the 3D table. What
@@ -40,28 +40,15 @@ export interface RoleCard {
 
 /** Every role, deployable or not, with the reason (§9.2 fee, §9.3 cooldown). */
 /**
- * Guard and diplomat can only act on the player's own ship. A freighter launched this round is still outside the harbour
- * (it arrives next round, game-design.md §8.1), so those two have nothing to act on: say so instead of the bare
- * "沒有可選的目標", which looks like a bug to a player who did send a ship.
- */
-function seaReason(context: DecisionContext, role: RoleId): string | null {
-  if (role !== 'guard' && role !== 'diplomat') return null;
-  const { view } = context;
-  const atSea = view.transit.find((s) => s.owner === view.playerId && s.arriveRound > view.round);
-  return atSea === undefined ? null : `你的${SHIP_TYPE_LABELS[atSea.type]}還在港外，第 ${atSea.arriveRound} 回合抵達才能部署`;
-}
-
-/**
  * Why a role has no ship to act on, said in terms of who sailed: when every role is greyed for this reason it is because
- * nobody's ship is in the voyage (everyone stayed in port, or the only ship is a freighter at sea), which would otherwise
- * look like a fault to a player who has the money.
+ * nobody's ship is a target (everyone stayed in port), which would otherwise look like a fault to a player who has the
+ * money. A freighter still at sea is a target too (roles are pre-deployed on it, game-design.md §8.1).
  */
 function noTargetReason(context: DecisionContext, role: RoleId): string {
   const { view } = context;
-  const own = seaReason(context, role);
-  if (own !== null) return own;
-  if (view.ships.length === 0) return '這回合沒有船出航，沒有目標';
-  if (role === 'customs' && view.ships.every((s) => s.owner === view.playerId)) return '海關只能針對別人的船，這回合只有你的船出航';
+  const targets = [...view.ships, ...view.transit.filter((s) => s.arriveRound > view.round)];
+  if (targets.length === 0) return '這回合沒有船出航，沒有目標';
+  if (role === 'customs' && targets.every((s) => s.owner === view.playerId)) return '海關只能針對別人的船，這回合只有你的船出航';
   return '沒有可選的目標';
 }
 

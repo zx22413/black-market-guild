@@ -111,7 +111,8 @@ export const GUESSABLE_ROLES = ['guard', 'pirate', 'smuggler', 'customs'] as con
 /** §9.2-9.4: no role, or any affordable, available role with a valid target. */
 function deployOptions(state: MatchState, playerId: PlayerId): Action[] {
   const player = playerOf(state, playerId);
-  const { ships } = state.roundState;
+  // This round's ships, and a freighter still at sea (launched this round): roles can be pre-deployed on it (game-design.md §8.1).
+  const ships = [...state.roundState.ships, ...state.transit.filter((s) => s.arriveRound > state.round)];
   const none: Action = { type: 'deploy-role', playerId, role: null, targetShipId: null, namedGood: null };
   const options: Action[] = [none];
   for (const role of ROLE_IDS) {

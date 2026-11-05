@@ -20,8 +20,13 @@ type Of<T extends MatchEvent['type']> = Extract<MatchEvent, { type: T }>;
 export function roleResults(events: readonly MatchEvent[], round: number): Map<string, RoleResult> {
   const inRound = events.filter((e) => !('round' in e) || e.round === round);
   const of = <T extends MatchEvent['type']>(type: T) => inRound.filter((e): e is Of<T> => e.type === type);
-  const deployments = of('roles-revealed').flatMap((e) => e.deployments);
   const outcome = new Map(of('ship-resolved').map((e) => [e.shipId, e.outcome] as const));
+  // Roles pre-deployed on a freighter the round before come to something now that it has arrived (game-design.md §8.1).
+  const carried = events
+    .filter((e): e is Of<'roles-revealed'> => e.type === 'roles-revealed' && e.round === round - 1)
+    .flatMap((e) => e.deployments)
+    .filter((d) => d.targetShipId !== null && outcome.has(d.targetShipId));
+  const deployments = [...carried, ...of('roles-revealed').flatMap((e) => e.deployments)];
   const smuggling = new Map(of('smuggling-settled').map((e) => [e.shipId, e]));
   const confiscated = of('goods-confiscated');
   const paid = (reason: string, playerId: PlayerId, shipId: ShipId | null) =>

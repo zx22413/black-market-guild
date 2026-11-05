@@ -31,6 +31,7 @@ export function emptyRound(): RoundState {
     builds: [],
     ships: [],
     deployments: [],
+    carried: [],
     rolesRevealed: false,
   };
 }
@@ -52,6 +53,8 @@ export function openRound(base: MatchState, round: number): Transition {
   const players = base.players.map((p) => ({ ...p, stock: addGoods(p.stock, produced[p.id] ?? NO_GOODS) }));
   const wanted = wantedPlayers(base);
   const arriving = base.transit.filter((s) => s.arriveRound <= round);
+  // Roles pre-deployed on a freighter that arrives now (deployments voided by a diplomat are already gone from the list).
+  const carried = base.roundState.deployments.filter((d) => arriving.some((s) => s.id === d.targetShipId));
   const state: MatchState = {
     ...base,
     round,
@@ -60,7 +63,7 @@ export function openRound(base: MatchState, round: number): Transition {
     demandDeck,
     // Experiment (rules.ships): ships launched earlier that reach this round's voyage.
     transit: base.transit.filter((s) => s.arriveRound > round),
-    roundState: { ...emptyRound(), demand, wanted, stockAtStart: Object.fromEntries(players.map((p) => [p.id, p.stock])), ships: arriving },
+    roundState: { ...emptyRound(), demand, wanted, stockAtStart: Object.fromEntries(players.map((p) => [p.id, p.stock])), ships: arriving, carried },
   };
   return runFrom(state, 0, [
     { type: 'round-started', round },

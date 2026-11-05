@@ -81,13 +81,13 @@ describe('experiment: ship types', () => {
     expect(arrived.state.transit).toEqual([]);
   });
 
-  it('lets roles target a freighter only once it has arrived, and not launch it too late to arrive', () => {
+  it('lets roles aim at a freighter at sea (pre-deployed), and does not offer a freighter that could not arrive', () => {
     let state = ready();
     for (const p of state.players) {
       state = apply(state, { type: 'invest', playerId: p.id, build: null, load: p.id === 'p1' ? G(1) : G(0), ...(p.id === 'p1' ? { shipType: 'freighter' as const } : {}) }).state;
     }
-    // Launched this round, so nothing is at sea for anyone to target yet.
-    expect(getLegalActions(state, 'p2').filter((a) => a.type === 'deploy-role' && a.targetShipId !== null)).toEqual([]);
+    // Launched this round: it is at sea, and a role can be pre-deployed on it (game-design.md §8.1; pre-deploy.test.ts).
+    expect(getLegalActions(state, 'p2').filter((a) => a.type === 'deploy-role' && a.targetShipId === 'r1-p1').length).toBeGreaterThan(0);
     // In the last round a freighter would never arrive: it is not offered.
     const last = getLegalActions({ ...ready(), round: RULES_V07.rounds }, 'p1').filter((a) => a.type === 'invest' && a.shipType === 'freighter');
     expect(last).toEqual([]);

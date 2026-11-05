@@ -36,6 +36,12 @@ describe('role results (stamps)', () => {
         if (e.type === 'roles-revealed') {
           for (const d of e.deployments) {
             const result = results.get(roleKey(d));
+            // A role aimed at a freighter still at sea (game-design.md §8.1) has nothing to show until the freighter arrives.
+            const resolved = roundEvents.some((x) => x.type === 'ship-resolved' && x.shipId === d.targetShipId);
+            if (!resolved) {
+              expect(result).toBeUndefined();
+              continue;
+            }
             // Every role ends in a stamp except a diplomat whose guess was voided by nothing (it gets its stamp from the cash it moved).
             if (d.role !== 'diplomat') expect(result === undefined).toBe(false);
             if (d.role === 'pirate') {

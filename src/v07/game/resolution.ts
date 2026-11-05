@@ -15,8 +15,11 @@ export function revealVoyageEvent(state: MatchState): Step {
   };
 }
 
+/** This round's deployments and those pre-deployed on a freighter that has now arrived (game-design.md §8.1). */
+export const effectiveDeployments = (state: MatchState): readonly Deployment[] => [...state.roundState.carried, ...state.roundState.deployments];
+
 function targeting(state: MatchState, ship: Ship, role: Deployment['role']): Deployment[] {
-  return state.roundState.deployments.filter((d) => d.role === role && d.targetShipId === ship.id);
+  return effectiveDeployments(state).filter((d) => d.role === role && d.targetShipId === ship.id);
 }
 
 /** §12: "targeted by a role" effects count once however many players target the ship. */

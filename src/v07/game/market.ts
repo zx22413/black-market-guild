@@ -1,7 +1,7 @@
 import { chain, changeCash, holds, payAll, playerOf, updatePlayer, type StepFn } from './cash';
 import { addGoods, mapGoods, nextPriceStep, only, priceAt, units } from './goods';
 import { traitOf } from './islands';
-import { voyageModifier } from './resolution';
+import { effectiveDeployments, voyageModifier } from './resolution';
 import { shipIncomePercent } from './rules';
 import { GOODS, type GoodId, type Goods, type MatchEvent, type MatchState, type PlayerId, type RoleId, type Ship, type Step } from './types';
 
@@ -36,7 +36,7 @@ export function settleMarket(state: MatchState): Step {
 }
 
 function deployed(state: MatchState, ship: Ship, role: RoleId): PlayerId[] {
-  return state.roundState.deployments.filter((d) => d.role === role && d.targetShipId === ship.id).map((d) => d.playerId);
+  return effectiveDeployments(state).filter((d) => d.role === role && d.targetShipId === ship.id).map((d) => d.playerId);
 }
 
 /** §9.5: smuggled goods value, raised by the black-market rush (§12). */
@@ -74,7 +74,7 @@ function seizures(state: MatchState, ship: Ship): Seizure[] {
   const officers =
     state.rules.ships.enabled === 1 && state.rules.ships.types[ship.type].secret === 1
       ? []
-      : state.roundState.deployments.filter((d) => d.role === 'customs' && d.targetShipId === ship.id && d.playerId !== ship.owner);
+      : effectiveDeployments(state).filter((d) => d.role === 'customs' && d.targetShipId === ship.id && d.playerId !== ship.owner);
   return GOODS.flatMap((good) => {
     if (covered(state, ship, good)) {
       return [];

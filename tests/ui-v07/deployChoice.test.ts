@@ -90,22 +90,6 @@ describe('role deployment choice (only legal actions)', () => {
     expect(card.reason).toBe('冷卻中，第 4 回合可用');
   });
 
-  it('says a freighter that is still at sea is why guard and diplomat have no target (ship bays)', () => {
-    let state = start(3, RULES_V07, { p1: 'mine', p2: 'mine', p3: 'mine' });
-    for (const id of ['p1', 'p2', 'p3']) state = edit(state, id, { stock: G(1, 1, 1, 0) });
-    state = apply(state, { type: 'invest', playerId: 'p1', build: null, load: G(1), shipType: 'freighter' });
-    for (const id of ['p2', 'p3']) state = apply(state, { type: 'invest', playerId: id, build: null, load: G(0) });
-    const cards = roleCards(contextOf(state), deployOptions(contextOf(state)));
-    for (const role of ['guard', 'diplomat']) {
-      const card = cards.find((c) => c.id === role)!;
-      expect(card.legal, role).toBe(false);
-      expect(card.reason, role).toBe('你的巨鯨號還在港外，第 2 回合抵達才能部署');
-    }
-    // Nobody's ship is in this round's voyage, so no other role has a target either, and the card says so.
-    for (const role of ['customs', 'pirate', 'smuggler']) expect(cards.find((c) => c.id === role)!.reason, role).toBe('這回合沒有船出航，沒有目標');
-    expect(cards.filter((c) => c.legal)).toEqual([]);
-  });
-
   it('tells the customs officer that only its own ship sails (it cannot name its own cargo)', () => {
     let state = start(3, RULES_V07, { p1: 'mine', p2: 'mine', p3: 'mine' });
     for (const id of ['p1', 'p2', 'p3']) state = edit(state, id, { stock: G(1, 1, 1, 0) });
