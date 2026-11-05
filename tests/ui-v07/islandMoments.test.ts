@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RULES_V07, type IslandId } from '../../src/v07/game';
+import { RULES_BUILDINGS, type IslandId } from '../../src/v07/game';
 import { launchMoments, openingMoments } from '../../src/ui-v07/table3d/islandMoments';
 
 const all: Record<string, IslandId> = {
@@ -14,7 +14,7 @@ const all: Record<string, IslandId> = {
 };
 const none = (_id: string): number => 0;
 const chipsOf = (round: number, carried = none) =>
-  Object.fromEntries(openingMoments(all, round, RULES_V07, carried).map((m) => [m.playerId, m.chips.map((c) => `${c.good}:${c.text}:${c.tone}`)]));
+  Object.fromEntries(openingMoments(all, round, RULES_BUILDINGS, carried).map((m) => [m.playerId, m.chips.map((c) => `${c.good}:${c.text}:${c.tone}`)]));
 
 describe('island moments', () => {
   it('pulses at the round start only for production that differs from an ordinary island', () => {
@@ -36,13 +36,13 @@ describe('island moments', () => {
   });
 
   it('greys an island whose moment only costs it', () => {
-    const tones = Object.fromEntries(openingMoments(all, 3, RULES_V07, none).map((m) => [m.playerId, m.tone]));
+    const tones = Object.fromEntries(openingMoments(all, 3, RULES_BUILDINGS, none).map((m) => [m.playerId, m.tone]));
     expect(tones).toEqual({ a: 'loss', b: 'loss', c: 'gain' });
   });
 
   it('pulses at the launch for a cheaper or dearer ship and a smaller hold, for those who launched', () => {
-    const launch = Object.fromEntries(launchMoments(all, ['e', 'g', 'a'], RULES_V07).map((m) => [m.playerId, m.chips.map((c) => `${c.text}:${c.tone}`)]));
+    const launch = Object.fromEntries(launchMoments(all, ['e', 'g', 'a'], RULES_BUILDINGS).map((m) => [m.playerId, m.chips.map((c) => `${c.text}:${c.tone}`)]));
     expect(launch).toEqual({ e: ['出航 50 G:gain', '可裝 −1:loss'], g: ['出航 150 G:loss'] });
-    expect(launchMoments(all, ['f'], RULES_V07)).toEqual([]);
+    expect(launchMoments(all, ['f'], RULES_BUILDINGS)).toEqual([]);
   });
 });

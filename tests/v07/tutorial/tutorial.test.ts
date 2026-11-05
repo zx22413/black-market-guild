@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DecisionContext } from '../../../src/v07/bots';
 import type { Action, MatchEvent } from '../../../src/v07/game';
-import { createMatch } from '../../../src/v07/game';
+import { RULES_BUILDINGS, createMatch } from '../../../src/v07/game';
 import {
   BASICS,
   CUSTOMS,
@@ -121,8 +121,9 @@ describe('every tutorial', () => {
     }
   });
 
-  it('keeps the official rule numbers, only fewer rounds ', () => {
-    const created = createMatch({ seed: 1, players: [{ id: 'a', name: 'a' }, { id: 'b', name: 'b' }, { id: 'c', name: 'c' }] });
+  // TODO: the tutorial still teaches the building rules; it moves to the ship bays with its rewrite.
+  it('keeps the building-rule numbers of the official rules, only fewer rounds ', () => {
+    const created = createMatch({ seed: 1, players: [{ id: 'a', name: 'a' }, { id: 'b', name: 'b' }, { id: 'c', name: 'c' }], rules: RULES_BUILDINGS });
     expect(created.ok).toBe(true);
     for (const script of TUTORIALS) {
       const official = created.ok ? created.value.state.rules : null;

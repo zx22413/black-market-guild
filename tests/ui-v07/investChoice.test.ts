@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DecisionContext } from '../../src/v07/bots';
-import { getLegalActions, getPendingDecisions, getPlayerView, type MatchState } from '../../src/v07/game';
+import { RULES_V07, getLegalActions, getPendingDecisions, getPlayerView, type MatchState } from '../../src/v07/game';
 import {
   EMPTY_CHOICE,
   actionFor,
@@ -17,9 +17,10 @@ import {
   unloadOne,
   unloadedBy,
   withBuild,
+  withShipType,
   unitsOf,
 } from '../../src/ui-v07/table/investChoice';
-import { G, edit, start } from '../v07/game/helpers';
+import { G, edit, start, withWanted } from '../v07/game/helpers';
 
 function contextOf(state: MatchState, playerId = 'p1'): DecisionContext {
   const decision = getPendingDecisions(state).find((d) => d.playerId === playerId)!;
@@ -119,11 +120,14 @@ describe('investment choice on the island (only legal actions)', () => {
     expect(actionFor(options, dropped)).toBeDefined();
   });
 
-  it('reminds about arms, the wanted mark and spice left behind', () => {
+  it('reminds about customs (any good can be named), the wanted mark and spice left behind', () => {
     const { context, options } = scenario();
     const withArms = loadOne(options, EMPTY_CHOICE, 'arms');
     const texts = investNotes(context, withArms).map((n) => n.text);
-    expect(texts).toContain('軍火抵達時，若有別人的護衛守著會被沒收');
+    expect(texts).toContain('海關可能指名船上的一種貨，船抵達時整塊沒收');
+    // Nothing is said about guards confiscating arms any more (§9.4: a guard takes no goods).
+    expect(texts.some((t) => t.includes('護衛'))).toBe(false);
+    expect(investNotes(context, EMPTY_CHOICE).some((n) => n.text.includes('海關'))).toBe(false);
     expect(texts).toContain('1 香料沒裝，回合結束會壞掉');
     expect(investNotes(context, loadOne(options, withArms, 'spice')).some((n) => n.text.includes('香料'))).toBe(false);
   });
@@ -132,8 +136,27 @@ describe('investment choice on the island (only legal actions)', () => {
     const { context, options } = scenario();
     const notes = investNotes(context, loadOne(options, EMPTY_CHOICE, 'arms'));
     for (const note of notes) expect(note.chips.length, note.text).toBeGreaterThan(0);
-    expect(notes.find((n) => n.text.includes('軍火'))?.chips).toEqual([{ kind: 'good', good: 'arms' }, { kind: 'role', role: 'guard' }, { kind: 'alert' }]);
+    expect(notes.find((n) => n.text.includes('海關'))?.chips).toEqual([{ kind: 'role', role: 'customs' }, { kind: 'alert' }]);
     expect(notes.find((n) => n.text.includes('香料'))?.chips).toEqual([{ kind: 'good', good: 'spice', count: 1 }, { kind: 'alert' }]);
+  });
+
+  it('says a hidden ship is out of the customs\' reach (ship-bay experiment)', () => {
+    const state = edit(start(3, RULES_V07, { p1: 'lumber' }), 'p1', { cash: 1000, stock: G(2, 2, 1, 1), buildings: [] });
+    const context = contextOf(state);
+    const options = investOptions(context);
+    const hidden = loadOne(options, withShipType(options, EMPTY_CHOICE, 'hidden'), 'wood');
+    expect(investNotes(context, hidden).map((n) => n.text)).toContain('密艙船：海關指名這艘船的貨無效');
+    const standard = loadOne(options, withShipType(options, EMPTY_CHOICE, 'standard'), 'wood');
+    expect(investNotes(context, standard).map((n) => n.text)).toContain('海關可能指名船上的一種貨，船抵達時整塊沒收');
+  });
+
+  it('tells a wanted player what it costs, as §9.6 says it', () => {
+    const state = withWanted(edit(start(3, undefined, { p1: 'lumber' }), 'p1', { cash: 1000, stock: G(2, 2, 1, 1) }), ['p1']);
+    const context = contextOf(state);
+    const options = investOptions(context);
+    const texts = investNotes(context, loadOne(options, EMPTY_CHOICE, 'wood')).map((n) => n.text);
+    expect(texts).toContain('你被通緝：海盜取走這艘船的貨值時（最終值 1 或 2），另從銀行多拿 100 G');
+    expect(texts.some((t) => t.includes('擊沉'))).toBe(false);
   });
 
   it('does not warn about spoiling spice on the Spice Isles (§11.2)', () => {

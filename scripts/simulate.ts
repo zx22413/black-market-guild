@@ -1,14 +1,15 @@
 /**
- * Runs many V0.7 bot-only matches and prints a Markdown balance report.
+ * Runs many V0.7.1 bot-only matches (the ship bays) and prints a Markdown balance report.
  * Usage: npm run simulate -- [--matches 1000] [--players 4] [--seed 1]
  *        [--lineup balanced,cautious,aggressive,builder]
- *        [--set roles.pirate.loot=150 ...] [--summary] [--ships]
+ *        [--set roles.pirate.loot=150 ...] [--summary] [--buildings]
  * `--set` overrides any numeric rule (repeatable) to test balance ideas without editing
  * the rules; `--summary` prints one Markdown table row of key metrics instead of a report.
+ * `--buildings` plays the old rules with the four buildings (RULES_BUILDINGS) instead of the ship bays.
  * Seats rotate every match so each strategy plays every seat position.
  */
 import { BOT_STRATEGIES, type BotStrategy } from '../src/v07/bots';
-import { BUILDING_IDS, GOODS, ROLE_IDS, RULES_SHIPS, RULES_V07, priceAt, type Rules } from '../src/v07/game';
+import { BUILDING_IDS, GOODS, ROLE_IDS, RULES_BUILDINGS, RULES_V07, priceAt, type Rules } from '../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../src/v07/match';
 import { addMatch, emptyStats, type SimStats } from './sim-stats';
 
@@ -60,7 +61,7 @@ function parseOptions(): Options {
     seed: Number.parseInt(get('seed') ?? '1', 10),
     lineup,
     overrides,
-    rules: applyOverrides(argv.includes('--ships') ? RULES_SHIPS : RULES_V07, overrides),
+    rules: applyOverrides(argv.includes('--buildings') ? RULES_BUILDINGS : RULES_V07, overrides),
     summary: argv.includes('--summary'),
   };
   if (![options.matches, options.players, options.seed].every(Number.isInteger)) {

@@ -153,15 +153,19 @@ export function applyEvent(board: Board, event: MatchEvent, rules: Rules = RULES
         ...board,
         launched: true,
         stayedInPort: event.stayedInPort,
-        ships: event.ships.map((s) => ({
-          id: s.id,
-          owner: s.owner,
-          outcome: s.outcome,
-          cargo: null,
-          modifier: null,
-          confiscated: [],
-          smuggling: null,
-        })),
+        // Ships that arrived from an earlier round ('ships-arriving', just after the round started) stay in the voyage.
+        ships: [
+          ...board.ships,
+          ...event.ships.map((s) => ({
+            id: s.id,
+            owner: s.owner,
+            outcome: s.outcome,
+            cargo: null,
+            modifier: null,
+            confiscated: [],
+            smuggling: null,
+          })),
+        ],
       };
     case 'cash-changed':
       return mapPlayer(board, event.playerId, (p) => ({ ...p, cash: p.cash + event.amount }));

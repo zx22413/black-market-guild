@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import type { MatchEvent } from '../../src/v07/game';
+import { RULES_BUILDINGS, type MatchEvent, type Rules } from '../../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../src/v07/match';
 import { cashSoFar, marketRows, settlementFlights } from '../../src/ui-v07/table3d/settlementModel';
 
 const seats: SeatConfig[] = ['A', 'B', 'C', 'D'].map((name, i) => ({ kind: 'bot', name, strategy: (['aggressive', 'balanced', 'aggressive', 'builder'] as const)[i]! }));
 
-function play(seed: number): MatchEvent[] {
-  const setup = setupFromSeats({ seed, seats });
+function play(seed: number, rules?: Rules): MatchEvent[] {
+  const setup = setupFromSeats({ seed, seats, ...(rules ? { rules } : {}) });
   return runMatchSync(setup, setup.bots).events as MatchEvent[];
 }
 
@@ -39,8 +39,8 @@ describe('settlement flights', () => {
     }
   });
 
-  it('salvage and insurance go to the building that does the work', () => {
-    const events = Array.from({ length: 40 }, (_, i) => i + 1).map((seed) => play(seed));
+  it('salvage and insurance go to the building that does the work (building rules)', () => {
+    const events = Array.from({ length: 40 }, (_, i) => i + 1).map((seed) => play(seed, RULES_BUILDINGS));
     const all = events.flatMap((ev) => [1, 2, 3, 4, 5, 6].flatMap((r) => settlementFlights(ev, r)));
     const salvage = all.filter((f) => f.label.startsWith('打撈'));
     expect(salvage.length).toBeGreaterThan(0);

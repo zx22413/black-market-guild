@@ -97,8 +97,10 @@ export function buildShipBeat(events: readonly MatchEvent[], shipId: ShipId): Sh
   if (!resolved) return null;
   const round = resolved.round;
   const inRound = events.filter((e) => roundOf(e) === round);
-  const launch = inRound.find((e): e is Extract<MatchEvent, { type: 'ships-launched' }> => e.type === 'ships-launched');
-  const owner = launch?.ships.find((s) => s.id === shipId)?.owner;
+  // A ship launched in an earlier round (a freighter) is announced by 'ships-arriving' this round, or by its launch before.
+  const owner = events
+    .flatMap((e) => (e.type === 'ships-launched' || e.type === 'ships-arriving' ? e.ships : []))
+    .find((s) => s.id === shipId)?.owner;
   const mod = inRound.flatMap((e) => (e.type === 'voyage-modifiers' ? e.modifiers : [])).find((m) => m.shipId === shipId);
   if (!owner || !mod) return null;
 

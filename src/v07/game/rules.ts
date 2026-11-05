@@ -145,8 +145,12 @@ export const NEUTRAL_TRAIT: IslandTrait = {
 
 const trait = (patch: Partial<IslandTrait>): IslandTrait => ({ ...NEUTRAL_TRAIT, ...patch });
 
-export const RULES_V07: Rules = {
-  version: 'V0.7.1',
+/**
+ * The V0.7.1 rules with the four buildings, as they were before the ship bays replaced them (2026-11-05). Kept for the
+ * tutorial (not yet rewritten) and the tests of the building code; the game itself plays `RULES_V07`.
+ */
+export const RULES_BUILDINGS: Rules = {
+  version: 'V0.7.1-buildings',
   players: { min: 3, max: 4 }, // §3
   rounds: 6, // §3
   startingCash: 1000, // §3
@@ -256,21 +260,22 @@ export function shipFinalCap(rules: Rules, type: ShipTypeId): number {
 }
 
 /**
- * Experiment (docs/proposals/2026-11-ship-bays.md, not a decided rule): the ship-bay candidate. Five ship types, and
- * every good produced every round (the production islands one more of their good, their drawbacks kept), so a ship
- * can actually be filled. Everything else is V0.7.1.
+ * The rules the game plays (docs/game-design.md, V0.7.1): the ship bays replace the buildings. Five ship types, and every
+ * good is produced every round (the production islands one more of their good, their drawbacks kept), so a ship can
+ * actually be filled. The buildings stay in the data (`buildings`) for `RULES_BUILDINGS`, but no building is offered.
+ * TODO: the free port and the lighthouse (ship fee), the economy and the tutorial are not redone yet (game-design.md §11, §14).
  */
-export const RULES_SHIPS: Rules = {
-  ...RULES_V07,
-  version: 'V0.7.1-ships',
+export const RULES_V07: Rules = {
+  ...RULES_BUILDINGS,
+  version: 'V0.7.1',
   productionEvery: goods({ wood: 1, iron: 1, spice: 1, arms: 1 }),
   // The shipyard goes: the freighter carries more instead.
-  capacity: { ...RULES_V07.capacity, shipyardBonus: 0 },
-  ships: { ...RULES_V07.ships, enabled: 1 },
+  capacity: { ...RULES_BUILDINGS.capacity, shipyardBonus: 0 },
+  ships: { ...RULES_BUILDINGS.ships, enabled: 1 },
   islands: {
-    ...RULES_V07.islands,
+    ...RULES_BUILDINGS.islands,
     traits: {
-      ...RULES_V07.islands.traits,
+      ...RULES_BUILDINGS.islands.traits,
       lumber: trait({ bonusProduction: goods({ wood: 1 }), productionEvery: goods({ iron: 3 }) }),
       mine: trait({ bonusProduction: goods({ iron: 1 }), productionEvery: goods({ wood: 3 }) }),
       'smuggler-port': trait({ bonusProduction: goods({ arms: 1 }), armsUncoverable: 1, feeDelta: { ...NO_ROLES, guard: 50 } }),

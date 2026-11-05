@@ -1,7 +1,7 @@
 import { GOODS, priceAt, producedFor, type GoodId, type Rules } from '../../v07/game';
 import { GOOD_LABELS } from '../labels';
 
-// What each good is for and how it behaves (docs/game-design.md §6.1–§6.3, §7.3, §9.5), for the
+// What each good is for and how it behaves (docs/game-design.md §6.1–§6.3, §7.3), for the
 // rules panel and the goods icons' tips. The numbers come from the rules, so the words never drift
 // from the engine; the rest only restates the design document.
 
@@ -13,12 +13,12 @@ const USE: Readonly<Record<GoodId, string>> = {
   arms: '只能販售',
 };
 
-/** What sets a good apart (§6.1, §6.3, §9.5); none for wood and iron. */
+/** What sets a good apart (§6.1, §6.3); none but the spice (customs name any good, so arms are no longer singled out). */
 const TRAIT: Readonly<Record<GoodId, string | null>> = {
   wood: null,
   iron: null,
   spice: '放不住：每回合黑市交易結束時，還留在倉庫裡的全部壞掉（香料群島例外）。',
-  arms: '船抵達時，船上有別人的護衛就全部被沒收（有走私商人掩護時不會）。',
+  arms: null,
 };
 
 /** The rounds an ordinary island makes this good, in words (§6.2): 「每回合」 or 「第 1、3、5 回合」. */

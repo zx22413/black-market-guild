@@ -1,26 +1,36 @@
 import { describe, expect, it } from 'vitest';
-import { RULES_V07, getLegalActions, getPlayerView, producedFor, type MatchState } from '../../../src/v07/game';
+import { RULES_BUILDINGS, RULES_V07, getLegalActions, getPlayerView, producedFor, type MatchState } from '../../../src/v07/game';
 import { G, apply, cash, cashOf, edit, find, plain, playRound, start, stockOf, withDemand, withPrices } from './helpers';
 
 const stocked = (state: MatchState, stock = G(3, 3, 1, 1)) => state.players.reduce((s, p) => edit(s, p.id, { stock }), state);
 
 describe('§6 production and warehouse', () => {
-  it('produces wood, iron, spice and arms in rounds 1, 3, 5', () => {
-    const rounds = [1, 2, 3, 4, 5, 6].map((r) => producedFor(RULES_V07, null, r));
+  it('produces wood, iron, spice and arms in rounds 1, 3, 5 (building rules)', () => {
+    const rounds = [1, 2, 3, 4, 5, 6].map((r) => producedFor(RULES_BUILDINGS, null, r));
     expect(rounds.map((g) => g.wood)).toEqual([1, 0, 1, 0, 1, 0]);
     expect(rounds.map((g) => g.iron)).toEqual([1, 0, 1, 0, 1, 0]);
     expect(rounds.map((g) => g.arms)).toEqual([1, 0, 1, 0, 1, 0]);
     expect(rounds.map((g) => g.spice)).toEqual([1, 0, 1, 0, 1, 0]);
   });
 
-  it('applies island production overrides (§11.2)', () => {
-    const per = (island: Parameters<typeof producedFor>[1]) => [1, 2, 3, 4, 5, 6].map((r) => producedFor(RULES_V07, island, r));
+  it('applies island production overrides (§11.2, building rules)', () => {
+    const per = (island: Parameters<typeof producedFor>[1]) => [1, 2, 3, 4, 5, 6].map((r) => producedFor(RULES_BUILDINGS, island, r));
     expect(per('lumber').map((g) => g.wood)).toEqual([1, 1, 1, 1, 1, 0]);
     expect(per('lumber').map((g) => g.iron)).toEqual([1, 0, 0, 1, 0, 0]);
     expect(per('mine').map((g) => g.iron)).toEqual([1, 1, 1, 1, 1, 0]);
     expect(per('mine').map((g) => g.wood)).toEqual([1, 0, 0, 1, 0, 0]);
     expect(per('smuggler-port').map((g) => g.arms)).toEqual([1, 1, 1, 1, 1, 1]);
     expect(per('spice-isles').map((g) => g.spice)).toEqual([2, 1, 2, 1, 2, 1]);
+  });
+
+  it('produces one of each good every round in the ship-bay rules (§6.2), with the island changes of §11.2', () => {
+    const per = (island: Parameters<typeof producedFor>[1]) => [1, 2, 3, 4, 5, 6].map((r) => producedFor(RULES_V07, island, r));
+    for (const good of ['wood', 'iron', 'spice', 'arms'] as const) expect(per(null).map((g) => g[good])).toEqual([1, 1, 1, 1, 1, 1]);
+    expect(per('lumber').map((g) => g.wood)).toEqual([2, 2, 2, 2, 2, 2]);
+    expect(per('lumber').map((g) => g.iron)).toEqual([1, 0, 0, 1, 0, 0]);
+    expect(per('mine').map((g) => g.iron)).toEqual([2, 2, 2, 2, 2, 2]);
+    expect(per('mine').map((g) => g.wood)).toEqual([1, 0, 0, 1, 0, 0]);
+    expect(per('smuggler-port').map((g) => g.arms)).toEqual([2, 2, 2, 2, 2, 2]);
   });
 
   it('announces production and keeps goods across rounds, except spice (§6.3)', () => {

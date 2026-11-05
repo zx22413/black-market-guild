@@ -193,11 +193,18 @@ export function investNotes(context: DecisionContext, choice: InvestChoice): Inv
     // §8: a shipyard built this round raises the capacity at once.
     if (choice.build === 'shipyard') notes.push({ at: 'ship', text: '造船廠當回合生效：可裝貨量 +1', label: '裝貨量', chips: [{ kind: 'ship', text: '+1' }] });
   }
-  // §9.5: another player's guard on an arriving ship confiscates its arms.
-  if (choice.load.arms > 0) notes.push({ at: 'ship', text: '軍火抵達時，若有別人的護衛守著會被沒收', label: '可能被沒收', chips: [{ kind: 'good', good: 'arms' }, { kind: 'role', role: 'guard' }, { kind: 'alert' }] });
+  if (unitsOf(choice.load) > 0) {
+    // §9.4: a customs officer names one good of an arriving ship and takes all of it. Ship-bay experiment: a hidden ship is out of their reach.
+    const hidden = view.rules.ships.enabled === 1 && choice.shipType != null && view.rules.ships.types[choice.shipType].secret === 1;
+    notes.push(
+      hidden
+        ? { at: 'ship', text: '密艙船：海關指名這艘船的貨無效', label: '海關無效', chips: [{ kind: 'role', role: 'customs' }, { kind: 'ship', text: '無效' }] }
+        : { at: 'ship', text: '海關可能指名船上的一種貨，船抵達時整塊沒收', label: '可能被沒收', chips: [{ kind: 'role', role: 'customs' }, { kind: 'alert' }] },
+    );
+  }
   // §9.6: sinking a ship that carries the wanted player's goods pays the pirates more.
   if (unitsOf(choice.load) > 0 && view.wanted.includes(view.playerId)) {
-    notes.push({ at: 'ship', text: '你被通緝：這艘船被擊沉時，海盜的戰利品 +100 G', label: '被通緝', chips: [{ kind: 'wanted' }, { kind: 'role', role: 'pirate' }, { kind: 'coin', text: `+${view.rules.wanted.lootBonus}` }] });
+    notes.push({ at: 'ship', text: `你被通緝：海盜取走這艘船的貨值時（最終值 1 或 2），另從銀行多拿 ${view.rules.wanted.lootBonus} G`, label: '被通緝', chips: [{ kind: 'wanted' }, { kind: 'role', role: 'pirate' }, { kind: 'coin', text: `+${view.rules.wanted.lootBonus}` }] });
   }
   // §6.3: spice left in the warehouse spoils at the end of the round (Spice Isles excepted, §11.2).
   if (split.left.spice > 0 && traitOf(view.rules, player.island).keepsSpice === 0) {

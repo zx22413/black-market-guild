@@ -1,6 +1,7 @@
 import {
   applyAction,
   createMatch,
+  RULES_BUILDINGS,
   type Action,
   type BuildingId,
   type GoodId,
@@ -37,7 +38,8 @@ export function apply(state: MatchState, action: Action): Played {
 
 /** A new match still in the island draft. */
 export function draft(players = 3, rules?: Rules, seed = 7): Played {
-  const created = createMatch({ seed, players: IDS.slice(0, players).map((id) => ({ id, name: id })), ...(rules ? { rules } : {}) });
+  // The mechanics tests pin the numbers of the rules with buildings (game-design.md before 2026-11-05); the ship bays (the default) have their own tests.
+  const created = createMatch({ seed, players: IDS.slice(0, players).map((id) => ({ id, name: id })), rules: rules ?? RULES_BUILDINGS });
   if (!created.ok) {
     throw new Error(created.error.message);
   }
