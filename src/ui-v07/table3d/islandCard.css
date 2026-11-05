@@ -266,8 +266,15 @@
   height: 40%;
 }
 /* An island with four rows (the smuggler port) gives the picture less room so no row is cut off. */
-.isle-card:has(.glance-row:nth-child(4)) .isle-art {
-  height: 46%;
+@media (min-width: 641px) {
+  .isle-card:has(.glance-row:nth-child(4)) .isle-art {
+    height: 46%;
+  }
+}
+@media (max-width: 640px) {
+  .isle-card:not(.small):has(.glance-row:nth-child(4)) .isle-art {
+    height: 30%;
+  }
 }
 .isle-card.small:has(.glance-row:nth-child(4)) .isle-art {
   height: 29%;

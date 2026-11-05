@@ -1,7 +1,7 @@
 import { useFrame, useLoader } from '@react-three/fiber';
 import { useMemo, useRef, useState } from 'react';
 import { BoxGeometry, CircleGeometry, PlaneGeometry, RingGeometry, SRGBColorSpace, TextureLoader, type MeshStandardMaterial } from 'three';
-import type { GoodId } from '../../v07/game';
+import { GOODS, type GoodId } from '../../v07/game';
 import { createGoldGlow, goldGlowPatch } from '../../ui/scene/goldGlow';
 import { goodIconUrl } from '../table3d/GoodIcon';
 import { mintGlow } from './mintMath';
@@ -67,6 +67,12 @@ function useMint(minted: boolean) {
     gold.uTime.value = t;
   });
   return patch ? { onBeforeCompile: patch, customProgramCacheKey: () => 'gold-glow' } : {};
+}
+
+// A crate's lid texture is loaded lazily and the table's one Suspense boundary wraps the whole scene, so the first crate of a
+// good to appear would blank the table until its icon arrived. The four icons are asked for as soon as this module loads.
+if (typeof document !== 'undefined') {
+  for (const good of GOODS) useLoader.preload(TextureLoader, goodIconUrl(good));
 }
 
 export function CrateModel({ good, tarp = false, faded = false, glow = false, spoiled = false, minted = false }: CrateModelProps) {

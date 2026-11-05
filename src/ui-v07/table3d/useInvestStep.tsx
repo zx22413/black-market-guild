@@ -29,6 +29,7 @@ import {
   withShipType,
   type InvestChoice,
 } from '../table/investChoice';
+import { cargoCards } from '../table/cargoCards';
 import { shipCards, shipEffect } from '../table/shipChoice';
 import { ReminderDialog } from '../table/ReminderDialog';
 import { isHintSeen, isReminderSkipped, markHintSeen, setReminderSkipped } from '../table/reminderSettings';
@@ -42,6 +43,7 @@ import { ArrowIcon, CloseIcon, CrateIcon, Flow, HouseIcon, IconDisc, InfoIcon, t
 import { LockHint } from './LockHint';
 import { usePhone } from './usePhone';
 import { SealSubmit } from './SealSubmit';
+import { CargoHand } from './CargoHand';
 import { ShipHand, ShipInfo, type ShipPick } from './ShipPicker';
 import { soundEngine } from '../audio/soundEngine';
 import { OWN_PLATE_REACH, type StageEnv, type StageParts } from './stage';
@@ -196,9 +198,9 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const shipPhase = typed && phase === 'ship';
   const shipOptions = typed ? shipCards(context) : [];
   const shipFx = shipEffect(context);
-  // The side shots: the ship pick everywhere, and the loading too except on a phone, where the island's own close shot
-  // (cropped to bring the crates up to size) stays, with the crates at their usual size.
-  const sideView = typed && (shipPhase || !phone);
+  // The side shot of the ship, for the pick and the loading alike: in the ship bays the goods are loaded from the
+  // cards of the cargo hand (CargoHand), so the island's warehouse is not on the table and the camera stays on the ship.
+  const sideView = typed;
   const scale = sideView ? SIDE_SCALE : 1;
   const house = warehouseCentre(home);
   const aroundHouse = scaledAbout([house.x, ISLAND_PLATEAU, house.z], scale);
@@ -457,24 +459,34 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       }}
     />
   );
+  const cargoHand = (
+    <CargoHand
+      cards={cargoCards(context, options, choice, board.round, fresh)}
+      todo={todo.cargo}
+      onLoad={loadGood}
+      onUnload={(g) => {
+        markHintSeen('unload-cargo');
+        setUnloaded(null);
+        setChoice((c) => unloadOne(c, g));
+      }}
+    />
+  );
   const shipPicked: ShipPick = shipDecided ? (choice.shipType ?? 'none') : null;
   const shipInfo = <ShipInfo cards={shipOptions} shown={peekShip ?? shipPicked} effect={shipFx} revealed={revealed} fresh={freshShip} layout={phone ? 'strip' : 'side'} />;
   const shipHand = <ShipHand cards={shipOptions} picked={shipPicked} todo={!shipDecided} effect={shipFx} revealed={revealed} fresh={freshShip} onPick={pickShip} onPeek={setPeekShip} />;
   return {
-    pins: shipPhase ? [] : pins,
+    // Ship bays: the ship's note is the only label; the stacks, clocks and warehouse note are on the cargo cards.
+    pins: shipPhase ? [] : typed ? pins.filter((p) => p.id === 'ship-note') : pins,
     camera,
     ...(typed ? { ownShip: true } : {}),
     ...(shipPhase ? { bareShot: true } : {}),
     ...(sideView ? { sideShot: true } : {}),
-    ...(sideView ? { cameraRig: (safe: SafeArea) => <ShipSideCamera angle={home} shot={shipPhase ? 'ship' : 'cargo'} safe={phone ? safe : { ...safe, right: Math.max(safe.right, shipPhase ? SHIP_INFO_ROOM : RANK_RAIL_ROOM) }} /> } : {}),
+    ...(sideView ? { cameraRig: (safe: SafeArea) => <ShipSideCamera angle={home} shot="ship" safe={phone ? safe : { ...safe, right: Math.max(safe.right, shipPhase ? SHIP_INFO_ROOM : RANK_RAIL_ROOM) }} /> } : {}),
     ...(phone ? { rivalRow: true } : { closeShot: true }),
     scene: (
       <>
         {typed ? (
           <>
-            <group position={[house.x, ISLAND_PLATEAU, house.z]} scale={scale}>
-              <group position={[-house.x, -ISLAND_PLATEAU, -house.z]}>{warehouse}</group>
-            </group>
             <group position={[dock.x, DECK_Y, dock.z]} scale={scale}>
               <group position={[-dock.x, -DECK_Y, -dock.z]}>{cargo}</group>
             </group>
@@ -489,7 +501,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       </>
     ),
     // On a wide screen the info card stands beside the ship (the overlay) and the hand is alone at the bottom; on a phone the strip stays above the hand.
-    ...(shipPhase ? { dock: phone ? <>{shipInfo}{shipHand}</> : shipHand } : {}),
+    ...(shipPhase ? { dock: phone ? <>{shipInfo}{shipHand}</> : shipHand } : typed ? { dock: cargoHand } : {}),
     bar: shipPhase ? (
       <>
         {chips}

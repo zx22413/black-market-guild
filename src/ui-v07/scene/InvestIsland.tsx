@@ -1,5 +1,5 @@
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
-import { useRef } from 'react';
+import { Suspense, useLayoutEffect, useRef, type ReactNode } from 'react';
 import type { Group, MeshBasicMaterial, MeshStandardMaterial } from 'three';
 import { GOODS, type BuildingId, type GoodId, type Goods } from '../../v07/game';
 import { Building } from '../../ui/scene/buildings/Building';
@@ -128,6 +128,38 @@ export function deckSlot(angle: number, i: number, count: number, state: ShipSta
   return [pose.position.x + Math.sin(pose.heading) * offset, DECK_Y + CRATE / 2, pose.position.z + Math.cos(pose.heading) * offset];
 }
 
+/**
+ * A crate that has just been loaded drops onto the deck from a little above, so pressing a card reads as cargo coming
+ * aboard. A crate already aboard slides to its new slot when the others change places (the slots follow the goods' order).
+ */
+function DropIn({ at, children }: { readonly at: Vec3; readonly children: ReactNode }) {
+  const group = useRef<Group>(null);
+  const age = useRef(0);
+  useLayoutEffect(() => {
+    // Born above its slot and small; the frame loop below brings it in.
+    group.current?.position.set(at[0], at[1] + DROP_HEIGHT, at[2]);
+    group.current?.scale.setScalar(0.55);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useFrame((_, delta) => {
+    const g = group.current;
+    if (!g) return;
+    age.current = Math.min(DROP_SECONDS, age.current + delta);
+    const t = age.current / DROP_SECONDS;
+    const ease = 1 - (1 - t) ** 3;
+    const follow = 1 - Math.exp(-Math.min(delta, 0.1) * SLIDE_RATE);
+    g.position.x += (at[0] - g.position.x) * follow;
+    g.position.z += (at[2] - g.position.z) * follow;
+    g.position.y = at[1] + DROP_HEIGHT * (1 - ease);
+    g.scale.setScalar(0.55 + 0.45 * ease);
+  });
+  return <group ref={group}>{children}</group>;
+}
+const DROP_SECONDS = 0.28;
+const DROP_HEIGHT = 1.6;
+/** How fast a crate slides to a changed slot (per second, exponential). */
+const SLIDE_RATE = 16;
+
 export interface ShipCargoProps {
   readonly angle: number;
   readonly load: Goods;
@@ -149,8 +181,18 @@ export function ShipCargo({ angle, load, capacity, onUnload, covered = false, st
       {Array.from({ length: slots }, (_, i) => {
         const at = deckSlot(angle, i, slots, state);
         const good = crates[i];
+        // A crate keeps its identity (good and ordinal among its kind) when the order of the deck changes, so only the new one drops in.
+        const ordinal = good === undefined ? 0 : crates.slice(0, i).filter((g) => g === good).length;
         if (good !== undefined) {
-          return <Crate key={i} good={good} position={at} state={covered ? 'tarp' : 'normal'} {...(onUnload ? { onClick: () => onUnload(good) } : {})} />;
+          const crate = (position: Vec3) => <Crate good={good} position={position} state={covered ? 'tarp' : 'normal'} {...(onUnload ? { onClick: () => onUnload(good) } : {})} />;
+          // Loading by cards: the crate that arrives drops in. Other players' covered ships and a submitted ship just stand.
+          return onUnload ? (
+            <Suspense key={`${good}-${ordinal}`} fallback={null}>
+              <DropIn at={at}>{crate([0, 0, 0])}</DropIn>
+            </Suspense>
+          ) : (
+            <group key={`${good}-${ordinal}`}>{crate(at)}</group>
+          );
         }
         return (
           <mesh key={i} position={at}>
