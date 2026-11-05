@@ -145,7 +145,7 @@ describe('investment choice on the island (only legal actions)', () => {
     const context = contextOf(state);
     const options = investOptions(context);
     const hidden = loadOne(options, withShipType(options, EMPTY_CHOICE, 'hidden'), 'wood');
-    expect(investNotes(context, hidden).map((n) => n.text)).toContain('密艙船：海關指名這艘船的貨無效');
+    expect(investNotes(context, hidden).map((n) => n.text)).toContain('幽靈號：海關指名這艘船的貨無效');
     const standard = loadOne(options, withShipType(options, EMPTY_CHOICE, 'standard'), 'wood');
     expect(investNotes(context, standard).map((n) => n.text)).toContain('海關可能指名船上的一種貨，船抵達時整塊沒收');
   });

@@ -198,7 +198,7 @@ export function investNotes(context: DecisionContext, choice: InvestChoice): Inv
     const hidden = view.rules.ships.enabled === 1 && choice.shipType != null && view.rules.ships.types[choice.shipType].secret === 1;
     notes.push(
       hidden
-        ? { at: 'ship', text: '密艙船：海關指名這艘船的貨無效', label: '海關無效', chips: [{ kind: 'role', role: 'customs' }, { kind: 'ship', text: '無效' }] }
+        ? { at: 'ship', text: '幽靈號：海關指名這艘船的貨無效', label: '海關無效', chips: [{ kind: 'role', role: 'customs' }, { kind: 'ship', text: '無效' }] }
         : { at: 'ship', text: '海關可能指名船上的一種貨，船抵達時整塊沒收', label: '可能被沒收', chips: [{ kind: 'role', role: 'customs' }, { kind: 'alert' }] },
     );
   }

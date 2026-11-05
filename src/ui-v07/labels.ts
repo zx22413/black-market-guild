@@ -90,7 +90,7 @@ export const VOYAGE_EVENT_TEXT: Readonly<Record<VoyageEventId, string>> = {
 };
 
 /** Experiment (docs/proposals/2026-11-ship-bays.md, not a decided rule): the five ship types. */
-export const SHIP_TYPE_LABELS: Readonly<Record<ShipTypeId, string>> = { standard: '白板船', gambler: '賭徒船', freighter: '貨櫃船', hidden: '密艙船', breaker: '破浪船' };
+export const SHIP_TYPE_LABELS: Readonly<Record<ShipTypeId, string>> = { standard: '信天翁號', gambler: '孤注號', freighter: '巨鯨號', hidden: '幽靈號', breaker: '海嘯號' };
 
 /** What sets a ship type apart besides its curve; null when nothing does. */
 export const SHIP_TYPE_TEXT: Readonly<Record<ShipTypeId, string | null>> = {
