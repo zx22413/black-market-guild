@@ -93,7 +93,7 @@ function investOptions(state: MatchState, playerId: PlayerId): Action[] {
       // Experiment (rules.ships): a sailing player also picks a ship type they can pay for and fill.
       return (typed ? SHIP_TYPE_IDS : ([undefined] as const))
         // A delayed ship must still arrive before the match ends.
-        .filter((shipType) => cash >= shipCostFor(rules, player.island, shipType) && units(load) <= room(shipType) && state.round + shipDelay(rules, shipType ?? 'standard') <= rules.rounds && shipTypeAvailable(rules, shipType ?? 'standard', player.lastShip[shipType ?? 'standard'], state.round))
+        .filter((shipType) => cash >= shipCostFor(rules, player.island, shipType, load) && units(load) <= room(shipType) && state.round + shipDelay(rules, shipType ?? 'standard') <= rules.rounds && shipTypeAvailable(rules, shipType ?? 'standard', player.lastShip[shipType ?? 'standard'], state.round))
         .map((shipType): Action => (shipType === undefined ? { type: 'invest', playerId, build, load } : { type: 'invest', playerId, build, load, shipType }));
     });
   });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RULES_BUILDINGS, RULES_V07, capacityFor, getLegalActions, producedFor, shipCostFor, shipFinalCapFor, type IslandId, type MatchState } from '../../../src/v07/game';
-import { G, cash, edit, find, plain, playRound, withDemand } from './helpers';
+import { G, cash, edit, find, plain, playRound, withDemand, withPrices } from './helpers';
 
 // §11.2 in the ship bays: the islands that work on the ship choice (draft numbers, game-design.md §11.2).
 
@@ -88,5 +88,45 @@ describe('lighthouse final value limit (§9.1 step 6)', () => {
 
   it('keeps the old lighthouse with no limit in the building rules', () => {
     expect(shipFinalCapFor(RULES_BUILDINGS, 'lighthouse', 'standard')).toBe(6);
+  });
+});
+
+describe('spice isles (ship bays)', () => {
+  const sale = (state: MatchState, spice = 1) => cash(playRound(state, { loads: { p1: G(0, 0, spice) }, rolls: { p1: 6 } }).events, 'sale', 'p1');
+
+  it('sells its own spice one cell higher (25 G), where an ordinary island sells at the new price', () => {
+    // Spice starts on the 150 G cell and rises two cells (demand 2, arrived 1): 200 G for everyone, 225 G with the bonus.
+    expect(sale(ready(null))).toBe(200);
+    expect(sale(ready('spice-isles'))).toBe(225);
+  });
+
+  it('never sells above the top of the track, and the market price itself does not move more', () => {
+    const top = withPrices(ready('spice-isles'), { ...ready('spice-isles').prices, spice: 6 });
+    expect(sale(top)).toBe(225);
+    const settled = find(playRound(ready('spice-isles'), { loads: { p1: G(0, 0, 1) } }).events, 'market-settled')[0]!;
+    expect(settled.priceAfter.spice).toBe(settled.priceBefore.spice + 2);
+  });
+
+  it('adds 25 G to the fee of a ship that carries any spice, once, whatever the amount', () => {
+    expect(shipCostFor(RULES_V07, 'spice-isles', 'standard')).toBe(0);
+    expect(shipCostFor(RULES_V07, 'spice-isles', 'standard', G(2, 0, 0))).toBe(0);
+    expect(shipCostFor(RULES_V07, 'spice-isles', 'standard', G(0, 0, 1))).toBe(25);
+    expect(shipCostFor(RULES_V07, 'spice-isles', 'standard', G(0, 0, 3))).toBe(25);
+    expect(shipCostFor(RULES_V07, 'spice-isles', 'hidden', G(1, 0, 1))).toBe(65);
+    expect(shipCostFor(RULES_V07, null, 'standard', G(0, 0, 3))).toBe(0);
+    expect(cash(playRound(ready('spice-isles'), { loads: { p1: G(0, 0, 1) } }).events, 'ship-cost', 'p1')).toBe(-25);
+    expect(cash(playRound(ready('spice-isles'), { loads: { p1: G(2) } }).events, 'ship-cost', 'p1')).toBe(0);
+  });
+
+  it('cannot launch a spice ship it cannot pay the fee for', () => {
+    const poor = edit(ready('spice-isles'), 'p1', { cash: 10 });
+    const loads = getLegalActions(poor, 'p1').flatMap((a) => (a.type === 'invest' && a.shipType !== undefined ? [a.load.spice] : []));
+    expect(loads.some((n) => n > 0)).toBe(false);
+    expect(loads.some((n) => n === 0)).toBe(true);
+  });
+
+  it('keeps the old half-rise drawback in the building rules', () => {
+    const old = edit(withDemand(plain(3, RULES_BUILDINGS).players.reduce((st, p) => edit(st, p.id, { stock: G(3, 3, 1, 1) }), plain(3, RULES_BUILDINGS)), G(2, 2, 2, 1)), 'p1', { island: 'spice-isles' });
+    expect(cash(playRound(old, { loads: { p1: G(0, 0, 1) }, rolls: { p1: 6 } }).events, 'sale', 'p1')).toBe(175);
   });
 });

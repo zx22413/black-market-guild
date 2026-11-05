@@ -150,6 +150,21 @@ describe('investment choice on the island (only legal actions)', () => {
     expect(investNotes(context, standard).map((n) => n.text)).toContain('海關可能指名船上的一種貨，船抵達時整塊沒收');
   });
 
+  it('tells the Spice Isles that a ship with spice pays 25 G more, and shows it in the summary', () => {
+    const state = edit(start(3, RULES_V07, { p1: 'spice-isles' }), 'p1', { cash: 1000, stock: G(2, 2, 2, 1), buildings: [] });
+    const context = contextOf(state);
+    const options = investOptions(context);
+    const ship = withShipType(options, EMPTY_CHOICE, 'standard');
+    const withSpice = loadOne(options, ship, 'spice');
+    const note = investNotes(context, withSpice).find((n) => n.label === '香料船費');
+    expect(note).toMatchObject({ text: '載了香料，這艘船的船費 +25 G', at: 'ship' });
+    expect(investSummary(context, withSpice)).toMatchObject({ shipCost: 25, cashAfter: 975 });
+    // No spice aboard, no fee and no note.
+    const withWood = loadOne(options, ship, 'wood');
+    expect(investNotes(context, withWood).some((n) => n.label === '香料船費')).toBe(false);
+    expect(investSummary(context, withWood).shipCost).toBe(0);
+  });
+
   it('tells a wanted player what it costs, as §9.6 says it', () => {
     const state = withWanted(edit(start(3, undefined, { p1: 'lumber' }), 'p1', { cash: 1000, stock: G(2, 2, 1, 1) }), ['p1']);
     const context = contextOf(state);

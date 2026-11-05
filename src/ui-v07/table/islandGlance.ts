@@ -21,7 +21,8 @@ const ship: GlanceIcon = { kind: 'ship' };
 export const ISLAND_GLANCE: Readonly<Record<IslandId, readonly GlanceItem[]>> = {
   'spice-isles': [
     { sign: 1, icon: good('spice'), text: '不壞・每回合 +1' },
-    { sign: -1, icon: good('spice'), text: '漲價只吃一半' },
+    { sign: 1, icon: good('spice'), text: '賣價高 1 格' },
+    { sign: -1, icon: ship, text: '載香料 +25 G' },
   ],
   'pirate-cove': [
     { sign: 1, icon: role('pirate'), text: '−2（一般 −1）' },

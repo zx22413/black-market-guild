@@ -24,10 +24,11 @@ export function roleFee(rules: Rules, island: IslandId | null, role: RoleId): nu
   return rules.roles.fees[role] + traitOf(rules, island).feeDelta[role];
 }
 
-export function shipCostFor(rules: Rules, island: IslandId | null, type: ShipTypeId = 'standard'): number {
+/** The ship fee of one launch; `load` (when known) adds the island's spice fee for a ship that carries spice. */
+export function shipCostFor(rules: Rules, island: IslandId | null, type: ShipTypeId = 'standard', load?: Goods): number {
   const t = traitOf(rules, island);
   const base = rules.ships.enabled === 1 ? (t.freeShips.includes(type) ? 0 : rules.ships.types[type].fee) : rules.shipCost;
-  return Math.max(0, base + t.shipCostDelta);
+  return Math.max(0, base + t.shipCostDelta + (load !== undefined && load.spice > 0 ? t.spiceShipFee : 0));
 }
 
 /** §8: base capacity, shipyard bonus (a shipyard built this round counts), island change. */

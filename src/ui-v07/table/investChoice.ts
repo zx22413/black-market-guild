@@ -154,7 +154,7 @@ export function investSummary(context: DecisionContext, choice: InvestChoice): I
   const { rules } = context.view;
   const loaded = unitsOf(choice.load);
   const buildCash = choice.build === null ? 0 : rules.buildings.costs[choice.build].cash;
-  const shipCost = shipCostFor(rules, player.island, choice.shipType ?? undefined);
+  const shipCost = shipCostFor(rules, player.island, choice.shipType ?? undefined, choice.load);
   const sails = loaded > 0;
   return { buildCash, shipCost, sails, cashBefore: player.cash, cashAfter: player.cash - buildCash - (sails ? shipCost : 0), loaded, capacity: capacityWith(context, choice.build, choice.shipType ?? null) };
 }
@@ -201,6 +201,11 @@ export function investNotes(context: DecisionContext, choice: InvestChoice): Inv
         ? { at: 'ship', text: '幽靈號：海關指名這艘船的貨無效', label: '海關無效', chips: [{ kind: 'role', role: 'customs' }, { kind: 'ship', text: '無效' }] }
         : { at: 'ship', text: '海關可能指名船上的一種貨，船抵達時整塊沒收', label: '可能被沒收', chips: [{ kind: 'role', role: 'customs' }, { kind: 'alert' }] },
     );
+  }
+  // §11.2: the spice isles charge a ship that carries spice.
+  const spiceFee = traitOf(view.rules, player.island).spiceShipFee;
+  if (spiceFee > 0 && choice.load.spice > 0 && unitsOf(choice.load) > 0) {
+    notes.push({ at: 'ship', text: `載了香料，這艘船的船費 +${spiceFee} G`, label: '香料船費', chips: [{ kind: 'good', good: 'spice', count: choice.load.spice }, { kind: 'ship', text: `+${spiceFee}` }] });
   }
   // §9.6: sinking a ship that carries the wanted player's goods pays the pirates more.
   if (unitsOf(choice.load) > 0 && view.wanted.includes(view.playerId)) {

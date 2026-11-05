@@ -60,7 +60,7 @@ export const ISLAND_LABELS: Readonly<Record<IslandId, string>> = {
 
 /** §11.2 */
 export const ISLAND_TEXT: Readonly<Record<IslandId, { readonly pro: string; readonly con: string }>> = {
-  'spice-isles': { pro: '香料不會壞；每回合多產 1 香料', con: '自己賣香料時，漲價只吃一半（無條件捨去）' },
+  'spice-isles': { pro: '香料不會壞；每回合多產 1 香料；自己船上的香料賣價高 1 格（25 G）', con: '船上有香料時，這艘船的船費 +25 G（每艘一次）' },
   'pirate-cove': { pro: '自己部署的海盜 −2（一般 −1）', con: '部署護衛 +25 G' },
   lumber: { pro: '自己的船可裝貨量 +1', con: '自己每艘船出航另付 25 G 港口稅' },
   mine: { pro: '鐵礦每回合多產 1', con: '木材只在第 1、4 回合生產' },

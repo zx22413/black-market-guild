@@ -88,7 +88,7 @@ function sail(action: Invest): StepFn {
       stock: subtractGoods(p.stock, action.load),
       lastShip: { ...p.lastShip, [action.shipType ?? 'standard']: current.round },
     }));
-    const cost = shipCostFor(current.rules, playerOf(current, action.playerId).island, action.shipType);
+    const cost = shipCostFor(current.rules, playerOf(current, action.playerId).island, action.shipType, action.load);
     return changeCash(unloaded, action.playerId, -cost, 'ship-cost', `r${current.round}-${action.playerId}`);
   };
 }

@@ -23,6 +23,10 @@ export interface IslandTrait {
   readonly keepsSpice: number;
   /** Per good: 1 = this player only gets half (rounded down) of a price rise when selling. */
   readonly halfRise: Goods;
+  /** Ship bays: per good, cells above the new price at which this player sells its own cargo (clamped to the track's top). */
+  readonly sellStepBonus: Goods;
+  /** Ship bays: G added to the ship fee of a ship that carries any spice. */
+  readonly spiceShipFee: number;
   readonly ownShipModifier: number;
   /** Added per pirate / guard this player deploys. */
   readonly pirateModifier: number;
@@ -137,6 +141,8 @@ export const NEUTRAL_TRAIT: IslandTrait = {
   bonusProduction: goods({}),
   keepsSpice: 0,
   halfRise: goods({}),
+  sellStepBonus: goods({}),
+  spiceShipFee: 0,
   ownShipModifier: 0,
   pirateModifier: 0,
   guardModifier: 0,
@@ -288,6 +294,8 @@ export const RULES_V07: Rules = {
       mine: trait({ bonusProduction: goods({ iron: 1 }), productionEvery: goods({ wood: 3 }) }),
       'smuggler-port': trait({ bonusProduction: goods({ arms: 1 }), armsUncoverable: 1, feeDelta: { ...NO_ROLES, guard: 50 }, freeShips: ['hidden'] }),
       'free-port': trait({ capacityDelta: -1, freeShips: ['gambler'] }),
+      // §11.2: spice sells one cell higher, a ship with spice pays 25 G more (the old half-rise drawback hardly mattered).
+      'spice-isles': trait({ keepsSpice: 1, bonusProduction: goods({ spice: 1 }), sellStepBonus: goods({ spice: 1 }), spiceShipFee: 25 }),
       lighthouse: trait({ ownShipModifier: 1, ownShipFinalCap: 5, feeDelta: { ...NO_ROLES, customs: -25 } }),
     },
   },

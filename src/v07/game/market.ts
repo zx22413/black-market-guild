@@ -44,12 +44,14 @@ function goodsValue(state: MatchState): number {
   return state.roundState.voyageEvent === 'black-market-rush' ? state.rules.voyageEvents.blackMarketRushGoodsValue : state.rules.roles.smuggler.goodsValue;
 }
 
-/** §7.3, §11.2: sale price at the new step; the spice isles only get half (rounded down) of a rise. */
+/** §7.3, §11.2: sale price at the new step; the old spice isles got half (rounded down) of a rise, the ship-bay ones sell cells higher. */
 export function salePrice(state: MatchState, playerId: PlayerId, good: GoodId, prices: Prices): number {
   const before = prices.before[good];
   const rise = prices.after[good] - before;
-  const halved = rise > 0 && traitOf(state.rules, playerOf(state, playerId).island).halfRise[good] === 1;
-  return priceAt(state.rules, good, halved ? before + Math.floor(rise / 2) : prices.after[good]);
+  const trait = traitOf(state.rules, playerOf(state, playerId).island);
+  const halved = rise > 0 && trait.halfRise[good] === 1;
+  const step = Math.min(state.rules.price.steps - 1, (halved ? before + Math.floor(rise / 2) : prices.after[good]) + trait.sellStepBonus[good]);
+  return priceAt(state.rules, good, step);
 }
 
 /** Smugglers taking goods from someone else's ship. */

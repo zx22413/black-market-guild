@@ -44,7 +44,7 @@ function scoreInvest(view: PlayerView, action: Invest, persona: Personality): nu
   const cost = action.build === null ? null : buildingCost(rules, action.build);
   const lastRound = view.round >= rules.rounds;
   const shippedUnits = GOODS.reduce((sum, g) => sum + action.load[g], 0);
-  let score = shippedUnits > 0 ? -shipCostFor(rules, player.island, action.shipType) : 0;
+  let score = shippedUnits > 0 ? -shipCostFor(rules, player.island, action.shipType, action.load) : 0;
   // Experiment (rules.ships): the ship type's payout curve replaces the plain arrive-or-sink odds.
   const typed = action.shipType === undefined ? null : rules.ships.types[action.shipType];
   const outlook = action.shipType === undefined ? null : curveOutlook(rules, action.shipType, expectedOwnModifier(view, trait.ownShipModifier, rules.ships.types[action.shipType].delay > 0), trait.ownShipFinalCap);

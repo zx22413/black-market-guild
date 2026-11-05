@@ -16,6 +16,9 @@ const COVER_SHARE = 0.1;
 const KEPT_SPICE_SHARE = 0.3;
 /** Ship bays: share of rounds a bot is assumed to pick a ship type that its island makes free. */
 const FREE_SHIP_USE = 0.25;
+/** Share of a ship's units a bot is assumed to fill with spice, and of its ships that carry any. */
+const SPICE_SHARE = 0.25;
+const SPICE_SHIP_SHARE = 0.5;
 /** Share of produced arms a bot would have covered with its own smuggler. */
 
 /** Expected net value of one more unit of a good: its sale minus its share of the ship cost. */
@@ -110,5 +113,9 @@ export function islandWorth(view: PlayerView, island: IslandId, persona: Persona
 
   const cover = t.armsUncoverable === 1 ? rules.rounds * perRound(rules, island, 'arms') * price * ARMS_SEIZURE_RISK * COVER_SHARE : 0;
 
-  return productionWorth(rules, island, price, persona) + sailing + roles + spice - halfRiseCost(rules, island) - cover;
+  // Ship bays: cells higher on the units it sells, minus the fee on the ships that carry spice.
+  const sellBonus = GOODS.reduce((sum, g) => sum + t.sellStepBonus[g] * rules.price.tracks[g].step * capacity * SPICE_SHARE * sails, 0);
+  const spiceFee = t.spiceShipFee * sails * SPICE_SHIP_SHARE;
+
+  return productionWorth(rules, island, price, persona) + sailing + roles + spice + sellBonus - spiceFee - halfRiseCost(rules, island) - cover;
 }
