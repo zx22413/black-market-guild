@@ -176,6 +176,8 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     };
   });
 
+  // The reason behind a hand with nothing to pick: the first greyed card that is not about cooldown or cash.
+  const noRoleReason = cards.every((c) => !c.legal) ? (cards.map((c) => c.reason).find((r) => r !== null && !r.startsWith('冷卻') && !r.startsWith('現金不足')) ?? null) : null;
   const shown = peek ?? choice.role;
   const shownCard = shown !== null && shown !== 'none' ? cards.find((c) => c.id === shown) : undefined;
   // The description strip sits above the hand, so the hand itself never moves: it describes the role pointed at or
@@ -188,6 +190,8 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
           <b>你的船上</b>
           <CargoChip cargo={cargo} />
         </header>
+        {/* Every role greyed (nobody's ship is in the voyage, say): the one reason, so the empty hand does not look like a fault. */}
+        {noRoleReason && <p className="why">沒有角色可以選：{noRoleReason}，只能「不部署」。</p>}
       </div>
     ) : (
       <div className={`dep-strip ${stripOpen ? 'open' : ''}`} aria-live="polite" onClick={() => setStripOpen((v) => !v)}>

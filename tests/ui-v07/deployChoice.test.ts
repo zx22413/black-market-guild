@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DecisionContext } from '../../src/v07/bots';
-import { applyAction, getLegalActions, getPendingDecisions, getPlayerView, type Action, type MatchState } from '../../src/v07/game';
+import { RULES_V07, applyAction, getLegalActions, getPendingDecisions, getPlayerView, type Action, type MatchState } from '../../src/v07/game';
 import {
   EMPTY_DEPLOY,
   blockedReason,
@@ -88,6 +88,39 @@ describe('role deployment choice (only legal actions)', () => {
     expect(context.view.myAvailableRoles).not.toContain('pirate');
     expect(card.legal).toBe(false);
     expect(card.reason).toBe('冷卻中，第 4 回合可用');
+  });
+
+  it('says a freighter that is still at sea is why guard and diplomat have no target (ship bays)', () => {
+    let state = start(3, RULES_V07, { p1: 'mine', p2: 'mine', p3: 'mine' });
+    for (const id of ['p1', 'p2', 'p3']) state = edit(state, id, { stock: G(1, 1, 1, 0) });
+    state = apply(state, { type: 'invest', playerId: 'p1', build: null, load: G(1), shipType: 'freighter' });
+    for (const id of ['p2', 'p3']) state = apply(state, { type: 'invest', playerId: id, build: null, load: G(0) });
+    const cards = roleCards(contextOf(state), deployOptions(contextOf(state)));
+    for (const role of ['guard', 'diplomat']) {
+      const card = cards.find((c) => c.id === role)!;
+      expect(card.legal, role).toBe(false);
+      expect(card.reason, role).toBe('你的巨鯨號還在港外，第 2 回合抵達才能部署');
+    }
+    // Nobody's ship is in this round's voyage, so no other role has a target either, and the card says so.
+    for (const role of ['customs', 'pirate', 'smuggler']) expect(cards.find((c) => c.id === role)!.reason, role).toBe('這回合沒有船出航，沒有目標');
+    expect(cards.filter((c) => c.legal)).toEqual([]);
+  });
+
+  it('tells the customs officer that only its own ship sails (it cannot name its own cargo)', () => {
+    let state = start(3, RULES_V07, { p1: 'mine', p2: 'mine', p3: 'mine' });
+    for (const id of ['p1', 'p2', 'p3']) state = edit(state, id, { stock: G(1, 1, 1, 0) });
+    state = apply(state, { type: 'invest', playerId: 'p1', build: null, load: G(1), shipType: 'standard' });
+    for (const id of ['p2', 'p3']) state = apply(state, { type: 'invest', playerId: id, build: null, load: G(0) });
+    const cards = roleCards(contextOf(state), deployOptions(contextOf(state)));
+    expect(cards.find((c) => c.id === 'customs')!.reason).toBe('海關只能針對別人的船，這回合只有你的船出航');
+    expect(cards.find((c) => c.id === 'guard')!.legal).toBe(true);
+  });
+
+  it('keeps the plain reason for guard and diplomat when the own ship is not at sea', () => {
+    const state = start(3, RULES_V07, { p1: 'mine', p2: 'mine', p3: 'mine' });
+    const sailed = ['p1', 'p2', 'p3'].reduce((s, id) => apply(edit(s, id, { stock: G(1, 1, 1, 0) }), { type: 'invest', playerId: id, build: null, load: id === 'p1' ? G(0) : G(1), shipType: id === 'p1' ? undefined : 'standard' } as Action), state);
+    const cards = roleCards(contextOf(sailed), deployOptions(contextOf(sailed)));
+    expect(cards.find((c) => c.id === 'guard')!.reason).toBe('沒有可選的目標');
   });
 
   it('a smuggler may board any ship, its own to cover', () => {
