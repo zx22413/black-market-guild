@@ -49,7 +49,7 @@
 .ship-dice {
   display: grid;
   /* A label column ("擲出" over "拿貨值") and the six faces: the row says what the percentages are. */
-  grid-template-columns: 52px repeat(6, minmax(0, 1fr));
+  grid-template-columns: 52px repeat(var(--faces, 6), minmax(0, 1fr));
   gap: 6px;
   margin: 4px 0 0;
   padding: 0;
@@ -131,6 +131,11 @@
   }
   :root:root:root .ship-hand .dep-card.on {
     background: linear-gradient(0deg, #f0c860 0 50px, #fff3c9 50px);
+  }
+  /* "沉 17→0%" is longer than the narrow card: a little smaller. */
+  :root:root:root .ship-hand .ship-odds .changed {
+    font-size: 9.5px;
+    letter-spacing: -0.05em;
   }
   :root:root:root .ship-hand .ship-odds {
     justify-content: center;
@@ -249,4 +254,106 @@
 .ship-info .ship-dice li.label b {
   font-size: var(--fs-note);
   line-height: 18px;
+}
+
+@media (max-width: 640px) {
+  /* A curve that runs to 9 (the breaker): nine narrow faces. */
+  :root:root:root .ship-dice.long {
+    grid-template-columns: 36px repeat(var(--faces, 9), minmax(0, 1fr));
+    gap: 2px;
+  }
+  :root:root:root .ship-dice.long li {
+    padding-right: 0;
+    padding-left: 0;
+  }
+  :root:root:root .ship-dice.long li b {
+    font-size: 10px;
+    letter-spacing: -0.03em;
+  }
+  :root:root:root .ship-dice.long li small {
+    font-size: 10px;
+  }
+}
+
+/*
+ * What the public modifiers do to a ship, shown once when it is first picked in a round (ShipPicker.tsx): the modifier flies in
+ * from the event chip, the "擲出" column says which rolls land on each final value (those no roll reaches dim), and the note
+ * says where the numbers come from. `.fresh` plays it; without it (picked again) the table just shows the result.
+ */
+.ship-token {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  padding: 2px 12px;
+  border: 2px solid #8a5a2b;
+  border-radius: 999px;
+  background: rgb(249 239 214 / 0.97);
+  color: #4a2c14;
+  font-size: var(--fs-body);
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgb(0 0 0 / 0.3);
+  pointer-events: none;
+}
+.ship-dice li em {
+  font-style: normal;
+  font-size: var(--fs-note);
+  line-height: 1.2;
+  color: #6b5537;
+  white-space: nowrap;
+}
+.ship-dice li.dead {
+  opacity: 0.35;
+}
+.ship-info .ship-dice li em {
+  flex: 0 0 56px;
+}
+.ship-info .ship-dice.rolled li small {
+  flex: 1;
+}
+.ship-effect-note {
+  margin: 6px 0 0;
+  font-size: var(--fs-note);
+  color: #6b5537;
+}
+.ship-dice.fresh li em {
+  opacity: 0;
+  animation: ship-roll-in 320ms ease forwards;
+  animation-delay: calc(750ms + var(--i, 0) * 110ms);
+}
+.ship-dice.fresh li.label em {
+  animation-delay: 750ms;
+}
+.ship-dice.fresh li.dead {
+  animation: ship-row-dim 360ms ease both;
+  animation-delay: calc(900ms + var(--i, 0) * 110ms);
+}
+@keyframes ship-roll-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes ship-row-dim {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ship-dice.fresh li em {
+    opacity: 1;
+    animation: none;
+  }
+  .ship-dice.fresh li.dead {
+    opacity: 0.35;
+    animation: none;
+  }
 }

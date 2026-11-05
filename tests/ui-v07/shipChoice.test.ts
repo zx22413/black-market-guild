@@ -12,7 +12,7 @@ import {
   unitsOf,
   withShipType,
 } from '../../src/ui-v07/table/investChoice';
-import { knownModifier, shipCards } from '../../src/ui-v07/table/shipChoice';
+import { shipCards, shipEffect } from '../../src/ui-v07/table/shipChoice';
 import { G, edit, start } from '../v07/game/helpers';
 
 function contextOf(state: MatchState, playerId = 'p1'): DecisionContext {
@@ -35,40 +35,99 @@ describe('ship cards (ship-bay experiment)', () => {
     expect(shipCards(contextOf(state))).toEqual([]);
   });
 
-  it('lists the five types with their fee, rest time and the die faces of the curve', () => {
+  it('lists the five types with their fee, rest time and the curve', () => {
     const context = scenario();
     expect(shipCards(context).map((c) => c.id)).toEqual(['standard', 'gambler', 'freighter', 'hidden', 'breaker']);
     const standard = card(context, 'standard');
-    expect(standard.rows.map((r) => r.percent)).toEqual([0, 30, 45, 60, 75, 100]);
+    expect(standard.curve.map((r) => r.percent)).toEqual([0, 30, 45, 60, 75, 100]);
     expect(standard).toMatchObject({ fee: 0, cooldown: 0, sinkPercent: 17, legal: true, reason: null });
     expect(card(context, 'gambler')).toMatchObject({ fee: 150, cooldown: 1, sinkPercent: 67 });
     expect(card(context, 'freighter')).toMatchObject({ sinkPercent: 0, capacityBonus: 2, delay: 1 });
     expect(card(context, 'hidden').fee).toBe(40);
   });
 
-  it('adds the public modifiers of the voyage event to the die faces (a storm sinks more, a tailwind lifts the breaker)', () => {
+  it("lists each ship's own curve by final value, with no modifier in it (a tailwind does not move it)", () => {
+    for (const event of [null, 'tailwind', 'storm'] as const) {
+      const context = scenario({}, event);
+      expect(card(context, 'standard').curve.map((r) => r.percent)).toEqual([0, 30, 45, 60, 75, 100]);
+      expect(card(context, 'standard').curve.map((r) => r.sinks)).toEqual([true, false, false, false, false, false]);
+      // The gambler sinks at final value 4 and below whatever the wind does.
+      expect(card(context, 'gambler').curve.map((r) => r.percent)).toEqual([0, 0, 0, 0, 125, 250]);
+      expect(card(context, 'freighter').curve.map((r) => r.percent)).toEqual([25, 35, 45, 55, 65, 75]);
+    }
+  });
+
+  it("shows the breaker's curve up to its top (final value 9, and nothing above it pays more) and says it is not capped", () => {
+    const context = scenario();
+    const breaker = card(context, 'breaker');
+    expect(breaker.curve.map((r) => r.final)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(breaker.curve.map((r) => r.percent)).toEqual([0, 20, 35, 50, 70, 100, 175, 250, 300]);
+    expect(breaker.curve.map((r) => r.orMore)).toEqual([false, false, false, false, false, false, false, false, true]);
+    expect(breaker.cap).toBeNull();
+    expect(card(context, 'standard').cap).toBe(6);
+    expect(card(context, 'standard').curve.some((r) => r.orMore)).toBe(false);
+  });
+
+  it("is the ship's own data: no voyage event, island or wind changes the curve or the sinking chance", () => {
+    const calm = scenario();
+    for (const [context, why] of [
+      [scenario({}, 'tailwind'), 'tailwind'],
+      [scenario({}, 'storm'), 'storm'],
+      [scenario({}, null, 'lighthouse'), 'a lighthouse island'],
+    ] as const) {
+      for (const id of ['standard', 'gambler', 'freighter', 'hidden', 'breaker']) {
+        // (A lighthouse island adds to the fee, which is the island's own rule and not part of the curve.)
+        expect(card(context, id).curve, `${id} under ${why}`).toEqual(card(calm, id).curve);
+        expect(card(context, id).sinkPercent, `${id} under ${why}`).toBe(card(calm, id).sinkPercent);
+      }
+    }
+  });
+
+  it('counts the sinking chance over the die faces with the final value equal to the roll', () => {
+    const context = scenario();
+    // Final value 1 sinks the standard ship; 1 to 4 sink the gambler; the breaker's curve above 6 is not a die face.
+    expect(card(context, 'standard').sinkPercent).toBe(17);
+    expect(card(context, 'gambler').sinkPercent).toBe(67);
+    expect(card(context, 'freighter').sinkPercent).toBe(0);
+    expect(card(context, 'breaker').sinkPercent).toBe(17);
+  });
+
+  it('keeps what the public modifiers do apart from the ship: a tailwind lifts every roll by one', () => {
+    const context = scenario({}, 'tailwind');
+    expect(shipEffect(context)).toMatchObject({ total: 1, parts: [{ label: '順風', delta: 1 }], conditional: null });
+    const standard = card(context, 'standard');
+    // The curve and its own sinking chance stay; the rolls that land on each final value shift up (roll 6 stays at the cap).
+    expect(standard.sinkPercent).toBe(17);
+    expect(standard.effectRolls).toEqual([[], [1], [2], [3], [4], [5, 6]]);
+    expect(standard.sinkPercentNow).toBe(0);
+    // The gambler sinks on final values 1 to 4: rolls 1 to 3 with the wind.
+    expect(card(context, 'gambler').sinkPercentNow).toBe(50);
+    // The breaker is not capped: roll 6 reaches final value 7, and nothing reaches 8 or 9+.
+    expect(card(context, 'breaker').effectRolls).toEqual([[], [1], [2], [3], [4], [5], [6], [], []]);
+    expect(card(context, 'freighter').sinkPercentNow).toBe(0);
+  });
+
+  it('a storm lowers every roll by one, and the island adds its own', () => {
     const storm = scenario({}, 'storm');
-    expect(knownModifier(storm)).toBe(-1);
-    // Rolls 1 and 2 both end at final value 1 and sink.
-    expect(card(storm, 'standard')).toMatchObject({ sinkPercent: 33 });
-    expect(card(storm, 'standard').rows.map((r) => r.final)).toEqual([1, 1, 2, 3, 4, 5]);
+    expect(shipEffect(storm)).toMatchObject({ total: -1, parts: [{ label: '暴風雨', delta: -1 }] });
+    expect(card(storm, 'standard').effectRolls).toEqual([[1, 2], [3], [4], [5], [6], []]);
+    expect(card(storm, 'standard').sinkPercentNow).toBe(33);
 
-    const tailwind = scenario({}, 'tailwind');
-    expect(knownModifier(tailwind)).toBe(1);
-    expect(card(tailwind, 'standard').rows.map((r) => r.final)).toEqual([2, 3, 4, 5, 6, 6]);
-    // Only the breaker is not capped at the die's top face: roll 6 ends at final value 7.
-    expect(card(tailwind, 'breaker').rows.map((r) => r.percent)).toEqual([20, 35, 50, 70, 100, 175]);
+    const both = scenario({}, 'tailwind', 'lighthouse');
+    expect(shipEffect(both).parts.map((p) => p.label)).toEqual(['順風', '燈塔島']);
+    expect(shipEffect(both).total).toBe(2);
+    // The plain card is the same under any of them.
+    expect(card(both, 'standard').sinkPercent).toBe(17);
   });
 
-  it('does not count the sea fog or the moonless night, which only move ships a role targets', () => {
-    expect(knownModifier(scenario({}, 'sea-fog'))).toBe(0);
-    expect(knownModifier(scenario({}, 'moonless-night'))).toBe(0);
-  });
-
-  it("adds the island's bonus for the player's own ship", () => {
-    const context = scenario({}, null, 'lighthouse');
-    expect(knownModifier(context)).toBe(1);
-    expect(card(context, 'standard').rows.map((r) => r.final)).toEqual([2, 3, 4, 5, 6, 6]);
+  it('says only in a line that sea fog and a moonless night move the ships a role targets (nothing is added)', () => {
+    for (const event of ['sea-fog', 'moonless-night'] as const) {
+      const effect = shipEffect(scenario({}, event));
+      expect(effect.total).toBe(0);
+      expect(effect.conditional).toContain('鎖定');
+    }
+    expect(shipEffect(scenario({}, 'calm-seas')).conditional).toBeNull();
+    expect(card(scenario({}, 'sea-fog'), 'standard').sinkPercentNow).toBe(17);
   });
 
   it('greys a type that is resting, too dear, or could not arrive before the end, and says why', () => {

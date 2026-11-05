@@ -1,71 +1,112 @@
-import { useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import type { ShipTypeId } from '../../v07/game';
 import { SHIP_TYPE_LABELS, SHIP_TYPE_TEXT } from '../labels';
-import type { ShipCard } from '../table/shipChoice';
+import type { ShipCard, ShipEffect } from '../table/shipChoice';
 import { ClockIcon, ForbidIcon, IconDisc, tokenIconUrl } from './icons';
 import './shipPicker.css';
 
 // The ship pick of the ship-bay experiment (docs/proposals/2026-11-ship-bays.md): a hand with one card per ship
 // type (fee, rest time, sinking chance) in the role hand's layout (useDeployStep), and the card that tells the
-// rest of the card pointed at or picked: its dice table and ability. On a wide screen that card stands beside
-// the ship, so the ship keeps the height; on a phone it is the strip above the hand, as for the roles.
+// rest of the card pointed at or picked: its curve and ability. On a wide screen that card stands beside the
+// ship, so the ship keeps the height; on a phone it is the strip above the hand, as for the roles.
+//
+// The curve and the sinking chance are the ship's own data. What the public modifiers (the voyage event, the
+// island) do to it is shown once: when a ship is first picked in a round (hovering does not count), the
+// modifier flies into the table, a column says which rolls land on each final value, and the card's sinking
+// chance goes from its own value to the one with the modifier. Picked again, it just shows the result.
 
 /** The ship card picked: a ship type, "不出航" ('none'), or nothing yet (null). */
 export type ShipPick = ShipTypeId | 'none' | null;
 
 const signed = (n: number): string => `${n > 0 ? '+' : '−'}${Math.abs(n)}`;
+const partsText = (effect: ShipEffect): string => effect.parts.map((p) => `${p.label} ${signed(p.delta)}`).join('、');
+const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/** How long the modifier's flight takes (ms); the table changes after it. */
+export const FLIGHT_MS = 750;
+const COUNT_STEPS = 10;
+const COUNT_STEP_MS = 50;
+
+/** "17→0%": the chance counts from the ship's own value to the one with the modifier when `play`, else it just shows both. */
+function SinkChange({ from, to, play }: { readonly from: number; readonly to: number; readonly play: boolean }) {
+  const [value, setValue] = useState(play && !reducedMotion() ? from : to);
+  useEffect(() => {
+    if (!play || reducedMotion()) {
+      setValue(to);
+      return undefined;
+    }
+    setValue(from);
+    const timers = Array.from({ length: COUNT_STEPS }, (_, i) => window.setTimeout(() => setValue(Math.round(from + ((to - from) * (i + 1)) / COUNT_STEPS)), FLIGHT_MS + (i + 1) * COUNT_STEP_MS));
+    return () => timers.forEach(clearTimeout);
+  }, [play, from, to]);
+  return <>{from === to ? `${to}%` : `${from}→${value}%`}</>;
+}
 
 interface ShipHandProps {
   readonly cards: readonly ShipCard[];
   readonly picked: ShipPick;
   /** Gold breathing on the hand until a card is picked. */
   readonly todo: boolean;
+  readonly effect: ShipEffect;
+  /** Ships picked at least once this round: their card shows what the modifier does to the sinking chance. */
+  readonly revealed: ReadonlySet<ShipTypeId>;
+  /** The ship whose effect is playing right now. */
+  readonly fresh: ShipTypeId | null;
   readonly onPick: (pick: ShipTypeId | 'none') => void;
   /** The card the pointer is on (null when it leaves): the info card describes it. Only a mouse peeks by hovering, as in the role hand. */
   readonly onPeek: (pick: ShipPick) => void;
 }
 
-export function ShipHand({ cards, picked, todo, onPick, onPeek }: ShipHandProps) {
+export function ShipHand({ cards, picked, todo, effect, revealed, fresh, onPick, onPeek }: ShipHandProps) {
   return (
     <div className={`dep-hand ship-hand ${todo ? 'todo' : ''} ${picked !== null ? 'picked' : ''}`} onPointerLeave={(e) => e.pointerType === 'mouse' && onPeek(null)}>
-      {cards.map((c) => (
-        <button
-          key={c.id}
-          type="button"
-          className={`dep-card ship-card ${picked === c.id ? 'on' : ''} ${c.legal ? '' : 'off'}`}
-          data-ship-card={c.id}
-          data-done={picked === c.id}
-          onPointerEnter={(e) => e.pointerType === 'mouse' && onPeek(c.id)}
-          onFocus={() => onPeek(c.id)}
-          onBlur={() => onPeek(null)}
-          aria-disabled={!c.legal}
-          // A greyed card says why on a tap too (touch browsers do not always focus a tapped button).
-          onClick={() => (c.legal ? onPick(c.id) : onPeek(c.id))}
-        >
-          {!c.legal && (
-            <span className="dep-card-off" aria-hidden="true">
-              <ForbidIcon />
-            </span>
-          )}
-          <span className="dep-ic">
-            <img src={tokenIconUrl('ship')} alt="" />
-          </span>
-          <b>{SHIP_TYPE_LABELS[c.id]}</b>
-          <span className="dep-fee" title={`船費 ${c.fee} G`}>
-            <IconDisc src={tokenIconUrl('coin')} />
-            {c.fee}
-          </span>
-          <span className="ship-odds" title={`沉船機率 ${c.sinkPercent}%${c.cooldown > 0 ? `；用過後冷卻 ${c.cooldown} 回合` : ''}`}>
-            <span>沉 {c.sinkPercent}%</span>
-            {c.cooldown > 0 && (
-              <span className="ship-rest">
-                <ClockIcon />
-                {c.cooldown}
+      {cards.map((c) => {
+        const withEffect = effect.total !== 0 && revealed.has(c.id);
+        return (
+          <button
+            key={c.id}
+            type="button"
+            className={`dep-card ship-card ${picked === c.id ? 'on' : ''} ${c.legal ? '' : 'off'}`}
+            data-ship-card={c.id}
+            data-done={picked === c.id}
+            onPointerEnter={(e) => e.pointerType === 'mouse' && onPeek(c.id)}
+            onFocus={() => onPeek(c.id)}
+            onBlur={() => onPeek(null)}
+            aria-disabled={!c.legal}
+            // A greyed card says why on a tap too (touch browsers do not always focus a tapped button).
+            onClick={() => (c.legal ? onPick(c.id) : onPeek(c.id))}
+          >
+            {!c.legal && (
+              <span className="dep-card-off" aria-hidden="true">
+                <ForbidIcon />
               </span>
             )}
-          </span>
-        </button>
-      ))}
+            <span className="dep-ic">
+              <img src={tokenIconUrl('ship')} alt="" />
+            </span>
+            <b>{SHIP_TYPE_LABELS[c.id]}</b>
+            <span className="dep-fee" title={`船費 ${c.fee} G`}>
+              <IconDisc src={tokenIconUrl('coin')} />
+              {c.fee}
+            </span>
+            <span
+              className="ship-odds"
+              title={`沉船機率 ${c.sinkPercent}%（骰子六面中最終值會沉的比例）${withEffect ? `；加上${partsText(effect)}是 ${c.sinkPercentNow}%` : ''}${c.cooldown > 0 ? `；用過後冷卻 ${c.cooldown} 回合` : ''}`}
+            >
+              <span className={withEffect && c.sinkPercent !== c.sinkPercentNow ? 'changed' : ''}>
+                沉 {withEffect ? <SinkChange from={c.sinkPercent} to={c.sinkPercentNow} play={fresh === c.id} /> : `${c.sinkPercent}%`}
+              </span>
+              {c.cooldown > 0 && (
+                <span className="ship-rest">
+                  <ClockIcon />
+                  {c.cooldown}
+                </span>
+              )}
+            </span>
+          </button>
+        );
+      })}
       <button
         type="button"
         className={`dep-card ship-card none ${picked === 'none' ? 'on' : ''}`}
@@ -89,22 +130,45 @@ interface ShipInfoProps {
   readonly cards: readonly ShipCard[];
   /** The card described: the one pointed at, else the one picked. */
   readonly shown: ShipPick;
-  /** Modifier of the voyage event and island, already in the dice table (0 = none). */
-  readonly modifier: number;
+  readonly effect: ShipEffect;
+  readonly revealed: ReadonlySet<ShipTypeId>;
+  readonly fresh: ShipTypeId | null;
   /** 'side': the card beside the ship; 'strip': the strip above the hand, folded to its header until tapped. */
   readonly layout: 'side' | 'strip';
 }
 
-export function ShipInfo({ cards, shown, modifier, layout }: ShipInfoProps) {
+export function ShipInfo({ cards, shown, effect, revealed, fresh, layout }: ShipInfoProps) {
   const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const token = useRef<HTMLSpanElement>(null);
   const card = shown !== null && shown !== 'none' ? cards.find((c) => c.id === shown) : undefined;
   const side = layout === 'side';
+  const rolled = card !== undefined && effect.total !== 0 && revealed.has(card.id);
+  const play = card !== undefined && fresh === card.id;
   const frame = side ? 'dep-strip ship-strip ship-info' : `dep-strip ship-strip ${open ? 'open' : ''}`;
-  const modifierChip = modifier !== 0 && (
-    <span className="chip" title="事件與島嶼的修正已算進骰值表；護衛、海盜等角色的修正出航後才知道。">
-      修正 {signed(modifier)}
-    </span>
-  );
+
+  // A strip folded to its header would play its show unseen: it opens for it.
+  useEffect(() => {
+    if (play && !side) setOpen(true);
+  }, [play, side]);
+
+  // The modifier leaves the event chip (top left) and flies into the card; then the table changes (CSS, `fresh`).
+  useLayoutEffect(() => {
+    const el = token.current;
+    const box = root.current;
+    if (!play || !el || !box || reducedMotion()) return undefined;
+    const from = (document.querySelector('.event-chip') ?? box).getBoundingClientRect();
+    const to = box.getBoundingClientRect();
+    const flight = el.animate(
+      [
+        { transform: `translate(${from.left + 8}px, ${from.top + 6}px) scale(1)`, opacity: 1 },
+        { transform: `translate(${to.left + 24}px, ${to.top + 14}px) scale(0.9)`, opacity: 1, offset: 0.85 },
+        { transform: `translate(${to.left + 24}px, ${to.top + 14}px) scale(0.9)`, opacity: 0 },
+      ],
+      { duration: FLIGHT_MS, easing: 'ease-in-out', fill: 'both' },
+    );
+    return () => flight.cancel();
+  }, [play]);
 
   if (shown === null) {
     return (
@@ -114,7 +178,15 @@ export function ShipInfo({ cards, shown, modifier, layout }: ShipInfoProps) {
     );
   }
   return (
-    <div className={frame} aria-live="polite" {...(side ? {} : { onClick: () => setOpen((v) => !v) })}>
+    <div ref={root} className={frame} aria-live="polite" {...(side ? {} : { onClick: () => setOpen((v) => !v) })}>
+      {play &&
+        // In the body: the phone's dock is moved by a transform, which would carry a fixed child with it.
+        createPortal(
+          <span ref={token} className="ship-token" aria-hidden="true" style={{ opacity: 0 }}>
+            {partsText(effect)}
+          </span>,
+          document.body,
+        )}
       {shown === 'none' && (
         <>
           <header>
@@ -135,22 +207,36 @@ export function ShipInfo({ cards, shown, modifier, layout }: ShipInfoProps) {
               <ClockIcon />
               {card.cooldown}
             </span>
-            {modifierChip}
             {!side && SHIP_TYPE_TEXT[card.id] && <span className="ship-ability">{SHIP_TYPE_TEXT[card.id]}</span>}
           </header>
           {side && SHIP_TYPE_TEXT[card.id] && <p className="ship-ability-line">{SHIP_TYPE_TEXT[card.id]}</p>}
-          <ol className="ship-dice" aria-label="骰值表：擲出的點數，與這艘船拿到貨值的幾成">
+          <ol
+            className={`ship-dice ${card.curve.length > 6 ? 'long' : ''} ${rolled ? 'rolled' : ''} ${play ? 'fresh' : ''}`}
+            style={{ '--faces': card.curve.length } as CSSProperties}
+            aria-label="骰值表：最終值，與這艘船拿到貨值的幾成"
+          >
             <li className="label" aria-hidden="true">
-              <small>擲出</small>
+              {rolled && <em>擲出</em>}
+              <small>最終值</small>
               <b>拿貨值</b>
             </li>
-            {card.rows.map((row) => (
-              <li key={row.roll} className={row.sinks ? 'sink' : row.percent > 100 ? 'win' : ''} title={row.sinks ? `擲 ${row.roll}（最終值 ${row.final}）：沉，貨全損` : `擲 ${row.roll}（最終值 ${row.final}）：拿到貨值的 ${row.percent}%`}>
-                <small>{row.roll}</small>
-                <b>{row.sinks ? '沉' : `${row.percent}%`}</b>
-              </li>
-            ))}
+            {card.curve.map((row, i) => {
+              const rolls = card.effectRolls[i] ?? [];
+              return (
+                <li
+                  key={row.final}
+                  className={`${row.sinks ? 'sink' : row.percent > 100 ? 'win' : ''} ${rolled && rolls.length === 0 ? 'dead' : ''}`}
+                  style={{ '--i': i } as CSSProperties}
+                  title={row.sinks ? `最終值 ${row.final}：沉，貨全損` : `最終值 ${row.final}${row.orMore ? ' 以上' : ''}：拿到貨值的 ${row.percent}%`}
+                >
+                  {rolled && <em>{rolls.length > 0 ? rolls.join('、') : '—'}</em>}
+                  <small>{row.orMore ? `${row.final}+` : row.final}</small>
+                  <b>{row.sinks ? '沉' : `${row.percent}%`}</b>
+                </li>
+              );
+            })}
           </ol>
+          {effect.conditional && <p className="ship-effect-note">{effect.conditional}</p>}
           {card.reason && <p className="why">{card.reason}</p>}
         </>
       )}

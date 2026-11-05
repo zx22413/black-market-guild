@@ -29,7 +29,7 @@ import {
   withShipType,
   type InvestChoice,
 } from '../table/investChoice';
-import { knownModifier, shipCards } from '../table/shipChoice';
+import { shipCards, shipEffect } from '../table/shipChoice';
 import { ReminderDialog } from '../table/ReminderDialog';
 import { isHintSeen, isReminderSkipped, markHintSeen, setReminderSkipped } from '../table/reminderSettings';
 import { GoodCount, GoodIcon } from './GoodIcon';
@@ -60,6 +60,8 @@ const mintChipDelay = (column: number): number => 150 + column * 120;
 const BUILD_BUTTON_Z = 9.5;
 /** The standings stand open at the right in a close shot (RankRail): the loading shot keeps the ship clear of them. */
 const RANK_RAIL_ROOM = 215;
+/** How long a ship's effect show lasts (ms): the flight, the rows one after another, the count, the note. */
+const SHIP_FX_MS = 2600;
 /** The ship pick's info card stands in the free column at the right (shipPicker.css `.ship-info`, wide screens): the ship keeps clear of it. */
 const SHIP_INFO_ROOM = 260;
 /** Each next pop a little higher, like bubbles rising. */
@@ -79,6 +81,10 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const [shipDecided, setShipDecided] = useState(false);
   // The ship card the pointer is on: the info card describes it, else the one picked.
   const [peekShip, setPeekShip] = useState<ShipPick>(null);
+  // Ships picked at least once this round (hovering does not count), and the one whose effect is playing now.
+  const [revealed, setRevealed] = useState<ReadonlySet<ShipTypeId>>(() => new Set());
+  const [freshShip, setFreshShip] = useState<ShipTypeId | null>(null);
+  const freshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [reminding, setReminding] = useState<readonly string[] | null>(null);
   // Crates a change of building took off the ship, said beside the ship until the next change.
   const [unloaded, setUnloaded] = useState<string | null>(null);
@@ -101,6 +107,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     setPhase('ship');
     setShipDecided(false);
     setPeekShip(null);
+    setRevealed(new Set());
+    setFreshShip(null);
     setReminding(null);
     setUnloaded(null);
     setMinting(true);
@@ -167,8 +175,15 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     setPicking(false);
   };
   // A ship card snaps into place like a role card; a smaller ship takes the crates that no longer fit off the deck.
+  // The first time a ship is picked in a round, what the public modifiers do to it plays once (ShipPicker).
   const pickShip = (pick: ShipTypeId | 'none') => {
     const type = pick === 'none' ? null : pick;
+    if (type !== null && shipFx.total !== 0 && !revealed.has(type)) {
+      setRevealed(new Set([...revealed, type]));
+      setFreshShip(type);
+      if (freshTimer.current) clearTimeout(freshTimer.current);
+      freshTimer.current = setTimeout(() => setFreshShip(null), SHIP_FX_MS);
+    }
     if (!shipDecided || type !== (choice.shipType ?? null)) soundEngine.playSfx('role-pick');
     setChoice(withShipType(options, choice, type));
     setShipDecided(true);
@@ -180,6 +195,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const typed = context.view.rules.ships.enabled === 1;
   const shipPhase = typed && phase === 'ship';
   const shipOptions = typed ? shipCards(context) : [];
+  const shipFx = shipEffect(context);
   // The side shots: the ship pick everywhere, and the loading too except on a phone, where the island's own close shot
   // (cropped to bring the crates up to size) stays, with the crates at their usual size.
   const sideView = typed && (shipPhase || !phone);
@@ -438,8 +454,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     />
   );
   const shipPicked: ShipPick = shipDecided ? (choice.shipType ?? 'none') : null;
-  const shipInfo = <ShipInfo cards={shipOptions} shown={peekShip ?? shipPicked} modifier={knownModifier(context)} layout={phone ? 'strip' : 'side'} />;
-  const shipHand = <ShipHand cards={shipOptions} picked={shipPicked} todo={!shipDecided} onPick={pickShip} onPeek={setPeekShip} />;
+  const shipInfo = <ShipInfo cards={shipOptions} shown={peekShip ?? shipPicked} effect={shipFx} revealed={revealed} fresh={freshShip} layout={phone ? 'strip' : 'side'} />;
+  const shipHand = <ShipHand cards={shipOptions} picked={shipPicked} todo={!shipDecided} effect={shipFx} revealed={revealed} fresh={freshShip} onPick={pickShip} onPeek={setPeekShip} />;
   return {
     pins: shipPhase ? [] : pins,
     camera,
