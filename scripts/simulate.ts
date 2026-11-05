@@ -103,7 +103,7 @@ const GOOD_LABELS: Record<string, string> = { wood: '木材', iron: '鐵礦', sp
 const ISLAND_LABELS: Record<string, string> = {
   'spice-isles': '香料群島',
   'pirate-cove': '海盜灣',
-  lumber: '林場島',
+  lumber: '船塢島',
   mine: '礦山島',
   'smuggler-port': '走私港',
   'free-port': '自由港',

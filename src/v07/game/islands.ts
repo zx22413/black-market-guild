@@ -1,5 +1,5 @@
 import { shuffle, type RngState } from './rng';
-import { NEUTRAL_TRAIT, type IslandTrait, type Rules } from './rules';
+import { NEUTRAL_TRAIT, shipFinalCap, type IslandTrait, type Rules } from './rules';
 import { ISLAND_IDS, type BuildingId, type GoodId, type Goods, type IslandId, type PlayerId, type RoleId, type ShipTypeId } from './types';
 
 // Island traits (§11).
@@ -25,13 +25,21 @@ export function roleFee(rules: Rules, island: IslandId | null, role: RoleId): nu
 }
 
 export function shipCostFor(rules: Rules, island: IslandId | null, type: ShipTypeId = 'standard'): number {
-  const base = rules.ships.enabled === 1 ? rules.ships.types[type].fee : rules.shipCost;
-  return Math.max(0, base + traitOf(rules, island).shipCostDelta);
+  const t = traitOf(rules, island);
+  const base = rules.ships.enabled === 1 ? (t.freeShips.includes(type) ? 0 : rules.ships.types[type].fee) : rules.shipCost;
+  return Math.max(0, base + t.shipCostDelta);
 }
 
 /** §8: base capacity, shipyard bonus (a shipyard built this round counts), island change. */
 export function capacityFor(rules: Rules, buildings: readonly BuildingId[], island: IslandId | null): number {
   return rules.capacity.base + (buildings.includes('shipyard') ? rules.capacity.shipyardBonus : 0) + traitOf(rules, island).capacityDelta;
+}
+
+/** §9.1 step 6: the highest final value a ship of `type` owned by a player on `island` can reach (the island's limit and the type's own, whichever is lower). */
+export function shipFinalCapFor(rules: Rules, island: IslandId | null, type: ShipTypeId): number {
+  const limit = traitOf(rules, island).ownShipFinalCap;
+  const cap = shipFinalCap(rules, type);
+  return limit > 0 ? Math.min(cap, limit) : cap;
 }
 
 export function cooldownFor(rules: Rules, island: IslandId | null, role: RoleId): number {

@@ -1,5 +1,5 @@
 import type { DecisionContext } from '../../v07/bots';
-import { SHIP_TYPE_IDS, shipCostFor, shipDelay, shipFinalCap, shipIncomePercent, shipTypeAvailable, traitOf, type ShipTypeId } from '../../v07/game';
+import { SHIP_TYPE_IDS, shipCostFor, shipDelay, shipFinalCap, shipFinalCapFor, shipIncomePercent, shipTypeAvailable, traitOf, type ShipTypeId } from '../../v07/game';
 import { ISLAND_LABELS, VOYAGE_EVENT_LABELS, VOYAGE_EVENT_TEXT } from '../labels';
 
 // The ship choice of the ship-bay experiment (docs/proposals/2026-11-ship-bays.md, not a decided rule) as
@@ -53,6 +53,8 @@ export interface ShipEffect {
   readonly total: number;
   /** The line for an event that only moves ships a role targets (sea fog, moonless night): not known yet, so not in the total. */
   readonly conditional: string | null;
+  /** The island's limit on the final value of the player's ships ("燈塔島：最終值最大 5"); null when there is none. */
+  readonly limit: string | null;
 }
 
 export function shipEffect(context: DecisionContext): ShipEffect {
@@ -65,7 +67,9 @@ export function shipEffect(context: DecisionContext): ShipEffect {
   const island = traitOf(view.rules, me.island).ownShipModifier;
   if (island !== 0 && me.island !== null) parts.push({ label: ISLAND_LABELS[me.island], delta: island });
   const conditional = view.voyageEvent === 'sea-fog' || view.voyageEvent === 'moonless-night' ? `${VOYAGE_EVENT_LABELS[view.voyageEvent]}：${VOYAGE_EVENT_TEXT[view.voyageEvent]}` : null;
-  return { parts, total: parts.reduce((n, p) => n + p.delta, 0), conditional };
+  const cap = traitOf(view.rules, me.island).ownShipFinalCap;
+  const limit = cap > 0 && cap < view.rules.sailing.dieMax && me.island !== null ? `${ISLAND_LABELS[me.island]}：最終值最大 ${cap}` : null;
+  return { parts, total: parts.reduce((n, p) => n + p.delta, 0), conditional, limit };
 }
 
 /** A ship type's curve by final value: 1 up to the die's top face, or up to the last entry of an uncapped type's curve. */
@@ -94,7 +98,7 @@ export function shipCards(context: DecisionContext): ShipCard[] {
     const curve = curveRows(context, id);
     const faces = curve.filter((r) => r.final <= rules.sailing.dieMax);
     const total = effect.total;
-    const cap = shipFinalCap(rules, id);
+    const cap = shipFinalCapFor(rules, me.island, id);
     const { dieMin, dieMax } = rules.sailing;
     // Each roll with the known modifier added: its final value (clamped as in §9.1), and the curve row it lands on.
     const landed = Array.from({ length: dieMax - dieMin + 1 }, (_, i) => {

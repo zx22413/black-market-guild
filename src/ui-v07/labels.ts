@@ -50,7 +50,7 @@ export const WEALTH_RULE_TEXT = '總財富 ＝ 現金 ＋ 持有建築現金成�
 export const ISLAND_LABELS: Readonly<Record<IslandId, string>> = {
   'spice-isles': '香料群島',
   'pirate-cove': '海盜灣',
-  lumber: '林場島',
+  lumber: '船塢島',
   mine: '礦山島',
   'smuggler-port': '走私港',
   'free-port': '自由港',
@@ -62,12 +62,12 @@ export const ISLAND_LABELS: Readonly<Record<IslandId, string>> = {
 export const ISLAND_TEXT: Readonly<Record<IslandId, { readonly pro: string; readonly con: string }>> = {
   'spice-isles': { pro: '香料不會壞；每回合多產 1 香料', con: '自己賣香料時，漲價只吃一半（無條件捨去）' },
   'pirate-cove': { pro: '自己部署的海盜 −2（一般 −1）', con: '部署護衛 +25 G' },
-  lumber: { pro: '木材第 1～5 回合每回合生產', con: '鐵礦只在第 1、4 回合生產' },
-  mine: { pro: '鐵礦第 1～5 回合每回合生產', con: '木材只在第 1、4 回合生產' },
-  'smuggler-port': { pro: '軍火每回合生產', con: '自己的軍火不能被走私商人掩護（海關指名軍火仍會沒收）；部署護衛 +50 G' },
-  'free-port': { pro: '出航成本 50 G', con: '可裝貨量 −1' },
+  lumber: { pro: '自己的船可裝貨量 +1', con: '自己每艘船出航另付 25 G 港口稅' },
+  mine: { pro: '鐵礦每回合多產 1', con: '木材只在第 1、4 回合生產' },
+  'smuggler-port': { pro: '軍火每回合多產 1；幽靈號船費 0', con: '自己的軍火不能被走私商人掩護（海關指名軍火仍會沒收）；部署護衛 +50 G' },
+  'free-port': { pro: '孤注號船費 0（冷卻照舊）', con: '可裝貨量 −1' },
   fortress: { pro: '自己部署的護衛 +2（一般 +1）；護衛只冷卻 1 回合', con: '部署海盜 +25 G' },
-  lighthouse: { pro: '自己的船出航 +1；海關免部署費', con: '出航成本 +50 G' },
+  lighthouse: { pro: '自己的船出航 +1；海關免部署費', con: '自己的船最終值最大 5（拿不到 100%）' },
 };
 
 export const VOYAGE_EVENT_LABELS: Readonly<Record<VoyageEventId, string>> = {

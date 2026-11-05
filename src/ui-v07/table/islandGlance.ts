@@ -28,20 +28,21 @@ export const ISLAND_GLANCE: Readonly<Record<IslandId, readonly GlanceItem[]>> = 
     { sign: -1, icon: role('guard'), text: '部署費 +25 G' },
   ],
   lumber: [
-    { sign: 1, icon: good('wood'), text: '第 1～5 回合生產' },
-    { sign: -1, icon: good('iron'), text: '只在第 1、4 回合' },
+    { sign: 1, icon: ship, text: '可裝貨量 +1' },
+    { sign: -1, icon: ship, text: '每艘船 +25 G' },
   ],
   mine: [
-    { sign: 1, icon: good('iron'), text: '第 1～5 回合生產' },
+    { sign: 1, icon: good('iron'), text: '每回合 +1' },
     { sign: -1, icon: good('wood'), text: '只在第 1、4 回合' },
   ],
   'smuggler-port': [
-    { sign: 1, icon: good('arms'), text: '每回合生產' },
+    { sign: 1, icon: good('arms'), text: '每回合 +1' },
+    { sign: 1, icon: ship, text: '幽靈號船費 0' },
     { sign: -1, icon: good('arms'), text: '軍火不能被掩護' },
     { sign: -1, icon: role('guard'), text: '部署費 +50 G' },
   ],
   'free-port': [
-    { sign: 1, icon: ship, text: '出航成本 50 G' },
+    { sign: 1, icon: ship, text: '孤注號船費 0' },
     { sign: -1, icon: ship, text: '可裝貨量 −1' },
   ],
   fortress: [
@@ -51,6 +52,6 @@ export const ISLAND_GLANCE: Readonly<Record<IslandId, readonly GlanceItem[]>> = 
   lighthouse: [
     { sign: 1, icon: ship, text: '出航 +1' },
     { sign: 1, icon: role('customs'), text: '海關免費' },
-    { sign: -1, icon: ship, text: '出航成本 +50 G' },
+    { sign: -1, icon: ship, text: '最終值最大 5' },
   ],
 };

@@ -21,7 +21,7 @@ function contextOf(state: MatchState, playerId = 'p1'): DecisionContext {
 }
 
 /** Round-1 investment of p1 under the ship-bay rules, on an island that changes neither fee nor capacity. */
-function scenario(patch: Parameters<typeof edit>[2] = {}, event: VoyageEventId | null = null, island: 'lumber' | 'lighthouse' = 'lumber') {
+function scenario(patch: Parameters<typeof edit>[2] = {}, event: VoyageEventId | null = null, island: 'mine' | 'lighthouse' = 'mine') {
   const base = edit(start(3, RULES_V07, { p1: island }), 'p1', { cash: 1000, stock: G(3, 3, 3, 3), buildings: [], ...patch });
   const state = { ...base, roundState: { ...base.roundState, voyageEvent: event } };
   return contextOf(state);
@@ -31,7 +31,7 @@ const card = (context: DecisionContext, id: string) => shipCards(context).find((
 
 describe('ship cards (ship-bay experiment)', () => {
   it('offers none while the experiment is off', () => {
-    const state = edit(start(3, undefined, { p1: 'lumber' }), 'p1', { cash: 1000 });
+    const state = edit(start(3, undefined, { p1: 'mine' }), 'p1', { cash: 1000 });
     expect(shipCards(contextOf(state))).toEqual([]);
   });
 
@@ -118,6 +118,19 @@ describe('ship cards (ship-bay experiment)', () => {
     expect(shipEffect(both).total).toBe(2);
     // The plain card is the same under any of them.
     expect(card(both, 'standard').sinkPercent).toBe(17);
+  });
+
+  it('keeps the lighthouse island\'s limit apart from the ship: the final value stops at 5', () => {
+    const lighthouse = scenario({}, null, 'lighthouse');
+    expect(shipEffect(lighthouse)).toMatchObject({ total: 1, limit: '燈塔島：最終值最大 5' });
+    expect(shipEffect(scenario({}, null, 'mine')).limit).toBeNull();
+    // Each roll with the +1, held at 5: the plain ship never sinks and tops out at row 5.
+    const standard = card(lighthouse, 'standard');
+    expect(standard.effectRolls).toEqual([[], [1], [2], [3], [4], []].map((rolls, i) => (i === 4 ? [4, 5, 6] : rolls)));
+    expect(standard.sinkPercentNow).toBe(0);
+    // The curve is still the ship's own: the limit is not in it.
+    expect(standard.curve.map((r) => r.percent)).toEqual([0, 30, 45, 60, 75, 100]);
+    expect(card(lighthouse, 'breaker').effectRolls.slice(5)).toEqual([[], [], [], []]);
   });
 
   it('says only in a line that sea fog and a moonless night move the ships a role targets (nothing is added)', () => {

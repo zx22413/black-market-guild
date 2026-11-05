@@ -31,6 +31,10 @@ export interface IslandTrait {
   readonly cooldownDelta: Readonly<Record<RoleId, number>>;
   readonly shipCostDelta: number;
   readonly capacityDelta: number;
+  /** Ship bays: the highest final value this player's own ships can reach (0 = no island limit; the ship type's own cap still applies). */
+  readonly ownShipFinalCap: number;
+  /** Ship bays: ship types that cost this player no fee (the island's own fee change still adds on top). */
+  readonly freeShips: readonly ShipTypeId[];
   /** 1 = a smuggler on this player's own ship cannot cover its arms from customs. */
   readonly armsUncoverable: number;
 }
@@ -140,6 +144,8 @@ export const NEUTRAL_TRAIT: IslandTrait = {
   cooldownDelta: NO_ROLES,
   shipCostDelta: 0,
   capacityDelta: 0,
+  ownShipFinalCap: 0,
+  freeShips: [],
   armsUncoverable: 0,
 };
 
@@ -263,7 +269,8 @@ export function shipFinalCap(rules: Rules, type: ShipTypeId): number {
  * The rules the game plays (docs/game-design.md, V0.7.1): the ship bays replace the buildings. Five ship types, and every
  * good is produced every round (the production islands one more of their good, their drawbacks kept), so a ship can
  * actually be filled. The buildings stay in the data (`buildings`) for `RULES_BUILDINGS`, but no building is offered.
- * TODO: the free port and the lighthouse (ship fee), the economy and the tutorial are not redone yet (game-design.md §11, §14).
+ * Islands (§11.2): shipyard island (was the lumber camp), free port, smuggler port and lighthouse work on the ship choice.
+ * TODO: the economy and the tutorial are not redone yet (game-design.md §14); the island numbers are drafts.
  */
 export const RULES_V07: Rules = {
   ...RULES_BUILDINGS,
@@ -276,9 +283,12 @@ export const RULES_V07: Rules = {
     ...RULES_BUILDINGS.islands,
     traits: {
       ...RULES_BUILDINGS.islands.traits,
-      lumber: trait({ bonusProduction: goods({ wood: 1 }), productionEvery: goods({ iron: 3 }) }),
+      // §11.2: the lumber camp becomes the shipyard island (id kept): one more unit of cargo, a harbour tax on every ship.
+      lumber: trait({ capacityDelta: 1, shipCostDelta: 25 }),
       mine: trait({ bonusProduction: goods({ iron: 1 }), productionEvery: goods({ wood: 3 }) }),
-      'smuggler-port': trait({ bonusProduction: goods({ arms: 1 }), armsUncoverable: 1, feeDelta: { ...NO_ROLES, guard: 50 } }),
+      'smuggler-port': trait({ bonusProduction: goods({ arms: 1 }), armsUncoverable: 1, feeDelta: { ...NO_ROLES, guard: 50 }, freeShips: ['hidden'] }),
+      'free-port': trait({ capacityDelta: -1, freeShips: ['gambler'] }),
+      lighthouse: trait({ ownShipModifier: 1, ownShipFinalCap: 5, feeDelta: { ...NO_ROLES, customs: -25 } }),
     },
   },
 };

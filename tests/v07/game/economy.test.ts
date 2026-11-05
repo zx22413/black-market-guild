@@ -26,8 +26,8 @@ describe('§6 production and warehouse', () => {
   it('produces one of each good every round in the ship-bay rules (§6.2), with the island changes of §11.2', () => {
     const per = (island: Parameters<typeof producedFor>[1]) => [1, 2, 3, 4, 5, 6].map((r) => producedFor(RULES_V07, island, r));
     for (const good of ['wood', 'iron', 'spice', 'arms'] as const) expect(per(null).map((g) => g[good])).toEqual([1, 1, 1, 1, 1, 1]);
-    expect(per('lumber').map((g) => g.wood)).toEqual([2, 2, 2, 2, 2, 2]);
-    expect(per('lumber').map((g) => g.iron)).toEqual([1, 0, 0, 1, 0, 0]);
+    // The shipyard island (id lumber) works on the ship choice, not on production (island-ships.test.ts).
+    expect(per('lumber')).toEqual(per(null));
     expect(per('mine').map((g) => g.iron)).toEqual([2, 2, 2, 2, 2, 2]);
     expect(per('mine').map((g) => g.wood)).toEqual([1, 0, 0, 1, 0, 0]);
     expect(per('smuggler-port').map((g) => g.arms)).toEqual([2, 2, 2, 2, 2, 2]);

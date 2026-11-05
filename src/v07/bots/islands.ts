@@ -1,5 +1,5 @@
 import { GOODS, ROLE_IDS, capacityFor, cooldownFor, producedFor, roleFee, traitOf, type GoodId, type IslandId, type PlayerView, type RoleId, type Rules } from '../game';
-import { ARMS_SEIZURE_RISK, arriveChance, averagePrice, expectedLoot, perUnitCost, seizureRisk } from './estimates';
+import { ARMS_SEIZURE_RISK, arriveChance, averagePrice, curveOutlook, expectedLoot, perUnitCost, seizureRisk } from './estimates';
 import type { Personality } from './personality';
 
 // Island draft (§11.1): estimate what each island's trait (§11.2) is worth over the whole match,
@@ -14,6 +14,8 @@ const RISE_CHANCE = 0.4;
 /** Share of spice that would have spoiled but can be shipped later instead. */
 const COVER_SHARE = 0.1;
 const KEPT_SPICE_SHARE = 0.3;
+/** Ship bays: share of rounds a bot is assumed to pick a ship type that its island makes free. */
+const FREE_SHIP_USE = 0.25;
 /** Share of produced arms a bot would have covered with its own smuggler. */
 
 /** Expected net value of one more unit of a good: its sale minus its share of the ship cost. */
@@ -92,10 +94,13 @@ export function islandWorth(view: PlayerView, island: IslandId, persona: Persona
   const capacity = capacityFor(rules, [], island);
   const cargo = capacity * price;
 
-  const sailing =
-    (arriveChance(rules, t.ownShipModifier) - p) * cargo * sails * (1 + persona.risk) -
-    t.shipCostDelta * sails +
-    t.capacityDelta * sails * price * p * 0.6;
+  // Ship bays: the plain ship's share of its cargo's value, with the island's modifier and final value limit, replaces the arrival odds.
+  const typed = rules.ships.enabled === 1;
+  const edge = typed
+    ? curveOutlook(rules, 'standard', t.ownShipModifier, t.ownShipFinalCap).income - curveOutlook(rules, 'standard', 0).income
+    : arriveChance(rules, t.ownShipModifier) - p;
+  const freeFees = typed ? t.freeShips.reduce((sum, type) => sum + rules.ships.types[type].fee * sails * FREE_SHIP_USE, 0) : 0;
+  const sailing = edge * cargo * sails * (1 + persona.risk) - t.shipCostDelta * sails + freeFees + t.capacityDelta * sails * price * p * 0.6;
   const roles = ROLE_IDS.reduce(
     (sum, role) =>
       sum + roleUses(rules, island, role) * roleUseValue(view, island, role, cargo, persona) - roleUses(rules, null, role) * roleUseValue(view, null, role, cargo, persona),

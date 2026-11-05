@@ -9,7 +9,7 @@ export { RULES_V07, RULES_BUILDINGS, NEUTRAL_TRAIT, arrivalIncomePercent, shipDe
 export type { BuildingRule, IslandTrait, Rules } from './rules';
 export { buildingValue } from './scoring';
 export { priceAt } from './goods';
-export { capacityFor, cooldownFor, producedFor, roleFee, shipCostFor, traitOf } from './islands';
+export { capacityFor, cooldownFor, producedFor, roleFee, shipCostFor, shipFinalCapFor, traitOf } from './islands';
 export { createRng, createRngFromState } from './rng';
 export type { Rng, RngState } from './rng';
 export * from './types';

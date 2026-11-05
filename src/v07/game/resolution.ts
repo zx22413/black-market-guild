@@ -1,6 +1,6 @@
 import { holds, playerOf } from './cash';
-import { traitOf } from './islands';
-import { shipFinalCap, shipSinks } from './rules';
+import { shipFinalCapFor, traitOf } from './islands';
+import { shipSinks } from './rules';
 import type { Deployment, MatchState, Ship, Step, VoyageModifier, VoyageOutcome } from './types';
 
 /** §5 step 1: draws and reveals the voyage event as the round opens. */
@@ -52,7 +52,7 @@ export function voyageModifier(state: MatchState, ship: Ship): VoyageModifier {
   const pirate = targeting(state, ship, 'pirate').reduce((sum, d) => sum + rules.roles.pirate.modifier + trait(d.playerId).pirateModifier, 0) + 0;
   const event = eventModifier(state, ship) + 0;
   const island = trait(ship.owner).ownShipModifier + 0;
-  const final = Math.min(shipFinalCap(rules, ship.type), Math.max(rules.sailing.dieMin, base + guard + pirate + event + island));
+  const final = Math.min(shipFinalCapFor(rules, playerOf(state, ship.owner).island, ship.type), Math.max(rules.sailing.dieMin, base + guard + pirate + event + island));
   return { shipId: ship.id, base, guard, pirate, event, island, final };
 }
 

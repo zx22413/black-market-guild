@@ -265,6 +265,16 @@
 .isle-card.small .isle-art {
   height: 40%;
 }
+/* An island with four rows (the smuggler port) gives the picture less room so no row is cut off. */
+.isle-card:has(.glance-row:nth-child(4)) .isle-art {
+  height: 46%;
+}
+.isle-card.small:has(.glance-row:nth-child(4)) .isle-art {
+  height: 29%;
+}
+.isle-card:has(.glance-row:nth-child(4)) .isle-body {
+  margin-bottom: 3%;
+}
 .isle-card.small .isle-body {
   gap: 2px;
   margin-bottom: 7%;

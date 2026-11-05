@@ -47,11 +47,11 @@ function scoreInvest(view: PlayerView, action: Invest, persona: Personality): nu
   let score = shippedUnits > 0 ? -shipCostFor(rules, player.island, action.shipType) : 0;
   // Experiment (rules.ships): the ship type's payout curve replaces the plain arrive-or-sink odds.
   const typed = action.shipType === undefined ? null : rules.ships.types[action.shipType];
-  const outlook = action.shipType === undefined ? null : curveOutlook(rules, action.shipType, expectedOwnModifier(view, trait.ownShipModifier, rules.ships.types[action.shipType].delay > 0));
+  const outlook = action.shipType === undefined ? null : curveOutlook(rules, action.shipType, expectedOwnModifier(view, trait.ownShipModifier, rules.ships.types[action.shipType].delay > 0), trait.ownShipFinalCap);
   const p = outlook === null ? arriveChance(rules, trait.ownShipModifier) : 1 - outlook.sink;
   // What a unit kept for a later voyage is worth must not depend on this voyage's ship type.
   // With ship types a later unit earns the standard ship's share of its value, not a plain arrival.
-  const keepP = outlook === null ? arriveChance(rules, trait.ownShipModifier) : curveOutlook(rules, 'standard', expectedOwnModifier(view, trait.ownShipModifier)).income;
+  const keepP = outlook === null ? arriveChance(rules, trait.ownShipModifier) : curveOutlook(rules, 'standard', expectedOwnModifier(view, trait.ownShipModifier), trait.ownShipFinalCap).income;
   const keepCost = outlook === null ? perUnitCost(rules) : 0;
   let cargoValue = 0;
   for (const g of GOODS) {

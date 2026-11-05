@@ -237,6 +237,7 @@ export function ShipInfo({ cards, shown, effect, revealed, fresh, layout }: Ship
             })}
           </ol>
           {rolled && <p className={`ship-effect-note ${play ? 'fresh' : ''}`}>{partsText(effect)}</p>}
+          {effect.limit && <p className="ship-effect-note">{effect.limit}</p>}
           {effect.conditional && <p className="ship-effect-note">{effect.conditional}</p>}
           {card.reason && <p className="why">{card.reason}</p>}
         </>

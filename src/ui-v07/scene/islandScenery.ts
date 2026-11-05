@@ -111,7 +111,7 @@ export const ISLAND_SCENERY: Readonly<Partial<Record<IslandId, IslandScenery>>> 
     ],
   },
   lumber: {
-    name: '林場島',
+    name: '船塢島',
     // A mossy forest floor: an even blend of the colormap's forest green #248d6d and dark wood #845442.
     ground: { top: '#547057', cliff: '#845442' },
     annex: { center: [0, -11.6], radii: [7.4, 3.8] },

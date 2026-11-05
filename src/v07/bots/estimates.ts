@@ -45,9 +45,11 @@ export function expectedLoot(rules: Rules, modifier: number, cargoValue: number,
  * Experiment (rules.ships): the mean share of its cargo's value, and the chance of sinking, of a ship of `type` whose final
  * value is a fair die plus a known modifier. The final is capped at the die's top face unless the type is uncapped.
  */
-export function curveOutlook(rules: Rules, type: ShipTypeId, modifier: number): { readonly income: number; readonly sink: number } {
+export function curveOutlook(rules: Rules, type: ShipTypeId, modifier: number, islandCap = 0): { readonly income: number; readonly sink: number } {
   const { dieMin, dieMax } = rules.sailing;
-  const cap = rules.ships.types[type].uncapped === 1 ? Number.MAX_SAFE_INTEGER : dieMax;
+  const typeCap = rules.ships.types[type].uncapped === 1 ? Number.MAX_SAFE_INTEGER : dieMax;
+  // The island may limit the final value of its owner's ships (§9.1 step 6); 0 = no limit.
+  const cap = islandCap > 0 ? Math.min(typeCap, islandCap) : typeCap;
   let income = 0;
   let sink = 0;
   for (let face = dieMin; face <= dieMax; face += 1) {
