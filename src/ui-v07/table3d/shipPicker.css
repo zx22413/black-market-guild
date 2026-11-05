@@ -329,6 +329,11 @@
   animation: ship-row-dim 360ms ease both;
   animation-delay: calc(900ms + var(--i, 0) * 110ms);
 }
+.ship-effect-note.fresh {
+  opacity: 0;
+  animation: ship-roll-in 320ms ease forwards;
+  animation-delay: 1500ms;
+}
 @keyframes ship-roll-in {
   from {
     opacity: 0;
@@ -348,7 +353,8 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ship-dice.fresh li em {
+  .ship-dice.fresh li em,
+  .ship-effect-note.fresh {
     opacity: 1;
     animation: none;
   }
