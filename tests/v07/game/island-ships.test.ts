@@ -100,9 +100,10 @@ describe('spice isles (ship bays)', () => {
     expect(sale(ready('spice-isles'))).toBe(225);
   });
 
-  it('never sells above the top of the track, and the market price itself does not move more', () => {
+  it('is not held by the top of the track (225 G becomes 250 G there), and the market price itself does not move more', () => {
     const top = withPrices(ready('spice-isles'), { ...ready('spice-isles').prices, spice: 6 });
-    expect(sale(top)).toBe(225);
+    expect(sale(top)).toBe(250);
+    expect(sale(withPrices(ready(null), { ...ready(null).prices, spice: 6 }))).toBe(225);
     const settled = find(playRound(ready('spice-isles'), { loads: { p1: G(0, 0, 1) } }).events, 'market-settled')[0]!;
     expect(settled.priceAfter.spice).toBe(settled.priceBefore.spice + 2);
   });

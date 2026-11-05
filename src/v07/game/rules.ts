@@ -23,7 +23,7 @@ export interface IslandTrait {
   readonly keepsSpice: number;
   /** Per good: 1 = this player only gets half (rounded down) of a price rise when selling. */
   readonly halfRise: Goods;
-  /** Ship bays: per good, cells above the new price at which this player sells its own cargo (clamped to the track's top). */
+  /** Ship bays: per good, cells above the new price at which this player sells its own cargo (not limited by the track's top: the island may sell above it). */
   readonly sellStepBonus: Goods;
   /** Ship bays: G added to the ship fee of a ship that carries any spice. */
   readonly spiceShipFee: number;

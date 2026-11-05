@@ -50,8 +50,8 @@ export function salePrice(state: MatchState, playerId: PlayerId, good: GoodId, p
   const rise = prices.after[good] - before;
   const trait = traitOf(state.rules, playerOf(state, playerId).island);
   const halved = rise > 0 && trait.halfRise[good] === 1;
-  const step = Math.min(state.rules.price.steps - 1, (halved ? before + Math.floor(rise / 2) : prices.after[good]) + trait.sellStepBonus[good]);
-  return priceAt(state.rules, good, step);
+  // The track's top limits the market price; the island's own bonus cells go on top of it.
+  return priceAt(state.rules, good, (halved ? before + Math.floor(rise / 2) : prices.after[good]) + trait.sellStepBonus[good]);
 }
 
 /** Smugglers taking goods from someone else's ship. */
