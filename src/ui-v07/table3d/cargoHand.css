@@ -1,8 +1,10 @@
 /* The cargo hand (CargoHand.tsx) rides on the role hand's classes (.dep-hand, .dep-card, beat.css and skin/layers.css), so it
    wears the same card frame; only what a goods card adds is here. */
+/* Tall enough for the picture window, the name and the count without the window being squeezed (a squeezed window
+   crops the icon that sits in it). */
 .cargo-hand .dep-card {
   position: relative;
-  height: 118px;
+  height: 134px;
   padding-top: 8px;
   gap: 2px;
 }
@@ -16,14 +18,17 @@
 }
 /* The skin fills a card's picture window with a full illustration and zooms role silhouettes (layers.css); a goods icon
    is a small symbol, so it sits whole in the middle of the window instead of being cropped. */
+/* The window keeps its height (the skin makes it flexible) so the icon always fits whole. */
 :root:not(.skin-classic) .cargo-hand .dep-card .dep-ic {
   display: grid;
+  flex: none;
+  height: 68px;
   place-items: center;
 }
+/* The icon is square: the window's inner height minus a little air. */
 :root:not(.skin-classic) .cargo-hand .dep-card .dep-ic img {
-  width: auto;
-  height: 76%;
-  aspect-ratio: 1;
+  width: 54px;
+  height: 54px;
   object-fit: contain;
   transform: none;
 }
@@ -119,7 +124,7 @@
     background: linear-gradient(0deg, #dcc994 0 44px, #f6ecd0 44px);
   }
   :root:root:root .cargo-hand .dep-card .dep-ic img {
-    width: auto;
-    height: 76%;
+    width: 38px;
+    height: 38px;
   }
 }
