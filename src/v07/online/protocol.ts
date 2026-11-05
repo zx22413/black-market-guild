@@ -1,8 +1,8 @@
 import type { DecisionContext } from '../bots';
 import type { Action, DecisionPhase, MatchEvent, MatchResult, PlayerId, PrivateEvent } from '../game';
 
-/** Bumped whenever messages change shape; a stale tab is told to reload. 2 = V0.7 rules, 3 = rematch, 4 = timers and takeover, 5 = shared lobby limit and public clocks. */
-export const PROTOCOL_VERSION = 5;
+/** Bumped whenever messages change shape; a stale tab is told to reload. 2 = V0.7 rules, 3 = rematch, 4 = timers and takeover, 5 = shared lobby limit and public clocks, 6 = ship bays (ship types, arriving freighters, island changes). */
+export const PROTOCOL_VERSION = 6;
 
 /** Largest client message the server reads; actions are small JSON objects. */
 export const MAX_MESSAGE_BYTES = 16_384;

@@ -276,7 +276,8 @@ export function shipFinalCap(rules: Rules, type: ShipTypeId): number {
  * good is produced every round (the production islands one more of their good, their drawbacks kept), so a ship can
  * actually be filled. The buildings stay in the data (`buildings`) for `RULES_BUILDINGS`, but no building is offered.
  * Islands (§11.2): shipyard island (was the lumber camp), free port, smuggler port and lighthouse work on the ship choice.
- * TODO: the economy and the tutorial are not redone yet (game-design.md §14); the island numbers are drafts.
+ * Decided 2026-11-05: these are the formal rules (the numbers get tuned after human playtests); the economy is not retuned.
+ * TODO: the tutorial and the rulebook still teach RULES_BUILDINGS.
  */
 export const RULES_V07: Rules = {
   ...RULES_BUILDINGS,

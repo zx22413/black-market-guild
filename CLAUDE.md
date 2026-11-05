@@ -30,7 +30,7 @@ npm run simulate -- --summary --set roles.pirate.loot=200 --set roles.fees.guard
 
 ## 規則來源（最重要）
 
-[`docs/game-design.md`](docs/game-design.md)（V0.7.1：船艙系統取代建築，2026-11-05 起為預設規則；舊建築規則保留為 `RULES_BUILDINGS`，教學與線上版暫時仍用它）是 gameplay 的**唯一 source of truth**，詳細協作規則見 [`AGENTS.md`](AGENTS.md)。**注意：正式引擎 `src/game`、UI 與線上版仍是 V0.6 實作**（原文封存於 [`docs/archive/game-design-v0.6.md`](docs/archive/game-design-v0.6.md)），V0.7 尚待搬遷；V0.7 規則已在原型 `src/proto/economy`（`--preset round14`）完整實作。重點：
+[`docs/game-design.md`](docs/game-design.md)（V0.7.1：船艙系統取代建築，2026-11-05 起是正式規則；舊建築規則保留為 `RULES_BUILDINGS`，只有教學仍用它）。**暫不部署線上版**：教學、規則書與船的外觀識別還沒改完，協定版本在程式裡已是 6，但線上仍是舊版是 gameplay 的**唯一 source of truth**，詳細協作規則見 [`AGENTS.md`](AGENTS.md)。**注意：正式引擎 `src/game`、UI 與線上版仍是 V0.6 實作**（原文封存於 [`docs/archive/game-design-v0.6.md`](docs/archive/game-design-v0.6.md)），V0.7 尚待搬遷；V0.7 規則已在原型 `src/proto/economy`（`--preset round14`）完整實作。重點：
 
 - 不得自行發明、推定或補完未定案的規則、數值、卡牌、角色能力或結算順序。[`docs/open-questions.md`](docs/open-questions.md) 是待確認清單，不是規則來源；其中的提案與範例數字絕對不可自行採用。
 - 實作遇到未定案規則時：停止具體化該規則，在程式碼中以 `TODO` 記錄問題、影響範圍與待確認決策；必要時設計成可注入的參數／設定，而不是寫死猜測值。

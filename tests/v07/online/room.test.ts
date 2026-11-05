@@ -119,8 +119,8 @@ describe('V0.7 online room', () => {
     expect(events.at(-1)).toMatchObject({ type: 'match-ended' });
   });
 
-  it('speaks protocol 5 with V0.7 rules', () => {
-    expect(PROTOCOL_VERSION).toBe(5);
+  it('speaks protocol 6 with the V0.7.1 ship-bay rules', () => {
+    expect(PROTOCOL_VERSION).toBe(6);
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'hello', token: HOST, protocol: PROTOCOL_VERSION });
     const sync = ctx.last(HOST, 'sync');
