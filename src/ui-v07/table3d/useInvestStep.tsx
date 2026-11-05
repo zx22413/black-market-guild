@@ -292,8 +292,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       </div>
   ) : null;
 
-  const pins: TablePin[] = [
-    {
+  // The ship types replace the buildings (rules.ships): then there is no building button.
+  const buildPin: TablePin = {
       id: 'build',
       // On the island's front edge as seen on screen, whichever way the island is turned, so it
       // never sits on the warehouse crates (side islands are turned a quarter round).
@@ -306,7 +306,9 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
           {!phone && cards}
         </div>
       ),
-    },
+  };
+  const pins: TablePin[] = [
+    ...(typed ? [] : [buildPin]),
     // Each stack says which good it is and how many are still free to load (the crate lids are too
     // small to tell the goods apart from the table camera). The label is part of the stack: a click on
     // it loads a crate like a click on the stack, never opens a tip (the glowing icon invites a click).
@@ -416,9 +418,11 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   // What a submit seals: kept on the bar under the seal while the others decide.
   const chips = (
     <span className="bar-chips">
-      <span className="chip" title="建築">
-        <HouseIcon /> {choice.build ? `${BUILDING_LABELS[choice.build]} −${summary.buildCash}` : '不蓋'}
-      </span>
+      {!typed && (
+        <span className="chip" title="建築">
+          <HouseIcon /> {choice.build ? `${BUILDING_LABELS[choice.build]} −${summary.buildCash}` : '不蓋'}
+        </span>
+      )}
       <span className="chip" title="出航">
         <IconDisc src={tokenIconUrl('ship')} /> {summary.sails ? `${choice.shipType ? `${SHIP_TYPE_LABELS[choice.shipType]} ` : ''}${summary.loaded}/${summary.capacity} −${summary.shipCost}` : '不出航'}
       </span>
@@ -497,7 +501,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       <>
         {chips}
         <SealSubmit disabled={!action} glow={todoReminders(todo).length === 0} onClick={submit} />
-        <LockHint icon={<InfoIcon />} text="提交後不能更改；所有人都提交後，建築與出航同時公開，船上的貨不公開。" />
+        <LockHint icon={<InfoIcon />} text={typed ? '提交後不能更改；所有人都提交後，出航的船同時公開，船上的貨不公開。' : '提交後不能更改；所有人都提交後，建築與出航同時公開，船上的貨不公開。'} />
       </>
     ),
     sealedChips: chips,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RULES_V07, SHIP_TYPE_IDS, getLegalActions, shipIncomePercent, type Rules } from '../../../src/v07/game';
+import { RULES_SHIPS, RULES_V07, SHIP_TYPE_IDS, getLegalActions, shipIncomePercent, type Rules } from '../../../src/v07/game';
 import { G, apply, cash, edit, find, plain, playRound, withDemand } from './helpers';
 
 /** Experiment (rules.ships): five ship types, each with its own payout curve. Test values, not a decided rule. */
@@ -25,6 +25,16 @@ describe('experiment: ship types', () => {
     expect(actions.some((a) => a.type === 'invest' && a.shipType === undefined && a.load.wood === 0 && a.load.iron === 0 && a.load.spice === 0 && a.load.arms === 0)).toBe(true);
     state = apply(state, { type: 'invest', playerId: 'p1', build: null, load: G(1), shipType: 'gambler' }).state;
     expect(state.roundState.submissions.p1).toBeDefined();
+  });
+
+  it('offers no building: the ship types replace them (the rules without ship types still offer them)', () => {
+    const rich = (rules: Rules) => edit(plain(3, rules), 'p1', { cash: 2000, stock: G(5, 5, 5, 5) });
+    const builds = (rules: Rules) => getLegalActions(rich(rules), 'p1').filter((a) => a.type === 'invest' && a.build !== null);
+    expect(builds(RULES_V07).length).toBeGreaterThan(0);
+    expect(builds(typed)).toEqual([]);
+    expect(builds(RULES_SHIPS)).toEqual([]);
+    // Not building is still an action, with and without a ship.
+    expect(getLegalActions(rich(RULES_SHIPS), 'p1').filter((a) => a.type === 'invest' && a.build === null).length).toBeGreaterThan(0);
   });
 
   it('lets only the freighter carry more than the base capacity of 3', () => {

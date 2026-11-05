@@ -61,21 +61,25 @@ export function getLegalActions(state: MatchState, playerId: PlayerId): Action[]
   }
 }
 
-/** §8, §10.1: at most one new affordable building, then any load within capacity and cash. */
+/**
+ * §8, §10.1: at most one new affordable building, then any load within capacity and cash. Experiment (rules.ships):
+ * the ship types replace the buildings (docs/proposals/2026-11-ship-bays.md), so no building is offered.
+ */
 function investOptions(state: MatchState, playerId: PlayerId): Action[] {
   const { rules } = state;
   const player = playerOf(state, playerId);
+  const typed = rules.ships.enabled === 1;
   const builds: (BuildingId | null)[] = [
     null,
     ...BUILDING_IDS.filter(
       (b) =>
+        !typed &&
         player.buildings.length < rules.buildings.maxPerPlayer &&
         !player.buildings.includes(b) &&
         player.cash >= rules.buildings.costs[b].cash &&
         covers(player.stock, buildingCost(rules, b)),
     ),
   ];
-  const typed = rules.ships.enabled === 1;
   return builds.flatMap((build) => {
     const stock = build === null ? player.stock : subtractGoods(player.stock, buildingCost(rules, build));
     const cash = player.cash - (build === null ? 0 : rules.buildings.costs[build].cash);
