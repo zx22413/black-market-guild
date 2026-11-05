@@ -122,8 +122,8 @@ export function Warehouse({ angle, stock, forBuild, onShip, canLoad, onLoad, glo
 }
 
 /** World position of cargo slot `i` of `count` on the ship docked in lane `angle`. */
-export function deckSlot(angle: number, i: number, count: number, state: ShipState = 'docked'): Vec3 {
-  const pose = shipPose(angle, state);
+export function deckSlot(angle: number, i: number, count: number, state: ShipState = 'docked', berth = 0): Vec3 {
+  const pose = shipPose(angle, state, berth);
   const offset = (i - (count - 1) / 2) * SLOT_GAP;
   return [pose.position.x + Math.sin(pose.heading) * offset, DECK_Y + CRATE / 2, pose.position.z + Math.cos(pose.heading) * offset];
 }
@@ -170,16 +170,18 @@ export interface ShipCargoProps {
   readonly covered?: boolean;
   /** Where the ship is: at the dock while deciding, out at sea once the voyage event is out. */
   readonly state?: ShipState;
+  /** The ship's sideways berth when one guild has several ships in the same place (`berthsOf`). */
+  readonly berth?: number;
 }
 
 /** Crates on the deck of the docked ship, with empty slot frames while there is room. */
-export function ShipCargo({ angle, load, capacity, onUnload, covered = false, state = 'docked' }: ShipCargoProps) {
+export function ShipCargo({ angle, load, capacity, onUnload, covered = false, state = 'docked', berth = 0 }: ShipCargoProps) {
   const crates = GOODS.flatMap((g) => Array.from({ length: load[g] }, () => g));
   const slots = covered ? crates.length : capacity;
   return (
     <group>
       {Array.from({ length: slots }, (_, i) => {
-        const at = deckSlot(angle, i, slots, state);
+        const at = deckSlot(angle, i, slots, state, berth);
         const good = crates[i];
         // A crate keeps its identity (good and ordinal among its kind) when the order of the deck changes, so only the new one drops in.
         const ordinal = good === undefined ? 0 : crates.slice(0, i).filter((g) => g === good).length;

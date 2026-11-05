@@ -139,7 +139,23 @@ const lastIndex = (events: readonly MatchEvent[], test: (e: MatchEvent) => boole
  * reveal, then each ship to its outcome as its beat plays (`beatIndex` is its place in the voyage,
  * `focus` the state of the beat on screen); from the market on, every ship rests at its outcome.
  */
-export function stageShipState(stage: ResolutionStage, beatIndex: number, voyageIndex: number, resting: ShipState, focus: ShipState | null): ShipState {
+/**
+ * A ship that sails over more than one round (a freighter): 'out' = launched this round and still at sea when
+ * it ends, 'in' = launched earlier and resolved in this round; null for a ship that is launched and resolved here.
+ */
+export type ShipCarry = 'out' | 'in' | null;
+
+export function stageShipState(stage: ResolutionStage, beatIndex: number, voyageIndex: number, resting: ShipState, focus: ShipState | null, carry: ShipCarry = null): ShipState {
+  if (carry === 'out') return stage === 'wanted' ? 'docked' : 'atSea';
+  if (carry === 'in') {
+    // Already out at sea from an earlier round: it stays there until its own beat sails it in to be resolved.
+    if (stage === 'voyage') {
+      if (beatIndex >= 0 && beatIndex < voyageIndex) return resting;
+      if (beatIndex === voyageIndex && focus) return focus;
+      return 'atSea';
+    }
+    return stage === 'wanted' || stage === 'event' || stage === 'reveal' ? 'atSea' : resting;
+  }
   if (stage === 'wanted') return 'docked';
   if (stage === 'event' || stage === 'reveal') return 'sailing';
   if (stage === 'voyage') {
@@ -180,8 +196,11 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   // Who owns which ship this round, from the launch.
   const owners = useMemo(() => {
     const launch = roundEvents.find((e): e is Extract<MatchEvent, { type: 'ships-launched' }> => e.type === 'ships-launched');
-    return new Map((launch?.ships ?? []).map((s) => [s.id, s.owner]));
+    const arriving = roundEvents.find((e): e is Extract<MatchEvent, { type: 'ships-arriving' }> => e.type === 'ships-arriving');
+    return new Map([...(arriving?.ships ?? []), ...(launch?.ships ?? [])].map((s) => [s.id, s.owner]));
   }, [roundEvents]);
+  // Ships that cross rounds: those coming in from an earlier round, and those launched now that this round does not resolve.
+  const arrivingIds = useMemo(() => new Set(roundEvents.flatMap((e) => (e.type === 'ships-arriving' ? e.ships.map((s) => s.id) : []))), [roundEvents]);
   const outcomes = useMemo(() => new Map(roundEvents.flatMap((e) => (e.type === 'ship-resolved' ? [[e.shipId, e.outcome] as const] : []))), [roundEvents]);
 
   // Reveal: role groups one by one.
@@ -250,11 +269,13 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     return lastIndex(events, (e) => e.type === 'round-ended' && e.round === round) + 1;
   }, [events, round, stage]);
 
-  const restingState = (id: ShipId): ShipState => (outcomes.get(id) === 'sank' ? 'sunk' : outcomes.get(id) === 'arrived' ? 'arrived' : 'sailing');
+  const carryOf = (id: ShipId): ShipCarry => (arrivingIds.has(id) ? 'in' : owners.has(id) && !outcomes.has(id) ? 'out' : null);
+  const restingState = (id: ShipId): ShipState =>
+    outcomes.get(id) === 'sank' ? 'sunk' : outcomes.get(id) === 'arrived' ? 'arrived' : carryOf(id) === 'out' ? 'atSea' : 'sailing';
   const tag = beat ? <BeatTag beat={beat} view={playback.view} names={Object.fromEntries(seats.map((s) => [s.id, s.name]))} viewer={viewer} /> : null;
   const layer = beat ? beatLayer({ beat, view: playback.view, angles, laneOf, weather, tag, seats, settled: beats.slice(0, voyageIndex), hold: holdVoyage }) : null;
   const shipState = (id: ShipId): ShipState =>
-    stageShipState(stage, beats.findIndex((b) => b.shipId === id), voyageIndex, restingState(id), layer?.focusState ?? null);
+    stageShipState(stage, beats.findIndex((b) => b.shipId === id), voyageIndex, restingState(id), layer?.focusState ?? null, carryOf(id));
 
   // The two stops that wait for a press go on by themselves online, so no one holds the table.
   // (A hook, so it stays above the early return below.)

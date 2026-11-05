@@ -3,8 +3,11 @@ import type { Board } from '../session/board';
 
 export const PLAYER_COLORS = ['#e0b43c', '#d0553f', '#4f8fd6', '#6db36a'] as const;
 
-/** Where a ship is drawn: waiting at its dock, out at sea, or finished. */
-export type ShipState = 'docked' | 'sailing' | 'sunk' | 'arrived';
+/**
+ * Where a ship is drawn: waiting at its dock, out at sea for this round's voyage, riding at sea between rounds
+ * (a freighter on its way, game-design.md §8.1), or finished.
+ */
+export type ShipState = 'docked' | 'sailing' | 'atSea' | 'sunk' | 'arrived';
 
 export interface SceneSeat {
   readonly id: PlayerId;
@@ -48,6 +51,8 @@ export interface SceneShip {
   /** Index into the seats array whose lane this ship sails. */
   readonly lane: number;
   readonly state: ShipState;
+  /** Sideways berth (in ship gaps) off the lane's middle, when one guild has several ships in the same place. */
+  readonly berth?: number;
   readonly roles: readonly Deployment[];
   readonly rerolled: boolean;
   readonly smuggled: number;

@@ -13,6 +13,7 @@ import {
   type Rules,
   type RoleId,
   type ShipId,
+  type ShipTypeId,
   type VoyageEventId,
   type VoyageModifier,
   type VoyageOutcome,
@@ -23,6 +24,9 @@ const NONE: Goods = { wood: 0, iron: 0, spice: 0, arms: 0 };
 export interface BoardShip {
   readonly id: ShipId;
   readonly owner: PlayerId;
+  readonly type: ShipTypeId;
+  /** Launched in an earlier round and arriving in this one (a freighter, game-design.md §8.1). */
+  readonly fromEarlier: boolean;
   readonly outcome: VoyageOutcome | null;
   /** Public only once the ship is resolved (§4). */
   readonly cargo: Goods | null;
@@ -143,10 +147,10 @@ export function applyEvent(board: Board, event: MatchEvent, rules: Rules = RULES
         board,
       );
     case 'ships-arriving':
-      // Experiment (rules.ships), not yet shown by the interface: ships from an earlier round join this round's voyage.
+      // Ships launched in an earlier round (a freighter) join this round's voyage.
       return {
         ...board,
-        ships: [...board.ships, ...event.ships.map((s) => ({ id: s.id, owner: s.owner, outcome: s.outcome, cargo: null, modifier: null, confiscated: [], smuggling: null }))],
+        ships: [...board.ships, ...event.ships.map((s) => ({ id: s.id, owner: s.owner, type: s.type, fromEarlier: true, outcome: s.outcome, cargo: null, modifier: null, confiscated: [], smuggling: null }))],
       };
     case 'ships-launched':
       return {
@@ -159,6 +163,8 @@ export function applyEvent(board: Board, event: MatchEvent, rules: Rules = RULES
           ...event.ships.map((s) => ({
             id: s.id,
             owner: s.owner,
+            type: s.type,
+            fromEarlier: false,
             outcome: s.outcome,
             cargo: null,
             modifier: null,

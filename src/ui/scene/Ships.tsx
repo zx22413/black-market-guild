@@ -11,7 +11,11 @@ import { useSwell, useWavePhase } from './SwellContext';
 import type { SceneShip, ShipState } from './tableModel';
 
 /** Where along its lane a ship rests in each state: dock, danger zone, target dock. */
-const LANE_T: Readonly<Record<ShipState, number>> = { docked: 0, sailing: 0.5, sunk: 0.5, arrived: 0.86 };
+/** A freighter between rounds rides closer in than the danger zone, so it never sits where this round's ships sail. */
+const LANE_T: Readonly<Record<ShipState, number>> = { docked: 0, atSea: 0.3, sailing: 0.5, sunk: 0.5, arrived: 0.86 };
+
+/** How far apart (scene units) two of one guild's ships ride side by side on its lane. */
+export const BERTH_GAP = 4;
 
 export interface LanePose {
   readonly position: Vector3;
@@ -32,9 +36,9 @@ export function lanePose(angle: number, t: number, sideways = 0): LanePose {
  */
 const DOCK_DISTANCE = 3;
 
-export function shipPose(angle: number, state: ShipState): LanePose {
-  if (state === 'docked') return lanePose(angle, DOCK_DISTANCE / laneCurve(angle).getLength());
-  return lanePose(angle, LANE_T[state]);
+export function shipPose(angle: number, state: ShipState, berth = 0): LanePose {
+  if (state === 'docked') return lanePose(angle, DOCK_DISTANCE / laneCurve(angle).getLength(), berth * BERTH_GAP);
+  return lanePose(angle, LANE_T[state], berth * BERTH_GAP);
 }
 
 /**
@@ -99,7 +103,8 @@ interface VoyageShipProps {
 
 /** A guild ship on its lane; glides from dock to the danger zone and on to the target. */
 export function VoyageShip({ ship, angle, selectable, chosen = false, onSelect, lantern = false }: VoyageShipProps) {
-  const target = useMemo(() => shipPose(angle, ship.state), [angle, ship.state]);
+  const berth = ship.berth ?? 0;
+  const target = useMemo(() => shipPose(angle, ship.state, berth), [angle, ship.state, berth]);
   // Where the ship first appears: its current pose, so a new ship is simply placed and only later
   // state changes sail. Kept in state because a changing position prop would snap the ship back.
   const [spawn] = useState(target);

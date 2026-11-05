@@ -17,9 +17,11 @@ import { Routes } from '../../ui/scene/Routes';
 import { Sea } from '../../ui/scene/Sea';
 import { SeaFog } from '../../ui/scene/SeaFog';
 import { VoyageShip, lanePose } from '../../ui/scene/Ships';
+import { berthsOf } from './berth';
+import { SeaPassage } from './SeaPassage';
 
 /** Where along its lane a ship rests (same as LANE_T in src/ui/scene/Ships.tsx). */
-const LANE_POINT: Readonly<Record<ShipState, number>> = { docked: 0, sailing: 0.5, sunk: 0.5, arrived: 0.86 };
+const LANE_POINT: Readonly<Record<ShipState, number>> = { docked: 0, atSea: 0.3, sailing: 0.5, sunk: 0.5, arrived: 0.86 };
 import { CrestSpray, ShoreSpray } from '../../ui/scene/Spray';
 import { Storm } from '../../ui/scene/Storm';
 import { soundEngine } from '../audio/soundEngine';
@@ -206,8 +208,8 @@ function PinTracker({ pins, elements }: { readonly pins: readonly TablePin[]; re
   return null;
 }
 
-function asSceneShip(ship: TableShip, lane: number): SceneShip {
-  return { id: ship.id, kind: 'solo', owners: [ship.owner], lane, state: ship.state, roles: [], rerolled: false, smuggled: 0, caughtSmugglers: [], modifier: null };
+function asSceneShip(ship: TableShip, lane: number, berth: number): SceneShip {
+  return { id: ship.id, kind: 'solo', owners: [ship.owner], lane, state: ship.state, berth, roles: [], rerolled: false, smuggled: 0, caughtSmugglers: [], modifier: null };
 }
 
 
@@ -231,6 +233,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
   };
   const [ready, setReady] = useState(false);
   const dpr = useTableDpr();
+  const berths = berthsOf(ships);
 
   return (
     <div className={`beat3d ${dim ? 'dim' : ''}`} onClick={onClick}>
@@ -282,7 +285,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
               const lane = laneOf(ship.owner);
               const body = (
                 <VoyageShip
-                  ship={asSceneShip(ship, lane)}
+                  ship={asSceneShip(ship, lane, berths.get(ship.id) ?? 0)}
                   angle={angles[lane]!}
                   selectable={ship.selectable ?? false}
                   chosen={ship.chosen ?? false}
@@ -292,6 +295,9 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
               );
               return <group key={ship.id}>{wrapShip ? wrapShip(ship.id, body) : body}</group>;
             })}
+            {ships.map((ship) => (
+              <SeaPassage key={`passage-${ship.id}`} angle={angles[laneOf(ship.owner)]!} color={seats[laneOf(ship.owner)]?.color ?? '#fcf4e2'} state={ship.state} berth={berths.get(ship.id) ?? 0} />
+            ))}
             {children}
             <EffectWarmup seatAngles={angles} onDone={onReady} />
           </Suspense>

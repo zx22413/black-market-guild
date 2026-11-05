@@ -8,6 +8,7 @@ import { SoundToggle } from '../audio/SoundToggle';
 import { useCountSound } from '../audio/useUiSounds';
 import { eventLine } from '../log';
 import { beatSeats } from '../scene/beatStage';
+import { berthsOf } from '../scene/berth';
 import { ShipCargo } from '../scene/InvestIsland';
 import { TableCanvas, overviewPoints, useTableLayout, type TablePin, type TableShip } from '../scene/TableCanvas';
 import { marketShow } from '../scene/marketShow';
@@ -28,6 +29,7 @@ import { SealSubmit } from './SealSubmit';
 import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
 import { OWN_BADGE_LIFT, OWN_PLATE_REACH } from './stage';
 import { rivalPlates, seatPlates } from './seatPlates';
+import { seaTagPins } from './seaTags';
 import type { StageEnv } from './stage';
 import { useDeployStep } from './useDeployStep';
 import { useHudSafe } from './useHudSafe';
@@ -259,12 +261,15 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   // Ships: at the dock while the round is decided; the resolution moves them out to sea.
   const launched: TableShip[] = board.ships.map((s) => {
     // The ships stay at the dock until the resolution sends them out.
-    const base: TableShip = { id: s.id, owner: s.owner, state: holding ? resolution.shipState(s.id) : 'docked' };
+    // Outside the round show a ship waits at the dock, except one that left in an earlier round (a freighter) and still rides at sea
+    // while this round is decided. (A ship launched now waits at the dock too, until the show sends it out.)
+    const base: TableShip = { id: s.id, owner: s.owner, state: holding ? resolution.shipState(s.id) : s.fromEarlier && s.outcome === null ? 'atSea' : 'docked' };
     return step?.ship ? step.ship(base) : base;
   });
   // The ship you are picking and loading (nothing is launched yet while the investment is decided).
-  const dockShip: TableShip[] = step?.ownShip && viewer && !launched.some((s) => s.owner === viewer) ? [{ id: `dock-${viewer}` as ShipId, owner: viewer, state: 'docked' }] : [];
-  const ships: TableShip[] = [...launched, ...dockShip];
+  const dockShip: TableShip[] = step?.ownShip && viewer && !launched.some((s) => s.owner === viewer && s.state !== 'atSea') ? [{ id: `dock-${viewer}` as ShipId, owner: viewer, state: 'docked' }] : [];
+  // The side shots of your own ship (picking and loading) leave out ships riding at sea, which would crowd in behind it.
+  const ships: TableShip[] = [...(step?.sideShot ? launched.filter((s) => s.state !== 'atSea') : launched), ...dockShip];
   const stateOf = (id: ShipId) => ships.find((x) => x.id === id)?.state;
   const market = {
     ...marketShow({
@@ -277,6 +282,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     ...(step?.sideShot && viewer ? { hiddenPiers: [angles[laneOf(viewer)]!] } : {}),
   };
   const myCargo = cargoNow;
+  const berths = berthsOf(ships);
 
   const waiting = new Set(snap.waitingOn);
   const deciding = !holding && snap.status === 'running' && board.round > 0;
@@ -308,7 +314,13 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     if (pin.id === `island-${viewerId}`) return { ...pin, position: [pin.position[0], pin.position[1], pin.position[2] - OWN_BADGE_LIFT] };
     return { ...pin, hidden: true };
   };
-  const pins = [...plates.map(stepAside), marketBadgePin(), ...badgesNow.map(stepAside), ...moments.pins, ...(step?.pins ?? []), ...resolution.pins, ...marks];
+  const seaTags = seaTagPins(
+    board.ships.map((s) => ({ id: s.id, owner: s.owner, type: s.type, fromEarlier: s.fromEarlier, atSea: stateOf(s.id) === 'atSea' })),
+    seats,
+    angles,
+    laneOf,
+  ).map((pin) => (closeUp ? { ...pin, hidden: true } : pin));
+  const pins = [...plates.map(stepAside), ...seaTags, marketBadgePin(), ...badgesNow.map(stepAside), ...moments.pins, ...(step?.pins ?? []), ...resolution.pins, ...marks];
   const camera = step?.camera ?? resolution.camera ?? overviewPoints(angles, seats.map((s) => s.island));
 
   const marketRef = useRef<HTMLDivElement>(null);
@@ -391,18 +403,24 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
         {step?.scene}
         {board.ships
           // Cargo rides on the deck until the ship has arrived or sunk; then the beat shows it.
-          .filter((s) => stateOf(s.id) === 'docked' || stateOf(s.id) === 'sailing')
-          .map((s) => (
+          .filter((s) => stateOf(s.id) === 'docked' || stateOf(s.id) === 'sailing' || stateOf(s.id) === 'atSea')
+          .map((s) => {
+            // Only the ship launched this round and still at the viewer's own disposal shows its real cargo (§4): a freighter
+            // that sailed earlier carries goods loaded in a round whose private view is gone.
+            const own = s.owner === viewer && !s.fromEarlier;
+            return (
             // The viewer's ship shows its cargo; others carry one tarp bundle: neither goods nor count are public (§4).
             <ShipCargo
               key={`cargo-${s.id}`}
               angle={angles[laneOf(s.owner)]!}
-              load={s.owner === viewer ? myCargo : { ...NO_GOODS, wood: 1 }}
-              capacity={s.owner === viewer ? GOODS.reduce((n, g) => n + myCargo[g], 0) : 1}
-              covered={s.owner !== viewer}
-              state={stateOf(s.id) === 'docked' ? 'docked' : 'sailing'}
+              load={own ? myCargo : { ...NO_GOODS, wood: 1 }}
+              capacity={own ? GOODS.reduce((n, g) => n + myCargo[g], 0) : 1}
+              covered={!own}
+              state={stateOf(s.id) ?? 'sailing'}
+              berth={berths.get(s.id) ?? 0}
             />
-          ))}
+            );
+          })}
         {resolution.scene}
       </TableCanvas>
 

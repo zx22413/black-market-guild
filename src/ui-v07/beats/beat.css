@@ -3608,3 +3608,9 @@ button .info-tip-anchor {
 :root:root:root .beat3d-pin > .inv-note.under {
   transform: translate(-50%, 42px);
 }
+
+/* The tag beside a freighter riding at sea between rounds (seaTags.tsx). */
+.sea-tag small {
+  display: block;
+  font-size: var(--fs-note);
+}

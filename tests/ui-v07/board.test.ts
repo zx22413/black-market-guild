@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { RULES_V07 } from '../../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../src/v07/match';
-import { buildBoard, initialBoard } from '../../src/ui-v07/session/board';
+import type { MatchEvent } from '../../src/v07/game';
+import { applyEvent, buildBoard, initialBoard } from '../../src/ui-v07/session/board';
 
 const seats = (strategy: 'balanced' | 'aggressive' | 'random'): SeatConfig[] =>
   ['A', 'B', 'C', 'D'].map((name) => ({ kind: 'bot', name, strategy }));
@@ -48,5 +49,16 @@ describe('ui-v07 board rebuilt from public events', () => {
     expect(midway.ships.every((s) => s.cargo === null && s.outcome === null)).toBe(true);
     const after = buildBoard(ids, RULES_V07.startingCash, log.events.slice(0, resolved + 1));
     expect(after.ships.some((s) => s.cargo !== null)).toBe(true);
+  });
+
+  it('keeps a freighter at sea over the round change: launched this round, arriving (from an earlier round) in the next', () => {
+    const freighter = { id: 's-whale', owner: 'p1', type: 'freighter' as const, outcome: null };
+    const launched: MatchEvent = { type: 'ships-launched', round: 1, ships: [freighter], stayedInPort: [] };
+    const arriving: MatchEvent = { type: 'ships-arriving', round: 2, ships: [freighter] };
+    const round1 = [{ type: 'round-started', round: 1 }, launched] as const satisfies readonly MatchEvent[];
+    const launchRound = round1.reduce((b, e) => applyEvent(b, e), initialBoard(['p1', 'p2'], RULES_V07.startingCash));
+    expect(launchRound.ships).toMatchObject([{ id: 's-whale', type: 'freighter', fromEarlier: false, outcome: null }]);
+    const nextRound = [{ type: 'round-started', round: 2 }, arriving].reduce((b, e) => applyEvent(b, e as MatchEvent), launchRound);
+    expect(nextRound.ships).toMatchObject([{ id: 's-whale', type: 'freighter', fromEarlier: true, outcome: null }]);
   });
 });
