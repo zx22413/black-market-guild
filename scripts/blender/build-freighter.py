@@ -279,7 +279,7 @@ def hull_point(z, y, side):
 def build_strakes():
     """A gold wale between planks and green strakes, and a white stripe at the waterline, standing a little proud."""
     for side in (1, -1):
-        for name, y, h, mat, proud in (("wale", 0.95, 0.1, "gold", 0.04), ("stripe", 0.46, 0.07, "marble", 0.016)):
+        for name, y, h, mat, proud in (("wale", 0.95, 0.1, "gold", 0.04), ("moulding", 1.2, 0.07, "woodDark", 0.03), ("stripe", 0.46, 0.07, "marble", 0.016)):
             zs = [STERN_Z + 0.02] + STATIONS[1:-2]
             verts, faces = [], []
             for z in zs:
@@ -299,7 +299,7 @@ def build_strakes():
 def build_trim():
     """Edge finishing ("封邊"): a broad cap rail along the top of both bulwarks, overhanging them inside and out, and a
     stem post where the two sides meet at the bow, so no edge of the hull ends raw."""
-    over, thick = 0.05, 0.075
+    over, thick = 0.09, 0.11
     zs = STATIONS
     for side in (1, -1):
         verts, faces = [], []
@@ -317,11 +317,11 @@ def build_trim():
         faces.append([3, 2, 1, 0])
         last = (n - 1) * 4
         faces.append([last, last + 1, last + 2, last + 3])
-        mesh_from(f"cap-rail-{side}", verts, faces, "woodDark")
+        mesh_from(f"cap-rail-{side}", verts, faces, "wood", shade=1.08)
     # The bow's cap: a short board across the stem joining the two rails.
     zb = zs[-1]
     xb = PROFILE[-1][0] * half_beam(zb) + over
-    box("cap-rail-bow", (0, sheer(zb) + thick / 2 - 0.005, zb + 0.06), (xb * 2, thick + 0.01, 0.2), "woodDark", bevel=0.015)
+    box("cap-rail-bow", (0, sheer(zb) + thick / 2 - 0.005, zb + 0.06), (xb * 2, thick + 0.01, 0.24), "wood", bevel=0.02, shade=1.08)
     # Stem post up the bow's leading edge, standing proud of the planking.
     top = sheer(BOW_Z) + 0.1
     beam("stem-post", (0, 0.3, BOW_Z + 0.06 + 0.03), (0, top, BOW_Z + 0.06 + 0.1 * top + 0.03), 0.17, "woodDark", sides=4)
@@ -375,11 +375,11 @@ def build_stern_house():
     box("house-band", (0, HOUSE_BAND, mid_z), (house_half(HOUSE_BAND) * 2 + 0.06, 0.09, depth + 0.06), "gold", bevel=0.01)
     for x0, x1 in ((HOUSE_LO, HOUSE_HI), (-HOUSE_LO, -HOUSE_HI)):
         for z in (HOUSE_FRONT + 0.03, HOUSE_BACK - 0.03):
-            beam("house-post", (x0 * 1.03, DECK, z), (x1 * 1.03, HOUSE_TOP, z), 0.09, "woodDark", sides=4)
+            beam("house-post", (x0 * 1.04, DECK, z), (x1 * 1.04, HOUSE_TOP, z), 0.12, "wood", sides=4, shade=1.05)
     # Roof slab with an overhang and a little balustrade round it.
     roof_y = HOUSE_TOP + 0.04
     # Its underside sits a little inside the house, never flush with the house's top (flush faces flicker).
-    box("house-roof", (0, roof_y + 0.005, mid_z - 0.02), (HOUSE_HI * 2 + 0.2, 0.1, depth + 0.14), "woodDark", bevel=0.02)
+    box("house-roof", (0, roof_y + 0.005, mid_z - 0.02), (HOUSE_HI * 2 + 0.24, 0.12, depth + 0.18), "wood", bevel=0.03, shade=1.05)
     rx, rz0, rz1 = HOUSE_HI + 0.05, HOUSE_FRONT + 0.02, HOUSE_BACK - 0.02
     rail_y = roof_y + 0.24
     for x in (rx, -rx):
@@ -543,7 +543,7 @@ def build_rig():
 
 # Parts the centre test does not apply to: open surfaces oriented by `facing`, and shapes that are not convex (a rope
 # coil's inner faces rightly look toward its centre; the painted flukes' outline is concave).
-OPEN_PARTS = ("hull-", "deck-floor", "wale-", "stripe-", "cap-rail-1", "cap-rail--1", "beakhead", "coil-", "transom-fluke")
+OPEN_PARTS = ("hull-", "deck-floor", "wale-", "moulding-", "stripe-", "cap-rail-1", "cap-rail--1", "beakhead", "coil-", "transom-fluke")
 
 
 def check_normals():
