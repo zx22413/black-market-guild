@@ -9,13 +9,13 @@ describe('ship berths', () => {
     expect(berthsOf([ship('a', 'p1', 'sailing'), ship('b', 'p2', 'sailing')]).get('a' as ShipId)).toBe(0);
   });
 
-  it('lines a guild\'s ships in the same place up side by side around the middle', () => {
+  it('lines a guild\'s ships up side by side around the middle', () => {
     const berths = berthsOf([ship('a', 'p1', 'sailing'), ship('b', 'p1', 'sailing')]);
     expect([berths.get('a' as ShipId), berths.get('b' as ShipId)]).toEqual([-0.5, 0.5]);
   });
 
-  it('does not separate ships that are in different places (a freighter at sea beside this round\'s ship at the dock)', () => {
-    const berths = berthsOf([ship('a', 'p1', 'atSea'), ship('b', 'p1', 'docked')]);
-    expect([berths.get('a' as ShipId), berths.get('b' as ShipId)]).toEqual([0, 0]);
+  it('separates a freighter at sea from this round\'s ship of the same guild, wherever each is', () => {
+    const berths = berthsOf([ship('a', 'p1', 'atSea'), ship('b', 'p1', 'docked'), ship('c', 'p2', 'docked')]);
+    expect([berths.get('a' as ShipId), berths.get('b' as ShipId), berths.get('c' as ShipId)]).toEqual([-0.5, 0.5, 0]);
   });
 });

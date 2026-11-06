@@ -268,7 +268,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
             {weather === 'sea-fog' && <SeaFog />}
             {weather === 'moonless-night' && <Night seatAngles={angles} />}
             {weather === 'black-market-rush' && <GoldRush />}
-            <Routes angles={angles} colors={seats.map((s) => s.color)} />
+            <Routes angles={angles} colors={seats.map((s) => s.color)} berths={seats.map((seat) => ships.filter((s) => s.owner === seat.id).map((s) => berths.get(s.id) ?? 0))} />
             <TargetIsland seatAngles={angles} night={weather === 'moonless-night'} {...(market ? { show: market } : {})} />
             {seats.map((seat, i) => (
               <IslandPulse key={seat.id} angle={angles[i]!} pulseKey={pulses?.get(seat.id)?.key ?? null} tone={pulses?.get(seat.id)?.tone ?? 'gain'}>

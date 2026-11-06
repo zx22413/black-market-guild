@@ -9,15 +9,14 @@ export interface BerthShip {
 }
 
 /**
- * Sideways berth of each ship, in ship gaps off its lane's middle: a guild's ships in the same place (same
- * lane, same state) ride side by side instead of one inside the other, e.g. a freighter coming in beside
- * the ship launched this round. A ship alone keeps the lane's middle (berth 0).
+ * Sideways berth of each ship, in ship gaps off its lane's middle: a guild's ships ride side by side on their own
+ * lines (one dashed lane each, `Routes`), so the freighter at sea and the ship launched this round can be told
+ * apart wherever they are. A ship alone keeps the lane's middle (berth 0).
  */
 export function berthsOf(ships: readonly BerthShip[]): ReadonlyMap<ShipId, number> {
   const groups = new Map<string, ShipId[]>();
   for (const ship of ships) {
-    const key = `${ship.owner}|${ship.state}`;
-    groups.set(key, [...(groups.get(key) ?? []), ship.id]);
+    groups.set(ship.owner, [...(groups.get(ship.owner) ?? []), ship.id]);
   }
   const berths = new Map<ShipId, number>();
   for (const ids of groups.values()) ids.forEach((id, i) => berths.set(id, i - (ids.length - 1) / 2));

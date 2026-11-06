@@ -9,6 +9,7 @@ const beat = (steps: BeatStep[], outcome: ShipBeat['outcome'] = 'arrived'): Ship
   round: 1,
   shipId: 's1',
   owner: 'p1',
+  type: 'standard',
   start: 3,
   steps,
   final: 4,

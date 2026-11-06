@@ -1,5 +1,5 @@
 import { GOODS, type PlayerId } from '../../v07/game';
-import { CASH_REASON_LABELS } from '../labels';
+import { CASH_REASON_LABELS, SHIP_TYPE_LABELS } from '../labels';
 import { GoodIcon } from '../table3d/GoodIcon';
 import type { BeatView } from './beatTimeline';
 import type { ShipBeat } from './shipBeat';
@@ -21,14 +21,14 @@ export function BeatTag({ beat, view, names, viewer }: BeatTagProps) {
   const step = currentStep(beat, view);
   const lastStep = view.stepsShown > 0 ? beat.steps[view.stepsShown - 1]! : null;
   const sank = beat.outcome === 'sank';
-  const owner = beat.owner === viewer ? '你的船' : `${names[beat.owner] ?? beat.owner}的船`;
+  const owner = `${beat.owner === viewer ? '你' : (names[beat.owner] ?? beat.owner)}的${SHIP_TYPE_LABELS[beat.type]}`;
   const cargo = GOODS.flatMap((g) => Array.from({ length: beat.cargo[g] }, () => g));
   const who = (id: PlayerId) => (id === viewer ? '你' : (names[id] ?? id));
 
   return (
     <div className="beat-tag" data-focus="beat">
       <div className="beat-tag-top">
-        <BeatDie value={view.die} step={lastStep} stepsShown={view.stepsShown} />
+        <BeatDie value={view.die} step={lastStep} stepsShown={view.stepsShown} type={beat.type} />
         <div className="beat-tag-say" aria-live="polite">
           <small>{owner}</small>
           {!view.showOutcome && !step && <b>起始 {beat.start}</b>}

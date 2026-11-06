@@ -1,8 +1,9 @@
 import { useLayoutEffect, useState } from 'react';
 import { GoodIcon } from '../table3d/GoodIcon';
 import { ArrowIcon } from '../table3d/icons';
-import { GOODS, type PlayerId } from '../../v07/game';
-import { CASH_REASON_LABELS, ISLAND_LABELS, ROLE_LABELS, VOYAGE_EVENT_LABELS } from '../labels';
+import { GOODS, type PlayerId, type ShipTypeId } from '../../v07/game';
+import { CASH_REASON_LABELS, ISLAND_LABELS, ROLE_LABELS, SHIP_TYPE_LABELS, VOYAGE_EVENT_LABELS } from '../labels';
+import { shipMeter } from './shipMeter';
 import type { BeatView } from './beatTimeline';
 import type { BeatStep, ShipBeat } from './shipBeat';
 import { useBeatPlayback, type BeatPlayback } from './useBeatPlayback';
@@ -11,9 +12,6 @@ import './beat.css';
 // Focus-layer prototype (docs/ui/v07-layout-research.md §6): one ship's resolution, one thing at a
 // time, as a full-screen card over the dimmed table. On the 3D table the same beat is told by
 // BeatTag, pinned above the ship.
-
-/** §9.1 step 8: 1–3 sinks, 4–6 arrives. Display only; the outcome itself comes from the event. */
-export const SINK_MAX = 2;
 
 type Names = Readonly<Record<PlayerId, string>>;
 
@@ -92,7 +90,9 @@ function useTumble(value: number | null, rolls: boolean): number | null {
   return face;
 }
 
-export function BeatDie({ value, step, stepsShown }: { readonly value: number | null; readonly step: BeatStep | null; readonly stepsShown: number }) {
+export function BeatDie({ value, step, stepsShown, type }: { readonly value: number | null; readonly step: BeatStep | null; readonly stepsShown: number; readonly type: ShipTypeId }) {
+  const meter = shipMeter(type);
+  const sinkMax = Math.max(0, ...meter.filter((c) => c.sinks).map((c) => c.value));
   const tumbling = useTumble(value, stepsShown === 0);
   const face = tumbling ?? value;
   return (
@@ -104,10 +104,10 @@ export function BeatDie({ value, step, stepsShown }: { readonly value: number | 
           {value ?? '?'}
         </div>
       )}
-      <ol className="beat-meter" aria-label="1～2 沉沒，3～6 抵達">
-        {[6, 5, 4, 3, 2, 1].map((v) => (
-          <li key={v} className={`${v <= SINK_MAX ? 'sink' : 'safe'} ${face === v ? 'on' : ''}`}>
-            {v}
+      <ol className="beat-meter" aria-label={sinkMax === 0 ? `${SHIP_TYPE_LABELS[type]}不會沉` : `${SHIP_TYPE_LABELS[type]}：1～${sinkMax} 沉沒，${sinkMax + 1} 以上抵達`}>
+        {meter.map((cell) => (
+          <li key={cell.value} className={`${cell.sinks ? 'sink' : 'safe'} ${face === cell.value ? 'on' : ''}`}>
+            {cell.value}
           </li>
         ))}
       </ol>
@@ -143,7 +143,7 @@ export function BeatCard({ beat, playback, names, viewer, onDone }: BeatCardProp
       <header className="beat-head">
         <span>第 {beat.round} 回合 · 航程結算</span>
         <strong>
-          {beat.owner === viewer ? '你的船' : `${owner}的船`}
+          {beat.owner === viewer ? '你' : owner}的{SHIP_TYPE_LABELS[beat.type]}
         </strong>
       </header>
 
@@ -153,7 +153,7 @@ export function BeatCard({ beat, playback, names, viewer, onDone }: BeatCardProp
           {current && <Actor step={current} />}
           {current?.kind === 'pirate' && <span className="beat-flash" />}
         </div>
-        <BeatDie value={view.die} step={lastStep} stepsShown={view.stepsShown} />
+        <BeatDie value={view.die} step={lastStep} stepsShown={view.stepsShown} type={beat.type} />
       </div>
 
       <div className="beat-caption" aria-live="polite">

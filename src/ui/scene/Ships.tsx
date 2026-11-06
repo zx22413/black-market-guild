@@ -15,7 +15,7 @@ import type { SceneShip, ShipState } from './tableModel';
 const LANE_T: Readonly<Record<ShipState, number>> = { docked: 0, atSea: 0.3, sailing: 0.5, sunk: 0.5, arrived: 0.86 };
 
 /** How far apart (scene units) two of one guild's ships ride side by side on its lane. */
-export const BERTH_GAP = 4;
+export const BERTH_GAP = 6;
 
 export interface LanePose {
   readonly position: Vector3;

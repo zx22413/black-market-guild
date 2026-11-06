@@ -1,4 +1,4 @@
-import { RULES_V07, traitOf, type CashReason, type GoodId, type Goods, type IslandId, type MatchEvent, type PlayerId, type RoleId, type ShipId, type VoyageEventId, type VoyageOutcome } from '../../v07/game';
+import { RULES_V07, traitOf, type CashReason, type GoodId, type Goods, type IslandId, type MatchEvent, type PlayerId, type RoleId, type ShipId, type ShipTypeId, type VoyageEventId, type VoyageOutcome } from '../../v07/game';
 
 // One "beat" of the round resolution: everything that happens to one ship, in the order of §9.1
 // (start die, guards, pirates, voyage event, island, clamp), then its outcome, cargo and money.
@@ -37,6 +37,8 @@ export interface ShipBeat {
   readonly round: number;
   readonly shipId: ShipId;
   readonly owner: PlayerId;
+  /** The ship's type: its name and its die meter. */
+  readonly type: ShipTypeId;
   /** Starting die value of the resolution (§4). */
   readonly start: number;
   readonly steps: readonly BeatStep[];
@@ -98,9 +100,8 @@ export function buildShipBeat(events: readonly MatchEvent[], shipId: ShipId): Sh
   const round = resolved.round;
   const inRound = events.filter((e) => roundOf(e) === round);
   // A ship launched in an earlier round (a freighter) is announced by 'ships-arriving' this round, or by its launch before.
-  const owner = events
-    .flatMap((e) => (e.type === 'ships-launched' || e.type === 'ships-arriving' ? e.ships : []))
-    .find((s) => s.id === shipId)?.owner;
+  const ship = events.flatMap((e) => (e.type === 'ships-launched' || e.type === 'ships-arriving' ? e.ships : [])).find((s) => s.id === shipId);
+  const owner = ship?.owner;
   const mod = inRound.flatMap((e) => (e.type === 'voyage-modifiers' ? e.modifiers : [])).find((m) => m.shipId === shipId);
   if (!owner || !mod) return null;
 
@@ -115,6 +116,7 @@ export function buildShipBeat(events: readonly MatchEvent[], shipId: ShipId): Sh
     round,
     shipId,
     owner,
+    type: ship?.type ?? 'standard',
     start: mod.base,
     steps: modifierSteps(
       mod,
