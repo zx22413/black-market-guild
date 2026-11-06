@@ -7,17 +7,24 @@ import { SHIP_TYPE_LABELS } from '../labels';
 
 /** Roughly half a hull's width on the table, in scene units. */
 const SHIP_HALF_BEAM = 2.5;
+/** How far a tag on a lane up the screen stands along the lane from its ship, toward the market. */
+const TAG_LIFT = 9;
 
 /**
  * Where a ship's tag stands. A lane that runs up the screen (the near and far islands) puts it beside the hull, to its right.
  * A lane that runs across the screen (the side islands) would aim that at the market's badge in the middle, so the tag stands
- * above the hull instead, in the open sea between the islands.
+ * above the hull instead, in the open sea between the islands. On the near island's lane the right side is where the far
+ * side island's name badge hangs, so its tag goes to the left.
  */
-export function seaTagSpot(angle: number, berth: number): { readonly position: Vec3; readonly aside: boolean } {
+export type TagSide = 'above' | 'left' | 'right';
+
+export function seaTagSpot(angle: number, berth: number): { readonly position: Vec3; readonly side: TagSide } {
   const [seatX, , seatZ] = seatPosition(angle);
   const at = shipPose(angle, 'atSea', berth).position;
-  const across = Math.abs(seatX) > Math.abs(seatZ);
-  return across ? { position: [at.x, 3, at.z - SHIP_HALF_BEAM], aside: false } : { position: [at.x + SHIP_HALF_BEAM, 2, at.z], aside: true };
+  if (Math.abs(seatX) > Math.abs(seatZ)) return { position: [at.x, 3, at.z - SHIP_HALF_BEAM], side: 'above' };
+  // Up the lane a little: level with the ship, the tag would sit among the islands' name badges that hang beside the harbour.
+  const along = seatZ > 0 ? -TAG_LIFT : TAG_LIFT;
+  return seatZ > 0 ? { position: [at.x - SHIP_HALF_BEAM, 2, at.z + along], side: 'left' } : { position: [at.x + SHIP_HALF_BEAM, 2, at.z + along], side: 'right' };
 }
 
 /** A ship on the table, as far as its sea tag cares. */
@@ -50,7 +57,7 @@ export function seaTagPins(
         id: `sea-${ship.id}`,
         position: spot.position,
         node: (
-          <span className={`beat3d-plate inv-plate sea-tag ${spot.aside ? 'aside' : ''}`} style={{ borderColor: seat?.color ?? '#888' }}>
+          <span className={`beat3d-plate inv-plate sea-tag ${spot.side}`} style={{ borderColor: seat?.color ?? '#888' }}>
             {seat?.isViewer ? '你' : (seat?.name ?? '')}的{SHIP_TYPE_LABELS[ship.type]}
             <small>{ship.fromEarlier ? '本回合抵達' : '航行中，下回合抵達'}</small>
           </span>

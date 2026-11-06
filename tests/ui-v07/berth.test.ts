@@ -23,11 +23,13 @@ describe('ship berths', () => {
 });
 
 describe('sea tag spot', () => {
-  it('stands beside the hull on a lane up the screen and above it on a lane across the screen', () => {
+  it('stands beside the hull on a lane up the screen (left on the near island\'s lane, right on the far one\'s) and above it on a lane across the screen', () => {
     const angles = seatAngles(4);
     const spots = angles.map((a) => ({ seat: seatPosition(a), spot: seaTagSpot(a, 0) }));
-    for (const { seat, spot } of spots) expect(spot.aside).toBe(Math.abs(seat[0]) <= Math.abs(seat[2]));
-    expect(spots.some((s) => s.spot.aside)).toBe(true);
-    expect(spots.some((s) => !s.spot.aside)).toBe(true);
+    for (const { seat, spot } of spots) {
+      if (Math.abs(seat[0]) > Math.abs(seat[2])) expect(spot.side).toBe('above');
+      else expect(spot.side).toBe(seat[2] > 0 ? 'left' : 'right');
+    }
+    expect(new Set(spots.map((s) => s.spot.side)).size).toBe(3);
   });
 });
