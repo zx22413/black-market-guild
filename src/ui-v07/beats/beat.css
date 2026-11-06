@@ -3622,8 +3622,8 @@ button .info-tip-anchor {
 }
 
 /* The tag beside a freighter riding at sea between rounds (seaTags.tsx). */
-/* Beside the hull, never over it: the pin's point is a hull's half width to the right of the ship. */
-.beat3d-pin > .sea-tag {
+/* Beside the hull, never over it (the pin's point is a hull's half width to the right of the ship); a tag of a lane across the screen stands above it. */
+.beat3d-pin > .sea-tag.aside {
   transform: translate(8px, -50%);
 }
 .sea-tag small {
