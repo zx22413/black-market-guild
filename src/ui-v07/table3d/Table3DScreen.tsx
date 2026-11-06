@@ -263,11 +263,11 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     // The ships stay at the dock until the resolution sends them out.
     // Outside the round show a ship waits at the dock, except one that left in an earlier round (a freighter) and still rides at sea
     // while this round is decided. (A ship launched now waits at the dock too, until the show sends it out.)
-    const base: TableShip = { id: s.id, owner: s.owner, state: holding ? resolution.shipState(s.id) : s.fromEarlier && s.outcome === null ? 'atSea' : 'docked' };
+    const base: TableShip = { id: s.id, owner: s.owner, type: s.type, state: holding ? resolution.shipState(s.id) : s.fromEarlier && s.outcome === null ? 'atSea' : 'docked' };
     return step?.ship ? step.ship(base) : base;
   });
   // The ship you are picking and loading (nothing is launched yet while the investment is decided).
-  const dockShip: TableShip[] = step?.ownShip && viewer && !launched.some((s) => s.owner === viewer && s.state !== 'atSea') ? [{ id: `dock-${viewer}` as ShipId, owner: viewer, state: 'docked' }] : [];
+  const dockShip: TableShip[] = step?.ownShip && viewer && !launched.some((s) => s.owner === viewer && s.state !== 'atSea') ? [{ id: `dock-${viewer}` as ShipId, owner: viewer, state: 'docked', ...(step.ownShipType ? { type: step.ownShipType } : {}) }] : [];
   // The side shots of your own ship (picking and loading) leave out ships riding at sea, which would crowd in behind it.
   const ships: TableShip[] = [...(step?.sideShot ? launched.filter((s) => s.state !== 'atSea') : launched), ...dockShip];
   const stateOf = (id: ShipId) => ships.find((x) => x.id === id)?.state;

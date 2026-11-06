@@ -1,5 +1,5 @@
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { SinkEffect } from './Effects';
 import { Vector3, type Group } from 'three';
 import type { Deployment } from '../../game';
@@ -99,10 +99,12 @@ interface VoyageShipProps {
   readonly onSelect: () => void;
   /** Hang a lit lantern at the masthead (moonless night). */
   readonly lantern?: boolean;
+  /** Draws the ship afloat instead of the Kenney model (a V0.7 ship type, which lights its own lantern); a wreck stays the Kenney wreck. */
+  readonly model?: ReactNode;
 }
 
 /** A guild ship on its lane; glides from dock to the danger zone and on to the target. */
-export function VoyageShip({ ship, angle, selectable, chosen = false, onSelect, lantern = false }: VoyageShipProps) {
+export function VoyageShip({ ship, angle, selectable, chosen = false, onSelect, lantern = false, model: afloat }: VoyageShipProps) {
   const berth = ship.berth ?? 0;
   const target = useMemo(() => shipPose(angle, ship.state, berth), [angle, ship.state, berth]);
   // Where the ship first appears: its current pose, so a new ship is simply placed and only later
@@ -126,8 +128,8 @@ export function VoyageShip({ ship, angle, selectable, chosen = false, onSelect, 
     <>
     {splash && <SinkEffect position={[target.position.x, 0, target.position.z]} />}
     <group ref={group} position={[spawn.position.x, ship.state === 'sunk' ? WRECK_DEPTH : -DRAFT, spawn.position.z]} rotation={[0, spawn.heading, 0]} onClick={click}>
-      <Model name={model} scale={0.546} />
-      {lantern && ship.state !== 'sunk' && (
+      {afloat && ship.state !== 'sunk' ? afloat : <Model name={model} scale={0.546} />}
+      {lantern && !afloat && ship.state !== 'sunk' && (
         <group position={SHIP_LANTERN}>
           <LanternGlow halo={1.8} />
         </group>

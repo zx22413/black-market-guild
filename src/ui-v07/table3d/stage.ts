@@ -3,6 +3,7 @@ import type { Action, Goods, PlayerId, ShipId } from '../../v07/game';
 import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
 import type { BeatSeat } from '../scene/beatStage';
 import type { TablePin, TableShip } from '../scene/TableCanvas';
+import type { ShipTypeId } from '../../v07/game';
 import type { Board } from '../session/board';
 import type { HumanRequest } from '../session/gameSession';
 
@@ -47,6 +48,8 @@ export interface StageParts {
   readonly bareShot?: boolean;
   /** A ship stands at the viewer's dock while they decide (the ship-bay experiment: the ship is what you pick and load). */
   readonly ownShip?: boolean;
+  /** Which ship type stands at the viewer's dock (the one picked, or the card being looked at). */
+  readonly ownShipType?: ShipTypeId;
   /** Adjusts each launched ship (selectable, chosen). */
   readonly ship?: (ship: TableShip) => TableShip;
   readonly onSelectShip?: (id: ShipId) => void;

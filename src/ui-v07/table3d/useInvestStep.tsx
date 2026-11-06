@@ -479,6 +479,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     pins: shipPhase ? [] : typed ? pins.filter((p) => p.id === 'ship-note') : pins,
     camera,
     ...(typed ? { ownShip: true } : {}),
+    ...(typed && (peekShip ?? shipPicked) && (peekShip ?? shipPicked) !== 'none' ? { ownShipType: (peekShip ?? shipPicked) as ShipTypeId } : {}),
     ...(shipPhase ? { bareShot: true } : {}),
     ...(sideView ? { sideShot: true } : {}),
     ...(sideView ? { cameraRig: (safe: SafeArea) => <ShipSideCamera angle={home} shot="ship" safe={phone ? safe : { ...safe, right: Math.max(safe.right, shipPhase ? SHIP_INFO_ROOM : RANK_RAIL_ROOM) }} /> } : {}),

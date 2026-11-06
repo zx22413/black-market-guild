@@ -1,7 +1,7 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useCallback, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Vector3 } from 'three';
-import type { IslandId, PlayerId, ShipId, VoyageEventId } from '../../v07/game';
+import type { IslandId, PlayerId, ShipId, ShipTypeId, VoyageEventId } from '../../v07/game';
 import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
 import { Clouds } from '../../ui/scene/Clouds';
 import { EffectWarmup } from '../../ui/scene/EffectWarmup';
@@ -19,6 +19,7 @@ import { SeaFog } from '../../ui/scene/SeaFog';
 import { VoyageShip, lanePose } from '../../ui/scene/Ships';
 import { berthsOf } from './berth';
 import { SeaPassage } from './SeaPassage';
+import { ShipModel } from './ships/ShipModel';
 
 /** Where along its lane a ship rests (same as LANE_T in src/ui/scene/Ships.tsx). */
 const LANE_POINT: Readonly<Record<ShipState, number>> = { docked: 0, atSea: 0.3, sailing: 0.5, sunk: 0.5, arrived: 0.86 };
@@ -50,6 +51,8 @@ export interface TableShip {
   readonly id: ShipId;
   readonly owner: PlayerId;
   readonly state: ShipState;
+  /** The ship type, public once it is launched (§4); drawn as that type's model. */
+  readonly type?: ShipTypeId;
   /** Can be clicked right now (a role target); shows a ring. */
   readonly selectable?: boolean;
   /** Picked but not yet submitted: bold ring. */
@@ -295,6 +298,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
                   chosen={ship.chosen ?? false}
                   lantern={weather === 'moonless-night'}
                   onSelect={() => onSelectShip?.(ship.id)}
+                  model={<ShipModel type={ship.type ?? 'standard'} color={seats[lane]?.color ?? '#fcf4e2'} night={weather === 'moonless-night'} underway={ship.state === 'sailing' || ship.state === 'atSea'} />}
                 />
               );
               return <group key={ship.id}>{wrapShip ? wrapShip(ship.id, body) : body}</group>;

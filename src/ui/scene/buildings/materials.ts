@@ -55,6 +55,12 @@ export const SWATCHES = {
   // The market's striped stall awnings (colormap column 15 of row A, and the pink of the row above it).
   awningPurple: { top: '#a475e5', bottom: '#5e3bb9' },
   awningPink: { top: '#ef78f0', bottom: '#aa77e7' },
+  // The five ship types (src/ui-v07/scene/ships): sail canvas, the freighter's red-brown junk sails, the ghost ship's
+  // grey rags and the light deck planks (colormap row A column 0, row B columns 6–7 and 10–11, 14).
+  canvas: { top: '#fde4c7', bottom: '#fce2c4' },
+  junkSail: { top: '#f1976c', bottom: '#b06041' },
+  ghostCloth: { top: '#c1caf2', bottom: '#a0a8c9' },
+  deck: { top: '#f2bf99', bottom: '#f0bc96' },
 } as const satisfies Record<string, Swatch>;
 export type Mat = keyof typeof SWATCHES;
 
