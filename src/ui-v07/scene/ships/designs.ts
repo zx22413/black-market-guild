@@ -5,7 +5,7 @@ import { bowed, type SailSpec } from './cloth';
 import { DECK, gunwale, halfBeam, hull, lanternBelow, lanternFrame, lanternHook, mirrored, ports, rope, roundHull, rudder, spar } from './hull';
 
 // The five ship types, each told apart by one silhouette feature (docs/art/ship-silhouettes.md): 信天翁號 a broad square
-// sail, 孤注號 a huge striped lateen, 巨鯨號 a fat round hull with crates and junk sails, 幽靈號 torn rags and a broken
+// sail, 孤注號 a huge striped lateen, 巨鯨號 a pear-bellied Dutch fluyt under stacked square sails, 幽靈號 torn rags and a broken
 // foremast, 海嘯號 a galley's banks of oars and bronze ram. Ship space as in hull.ts (bow +z, keel at y = 0), table units.
 
 /** Parts that move about a pivot (ship space); `ShipModel` draws them with the pivot as their origin. */
@@ -33,7 +33,8 @@ export interface ShipDesign {
   readonly motion:
     | { readonly kind: 'albatross'; readonly center: Vec3; readonly radius: number }
     | { readonly kind: 'die'; readonly die: Hinged }
-    | { readonly kind: 'whale'; readonly tail: Hinged; readonly spout: Vec3 }
+    /** A cargo boom heeled at `heel`, its tip `reach` aft and `rise` up, swinging a crate between ±`swing` radians. */
+    | { readonly kind: 'crane'; readonly heel: Vec3; readonly reach: number; readonly rise: number; readonly swing: number }
     | { readonly kind: 'ghost'; readonly swing: Hinged; readonly flame: Vec3 }
     | { readonly kind: 'galley'; readonly oars: ShipOars };
 }
@@ -170,86 +171,87 @@ const GAMBLER: ShipDesign = {
   motion: { kind: 'die', die: { parts: die(GAMBLER_DIE), pivot: GAMBLER_DIE } },
 };
 
-/* ---------- 巨鯨號: a broad whale-grey freighter, crates on deck, junk sails, a whale's tail at the stern ---------- */
+/* ---------- 巨鯨號: a Dutch fluyt, the era's bulk carrier: pear-bellied, tall stacked square sails, a cargo boom ---------- */
 
-const FREIGHTER_HULL = roundHull(3.5, 1.75, -3);
+// The hull itself, its stern and its deck dressing are built in Blender (scripts/blender/build-freighter.py, drawn from
+// docs/art/freighter-concept.svg); the parts here are its rig (masts, yards, stays, lantern), which the Blender build
+// takes over unchanged so the code-drawn sails hang where they should, plus a plain hull to fall back on.
 
-/** A junk sail swung `yaw` off the centre line about its mast at z, between heights bottom and top, battened. */
-function junkSail(mastZ: number, bottom: number, top: number, fore: number, aft: number, yaw: number): { readonly sail: SailSpec; readonly spars: KitPart[] } {
-  // The sail hangs just to the side of its mast (the side it fills toward), so the mast never runs through the cloth.
-  const side = 0.17;
-  const at = (dz: number, y: number): Vec3 => [-dz * Math.sin(yaw) + side * Math.cos(yaw), y, mastZ + dz * Math.cos(yaw) + side * Math.sin(yaw)];
-  const yardFore = at(fore, top);
-  const yardAft = at(-aft, top - 0.3);
-  const footAft = at(-aft, bottom);
-  const footFore = at(fore + 0.1, bottom);
-  // The leech swells aft in the junk's fan shape; the foot sags a little.
-  const aftward: Vec3 = [Math.sin(yaw) * 0.75, 0, -Math.cos(yaw) * 0.75];
+const FREIGHTER_HULL = roundHull(3.4, 1.75, -3);
+const FORE_Z = 2.05;
+const MAIN_Z = 0.1;
+const MIZZEN_Z = -1.75;
+
+/** A square sail hung just ahead of its mast at z, from a yard at `yard` down to its foot, bellying forward. */
+function squareSail(mastZ: number, yard: number, foot: number, halfHead: number, halfFoot: number, belly: number): { readonly sail: SailSpec; readonly spar: KitPart } {
+  const z = mastZ + 0.18;
+  const head: [Vec3, Vec3] = [[-halfHead, yard, z], [halfHead, yard, z]];
   return {
     sail: {
-      edge: [yardFore, yardAft],
-      pieces: [bowed([yardFore, yardAft, footAft, footFore], [null, aftward, [0, -0.15, 0], null])],
-      mat: 'junkSail',
-      bands: { axis: 'w', pattern: [{ mat: 'junkSail', width: 0.5 }, { mat: 'woodDark', width: 0.08 }] },
-      belly: 0.2,
+      edge: head,
+      pieces: [bowed([head[0], head[1], [halfFoot, foot, z], [-halfFoot, foot, z]], [null, [0.08, 0, 0], [0, -0.22, 0], [-0.08, 0, 0]])],
+      mat: 'canvas',
+      belly,
     },
-    spars: [spar(at(fore + 0.05, top + 0.03), at(-aft - 0.05, top - 0.27), 0.07), spar(at(fore + 0.15, bottom - 0.03), at(-aft - 0.05, bottom - 0.03), 0.07)],
+    spar: spar([-halfHead - 0.14, yard + 0.06, mastZ + 0.1], [halfHead + 0.14, yard + 0.06, mastZ + 0.1], 0.09),
   };
 }
 
-const FORE_JUNK = junkSail(2.1, 2.65, 4.75, 0.45, 1.9, 0.42);
-const MAIN_JUNK = junkSail(-0.75, 2.65, 5.35, 0.5, 2.2, 0.42);
-const freighterLantern = lanternHook([0.75, DECK + 1.1, -2.6], 0.6, [0, 0, -0.45]);
+const MAIN_COURSE = squareSail(MAIN_Z, 4.2, 2.7, 1.45, 1.6, 0.5);
+const MAIN_TOPSAIL = squareSail(MAIN_Z, 5.9, 4.4, 1.0, 1.25, 0.38);
+const FORE_COURSE = squareSail(FORE_Z, 3.95, 2.7, 1.2, 1.35, 0.45);
+const FORE_TOPSAIL = squareSail(FORE_Z, 5.4, 4.1, 0.82, 1.08, 0.33);
+const MIZZEN_LATEEN: SailSpec = {
+  edge: [[0.18, 3.6, -1.0], [0.18, 5.4, -2.9]],
+  pieces: [bowed([[0.18, 3.6, -1.0], [0.18, 5.4, -2.9], [0.18, 3.9, -2.75]], [null, [0, 0, -0.12], [0, -0.12, 0]])],
+  mat: 'canvas',
+  belly: 0.3,
+};
+const freighterLantern = lanternHook([0.42, 3.38, -2.98], 0.62, [0.36, 0, -0.12]);
 
-/** Crates along both sides of the deck, leaving the centre line for the cargo you load. */
-function deckCrates(): KitPart[] {
-  const crate = (x: number, y: number, z: number): KitPart => ({ kind: 'box', center: [x, y, z], size: [0.6, 0.58, 0.66], bevel: 0.03, mat: 'wood' });
-  const bottom = DECK + 0.29;
-  const rows = [-1.15, -0.35, 0.45, 1.25].flatMap((z) => [crate(1.02, bottom, z), crate(-1.02, bottom, z)]);
-  return [...rows, crate(1.02, bottom + 0.58, -0.35), crate(1.02, bottom + 0.58, 0.45), crate(-1.02, bottom + 0.58, 0.45)];
+/** Crates and the stern house of the fallback hull (the Blender hull dresses its own deck). */
+function fallbackDeck(): KitPart[] {
+  const crate = (x: number, z: number): KitPart => ({ kind: 'box', center: [x, DECK + 0.25, z], size: [0.5, 0.5, 0.55], bevel: 0.03, mat: 'wood' });
+  return [
+    ...[-1.1, -0.4].flatMap((z) => [crate(0.8, z), crate(-0.8, z)]),
+    { kind: 'box', center: [0, DECK + 0.6, -2.55], size: [1.6, 1.2, 0.9], bevel: 0.04, mat: 'roofGreen' },
+  ];
 }
 
-/** The whale's flukes: two broad lobes behind the transom on a short stock, beating up and down about its root. */
-const TAIL_ROOT: Vec3 = [0, 1.0, -3.0];
-const TAIL: readonly KitPart[] = [
-  { kind: 'beam', from: [0, 1.0, -2.95], to: [0, 1.1, -3.55], width: 0.3, sides: 6, mat: 'slate' },
-  ...([1, -1] as const).map((side): KitPart => ({
-    kind: 'loft',
-    base: [0, 1.04, 0],
-    outline: side > 0 ? [[0, -3.35], [1.3, -3.7], [1.15, -4.05], [0.05, -3.75]] : [[0, -3.35], [-0.05, -3.75], [-1.15, -4.05], [-1.3, -3.7]],
-    height: 0.1,
-    bottom: 1,
-    top: 1,
-    mat: 'slate',
-  })),
-];
+/** The cargo boom: heeled just aft of the foremast, it swings a crate from one side of the deck to the other. */
+const BOOM_HEEL: Vec3 = [0, DECK + 0.3, 1.7];
 
 const FREIGHTER: ShipDesign = {
   parts: [
-    ...hull(FREIGHTER_HULL, 'slate', 'stone'),
+    ...hull(FREIGHTER_HULL, 'slate', 'wood'),
     ...gunwale(FREIGHTER_HULL),
-    ...deckCrates(),
-    { kind: 'box', center: [0, DECK + 0.55, -2.35], size: [2.1, 1.1, 1.1], bevel: 0.04, mat: 'plaster' },
-    { kind: 'loft', base: [0, DECK + 1.1, -2.35], outline: [[-1.2, -0.66], [1.2, -0.66], [1.2, 0.66], [-1.2, 0.66]], height: 0.45, bottom: 1, top: 0.35, mat: 'roofBlue' },
-    { kind: 'box', center: [-0.5, DECK + 0.6, -1.78], size: [0.3, 0.36, 0.06], bevel: 0.01, mat: 'dark' },
-    { kind: 'box', center: [0.5, DECK + 0.6, -1.78], size: [0.3, 0.36, 0.06], bevel: 0.01, mat: 'dark' },
-    { kind: 'prism', base: [0.55, DECK, 2.45], radius: 0.2, top: 1, height: 0.42, sides: 10, mat: 'wood' },
-    { kind: 'prism', base: [-0.55, DECK, 2.45], radius: 0.2, top: 1, height: 0.42, sides: 10, mat: 'wood' },
+    ...fallbackDeck(),
     rudder(-3),
-    spar([0, DECK, 2.1], [0, 5.0, 2.1], 0.19),
-    spar([0, DECK, -0.75], [0, 5.65, -0.75], 0.2),
-    ...FORE_JUNK.spars,
-    ...MAIN_JUNK.spars,
-    // Shrouds to the port rail: the junk sails fill out to starboard.
-    rope([0, 4.9, 2.1], [-1.35, DECK + 0.24, 2.35]),
-    rope([0, 5.55, -0.75], [-1.6, DECK + 0.24, -0.6]),
-    rope([0, 5.55, -0.75], [0, DECK + 1.5, -2.0]),
+    spar([0, DECK, MAIN_Z], [0, 6.4, MAIN_Z], 0.19),
+    spar([0, DECK, FORE_Z], [0, 5.75, FORE_Z], 0.17),
+    spar([0, DECK, MIZZEN_Z], [0, 4.9, MIZZEN_Z], 0.13),
+    spar([0, 1.55, 3.2], [0, 2.4, 4.7], 0.12),
+    MAIN_COURSE.spar,
+    MAIN_TOPSAIL.spar,
+    FORE_COURSE.spar,
+    FORE_TOPSAIL.spar,
+    spar([0.12, 3.5, -0.9], [0.12, 5.5, -3.0], 0.07),
+    // Shrouds land aft of each mast, clear of the square sails' bellies; the mizzen's only to port (its lateen fills to starboard).
+    ...([1, -1] as const).flatMap((side) => [
+      rope([0, 5.8, MAIN_Z], [side * 1.15, DECK + 0.24, MAIN_Z - 0.6]),
+      rope([0, 5.8, MAIN_Z], [side * 1.05, DECK + 0.24, MAIN_Z - 1.1]),
+      rope([0, 5.2, FORE_Z], [side * 1.05, DECK + 0.24, FORE_Z - 0.55]),
+    ]),
+    rope([0, 4.6, MIZZEN_Z], [-0.95, DECK + 0.24, MIZZEN_Z - 0.45]),
+    // Stays: the fore stay to the bowsprit end, the main stay down to the foremast.
+    rope([0, 5.75, FORE_Z], [0, 2.38, 4.66]),
+    rope([0, 6.35, MAIN_Z], [0, 4.45, FORE_Z]),
     ...freighterLantern.parts,
   ],
-  sails: [FORE_JUNK.sail, MAIN_JUNK.sail],
-  pennant: [0, 5.65, -0.75],
+  sails: [MAIN_COURSE.sail, MAIN_TOPSAIL.sail, FORE_COURSE.sail, FORE_TOPSAIL.sail, MIZZEN_LATEEN],
+  pennant: [0, 6.4, MAIN_Z],
   lantern: freighterLantern.at,
-  motion: { kind: 'whale', tail: { parts: TAIL, pivot: TAIL_ROOT }, spout: [0, DECK + 0.1, 2.9] },
+  motion: { kind: 'crane', heel: BOOM_HEEL, reach: 1.1, rise: 2.2, swing: 0.85 },
 };
 
 /* ---------- 幽靈號: a dark old hull, rags hanging from a crooked yard, the foremast snapped ---------- */

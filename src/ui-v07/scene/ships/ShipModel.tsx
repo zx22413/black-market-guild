@@ -6,9 +6,11 @@ import type { Vec3 } from '../../../ui/scene/buildings/polyhedra';
 import type { ShipTypeId } from '../../../v07/game';
 import { sailCloth, type SailSpec } from './cloth';
 import { CLOTH_TIME, glowMaterial, pennantMaterial, sailMaterial, type ClothBend, type Wind } from './clothMaterial';
+import { BlenderHull, blenderHullUrl } from './BlenderHull';
 import { SHIP_DESIGNS, type ShipDesign } from './designs';
+import { DECK } from './hull';
 import { FLAME_WARM, LanternFlame } from './shipLights';
-import { Albatross, cachedGeometry, GalleyOars, GhostLantern, TumblingDie, WhaleTail } from './shipMotions';
+import { Albatross, cachedGeometry, GalleyOars, GhostLantern, TumblingDie, CargoBoom } from './shipMotions';
 
 /** One cloth ready to draw: its plates, where its frame sits on the ship, and how the shader bends it. */
 interface ClothPiece {
@@ -54,7 +56,8 @@ function personality(design: ShipDesign, body: Group, t: number, u: number): voi
       body.rotation.set(0, 0, -(0.03 + 0.17 * u) * gust);
       break;
     }
-    case 'whale':
+    case 'crane':
+      // A deep-laden fluyt: slow, heavy rolling.
       body.rotation.set(0.015 * Math.sin(t * 0.4), 0, 0.035 * Math.sin(t * 0.5));
       break;
     case 'ghost':
@@ -101,11 +104,16 @@ export function ShipModel({ type, color, night, underway }: ShipModelProps) {
     if (body.current) personality(design, body.current, clock.elapsedTime, going.current);
   });
   const motion = design.motion;
+  const glb = blenderHullUrl(type);
   return (
     <group ref={body}>
-      <mesh geometry={hull} castShadow receiveShadow dispose={null}>
-        <meshStandardMaterial vertexColors roughness={0.8} />
-      </mesh>
+      {glb ? (
+        <BlenderHull url={glb} />
+      ) : (
+        <mesh geometry={hull} castShadow receiveShadow dispose={null}>
+          <meshStandardMaterial vertexColors roughness={0.8} />
+        </mesh>
+      )}
       {rig.sails.map((sail, i) => (
         <group key={i} matrix={sail.matrix} matrixAutoUpdate={false}>
           <mesh geometry={sail.geometry} material={night && glows[i] ? glows[i]! : sails[i]!} castShadow={!(night && sail.glow)} dispose={null} />
@@ -117,7 +125,7 @@ export function ShipModel({ type, color, night, underway }: ShipModelProps) {
       {design.lantern && <LanternFlame at={design.lantern} color={FLAME_WARM} lit={night} />}
       {motion.kind === 'albatross' && <Albatross center={motion.center} radius={motion.radius} underway={going} />}
       {motion.kind === 'die' && <TumblingDie die={motion.die} underway={going} />}
-      {motion.kind === 'whale' && <WhaleTail tail={motion.tail} spout={motion.spout} underway={going} />}
+      {motion.kind === 'crane' && <CargoBoom heel={motion.heel} reach={motion.reach} rise={motion.rise} swing={motion.swing} deck={DECK} underway={going} />}
       {motion.kind === 'ghost' && <GhostLantern swing={motion.swing} flame={motion.flame} underway={going} night={night} pulse={pulse} />}
       {motion.kind === 'galley' && <GalleyOars oars={motion.oars} underway={going} />}
     </group>

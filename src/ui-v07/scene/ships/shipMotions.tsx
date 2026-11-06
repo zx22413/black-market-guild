@@ -105,46 +105,91 @@ export function TumblingDie({ die, underway }: { readonly die: Hinged; readonly 
   );
 }
 
-const SPOUT_DROPS = 9;
+/** The cargo boom's moving parts, in its own frame (heel at the origin, pointing aft along -z before it swings). */
+interface Boom {
+  readonly boom: BufferGeometry;
+  readonly crate: BufferGeometry;
+}
 
-/** 巨鯨號: its whale's tail beats slowly behind the stern, and now and then it blows a spout of spray from the bow. */
-export function WhaleTail({ tail, spout, underway }: { readonly tail: Hinged; readonly spout: readonly [number, number, number]; readonly underway: Underway }) {
-  const geometry = pivoted(tail);
-  const fluke = useRef<Group>(null);
-  const drops = useRef<(Mesh | null)[]>([]);
-  const blow = useRef(Math.random() * 5);
-  const lean = useMemo(() => Array.from({ length: SPOUT_DROPS }, (_, i) => new Vector3(Math.cos(i * 2.4) * 0.35, 1, Math.sin(i * 2.4) * 0.35)), []);
-  useLiveFrame(({ clock }, delta) => {
-    const u = underway.current;
-    const t = clock.elapsedTime;
-    if (fluke.current) fluke.current.rotation.x = (0.18 + 0.17 * u) * Math.sin(t * (1.1 + 1.1 * u));
-    const period = 9 - 3 * u;
-    blow.current = (blow.current + delta) % period;
-    const s = blow.current / 1.6;
-    drops.current.forEach((drop, i) => {
-      if (!drop) return;
-      const k = s - i * 0.05;
-      drop.visible = k > 0 && k < 1;
-      if (!drop.visible) return;
-      const d = lean[i]!;
-      drop.position.set(spout[0] + d.x * k * 1.2, spout[1] + 2.6 * k - 2.2 * k * k, spout[2] + d.z * k * 1.2);
-      drop.scale.setScalar(0.22 * (1 - k * 0.6));
-    });
+const booms = new Map<string, Boom>();
+function boomOf(reach: number, rise: number): Boom {
+  const key = `${reach}:${rise}`;
+  const hit = booms.get(key);
+  if (hit) return hit;
+  const tip: [number, number, number] = [0, rise, -reach];
+  const boom = geometryFromParts([
+    { kind: 'beam', from: [0, 0, 0], to: tip, width: 0.11, sides: 6, mat: 'woodDark' },
+    { kind: 'box', center: [0, 0.05, 0], size: [0.24, 0.12, 0.24], bevel: 0.02, mat: 'woodDark' },
+    { kind: 'box', center: tip, size: [0.12, 0.12, 0.12], bevel: 0.02, mat: 'metal' },
+  ]);
+  const crate = geometryFromParts([
+    { kind: 'box', center: [0, 0, 0], size: [0.46, 0.44, 0.48], bevel: 0.03, mat: 'wood' },
+    { kind: 'box', center: [0, 0.02, 0], size: [0.49, 0.06, 0.51], bevel: 0.01, mat: 'rope' },
+  ]);
+  const made = { boom, crate };
+  booms.set(key, made);
+  return made;
+}
+
+/** Height of the crate's centre above the deck when it stands there (half its height). */
+const CRATE_REST = 0.22;
+/** How far below the boom's tip the crate rides when hoisted. */
+const CRATE_HOISTED = 0.75;
+/** The boom's loop, in seconds at the docked pace: wait, hoist, swing across, lower; then the same back. */
+const BOOM_WAIT = 2.6;
+const BOOM_HOIST = 1.2;
+const BOOM_SWING = 2.2;
+
+const smooth = (t: number): number => {
+  const c = Math.max(0, Math.min(1, t));
+  return c * c * (3 - 2 * c);
+};
+
+/**
+ * 巨鯨號: a cargo boom heeled aft of the foremast swings a crate from one side of the deck to the other — hoist, swing,
+ * lower, wait — and back again; slower at the dock, brisker under way.
+ */
+export function CargoBoom({ heel, reach, rise, swing, deck, underway }: { readonly heel: readonly [number, number, number]; readonly reach: number; readonly rise: number; readonly swing: number; readonly deck: number; readonly underway: Underway }) {
+  const { boom, crate } = boomOf(reach, rise);
+  const arm = useRef<Group>(null);
+  const load = useRef<Group>(null);
+  const rope = useRef<Mesh>(null);
+  const clock = useRef(Math.random() * 10);
+  const rest = deck + CRATE_REST - heel[1];
+  useLiveFrame((_, delta) => {
+    clock.current += delta * (1 + 0.6 * underway.current);
+    const half = BOOM_WAIT + 2 * BOOM_HOIST + BOOM_SWING;
+    const t = clock.current % (2 * half);
+    const back = t >= half;
+    const s = t % half;
+    const lift = s < BOOM_WAIT ? 0 : s < BOOM_WAIT + BOOM_HOIST ? smooth((s - BOOM_WAIT) / BOOM_HOIST) : s < BOOM_WAIT + BOOM_HOIST + BOOM_SWING ? 1 : smooth(1 - (s - BOOM_WAIT - BOOM_HOIST - BOOM_SWING) / BOOM_HOIST);
+    const across = s < BOOM_WAIT + BOOM_HOIST ? 0 : smooth((s - BOOM_WAIT - BOOM_HOIST) / BOOM_SWING);
+    const from = back ? -swing : swing;
+    if (arm.current) arm.current.rotation.y = from + (-2 * from) * across;
+    const y = rest + (rise - CRATE_HOISTED - rest) * lift;
+    if (load.current) load.current.position.set(0, y, -reach);
+    if (rope.current) {
+      const top = rise - 0.06;
+      const bottom = y + 0.22;
+      rope.current.position.set(0, (top + bottom) / 2, -reach);
+      rope.current.scale.set(1, Math.max(0.01, top - bottom), 1);
+    }
   });
   return (
-    <>
-      <group ref={fluke} position={[...tail.pivot]}>
-        <mesh geometry={geometry} castShadow dispose={null}>
+    <group ref={arm} position={[...heel]}>
+      <mesh geometry={boom} castShadow dispose={null}>
+        <meshStandardMaterial vertexColors roughness={0.8} />
+      </mesh>
+      <mesh ref={rope}>
+        <boxGeometry args={[0.035, 1, 0.035]} />
+        <meshStandardMaterial color="#ca845c" roughness={0.9} />
+      </mesh>
+      <group ref={load}>
+        <mesh geometry={crate} castShadow dispose={null}>
           <meshStandardMaterial vertexColors roughness={0.8} />
         </mesh>
       </group>
-      {Array.from({ length: SPOUT_DROPS }, (_, i) => (
-        <mesh key={i} ref={(m) => void (drops.current[i] = m)} visible={false}>
-          <icosahedronGeometry args={[1, 0]} />
-          <meshStandardMaterial color="#eaf6ff" flatShading roughness={0.4} />
-        </mesh>
-      ))}
-    </>
+    </group>
   );
 }
 
