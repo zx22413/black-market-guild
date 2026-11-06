@@ -4,6 +4,7 @@ import type { ShipTypeId } from '../../v07/game';
 import { SHIP_TYPE_LABELS, SHIP_TYPE_TEXT } from '../labels';
 import type { ShipCard, ShipEffect } from '../table/shipChoice';
 import { ClockIcon, ForbidIcon, IconDisc, tokenIconUrl } from './icons';
+import { InfoTip } from './InfoTip';
 import './shipPicker.css';
 
 // The ship pick of the ship-bay experiment (docs/proposals/2026-11-ship-bays.md): a hand with one card per ship
@@ -20,6 +21,10 @@ import './shipPicker.css';
 export type ShipPick = ShipTypeId | 'none' | null;
 
 const signed = (n: number): string => `${n > 0 ? '+' : '−'}${Math.abs(n)}`;
+/** What the dice table's two row titles say when they are hovered or tapped (numbers come from the table itself). */
+const FINAL_VALUE_TEXT = '出航時擲一顆骰子，再加上航海事件、島嶼與護衛（+1）、海盜（−1）的修正，就是這艘船的最終值（最低 1）。最終值決定船沉不沉，以及拿到多少貨值。';
+const CARGO_SHARE_TEXT = '船抵達時，船東拿到船上貨物價值的幾成：100% 是原價，超過 100% 是加成；「沉」代表貨物全損。貨值以抵達那回合的價格計。';
+
 const partsText = (effect: ShipEffect): string => effect.parts.map((p) => `${p.label} ${signed(p.delta)}`).join('、');
 const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -215,10 +220,18 @@ export function ShipInfo({ cards, shown, effect, revealed, fresh, layout }: Ship
             style={{ '--faces': card.curve.length } as CSSProperties}
             aria-label="骰值表：最終值，與這艘船拿到貨值的幾成"
           >
-            <li className="label" aria-hidden="true">
-              {rolled && <em>擲出</em>}
-              <small>最終值</small>
-              <b>拿貨值</b>
+            <li className="label">
+              {rolled && (
+                <InfoTip title="擲出" text="這回合的修正（航海事件、島嶼、護衛與海盜）都算進去後，擲到這些點數的船，會落在這一欄的最終值。">
+                  <em>擲出</em>
+                </InfoTip>
+              )}
+              <InfoTip title="最終值" text={FINAL_VALUE_TEXT}>
+                <small>最終值</small>
+              </InfoTip>
+              <InfoTip title="拿貨值" text={CARGO_SHARE_TEXT}>
+                <b>拿貨值</b>
+              </InfoTip>
             </li>
             {card.curve.map((row, i) => {
               const rolls = card.effectRolls[i] ?? [];
