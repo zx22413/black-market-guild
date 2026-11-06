@@ -2,6 +2,7 @@ import { useGLTF } from '@react-three/drei';
 import { useMemo } from 'react';
 import type { BufferGeometry, Mesh } from 'three';
 import type { ShipTypeId } from '../../../v07/game';
+import { CargoBoom, type CargoBoomProps } from './shipMotions';
 
 // Ship hulls built in Blender (scripts/blender/build-*.py) instead of from code parts: the hull, its decoration and the
 // deck dressing come from the GLB; the rig's sails, the pennant, the lantern flame and the moving parts still come from
@@ -20,20 +21,30 @@ export function blenderHullUrl(type: ShipTypeId): string | null {
   return BLENDER_HULLS[type] ?? null;
 }
 
-/** The hull mesh from a GLB: its first mesh, vertex colours = palette gradient × baked ambient occlusion, flat shaded. */
-export function BlenderHull({ url }: { readonly url: string }) {
+/**
+ * The hull from a GLB: its mesh named after the ship (any mesh but `boom` and `crate`), vertex colours = palette gradient ×
+ * baked ambient occlusion, flat shaded. `crane` draws the freighter's cargo boom with the GLB's `boom` and `crate`
+ * meshes when it has them.
+ */
+export function BlenderHull({ url, crane }: { readonly url: string; readonly crane?: Omit<CargoBoomProps, 'model'> }) {
   const { scene } = useGLTF(url);
-  const hull = useMemo(() => {
-    let found: BufferGeometry | null = null;
+  const meshes = useMemo(() => {
+    const found = new Map<string, BufferGeometry>();
     scene.traverse((o) => {
-      if (!found && (o as Mesh).isMesh) found = (o as Mesh).geometry;
+      if ((o as Mesh).isMesh) found.set(o.name, (o as Mesh).geometry);
     });
-    if (!found) throw new Error(`no hull mesh in ${url}`);
-    return found as BufferGeometry;
+    const hull = [...found.entries()].find(([name]) => name !== 'boom' && name !== 'crate')?.[1];
+    if (!hull) throw new Error(`no hull mesh in ${url}`);
+    const boom = found.get('boom');
+    const crate = found.get('crate');
+    return { hull, moving: boom && crate ? { boom, crate } : undefined };
   }, [scene, url]);
   return (
-    <mesh geometry={hull} castShadow receiveShadow dispose={null}>
-      <meshStandardMaterial vertexColors flatShading roughness={0.8} />
-    </mesh>
+    <>
+      <mesh geometry={meshes.hull} castShadow receiveShadow dispose={null}>
+        <meshStandardMaterial vertexColors flatShading roughness={0.8} />
+      </mesh>
+      {crane && <CargoBoom {...crane} {...(meshes.moving ? { model: meshes.moving } : {})} />}
+    </>
   );
 }

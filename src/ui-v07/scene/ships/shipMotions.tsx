@@ -149,8 +149,20 @@ const smooth = (t: number): number => {
  * 巨鯨號: a cargo boom heeled aft of the foremast swings a crate from one side of the deck to the other — hoist, swing,
  * lower, wait — and back again; slower at the dock, brisker under way.
  */
-export function CargoBoom({ heel, reach, rise, swing, deck, underway }: { readonly heel: readonly [number, number, number]; readonly reach: number; readonly rise: number; readonly swing: number; readonly deck: number; readonly underway: Underway }) {
-  const { boom, crate } = boomOf(reach, rise);
+export interface CargoBoomProps {
+  readonly heel: readonly [number, number, number];
+  readonly reach: number;
+  readonly rise: number;
+  readonly swing: number;
+  readonly deck: number;
+  readonly underway: Underway;
+  /** The boom and crate built in Blender (BlenderHull.tsx), about the boom's heel and the crate's centre; else built from parts here. */
+  readonly model?: { readonly boom: BufferGeometry; readonly crate: BufferGeometry };
+}
+
+export function CargoBoom({ heel, reach, rise, swing, deck, underway, model }: CargoBoomProps) {
+  const { boom, crate } = model ?? boomOf(reach, rise);
+  const flat = model !== undefined;
   const arm = useRef<Group>(null);
   const load = useRef<Group>(null);
   const rope = useRef<Mesh>(null);
@@ -178,7 +190,7 @@ export function CargoBoom({ heel, reach, rise, swing, deck, underway }: { readon
   return (
     <group ref={arm} position={[...heel]}>
       <mesh geometry={boom} castShadow dispose={null}>
-        <meshStandardMaterial vertexColors roughness={0.8} />
+        <meshStandardMaterial vertexColors flatShading={flat} roughness={0.8} />
       </mesh>
       <mesh ref={rope}>
         <boxGeometry args={[0.035, 1, 0.035]} />
@@ -186,7 +198,7 @@ export function CargoBoom({ heel, reach, rise, swing, deck, underway }: { readon
       </mesh>
       <group ref={load}>
         <mesh geometry={crate} castShadow dispose={null}>
-          <meshStandardMaterial vertexColors roughness={0.8} />
+          <meshStandardMaterial vertexColors flatShading={flat} roughness={0.8} />
         </mesh>
       </group>
     </group>

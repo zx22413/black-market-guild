@@ -1,6 +1,6 @@
 ---
 name: lowpoly-model
-description: Design and build hand-made low-poly 3D models for the Black Market Guild table (asset buildings, harbor props, island decorations) with the part-data system in src/ui/scene/buildings — references, design direction, SVG blueprint, modeling, in-game verification and tests. Use this whenever the user asks to make, redesign, restyle, enlarge or add detail to a building, prop or other 3D object on the table (e.g. 「做一棟燈塔」「造船廠改好看一點」「島上加個市集攤位」「建築看不清楚」), or asks about materials, colors or the modeling style of the scene — even if they do not mention this skill or the part system.
+description: Design and build hand-made, game-styled (stylized, not diagram-like) low-poly 3D models for the Black Market Guild table (asset buildings, harbor props, island decorations) with the part-data system in src/ui/scene/buildings — references, design direction, SVG blueprint, modeling, in-game verification and tests. Use this whenever the user asks to make, redesign, restyle, enlarge or add detail to a building, prop or other 3D object on the table (e.g. 「做一棟燈塔」「造船廠改好看一點」「島上加個市集攤位」「建築看不清楚」「不夠精緻」「不像遊戲」「跟 For the King 有差」), or asks about materials, colors or the modeling style of the scene — even if they do not mention this skill or the part system.
 ---
 
 # 低面數模型製作
@@ -32,10 +32,28 @@ description: Design and build hand-made low-poly 3D models for the Black Market 
 
 依序做，每一步都讓使用者看得到成果，方向錯了能早點修正。
 
-### 1. 參考與設計方向
+### 1. 參考板、設計稿、確認（先做完才建模）
 
-- 找參考：Kenney 系列（`kenney.nl` 的 Pirate Kit、Fantasy Town Kit、Castle Kit，CC0），加上真實的歷史建築（17 世紀港口、Wikimedia Commons）。參考圖存到 scratchpad 給使用者看，**不要把外部圖片加進 repo**（見 `references/visual/README.md`）。
-- 提出設計方向：這個模型的**主剪影特徵**是什麼（高塔、階梯山牆、吊架……要跟既有建築不同）、用哪個屋頂材質、大約多高多寬。遇到使用者明確說「直接做」才跳過確認。
+照風格指南第 6 節「遊戲化」做。這一步最容易偷懶，也最花時間：巨鯨號重做了四次，都是因為還沒有設計就開始加細節。
+
+1. **參考板**：同時找兩種參考。
+   - 真實物件：博物館模型、歷史圖、Wikimedia Commons，用來確認它本來的結構，例如中式帆的頂桁往船尾上揚、fluyt 是梨形斷面。
+   - 風格化遊戲美術：For the King 的截圖（SteamDB 的 screenshots 頁）、Sketchfab 依 Most liked 排序搜 `stylized ...`、Kenney，看別人怎麼誇張比例、怎麼配色。
+   - 用瀏覽器縮放截圖存到 scratchpad，拼成一張有分組標題、每組一句觀察的參考板給使用者看。**不要把外部圖片加進 repo**（見 `references/visual/README.md`）。
+2. **設計稿**：在 `docs/art/` 畫 SVG（用 Python 產生，Chrome headless 轉 PNG，見下方指令），至少包含：
+   - 主視圖（側面或碼頭側）加標註、俯視（桌面鏡頭看到的樣子）、背面或其他有特色的角度；
+   - 色票（只用 `SWATCHES`，新色標「待新增」）；
+   - 「待確認」與「沿用不變」兩行：寫出要使用者決定的事，以及不能動的尺寸，例如佔地、甲板高度。
+   - 粗描邊加漸層的畫法就夠，重點是輪廓、色帶、主特徵對不對。
+3. **使用者確認**後才進第 2 步。使用者否決的方向，記到對應的設計文件「試過但不採用」，例如 `docs/art/ship-silhouettes.md`。
+4. **選做法**：方正、凸多面體拼得出來的，繼續這個 skill（程式碼零件）；需要曲面船身、往內收的弧線的，改用 `blender-model` skill（風格指南第 7 節）。
+
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu --hide-scrollbars \
+  --window-size=1600,1000 --screenshot=/path/to/scratchpad/sheet.png "file://$PWD/docs/art/xxx-concept.svg"
+```
+
+AI 生圖（codex，見記憶）可以拿來出概念圖，但設計稿仍以 SVG 為準，因為比例要能直接對到遊戲座標。
 
 ### 2. 寫零件資料
 
@@ -89,6 +107,7 @@ npm run capture -- /path/to/scratchpad/out.jpg   # 背景執行，收到一張�
 - `tests/ui/buildings.test.ts` 已經對所有設計檢查：零件是封閉凸體、每種資產有專屬屋頂色、全部落在草地內不重疊、最高建築高過船。新增設計會自動被涵蓋；新增零件種類或 kit 部件時，補上對應的幾何測試。
 - 執行 `npm run typecheck`、`npm test`、`npm run art:buildings`（造景則是 `npm run art:islands`），並把更新後的設計圖一起 commit。
 - 更新 `src/ui/README.md` 裡 `buildings/` 的說明；若規則有變，更新風格指南。
+- 收尾前跑一次風格指南第 5 節（辨識度）、第 6.6 節（遊戲化）和第 6.7 節（顯示錯誤：透明缺面、閃爍、接縫、懸空、被鏡頭切掉）的檢查清單。
 
 ## 常見問題
 
@@ -100,5 +119,8 @@ npm run capture -- /path/to/scratchpad/out.jpg   # 背景執行，收到一張�
 | 平坦的地板上有細細的斜紋 | 陰影瑕疵（shadow acne）；`TableCanvas` 的太陽光已設 `shadow-bias`／`shadow-normalBias`，不要拿掉。另開新的 Canvas 時也要照抄 |
 | 設計圖前後順序錯亂 | 零件穿進另一個實心零件內部；改成沿牆面的樑或拆成多段 |
 | 看起來像方塊堆疊 | 方塊沒倒角、屋頂沒出簷、圓形零件邊數太少；照風格指南第 3 節 |
+| 細節加了很多還是醜、「跟原本沒差」 | 沒有先改輪廓與配色，只加零件或換色；回到第 1 步，照風格指南第 6.2 節的順序重做設計稿 |
+| 裝飾看起來像貼上去的 | 主題元素沒放在本來會有圖案的地方（風格指南第 6.3 節）；改畫在尾板、帆、旗上，或乾脆拿掉 |
+| 特寫鏡頭切到模型頂端 | 特寫鏡頭的取景框是共用的（例：`ShipSideCamera` 的 `SHIP_BOX` 高 5.6）；降低模型，而不是放大取景框讓其他模型變小 |
 | 遊戲裡看不清楚 | 先加強剪影與屋頂色；真的太小再調 `ASSET_BUILDING_SCALE` 與島的半徑，並跑擺放測試 |
 | 天氣一變整個桌面不見 | 霧距由 `WeatherFog` 依鏡頭距離縮放；若改了鏡頭或桌面大小後又出現，檢查那裡 |

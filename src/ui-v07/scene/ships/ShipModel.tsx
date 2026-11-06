@@ -4,7 +4,7 @@ import { geometryFromParts } from '../../../ui/scene/buildings/Building';
 import { useLiveFrame } from '../../../ui/scene/liveFrame';
 import type { Vec3 } from '../../../ui/scene/buildings/polyhedra';
 import type { ShipTypeId } from '../../../v07/game';
-import { sailCloth, type SailSpec } from './cloth';
+import { sailCloth, type SailEmblem, type SailSpec } from './cloth';
 import { CLOTH_TIME, glowMaterial, pennantMaterial, sailMaterial, type ClothBend, type Wind } from './clothMaterial';
 import { BlenderHull, blenderHullUrl } from './BlenderHull';
 import { SHIP_DESIGNS, type ShipDesign } from './designs';
@@ -18,13 +18,14 @@ interface ClothPiece {
   readonly matrix: Matrix4;
   readonly bend: ClothBend;
   readonly glow: boolean;
+  readonly emblem?: SailEmblem;
 }
 
 function clothPiece(spec: SailSpec, phase: number): ClothPiece {
   const cloth = sailCloth(spec);
   const [x, y, z] = cloth.axes;
   const matrix = new Matrix4().set(x[0], y[0], z[0], cloth.origin[0], x[1], y[1], z[1], cloth.origin[1], x[2], y[2], z[2], cloth.origin[2], 0, 0, 0, 1);
-  return { geometry: geometryFromParts(cloth.parts), matrix, bend: { span: cloth.span, belly: spec.belly, flutter: spec.flutter ?? 0, phase }, glow: spec.glow ?? false };
+  return { geometry: geometryFromParts(cloth.parts), matrix, bend: { span: cloth.span, belly: spec.belly, flutter: spec.flutter ?? 0, phase }, glow: spec.glow ?? false, ...(spec.emblem ? { emblem: spec.emblem } : {}) };
 }
 
 /** The pennant at the masthead, flying aft. */
@@ -91,7 +92,7 @@ export function ShipModel({ type, color, night, underway }: ShipModelProps) {
   const rig = rigOf(type);
   const wind = useMemo<Wind>(() => ({ value: underway ? 1 : 0 }), []);
   const going = useRef(underway ? 1 : 0);
-  const sails = useMemo(() => rig.sails.map((s) => sailMaterial(s.bend, wind)), [rig, wind]);
+  const sails = useMemo(() => rig.sails.map((s) => sailMaterial(s.bend, wind, s.emblem)), [rig, wind]);
   const glows = useMemo(() => rig.sails.map((s) => (s.glow ? glowMaterial(s.bend, wind, '#7ff0d4') : null)), [rig, wind]);
   const pennant = useMemo(() => pennantMaterial(rig.pennant.bend, wind, color), [rig, wind, color]);
   useEffect(() => () => [...sails, ...glows, pennant].forEach((m) => m?.dispose()), [sails, glows, pennant]);
@@ -108,7 +109,7 @@ export function ShipModel({ type, color, night, underway }: ShipModelProps) {
   return (
     <group ref={body}>
       {glb ? (
-        <BlenderHull url={glb} />
+        <BlenderHull url={glb} {...(motion.kind === 'crane' ? { crane: { heel: motion.heel, reach: motion.reach, rise: motion.rise, swing: motion.swing, deck: DECK, underway: going } } : {})} />
       ) : (
         <mesh geometry={hull} castShadow receiveShadow dispose={null}>
           <meshStandardMaterial vertexColors roughness={0.8} />
@@ -125,7 +126,7 @@ export function ShipModel({ type, color, night, underway }: ShipModelProps) {
       {design.lantern && <LanternFlame at={design.lantern} color={FLAME_WARM} lit={night} />}
       {motion.kind === 'albatross' && <Albatross center={motion.center} radius={motion.radius} underway={going} />}
       {motion.kind === 'die' && <TumblingDie die={motion.die} underway={going} />}
-      {motion.kind === 'crane' && <CargoBoom heel={motion.heel} reach={motion.reach} rise={motion.rise} swing={motion.swing} deck={DECK} underway={going} />}
+      {motion.kind === 'crane' && !glb && <CargoBoom heel={motion.heel} reach={motion.reach} rise={motion.rise} swing={motion.swing} deck={DECK} underway={going} />}
       {motion.kind === 'ghost' && <GhostLantern swing={motion.swing} flame={motion.flame} underway={going} night={night} pulse={pulse} />}
       {motion.kind === 'galley' && <GalleyOars oars={motion.oars} underway={going} />}
     </group>

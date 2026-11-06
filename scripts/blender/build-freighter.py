@@ -9,7 +9,8 @@ What the GLB holds: the pear-bellied hull (tumblehome up to a narrow deck, a rou
 its bands (grey bottom, white stripe, warm planking, gold wale, green upper strakes), cargo ports, a pointed beakhead,
 the stern house with its arched, painted transom board, the planked deck and its cargo, and the rig's masts, yards and
 ropes, rebuilt from the code design (the dump) so the code-drawn sails, pennant and lantern flame hang where they did.
-The sails, pennant, lantern flame and the cargo boom (a moving part) are NOT in the GLB: ShipModel draws them.
+The cargo boom and the crate it swings are separate meshes (`boom`, `crate`) about their own origins, which ShipModel
+moves; the sails, pennant, lantern flame and the boom's rope are NOT in the GLB: ShipModel draws them.
 
 Every part is shaded top to bottom with its palette swatch (src/ui/scene/buildings/materials.ts); then ambient
 occlusion is baked into the vertex colours, so parts read as fitted together. Coordinates are ship space as in
@@ -94,13 +95,14 @@ def box(name, center, size, mat, bevel=0.02, shade=1.0, yaw=0.0):
     bmesh.ops.create_cube(bm, size=1.0)
     c, s = math.cos(yaw), math.sin(yaw)
     for v in bm.verts:
-        x, y, z = v.co.x * size[0], v.co.z * size[1], v.co.y * size[2]
+        # Cube (x, y, z) -> ship (x, z, -y): a rotation, not a mirror, so the cube's faces keep looking outward. (Swapping
+        # y and z mirrors it; recalc_face_normals after the bevel then only half fixes it, and the inward faces vanish
+        # in the game: crates looked hollow.)
+        x, y, z = v.co.x * size[0], v.co.z * size[1], -v.co.y * size[2]
         x, z = x * c + z * s, -x * s + z * c
         v.co = V(center[0] + x, center[1] + y, center[2] + z)
     if bevel > 0:
         bmesh.ops.bevel(bm, geom=list(bm.edges), offset=bevel, segments=1, affect="EDGES", profile=0.5)
-    # Mapping the cube's axes into ship space mirrors it, so its faces would look inward without this.
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     return finish(bm, name, mat, shade)
 
 
@@ -191,7 +193,8 @@ def sheer(z):
 # drawn in (tumblehome) to a narrow deck. The last height is replaced by sheer(z).
 PROFILE = [(0.0, 0.0), (0.4, 0.05), (0.72, 0.18), (0.92, 0.4), (1.0, 0.7), (0.97, 0.95), (0.88, 1.2), (0.8, None)]
 # The swatch of each outer segment, keel up: grey bottom, warm planks, green upper strakes.
-SEG_MATS = ["slate", "slate", "slate", "wood", "wood", "leaf", "leaf"]
+PAINT = DUMP.get("paint") or "leaf"  # designs.ts FREIGHTER_PAINT: upper strakes, stern house, transom frame
+SEG_MATS = ["slate", "slate", "slate", "wood", "wood", PAINT, PAINT]
 SEG_SHADES = [1.0, 0.92, 1.0, 0.92, 1.0, 0.92, 1.0]
 STATIONS = [STERN_Z, -2.7, -2.2, -1.5, -0.7, 0.2, 1.0, 1.7, 2.3, 2.8, 3.1, 3.28]
 
@@ -335,7 +338,7 @@ def house_block(name, y0, y1, mat):
 def build_stern_house():
     # Warm planks below the rail line, painted green above it (the transom board's colour), a gold band between.
     house_block("house-low", DECK, HOUSE_BAND, "wood")
-    house_block("house-high", HOUSE_BAND, HOUSE_TOP, "leaf")
+    house_block("house-high", HOUSE_BAND, HOUSE_TOP, PAINT)
     mid_z = (HOUSE_FRONT + HOUSE_BACK) / 2
     depth = HOUSE_FRONT - HOUSE_BACK
     box("house-band", (0, HOUSE_BAND, mid_z), (house_half(HOUSE_BAND) * 2 + 0.06, 0.09, depth + 0.06), "gold", bevel=0.01)
@@ -344,7 +347,8 @@ def build_stern_house():
             beam("house-post", (x0 * 1.03, DECK, z), (x1 * 1.03, HOUSE_TOP, z), 0.09, "woodDark", sides=4)
     # Roof slab with an overhang and a little balustrade round it.
     roof_y = HOUSE_TOP + 0.04
-    box("house-roof", (0, roof_y, mid_z - 0.02), (HOUSE_HI * 2 + 0.2, 0.08, depth + 0.14), "woodDark", bevel=0.02)
+    # Its underside sits a little inside the house, never flush with the house's top (flush faces flicker).
+    box("house-roof", (0, roof_y + 0.005, mid_z - 0.02), (HOUSE_HI * 2 + 0.2, 0.1, depth + 0.14), "woodDark", bevel=0.02)
     rx, rz0, rz1 = HOUSE_HI + 0.05, HOUSE_FRONT + 0.02, HOUSE_BACK - 0.02
     rail_y = roof_y + 0.24
     for x in (rx, -rx):
@@ -377,7 +381,7 @@ def arch(half, bottom, shoulder, top, steps=6):
 def build_transom():
     """The fluyt's tall, narrow, painted transom board: a green arched frame, a cream panel, a whale's tail on it."""
     z = HOUSE_BACK - 0.02
-    slab("transom-frame", arch(0.58, 2.05, 3.3, 3.85), z, z - 0.06, "leaf")
+    slab("transom-frame", arch(0.58, 2.05, 3.3, 3.85), z, z - 0.06, PAINT)
     slab("transom-panel", arch(0.44, 2.2, 3.3, 3.7), z - 0.06, z - 0.1, "canvas")
     # The whale's flukes, painted (two thin convex plates on the panel).
     left = [(0.0, 2.55), (0.0, 3.02), (-0.12, 3.12), (-0.3, 3.18), (-0.33, 3.08), (-0.18, 3.0), (-0.06, 2.85)]
@@ -445,6 +449,36 @@ def build_cargo():
     beam("capstan-cap", (0, DECK + 0.4, -1.95), (0, DECK + 0.47, -1.95), 0.36, "woodDark", sides=8)
 
 
+# ---------------------------------------------------------------- the cargo boom (moving parts, exported on their own)
+
+def build_boom():
+    """The boom and the crate it swings, built where they stand at rest (boom pointing aft, crate on the deck), so they
+    take AO from the ship; `main` moves them so the boom's heel and the crate's centre are their origins."""
+    m = DUMP["motion"]
+    hx, hy, hz = m["heel"]
+    tip = (hx, hy + m["rise"], hz - m["reach"])
+    beam("boom-spar", (hx, hy, hz), tip, 0.12, "woodDark", sides=6, taper=0.75)
+    beam("boom-heel", (hx, hy - 0.06, hz), (hx, hy + 0.1, hz), 0.26, "woodDark", sides=8)
+    for t in (0.35, 0.7):
+        a = (hx, hy + m["rise"] * t, hz - m["reach"] * t)
+        beam("boom-band", (a[0], a[1] - 0.03, a[2] + 0.02), (a[0], a[1] + 0.03, a[2] - 0.02), 0.15, "metal", sides=6)
+    box("boom-block", tip, (0.14, 0.16, 0.14), "metal", bevel=0.02)
+    return (hx, hy, hz)
+
+
+CRATE_SIZE = (0.46, 0.44, 0.48)
+
+
+def build_swung_crate():
+    """The crate the boom swings, at rest on the deck beside it; its centre becomes its origin."""
+    m = DUMP["motion"]
+    hx, hy, hz = m["heel"]
+    a = m["swing"]
+    at = (hx - m["reach"] * math.sin(a), DECK + CRATE_SIZE[1] / 2, hz - m["reach"] * math.cos(a))
+    crate("crate-swung", at, size=CRATE_SIZE)
+    return at
+
+
 # ---------------------------------------------------------------- the rig from the code design
 
 def build_rig():
@@ -470,6 +504,29 @@ def build_rig():
                 box(f"lamp-{i}", p["center"], p["size"], p["mat"], bevel=p.get("bevel", 0.01))
             else:
                 beam(f"lamp-cap-{i}", p["base"], (p["base"][0], p["base"][1] + p["height"], p["base"][2]), p["radius"] * 2, p["mat"], sides=4, taper=0.05)
+
+
+# Parts the centre test does not apply to: open surfaces oriented by `facing`, and shapes that are not convex (a rope
+# coil's inner faces rightly look toward its centre; the painted flukes' outline is concave).
+OPEN_PARTS = ("hull-", "deck-floor", "wale-", "stripe-", "beakhead", "coil-", "transom-fluke")
+
+
+def check_normals():
+    """Every convex part's faces must look away from its centre; an inward face is culled in the game (a see-through crate)."""
+    bad = []
+    for ob, _, _ in PARTS:
+        if ob.name.startswith(OPEN_PARTS):
+            continue
+        me = ob.data
+        centre = sum((v.co for v in me.vertices), Vector()) / len(me.vertices)
+        inward = sum(1 for p in me.polygons if p.normal.dot(p.center - centre) < -1e-6)
+        if inward:
+            bad.append(f"{ob.name}: {inward}/{len(me.polygons)}")
+    if bad:
+        # Fail the build: a model with inward faces shows holes in the game and must not be exported.
+        print("INWARD FACES", len(bad), "parts:", "; ".join(bad[:12]))
+        sys.exit(1)
+    print("NORMALS OK")
 
 
 # ---------------------------------------------------------------- colour, ambient occlusion, export
@@ -529,11 +586,12 @@ def bake_ao(ship):
     me.color_attributes.render_color_index = 0
 
 
-def export(ship):
-    for poly in ship.data.polygons:
-        poly.use_smooth = False
+def export(obs):
     bpy.ops.object.select_all(action="DESELECT")
-    ship.select_set(True)
+    for ob in obs:
+        for poly in ob.data.polygons:
+            poly.use_smooth = False
+        ob.select_set(True)
     bpy.ops.export_scene.gltf(filepath=OUT_PATH, export_format="GLB", use_selection=True, export_vertex_color="ACTIVE",
                               export_materials="PLACEHOLDER", export_normals=True, export_apply=True, export_yup=True)
 
@@ -547,9 +605,29 @@ build_transom()
 build_planks()
 build_cargo()
 build_rig()
+ship_parts = len(PARTS)
+heel = build_boom()
+boom_parts = len(PARTS)
+crate_at = build_swung_crate()
+check_normals()
 colour_parts()
-ship = join_parts(PARTS, "freighter")
+ship = join_parts(PARTS[:ship_parts], "freighter")
+boom = join_parts(PARTS[ship_parts:boom_parts], "boom")
+swung = join_parts(PARTS[boom_parts:], "crate")
+# The ship bakes without the boom and its crate (they move, so their shadow must not be painted on the deck); the
+# moving parts bake with the ship around them.
+for ob in (boom, swung):
+    ob.hide_render = True
 bake_ao(ship)
-export(ship)
-tris = sum(len(p.vertices) - 2 for p in ship.data.polygons)
-print(f"EXPORTED {OUT_PATH}: {len(ship.data.polygons)} faces, ~{tris} triangles")
+for ob in (boom, swung):
+    ob.hide_render = False
+bake_ao(boom)
+bake_ao(swung)
+for ob, origin in ((boom, heel), (swung, crate_at)):
+    o = V(*origin)
+    for v in ob.data.vertices:
+        v.co -= o
+export([ship, boom, swung])
+for ob in (ship, boom, swung):
+    tris = sum(len(p.vertices) - 2 for p in ob.data.polygons)
+    print(f"EXPORTED {OUT_PATH} {ob.name}: {len(ob.data.polygons)} faces, ~{tris} triangles")

@@ -20,6 +20,17 @@ export interface SailSpec {
   readonly flutter?: number;
   /** Glows at night instead of taking the light (the ghost ship's rags). */
   readonly glow?: boolean;
+  /** A device painted on the cloth (`clothMaterial.ts` draws it): centred at `u` along the edge and `w` down from it, in the sail's frame, `size` across. */
+  readonly emblem?: SailEmblem;
+}
+
+/** A painted device on a sail: which art, where it sits in the sail's frame, how big, and the colour of its disc. */
+export interface SailEmblem {
+  readonly art: 'whale-tail';
+  readonly u: number;
+  readonly w: number;
+  readonly size: number;
+  readonly mat: Mat;
 }
 
 /** A sail laid out in its own frame: the edge runs along +x from the origin, the cloth hangs toward +z, it bulges along y. */

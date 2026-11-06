@@ -1,5 +1,6 @@
 import type { ShipTypeId } from '../../../v07/game';
 import type { KitPart } from '../../../ui/scene/buildings/kit';
+import type { Mat } from '../../../ui/scene/buildings/materials';
 import type { Vec2, Vec3 } from '../../../ui/scene/buildings/polyhedra';
 import { bowed, type SailSpec } from './cloth';
 import { DECK, gunwale, halfBeam, hull, lanternBelow, lanternFrame, lanternHook, mirrored, ports, rope, roundHull, rudder, spar } from './hull';
@@ -182,8 +183,11 @@ const FORE_Z = 2.05;
 const MAIN_Z = 0.1;
 const MIZZEN_Z = -1.75;
 
-/** A square sail hung just ahead of its mast at z, from a yard at `yard` down to its foot, bellying forward. */
-function squareSail(mastZ: number, yard: number, foot: number, halfHead: number, halfFoot: number, belly: number): { readonly sail: SailSpec; readonly spar: KitPart } {
+/**
+ * A square sail hung just ahead of its mast at z, from a yard at `yard` down to its foot, bellying forward; `emblem`
+ * paints a device of that size and colour in its middle.
+ */
+function squareSail(mastZ: number, yard: number, foot: number, halfHead: number, halfFoot: number, belly: number, emblem?: { readonly size: number; readonly mat: Mat }): { readonly sail: SailSpec; readonly spar: KitPart } {
   const z = mastZ + 0.18;
   const head: [Vec3, Vec3] = [[-halfHead, yard, z], [halfHead, yard, z]];
   return {
@@ -192,12 +196,19 @@ function squareSail(mastZ: number, yard: number, foot: number, halfHead: number,
       pieces: [bowed([head[0], head[1], [halfFoot, foot, z], [-halfFoot, foot, z]], [null, [0.08, 0, 0], [0, -0.22, 0], [-0.08, 0, 0]])],
       mat: 'canvas',
       belly,
+      // In the sail's frame u runs along the yard from its port end and w down from it.
+      ...(emblem ? { emblem: { art: 'whale-tail' as const, u: halfHead, w: (yard - foot) * 0.52, size: emblem.size, mat: emblem.mat } } : {}),
     },
     spar: spar([-halfHead - 0.14, yard + 0.06, mastZ + 0.1], [halfHead + 0.14, yard + 0.06, mastZ + 0.1], 0.09),
   };
 }
 
-const MAIN_COURSE = squareSail(MAIN_Z, 4.2, 2.7, 1.45, 1.6, 0.5);
+/**
+ * The fluyt's paint colour: upper strakes, stern house, transom frame and the sail's emblem disc (Blender reads it too).
+ * Chosen 2026-11-07 from leaf green, charcoal, red and blue side by side.
+ */
+export const FREIGHTER_PAINT: Mat = 'roofBlue';
+const MAIN_COURSE = squareSail(MAIN_Z, 4.2, 2.7, 1.45, 1.6, 0.5, { size: 1.15, mat: FREIGHTER_PAINT });
 const MAIN_TOPSAIL = squareSail(MAIN_Z, 5.9, 4.4, 1.0, 1.25, 0.38);
 const FORE_COURSE = squareSail(FORE_Z, 3.95, 2.7, 1.2, 1.35, 0.45);
 const FORE_TOPSAIL = squareSail(FORE_Z, 5.4, 4.1, 0.82, 1.08, 0.33);
