@@ -34,7 +34,7 @@ RNG = random.Random(7)
 
 DECK = 1.25
 BOW_Z, STERN_Z, HALF_BEAM = 3.35, -3.0, 1.75
-RAIL = 0.09  # bulwark thickness
+RAIL = 0.14  # bulwark thickness (chunky, like Kenney's ships: a thin bulwark reads as cardboard)
 AO_STRENGTH = 0.4
 # How much of the baked AO each part takes, by name prefix (AO is per vertex: a big face tucked in at every corner
 # would otherwise go dark all over).
@@ -296,6 +296,37 @@ def build_strakes():
             mesh_from(f"{name}-{side}", verts, faces, mat)
 
 
+def build_trim():
+    """Edge finishing ("封邊"): a broad cap rail along the top of both bulwarks, overhanging them inside and out, and a
+    stem post where the two sides meet at the bow, so no edge of the hull ends raw."""
+    over, thick = 0.05, 0.075
+    zs = STATIONS
+    for side in (1, -1):
+        verts, faces = [], []
+        for z in zs:
+            xo = PROFILE[-1][0] * half_beam(z)
+            xi = max(xo - RAIL - over, 0.03)
+            s = sheer(z)
+            for x, y in ((xo + over, s - 0.01), (xo + over, s + thick), (xi, s + thick), (xi, s - 0.01)):
+                verts.append((side * x, y, z))
+        n = len(zs)
+        for i in range(n - 1):
+            for k in range(4):
+                a, b = i * 4 + k, i * 4 + (k + 1) % 4
+                faces.append([a, b, b + 4, a + 4])
+        faces.append([3, 2, 1, 0])
+        last = (n - 1) * 4
+        faces.append([last, last + 1, last + 2, last + 3])
+        mesh_from(f"cap-rail-{side}", verts, faces, "woodDark")
+    # The bow's cap: a short board across the stem joining the two rails.
+    zb = zs[-1]
+    xb = PROFILE[-1][0] * half_beam(zb) + over
+    box("cap-rail-bow", (0, sheer(zb) + thick / 2 - 0.005, zb + 0.06), (xb * 2, thick + 0.01, 0.2), "woodDark", bevel=0.015)
+    # Stem post up the bow's leading edge, standing proud of the planking.
+    top = sheer(BOW_Z) + 0.1
+    beam("stem-post", (0, 0.3, BOW_Z + 0.06 + 0.03), (0, top, BOW_Z + 0.06 + 0.1 * top + 0.03), 0.17, "woodDark", sides=4)
+
+
 def build_ports():
     """A merchant's row of square cargo ports with gold rims (no guns)."""
     for side in (1, -1):
@@ -496,19 +527,23 @@ def build_rig():
                     w = p["width"] * 1.1 * (1 - 0.35 * t) + 0.04
                     beam(f"mast-band-{i}", (a[0], y - 0.03, a[2]), (a[0], y + 0.03, a[2]), w, "metal", sides=8)
                 beam(f"mast-step-{i}", (a[0], DECK, a[2]), (a[0], DECK + 0.1, a[2]), p["width"] * 2.0, "woodDark", sides=8)
+                # A cap on the masthead (a truck): a squat disc and a knob, so the mast does not end in a cut.
+                w = p["width"] * 1.1 * 0.65
+                beam(f"mast-cap-{i}", (a[0], b[1] - 0.02, a[2]), (a[0], b[1] + 0.07, a[2]), w * 1.7, "woodDark", sides=8)
+                beam(f"mast-knob-{i}", (a[0], b[1] + 0.07, a[2]), (a[0], b[1] + 0.16, a[2]), w * 0.9, "gold", sides=8, taper=0.5)
                 continue
             beam(f"rig-{i}", a, b, p["width"], p["mat"], sides=4 if p["mat"] == "rope" else p.get("sides", 6))
-        elif p["kind"] in ("box", "prism") and p["mat"] == "metal":
-            # The lantern's iron frame (base plate and cap).
-            if p["kind"] == "box":
-                box(f"lamp-{i}", p["center"], p["size"], p["mat"], bevel=p.get("bevel", 0.01))
-            else:
-                beam(f"lamp-cap-{i}", p["base"], (p["base"][0], p["base"][1] + p["height"], p["base"][2]), p["radius"] * 2, p["mat"], sides=4, taper=0.05)
+        elif p["kind"] == "box" and (p["mat"] == "metal" or p["center"][1] > DECK + 1.5):
+            # Rig details: the lantern's base plate, the yards' end bands and the sails' head ties.
+            box(f"rig-box-{i}", p["center"], p["size"], p["mat"], bevel=p.get("bevel", 0.01))
+        elif p["kind"] == "prism" and p["mat"] == "metal":
+            # The lantern's pyramid cap.
+            beam(f"lamp-cap-{i}", p["base"], (p["base"][0], p["base"][1] + p["height"], p["base"][2]), p["radius"] * 2, p["mat"], sides=4, taper=0.05)
 
 
 # Parts the centre test does not apply to: open surfaces oriented by `facing`, and shapes that are not convex (a rope
 # coil's inner faces rightly look toward its centre; the painted flukes' outline is concave).
-OPEN_PARTS = ("hull-", "deck-floor", "wale-", "stripe-", "beakhead", "coil-", "transom-fluke")
+OPEN_PARTS = ("hull-", "deck-floor", "wale-", "stripe-", "cap-rail-1", "cap-rail--1", "beakhead", "coil-", "transom-fluke")
 
 
 def check_normals():
@@ -598,6 +633,7 @@ def export(obs):
 
 build_hull()
 build_strakes()
+build_trim()
 build_ports()
 build_beakhead()
 build_stern_house()

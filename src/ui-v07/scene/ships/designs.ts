@@ -183,11 +183,14 @@ const FORE_Z = 2.05;
 const MAIN_Z = 0.1;
 const MIZZEN_Z = -1.75;
 
+/** How many ties hold a square sail's head to its yard: about one every 0.55, at least three. */
+const ties = (halfHead: number): number => Math.max(2, Math.round((halfHead * 2) / 0.55)) + 1;
+
 /**
  * A square sail hung just ahead of its mast at z, from a yard at `yard` down to its foot, bellying forward; `emblem`
  * paints a device of that size and colour in its middle.
  */
-function squareSail(mastZ: number, yard: number, foot: number, halfHead: number, halfFoot: number, belly: number, emblem?: { readonly size: number; readonly mat: Mat }): { readonly sail: SailSpec; readonly spar: KitPart } {
+function squareSail(mastZ: number, yard: number, foot: number, halfHead: number, halfFoot: number, belly: number, emblem?: { readonly size: number; readonly mat: Mat }): { readonly sail: SailSpec; readonly spar: KitPart; readonly trim: readonly KitPart[] } {
   const z = mastZ + 0.18;
   const head: [Vec3, Vec3] = [[-halfHead, yard, z], [halfHead, yard, z]];
   return {
@@ -200,6 +203,14 @@ function squareSail(mastZ: number, yard: number, foot: number, halfHead: number,
       ...(emblem ? { emblem: { art: 'whale-tail' as const, u: halfHead, w: (yard - foot) * 0.52, size: emblem.size, mat: emblem.mat } } : {}),
     },
     spar: spar([-halfHead - 0.14, yard + 0.06, mastZ + 0.1], [halfHead + 0.14, yard + 0.06, mastZ + 0.1], 0.09),
+    // Edge finishing: iron bands near the yard's ends, and the sail's head tied to the yard at intervals.
+    trim: [
+      ...([1, -1] as const).map((side): KitPart => ({ kind: 'box', center: [side * (halfHead + 0.04), yard + 0.06, mastZ + 0.1], size: [0.06, 0.13, 0.13], bevel: 0.015, mat: 'metal' })),
+      ...Array.from({ length: ties(halfHead) }, (_, i): KitPart => {
+        const x = -halfHead + 0.1 + ((halfHead * 2 - 0.2) * i) / (ties(halfHead) - 1);
+        return { kind: 'box', center: [x, yard + 0.02, mastZ + 0.15], size: [0.07, 0.17, 0.15], bevel: 0.02, mat: 'canvas' };
+      }),
+    ],
   };
 }
 
@@ -242,10 +253,7 @@ const FREIGHTER: ShipDesign = {
     spar([0, DECK, FORE_Z], [0, 5.75, FORE_Z], 0.17),
     spar([0, DECK, MIZZEN_Z], [0, 4.9, MIZZEN_Z], 0.13),
     spar([0, 1.55, 3.2], [0, 2.4, 4.7], 0.12),
-    MAIN_COURSE.spar,
-    MAIN_TOPSAIL.spar,
-    FORE_COURSE.spar,
-    FORE_TOPSAIL.spar,
+    ...[MAIN_COURSE, MAIN_TOPSAIL, FORE_COURSE, FORE_TOPSAIL].flatMap((s) => [s.spar, ...s.trim]),
     spar([0.12, 3.5, -0.9], [0.12, 5.5, -3.0], 0.07),
     // Shrouds land aft of each mast, clear of the square sails' bellies; the mizzen's only to port (its lateen fills to starboard).
     ...([1, -1] as const).flatMap((side) => [
