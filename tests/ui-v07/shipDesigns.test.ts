@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { SHIP_TYPE_IDS } from '../../src/v07/game';
 import { SWATCHES } from '../../src/ui/scene/buildings/materials';
-import { partFaces, type Vec2 } from '../../src/ui/scene/buildings/polyhedra';
+import { partFaces, type Vec2, type Vec3 } from '../../src/ui/scene/buildings/polyhedra';
 import { BERTH_GAP, DRAFT } from '../../src/ui/scene/Ships';
-import { bowed, sailCloth } from '../../src/ui-v07/scene/ships/cloth';
+import { bowed, sailCloth, type SailSpec } from '../../src/ui-v07/scene/ships/cloth';
 import { SHIP_DESIGNS } from '../../src/ui-v07/scene/ships/designs';
 import { DECK, halfBeam, mirrored, roundHull } from '../../src/ui-v07/scene/ships/hull';
 import { DECK_Y } from '../../src/ui-v07/scene/InvestIsland';
@@ -102,5 +102,56 @@ describe('ship designs', () => {
 
   it('flies every pennant above the deck', () => {
     for (const type of SHIP_TYPE_IDS) expect(SHIP_DESIGNS[type].pennant[1]).toBeGreaterThan(DECK + 3);
+  });
+});
+
+/** Points over a sail at full wind, its belly and flutter at their furthest (both ways for a flapping rag). */
+function filledSail(spec: SailSpec): Vec3[] {
+  const cloth = sailCloth(spec);
+  const [x, y, z] = cloth.axes;
+  const [u0, u1] = cloth.span.u;
+  return cloth.parts.flatMap((part) =>
+    part.kind !== 'loft'
+      ? []
+      : part.outline.flatMap(([u, w]) => {
+          const un = Math.max(-1, Math.min(1, ((u - u0) / (u1 - u0)) * 2 - 1));
+          const v = Math.max(0, Math.min(1, w / cloth.span.w));
+          const belly = spec.belly * (1 - un * un) * Math.sin(Math.PI * v);
+          const flap = (spec.flutter ?? 0) * v;
+          return [belly + flap, belly - flap, 0].map((off): Vec3 => [0, 1, 2].map((i) => cloth.origin[i]! + x[i]! * u + z[i]! * w + y[i]! * off) as unknown as Vec3);
+        }),
+  );
+}
+
+function distanceToSegment(p: Vec3, a: Vec3, b: Vec3): number {
+  const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]] as const;
+  const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * d[0] + (p[1] - a[1]) * d[1] + (p[2] - a[2]) * d[2]) / (d[0] ** 2 + d[1] ** 2 + d[2] ** 2)));
+  return Math.hypot(p[0] - a[0] - d[0] * t, p[1] - a[1] - d[1] * t, p[2] - a[2] - d[2] * t);
+}
+
+describe('sails clear the rigging', () => {
+  it.each(SHIP_TYPE_IDS)('%s: a full sail touches only the spars it is bent to', (type) => {
+    const design = SHIP_DESIGNS[type];
+    for (const sail of design.sails) {
+      const corners = sail.pieces.flat();
+      const filled = filledSail(sail);
+      for (const beam of design.parts) {
+        if (beam.kind !== 'beam') continue;
+        // Its own yard, boom or bowsprit: a corner of the sail is made fast to it.
+        if (corners.some((c) => distanceToSegment(c, beam.from, beam.to) < 0.25)) continue;
+        const nearest = Math.min(...filled.map((p) => distanceToSegment(p, beam.from, beam.to)));
+        expect(nearest, `${type} sail at ${JSON.stringify(sail.edge[0])} vs beam ${JSON.stringify(beam.from)}→${JSON.stringify(beam.to)}`).toBeGreaterThan(beam.width / 2 + 0.02);
+      }
+    }
+  });
+
+  it('keeps the standard ship\'s jib ahead of its square sail', () => {
+    const [square, jib] = SHIP_DESIGNS.standard.sails;
+    expect(Math.min(...filledSail(jib!).map((p) => p[2]))).toBeGreaterThan(Math.max(...filledSail(square!).map((p) => p[2])) + 0.05);
+  });
+
+  it('keeps the gambler\'s jib to port of its lateen', () => {
+    const [lateen, jib] = SHIP_DESIGNS.gambler.sails;
+    expect(Math.max(...filledSail(jib!).map((p) => p[0]))).toBeLessThan(Math.min(...filledSail(lateen!).map((p) => p[0])));
   });
 });

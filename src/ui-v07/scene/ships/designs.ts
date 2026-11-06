@@ -63,10 +63,12 @@ const STANDARD: ShipDesign = {
     // The crow's nest: a small tub round the mast above the yard.
     { kind: 'prism', base: [0, 4.85, 0.3], radius: 0.24, top: 1.15, height: 0.32, sides: 8, mat: 'woodDark' },
     spar([-1.9, 4.7, 0.4], [1.9, 4.7, 0.4], 0.1),
-    rope([0, 5.3, 0.3], [1.15, DECK + 0.24, -0.4]),
-    rope([0, 5.3, 0.3], [-1.15, DECK + 0.24, -0.4]),
-    rope([0, 5.3, 0.3], [1.15, DECK + 0.24, 0.9]),
-    rope([0, 5.3, 0.3], [-1.15, DECK + 0.24, 0.9]),
+    // Shrouds land aft of the square sail, so its belly never reaches them; the forestay runs ahead of it.
+    rope([0, 5.3, 0.3], [1.2, DECK + 0.24, -0.3]),
+    rope([0, 5.3, 0.3], [-1.2, DECK + 0.24, -0.3]),
+    rope([0, 5.3, 0.3], [1.15, DECK + 0.24, -1.1]),
+    rope([0, 5.3, 0.3], [-1.15, DECK + 0.24, -1.1]),
+    rope([0, 5.7, 0.3], [0, 1.85, 4.1]),
     rope([0, 5.7, 0.3], [0, DECK + 0.7, -2.5]),
     ...standardLantern.parts,
   ],
@@ -78,8 +80,9 @@ const STANDARD: ShipDesign = {
       belly: 0.6,
     },
     {
-      edge: [[0, 5.25, 0.45], [0, 1.9, 4.0]],
-      pieces: [bowed([[0, 5.25, 0.45], [0, 1.9, 4.0], [0, 1.72, 1.9]], [null, [0, -0.2, 0], [0, 0, -0.35]])],
+      // The jib on the lower forestay, all of it ahead of the square sail's fullest belly.
+      edge: [[0, 4.4, 1.55], [0, 1.95, 4.0]],
+      pieces: [bowed([[0, 4.4, 1.55], [0, 1.95, 4.0], [0, 1.75, 2.05]], [null, [0, -0.18, 0], [0, 0, -0.22]])],
       mat: 'canvas',
       belly: 0.3,
     },
@@ -140,8 +143,9 @@ const GAMBLER: ShipDesign = {
     spar([0, 1.15, 3.5], [0, 2.05, 5.5], 0.11),
     spar([0, DECK, 0.4], [0, 5.65, 1.1], 0.16),
     spar([0.26, 2.2, 4.4], [0.26, 8.6, -2.6], 0.11),
-    rope([0, 5.5, 1.08], [0.82, DECK + 0.24, 0.1]),
+    // Shrouds only on the port side: the lateen fills out to starboard.
     rope([0, 5.5, 1.08], [-0.82, DECK + 0.24, 0.1]),
+    rope([0, 5.5, 1.08], [-0.7, DECK + 0.24, -1.2]),
     rope([0, 5.6, 1.1], [0, 2.05, 5.45]),
     rope([0.6, 1.75, -2.7], [0.55, DECK + 0.24, -2.4]),
     ...gamblerLantern.parts,
@@ -158,7 +162,7 @@ const GAMBLER: ShipDesign = {
       edge: [[0, 5.05, 1.25], [0, 2.0, 5.3]],
       pieces: [bowed([[0, 5.05, 1.25], [0, 2.0, 5.3], [0, 1.72, 3.1]], [null, [0, -0.18, 0], [0, 0, -0.3]])],
       mat: 'canvas',
-      belly: -0.25,
+      belly: 0.25,
     },
   ],
   pennant: [0.26, 8.6, -2.6],
@@ -172,7 +176,9 @@ const FREIGHTER_HULL = roundHull(3.5, 1.75, -3);
 
 /** A junk sail swung `yaw` off the centre line about its mast at z, between heights bottom and top, battened. */
 function junkSail(mastZ: number, bottom: number, top: number, fore: number, aft: number, yaw: number): { readonly sail: SailSpec; readonly spars: KitPart[] } {
-  const at = (dz: number, y: number): Vec3 => [-dz * Math.sin(yaw), y, mastZ + dz * Math.cos(yaw)];
+  // The sail hangs just to the side of its mast (the side it fills toward), so the mast never runs through the cloth.
+  const side = 0.17;
+  const at = (dz: number, y: number): Vec3 => [-dz * Math.sin(yaw) + side * Math.cos(yaw), y, mastZ + dz * Math.cos(yaw) + side * Math.sin(yaw)];
   const yardFore = at(fore, top);
   const yardAft = at(-aft, top - 0.3);
   const footAft = at(-aft, bottom);
@@ -234,7 +240,9 @@ const FREIGHTER: ShipDesign = {
     spar([0, DECK, -0.75], [0, 5.65, -0.75], 0.2),
     ...FORE_JUNK.spars,
     ...MAIN_JUNK.spars,
-    rope([0, 4.9, 2.1], [0, 1.6, 3.4]),
+    // Shrouds to the port rail: the junk sails fill out to starboard.
+    rope([0, 4.9, 2.1], [-1.35, DECK + 0.24, 2.35]),
+    rope([0, 5.55, -0.75], [-1.6, DECK + 0.24, -0.6]),
     rope([0, 5.55, -0.75], [0, DECK + 1.5, -2.0]),
     ...freighterLantern.parts,
   ],
@@ -267,8 +275,9 @@ function rags(from: Vec3, to: Vec3, strips: readonly (readonly [number, number, 
   }));
 }
 
-const MAIN_YARD: readonly [Vec3, Vec3] = [[-1.75, 5.3, -0.12], [1.75, 5.85, -0.42]];
-const FORE_YARD: readonly [Vec3, Vec3] = [[-1.15, 3.5, 1.78], [1.15, 3.28, 1.68]];
+/** The yards cross ahead of their masts, so the rags hanging from them clear the masts. */
+const MAIN_YARD: readonly [Vec3, Vec3] = [[-1.75, 5.3, 0.1], [1.75, 5.85, -0.2]];
+const FORE_YARD: readonly [Vec3, Vec3] = [[-1.15, 3.5, 2.0], [1.15, 3.28, 1.9]];
 /** The ghost ship's lantern hangs from the hook on its stern arm and swings. */
 const GHOST_HOOK: Vec3 = [0, DECK + 2.73, -3.05];
 const GHOST_LANTERN: Vec3 = lanternBelow(GHOST_HOOK);
@@ -297,7 +306,8 @@ const GHOST: ShipDesign = {
   ],
   sails: [
     ...rags(MAIN_YARD[0], MAIN_YARD[1], [[0.02, 0.18, 2.6], [0.24, 0.38, 1.7], [0.44, 0.58, 2.9], [0.64, 0.8, 2.0], [0.84, 0.98, 2.4]]),
-    ...rags(FORE_YARD[0], FORE_YARD[1], [[0.05, 0.3, 1.4], [0.38, 0.6, 1.0], [0.7, 0.95, 1.55]]),
+    // The snapped foremast stands in the gap between two rags.
+    ...rags(FORE_YARD[0], FORE_YARD[1], [[0.04, 0.3, 1.4], [0.66, 0.95, 1.55]]),
   ],
   pennant: [0.35, 6.3, -0.35],
   motion: {
