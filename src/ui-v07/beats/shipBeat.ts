@@ -149,18 +149,20 @@ export function resolvedShips(events: readonly MatchEvent[], round: number): Shi
 
 export interface ReceiptLine {
   readonly reason: CashReason;
+  /** The ship the money came from or went for; null for money that belongs to no ship. */
+  readonly shipId: ShipId | null;
   readonly amount: number;
   readonly count: number;
 }
 
-/** The round's money for one player, summed per reason in first-seen order: the "your bill" card. */
+/** The round's money for one player, summed per ship and reason in first-seen order: the "your bill" card. */
 export function buildReceipt(events: readonly MatchEvent[], round: number, playerId: PlayerId): { readonly lines: readonly ReceiptLine[]; readonly net: number } {
   const lines: ReceiptLine[] = [];
   for (const e of events) {
     if (e.type !== 'cash-changed' || e.round !== round || e.playerId !== playerId) continue;
-    const i = lines.findIndex((l) => l.reason === e.reason);
-    if (i < 0) lines.push({ reason: e.reason, amount: e.amount, count: 1 });
-    else lines[i] = { reason: e.reason, amount: lines[i]!.amount + e.amount, count: lines[i]!.count + 1 };
+    const i = lines.findIndex((l) => l.reason === e.reason && l.shipId === e.shipId);
+    if (i < 0) lines.push({ reason: e.reason, shipId: e.shipId, amount: e.amount, count: 1 });
+    else lines[i] = { reason: e.reason, shipId: e.shipId, amount: lines[i]!.amount + e.amount, count: lines[i]!.count + 1 };
   }
   return { lines, net: lines.reduce((sum, l) => sum + l.amount, 0) };
 }

@@ -344,6 +344,18 @@
   font-size: var(--fs-title);
   animation: beat-pop 280ms cubic-bezier(0.2, 1.5, 0.4, 1) backwards;
 }
+.receipt-lines li.receipt-ship {
+  display: block;
+  padding: 8px 4px 2px;
+  border-bottom: 0;
+  font-size: var(--fs-body);
+  font-weight: 700;
+  font-family: var(--font-strong);
+  color: #6b5537;
+}
+.receipt-lines li.of-ship {
+  padding-left: 18px;
+}
 .receipt-net {
   margin: 0;
   border: 0;

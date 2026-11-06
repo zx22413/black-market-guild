@@ -77,7 +77,7 @@ describe('ship beat built from public events', () => {
         const expected = events.reduce((n, e) => n + (e.type === 'cash-changed' && e.round === round && e.playerId === id ? e.amount : 0), 0);
         const receipt = buildReceipt(events, round, id);
         expect(receipt.net).toBe(expected);
-        expect(new Set(receipt.lines.map((l) => l.reason)).size).toBe(receipt.lines.length);
+        expect(new Set(receipt.lines.map((l) => `${l.shipId}|${l.reason}`)).size).toBe(receipt.lines.length);
       }
     }
   });

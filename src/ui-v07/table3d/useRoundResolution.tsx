@@ -7,6 +7,7 @@ import type { ShipState } from '../../ui/scene/tableModel';
 import { BeatTag } from '../beats/BeatTag';
 import { countdownLabel, useAutoAdvance } from './useAutoAdvance';
 import { ReceiptCard } from '../beats/ReceiptCard';
+import { shipLabel } from '../beats/shipLabel';
 import { buildReceipt, buildShipBeat, resolvedShips, type ShipBeat } from '../beats/shipBeat';
 import { useBeatSounds } from '../audio/useBeatSounds';
 import { useBeatPlayback } from '../beats/useBeatPlayback';
@@ -307,7 +308,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
           clamp: true,
           node: (
             <span key={flying.key} className={`flight-chip ${flying.amount !== null && flying.amount < 0 ? 'down' : ''}`} style={{ borderColor: colorOf(flying.playerId) }}>
-              {flying.amount !== null && <b>{flying.amount >= 0 ? '+' : '−'}{Math.abs(flying.amount)} G</b>} {flying.playerId === viewer ? '你' : nameOf(flying.playerId)} · {withGoodIcons(flying.label)}
+              {flying.amount !== null && <b>{flying.amount >= 0 ? '+' : '−'}{Math.abs(flying.amount)} G</b>} {flying.playerId === viewer ? '你' : nameOf(flying.playerId)} · {withGoodIcons(flying.label)}{flying.shipId && <small> · {shipLabel(events, round!, flying.shipId, viewer, nameOf)}</small>}
             </span>
           ),
         },
@@ -445,7 +446,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
         {stage === 'wanted' && <WantedBanner seats={wantedSeats} />}
         {weather && stage !== 'wanted' && stage !== 'event' && stage !== 'receipt' && <VoyageEventChip event={weather} />}
         {weather && stage === 'event' && <VoyageEventCard key={round} event={weather} held={holdEvent} hidden={hideEvent} onDone={() => setStage('reveal')} />}
-        {stage === 'receipt' && viewer !== null ? <ReceiptCard round={round!} viewer={viewer} lines={receipt.lines} net={receipt.net} onClose={finish} autoCloseIn={waitingAt === 'receipt' ? secondsLeft : null} /> : null}
+        {stage === 'receipt' && viewer !== null ? <ReceiptCard round={round!} viewer={viewer} lines={receipt.lines} shipName={(id) => shipLabel(events, round!, id, viewer, nameOf)} net={receipt.net} onClose={finish} autoCloseIn={waitingAt === 'receipt' ? secondsLeft : null} /> : null}
       </>
     ),
     onTableClick: stage === 'voyage' && !holdVoyage ? () => (playback.next() ? undefined : nextShip()) : undefined,
