@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Deployment, GoodId, Goods, MatchEvent, PlayerId, PrivateEvent, ShipId, VoyageEventId } from '../../v07/game';
 import type { FitPoint } from '../../ui/scene/CameraRig';
-import { TARGET_ISLAND_RADIUS } from '../../ui/scene/layout';
+import { TARGET_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
 import { shipPose } from '../../ui/scene/Ships';
 import type { ShipState } from '../../ui/scene/tableModel';
 import { BeatTag } from '../beats/BeatTag';
 import { countdownLabel, useAutoAdvance } from './useAutoAdvance';
 import { ReceiptCard } from '../beats/ReceiptCard';
 import { shipLabel } from '../beats/shipLabel';
+import { berthsOf } from '../scene/berth';
 import { buildReceipt, buildShipBeat, resolvedShips, type ShipBeat } from '../beats/shipBeat';
 import { useBeatSounds } from '../audio/useBeatSounds';
 import { useBeatPlayback } from '../beats/useBeatPlayback';
@@ -135,17 +136,22 @@ const lastIndex = (events: readonly MatchEvent[], test: (e: MatchEvent) => boole
 };
 
 /**
- * Where a ship is at each stage of the round's show. It only ever moves on: at the dock while the
- * wanted flag is up (the voyage event is not out yet), at sea from the event card through the role
- * reveal, then each ship to its outcome as its beat plays (`beatIndex` is its place in the voyage,
- * `focus` the state of the beat on screen); from the market on, every ship rests at its outcome.
- */
-/**
  * A ship that sails over more than one round (a freighter): 'out' = launched this round and still at sea when
  * it ends, 'in' = launched earlier and resolved in this round; null for a ship that is launched and resolved here.
  */
 export type ShipCarry = 'out' | 'in' | null;
 
+/** How far apart (px) a guild's rows of role badges stand, so two ships' badges never pile up (a row of two badges is about this wide). */
+const BADGE_ROW_PX = 100;
+/** The near island's badges also go this far up the screen, off the island's own name badge. */
+const BADGE_LEAD_PX = 85;
+
+/**
+ * Where a ship is at each stage of the round's show. It only ever moves on: at the dock while the
+ * wanted flag is up (the voyage event is not out yet), at sea from the event card through the role
+ * reveal, then each ship to its outcome as its beat plays (`beatIndex` is its place in the voyage,
+ * `focus` the state of the beat on screen); from the market on, every ship rests at its outcome.
+ */
 export function stageShipState(stage: ResolutionStage, beatIndex: number, voyageIndex: number, resting: ShipState, focus: ShipState | null, carry: ShipCarry = null): ShipState {
   if (carry === 'out') return stage === 'wanted' ? 'docked' : 'atSea';
   if (carry === 'in') {
@@ -318,7 +324,23 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   // until the bill (the lighthouse's extra look stays low-key: no badge).
   // Roles stay secret until the reveal: no badges while the flag and the event card are up.
   const badgeGroups = stage === 'reveal' ? groups.slice(0, groupsShown) : stage === 'receipt' || stage === 'wanted' || stage === 'event' ? [] : groups;
-  const badgeCtx: PlaceContext = { angles, laneOf, ships: new Map([...owners].map(([id, owner]) => [id, { owner, state: shipState(id) }])) };
+  const badgeShips = [...owners].map(([id, owner]) => ({ id, owner, state: shipState(id) }));
+  const berths = berthsOf(badgeShips);
+  const badgeCtx: PlaceContext = { angles, laneOf, ships: new Map(badgeShips.map((s) => [s.id, { owner: s.owner, state: s.state }])), berths };
+  // One guild's ships ride side by side, so their badge rows hang at different depths too: a row's worth of badges is wider than the berth gap.
+  // A guild's badge rows stand side by side (a row is about as wide as the berth gap is on screen, so the berth alone is not enough),
+  // and the near island's go up the screen, clear of its own name badge.
+  const badgeSlide = (shipId: ShipId): number => {
+    const owner = owners.get(shipId);
+    const count = badgeShips.filter((s) => s.owner === owner).length;
+    return (badgeRow(shipId) - (count - 1) / 2) * BADGE_ROW_PX;
+  };
+  const badgeLift = (shipId: ShipId): number => (seatPosition(angles[laneOf(owners.get(shipId) ?? '')]!)[2] > 0 ? -BADGE_LEAD_PX : 0);
+  const badgeRow = (shipId: ShipId): number => {
+    const owner = owners.get(shipId);
+    const mine = badgeShips.filter((s) => s.owner === owner).map((s) => berths.get(s.id) ?? 0).sort((a, b) => a - b);
+    return Math.max(0, mine.indexOf(berths.get(shipId) ?? 0));
+  };
   const onShips = new Map<ShipId, Deployment[]>();
   for (const g of badgeGroups) {
     for (const d of g.deployments) {
@@ -341,7 +363,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   const badgePins: TablePin[] = [
     ...[...onShips].map(([shipId, ds]): TablePin => {
       const [x, , z] = placePoint({ kind: 'ship', shipId }, badgeCtx);
-      return { id: `badges-${shipId}`, position: [x, 0, z + 4.5], node: <RoleBadges deployments={ds} colorOf={colorOf} nameOf={nameOrYou} stamp={stamp} /> };
+      return { id: `badges-${shipId}`, position: [x, 0, z + 4.5], lift: badgeLift(shipId), slide: badgeSlide(shipId), node: <RoleBadges deployments={ds} colorOf={colorOf} nameOf={nameOrYou} stamp={stamp} /> };
     }),
     // Brokers bet on the market: their badges hang at the harbor, on its front-left diagonal where
     // no lane runs (so they never look like they sit on a ship).

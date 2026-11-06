@@ -68,6 +68,10 @@ export interface TablePin {
   readonly drop?: boolean;
   /** Ease toward the position instead of jumping, for a label that follows something that glides (a pushed ship). */
   readonly glide?: boolean;
+  /** Screen pixels the label is moved down from its point (negative: up), to stack labels that share a point. */
+  readonly lift?: number;
+  /** Screen pixels the label is moved right (negative: left), to set labels that share a point side by side. */
+  readonly slide?: number;
 }
 
 
@@ -202,7 +206,7 @@ function PinTracker({ pins, elements }: { readonly pins: readonly TablePin[]; re
       }
       if (side?.classList.contains('side-left')) x += Math.max(0, SIDE_MARGIN - (x - SIDE_GAP - side.offsetWidth));
       else if (side?.classList.contains('side-right')) x -= Math.max(0, x + SIDE_GAP + side.offsetWidth - (width - SIDE_MARGIN));
-      el.style.transform = `translate(${x}px, ${y}px)`;
+      el.style.transform = `translate(${x + (pin.slide ?? 0)}px, ${y + (pin.lift ?? 0)}px)`;
     }
   });
   return null;

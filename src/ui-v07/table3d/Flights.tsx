@@ -24,6 +24,8 @@ export interface PlaceContext {
   readonly laneOf: (id: PlayerId) => number;
   /** Owner and resting state of each ship this round. */
   readonly ships: ReadonlyMap<ShipId, { readonly owner: PlayerId; readonly state: ShipState }>;
+  /** Sideways berth of ships that ride beside another of their guild (`berthsOf`); missing = the lane's middle. */
+  readonly berths?: ReadonlyMap<ShipId, number>;
 }
 
 export function placePoint(place: Place, ctx: PlaceContext): Vec3 {
@@ -41,7 +43,7 @@ export function placePoint(place: Place, ctx: PlaceContext): Vec3 {
     case 'ship': {
       const s = ctx.ships.get(place.shipId);
       if (!s) return [0, 3, 0];
-      const p = shipPose(ctx.angles[ctx.laneOf(s.owner)]!, s.state).position;
+      const p = shipPose(ctx.angles[ctx.laneOf(s.owner)]!, s.state, ctx.berths?.get(place.shipId) ?? 0).position;
       return [p.x, 3, p.z];
     }
   }

@@ -2064,6 +2064,11 @@ button.inv-stack:hover {
 .role-badges {
   display: flex;
   gap: 4px;
+  /* The pin is a zero-width box: without this its info-tip anchors shrink to nothing and the round badges pile up on each other. */
+  width: max-content;
+}
+.role-badges > .info-tip-anchor {
+  flex: none;
 }
 .role-badge {
   position: relative;
