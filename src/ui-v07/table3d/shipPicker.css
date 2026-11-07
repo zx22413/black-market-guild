@@ -48,7 +48,7 @@
 }
 .ship-dice {
   display: grid;
-  /* A label column ("擲出" over "拿貨值") and the six faces: the row says what the percentages are. */
+  /* A label column ("擲出" over "獲利率") and the six faces: the row says what the percentages are. */
   grid-template-columns: 52px repeat(var(--faces, 6), minmax(0, 1fr));
   gap: 6px;
   margin: 4px 0 0;

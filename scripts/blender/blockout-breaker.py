@@ -201,9 +201,10 @@ def build_bow():
     # Ram bed: a dark wedge that carries the bronze forward of the cutwater, so the ram grows out of the hull.
     zb = stem_z(0.45)
     beam("ram-bed", (0, 0.5, zb - 0.6), (0, 0.5, zb + 0.35), 0.5, "woodDark", sides=4, taper=0.8, shade=0.85)
-    # The ram: a long bronze beak at the waterline, a thick gold collar where it leaves the bed, three blades at the tip.
+    # The ram: a long bronze beak at the waterline, a slim gold collar where it leaves the bed, three blades at the tip.
     beam("ram", (0, 0.5, zb + 0.25), (0, 0.48, 4.45), 0.6, "brass", sides=4, taper=0.6)
-    beam("ram-collar", (0, 0.5, zb + 0.2), (0, 0.5, zb + 0.44), 0.78, "gold", sides=8)
+    # A slim gold band (it was 0.78 across and 0.24 long, and stole the show in close-ups).
+    beam("ram-collar", (0, 0.5, zb + 0.24), (0, 0.5, zb + 0.36), 0.68, "gold", sides=8)
     beam("ram-band", (0, 0.49, 3.78), (0, 0.49, 3.92), 0.5, "gold", sides=8)
     for nm, tip in (("s", (0.5, 0.48, 4.42)), ("p", (-0.5, 0.48, 4.42)), ("u", (0, 0.98, 4.42))):
         beam(f"ram-blade-{nm}", (0, 0.49, 3.85), tip, 0.2, "brass", sides=4, taper=0.45)

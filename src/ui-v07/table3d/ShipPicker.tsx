@@ -218,7 +218,7 @@ export function ShipInfo({ cards, shown, effect, revealed, fresh, layout }: Ship
           <ol
             className={`ship-dice ${card.curve.length > 6 ? 'long' : ''} ${rolled ? 'rolled' : ''} ${play ? 'fresh' : ''}`}
             style={{ '--faces': card.curve.length } as CSSProperties}
-            aria-label="骰值表：最終值，與這艘船拿到貨值的幾成"
+            aria-label="骰值表：最終值，與這艘船的獲利率"
           >
             <li className="label">
               {rolled && (
@@ -229,8 +229,8 @@ export function ShipInfo({ cards, shown, effect, revealed, fresh, layout }: Ship
               <InfoTip title="最終值" text={FINAL_VALUE_TEXT}>
                 <small>最終值</small>
               </InfoTip>
-              <InfoTip title="拿貨值" text={CARGO_SHARE_TEXT}>
-                <b>拿貨值</b>
+              <InfoTip title="獲利率" text={CARGO_SHARE_TEXT}>
+                <b>獲利率</b>
               </InfoTip>
             </li>
             {card.curve.map((row, i) => {
@@ -240,7 +240,7 @@ export function ShipInfo({ cards, shown, effect, revealed, fresh, layout }: Ship
                   key={row.final}
                   className={`${row.sinks ? 'sink' : row.percent > 100 ? 'win' : ''} ${rolled && rolls.length === 0 ? 'dead' : ''}`}
                   style={{ '--i': i } as CSSProperties}
-                  title={row.sinks ? `最終值 ${row.final}：沉，貨全損` : `最終值 ${row.final}${row.orMore ? ' 以上' : ''}：拿到貨值的 ${row.percent}%`}
+                  title={row.sinks ? `最終值 ${row.final}：沉，貨全損` : `最終值 ${row.final}${row.orMore ? ' 以上' : ''}：獲利率 ${row.percent}%（拿到貨值的 ${row.percent}%）`}
                 >
                   {rolled && <em>{rolls.length > 0 ? rolls.join('、') : '—'}</em>}
                   <small>{row.orMore ? `${row.final}+` : row.final}</small>

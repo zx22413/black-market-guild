@@ -255,6 +255,18 @@ def build_beak():
     faces.append([0, 1, 2, 3])
     faces.append([sections * 4 + 3, sections * 4 + 2, sections * 4 + 1, sections * 4])
     mesh_from("beak", verts, faces, "roofRed")
+    # Edge finishing: the beak's keel (its lower edge) in dark timber, carrying the cutwater out to the tip, and a gold
+    # strip along each side's middle edge, so neither the underside nor the side seam ends raw (a lone lit sliver).
+    bot_line = [verts[i * 4 + 2] for i in range(sections + 1)]
+    for i, (a, b) in enumerate(zip(bot_line, bot_line[1:])):
+        w = 0.15 * (1 - i / sections) + 0.07
+        beam(f"beak-keel-{i}", (a[0], a[1] - 0.02, a[2]), (b[0], b[1] - 0.02, b[2]), w, "woodDark", sides=4)
+    for s in (1, -1):
+        side_line = [verts[i * 4 + (1 if s > 0 else 3)] for i in range(sections + 1)]
+        for i, (a, b) in enumerate(zip(side_line, side_line[1:])):
+            if i >= sections - 1:
+                break  # the tip is the collar's
+            beam(f"beak-strip-{s}-{i}", (a[0] + s * 0.015, a[1], a[2]), (b[0] + s * 0.015, b[1], b[2]), 0.07, "gold", sides=4)
     # Gold edge along the beak's top and a gold finial (a ball on a collar) at its tip.
     beam("beak-rail", root_top, (BEAK_TIP[0], BEAK_TIP[1] + 0.06, BEAK_TIP[2]), 0.1, "gold", sides=4, taper=0.6)
     beam("beak-collar", (0, BEAK_TIP[1], BEAK_TIP[2] - 0.12), (0, BEAK_TIP[1] + 0.02, BEAK_TIP[2] + 0.02), 0.16, "gold", sides=8)
