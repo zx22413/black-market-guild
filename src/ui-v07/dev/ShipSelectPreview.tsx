@@ -61,7 +61,7 @@ export function ShipSelectPreview() {
   const house = warehouseCentre(angles[0]!);
   return (
     <div style={{ position: 'fixed', inset: 0, fontFamily: 'system-ui, sans-serif' }}>
-      <TableCanvas seats={seats} weather={null} ships={ships} camera={<ShipSideCamera angle={angles[0]!} shot={step} />} cameraPoints={[]} safe={{ top: 0, bottom: 0, left: 0, right: 0 }} pins={[]} onReady={() => undefined}>
+      <TableCanvas seats={seats} weather={null} ships={ships} camera={<ShipSideCamera angle={angles[0]!} shot={step} ship={ship.id} />} cameraPoints={[]} safe={{ top: 0, bottom: 0, left: 0, right: 0 }} pins={[]} onReady={() => undefined}>
         {/* Scaled about its own centre to the deck crates' size, so a crate looks the same on land and on the ship. */}
         <group position={[house.x, 0, house.z]} scale={CRATE_SCALE}>
           <group position={[-house.x, 0, -house.z]}>

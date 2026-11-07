@@ -472,6 +472,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     />
   );
   const shipPicked: ShipPick = shipDecided ? (choice.shipType ?? 'none') : null;
+  // The ship on the dock (hovered or picked), so the side shot frames a taller one from further back.
+  const shownShip = typed && (peekShip ?? shipPicked) && (peekShip ?? shipPicked) !== 'none' ? ((peekShip ?? shipPicked) as ShipTypeId) : undefined;
   const shipInfo = <ShipInfo cards={shipOptions} shown={peekShip ?? shipPicked} effect={shipFx} revealed={revealed} fresh={freshShip} layout={phone ? 'strip' : 'side'} />;
   const shipHand = <ShipHand cards={shipOptions} picked={shipPicked} todo={!shipDecided} effect={shipFx} revealed={revealed} fresh={freshShip} onPick={pickShip} onPeek={setPeekShip} />;
   return {
@@ -479,10 +481,10 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     pins: shipPhase ? [] : typed ? pins.filter((p) => p.id === 'ship-note') : pins,
     camera,
     ...(typed ? { ownShip: true } : {}),
-    ...(typed && (peekShip ?? shipPicked) && (peekShip ?? shipPicked) !== 'none' ? { ownShipType: (peekShip ?? shipPicked) as ShipTypeId } : {}),
+    ...(shownShip ? { ownShipType: shownShip } : {}),
     ...(shipPhase ? { bareShot: true } : {}),
     ...(sideView ? { sideShot: true } : {}),
-    ...(sideView ? { cameraRig: (safe: SafeArea) => <ShipSideCamera angle={home} shot="ship" safe={phone ? safe : { ...safe, right: Math.max(safe.right, shipPhase ? SHIP_INFO_ROOM : RANK_RAIL_ROOM) }} /> } : {}),
+    ...(sideView ? { cameraRig: (safe: SafeArea) => <ShipSideCamera angle={home} shot="ship" {...(shownShip ? { ship: shownShip } : {})} safe={phone ? safe : { ...safe, right: Math.max(safe.right, shipPhase ? SHIP_INFO_ROOM : RANK_RAIL_ROOM) }} /> } : {}),
     ...(phone ? { rivalRow: true } : { closeShot: true }),
     scene: (
       <>

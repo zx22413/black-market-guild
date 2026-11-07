@@ -5,6 +5,7 @@ import type { SafeArea } from '../../ui/scene/CameraRig';
 import { playerIslandHeading } from '../../ui/scene/islandShape';
 import { seatPosition } from '../../ui/scene/layout';
 import { shipPose } from '../../ui/scene/Ships';
+import type { ShipTypeId } from '../../v07/game';
 
 // The ship-bay experiment's two shots of your own docked ship (docs/proposals/2026-11-ship-bays.md): a
 // close-up from the open sea while you pick the ship, and a wider one that takes in the warehouse
@@ -42,6 +43,11 @@ const MIN_BACK: Readonly<Record<ShipShot, number>> = { ship: 0.5, cargo: 1 };
 const TOP_MARGIN = 8;
 /** The ship's box in scene units (half length along the hull, half width, mast height, depth under the water line): what has to fit. */
 const SHIP_BOX = { halfLength: 3.4, halfWidth: 1, height: 5.6, depth: 0.5 } as const;
+/**
+ * Ships taller than the box: 孤注號's lateen tops out near 7.0 and its pennant near 7.3 (the user chose the big sail
+ * and a taller frame for this one ship, 2026-11-07), so the pick shot frames it from further back.
+ */
+const SHIP_TOPS: Partial<Readonly<Record<ShipTypeId, number>>> = { gambler: 7.4 };
 /** The warehouse part kept in the loading shot: its two middle columns (half the row's width, a stack's height). */
 const WAREHOUSE_REACH = { halfWidth: 2.4, height: 4 } as const;
 
@@ -57,9 +63,11 @@ export function warehouseCentre(angle: number): { readonly x: number; readonly z
 
 /**
  * Looks at the ship docked at island `angle`, gliding to the rig of the current shot. `safe` is the room the
- * HUD leaves: the picture is shifted so the ship sits in the middle of it, not behind the cards.
+ * HUD leaves: the picture is shifted so the ship sits in the middle of it, not behind the cards. `ship` is the type
+ * on show, for the few ships taller than the shared box (`SHIP_TOPS`).
  */
-export function ShipSideCamera({ angle, shot, safe }: { readonly angle: number; readonly shot: ShipShot; readonly safe?: SafeArea }) {
+export function ShipSideCamera({ angle, shot, safe, ship }: { readonly angle: number; readonly shot: ShipShot; readonly safe?: SafeArea; readonly ship?: ShipTypeId }) {
+  const top = (ship && SHIP_TOPS[ship]) ?? SHIP_BOX.height;
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const { width, height } = useThree((s) => s.size);
   const at = useRef<Rig | null>(null);
@@ -108,7 +116,7 @@ export function ShipSideCamera({ angle, shot, safe }: { readonly angle: number; 
     const corners: [number, number, number][] = [];
     for (const along of [-SHIP_BOX.halfLength, SHIP_BOX.halfLength]) {
       for (const across of [-SHIP_BOX.halfWidth, SHIP_BOX.halfWidth]) {
-        for (const up of [-SHIP_BOX.depth, SHIP_BOX.height]) corners.push([dock.position.x + fx * along + px * across, up, dock.position.z + fz * along + pz * across]);
+        for (const up of [-SHIP_BOX.depth, top]) corners.push([dock.position.x + fx * along + px * across, up, dock.position.z + fz * along + pz * across]);
       }
     }
     if (shot === 'cargo') {
