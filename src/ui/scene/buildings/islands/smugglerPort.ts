@@ -125,7 +125,7 @@ const HEAD_TOP = 3.12;
 /** The cave mouth on the headland's yard face: its middle (x, z) and width (island_smuggler.py MOUTH). */
 const MOUTH = { x: 0, width: 2.6, z: 2.1 } as const;
 /** The middle of the sea arch's opening (between its legs in island_smuggler.py ARCH), where the skiff rows through. */
-const ARCH_AT: Vec2 = [10.4, -6.4];
+const ARCH_AT: Vec2 = [10.4, -7.7];
 
 /** A low tuft of heather on `base`: a dark stem mound under a purple crown. */
 function heatherTuft([x, y, z]: Vec3, r: number): P[] {

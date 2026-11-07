@@ -1,5 +1,5 @@
-"""The smuggling port's island base (走私港), shared by its blockout (blockout-island-smuggler.py) and its build
-(build-island-smuggler.py). docs/art/island-base-research.md §6–7 has the design.
+"""The smuggling port's island base (走私港), shared by its blockout (blockout-island.py) and its build
+(build-island.py), both run with `-- smuggler-port`. docs/art/island-base-research.md §6–7 has the design.
 
 Island space as in the game (three.js: y up, +z toward the dock); the plateau group stands at y = 2.6 and the
 heather's top is TURF = 2.85, where the asset buildings and scenery stand.
@@ -10,7 +10,9 @@ heather's top is TURF = 2.85, where the asset buildings and scenery stand.
   pale caps on the column tops; a stone coping on the quay; stone treads on the stairs; a dark frame on the pier;
 - the ground follows use: a cove cut into the dock side with a quay, a pier and stairs up to the yard; a shingle
   beach in a bay on the right, reached by column-stump steps; paths from the stairs to the warehouse, the pennant
-  and the beach; heather hummocks and outcrops on the plateau;
+  and the beach; heather hummocks and outcrops on the plateau; not a disc: a geo (a narrow sea cleft) cut deep into
+  the left flank with the smugglers' hidden landing at its head, and the left prow running out into a causeway of
+  column clumps stepping down into the sea;
 - the headland (the backdrop): a second tier of columns behind the lots with the cave store opening onto the yard
   under a lintel of one fallen column, and the sea arch off its right end, its span columns lying on their sides.
   It turns to the back, left or right with the backdrop (src/ui-v07/scene/islandScenery.ts `backdropTurn`), so it
@@ -23,22 +25,14 @@ Every part is tagged `after` (the blockout's "new shape" layer).
 import math
 import random
 
-from blockout_kit import *  # noqa: F401,F403
+from island_kit import *  # noqa: F401,F403
 import blockout_kit as kit
-
-TURF = 2.85
-PLATEAU = 2.6
-SEA = -0.3
 
 kit.SWATCHES.update(
     {
         "heath": ("#6f5ea8", "#54468a"),
         "heathLip": ("#9a88d4", "#7563b4"),
         "peat": ("#4f3632", "#3a2826"),
-        "colCap": ("#9ea3bd", "#7c8099"),
-        "sea": ("#5fb3ad", "#4a9e99"),
-        "foam": ("#f6f6ef", "#e4e6df"),
-        "path": ("#a99ab0", "#8f8098"),
         "heathDark": ("#56487f", "#463a6c"),
     }
 )
@@ -51,72 +45,18 @@ rng = random.Random(7)
 OUTLINE = [
     (1.2, 9.0), (2.6, 9.4), (2.9, 11.4), (4.8, 11.0), (6.6, 9.6),
     (6.0, 7.6), (7.4, 6.0), (9.6, 5.4), (10.8, 3.4),
-    (11.4, 1.0), (11.6, -1.6), (11.0, -4.2), (10.0, -6.6), (8.2, -8.6), (5.6, -10.0), (2.4, -10.8),
-    (-1.0, -10.9), (-4.2, -10.2), (-7.0, -8.6), (-9.2, -6.4), (-10.8, -3.6), (-11.5, -0.6), (-11.1, 2.6),
-    (-10.0, 5.4), (-8.4, 7.8), (-6.2, 9.8), (-4.0, 11.1), (-2.6, 11.6), (-2.2, 9.4), (-1.0, 9.0),
+    (11.8, 0.6), (12.2, -2.4), (11.2, -5.4), (9.6, -8.0), (7.0, -9.8), (3.6, -10.8),
+    (-0.6, -11.0), (-4.6, -10.4), (-8.0, -8.8), (-10.6, -6.2), (-12.2, -3.0), (-12.4, 0.6),
+    # The geo: a narrow sea cleft cut deep into the left flank, the smugglers' hidden landing.
+    (-11.6, 3.2), (-8.9, 4.0), (-8.7, 6.0), (-11.9, 7.0),
+    # The left prow, its point running out into the causeway.
+    (-12.8, 9.6), (-9.2, 11.6), (-6.2, 10.8), (-4.0, 11.2), (-2.6, 11.6), (-2.2, 9.4), (-1.0, 9.0),
 ]
+GEO = [(-12.2, 3.0), (-8.9, 4.0), (-8.7, 6.0), (-12.4, 7.2)]
+# The causeway: clumps of columns stepping down from the left prow into the sea (after the Giant's Causeway).
+CAUSEWAY = [(-13.4, 10.2, 1.7), (-14.2, 11.0, 1.2), (-14.9, 11.7, 0.75), (-15.5, 12.3, 0.35), (-16.0, 12.8, 0.0)]
 QUAY = [(-2.0, 9.75), (2.4, 9.75), (2.7, 12.6), (-2.3, 12.6)]
 BEACH = [(6.0, 7.6), (7.4, 6.0), (9.6, 5.4), (10.8, 3.4), (12.6, 4.4), (12.4, 7.6), (10.2, 10.2), (7.6, 10.8), (6.6, 9.6)]
-
-
-def signed_area(plan):
-    return sum(plan[i][0] * plan[(i + 1) % len(plan)][1] - plan[(i + 1) % len(plan)][0] * plan[i][1] for i in range(len(plan))) / 2
-
-
-def grow(plan, d):
-    """Any simple polygon pushed out by d (negative pulls it in): each vertex along its corner bisector."""
-    ccw = -1 if signed_area(plan) < 0 else 1  # flip so normals point outward whichever way the plan winds
-    n = len(plan)
-    out = []
-    for i in range(n):
-        (xa, za), (x, z), (xb, zb) = plan[i - 1], plan[i], plan[(i + 1) % n]
-        ns = []
-        for (x0, z0), (x1, z1) in (((xa, za), (x, z)), ((x, z), (xb, zb))):
-            ln = math.hypot(x1 - x0, z1 - z0) or 1
-            ns.append((ccw * (z1 - z0) / ln, -ccw * (x1 - x0) / ln))
-        bx, bz = ns[0][0] + ns[1][0], ns[0][1] + ns[1][1]
-        ln = math.hypot(bx, bz) or 1
-        bx, bz = bx / ln, bz / ln
-        k = d / max(bx * ns[0][0] + bz * ns[0][1], 0.4)
-        out.append((x + bx * k, z + bz * k))
-    return out
-
-
-def inside(plan, x, z):
-    hit = False
-    for i in range(len(plan)):
-        (x0, z0), (x1, z1) = plan[i], plan[(i + 1) % len(plan)]
-        if (z0 > z) != (z1 > z) and x < x0 + (z - z0) * (x1 - x0) / (z1 - z0):
-            hit = not hit
-    return hit
-
-
-def walk(plan, step):
-    """Points every `step` along a closed outline, with the edge's outward normal."""
-    ccw = -1 if signed_area(plan) < 0 else 1
-    pts = []
-    for i in range(len(plan)):
-        (x0, z0), (x1, z1) = plan[i], plan[(i + 1) % len(plan)]
-        ln = math.hypot(x1 - x0, z1 - z0)
-        nx, nz = ccw * (z1 - z0) / ln, -ccw * (x1 - x0) / ln
-        for k in range(max(1, round(ln / step))):
-            t = (k + 0.5) / max(1, round(ln / step))
-            pts.append((x0 + (x1 - x0) * t, z0 + (z1 - z0) * t, nx, nz))
-    return pts
-
-
-def slab(name, plan, y0, y1, mat, shade=1.0):
-    ob = plan_solid(name, plan, y0, y1, mat, shade)
-    ob["after"] = True
-    return ob
-
-
-def hexcol(name, x, z, r, y0, y1, mat="basalt", cap=True, shade=1.0):
-    ob = prism(name, (x, y0, z), r, y1 - y0, mat, sides=6, shade=shade)
-    ob["after"] = True
-    if cap:
-        c = prism(f"{name}-cap", (x, y1 - 0.02, z), r * 0.86, 0.12, "colCap", sides=6)
-        c["after"] = True
 
 
 # The headland (the old smuggler-cave backdrop, rebuilt into the base): a second tier of columns behind the lots,
@@ -126,57 +66,30 @@ def hexcol(name, x, z, r, y0, y1, mat="basalt", cap=True, shade=1.0):
 HEAD = [(-8.6, -8.2), (-4.6, -7.9), (-0.4, -8.0), (2.2, -8.9), (3.0, -11.4), (2.4, -14.4), (-0.6, -15.6), (-5.4, -15.4), (-8.8, -13.6), (-10.0, -10.6)]
 HEAD_TOP = 5.4
 MOUTH = (-3.0, 2.6)  # centre x and width of the cave mouth on the headland's yard face
-# The sea arch: its legs stand wide of the skiff's loop under it (smugglerPort.ts, centre x 7.4, z -17.4).
-ARCH = {"legs": (3.2, 11.6), "z": -17.4, "span": 6.3}
+# The sea arch: its legs stand wide of the skiff's loop under it (smugglerPort.ts, centre x 7.4, z -18.7).
+ARCH = {"legs": (3.2, 11.6), "z": -18.7, "span": 6.3}
 # Each leg's columns: (dx toward the opening, dz, height below the span); kept mostly outboard of the opening.
 ARCH_LEG = ((0, 0, 0), (-0.9, 0.7, -0.9), (-0.6, -0.9, -1.6), (0.3, 0.8, -1.2))
 ARCH_LEG_R = 0.85
 # Names of the parts that turn with the backdrop (the headland and the arch), built into their own model.
 HEADLAND_PREFIXES = ("head-", "cave-back", "cave-lintel", "arch-")
+# Headland parts standing in the sea apart from it (left out of its waterline; `sea_rocks` lists them for the tests).
+SEA_ROCK_PREFIXES = ("arch-",)
+# Left out of the body's waterline: the causeway runs out too far and thin for 11 points to follow.
+SHORE_SKIP = ("causeway",)
+# Concave or thin parts the outward-normal check skips.
+OPEN_PARTS = ("base-", "path-", "head-peat", "head-lip", "head-heath", "patch-", "quay", "beach", "sea", "pier-deck", "cottage-roof")
+AO_WEIGHTS = {"head-heath": 0.2, "head-lip": 0.3, "head-peat": 0.4}
+# The blockout (blockout-island.py): the old cave backdrop is replaced by the headland; close-ups of the cove and beach.
+BLOCKOUT_HIDE = ("smuggler-cave",)
+# (geo-close is the cleft on the left flank, causeway-close the prow)
+CLOSE_UPS = {"cove-close": (28, 16, (1.5, 2.0, 10.5), 15), "beach-close": (60, 22, (8.5, 1.2, 6.5), 13), "geo-close": (-70, 22, (-10.5, 1.4, 5.0), 13), "causeway-close": (-30, 18, (-12.5, 1.0, 10.0), 14)}
 
 
-def arch_rocks():
+def sea_rocks():
     """Every arch-leg column as (x, z, r), island space at turn 0."""
     x0, x1 = ARCH["legs"]
     return [(lx + dx * (1 if leg == 0 else -1), ARCH["z"] + dz, ARCH_LEG_R) for leg, lx in enumerate((x0, x1)) for dx, dz, _ in ARCH_LEG]
-
-
-def hex_fill(plan, r):
-    """Hexagonally packed centres inside a plan."""
-    xs, zs = [p[0] for p in plan], [p[1] for p in plan]
-    pts, row = [], 0
-    z = min(zs)
-    while z <= max(zs):
-        x = min(xs) + (r * 0.87 if row % 2 else 0)
-        while x <= max(xs):
-            if inside(plan, x, z):
-                pts.append((x, z))
-            x += r * 1.74
-        z += r * 1.5
-        row += 1
-    return pts
-
-
-def edge_distance(plan, x, z):
-    best = 1e9
-    for i in range(len(plan)):
-        (x0, z0), (x1, z1) = plan[i], plan[(i + 1) % len(plan)]
-        dx, dz = x1 - x0, z1 - z0
-        t = max(0.0, min(1.0, ((x - x0) * dx + (z - z0) * dz) / (dx * dx + dz * dz)))
-        best = min(best, math.hypot(x - x0 - dx * t, z - z0 - dz * t))
-    return best
-
-
-def lying(name, a, b, r, mat="basalt"):
-    """A column lying on its side from a to b, a hexagonal beam with a stone cap at each end."""
-    ob = beam(name, a, b, r * 2, mat, sides=6)
-    ob["after"] = True
-    for k, (p, q) in enumerate(((a, b), (b, a))):
-        d = [q[i] - p[i] for i in range(3)]
-        ln = math.sqrt(sum(c * c for c in d))
-        e = [p[i] - d[i] / ln * 0.06 for i in range(3)]
-        c = beam(f"{name}-cap{k}", e, p, r * 1.7, "colCap", sides=6)
-        c["after"] = True
 
 
 def build_headland():
@@ -240,23 +153,44 @@ def build_headland_props():
     g["after"] = True
 
 
-def boulder(name, x, y, z, r):
-    """A rounded shingle boulder: a squat seven-sided lump, wider than tall."""
-    ob = prism(name, (x, y, z), r, r * 0.55, "basalt", sides=7, top=0.7)
-    ob["after"] = True
-    c = prism(f"{name}-top", (x, y + r * 0.55, z), r * 0.7, r * 0.18, "colCap", sides=7, top=0.6)
-    c["after"] = True
-
-
 def build_plateau_detail():
     """Breaks up the heather: darker patches, columns pushing up through it, a dry-stone wall along the back lots."""
-    for k, (x, z, r) in enumerate(((-8.4, -2.6, 1.4), (8.8, -1.8, 1.2), (-7.6, 4.6, 1.1), (7.6, 3.6, 0.9), (3.6, -7.6, 1.0), (-1.6, 3.0, 0.8))):
+    for k, (x, z, r) in enumerate(((-8.4, -2.6, 1.4), (8.8, -1.8, 1.2), (-6.6, 7.8, 0.85), (7.6, 3.6, 0.9), (3.6, -7.6, 1.0), (-1.6, 3.0, 0.8))):
         pts = [(x + math.cos(a) * r * (0.8 + 0.3 * math.sin(a * 3 + k)), z + math.sin(a) * r * (0.8 + 0.3 * math.cos(a * 2 + k))) for a in [i * math.pi / 5 for i in range(10)]]
         slab(f"patch-{k}", pts, TURF - 0.05, TURF + 0.16, "heathDark")
         slab(f"patch-{k}-top", grow(pts, -0.22), TURF + 0.1, TURF + 0.24, "heathLip")
-    for k, (x, z, h) in enumerate(((-9.2, 0.8, 0.6), (-8.8, 1.7, 0.35), (9.6, 1.0, 0.5), (9.0, 1.9, 0.3), (-6.6, 7.4, 0.4), (4.6, -8.4, 0.45))):
+    for k, (x, z, h) in enumerate(((-9.2, 0.8, 0.6), (-8.8, 1.7, 0.35), (9.6, 1.0, 0.5), (9.0, 1.9, 0.3), (-8.2, 8.9, 0.4), (4.6, -8.4, 0.45))):
         hexcol(f"outcrop-{k}", x, z, 0.55, TURF - 0.3, TURF + h)
 
+
+
+def build_geo():
+    """The geo's walls of slim columns, and the smugglers' landing at its head: a timber stage and a ladder up."""
+    for side, ((xa, za), (xb, zb)) in enumerate((((-11.6, 3.2), (-8.9, 4.0)), ((-8.7, 6.0), (-11.9, 7.0)))):
+        n = 4
+        for k in range(n):
+            t = (k + 0.5) / n
+            x, z = xa + (xb - xa) * t, za + (zb - za) * t
+            inward = 0.35 if side == 0 else -0.35  # into the cleft
+            hexcol(f"geo-col-{side}-{k}", x, z + inward, rng.uniform(0.4, 0.55), FOOT, rng.uniform(1.6, 2.5), shade=rng.uniform(0.82, 1.0))
+    box("geo-stage", (-9.7, 0.45, 5.0), (1.5, 0.14, 1.3), "wood", bevel=0.03)["after"] = True
+    for x, z in ((-10.35, 4.45), (-10.35, 5.55), (-9.05, 4.45), (-9.05, 5.55)):
+        beam(f"geo-post-{x}-{z}", (x, -1.0, z), (x, 0.5, z), 0.16, "woodDark")["after"] = True
+    for dz in (-0.25, 0.25):
+        beam(f"geo-ladder-{dz}", (-9.2, 0.5, 5.0 + dz), (-8.75, TURF + 0.5, 5.0 + dz), 0.08, "woodDark")["after"] = True
+    for k in range(6):
+        t = (k + 0.5) / 6
+        x, y = -9.2 + 0.45 * t, 0.5 + (TURF - 0.5) * t
+        beam(f"geo-rung-{k}", (x, y, 4.75), (x, y, 5.25), 0.06, "wood")["after"] = True
+    for k, (dx, dz) in enumerate(((-0.4, -0.2), (0.15, 0.3))):
+        beam(f"geo-keg-{k}", (-9.7 + dx, 0.75, 5.0 + dz - 0.25), (-9.7 + dx, 0.75, 5.0 + dz + 0.25), 0.42, "wood", sides=10)["after"] = True
+
+
+def build_causeway():
+    """Clumps of columns stepping down from the left prow into the sea."""
+    for k, (x, z, top) in enumerate(CAUSEWAY):
+        for j, (dx, dz, dh) in enumerate(((0, 0, 0), (0.75, -0.45, -0.25), (-0.5, 0.7, -0.4))):
+            hexcol(f"causeway-{k}-{j}", x + dx, z + dz, rng.uniform(0.55, 0.72), FOOT, top + dh + rng.uniform(-0.08, 0.08), shade=rng.uniform(0.85, 1.05))
 
 
 # ---------------------------------------------------------------- the new base
@@ -273,7 +207,7 @@ def build_base():
     # The rim: columns in clumps. A slow wave round the coast picks each clump's height tier, so neighbours share a
     # height and the rim steps up and down in runs; where the wave is lowest the rim has collapsed into a scree of
     # short stumps instead of a wall.
-    near_cove = lambda x, z: inside(grow(QUAY, 0.6), x, z) or inside(grow(BEACH, 0.3), x, z)
+    near_cove = lambda x, z: inside(grow(QUAY, 0.6), x, z) or inside(grow(BEACH, 0.3), x, z) or inside(GEO, x, z)
     TIERS = [0.5, 1.2, 1.9, 2.35, 2.6]
     for i, (x, z, nx, nz) in enumerate(walk(OUTLINE, 1.45)):
         wave = math.sin(i * 0.37) * 0.6 + math.sin(i * 0.91 + 1.3) * 0.4
@@ -302,6 +236,8 @@ def build_base():
 
     build_headland()
     build_plateau_detail()
+    build_geo()
+    build_causeway()
 
     # Cove: stone quay with a marble coping round its edge, its front stepping into the sea.
     slab("quay", QUAY, -3.0, 0.5, "slate")

@@ -2,7 +2,7 @@ import { LANDMARK_DESIGNS, landmarkParts, type LandmarkDesign, type LandmarkId }
 import { bounds } from '../../ui/scene/buildings/polyhedra';
 import type { IslandGround } from '../../ui/scene/IslandBase';
 import { HEADLAND_AT } from '../../ui/scene/buildings/islands/smugglerPort';
-import { SMUGGLER_PORT_BASE, type IslandBaseShape } from '../../ui/scene/islandBaseShapes';
+import { LIGHTHOUSE_BASE, PIRATE_COVE_BASE, SMUGGLER_PORT_BASE, SPICE_ISLES_BASE, type IslandBaseShape } from '../../ui/scene/islandBaseShapes';
 import type { IslandAnnex, SeaPoint, SeatShores } from '../../ui/scene/islandShape';
 import type { Vec3 } from '../../ui/scene/layout';
 import type { IslandId } from '../../v07/game';
@@ -75,9 +75,13 @@ export const ISLAND_SCENERY: Readonly<Partial<Record<IslandId, IslandScenery>>> 
   'spice-isles': {
     name: '香料群島',
     ground: { top: '#b06041', cliff: '#e2c28a' },
+    // Red-earth terraces fanning down to a black sand beach, a hairpin road on a stone causeway, a stilted pier, and the
+    // spice house's walled garden podium (docs/art/island-base-research.md §11–14).
+    base: { model: 'spice-isles', shape: SPICE_ISLES_BASE },
     pieces: [
       { design: 'spice-stall', at: [0.3, TURF, 3.25], scale: 2 },
-      { design: 'windtower-house', at: [0, RIM, -9.05], scale: 2.3, backdrop: true },
+      // On the walled garden podium, its top flush with the yard.
+      { design: 'windtower-house', at: [0, TURF, -9.05], scale: 2.3, backdrop: true },
       { design: 'drying-floor', at: [-1.0, TURF, -0.5], scale: 1.1 },
       { design: 'nutmeg-tree', at: [-5.6, TURF, -3.6], scale: 1.6 },
       // Off to the side at the back, where your own island's camera sees it past the buildings.
@@ -121,10 +125,13 @@ export const ISLAND_SCENERY: Readonly<Partial<Record<IslandId, IslandScenery>>> 
   'pirate-cove': {
     name: '海盜灣',
     ground: { top: '#e2c28a', cliff: '#e0a57e' },
-    annex: { center: [0, -14.2], radii: [8.6, 4.6] },
+    // A low, slanting sand oval with a lopsided harbour bitten out of the front, a boardwalk and a barrel pontoon, and a
+    // broad flat beach round the back and sides for the careened ship (docs/art/island-base-research.md §11–17).
+    base: { model: 'pirate-cove', shape: PIRATE_COVE_BASE },
     pieces: [
       { design: 'plunder-sale', at: [0.3, TURF, 3.25], scale: 2 },
-      { design: 'careened-ship', at: [0, RIM, -13.75], scale: 3, turn: -0.45, backdrop: true },
+      // Hauled up on the broad back beach (its top 0.55, 2.05 below the plateau), its log ways under the hull.
+      { design: 'careened-ship', at: [0, -2.05, -13.1], scale: 3, turn: -0.45, backdrop: true },
       { design: 'beach-battery', at: [-5.6, TURF, -3.8], scale: 1.5, turn: -Math.PI / 2 },
       { design: 'boucan', at: [-1.0, TURF, -0.5], scale: 1.5 },
       { design: 'rowboat', at: [5.3, TURF, 3.9], scale: 1.6, turn: 2.8 },
@@ -172,9 +179,13 @@ export const ISLAND_SCENERY: Readonly<Partial<Record<IslandId, IslandScenery>>> 
     name: '燈塔島',
     // Deep sea-green headland turf over white chalk cliffs, for the white tower to stand out against.
     ground: { top: '#3ea87a', cliff: '#bebed6' },
+    // White chalk cliffs with flint seams, a shield of straight faces cut by two dry valleys and the dock's chine, a
+    // chalk islet and stacks, and the beacon's promontory (docs/art/island-base-research.md §9).
+    base: { model: 'lighthouse', shape: LIGHTHOUSE_BASE },
     pieces: [
       { design: 'lookout', at: [0.3, TURF, 3.25], scale: 2 },
-      { design: 'coal-beacon', at: [0, RIM, -10.4], scale: 3, backdrop: true },
+      // On the promontory's turf, flush with the yard.
+      { design: 'coal-beacon', at: [0, TURF, -10.4], scale: 3, backdrop: true },
       { design: 'rowboat', at: [5.3, TURF, 3.9], scale: 1.6, turn: 0.3 },
     ],
   },

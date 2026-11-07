@@ -1,13 +1,13 @@
-"""Builds the smuggling port's island base (scripts/blender/island_smuggler.py) for the game:
+"""Builds an island base (scripts/blender/island_<module>.py) for the game:
 
-  Blender -b --factory-startup --python scripts/blender/build-island-smuggler.py
+  Blender -b --factory-startup --python scripts/blender/build-island.py -- smuggler-port
 
 writes
-- public/models/islands/smuggler-port-body.glb: the island that stays put (cliff, plateau, cove, quay, pier, stairs,
-  paths, beach), island space, drawn in place of IslandBase;
-- public/models/islands/smuggler-port-headland.glb: the headland and sea arch, island space at turn 0, which turn
-  with the backdrop;
-- src/ui/scene/islandBaseShapes.ts: their waterlines for the sea foam and the arch's legs for the skiff's loop test.
+- public/models/islands/<island>-body.glb: the island that stays put, island space, drawn in place of IslandBase;
+- public/models/islands/<island>-headland.glb: the parts named by the module's HEADLAND_PREFIXES, island space at
+  turn 0, which turn with the backdrop;
+- src/ui/scene/islandBases/<island>.ts: their waterlines for the sea foam, and the rocks the module's `sea_rocks()`
+  stands in the sea apart from the headland (for the scenery boats' loop test).
 
 Colours are the palette gradient times baked ambient occlusion, in one vertex colour, flat shaded, like the ships.
 """
@@ -17,20 +17,27 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from island_smuggler import *  # noqa: E402,F403
-import island_smuggler as isl  # noqa: E402
+import importlib  # noqa: E402
+
+import bpy  # noqa: E402
+
 import blockout_kit as kit  # noqa: E402
+
+ISLAND = sys.argv[sys.argv.index("--") + 1]
+isl = importlib.import_module("island_" + ISLAND.split("-")[0])
+HEADLAND_PREFIXES = isl.HEADLAND_PREFIXES
+CONST = ISLAND.upper().replace("-", "_") + "_BASE"
 
 REPO = kit.REPO
 OUT_MODELS = os.path.join(REPO, "public/models/islands")
-OUT_SHAPES = os.path.join(REPO, "src/ui/scene/islandBaseShapes.ts")
+OUT_SHAPES = os.path.join(REPO, f"src/ui/scene/islandBases/{ISLAND}.ts")
 AO_STRENGTH = 0.45
 # Big flat faces have vertices only at their corners, so vertex AO would darken them whole: weaken it there.
-AO_WEIGHTS = {"base-": 0.2, "head-heath": 0.2, "head-lip": 0.3, "head-peat": 0.4, "patch-": 0.3, "path-": 0.2, "quay": 0.3, "beach": 0.25, "pier-deck": 0.4}
+AO_WEIGHTS = {"base-": 0.2, "patch-": 0.3, "path-": 0.2, "quay": 0.3, "beach": 0.25, "pier-deck": 0.4, **getattr(isl, "AO_WEIGHTS", {})}
 SHORE_POINTS = 11  # src/ui/scene/islandShape.ts
 
 isl.build_base()
-kit.check_normals(skip=("base-", "path-", "head-peat", "head-lip", "head-heath", "patch-", "quay", "beach", "sea", "pier-deck"))
+kit.check_normals(skip=isl.OPEN_PARTS)
 sea = [p for p in kit.PARTS if p[0].name == "sea"]
 kit.PARTS[:] = [p for p in kit.PARTS if p[0].name != "sea"]
 for ob, _, _ in sea:
@@ -125,22 +132,28 @@ def ring(pts, angles, margin=1.05):
 colour()
 head_parts = [ob for ob, _, _ in kit.PARTS if ob.name.startswith(HEADLAND_PREFIXES)]
 body_parts = [ob for ob, _, _ in kit.PARTS if not ob.name.startswith(HEADLAND_PREFIXES)]
-arch_parts = [ob for ob in head_parts if ob.name.startswith("arch-")]
-cliff_parts = [ob for ob in head_parts if not ob.name.startswith("arch-")]
+SEA_ROCK_PREFIXES = getattr(isl, "SEA_ROCK_PREFIXES", ())
+cliff_parts = [ob for ob in head_parts if not ob.name.startswith(SEA_ROCK_PREFIXES or ("\0",))]
 
-body_ring = ring(island_points(body_parts), [-math.pi + (i + 0.5) * 2 * math.pi / SHORE_POINTS for i in range(SHORE_POINTS)])
+# Small outlying rocks (the module's SHORE_SKIP) are left out: 11 points round the coast cannot follow them, and the
+# foam would run out across open sea to reach them.
+shore_parts = [ob for ob in body_parts if not ob.name.startswith(getattr(isl, "SHORE_SKIP", ()) or ("\0",))]
+body_ring = ring(island_points(shore_parts), [-math.pi + (i + 0.5) * 2 * math.pi / SHORE_POINTS for i in range(SHORE_POINTS)])
 head_pts = island_points(cliff_parts)
-head_angles = sorted(math.atan2(z, x) for x, z in head_pts)
-a0, a1 = head_angles[0], head_angles[-1]
-head_fan = [(0.0, 0.0)] + ring(head_pts, [a0 + (a1 - a0) * i / (SHORE_POINTS - 2) for i in range(SHORE_POINTS - 1)], margin=1.0)
-rocks = [(round(x, 2), round(z, 2), r) for x, z, r in isl.arch_rocks()]
+if head_pts:
+    head_angles = sorted(math.atan2(z, x) for x, z in head_pts)
+    a0, a1 = head_angles[0], head_angles[-1]
+    head_fan = [(0.0, 0.0)] + ring(head_pts, [a0 + (a1 - a0) * i / (SHORE_POINTS - 2) for i in range(SHORE_POINTS - 1)], margin=1.0)
+else:
+    head_fan = [(0.0, 0.0)] * SHORE_POINTS  # nothing of the headland stands in the sea: an empty fan draws no foam
+rocks = [(round(x, 2), round(z, 2), r) for x, z, r in getattr(isl, "sea_rocks", lambda: [])()]
 
 os.makedirs(OUT_MODELS, exist_ok=True)
 for parts, name in ((body_parts, "body"), (head_parts, "headland")):
     ob = join(parts, name)
     tris = sum(len(p.vertices) - 2 for p in ob.data.polygons)
     bake(ob)
-    export(ob, os.path.join(OUT_MODELS, f"smuggler-port-{name}.glb"))
+    export(ob, os.path.join(OUT_MODELS, f"{ISLAND}-{name}.glb"))
     print(f"EXPORTED {name}: ~{tris} triangles")
     bpy.data.objects.remove(ob)
 
@@ -149,23 +162,15 @@ def ts_points(points):
     return "[" + ", ".join(f"[{x}, {z}]" for x, z in points) + "]"
 
 
-open(OUT_SHAPES, "w").write(f"""// Generated by scripts/blender/build-island-smuggler.py — do not edit; change the island there and rebuild.
-import type {{ SeaPoint }} from './islandShape';
+os.makedirs(os.path.dirname(OUT_SHAPES), exist_ok=True)
+rock_list = ", ".join(f"[{x}, {z}, {r}]" for x, z, r in rocks)
+open(OUT_SHAPES, "w").write(f"""// Generated by scripts/blender/build-island.py -- {ISLAND}; do not edit: change scripts/blender/{isl.__name__}.py and rebuild.
+import type {{ IslandBaseShape }} from '../islandBaseShapes';
 
-/** An island base built in Blender (`IslandScenery.base`): where it meets the sea, in island space at turn 0. */
-export interface IslandBaseShape {{
-  /** The island that stays put, `SHORE_POINTS` points round its waterline. */
-  readonly shore: readonly SeaPoint[];
-  /** The headland that turns with the backdrop: a fan from the island's centre over its waterline (`SHORE_POINTS` points). */
-  readonly headlandShore: readonly SeaPoint[];
-  /** Columns standing in the sea apart from the headland (the sea arch's legs): x, z and radius. */
-  readonly seaRocks: readonly (readonly [number, number, number])[];
-}}
-
-export const SMUGGLER_PORT_BASE: IslandBaseShape = {{
+export const {CONST}: IslandBaseShape = {{
   shore: {ts_points(body_ring)},
   headlandShore: {ts_points(head_fan)},
-  seaRocks: [{", ".join(f"[{x}, {z}, {r}]" for x, z, r in rocks)}],
+  seaRocks: [{rock_list}],
 }};
 """)
 print("WROTE", OUT_SHAPES)

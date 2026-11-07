@@ -1,20 +1,17 @@
-"""Blockout of the smuggling port's new island base (docs/art/island-base-research.md, directions A + C).
+"""Blockout of an island's new base (docs/art/island-base-research.md): the current island and the new one rendered
+from the same cameras, for the design sheet.
 
-  npx tsx scripts/blender/dump-island.ts smuggler-port > <scratch>/smuggler.json
-  Blender -b --factory-startup --python scripts/blender/blockout-island-smuggler.py -- <render dir> <scratch>/smuggler.json
+  npx tsx scripts/blender/dump-island.ts <island> > <scratch>/<island>.json
+  Blender -b --factory-startup --python scripts/blender/blockout-island.py -- <island> <render dir> <scratch>/<island>.json
 
-Island space as in the game (three.js: y up, +z toward the dock, the plateau group at y = 2.6, turf top 2.85). The
-current cliff, turf, dock, asset buildings and scenery come from the dump, so the "before" and "after" renders share
-cameras and every building stands exactly where the game puts it.
-
-The new base, in game-art terms (docs/art/lowpoly-style.md §6):
-- one loud feature: the whole cliff is oversized hexagonal basalt columns, their tops stepping down at the rim and
-  breaking into a causeway of stumps at the waterline;
-- every edge trimmed against a contrasting neighbour: a light heather lip over a dark peat band over dark basalt;
-  pale stone caps on the column tops; marble coping on the quay; dark timber frames on the pier and stairs;
-- the ground follows use (direction C): a cove cut into the dock side with a stone quay, a pier and a flight of
-  stairs up to the yard; a shingle beach in a bay on the right, where the rowboat is pulled up, reached by
-  column-stump steps.
+The new base comes from scripts/blender/island_<module>.py (`build_base`, and `build_headland_props` for stand-ins of
+code parts the dump does not have yet). The current cliff, turf, dock, asset buildings and scenery come from the dump,
+so every building stands exactly where the game puts it. The module may also set
+- BLOCKOUT_HIDE: scenery designs the new base replaces (left out of the "after" renders);
+- BLOCKOUT_MOVES: {design: (dx, dy, dz)} for scenery the new layout moves;
+- CLOSE_UPS: {view: (azimuth, elevation, target, ortho scale)} close-up cameras besides top, dock side and back;
+- OPEN_PARTS: name prefixes of concave parts the normal check skips.
+Writes before-<view>.png and after-<view>.png.
 """
 
 import json
@@ -27,11 +24,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from blockout_kit import *  # noqa: E402,F403
 import blockout_kit as kit  # noqa: E402
 
-args = sys.argv[sys.argv.index("--") + 1 :]
-DUMP = json.load(open(args[1]))
+import importlib  # noqa: E402
 
-from island_smuggler import *  # noqa: E402,F403
-import island_smuggler as isl  # noqa: E402
+args = sys.argv[sys.argv.index("--") + 1 :]
+ISLAND = args[0]
+DUMP = json.load(open(args[2]))
+sys.argv = sys.argv[: sys.argv.index("--") + 1] + args[1:]  # out_dir() reads the first argument after `--`
+isl = importlib.import_module("island_" + ISLAND.split("-")[0])
+from island_kit import *  # noqa: E402,F403
 
 # ---------------------------------------------------------------- dumped meshes (before shape, buildings, scenery)
 
@@ -76,11 +76,12 @@ def placeholders():
         ob["before"] = ob["after"] = True
 
 
-build_base()
-build_headland_props()
+isl.build_base()
+if hasattr(isl, "build_headland_props"):
+    isl.build_headland_props()
 before_dock()
 placeholders()
-check_normals(skip=("base-", "path-", "head-peat", "head-lip", "head-heath", "patch-", "cottage-roof", "quay", "beach", "sea", "before-sea", "pier-deck"))
+check_normals(skip=tuple(isl.OPEN_PARTS) + ("before-sea",))
 colour_parts()
 VC = bpy.data.materials["vc"]
 for m in DUMP["before"]:
@@ -89,17 +90,19 @@ for m in DUMP["buildings"]:
     ob = soup(m, "before")
     ob["after"] = True
     ob.data.materials.append(VC)
+MOVES = getattr(isl, "BLOCKOUT_MOVES", {})
+HIDE = getattr(isl, "BLOCKOUT_HIDE", ())
 for m in DUMP["scenery"]:
     ob = soup(m, "before")
-    # The rowboat moves down onto the beach in the new layout.
-    if "rowboat" in m["name"]:
+    design = m["name"].split("-", 2)[2]  # scenery-<i>-<design>
+    if design in HIDE:
+        ob["after"] = False
+    elif design in MOVES:
         ob["after"] = False
         moved = soup(m, "after")
-        moved.name = "after-rowboat"
-        moved.location = V(3.75, 0.25 - TURF, 3.85)
+        moved.name = f"after-{design}"
+        moved.location = V(*MOVES[design])
         moved.data.materials.append(VC)
-    elif "smuggler-cave" in m["name"]:
-        ob["after"] = False  # rebuilt from columns (build_headland)
     else:
         ob["after"] = True
     ob.data.materials.append(VC)
@@ -131,8 +134,7 @@ VIEWS = {
     "top": camera("cam-top", V(0, 60, 0.5), V(0, 0, 0.5), 37, (1100, 1100)),
     "dock-side": orbit("cam-dock", 0, 48, (0, 2, 0), 36),
     "back": orbit("cam-back", 180, 48, (0, 2, -1), 36),
-    "cove-close": orbit("cam-cove", 28, 16, (1.5, 2.0, 10.5), 15),
-    "beach-close": orbit("cam-beach", 60, 22, (8.5, 1.2, 6.5), 13),
+    **{name: orbit(f"cam-{name}", az, el, target, scale) for name, (az, el, target, scale) in getattr(isl, "CLOSE_UPS", {}).items()},
 }
 VIEWS["top"][0].rotation_euler = (0, 0, 0)
 

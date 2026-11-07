@@ -36,15 +36,6 @@ function brig(): P[] {
   ];
 }
 
-const BEACH: readonly Vec2[] = [
-  [-2.4, -0.5],
-  [-1.6, -1.0],
-  [1.4, -1.0],
-  [1.95, -0.5],
-  [1.95, 1.5],
-  [-2.0, 1.45],
-];
-
 /** Hove down on the -z side: the ship lies over away from the island, masts slanting out to sea. */
 const HEEL: Tilt = { axis: 'x', angle: -0.62, pivot: [0, -0.95, -0.42] };
 const heeled = (parts: readonly P[]): P[] => parts.map((part) => ({ ...part, tilt: HEEL }));
@@ -64,7 +55,8 @@ function pitchPot([x, y, z]: Vec3, r: number): P[] {
  * island, her tarred bottom turned up toward the yard and her masts slanting out to sea under the Jolly
  * Roger, held by tackles to anchors in the shallows; shores and a pitch pot stand on the beach beside
  * the cargo landed before heaving down, open chests of gold and silver plate that glow and glint.
- * Authored for about 3×, on the cliff-top beach of the annex.
+ * Authored for about 3×; the careening beach under the hull is the island's base (scripts/blender/island_pirate.py:
+ * a dune ridge with log ways), so the design brings no ground of its own.
  */
 const careenedShip: LandmarkDesign = {
   motif: '傾側修船的海盜船＋斜桅骷髏旗＋卸上沙灘的金銀財寶',
@@ -79,8 +71,6 @@ const careenedShip: LandmarkDesign = {
     [-0.28, 0.36, 0.98],
   ],
   parts: [
-    // The careenage: a sand beach on the cliff top under the hull.
-    { kind: 'loft', base: [0, 0, -0.35], outline: BEACH, height: 0.06, bottom: 1, top: 0.97, mat: 'sand' },
     ...heeled(brig()),
     // Tackles from the mastheads down to anchor posts in the shallows.
     ...([
