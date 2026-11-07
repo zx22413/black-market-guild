@@ -26,7 +26,7 @@ export interface SailSpec {
 
 /** A painted device on a sail: which art, where it sits in the sail's frame, how big, and the colour of its disc. */
 export interface SailEmblem {
-  readonly art: 'whale-tail';
+  readonly art: 'whale-tail' | 'albatross';
   readonly u: number;
   readonly w: number;
   readonly size: number;

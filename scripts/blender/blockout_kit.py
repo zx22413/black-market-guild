@@ -21,8 +21,13 @@ from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Vector
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-OUT_DIR = sys.argv[sys.argv.index("--") + 1]
-os.makedirs(OUT_DIR, exist_ok=True)
+
+
+def out_dir():
+    """The render folder: the first argument after `--` (a blockout run)."""
+    path = sys.argv[sys.argv.index("--") + 1]
+    os.makedirs(path, exist_ok=True)
+    return path
 
 
 def read_swatches():
@@ -301,6 +306,7 @@ def render_views(anchors, close_ups=None, centre_y=3.3, centre_z=0.35, scale=8.6
     """The sheet's four orthographic views (side from port with the bow right, front, top with the bow right, oblique
     45° from the port bow and 30° up) and any close-ups ({name: near(...)}); writes <name>.png and anchors.json."""
     setup_render()
+    OUT_DIR = out_dir()
     el, az = math.radians(30), math.radians(45)
     views = {
         "side": camera("cam-side", V(-30, centre_y, centre_z), V(0, centre_y, centre_z), scale, (1100, 1100)),
@@ -335,4 +341,4 @@ def finish_blockout(anchors, band=None, skip=(), close_ups=None, **frame):
     tris = sum(len(p.vertices) - 2 for ob, _, _ in PARTS for p in ob.data.polygons)
     print(f"BLOCKOUT {len(PARTS)} parts, ~{tris} triangles")
     render_views(anchors, close_ups() if close_ups else None, **frame)
-    print("RENDERED", OUT_DIR)
+    print("RENDERED", out_dir())

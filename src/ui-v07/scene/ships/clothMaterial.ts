@@ -102,7 +102,18 @@ function emblemTexture(emblem: SailEmblem): Texture {
   g.lineWidth = 5;
   g.strokeStyle = SWATCHES.canvas.top;
   g.stroke();
-  // The flukes (the design sheet's emblem path, 5×), a little below the middle.
+  (emblem.art === 'albatross' ? drawAlbatross : drawFlukes)(g, c);
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  texture.wrapS = ClampToEdgeWrapping;
+  texture.wrapT = ClampToEdgeWrapping;
+  texture.anisotropy = 4;
+  emblems.set(key, texture);
+  return texture;
+}
+
+/** 巨鯨號's whale's flukes (the design sheet's emblem path, 5×), a little below the middle. */
+function drawFlukes(g: CanvasRenderingContext2D, c: number): void {
   g.save();
   g.translate(c, c + 12);
   g.scale(5, 5);
@@ -121,13 +132,32 @@ function emblemTexture(emblem: SailEmblem): Texture {
   g.strokeStyle = EMBLEM_INK;
   g.stroke();
   g.restore();
-  const texture = new CanvasTexture(canvas);
-  texture.colorSpace = SRGBColorSpace;
-  texture.wrapS = ClampToEdgeWrapping;
-  texture.wrapT = ClampToEdgeWrapping;
-  texture.anisotropy = 4;
-  emblems.set(key, texture);
-  return texture;
+}
+
+/**
+ * 信天翁號's albatross (docs/art/standard-concept.svg): a seabird's "M", long wings bent at the wrist with dark tips,
+ * dipping to a small body, in cream, inked. Points in sail units (y up) from the blockout, 149 px each (the disc spans `size`).
+ */
+function drawAlbatross(g: CanvasRenderingContext2D, c: number): void {
+  const unit = 149;
+  const path = (points: readonly (readonly [number, number])[], fill: string) => {
+    g.beginPath();
+    points.forEach(([x, y], i) => (i === 0 ? g.moveTo(c + x * unit, c - y * unit * 2.2) : g.lineTo(c + x * unit, c - y * unit * 2.2)));
+    g.closePath();
+    g.fillStyle = fill;
+    g.fill();
+    g.lineJoin = 'round';
+    g.lineWidth = 3.5;
+    g.strokeStyle = EMBLEM_INK;
+    g.stroke();
+  };
+  // A seabird's "M": two long wings bent at the wrist, dipping to a small body (drawn 2.2× taller than the outline, to read small).
+  const bird = [
+    [-0.74, -0.04], [-0.5, 0.17], [-0.24, 0.15], [-0.07, 0.04], [0, 0.11], [0.07, 0.04], [0.24, 0.15], [0.5, 0.17], [0.74, -0.04],
+    [0.5, 0.06], [0.24, 0.03], [0.07, -0.1], [0, -0.16], [-0.07, -0.1], [-0.24, 0.03], [-0.5, 0.06],
+  ] as const;
+  path(bird, SWATCHES.canvas.top);
+  for (const s of [1, -1]) path([[s * 0.74, -0.04], [s * 0.6, 0.08], [s * 0.6, 0.02]], SWATCHES.dark.top);
 }
 
 /** The owner's pennant, one flat colour. */

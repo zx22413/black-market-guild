@@ -40,8 +40,10 @@ export interface ShipDesign {
     | { readonly kind: 'galley'; readonly oars: ShipOars };
 }
 
-/* ---------- 信天翁號: the standard ship, one mast and a broad square sail ---------- */
+/* ---------- 信天翁號: a medieval cog, one mast and a square sail wider than the ship, like spread wings ---------- */
 
+// The Blender hull (scripts/blender/build-standard.py, design docs/art/standard-concept.svg) adds the castles, the
+// crow's nest, the chainwales and the trims; these parts are the rig it rebuilds and the code-built fallback.
 const STANDARD_HULL = mirrored([
   [0, 3],
   [0.85, 2.2],
@@ -49,49 +51,51 @@ const STANDARD_HULL = mirrored([
   [1.25, -1.8],
   [1.05, -2.7],
 ]);
-const standardLantern = lanternHook([0, DECK + 0.7, -2.45], 0.75, [0, 0, -0.4]);
+const STANDARD_MAST_Z = 0.15;
+/** The yard's half length: wider than the hull (half beam 1.5), the sail's "wings" (decided 2026-11-07). */
+const STANDARD_YARD = 2.6;
+const STANDARD_SAIL = (() => {
+  const z = STANDARD_MAST_Z + 0.18;
+  const head: [Vec3, Vec3] = [[-2.52, 4.62, z], [2.52, 4.62, z]];
+  return {
+    edge: head,
+    pieces: [bowed([head[0], head[1], [2.67, 2.55, z], [-2.67, 2.55, z]], [null, [0.08, 0, 0], [0, -0.28, 0], [-0.08, 0, 0]])],
+    mat: 'canvas',
+    belly: 0.55,
+    emblem: { art: 'albatross', u: 2.52, w: 1.0, size: 1.72, mat: 'slate' },
+  } satisfies SailSpec;
+})();
+/** Where the shrouds land: deadeyes on the chainwale outside the hull (the Blender hull's chainwale, y 1.43). */
+const STANDARD_SHROUDS: readonly Vec3[] = [-0.45, -0.95].flatMap((z) => [1, -1].map((s): Vec3 => [s * 1.73, 1.61, z]));
+/** The stern lantern hangs from an iron arm off the aft castle's stern wall. */
+const STANDARD_LANTERN: Vec3 = [0, DECK + 0.47, -3.36];
 
 const STANDARD: ShipDesign = {
   parts: [
     ...hull(STANDARD_HULL, 'woodDark', 'wood'),
     ...gunwale(STANDARD_HULL),
     ...ports(STANDARD_HULL, [-1.3, -0.3, 0.7]),
-    { kind: 'box', center: [0, DECK + 0.35, -2.05], size: [2.2, 0.7, 1.1], bevel: 0.04, mat: 'wood' },
-    { kind: 'box', center: [-0.45, DECK + 0.38, -2.62], size: [0.3, 0.28, 0.06], bevel: 0.01, mat: 'dark' },
-    { kind: 'box', center: [0.45, DECK + 0.38, -2.62], size: [0.3, 0.28, 0.06], bevel: 0.01, mat: 'dark' },
     rudder(-2.7),
-    spar([0, 1.15, 2.8], [0, 1.85, 4.1], 0.12),
-    spar([0, DECK, 0.3], [0, 5.75, 0.3], 0.17),
-    // The crow's nest: a small tub round the mast above the yard.
-    { kind: 'prism', base: [0, 4.85, 0.3], radius: 0.24, top: 1.15, height: 0.32, sides: 8, mat: 'woodDark' },
-    spar([-1.9, 4.7, 0.4], [1.9, 4.7, 0.4], 0.1),
-    // Shrouds land aft of the square sail, so its belly never reaches them; the forestay runs ahead of it.
-    rope([0, 5.3, 0.3], [1.2, DECK + 0.24, -0.3]),
-    rope([0, 5.3, 0.3], [-1.2, DECK + 0.24, -0.3]),
-    rope([0, 5.3, 0.3], [1.15, DECK + 0.24, -1.1]),
-    rope([0, 5.3, 0.3], [-1.15, DECK + 0.24, -1.1]),
-    rope([0, 5.7, 0.3], [0, 1.85, 4.1]),
-    rope([0, 5.7, 0.3], [0, DECK + 0.7, -2.5]),
-    ...standardLantern.parts,
+    // Bowsprit (a cog's bowline spar) out of the forecastle.
+    spar([0, DECK + 0.45, 2.7], [0, 2.25, 4.05], 0.16),
+    spar([0, DECK, STANDARD_MAST_Z], [0, 5.5, STANDARD_MAST_Z], 0.2),
+    // The crow's nest: a tub round the mast above the yard (the Blender hull's is crenellated).
+    { kind: 'prism', base: [0, 4.88, STANDARD_MAST_Z], radius: 0.34, top: 1.08, height: 0.36, sides: 10, mat: 'sandstone' },
+    spar([-STANDARD_YARD, 4.7, STANDARD_MAST_Z + 0.16], [STANDARD_YARD, 4.7, STANDARD_MAST_Z + 0.16], 0.14),
+    // Shrouds land aft of the square sail on the chainwales, so its belly never reaches them; the forestay runs to the
+    // bowsprit ahead of it, the backstay to the aft castle.
+    ...STANDARD_SHROUDS.map((end) => rope([0, 4.95, STANDARD_MAST_Z], end)),
+    rope([0, 5.3, STANDARD_MAST_Z], [0, 2.2, 3.98]),
+    rope([0, 5.3, STANDARD_MAST_Z], [0, DECK + 1.13, -2.5]),
+    spar([0, DECK + 0.82, -2.98], [0, DECK + 0.82, -3.36], 0.06),
+    rope([0, DECK + 0.82, -3.36], [0, STANDARD_LANTERN[1] + 0.31, -3.36]),
+    ...lanternFrame(STANDARD_LANTERN),
   ],
-  sails: [
-    {
-      edge: [[-1.85, 4.64, 0.48], [1.85, 4.64, 0.48]],
-      pieces: [bowed([[-1.85, 4.64, 0.48], [1.85, 4.64, 0.48], [2.05, 2.75, 0.48], [-2.05, 2.75, 0.48]], [null, [0.14, 0, 0], [0, -0.4, 0], [-0.14, 0, 0]])],
-      mat: 'canvas',
-      belly: 0.6,
-    },
-    {
-      // The jib on the lower forestay, all of it ahead of the square sail's fullest belly.
-      edge: [[0, 4.4, 1.55], [0, 1.95, 4.0]],
-      pieces: [bowed([[0, 4.4, 1.55], [0, 1.95, 4.0], [0, 1.75, 2.05]], [null, [0, -0.18, 0], [0, 0, -0.22]])],
-      mat: 'canvas',
-      belly: 0.3,
-    },
-  ],
-  pennant: [0, 5.75, 0.3],
-  lantern: standardLantern.at,
-  motion: { kind: 'albatross', center: [0, 6.6, 0.2], radius: 1.9 },
+  // One square sail only: a real cog carries no jib (decided 2026-11-07).
+  sails: [STANDARD_SAIL],
+  pennant: [0, 5.62, STANDARD_MAST_Z],
+  lantern: STANDARD_LANTERN,
+  motion: { kind: 'albatross', center: [0, 6.6, STANDARD_MAST_Z], radius: 1.9 },
 };
 
 /* ---------- 孤注號: a slim racer under a towering striped lateen ---------- */

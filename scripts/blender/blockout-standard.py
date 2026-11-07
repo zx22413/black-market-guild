@@ -348,19 +348,52 @@ def build_emblem():
 
 
 def build_rig():
+    build_spars()
+    build_rig_dressing()
+
+
+def build_spars():
+    """Masts, yard, bowsprit, stays, shrouds and the pennant stand-in: in the GLB build these come from designs.ts."""
     beam("mast", (0, DECK - 0.1, MAST_Z), (0, MAST_TOP, MAST_Z), 0.22, "woodDark", sides=8, taper=0.7)
+    beam("yard", (-YARD_HALF, YARD_Y, MAST_Z + 0.16), (YARD_HALF, YARD_Y, MAST_Z + 0.16), 0.14, "woodDark", sides=8)
+    beam("bowsprit", (0, DECK + 0.45, 2.7), (0, 2.25, 4.05), 0.16, "woodDark", sides=8, taper=0.75)
+    beam("forestay", (0, 5.3, MAST_Z), BOWSPRIT_AT(3.98), 0.04, "rope")
+    beam("backstay", (0, 5.3, MAST_Z), (0, DECK + 1.15, -2.6), 0.035, "rope")
+    for s in (1, -1):
+        for z in SHROUD_ZS:
+            x, y = SHROUD_END(s)
+            beam(f"shroud-{s}-{z}", (0, 4.95, MAST_Z), (x, y, z), 0.04, "rope")
+    # Pennant: drawn by code in the owner's colour; a stand-in triangle here.
+    verts = [(0, 5.62, MAST_Z), (0, 5.9, MAST_Z), (0, 5.76, MAST_Z - 0.75), (0.02, 5.62, MAST_Z), (0.02, 5.9, MAST_Z), (0.02, 5.76, MAST_Z - 0.75)]
+    mesh_from("pennant", verts, [[0, 1, 2], [5, 4, 3], [0, 3, 4, 1], [1, 4, 5, 2], [2, 5, 3, 0]], "pennant")
+    beam("pennant-staff", (0, MAST_TOP, MAST_Z), (0, 5.92, MAST_Z), 0.04, "metal")
+
+
+SHROUD_ZS = (-0.45, -0.95)
+BOWSPRIT_AT = lambda z: (0, DECK + 0.45 + (2.25 - DECK - 0.45) * (z - 2.7) / (4.05 - 2.7), z)  # noqa: E731
+
+
+def CHAINWALE_Y():
+    return sheer(-0.7) - 0.18
+
+
+def SHROUD_END(s):
+    """Where a shroud lands: on top of its deadeye on the chainwale (designs.ts STANDARD_SHROUDS)."""
+    return s * (hull_rail_x(-0.7) + 0.2), CHAINWALE_Y() + 0.19
+
+
+def build_rig_dressing():
+    """Blender-only rig details round the spars: mast partner, hoops and cap, the yard's sling and end bands, the crow's
+    nest, the bowsprit's gammon iron and cap, and the chainwales with their deadeyes and chains."""
     prism("mast-partner", (0, DECK - 0.02, MAST_Z), 0.26, 0.16, "woodDark", sides=8, top=0.8, shade=0.85)
     prism("mast-partner-ring", (0, DECK + 0.12, MAST_Z), 0.17, 0.07, "metal", sides=8)
     for y in (2.2, 3.2, 4.1):
         prism(f"mast-hoop-{y}", (0, y, MAST_Z), 0.135, 0.07, "metal", sides=8)
     prism("mast-cap", (0, MAST_TOP - 0.02, MAST_Z), 0.12, 0.12, "gold", sides=8)
-    # Yard: a thick spar wider than the ship, with iron bands at its arms.
-    beam("yard", (-YARD_HALF, YARD_Y, MAST_Z + 0.16), (YARD_HALF, YARD_Y, MAST_Z + 0.16), 0.14, "woodDark", sides=8)
     for s in (1, -1):
         beam(f"yard-band-{s}", (s * (YARD_HALF - 0.12), YARD_Y, MAST_Z + 0.16), (s * (YARD_HALF + 0.02), YARD_Y, MAST_Z + 0.16), 0.19, "plaster", sides=8)
-    # Crow's nest (top castle): a round tub above the yard, crenellated rim to echo the castles.
     box("yard-sling", (0, YARD_Y, MAST_Z + 0.08), (0.24, 0.22, 0.2), "metal", bevel=0.02)
-    # Cheeks under the top: a dark cone that carries the tub on the mast.
+    # Crow's nest (a top castle): cheeks under it, a sandstone tub, dark bands and a crenellated rim echoing the castles.
     prism("top-cheeks", (0, 4.6, MAST_Z), 0.13, 0.3, "woodDark", sides=10, top=2.6, shade=0.85)
     prism("top-tub", (0, 4.88, MAST_Z), 0.34, 0.36, "sandstone", sides=10, top=1.08)
     prism("top-band", (0, 4.86, MAST_Z), 0.38, 0.1, "woodDark", sides=10)
@@ -368,30 +401,24 @@ def build_rig():
     for i in range(6):
         a = 2 * math.pi * i / 6
         box(f"top-merlon-{i}", (math.cos(a) * 0.36, 5.38, MAST_Z + math.sin(a) * 0.36), (0.16, 0.2, 0.16), "roofRed" if i % 2 == 0 else "marble", bevel=0.0, yaw=-a)
-    # Bowsprit (a cog's bowline spar) and the stays.
-    beam("bowsprit", (0, DECK + 0.45, 2.7), (0, 2.25, 4.05), 0.16, "woodDark", sides=8, taper=0.75)
-    bs = lambda z: (0, DECK + 0.45 + (2.25 - DECK - 0.45) * (z - 2.7) / (4.05 - 2.7), z)
-    beam("bowsprit-gammon", bs(3.3), bs(3.42), 0.25, "metal", sides=8)
-    beam("bowsprit-cap", bs(3.88), bs(4.08), 0.17, "plaster", sides=8)
-    beam("forestay", (0, 5.3, MAST_Z), bs(3.98), 0.04, "rope")
-    beam("backstay", (0, 5.3, MAST_Z), (0, DECK + 1.15, -2.6), 0.035, "rope")
+    beam("bowsprit-gammon", BOWSPRIT_AT(3.3), BOWSPRIT_AT(3.42), 0.25, "metal", sides=8)
+    beam("bowsprit-cap", BOWSPRIT_AT(3.88), BOWSPRIT_AT(4.08), 0.17, "plaster", sides=8)
     for s in (1, -1):
         # Chainwale: a thick board standing out from the hull below the cap rail, where the shrouds land on deadeyes.
-        cy = sheer(-0.7) - 0.18
+        cy = CHAINWALE_Y()
         box(f"chainwale-{s}", (s * (hull_rail_x(-0.7) + 0.12), cy, -0.7), (0.24, 0.1, 1.0), "woodDark", bevel=0.02, shade=0.85)
-        for z in (-0.45, -0.95):
-            x = s * (hull_rail_x(-0.7) + 0.2)
+        for z in SHROUD_ZS:
+            x = SHROUD_END(s)[0]
             prism(f"deadeye-{s}-{z}", (x, cy + 0.05, z), 0.07, 0.14, "dark", sides=6)
             beam(f"chain-{s}-{z}", (x, cy - 0.05, z), (x - s * 0.02, cy - 0.4, z), 0.035, "metal", sides=4)
-            beam(f"shroud-{s}-{z}", (0, 4.95, MAST_Z), (x, cy + 0.19, z), 0.04, "rope")
-    # Pennant: drawn by code in the owner's colour; a stand-in triangle here.
-    verts = [(0, 5.62, MAST_Z), (0, 5.9, MAST_Z), (0, 5.76, MAST_Z - 0.75), (0.02, 5.62, MAST_Z), (0.02, 5.9, MAST_Z), (0.02, 5.76, MAST_Z - 0.75)]
-    mesh_from("pennant", verts, [[0, 1, 2], [5, 4, 3], [0, 3, 4, 1], [1, 4, 5, 2], [2, 5, 3, 0]], "pennant")
-    beam("pennant-staff", (0, MAST_TOP, MAST_Z), (0, 5.92, MAST_Z), 0.04, "metal")
+
+
+def build_lantern_plate():
+    box("lantern-plate", (0, DECK + 0.78, -3.03), (0.22, 0.3, 0.06), "metal", bevel=0.01)
 
 
 def build_stern_lantern():
-    box("lantern-plate", (0, DECK + 0.75, -3.03), (0.2, 0.3, 0.06), "metal", bevel=0.01)
+    build_lantern_plate()
     beam("lantern-arm", (0, DECK + 0.82, -3.02), (0, DECK + 0.82, -3.38), 0.06, "metal", sides=4)
     beam("lantern-hook", (0, DECK + 0.82, -3.36), (0, DECK + 0.68, -3.36), 0.035, "metal", sides=4)
     box("lantern", (0, DECK + 0.52, -3.36), (0.22, 0.3, 0.22), "metal", bevel=0.02)
@@ -455,23 +482,30 @@ ANCHORS = {
 }
 
 
-build_hull()
-build_trim()
-build_rudder()
-build_castles()
-build_sail()
-build_sail_hem()
-build_emblem()
-build_rig()
-build_stern_lantern()
-build_albatross_path()
-finish_blockout(
-    ANCHORS,
-    band=hull_band,
-    skip=("hull", "sail", "emblem", "rudder", "wale", "cap-rail", "pennant", "aftcastle-", "forecastle-", "top-"),
-    close_ups=lambda: {
-        "near-bow": near((0, 1.9, 2.3), -55, 22, 3.6),
-        "near-stern": near((0, 1.8, -2.3), -125, 22, 3.6),
-        "near-waist": near((0, 1.7, 0.0), -80, 28, 4.2),
-    },
-)
+
+def build_ship_body():
+    """Everything that is not rig, sail or a code-drawn stand-in: the hull and its trims, rudder and castles."""
+    build_hull()
+    build_trim()
+    build_rudder()
+    build_castles()
+
+
+if __name__ == "__main__":
+    build_ship_body()
+    build_sail()
+    build_sail_hem()
+    build_emblem()
+    build_rig()
+    build_stern_lantern()
+    build_albatross_path()
+    finish_blockout(
+        ANCHORS,
+        band=hull_band,
+        skip=("hull", "sail", "emblem", "rudder", "wale", "cap-rail", "pennant", "aftcastle-", "forecastle-", "top-"),
+        close_ups=lambda: {
+            "near-bow": near((0, 1.9, 2.3), -55, 22, 3.6),
+            "near-stern": near((0, 1.8, -2.3), -125, 22, 3.6),
+            "near-waist": near((0, 1.7, 0.0), -80, 28, 4.2),
+        },
+    )

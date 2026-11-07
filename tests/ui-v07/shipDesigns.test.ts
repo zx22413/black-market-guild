@@ -145,9 +145,11 @@ describe('sails clear the rigging', () => {
     }
   });
 
-  it('keeps the standard ship\'s jib ahead of its square sail', () => {
-    const [square, jib] = SHIP_DESIGNS.standard.sails;
-    expect(Math.min(...filledSail(jib!).map((p) => p[2]))).toBeGreaterThan(Math.max(...filledSail(square!).map((p) => p[2])) + 0.05);
+  it('gives the standard ship one square sail wider than its hull, like spread wings', () => {
+    const sails = SHIP_DESIGNS.standard.sails;
+    expect(sails).toHaveLength(1);
+    const span = Math.max(...sails[0]!.pieces.flat().map((p) => Math.abs(p[0])));
+    expect(span).toBeGreaterThan(1.5 * 1.6);
   });
 
   it('keeps the gambler\'s jib to port of its lateen', () => {
