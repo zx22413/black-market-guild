@@ -48,44 +48,149 @@ function terraces(): P[] {
   ]);
 }
 
-/** Steps and their size: four steps up each terrace. */
+/** Steps and their size: four risers up each terrace. */
 const STEPS = 4;
 const RISE = STEP_UP / STEPS;
 const RUN = 0.17;
+/** How deep a landing is along its flight, and how high a stair's handrail rides over the steps' nosings. */
+const LANDING = 0.3;
+const RAIL = 0.26;
 
-/** A flight straight up the +z face of terrace 0 from the grass, `width` wide. */
-function frontFlight(): P[] {
-  const wall = TIERS[0];
-  return Array.from({ length: STEPS }, (_, k): P => {
-    const z0 = wall + RUN * (STEPS - 1 - k);
-    return { kind: 'box', center: [0, (RISE * (k + 1)) / 2, z0 + RUN / 2], size: [0.7, RISE * (k + 1), RUN], bevel: 0.01, mat: 'stone' };
-  });
+/** A flight's run from its head down: each riser's tread height above the floor it climbs from, and its depth. */
+interface Tread {
+  readonly top: number;
+  readonly run: number;
 }
 
-/** How far a side flight stands out from its wall, and where along the wall it starts (it climbs toward +x). */
-const SIDE_DEPTH = 0.32;
-const SIDE_START = -0.4;
+/**
+ * A gate where a flight comes onto a terrace, on the +z face: two sandstone piers with stone caps, a stone lintel and a
+ * low sandstone gable on it, across `x0..x1` at `z`, standing on `floor`.
+ */
+function gate(x0: number, x1: number, z: number, floor: number, tall: number): P[] {
+  const piers = [x0, x1].flatMap((x): P[] => [
+    { kind: 'box', center: [x, floor + tall / 2, z], size: [0.16, tall, 0.16], bevel: 0.01, mat: 'sandstone' },
+    { kind: 'box', center: [x, floor + tall + 0.03, z], size: [0.2, 0.06, 0.2], bevel: 0.01, mat: 'stone' },
+  ]);
+  return [
+    ...piers,
+    { kind: 'box', center: [(x0 + x1) / 2, floor + tall - 0.06, z], size: [x1 - x0 + 0.2, 0.12, 0.18], bevel: 0.01, mat: 'stone' },
+    { kind: 'gable', base: [(x0 + x1) / 2, floor + tall, z], size: [x1 - x0 + 0.2, 0.14, 0.16], ridge: 'x', mat: 'sandstone' },
+  ];
+}
 
-/** A flight hugging the +z face of terrace `tier`, climbing along the wall toward +x from its floor. */
+/** A newel post with a ball on it, standing on `y`. */
+const newel = (x: number, y: number, z: number): P[] => [
+  { kind: 'box', center: [x, y + 0.21, z], size: [0.16, 0.42, 0.16], bevel: 0.01, mat: 'sandstone' },
+  { kind: 'prism', base: [x, y + 0.42, z], radius: 0.08, height: 0.12, top: 0.03, sides: 8, mat: 'stone' },
+];
+
+/**
+ * The broad flight straight up the +z face of terrace 0 from the grass: two steps, a landing half way (its floor laid in
+ * sandstone so it reads as a place to stop), one step to the grass; a cheek wall with a stone coping either side,
+ * stepped down at the landing, a newel at the foot and at the step; a gate at its head on the terrace's edge.
+ */
+const GRAND = { width: 1.0, treads: [{ top: 0.76, run: RUN }, { top: 0.57, run: RUN }, { top: 0.38, run: LANDING }, { top: 0.19, run: RUN }] as readonly Tread[] };
+const GRAND_START = TIERS[0] - 0.06;
+const GRAND_FOOT = GRAND_START + GRAND.treads.reduce((sum, t) => sum + t.run, 0);
+
+function grandFlight(): P[] {
+  const { width } = GRAND;
+  const parts: P[] = [];
+  let z = GRAND_START;
+  for (const { top, run } of GRAND.treads) {
+    parts.push({ kind: 'box', center: [0, top / 2, z + run / 2 + 0.03], size: [width, top, run + 0.06], bevel: 0.01, mat: 'stone' });
+    if (run > RUN) parts.push({ kind: 'box', center: [0, top + 0.0125, z + run / 2 + 0.03], size: [width - 0.01, 0.025, run], mat: 'sandstone' });
+    z += run;
+  }
+  // The cheek walls in two steps: high beside the upper steps, low beside the landing and the last step.
+  const turn = GRAND_START + 2 * RUN;
+  for (const side of [-1, 1]) {
+    const x = side * (width / 2 + 0.08);
+    for (const [z0, z1, top] of [[GRAND_START - 0.04, turn, 0.88], [turn, GRAND_FOOT, 0.5]] as const) {
+      parts.push({ kind: 'box', center: [x, top / 2, (z0 + z1) / 2], size: [0.14, top, z1 - z0], bevel: 0.01, mat: 'sandstone' });
+      parts.push({ kind: 'box', center: [x, top + 0.03, (z0 + z1) / 2], size: [0.2, 0.06, z1 - z0 + 0.04], bevel: 0.01, mat: 'stone' });
+    }
+    parts.push(...newel(x, 0, GRAND_FOOT - 0.06), ...newel(x, 0.5 - 0.42 + 0.06, turn));
+  }
+  parts.push(...gate(-(width / 2 + 0.08), width / 2 + 0.08, edgeOf(0) - 0.08, STEP_UP, 0.95));
+  return parts;
+}
+
+/** A side flight's start along its wall (it climbs toward +x), how far it stands out, and its run from the foot up. */
+const SIDE_START = -0.46;
+const SIDE_DEPTH = 0.38;
+const SIDE_TREADS: readonly Tread[] = [
+  { top: RISE, run: RUN },
+  { top: 2 * RISE, run: LANDING },
+  { top: 3 * RISE, run: RUN },
+  { top: STEP_UP, run: RUN },
+  { top: STEP_UP, run: LANDING },
+];
+const SIDE_HEAD = SIDE_START + SIDE_TREADS.reduce((sum, t) => sum + t.run, 0);
+
+/**
+ * A flight hugging the +z face of terrace `tier`, climbing along the wall toward +x from its floor: two steps, a half
+ * landing, two steps and a top landing level with the terrace, both landings floored in sandstone. On its drop side an
+ * open balustrade: a stone handrail running parallel to the nosings and level over the landings, each baluster standing
+ * on its step and stopping under the rail; the rail turns round the top landing's far end back to the wall, so the only
+ * way off it is the gate onto the terrace.
+ */
 function sideFlight(tier: number): P[] {
   const wall = TIERS[tier]!;
   const floor = floorOf(tier);
-  return Array.from({ length: STEPS }, (_, k): P => ({
-    kind: 'box',
-    center: [SIDE_START + RUN * (k + 0.5), floor + (RISE * (k + 1)) / 2, wall + SIDE_DEPTH / 2],
-    size: [RUN, RISE * (k + 1), SIDE_DEPTH],
-    bevel: 0.01,
-    mat: 'stone',
-  }));
+  const parts: P[] = [];
+  const spans: { x0: number; x1: number; top: number }[] = [];
+  let x = SIDE_START;
+  for (const { top, run } of SIDE_TREADS) {
+    parts.push({ kind: 'box', center: [x + run / 2, floor + top / 2, wall + SIDE_DEPTH / 2 - 0.03], size: [run + 0.005, top, SIDE_DEPTH + 0.06], bevel: 0.01, mat: 'stone' });
+    if (run > RUN) parts.push({ kind: 'box', center: [x + run / 2, floor + top + 0.0125, wall + SIDE_DEPTH / 2], size: [run - 0.01, 0.025, SIDE_DEPTH - 0.02], mat: 'sandstone' });
+    spans.push({ x0: x, x1: x + run, top: floor + top });
+    x += run;
+  }
+  const zr = wall + SIDE_DEPTH + 0.01;
+  // The handrail: up each flight, level over each landing.
+  const rail: [number, number][] = [[SIDE_START, spans[0]!.top + RAIL]];
+  for (const { x0, x1, top } of spans) {
+    if (x1 - x0 > RUN + 0.01) rail.push([x0 + 0.02, top + RAIL], [x1 - 0.02, top + RAIL]);
+    else rail.push([(x0 + x1) / 2, top + RAIL]);
+  }
+  rail.push([SIDE_HEAD, floor + STEP_UP + RAIL]);
+  const railAt = (px: number): number => {
+    for (let i = 1; i < rail.length; i++) {
+      const [[xa, ya], [xb, yb]] = [rail[i - 1]!, rail[i]!];
+      if (px <= xb) return ya + ((yb - ya) * (px - xa)) / Math.max(xb - xa, 1e-6);
+    }
+    return rail[rail.length - 1]![1];
+  };
+  const stepAt = (px: number): number => spans.find((sp) => px < sp.x1)?.top ?? floor + STEP_UP;
+  for (let i = 1; i < rail.length; i++) {
+    const [[xa, ya], [xb, yb]] = [rail[i - 1]!, rail[i]!];
+    parts.push({ kind: 'beam', from: [xa, ya, zr], to: [xb, yb, zr], width: 0.07, mat: 'stone' });
+  }
+  for (let bx = SIDE_START + 0.08; bx < SIDE_HEAD - 0.04; bx += 0.11) {
+    const [y0, y1] = [stepAt(bx), railAt(bx) - 0.03];
+    parts.push({ kind: 'box', center: [bx, (y0 + y1) / 2, zr], size: [0.035, y1 - y0, 0.035], mat: 'sandstone' });
+  }
+  // Round the top landing's far end, back to the wall.
+  const top = floor + STEP_UP;
+  parts.push({ kind: 'beam', from: [SIDE_HEAD, top + RAIL, zr], to: [SIDE_HEAD, top + RAIL, wall - 0.04], width: 0.07, mat: 'stone' });
+  for (const dz of [0.12, 0.24]) parts.push({ kind: 'box', center: [SIDE_HEAD - 0.02, top + (RAIL - 0.03) / 2, zr - dz], size: [0.035, RAIL - 0.03, 0.035], mat: 'sandstone' });
+  parts.push({ kind: 'box', center: [SIDE_HEAD - 0.02, top + (RAIL + 0.04) / 2, zr], size: [0.07, RAIL + 0.04, 0.07], mat: 'sandstone' });
+  parts.push(...newel(SIDE_START - 0.04, floor, zr));
+  parts.push(...gate(SIDE_HEAD - 0.38, SIDE_HEAD + 0.02, edgeOf(tier) - 0.06, top, 0.75));
+  return parts;
 }
 
 function stairs(): P[] {
   return [
-    ...AXIS_FACES.flatMap((t) => spun(frontFlight(), t)),
+    ...AXIS_FACES.flatMap((t) => spun(grandFlight(), t)),
     ...DIAGONAL_FACES.flatMap((t) => spun(sideFlight(1), t)),
     ...AXIS_FACES.flatMap((t) => spun(sideFlight(2), t)),
   ];
 }
+
+/** The flights alone, as `marketRestParts` draws them (for the market's stair blockouts, scripts/blender/dump-market.ts). */
+export const MARKET_FLIGHTS: readonly P[] = stairs();
 
 /** A stall against the wall of terrace `wallTier`, on the floor in front of it: where, and its depth. */
 interface StallSpot {
@@ -228,7 +333,7 @@ export const STALL_KEEPERS: readonly { readonly at: Vec3; readonly heading: numb
 /** Where porters set down their crates: in front of each straight-face stall on the first terrace, by its turn. */
 export const STALL_DROPS: readonly { readonly spin: number; readonly at: Vec3 }[] = AXIS_FACES.map((spin) => ({ spin, at: turned([0, floorOf(1), TIERS[1] + 0.62], spin) }));
 /** Foot and head of the straight flight up the first terrace, on the +z face before turning. */
-export const FLIGHT_FOOT: Vec3 = [0, 0, TIERS[0] + RUN * STEPS + 0.15];
+export const FLIGHT_FOOT: Vec3 = [0, 0, GRAND_FOOT + 0.15];
 export const FLIGHT_HEAD: Vec3 = [0, floorOf(1), edgeOf(0) - 0.12];
 
 /** Lantern posts stand on a ring's outer corners, this far in from the floor's edge, this tall. */
@@ -466,22 +571,26 @@ export const LIGHTER_PATH: readonly Vec3[] = (() => {
   const f3 = floorOf(3);
   // The second flight up: on the slanted face at 45°, climbing toward +x of that face.
   const side1 = DIAGONAL_FACES[0]!;
-  const sideFoot = turned([SIDE_START - 0.15, f1, TIERS[1] + SIDE_DEPTH + 0.15], side1);
-  const sideHead = turned([SIDE_START + RUN * STEPS + 0.12, f2, TIERS[1] - 0.18], side1);
+  // Each side flight: in front of its first step, up it to the top landing, then through the gate onto the terrace.
+  const climb = (tier: number, spin: number, from: number, to: number): Vec3[] => [
+    turned([SIDE_START - 0.16, from, TIERS[tier]! + SIDE_DEPTH / 2], spin),
+    turned([SIDE_HEAD - 0.18, to, TIERS[tier]! + SIDE_DEPTH / 2], spin),
+    turned([SIDE_HEAD - 0.18, to, edgeOf(tier) - 0.22], spin),
+  ];
+  const [sideFoot, ...sideHead] = climb(1, side1, f1, f2);
   const top = AXIS_FACES[0]!;
-  const topFoot = turned([SIDE_START - 0.15, f2, TIERS[2] + SIDE_DEPTH + 0.15], top);
-  const topHead = turned([SIDE_START + RUN * STEPS + 0.12, f3, TIERS[2] - 0.2], top);
+  const [topFoot, ...topHead] = climb(2, top, f2, f3);
   return [
     [0, 0, FLIGHT_FOOT[2] + 0.6],
     FLIGHT_FOOT,
     [0, f1, FLIGHT_HEAD[2]],
     ...ringWalk(LIGHTER_RING[0], f1, 0),
-    sideFoot,
-    sideHead,
+    sideFoot!,
+    ...sideHead,
     // Round the second floor to the corner before the top flight (the last sides are lit from the flights).
     ...ringWalk(LIGHTER_RING[1], f2, side1).slice(0, 7),
-    topFoot,
-    topHead,
+    topFoot!,
+    ...topHead,
     ...ringWalk(LIGHTER_RING[2], f3, 0),
   ];
 })();
