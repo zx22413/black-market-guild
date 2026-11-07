@@ -1,6 +1,6 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useMemo } from 'react';
-import { SHIP_TYPE_IDS, type PlayerId, type ShipTypeId, type VoyageEventId } from '../../v07/game';
+import { BUILDING_IDS, ISLAND_IDS, SHIP_TYPE_IDS, type IslandId, type PlayerId, type ShipTypeId, type VoyageEventId } from '../../v07/game';
 import { seatAngles } from '../../ui/scene/layout';
 import { shipPose } from '../../ui/scene/Ships';
 import { PLAYER_COLORS, type ShipState } from '../../ui/scene/tableModel';
@@ -10,7 +10,9 @@ import { TableCanvas, type TableShip } from '../scene/TableCanvas';
 
 // Dev-only: the five ship types on the table at /v07.html?dev=ships. Query: `state` docked | sailing (default docked),
 // `weather` (moonless-night for the lanterns and the ghost ship's glow), `view` table (the game's camera) | close (circles
-// one ship; `ship` = standard | gambler | freighter | hidden | breaker) | side (beside that ship at deck height).
+// one ship; `ship` = standard | gambler | freighter | hidden | breaker) | side (beside that ship at deck height),
+// `islands` (comma-separated island ids for the four seats, e.g. smuggler-port,mine; blank keeps the default look),
+// `assets` (any value: every seat has all four buildings up), `seat` (the seat whose island `close`/`side` look at).
 
 const OWNERS = [0, 1, 2, 3, 0] as const;
 
@@ -37,7 +39,9 @@ export function ShipsPreview() {
   const view = (['close', 'side'].includes(q.get('view') ?? '') ? q.get('view') : 'table') as 'table' | 'close' | 'side';
   const focus = (SHIP_TYPE_IDS as readonly string[]).includes(q.get('ship') ?? '') ? (q.get('ship') as ShipTypeId) : 'standard';
   const angles = useMemo(() => seatAngles(4), []);
-  const seats: BeatSeat[] = angles.map((_, i) => ({ id: `p${i}` as PlayerId, name: '', color: PLAYER_COLORS[i]!, buildings: [], island: null, isViewer: i === 0 }));
+  const islands = (q.get('islands') ?? '').split(',').map((id) => ((ISLAND_IDS as readonly string[]).includes(id) ? (id as IslandId) : null));
+  const buildings = q.has('assets') ? BUILDING_IDS : [];
+  const seats: BeatSeat[] = angles.map((_, i) => ({ id: `p${i}` as PlayerId, name: '', color: PLAYER_COLORS[i]!, buildings, island: islands[i] ?? null, isViewer: i === 0 }));
   const ships: TableShip[] = SHIP_TYPE_IDS.map((type, i) => ({ id: `s-${type}` as never, owner: seats[OWNERS[i]!]!.id, state, type }));
   const berths = berthsOf(ships);
   const index = SHIP_TYPE_IDS.indexOf(focus);

@@ -43,13 +43,15 @@ interface PlayerIslandProps {
   readonly scenery?: ReactNode;
   /** A lobe of cliff the chosen island's big landmark rises from. */
   readonly annex?: IslandAnnex;
+  /** A Blender-built base (island space) drawn instead of the craggy cliff, turf, dock and shore rock. */
+  readonly base?: ReactNode;
 }
 
 /** Where the dock model's legs end, below the sea's rest level (-0.3), so they stand in the water. */
 const DOCK_FOOT = -0.55;
 
 /** One guild's home island: dock toward the center, owned assets in fixed lots. */
-export function PlayerIsland({ seat, angle, seed, selectable = false, selected = false, onSelect, ground, scenery, annex }: PlayerIslandProps) {
+export function PlayerIsland({ seat, angle, seed, selectable = false, selected = false, onSelect, ground, scenery, annex, base }: PlayerIslandProps) {
   const home = seatPosition(angle);
   // Buildings already standing when the island appears are simply there; later ones are built on screen.
   const [standing] = useState(() => new Set(seat.assets));
@@ -70,7 +72,7 @@ export function PlayerIsland({ seat, angle, seed, selectable = false, selected =
       onPointerOut={cursor('')}
     >
       {(selectable || selected) && <IslandRing selected={selected} />}
-      <IslandBase radius={PLAYER_ISLAND_RADIUS} seed={seed} {...(ground ? { ground } : {})} {...(annex ? { annex } : {})} />
+      {base ?? <IslandBase radius={PLAYER_ISLAND_RADIUS} seed={seed} {...(ground ? { ground } : {})} {...(annex ? { annex } : {})} />}
       <group position={[0, PLATEAU, 0]}>
         {seat.assets.map((asset) => (
           <BuildSite key={asset} asset={asset} color={seat.color} position={ASSET_LOTS[asset]} scale={ASSET_BUILDING_SCALE} animate={!standing.has(asset)} />
@@ -86,8 +88,12 @@ export function PlayerIsland({ seat, angle, seed, selectable = false, selected =
         <Banner color={seat.color} position={[0, 0, 0.5]} />
       </group>
       {/* The model's legs start at its origin: standing it in the sea (rest level -0.3) puts its deck at about the market piers' (0.45). */}
-      <Model name="structure-platform-dock" position={[0, DOCK_FOOT, PLAYER_ISLAND_RADIUS + 0.4]} scale={[1.2, 1, 1.6]} />
-      <Model name="rocks-sand-a" position={[-11, -0.6, 5.4]} scale={0.8} />
+      {!base && (
+        <>
+          <Model name="structure-platform-dock" position={[0, DOCK_FOOT, PLAYER_ISLAND_RADIUS + 0.4]} scale={[1.2, 1, 1.6]} />
+          <Model name="rocks-sand-a" position={[-11, -0.6, 5.4]} scale={0.8} />
+        </>
+      )}
     </group>
   );
 }

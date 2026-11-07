@@ -1,8 +1,9 @@
 import { LANDMARK_DESIGNS, landmarkParts, type LandmarkDesign, type LandmarkId } from '../../ui/scene/buildings/landmarks';
 import { bounds } from '../../ui/scene/buildings/polyhedra';
 import type { IslandGround } from '../../ui/scene/IslandBase';
-import type { IslandAnnex } from '../../ui/scene/islandShape';
-import type { SeaPoint } from '../../ui/scene/islandShape';
+import { HEADLAND_AT } from '../../ui/scene/buildings/islands/smugglerPort';
+import { SMUGGLER_PORT_BASE, type IslandBaseShape } from '../../ui/scene/islandBaseShapes';
+import type { IslandAnnex, SeaPoint, SeatShores } from '../../ui/scene/islandShape';
 import type { Vec3 } from '../../ui/scene/layout';
 import type { IslandId } from '../../v07/game';
 
@@ -32,6 +33,21 @@ export interface SceneryPiece {
    * parts each kept clear of the lots one by one rather than as one box.
    */
   readonly laidIn?: boolean;
+  /**
+   * Down on the island's own low ground below the plateau (a beach of a Blender-built base, `IslandScenery.base`),
+   * so it stands off the plateau: the smuggling port's rowboat pulled up on the shingle.
+   */
+  readonly ashore?: boolean;
+}
+
+/**
+ * An island base built in Blender in place of the round craggy cliff (scripts/blender/build-island-*.py): the part
+ * that stays put (`public/models/islands/<model>-body.glb`, island space) and the headland that turns with the
+ * backdrop (`<model>-headland.glb`, authored at the back), with their waterlines.
+ */
+export interface IslandBaseModel {
+  readonly model: string;
+  readonly shape: IslandBaseShape;
 }
 
 export interface IslandScenery {
@@ -44,6 +60,8 @@ export interface IslandScenery {
    * landmass as big as the mine's mountain grows out of the island instead of the sea beside it.
    */
   readonly annex?: { readonly center: SeaPoint; readonly radii: SeaPoint };
+  /** A Blender-built base that replaces the island's cliff, turf and dock (and makes `annex` unnecessary). */
+  readonly base?: IslandBaseModel;
 }
 
 /** The grass slab's top above the plateau origin (`IslandBase`: centered 0.2 up, 0.5 thick); thin pieces would sink below it. */
@@ -87,11 +105,13 @@ export const ISLAND_SCENERY: Readonly<Partial<Record<IslandId, IslandScenery>>> 
     name: '走私港',
     // The colormap's purples are all saturated, so the heath is an even blend of its #5a38b7 and grey-violet #68687d.
     ground: { top: '#625297', cliff: '#45454f' },
-    annex: { center: [-2.7, -11.6], radii: [5.8, 3.8] },
+    // The basalt-column island, its cove, quay and beach, and the headland with the cave and the sea arch (docs/art/island-base-research.md §6–7).
+    base: { model: 'smuggler-port', shape: SMUGGLER_PORT_BASE },
     pieces: [
       { design: 'arms-cache', at: [0.3, TURF, 3.25], scale: 2 },
-      { design: 'smuggler-cave', at: [0, SEA_FOOT, -11], scale: 4, backdrop: true },
-      { design: 'rowboat', at: [5.3, TURF, 3.9], scale: 1.6, turn: 0.3 },
+      { design: 'smuggler-cave', at: [HEADLAND_AT[0], 0, HEADLAND_AT[1]], scale: 1, backdrop: true },
+      // Pulled up on the shingle beach in the bay on the right (the beach's top is 0.22, 2.38 below the plateau).
+      { design: 'rowboat', at: [9.8, -2.37, 7.4], scale: 1.6, turn: 0.5, ashore: true },
       { design: 'heather', at: [-1.0, TURF, -0.6], scale: 1.1 },
       { design: 'heather', at: [-5.3, TURF, 5.0], scale: 0.8, turn: 1 },
       { design: 'basalt-columns', at: [-5.75, TURF, -3.55], scale: 1.4 },
@@ -171,6 +191,22 @@ export const BACKDROP_TURNS = [0, Math.PI / 2, -Math.PI / 2] as const;
 export function backdropTurn(heading: number): number {
   const away = (turn: number): number => Math.round(Math.cos(heading + turn) * 1e9);
   return BACKDROP_TURNS.reduce((best, turn) => (away(turn) > away(best) ? turn : best));
+}
+
+/** Island space to island space: turn about +y the way three.js does. */
+function turnPoint([x, z]: SeaPoint, turn: number): SeaPoint {
+  return [x * Math.cos(turn) + z * Math.sin(turn), -x * Math.sin(turn) + z * Math.cos(turn)];
+}
+
+/**
+ * The waterlines of the chosen island's Blender-built base in island space, its headland turned with the backdrop
+ * (for `islandShorelines`); null if the island keeps the craggy cliff.
+ */
+export function islandBaseShores(island: IslandId | null, heading: number): SeatShores | null {
+  const base = island ? ISLAND_SCENERY[island]?.base : undefined;
+  if (!base) return null;
+  const turn = backdropTurn(heading);
+  return [base.shape.headlandShore.map((p) => turnPoint(p, turn)), base.shape.shore];
 }
 
 /** The chosen island's cliff annex on the table, turned with its backdrop; null if it has none. */

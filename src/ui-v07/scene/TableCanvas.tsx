@@ -9,7 +9,7 @@ import { GoldRush } from '../../ui/scene/GoldRush';
 import { PlayerIsland, TargetIsland } from '../../ui/scene/Islands';
 import type { MarketShow } from '../../ui/scene/MarketIsland';
 import { islandLook } from './IslandLook';
-import { backdropTop, islandAnnex } from './islandScenery';
+import { backdropTop, islandAnnex, islandBaseShores } from './islandScenery';
 import { islandShorelines, playerIslandHeading, playerIslandSeed } from '../../ui/scene/islandShape';
 import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatAngles, seatPosition, type Vec3 } from '../../ui/scene/layout';
 import { Night } from '../../ui/scene/Night';
@@ -233,7 +233,12 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
   const { angles, laneOf } = useTableLayout(seats);
   const islandKey = seats.map((s) => s.island ?? '').join('|');
   const shores = useMemo(
-    () => islandShorelines(angles, seats.map((s, i) => islandAnnex(s.island, playerIslandHeading(angles[i]!)))),
+    () =>
+      islandShorelines(
+        angles,
+        seats.map((s, i) => islandAnnex(s.island, playerIslandHeading(angles[i]!))),
+        seats.map((s, i) => islandBaseShores(s.island, playerIslandHeading(angles[i]!))),
+      ),
     // Seats are a fresh array each render; the shores only change with the seats' islands.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [angles, islandKey],

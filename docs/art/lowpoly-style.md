@@ -127,4 +127,4 @@
 ## 7. 程式碼零件還是 Blender
 
 - **程式碼零件**（第 2～3 節，`lowpoly-model` skill）：方正、由凸多面體拼得出來的東西，例如建築、造景、道具。可以直接畫 SVG 設計圖、跑幾何測試。
-- **Blender**（`blender-model` skill）：需要曲面、往內收的弧線、複雜輪廓的東西，例如船身。由 `scripts/blender/` 的腳本在背景產生 GLB，結果可以重跑、可以進版本控制。材質一樣只用 `SWATCHES`，頂點色烘焙 AO。
+- **Blender**（`blender-model` skill）：需要曲面、往內收的弧線、複雜輪廓的東西，例如船身，以及整座島的地基（走私港：`scripts/blender/island_smuggler.py`，設計紀錄在 [`island-base-research.md`](island-base-research.md)）。由 `scripts/blender/` 的腳本在背景產生 GLB，結果可以重跑、可以進版本控制。材質一樣只用 `SWATCHES`，頂點色烘焙 AO。

@@ -3,7 +3,9 @@ import type { Vec2, Vec3 } from '../polyhedra';
 import type { LandmarkDesign, LandmarkOars, P } from './design';
 import { ellipseLoop } from './seaLoop';
 
-// The smuggling port (走私港): a basalt headland with a sea arch and cave store, an arms cache, a rowboat, heather and basalt columns.
+// The smuggling port (走私港): what stands on its basalt headland (the cave store's shoring and kegs, the lookout's cottage,
+// the signal gibbet, the skiff under the sea arch), an arms cache, a rowboat, heather and basalt columns. The headland
+// and arch themselves are the island's base (scripts/blender/island_smuggler.py).
 
 /**
  * Powder keg lying on its side along z on `base`, `r` in radius, iron hoops near the ends and a red
@@ -113,43 +115,17 @@ function skiffOars(k: number): LandmarkOars {
 }
 
 /**
- * The sea arch standing on its own off the headland: the middle of its opening, and how far each leg
- * stands from it. Far enough out that open water lies on both sides, so a boat can row through.
+ * The design's origin on the plateau (island space x, z), where the scenery piece stands (islandScenery.ts): the
+ * middle of the headland. Heights are above the plateau: the yard's heather (TURF) and the headland's (HEAD_TOP)
+ * as scripts/blender/island_smuggler.py builds them (TURF 2.85, HEAD_TOP 5.4 + 0.32, less the plateau's 2.6).
  */
-const ARCH = { at: [1.8, -1.6] as Vec2, legs: 0.9 } as const;
-
-/** Outline of the flat-topped headland, off to the left of the arch; its back corner runs out to carry the arch. */
-const HEADLAND: readonly Vec2[] = [
-  [-1.75, -0.55],
-  [-1.2, -0.85],
-  [0.2, -0.85],
-  [0.45, -0.6],
-  [0.45, 0.45],
-  [0.1, 0.6],
-  [-1.4, 0.6],
-  [-1.75, 0.35],
-];
-/** The arch's span, from the headland out to the stack. */
-const SPAN: readonly Vec2[] = [
-  [-1.14, -0.25],
-  [1.14, -0.3],
-  [1.14, 0.3],
-  [-1.14, 0.28],
-];
-const LINTEL: readonly Vec2[] = [
-  [-1, -0.15],
-  [1, -0.15],
-  [0.92, 0.12],
-  [-0.92, 0.12],
-];
-const BOULDER: readonly Vec2[] = [
-  [-1, -0.6],
-  [0.2, -1],
-  [1, -0.5],
-  [0.9, 0.7],
-  [-0.3, 1],
-  [-1, 0.5],
-];
+export const HEADLAND_AT: Vec2 = [-3, -11];
+const TURF = 0.25;
+const HEAD_TOP = 3.12;
+/** The cave mouth on the headland's yard face: its middle (x, z) and width (island_smuggler.py MOUTH). */
+const MOUTH = { x: 0, width: 2.6, z: 2.1 } as const;
+/** The middle of the sea arch's opening (between its legs in island_smuggler.py ARCH), where the skiff rows through. */
+const ARCH_AT: Vec2 = [10.4, -6.4];
 
 /** A low tuft of heather on `base`: a dark stem mound under a purple crown. */
 function heatherTuft([x, y, z]: Vec3, r: number): P[] {
@@ -171,71 +147,43 @@ function signalLantern(x: number, y: number, z: number, size: number): P[] {
 }
 
 /**
- * The smuggling port's headland, after the Cornish smuggling coves (Prussia Cove, where the Carters
- * landed cargoes under their own cliff-top guns): a flat-topped basalt cliff capped with heather, a
- * timber-shored cave store opening onto the yard with red-X powder kegs in its mouth, a whitewashed
- * lookout's cottage and a signal-lantern gibbet on top, and a sea arch standing off the headland, the
- * smugglers' way in. Low and wide, with a hole through it, unlike the mine's peaks. Authored for
- * about 4×, standing in the sea: its base (y < 0.9) is under the sea and inside the cliff and the
- * plateau's turf is at y ≈ 0.96, so the cave, cottage and kegs are drawn at half the asset buildings'
- * size to stay building-sized.
+ * What stands on the smuggling port's headland, after the Cornish smuggling coves (Prussia Cove, where the Carters
+ * landed cargoes under their own cliff-top guns). The headland itself — a second tier of basalt columns behind the
+ * lots with the cave store opening onto the yard, and the sea arch off its end — is part of the island's base, built
+ * in Blender (scripts/blender/island_smuggler.py, `IslandScenery.base`); these parts are drawn on it at scale 1 in
+ * plateau space, from `HEADLAND_AT`, and turn with it: the cave's timber shoring with red-X powder kegs in its mouth, the lookout's
+ * whitewashed cottage, and the signal-lantern gibbet at the cliff edge over the yard.
  */
 const smugglerCave: LandmarkDesign = {
-  motif: '平頂海崖＋海蝕拱門＋崖洞軍火庫＋看守小屋與信號燈',
+  motif: '玄武岩柱高台＋海蝕拱門＋崖洞軍火庫＋看守小屋與信號燈',
   parts: [
-    { kind: 'loft', base: [0, 0, 0], outline: HEADLAND, height: 0.9, bottom: 1, top: 0.97, mat: 'basalt' },
-    { kind: 'loft', base: [0, 0.9, 0], outline: HEADLAND, height: 1.3, bottom: 0.97, top: 0.92, mat: 'basalt' },
-    // Heather tufts on the cliff top and along the arch.
-    ...([
-      [-1.45, -0.45, 0.11],
-      [-0.55, -0.6, 0.13],
-      [-0.1, -0.35, 0.09],
-      [-1.5, 0.3, 0.1],
-      [-0.6, 0.35, 0.08],
-      [0.2, 0.25, 0.1],
-      [1.35, -1.6, 0.08],
-      [2.3, -1.52, 0.09],
-    ] as const).flatMap(([x, z, r]) => heatherTuft([x, x > 0.5 ? 2.1 : 2.2, z], r)),
-    // Sea arch standing off the headland: two legs of rock in the sea under a span, open from the waterline up.
-    ...[-1, 1].flatMap((s): P[] => [
-      { kind: 'loft', base: [ARCH.at[0] + s * ARCH.legs, 0, ARCH.at[1]], outline: BOULDER, height: 1.0, bottom: 0.3, top: 0.25, mat: 'basalt' },
-      { kind: 'loft', base: [ARCH.at[0] + s * (ARCH.legs - 0.02), 1.0, ARCH.at[1] + 0.02], outline: BOULDER, height: 0.6, bottom: 0.25, top: 0.27, mat: 'basalt' },
-    ]),
-    // Haunches where the legs meet the span, widening upward, so the opening reads as a worn-out arch rather than a gate.
-    ...[-1, 1].map((s): P => ({ kind: 'loft', base: [ARCH.at[0] + s * (ARCH.legs - 0.26), 1.15, ARCH.at[1]], outline: BOULDER, height: 0.46, bottom: 0.1, top: 0.26, mat: 'basalt' })),
-    { kind: 'loft', base: [ARCH.at[0], 1.6, ARCH.at[1]], outline: SPAN, height: 0.5, bottom: 0.94, top: 1, mat: 'basalt' },
-    { kind: 'loft', base: [ARCH.at[0] - 0.1, 1.42, ARCH.at[1]], outline: BOULDER, height: 0.18, bottom: 0.1, top: 0.22, mat: 'basalt' },
-    // Cave mouth: dark back, rough jambs and a lintel boulder standing out of the cliff face.
-    { kind: 'box', center: [-0.75, 1.38, 0.61], size: [1.0, 0.84, 0.06], mat: 'dark' },
-    ...[-1, 1].map((s): P => ({ kind: 'loft', base: [-0.75 + s * 0.62, 0.9, 0.66], outline: BOULDER, height: 0.95, bottom: 0.2, top: 0.15, mat: 'stone' })),
-    { kind: 'loft', base: [-0.75, 1.76, 0.66], outline: LINTEL, height: 0.28, bottom: 0.78, top: 0.6, mat: 'stone' },
-    // Timber shoring inside the mouth.
-    post(-1.17, 0.68, 0.96, 1.76, 0.05),
-    post(-0.33, 0.68, 0.96, 1.76, 0.05),
-    { kind: 'beam', from: [-1.22, 1.74, 0.68], to: [-0.28, 1.74, 0.68], width: 0.06, mat: 'woodDark' },
+    // Timber shoring inside the cave mouth.
+    post(MOUTH.x - MOUTH.width / 2 + 0.25, MOUTH.z, TURF, TURF + 2, 0.22),
+    post(MOUTH.x + MOUTH.width / 2 - 0.25, MOUTH.z, TURF, TURF + 2, 0.22),
+    { kind: 'beam', from: [MOUTH.x - MOUTH.width / 2 + 0.1, TURF + 2, MOUTH.z], to: [MOUTH.x + MOUTH.width / 2 - 0.1, TURF + 2, MOUTH.z], width: 0.22, mat: 'woodDark' },
     // Powder kegs and a crate in the mouth.
-    ...kegPile([-0.92, 0.965, 0.76], 0.075),
-    ...powderKeg([-0.6, 0.965, 0.76], 0.075),
-    { kind: 'box', center: [-0.43, 1.05, 0.74], size: [0.16, 0.16, 0.16], bevel: 0.02, mat: 'wood' },
-    // Lookout's cottage: whitewashed walls, a slate roof, a chimney and a lit window toward the yard.
-    { kind: 'box', center: [-1.05, 2.45, -0.25], size: [0.62, 0.38, 0.44], bevel: 0.02, mat: 'plaster' },
-    ...gabledRoof({ base: [-1.05, 2.64, -0.25], size: [0.62, 0.24, 0.44], ridge: 'x', roof: 'slate', fill: 'plaster', overhang: 0.06, thickness: 0.04 }),
-    { kind: 'box', center: [-1.3, 2.86, -0.25], size: [0.1, 0.28, 0.12], bevel: 0.015, mat: 'stone' },
-    { kind: 'box', center: [-0.9, 2.4, -0.02], size: [0.12, 0.24, 0.03], mat: 'woodDark' },
-    { kind: 'box', center: [-1.18, 2.48, -0.02], size: [0.12, 0.1, 0.03], mat: 'gold' },
-    // Signal lantern: a gibbet post at the cliff edge, the lantern (`rotor`) hung out over the cave.
-    post(-0.25, 0.1, 2.26, 3.5, 0.06),
-    { kind: 'beam', from: [-0.25, 3.46, 0.1], to: [-0.25, 3.46, 0.48], width: 0.05, mat: 'woodDark' },
-    { kind: 'beam', from: [-0.25, 3.12, 0.1], to: [-0.25, 3.42, 0.38], width: 0.035, mat: 'woodDark' },
+    ...kegPile([MOUTH.x - 0.45, TURF, 1.5], 0.28),
+    ...powderKeg([MOUTH.x + 0.75, TURF, 1.5], 0.28),
+    { kind: 'box', center: [MOUTH.x + 0.75, TURF + 0.95, 1.5], size: [0.5, 0.5, 0.5], bevel: 0.05, mat: 'wood' },
+    // Lookout's cottage: whitewashed walls, a slate roof, a chimney, a door and a lit window toward the yard.
+    { kind: 'box', center: [-2.6, HEAD_TOP + 0.7, -1], size: [2.6, 1.4, 1.8], bevel: 0.05, mat: 'plaster' },
+    ...gabledRoof({ base: [-2.6, HEAD_TOP + 1.4, -1], size: [2.6, 0.95, 1.8], ridge: 'x', roof: 'slate', fill: 'plaster', overhang: 0.2, thickness: 0.14 }),
+    { kind: 'box', center: [-3.6, HEAD_TOP + 2.1, -1], size: [0.42, 1.2, 0.46], bevel: 0.04, mat: 'stone' },
+    { kind: 'box', center: [-3.1, HEAD_TOP + 0.5, -0.08], size: [0.5, 1, 0.08], mat: 'woodDark' },
+    { kind: 'box', center: [-1.9, HEAD_TOP + 0.85, -0.08], size: [0.5, 0.42, 0.08], mat: 'gold' },
+    // Signal gibbet at the cliff edge, its arm out over the yard.
+    post(1.6, 1.4, HEAD_TOP, HEAD_TOP + 3.6, 0.24),
+    { kind: 'beam', from: [1.6, HEAD_TOP + 3.5, 1.4], to: [1.6, HEAD_TOP + 3.5, 2.9], width: 0.18, mat: 'woodDark' },
+    { kind: 'beam', from: [1.6, HEAD_TOP + 2.4, 1.4], to: [1.6, HEAD_TOP + 3.38, 2.4], width: 0.13, mat: 'woodDark' },
   ],
   // The lantern swings in the wind on its hook.
-  rotor: { parts: signalLantern(-0.25, 3.44, 0.45, 0.16), pivot: [-0.25, 3.44, 0.45], axis: 'z', speed: 1.7, swing: 0.2 },
+  rotor: { parts: signalLantern(1.6, HEAD_TOP + 3.46, 2.8, 0.5), pivot: [1.6, HEAD_TOP + 3.46, 2.8], axis: 'z', speed: 1.7, swing: 0.2 },
   // The cottage's peat fire smokes from its chimney.
-  smoke: [{ at: [-1.3, 3.0, -0.25], size: 0.3 }],
+  smoke: [{ at: [-3.6, HEAD_TOP + 2.8, -1], size: 1.2 }],
   // At night the signal lantern flashes to the boats.
-  lights: [{ at: [-0.25, 3.28, 0.45], reach: 12, signal: true }],
+  lights: [{ at: [1.6, HEAD_TOP + 2.9, 2.8], reach: 12, signal: true }],
   // A skiff rows out to sea under the arch, comes about and rows back in under it, over and over.
-  boat: { path: ellipseLoop(ARCH.at, [0.2, 0.62], 36), hull: skiff(0.36), speed: 0.13, oars: skiffOars(0.36) },
+  boat: { path: ellipseLoop(ARCH_AT, [0.7, 1.9], 36), hull: skiff(1.44), speed: 0.52, oars: skiffOars(1.44) },
 };
 
 /** A clump of columnar basalt: hexagonal columns of a few heights. */

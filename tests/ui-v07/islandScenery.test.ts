@@ -164,8 +164,15 @@ describe.each(Object.entries(ISLAND_SCENERY))('%s scenery', (_, scenery) => {
   const pieces = scenery!.pieces.flatMap((p) => pieceFootprints(p).map((f) => ({ ...f, owner: p.design })));
 
   it('stands every piece but the backdrop on the plateau', () => {
-    for (const piece of scenery!.pieces.filter((p) => !p.backdrop && !p.laidIn)) {
+    for (const piece of scenery!.pieces.filter((p) => !p.backdrop && !p.laidIn && !p.ashore)) {
       for (const [x, z] of footingPoints(piece)) expect(Math.hypot(x, z), piece.design).toBeLessThan(PLAYER_ISLAND_RADIUS * PLATEAU_SAFE_RATIO);
+    }
+  });
+
+  it('puts a piece ashore only on an island with its own low ground, below the plateau', () => {
+    for (const piece of scenery!.pieces.filter((p) => p.ashore)) {
+      expect(scenery!.base, piece.design).toBeDefined();
+      expect(piece.at[1], piece.design).toBeLessThan(0);
     }
   });
 

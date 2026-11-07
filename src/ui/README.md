@@ -56,7 +56,7 @@ SetupScreen ──SessionOptions──▶ startGameSession ──runMatch──�
 | --- | --- |
 | `TableScene.tsx` | 場景組裝：燈光、天氣、島、航道、船、名牌定位與自動取景。 |
 | `tableModel.ts` | `buildSceneTable`：把 `Board` 轉成座位順序（你在最前）、玩家顏色（跟座位走，不隨視角改變）與船的航道和狀態。 |
-| `Islands.tsx`、`IslandBase.tsx` | 玩家小島（固定地基蓋資產建築）與目標島；島體為程序產生的低面數岩壁。 |
+| `Islands.tsx`、`IslandBase.tsx`、`IslandModel.tsx`、`islandBaseShapes.ts` | 玩家小島（固定地基蓋資產建築）與目標島；島體為程序產生的低面數岩壁。選了有 Blender 地基的島（目前是走私港）時，`PlayerIsland` 的 `base` 改畫 `IslandModel`（`public/models/islands/<島>-body.glb`），不畫岩壁、草地與 Kenney 碼頭；會跟著標的物轉向的高台另外一個 GLB。兩者與水線（`islandBaseShapes.ts`，給浪花與航線測試）都由 `scripts/blender/build-island-<島>.py` 產生。 |
 | `Ships.tsx`、`Routes.tsx` | 航道（曲線虛線）；船、護衛小艇與海盜船沿航道滑行，可當部署目標點選。 |
 | `Effects.tsx` | 沉船場面（衝起後落回的水冠、兩圈有高度的低面數浪圈往外擴散、水花、殘骸旁冒出的氣泡、浮出後漂開再沉下的木桶與木箱，只在畫面上發生沉沒時播放一次）；殘骸本身的傾斜在 `Ships.tsx`。 |
 | `Storm.tsx`、`stormMath.ts` | 暴風雨事件：往左下斜打的低面數雨絲，以及每 3～9 秒一次打在桌面遠側島嶼空隙海面上的閃電（鋸齒光束、落點閃光，整個桌面跟著閃兩下）。閃電時間跟著真實時鐘走。 |

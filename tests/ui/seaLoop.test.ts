@@ -78,16 +78,30 @@ describe.each(boats)('$island boat', ({ scenery, piece, boat }) => {
     for (const turn of piece.backdrop ? BACKDROP_TURNS : [0]) {
       for (const seat of [0, 1, 2, 3]) {
         const seed = playerIslandSeed(seat);
-        const shore = scenery.annex
+        const base = scenery.base?.shape;
+        const shore = base
+          ? [...base.shore, ...base.headlandShore.slice(1).map(([x, z]): Vec2 => [x * Math.cos(turn) + z * Math.sin(turn), -x * Math.sin(turn) + z * Math.cos(turn)])]
+          : scenery.annex
           ? annexedShores(PLAYER_ISLAND_RADIUS, PLAYER_ISLAND_HEIGHT, seed, { ...scenery.annex, turn }).flatMap((fan) => fan.slice(1))
           : islandWaterline(PLAYER_ISLAND_RADIUS, PLAYER_ISLAND_HEIGHT, seed);
         for (const [x, z] of boat.path) {
           const [lx, lz] = [piece.at[0] + x * piece.scale, piece.at[2] + z * piece.scale];
           const p: Vec2 = [lx * Math.cos(turn) + lz * Math.sin(turn), -lx * Math.sin(turn) + lz * Math.cos(turn)];
-          const clear = Math.min(...shore.map((a, i) => segmentDistance(p, a, shore[(i + 1) % shore.length]!)));
+          const rings = base ? [base.shore, shore.slice(base.shore.length)] : [shore];
+          const clear = Math.min(...rings.flatMap((ring) => ring.map((a, i) => segmentDistance(p, a, ring[(i + 1) % ring.length]!))));
           expect(Math.hypot(...p)).toBeGreaterThan(PLAYER_ISLAND_RADIUS);
           expect(clear, `seat ${seat}, turn ${turn}`).toBeGreaterThan(reach);
         }
+      }
+    }
+  });
+
+  it('never runs into the rocks its island base stands in the sea (the sea arch\'s legs)', () => {
+    const reach = reachOf(boat) * piece.scale;
+    for (const [rx, rz, r] of scenery.base?.shape.seaRocks ?? []) {
+      for (const [x, z] of boat.path) {
+        const [lx, lz] = [piece.at[0] + x * piece.scale, piece.at[2] + z * piece.scale];
+        expect(Math.hypot(lx - rx, lz - rz) - r, `rock at ${rx}, ${rz}`).toBeGreaterThan(reach);
       }
     }
   });

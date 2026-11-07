@@ -205,10 +205,21 @@ function place(points: readonly SeaPoint[], cx: number, cz: number, heading: num
 }
 
 /**
- * Every island's waterline in world space: the target island first, then each seat in order, then
- * the annex of each seat that has one (`annexes[i]` belongs to seat i).
+ * A seat's waterlines in island space, set by its island instead of its cliff (an island base built in Blender): the
+ * main shore last, any others (a headland's fan) before it, each `SHORE_POINTS` points.
  */
-export function islandShorelines(angles: readonly number[], annexes: readonly (IslandAnnex | null)[] = []): SeaPoint[][] {
+export type SeatShores = readonly (readonly SeaPoint[])[];
+
+/**
+ * Every island's waterline in world space: the target island first, then each seat in order, then
+ * the annex of each seat that has one (`annexes[i]` belongs to seat i). A seat with `bases[i]` takes those
+ * waterlines instead of its cliff's.
+ */
+export function islandShorelines(
+  angles: readonly number[],
+  annexes: readonly (IslandAnnex | null)[] = [],
+  bases: readonly (SeatShores | null)[] = [],
+): SeaPoint[][] {
   const target = islandWaterline(TARGET_ISLAND_RADIUS, TARGET_ISLAND_HEIGHT, TARGET_ISLAND_SEED);
   const onSeat = (i: number, line: readonly SeaPoint[]): SeaPoint[] => {
     const angle = angles[i]!;
@@ -216,6 +227,8 @@ export function islandShorelines(angles: readonly number[], annexes: readonly (I
     return place(line, x, z, playerIslandHeading(angle));
   };
   const shores = angles.map((_, i) => {
+    const base = bases[i];
+    if (base) return base.map((line) => onSeat(i, line));
     const annex = annexes[i];
     const seed = playerIslandSeed(i);
     return annex
