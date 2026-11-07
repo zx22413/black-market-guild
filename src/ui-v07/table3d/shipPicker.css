@@ -143,12 +143,37 @@
   :root:root:root .ship-hand .dep-card {
     background: linear-gradient(0deg, #dcc994 0 50px, #f6ecd0 50px);
   }
-  /* Six cards across a phone leave a window too narrow for the whole ship: it shows the bow end (the bow is on the right). */
+  /* Six cards across a phone leave a window too narrow for the whole ship: it shows the bow end (the bow is on the
+     right), zoomed in on the hull so the ship fills the window instead of the sky and sea around it. */
   :root:root:root .ship-hand .dep-card .ship-art {
     height: 54px;
   }
   :root:root:root .ship-hand .dep-card .ship-art img {
     object-position: 92% 50%;
+    transform: scale(1.45);
+    transform-origin: 78% 46%;
+  }
+  /* Room for a four-character name: "不出航" only carries a cross, so it is narrower and gives its width to the ships,
+     the inner frame line sits nearer the edge, and the name is a little smaller and tighter. */
+  :root:root:root .ship-hand .ship-card.none {
+    flex-grow: 0.8;
+  }
+  :root:root:root .ship-hand .ship-card {
+    padding-right: 2px;
+    padding-left: 2px;
+    outline-offset: -7px;
+  }
+  :root:root:root .ship-hand .ship-card b {
+    font-size: clamp(10px, 2.8vw, 11px);
+    letter-spacing: -0.04em;
+  }
+  /* A three-digit fee ("150") beside the coin, likewise. */
+  :root:root:root .ship-hand .ship-card .dep-fee {
+    gap: 1px;
+  }
+  :root:root:root .ship-hand .ship-card .dep-fee .chip-ic {
+    width: 18px;
+    height: 18px;
   }
   :root:root:root .ship-hand .dep-card.on {
     background: linear-gradient(0deg, #f0c860 0 50px, #fff3c9 50px);
