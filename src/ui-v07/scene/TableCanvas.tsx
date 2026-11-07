@@ -9,8 +9,8 @@ import { GoldRush } from '../../ui/scene/GoldRush';
 import { PlayerIsland, TargetIsland } from '../../ui/scene/Islands';
 import type { MarketShow } from '../../ui/scene/MarketIsland';
 import { islandLook } from './IslandLook';
-import { backdropTop, islandAnnex, islandBaseShores } from './islandScenery';
-import { islandShorelines, playerIslandHeading, playerIslandSeed } from '../../ui/scene/islandShape';
+import { backdropTop, islandAnnex, islandBaseFoam, islandBaseShores } from './islandScenery';
+import { islandFoam, islandShorelines, playerIslandHeading, playerIslandSeed } from '../../ui/scene/islandShape';
 import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatAngles, seatPosition, type Vec3 } from '../../ui/scene/layout';
 import { Night } from '../../ui/scene/Night';
 import { Routes } from '../../ui/scene/Routes';
@@ -243,6 +243,16 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [angles, islandKey],
   );
+  const foam = useMemo(
+    () =>
+      islandFoam(
+        angles,
+        seats.map((s, i) => islandAnnex(s.island, playerIslandHeading(angles[i]!))),
+        seats.map((s, i) => islandBaseFoam(s.island, playerIslandHeading(angles[i]!))),
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [angles, islandKey],
+  );
   const labels = useRef(new Map<string, HTMLElement>());
   const pin = (id: string) => (el: HTMLElement | null) => {
     if (el) labels.current.set(id, el);
@@ -276,7 +286,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
         />
         <SwellProvider target={look.swell}>
           <Suspense fallback={null}>
-            <Sea color={look.sea} shores={shores} vignette={look.vignette ?? 0} lines={look.seaLines ?? 0} glow={look.seaGlow ?? 0} />
+            <Sea color={look.sea} shores={shores} foam={foam} vignette={look.vignette ?? 0} lines={look.seaLines ?? 0} glow={look.seaGlow ?? 0} />
             <ShoreSpray shores={shores} />
             <CrestSpray shores={shores} />
             {(look.clouds ?? 0) > 0 && <Clouds amount={look.clouds ?? 0} />}

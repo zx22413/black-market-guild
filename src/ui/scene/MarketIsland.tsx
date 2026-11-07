@@ -35,9 +35,8 @@ import { Walkers } from './buildings/LandmarkWalkers';
 import { limbSwing, walkBob } from './buildings/islands/people';
 import type { KitPart } from './buildings/kit';
 import type { Walker } from './buildings/islands/design';
-import { IslandBase } from './IslandBase';
-import { TARGET_ISLAND_HEIGHT, TARGET_ISLAND_SEED } from './islandShape';
-import { TARGET_ISLAND_RADIUS } from './layout';
+import { useGLTF } from '@react-three/drei';
+import { IslandModel } from './IslandModel';
 import { useLiveFrame } from './liveFrame';
 import { MARKET_GROUND, marketDock } from './marketDocks';
 import { awningAngle, bellSwing, flipAngle, flipShowsNew, FLIP, hawkArm, lanternLitAt, pathLength, pealSwing, walkAt } from './marketMotion';
@@ -456,7 +455,7 @@ function ringOf(i: number): number {
   return i < RING_SIZES[0] ? 0 : i < RING_SIZES[0] + RING_SIZES[1] ? 1 : 2;
 }
 
-/** The piers at each guild's berth and the stairs up the cliff behind them. */
+/** The goods waiting on each guild's dock landing. */
 function Piers({ geometry }: { readonly geometry: BufferGeometry }) {
   return (
     <mesh geometry={geometry} castShadow receiveShadow dispose={null}>
@@ -465,9 +464,13 @@ function Piers({ geometry }: { readonly geometry: BufferGeometry }) {
   );
 }
 
+/** The town round the bazaar (scripts/blender/build-market.py): riva, inner docks, grand stairs, houses. */
+const MARKET_GROUND_URL = `${import.meta.env.BASE_URL}models/islands/market-body.glb`;
+useGLTF.preload(MARKET_GROUND_URL);
+
 const DEFAULT_SHOW: MarketShow = { prices: null, rowColors: ['#c08a4e', '#9fb0bd', '#e2823a', '#d35d6e'], awnings: 'open', lanterns: 'off', deliveries: [] };
 
-/** The market island: its ground, the stepped bazaar and its moving parts, and a pier at every seat's berth. */
+/** The market island: the town round it, the stepped bazaar and its moving parts, and the goods on every seat's dock. */
 export function MarketIsland({ seatAngles, show = DEFAULT_SHOW, night = false }: { readonly seatAngles: readonly number[]; readonly show?: MarketShow; readonly night?: boolean }) {
   const key = seatAngles.map((a) => a.toFixed(4)).join('|');
   const docks = useMemo(
@@ -485,7 +488,7 @@ export function MarketIsland({ seatAngles, show = DEFAULT_SHOW, night = false }:
   const paths = useMemo(() => new Map([...docks].map(([a, d]) => [a, d.porterPath.map((p) => [...p] as [number, number, number])] as const)), [docks]);
   return (
     <group>
-      <IslandBase radius={TARGET_ISLAND_RADIUS} seed={TARGET_ISLAND_SEED} height={TARGET_ISLAND_HEIGHT} />
+      <IslandModel url={MARKET_GROUND_URL} />
       <group position={[0, MARKET_GROUND, 0]} scale={MARKET_SCALE}>
         <Landmark design="market" />
         <Awnings state={show.awnings} />

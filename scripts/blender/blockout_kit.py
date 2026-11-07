@@ -74,12 +74,25 @@ def finish(bm, name, mat, shade=1.0):
     return ob
 
 
-def mesh_from(name, verts, faces, mat, shade=1.0):
+def outward(bm):
+    """Turn every face of a convex solid outward, one by one. `recalc_face_normals` got turned boxes wrong (a box turned
+    more than a quarter turn came out inside out, a bevelled one partly), and the game culls inward faces."""
+    centre = sum((v.co for v in bm.verts), Vector()) / max(len(bm.verts), 1)
+    for f in bm.faces:
+        f.normal_update()
+    inward = [f for f in bm.faces if f.normal.dot(f.calc_center_median() - centre) < 0]
+    if inward:
+        bmesh.ops.reverse_faces(bm, faces=inward)
+
+
+def mesh_from(name, verts, faces, mat, shade=1.0, convex=False):
     bm = bmesh.new()
     vs = [bm.verts.new(V(*p)) for p in verts]
     for f in faces:
         bm.faces.new([vs[i] for i in f])
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    if convex:
+        outward(bm)
     return finish(bm, name, mat, shade)
 
 
@@ -94,6 +107,7 @@ def box(name, center, size, mat, bevel=0.02, shade=1.0, yaw=0.0):
     if bevel > 0:
         bmesh.ops.bevel(bm, geom=list(bm.edges), offset=bevel, segments=1, affect="EDGES", profile=0.5)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    outward(bm)
     return finish(bm, name, mat, shade)
 
 
@@ -117,6 +131,7 @@ def beam(name, a, b, width, mat, sides=6, taper=1.0, shade=1.0):
     bm.faces.new(list(reversed(lo)))
     bm.faces.new(hi)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    outward(bm)
     return finish(bm, name, mat, shade)
 
 
@@ -129,7 +144,7 @@ def prism(name, base, radius, height, mat, sides=8, top=1.0, shade=1.0):
             verts.append((base[0] + math.cos(a) * radius * k, y, base[2] + math.sin(a) * radius * k))
     faces = [list(range(sides)), list(range(sides, 2 * sides))]
     faces += [[i, (i + 1) % sides, sides + (i + 1) % sides, sides + i] for i in range(sides)]
-    return mesh_from(name, verts, faces, mat, shade)
+    return mesh_from(name, verts, faces, mat, shade, convex=True)
 
 
 def plan_ring(name, outer_plan, inner_plan, y0, y1, mat, shade=1.0):

@@ -1,4 +1,5 @@
 import { CylinderGeometry, type BufferGeometry } from 'three';
+import { MARKET_FOAM, MARKET_SHORE } from './islandBases/market';
 import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatPosition } from './layout';
 
 /** Sides of the craggy island cliff; also the number of points on each shoreline. */
@@ -220,7 +221,8 @@ export function islandShorelines(
   annexes: readonly (IslandAnnex | null)[] = [],
   bases: readonly (SeatShores | null)[] = [],
 ): SeaPoint[][] {
-  const target = islandWaterline(TARGET_ISLAND_RADIUS, TARGET_ISLAND_HEIGHT, TARGET_ISLAND_SEED);
+  // The market island's town (scripts/blender/build-market.py), not a cliff.
+  const target = MARKET_SHORE.map(([x, z]): SeaPoint => [x, z]);
   const onSeat = (i: number, line: readonly SeaPoint[]): SeaPoint[] => {
     const angle = angles[i]!;
     const [x, , z] = seatPosition(angle);
@@ -237,6 +239,50 @@ export function islandShorelines(
   });
   const seats = shores.map((parts) => parts[parts.length - 1]!);
   const extra = shores.flatMap((parts) => parts.slice(0, -1));
+  return [target, ...seats, ...extra];
+}
+
+/** A piece of an island's waterline for the sea foam: [x0, z0, x1, z1]. */
+export type FoamSegment = readonly [number, number, number, number];
+
+/** A closed waterline as foam segments. */
+export function loopSegments(line: readonly SeaPoint[]): FoamSegment[] {
+  return line.map(([x, z], i): FoamSegment => {
+    const [nx, nz] = line[(i + 1) % line.length]!;
+    return [x, z, nx, nz];
+  });
+}
+
+/**
+ * Every island's waterline for the sea foam in world space, one list of segments per island (or headland): the market
+ * town's real waterline first, then each seat in order, its Blender-built base's real waterline (`bases[i]`, island
+ * space, the headland's already turned) or else its cliff's, then each seat's annex.
+ */
+export function islandFoam(
+  angles: readonly number[],
+  annexes: readonly (IslandAnnex | null)[] = [],
+  bases: readonly (readonly (readonly FoamSegment[])[] | null)[] = [],
+): FoamSegment[][] {
+  const onSeat = (i: number, segs: readonly FoamSegment[]): FoamSegment[] => {
+    const angle = angles[i]!;
+    const [x, , z] = seatPosition(angle);
+    const heading = playerIslandHeading(angle);
+    return segs.map(([ax, az, bx, bz]): FoamSegment => {
+      const [p, q] = place([[ax, az], [bx, bz]], x, z, heading) as [SeaPoint, SeaPoint];
+      return [p[0], p[1], q[0], q[1]];
+    });
+  };
+  const target = MARKET_FOAM.map((s): FoamSegment => [...s]);
+  const lists = angles.map((_, i) => {
+    const base = bases[i];
+    if (base) return base.map((segs) => onSeat(i, segs));
+    const annex = annexes[i];
+    const seed = playerIslandSeed(i);
+    const lines = annex ? annexedShores(PLAYER_ISLAND_RADIUS, PLAYER_ISLAND_HEIGHT, seed, annex) : [islandWaterline(PLAYER_ISLAND_RADIUS, PLAYER_ISLAND_HEIGHT, seed)];
+    return lines.map((line) => onSeat(i, loopSegments(line)));
+  });
+  const seats = lists.map((parts) => parts[parts.length - 1]!);
+  const extra = lists.flatMap((parts) => parts.slice(0, -1));
   return [target, ...seats, ...extra];
 }
 

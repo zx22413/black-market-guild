@@ -3,7 +3,7 @@ import { bounds } from '../../ui/scene/buildings/polyhedra';
 import type { IslandGround } from '../../ui/scene/IslandBase';
 import { HEADLAND_AT } from '../../ui/scene/buildings/islands/smugglerPort';
 import { FORTRESS_BASE, FREE_PORT_BASE, LIGHTHOUSE_BASE, LUMBER_BASE, MINE_BASE, PIRATE_COVE_BASE, SMUGGLER_PORT_BASE, SPICE_ISLES_BASE, type IslandBaseShape } from '../../ui/scene/islandBaseShapes';
-import type { IslandAnnex, SeaPoint, SeatShores } from '../../ui/scene/islandShape';
+import type { FoamSegment, IslandAnnex, SeaPoint, SeatShores } from '../../ui/scene/islandShape';
 import type { Vec3 } from '../../ui/scene/layout';
 import type { IslandId } from '../../v07/game';
 
@@ -230,6 +230,22 @@ export function islandBaseShores(island: IslandId | null, heading: number): Seat
   if (!base) return null;
   const turn = backdropTurn(heading);
   return [base.shape.headlandShore.map((p) => turnPoint(p, turn)), base.shape.shore];
+}
+
+/**
+ * The real waterlines of the chosen island's Blender-built base for the sea foam, in island space: the headland's
+ * turned with the backdrop, then the body's; null if the island keeps the craggy cliff.
+ */
+export function islandBaseFoam(island: IslandId | null, heading: number): (readonly FoamSegment[])[] | null {
+  const base = island ? ISLAND_SCENERY[island]?.base : undefined;
+  if (!base) return null;
+  const turn = backdropTurn(heading);
+  const head = base.shape.headlandFoam.map(([ax, az, bx, bz]): FoamSegment => {
+    const [px, pz] = turnPoint([ax, az], turn);
+    const [qx, qz] = turnPoint([bx, bz], turn);
+    return [px, pz, qx, qz];
+  });
+  return head.length ? [head, base.shape.foam] : [base.shape.foam];
 }
 
 /** The chosen island's cliff annex on the table, turned with its backdrop; null if it has none. */

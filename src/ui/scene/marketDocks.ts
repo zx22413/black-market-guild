@@ -1,145 +1,28 @@
-import type { BufferGeometry } from 'three';
 import type { KitPart } from './buildings/kit';
 import { FLIGHT_FOOT, FLIGHT_HEAD, MARKET_SCALE, STALL_DROPS } from './buildings/islands/market';
 import { spinPoint, type Vec3 } from './buildings/polyhedra';
-import { TARGET_ISLAND_HEIGHT, TARGET_ISLAND_SEED, cliffLift, grassSlab, islandCliff } from './islandShape';
-import { TARGET_ISLAND_RADIUS, laneCurve } from './layout';
+import { MARKET_TOWN } from './islandBases/market';
+import { TARGET_ISLAND_HEIGHT } from './islandShape';
+import { laneCurve } from './layout';
 
 // Where each guild's ship ties up at the market island, and the porters' way from it up to a stall
-// (docs/ui/v07-event-presentation.md §1.10): a pier beside the ship's berth, a timber stair up the
-// cliff, across the grass and up the market's nearest straight flight. Table units, pure math so the
-// layout is testable without WebGL.
+// (docs/ui/v07-event-presentation.md §1.10, docs/art/island-base-research.md §25): the town's ground
+// (public/models/islands/market-body.glb, scripts/blender/build-market.py) has an inner dock along each
+// of the four berths; porters step off onto the dock's side quay, cross the landing at its head, climb
+// the grand stairs between the twin columns, walk the street to the bazaar's foot and up its nearest
+// straight flight. Table units, pure math so the layout is testable without WebGL.
 
-/** Top of the market island's grass, where the market stands (`IslandBase`: plateau 0.45 over the cliff). */
+/** The town's square, where the market stands (the bazaar's ground, as before the town was built). */
 export const MARKET_GROUND = TARGET_ISLAND_HEIGHT + 0.45;
-/** The cliff's sandy top, below the grass. */
-const CLIFF_TOP = TARGET_ISLAND_HEIGHT;
-/** The pier's deck height above the table's zero (the sea rests at -0.3). */
-const DECK = 0.45;
 /** Where along its lane a ship lies once it has arrived (`LANE_T.arrived` in Ships.tsx). */
 const BERTH_T = 0.86;
-/** The pier runs beside the ship this far from its keel line, and this far past its bow and stern. */
-const PIER = { offset: 2.5, width: 1.5, past: 1.2 } as const;
-/** A cliff stair's steps: how high each is, how wide the flight is, and how far it keeps off the rock. */
-const STAIR = { rise: 0.32, width: 1.1, clearance: 0.35 } as const;
-
-/** A point on the island's cliff (or grass) outline at `angle` (radians, x = cos, z = sin), on row `row` of its cylinder. */
-function ringRadius(geometry: BufferGeometry, sides: number, row: number, angle: number): number {
-  const position = geometry.attributes.position!;
-  const at = (side: number): [number, number] => {
-    const i = row * (sides + 1) + side;
-    return [position.getX(i), position.getZ(i)];
-  };
-  const [dx, dz] = [Math.cos(angle), Math.sin(angle)];
-  for (let side = 0; side < sides; side++) {
-    const [ax, az] = at(side);
-    const [bx, bz] = at(side + 1);
-    // Where the ray from the center along (dx, dz) crosses this edge.
-    const ex = bx - ax;
-    const ez = bz - az;
-    const denom = dx * ez - dz * ex;
-    if (Math.abs(denom) < 1e-9) continue;
-    const r = (ax * ez - az * ex) / denom;
-    const t = (ax * dz - az * dx) / denom;
-    if (r > 0 && t >= -1e-9 && t <= 1 + 1e-9) return r;
-  }
-  return Math.hypot(...at(0));
-}
-
-/** The cliff's profile along `angle`: radius and height at its top, middle and foot. */
-function cliffProfile(angle: number): { readonly r: number; readonly y: number }[] {
-  const cliff = islandCliff(TARGET_ISLAND_RADIUS, TARGET_ISLAND_HEIGHT, TARGET_ISLAND_SEED);
-  const lift = cliffLift(TARGET_ISLAND_HEIGHT);
-  const position = cliff.attributes.position!;
-  const profile = [0, 1, 2].map((row) => ({ r: ringRadius(cliff, 11, row, angle), y: position.getY(row * 12) + lift }));
-  cliff.dispose();
-  return profile;
-}
-
-/** How far the grass reaches along `angle`. */
-export function grassRadius(angle: number): number {
-  const grass = grassSlab(TARGET_ISLAND_RADIUS * 0.78, TARGET_ISLAND_SEED + 7);
-  const r = ringRadius(grass, 11, 0, angle);
-  grass.dispose();
-  return r;
-}
-
-/**
- * How far out the cliff stair comes per unit it drops (at least 1): steep enough that every step clears
- * the rock below the cliff top by `STAIR.clearance`, down to the pier's deck.
- */
-function stairSlope(profile: readonly { readonly r: number; readonly y: number }[]): number {
-  const [top, middle, foot] = profile as [{ r: number; y: number }, { r: number; y: number }, { r: number; y: number }];
-  // The rock's radius at deck height, between the two rows either side of it.
-  const [upper, lower] = middle.y > DECK ? [middle, foot] : [top, middle];
-  const k = (upper.y - DECK) / (upper.y - lower.y || 1);
-  const atDeck = { r: upper.r + (lower.r - upper.r) * k, y: DECK };
-  const checks = [...(middle.y > DECK && middle.y < top.y ? [middle] : []), atDeck];
-  return Math.max(1, ...checks.map(({ r, y }) => (r + STAIR.clearance - top.r) / Math.max(0.1, top.y - y)));
-}
-
-/** The pier head's cargo shed and the pile of goods waiting to be carried up, either side of the porters' way over the sand. */
-const HEAD = { aside: 1.6, shed: { width: 1.5, depth: 1.0, high: 1.3, low: 1.0 }, pile: 0.8, margin: 0.25 } as const;
-
-/**
- * Where on the cliff top's sand a thing `depth` deep can stand, `aside` to one side of the porters' way
- * (in the pier's frame: x across, z out along its bearing): the middle of the sand between the grass
- * and the cliff's edge there, or null where the sand is too narrow.
- */
-function onSand(pierAngle: number, yaw: number, aside: number, depth: number): { readonly z: number; readonly depth: number } | null {
-  const probe = spinPoint([aside, 0, 10], yaw);
-  const bearing = Math.atan2(probe[2], probe[0]);
-  const grass = grassRadius(bearing) + HEAD.margin;
-  const edge = cliffProfile(bearing)[0]!.r - HEAD.margin;
-  const room = Math.min(depth, edge - grass);
-  if (room < 0.5) return null;
-  const middle = (grass + edge) / 2;
-  return { z: Math.sqrt(Math.max(0, middle * middle - aside * aside)), depth: room };
-}
-
-/** The shed and the waiting pile at a pier head, built in the pier's frame and turned onto its bearing. */
-function pierHead(pierAngle: number, yaw: number): KitPart[] {
-  const parts: KitPart[] = [];
-  const turn = (part: KitPart): KitPart => ({ ...part, spin: yaw });
-  const shedAt = onSand(pierAngle, yaw, HEAD.aside, HEAD.shed.depth);
-  if (shedAt) {
-    const { width, high, low } = HEAD.shed;
-    const [x, z, d] = [HEAD.aside, shedAt.z, shedAt.depth];
-    // Open toward the porters' way (its -x side), the roof running down away from it.
-    const corners: [number, number, number][] = [
-      [x - width / 2, z - d / 2, high],
-      [x - width / 2, z + d / 2, high],
-      [x + width / 2, z - d / 2, low],
-      [x + width / 2, z + d / 2, low],
-    ];
-    corners.forEach(([px, pz, h]) => parts.push(turn({ kind: 'beam', from: [px, CLIFF_TOP, pz], to: [px, CLIFF_TOP + h, pz], width: 0.14, mat: 'woodDark' })));
-    const slope = Math.atan2(high - low, width);
-    parts.push(
-      turn({
-        kind: 'box',
-        center: [x, CLIFF_TOP + (high + low) / 2 + 0.05, z],
-        size: [Math.hypot(width, high - low) + 0.3, 0.08, d + 0.3],
-        bevel: 0.02,
-        mat: 'wood',
-        tilt: { axis: 'z', angle: slope, pivot: [x, CLIFF_TOP + (high + low) / 2 + 0.05, z] },
-      }),
-    );
-    const crate = (cx: number, cy: number, cz: number, mat: KitPart['mat']): KitPart => turn({ kind: 'box', center: [cx, CLIFF_TOP + cy, cz], size: [0.42, 0.42, 0.42], bevel: 0.04, mat });
-    parts.push(crate(x + 0.3, 0.21, z - 0.18, 'wood'), crate(x + 0.3, 0.21, z + 0.26, 'woodDark'), crate(x + 0.3, 0.63, z + 0.04, 'wood'));
-    parts.push(turn({ kind: 'box', center: [x - 0.2, CLIFF_TOP + 0.16, z + 0.15], size: [0.36, 0.32, 0.3], bevel: 0.1, mat: 'plaster' }));
-  }
-  const pileAt = onSand(pierAngle, yaw, -HEAD.aside, HEAD.pile);
-  if (pileAt) {
-    const [x, z] = [-HEAD.aside, pileAt.z];
-    const crate = (cx: number, cy: number, cz: number, mat: KitPart['mat']): KitPart => turn({ kind: 'box', center: [x + cx, CLIFF_TOP + cy, z + cz], size: [0.4, 0.4, 0.4], bevel: 0.04, mat });
-    parts.push(crate(-0.2, 0.2, -0.2, 'wood'), crate(0.22, 0.2, -0.18, 'woodDark'), crate(0, 0.2, 0.22, 'wood'), crate(0, 0.6, -0.05, 'woodDark'));
-    parts.push(turn({ kind: 'box', center: [x + 0.3, CLIFF_TOP + 0.15, z + 0.3], size: [0.34, 0.3, 0.28], bevel: 0.1, mat: 'plaster' }));
-  }
-  return parts;
-}
+/** How far a ship's bow lies ahead of its middle. */
+const HALF_HULL = 2.9;
+/** The paving ring round the bazaar's foot, where the streets from the docks meet it. */
+export const MARKET_RING = MARKET_TOWN.ring;
 
 export interface MarketDock {
-  /** Pier, pilings and the cliff stair, in table space. */
+  /** The goods waiting on the dock's landing, in table space. */
   readonly parts: readonly KitPart[];
   /** The porters' walk from the berth to a stall's counter, in table space (open: it ends at the stall). */
   readonly porterPath: readonly Vec3[];
@@ -153,8 +36,18 @@ export function berthOf(seatAngle: number): { readonly at: Vec3; readonly inward
   return { at: [p.x, 0, p.z], inward: [t.x, 0, t.z] };
 }
 
-const add = (a: Vec3, b: Vec3, k = 1): Vec3 => [a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k];
-const atHeight = (p: Vec3, y: number): Vec3 => [p[0], y, p[2]];
+/**
+ * A berth's dock in its own frame (as blockout-market.py cuts it): from the ship's bow, `u` out along the keel toward
+ * the stern and `v` across it; `at(u, v, y)` is a point of the dock in table space.
+ */
+export function dockFrame(seatAngle: number): { readonly at: (u: number, v: number, y: number) => Vec3; readonly yaw: number } {
+  const { at: ship, inward } = berthOf(seatAngle);
+  const ln = Math.hypot(inward[0], inward[2]) || 1;
+  const [ux, uz] = [-inward[0] / ln, -inward[2] / ln];
+  const [vx, vz] = [-uz, ux];
+  const [bx, bz] = [ship[0] - ux * HALF_HULL, ship[2] - uz * HALF_HULL];
+  return { at: (u, v, y) => [bx + ux * u + vx * v, y, bz + uz * u + vz * v], yaw: Math.atan2(ux, uz) };
+}
 
 /** The market's design point `p` (on its +z face) turned by `spin` and placed on the table. */
 const onTable = (p: Vec3, spin: number): Vec3 => {
@@ -168,86 +61,55 @@ function nearestFace(angle: number): number {
   return Math.round(spin / (Math.PI / 2)) * (Math.PI / 2);
 }
 
-/** The pier beside a seat's berth, the stair up the cliff behind it, and the porters' walk. */
+/** Goods waiting on a dock's landing to be carried up, to one side of the porters' way: crates and a sack. */
+function landingGoods(at: (u: number, v: number, y: number) => Vec3, yaw: number, side: number): KitPart[] {
+  const { low, headU, landing } = MARKET_TOWN;
+  const u = headU - landing / 2;
+  const crate = (du: number, dv: number, y: number, mat: KitPart['mat']): KitPart => ({ kind: 'box', center: spinPoint(at(u + du, side * (1.3 + dv), low + y), -yaw), size: [0.42, 0.42, 0.42], bevel: 0.04, mat, spin: yaw });
+  return [
+    crate(-0.2, 0, 0.21, 'wood'),
+    crate(0.25, 0.05, 0.21, 'woodDark'),
+    crate(0.02, 0.02, 0.63, 'wood'),
+    { kind: 'box', center: spinPoint(at(u + 0.1, side * 0.85, low + 0.15), -yaw), size: [0.34, 0.3, 0.28], bevel: 0.1, mat: 'plaster', spin: yaw },
+  ];
+}
+
+/** The goods on a seat's dock landing and the porters' walk from its ship up to a stall. */
 export function marketDock(seatAngle: number): MarketDock {
-  const { at: ship, inward } = berthOf(seatAngle);
-  // The pier lies along the ship, on the side nearer the seat's own bearing (away from the lane's bend).
-  const side: Vec3 = [-inward[2], 0, inward[0]];
-  const off = (a: number): number => Math.abs(Math.atan2(Math.sin(a - seatAngle), Math.cos(a - seatAngle)));
-  const [left, right] = [add(ship, side, PIER.offset), add(ship, side, -PIER.offset)];
-  const keel = off(Math.atan2(left[2], left[0])) <= off(Math.atan2(right[2], right[0])) ? left : right;
-  const pierAngle = Math.atan2(keel[2], keel[0]);
-  const slope = stairSlope(cliffProfile(pierAngle));
-  const top = cliffProfile(pierAngle)[0]!;
-  const outward: Vec3 = [Math.cos(pierAngle), 0, Math.sin(pierAngle)];
-  const stairFoot = top.r + (CLIFF_TOP - DECK) * slope;
-  const pierInner = stairFoot;
-  const shipReach = Math.hypot(ship[0], ship[2]) + PIER.past + 2.2;
-  const along = (r: number, y: number): Vec3 => [outward[0] * r, y, outward[2] * r];
-  const yaw = Math.atan2(outward[0], outward[2]);
-  const deckLength = shipReach - pierInner;
-  const deckMiddle = along(pierInner + deckLength / 2, DECK - 0.1);
-  const parts: KitPart[] = [];
-  const turnedBox = (center: Vec3, size: Vec3, mat: KitPart['mat'], bevel = 0.03): KitPart => ({
-    kind: 'box',
-    center: spinPoint(center, -yaw),
-    size,
-    bevel,
-    mat,
-    spin: yaw,
-  });
-  // The deck, laid along the radial line in its own frame (+z outward) and turned into place.
-  parts.push(turnedBox(deckMiddle, [PIER.width, 0.2, deckLength], 'woodDark'));
-  for (let r = pierInner + 0.5; r < shipReach; r += 2) {
-    for (const s of [-1, 1]) {
-      const foot = add(along(r, -1.2), [Math.cos(pierAngle + Math.PI / 2), 0, Math.sin(pierAngle + Math.PI / 2)], s * (PIER.width / 2 - 0.12));
-      parts.push({ kind: 'beam', from: foot, to: atHeight(foot, DECK - 0.15), width: 0.2, sides: 6, mat: 'wood' });
-    }
-  }
-  const steps = Math.ceil((CLIFF_TOP - DECK) / STAIR.rise);
-  const rise = (CLIFF_TOP - DECK) / steps;
-  for (let k = 0; k < steps; k++) {
-    const topY = DECK + rise * (k + 1);
-    const outer = stairFoot - (rise * k) * slope;
-    const inner = stairFoot - rise * (k + 1) * slope;
-    parts.push(turnedBox(along((outer + inner) / 2, topY - 0.08), [STAIR.width, 0.16, outer - inner + 0.02], 'wood', 0.02));
-    // Posts under every other step hold the flight off the rock.
-    if (k % 2 === 0) {
-      const foot = along((outer + inner) / 2, DECK - 0.6);
-      parts.push({ kind: 'beam', from: foot, to: atHeight(foot, topY - 0.16), width: 0.14, mat: 'woodDark' });
-    }
-  }
-  parts.push(...pierHead(pierAngle, yaw));
-  // The porters: off the ship onto the pier, up the stair, over the sand and grass, up the market's flight.
-  const face = nearestFace(pierAngle);
+  const { at, yaw } = dockFrame(seatAngle);
+  const { low, headU, landing, stairRun, water } = MARKET_TOWN;
+  // Off the ship onto the side quay nearer the seat's own bearing, then along it to the landing.
+  const off = (p: Vec3): number => Math.abs(Math.atan2(Math.sin(Math.atan2(p[2], p[0]) - seatAngle), Math.cos(Math.atan2(p[2], p[0]) - seatAngle)));
+  const side = off(at(HALF_HULL, 1, 0)) <= off(at(HALF_HULL, -1, 0)) ? 1 : -1;
+  const quay = side * (water / 2 + 0.5);
+  const stairFoot = at(headU - landing - 0.05, 0, low);
+  const stairTop = at(headU - landing - stairRun - 0.25, 0, MARKET_GROUND);
+  // Along the street from the stairs' head to the paving ring round the bazaar, then round it to the flight.
+  const street = Math.atan2(stairTop[2], stairTop[0]);
+  const face = nearestFace(street);
   const drop = STALL_DROPS.find((d) => Math.abs(Math.sin((d.spin - face) / 2)) < 1e-6) ?? STALL_DROPS[0]!;
   const foot = onTable(FLIGHT_FOOT, face);
-  const grassEdge = grassRadius(pierAngle) - 0.4;
-  const ringTo = (p: Vec3): Vec3[] => {
-    // Round the market's foot (outside the flights) from the pier's bearing to the flight's.
-    const from = pierAngle;
-    const to = Math.atan2(p[2], p[0]);
-    const turn = Math.atan2(Math.sin(to - from), Math.cos(to - from));
-    if (Math.abs(turn) < 0.3) return [];
-    const count = Math.ceil(Math.abs(turn) / 0.25);
-    return Array.from({ length: count }, (_, i) => {
-      const a = from + (turn * (i + 1)) / (count + 1);
-      // Just outside the flights' feet, and never off the grass.
-      const r = Math.min(Math.hypot(p[0], p[2]) + 0.35, grassRadius(a) - 0.3);
-      return [Math.cos(a) * r, MARKET_GROUND, Math.sin(a) * r] as Vec3;
-    });
-  };
+  const ringR = MARKET_RING - 0.5;
+  const toFlight = Math.atan2(foot[2], foot[0]);
+  const turn = Math.atan2(Math.sin(toFlight - street), Math.cos(toFlight - street));
+  const steps = Math.abs(turn) < 0.08 ? 0 : Math.ceil(Math.abs(turn) / 0.25);
+  const round = Array.from({ length: steps }, (_, i): Vec3 => {
+    const a = street + (turn * (i + 1)) / (steps + 1);
+    return [Math.cos(a) * ringR, MARKET_GROUND, Math.sin(a) * ringR];
+  });
   const porterPath: Vec3[] = [
-    along(shipReach - PIER.past - 2.2, DECK),
-    along(pierInner + 0.3, DECK),
-    along(top.r - 0.3, CLIFF_TOP),
-    along(Math.min(grassEdge, top.r - 0.8), MARKET_GROUND),
-    ...ringTo(foot),
+    at(HALF_HULL, quay, low),
+    at(headU - landing / 2, quay * 0.7, low),
+    at(headU - landing / 2, side * 0.5, low),
+    stairFoot,
+    stairTop,
+    [Math.cos(street) * ringR, MARKET_GROUND, Math.sin(street) * ringR],
+    ...round,
     foot,
     onTable(FLIGHT_HEAD, face),
     [drop.at[0] * MARKET_SCALE, MARKET_GROUND + drop.at[1] * MARKET_SCALE, drop.at[2] * MARKET_SCALE],
   ];
-  return { parts, porterPath };
+  return { parts: landingGoods(at, yaw, -side), porterPath };
 }
 
 /** A painted mark on a crate face: its middle, the face's outward turn about y (0 = +z), and its size. */
@@ -262,7 +124,7 @@ export interface ContrabandPile {
   readonly parts: readonly KitPart[];
   /** Where CONTRABAY is sprayed (the outward faces of the front crates). */
   readonly marks: readonly CrateMark[];
-  /** The pile's foot on the sand. */
+  /** The pile's foot on the riva. */
   readonly at: Vec3;
 }
 
@@ -282,33 +144,32 @@ export function quietBearing(seatAngles: readonly number[]): number {
 }
 
 /**
- * A pile of smuggled crates on the market island's sand, between two piers (docs/title-wordmark.html,
- * H3-A): three big crates and a long one, CONTRABAY sprayed on the faces toward the sea. Built in a
- * frame with +z out along the bearing and x across it, then turned into place like the pier heads.
+ * A pile of smuggled crates on the market island's riva at the quiet bearing, at the mouth of a dark alley between
+ * the houses (docs/title-wordmark.html, H3-A): three big crates and a long one, CONTRABAY sprayed on the faces toward
+ * the sea. Built in a frame with +z out along the bearing and x across it, then turned into place.
  */
 export function contrabandPile(seatAngles: readonly number[]): ContrabandPile {
   const bearing = quietBearing(seatAngles);
   const yaw = Math.atan2(Math.cos(bearing), Math.sin(bearing));
-  const grass = grassRadius(bearing) + HEAD.margin;
-  const edge = cliffProfile(bearing)[0]!.r - HEAD.margin;
-  // Toward the cliff's edge rather than the sand's middle, clear of the grass's ragged rim.
-  const r = Math.max((grass + edge) / 2, edge - PILE.crate * 0.75);
+  // On the riva at the alley's mouth, between the town's wall and the quay's edge.
+  const r = (MARKET_TOWN.town + MARKET_TOWN.riva) / 2 - 0.1;
+  const QUAY = MARKET_TOWN.low;
   const s = PILE.crate;
   const parts: KitPart[] = [];
   const marks: CrateMark[] = [];
   const crate = (x: number, y: number, z: number, size: Vec3, mat: KitPart['mat'], mark: boolean): void => {
     const [w, h, d] = size;
     const box = (center: Vec3, sz: Vec3, m: KitPart['mat'], bevel: number): KitPart => ({ kind: 'box', center, size: sz, bevel, mat: m, spin: yaw });
-    parts.push(box([x, CLIFF_TOP + y, r + z], size, mat, 0.05));
+    parts.push(box([x, QUAY + y, r + z], size, mat, 0.05));
     // Two straps round the crate, a little proud of it, near its top and bottom.
     for (const band of [-0.32, 0.32]) {
-      parts.push(box([x, CLIFF_TOP + y + band * h, r + z], [w + PILE.strap, PILE.strap * 1.4, d + PILE.strap], 'woodDark', 0.01));
+      parts.push(box([x, QUAY + y + band * h, r + z], [w + PILE.strap, PILE.strap * 1.4, d + PILE.strap], 'woodDark', 0.01));
     }
-    if (mark) marks.push({ at: spinPoint([x, CLIFF_TOP + y, r + z + d / 2 + PILE.lift], yaw), yaw, size: [PILE.mark[0] * (w / s), PILE.mark[1]] });
+    if (mark) marks.push({ at: spinPoint([x, QUAY + y, r + z + d / 2 + PILE.lift], yaw), yaw, size: [PILE.mark[0] * (w / s), PILE.mark[1]] });
   };
   crate(-0.46, s / 2, 0.05, [s, s, s], 'wood', true);
   crate(0.44, s / 2, -0.12, [s, s, s], 'woodDark', false);
   crate(-0.05, s * 1.5, -0.04, [s, s, s], 'wood', true);
   crate(1.3, 0.25, 0.12, [1.0, 0.5, 0.5], 'woodDark', false);
-  return { parts, marks, at: spinPoint([0, CLIFF_TOP, r], yaw) };
+  return { parts, marks, at: spinPoint([0, QUAY, r], yaw) };
 }

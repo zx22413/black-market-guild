@@ -21,9 +21,9 @@ import {
 import { SWATCHES } from '../../src/ui/scene/buildings/materials';
 import { bounds, partFaces, spinPoint, type Part, type Vec3 } from '../../src/ui/scene/buildings/polyhedra';
 import { BUILDING_DESIGNS } from '../../src/ui/scene/buildings/designs';
-import { ASSET_BUILDING_SCALE, TARGET_ISLAND_RADIUS, seatAngles } from '../../src/ui/scene/layout';
-import { TARGET_ISLAND_HEIGHT } from '../../src/ui/scene/islandShape';
-import { MARKET_GROUND, berthOf, contrabandPile, grassRadius, marketDock, quietBearing } from '../../src/ui/scene/marketDocks';
+import { ASSET_BUILDING_SCALE, seatAngles } from '../../src/ui/scene/layout';
+import { MARKET_SHORE, MARKET_TOWN } from '../../src/ui/scene/islandBases/market';
+import { MARKET_GROUND, MARKET_RING, berthOf, contrabandPile, dockFrame, marketDock, quietBearing } from '../../src/ui/scene/marketDocks';
 import { lanternLitAt, pathLength } from '../../src/ui/scene/marketMotion';
 
 const sub = (a: Vec3, b: Vec3): number[] => a.map((n, i) => n - b[i]!);
@@ -69,11 +69,10 @@ describe('market island model', () => {
     }
   });
 
-  it('stands on the grass all the way round, flights included', () => {
+  it('stands inside the paving ring round its foot, flights included', () => {
     const points = parts.flatMap((part) => partFaces(part).flatMap((f) => f.points));
     for (const p of points) {
-      const r = Math.hypot(p[0], p[2]) * MARKET_SCALE;
-      expect(r).toBeLessThan(grassRadius(angle(p)) - 0.2);
+      expect(Math.hypot(p[0], p[2]) * MARKET_SCALE).toBeLessThan(MARKET_RING - 0.2);
       expect(p[1]).toBeGreaterThanOrEqual(-1e-9);
     }
   });
@@ -164,68 +163,79 @@ describe('lamplighter', () => {
   });
 });
 
-describe('market piers and porters', () => {
-  for (const count of [3, 4]) {
-    it(`gives each of ${count} seats a pier beside its berth and a walk up to a stall`, () => {
-      for (const seat of seatAngles(count)) {
-        const { porterPath, parts } = marketDock(seat);
-        const berth = berthOf(seat).at;
-        const [start] = porterPath;
-        const end = porterPath[porterPath.length - 1]!;
-        // Off the ship, at its side.
-        expect(Math.hypot(start![0] - berth[0], start![2] - berth[2])).toBeLessThan(3.5);
-        // Into a stall on the first terrace.
-        const drops = STALL_DROPS.map((d) => d.at.map((v, i) => (i === 1 ? MARKET_GROUND + v * MARKET_SCALE : v * MARKET_SCALE)));
-        expect(drops.some((d) => Math.hypot(d[0]! - end[0], d[2]! - end[2]) < 1e-6)).toBe(true);
-        // Always up, never down.
-        for (let i = 1; i < porterPath.length; i++) expect(porterPath[i]![1]).toBeGreaterThanOrEqual(porterPath[i - 1]![1] - 1e-9);
-        // On the grass, the walk keeps to it.
-        for (const p of porterPath.filter((q) => Math.abs(q[1] - MARKET_GROUND) < 1e-9)) expect(Math.hypot(p[0], p[2])).toBeLessThan(grassRadius(angle(p)) + 0.05);
-        parts.forEach(expectClosedConvex);
-      }
-    });
-  }
+describe('market docks and porters', () => {
+  // The town is built for four seats (empty seats are filled by bots; docs/art/island-base-research.md §25.5).
+  const seats = seatAngles(4);
 
-  it("stands each pier head's shed and pile on the cliff-top sand, clear of the porters' way", () => {
-    for (const seat of [...seatAngles(3), ...seatAngles(4)]) {
+  it('walks each seat\'s porters off the ship onto its dock, up the grand stairs and the street to a stall', () => {
+    for (const seat of seats) {
+      const { porterPath, parts } = marketDock(seat);
+      const berth = berthOf(seat).at;
+      const [start] = porterPath;
+      const end = porterPath[porterPath.length - 1]!;
+      // Off the ship, at its side, on the dock's low quay.
+      expect(Math.hypot(start![0] - berth[0], start![2] - berth[2])).toBeLessThan(3.5);
+      expect(start![1]).toBeCloseTo(MARKET_TOWN.low);
+      // Into a stall on the first terrace.
+      const drops = STALL_DROPS.map((d) => d.at.map((v, i) => (i === 1 ? MARKET_GROUND + v * MARKET_SCALE : v * MARKET_SCALE)));
+      expect(drops.some((d) => Math.hypot(d[0]! - end[0], d[2]! - end[2]) < 1e-6)).toBe(true);
+      // Always up, never down.
+      for (let i = 1; i < porterPath.length; i++) expect(porterPath[i]![1]).toBeGreaterThanOrEqual(porterPath[i - 1]![1] - 1e-9);
+      // In the town: the quay inside the dock's water's edge, the square inside the town's wall.
+      for (const p of porterPath) {
+        if (Math.abs(p[1] - MARKET_GROUND) < 1e-9) expect(Math.hypot(p[0], p[2])).toBeLessThan(MARKET_TOWN.town);
+      }
+      parts.forEach(expectClosedConvex);
+    }
+  });
+
+  it("stands each dock's waiting goods on its landing, clear of the porters' way", () => {
+    for (const seat of seats) {
       const { parts, porterPath } = marketDock(seat);
-      const head = parts.filter((p) => partFaces(p).every((f) => f.points.every((q) => q[1] >= TARGET_ISLAND_HEIGHT - 1e-6)));
-      expect(head.length).toBeGreaterThan(0);
-      const walk = porterPath.filter((q) => Math.abs(q[1] - TARGET_ISLAND_HEIGHT) < 1e-6 || Math.abs(q[1] - MARKET_GROUND) < 1e-6);
-      for (const part of head) {
+      expect(parts.length).toBeGreaterThan(0);
+      const { at } = dockFrame(seat);
+      const [origin, uAxis, vAxis] = [at(0, 0, 0), at(1, 0, 0), at(0, 1, 0)];
+      const frame = (q: Vec3): [number, number] => {
+        const [dx, dz] = [q[0] - origin[0], q[2] - origin[2]];
+        return [dx * (uAxis[0] - origin[0]) + dz * (uAxis[2] - origin[2]), dx * (vAxis[0] - origin[0]) + dz * (vAxis[2] - origin[2])];
+      };
+      for (const part of parts) {
         for (const q of partFaces(part).flatMap((f) => f.points)) {
-          if (q[1] > TARGET_ISLAND_HEIGHT + 0.05) continue;
-          // Feet on the sand: past the grass, short of the cliff's edge.
-          expect(Math.hypot(q[0], q[2])).toBeGreaterThan(grassRadius(angle(q)));
+          const [u, v] = frame(q);
+          expect(q[1]).toBeGreaterThanOrEqual(MARKET_TOWN.low - 1e-6);
+          expect(u).toBeGreaterThan(MARKET_TOWN.headU - MARKET_TOWN.landing - 1e-6);
+          expect(u).toBeLessThan(MARKET_TOWN.headU + 1e-6);
+          expect(Math.abs(v)).toBeLessThan(MARKET_TOWN.water / 2);
         }
         const middle = bounds([part]);
         const c: Vec3 = [(middle.min[0] + middle.max[0]) / 2, 0, (middle.min[2] + middle.max[2]) / 2];
-        for (let i = 1; i < walk.length; i++) expect(segmentDistance(c, walk[i - 1]!, walk[i]!)).toBeGreaterThan(0.5);
+        for (let i = 1; i < porterPath.length; i++) expect(segmentDistance(c, porterPath[i - 1]!, porterPath[i]!)).toBeGreaterThan(0.5);
       }
     }
   });
 
-  it('piles the smugglers\' crates on the sand between two piers, clear of every porter, marked toward the sea', () => {
-    for (const count of [3, 4]) {
-      const seats = seatAngles(count);
-      const { parts, marks, at } = contrabandPile(seats);
-      parts.forEach(expectClosedConvex);
-      for (const q of parts.flatMap((p) => partFaces(p).flatMap((f) => f.points))) {
-        // Standing on the sand: no lower than its top, past the grass, inside the island.
-        expect(q[1]).toBeGreaterThanOrEqual(TARGET_ISLAND_HEIGHT - 1e-6);
-        expect(Math.hypot(q[0], q[2])).toBeGreaterThan(grassRadius(angle(q)));
-        expect(Math.hypot(q[0], q[2])).toBeLessThan(TARGET_ISLAND_RADIUS);
-      }
-      for (const seat of seats) {
-        const walk = marketDock(seat).porterPath;
-        for (let i = 1; i < walk.length; i++) expect(segmentDistance(at, walk[i - 1]!, walk[i]!)).toBeGreaterThan(3);
-      }
-      expect(marks.length).toBeGreaterThan(0);
-      for (const m of marks) {
-        const out = Math.hypot(m.at[0], m.at[2]);
-        expect((Math.sin(m.yaw) * m.at[0] + Math.cos(m.yaw) * m.at[2]) / out).toBeGreaterThan(0.99);
-      }
+  it("piles the smugglers' crates on the riva at the quiet bearing, clear of every porter, marked toward the sea", () => {
+    const { parts, marks, at } = contrabandPile(seats);
+    parts.forEach(expectClosedConvex);
+    for (const q of parts.flatMap((p) => partFaces(p).flatMap((f) => f.points))) {
+      expect(q[1]).toBeGreaterThanOrEqual(MARKET_TOWN.low - 1e-6);
+      expect(Math.hypot(q[0], q[2])).toBeGreaterThan(MARKET_TOWN.town);
+      expect(Math.hypot(q[0], q[2])).toBeLessThan(MARKET_TOWN.riva);
     }
+    for (const seat of seats) {
+      const walk = marketDock(seat).porterPath;
+      for (let i = 1; i < walk.length; i++) expect(segmentDistance(at, walk[i - 1]!, walk[i]!)).toBeGreaterThan(3);
+    }
+    expect(marks.length).toBeGreaterThan(0);
+    for (const m of marks) {
+      const out = Math.hypot(m.at[0], m.at[2]);
+      expect((Math.sin(m.yaw) * m.at[0] + Math.cos(m.yaw) * m.at[2]) / out).toBeGreaterThan(0.99);
+    }
+  });
+
+  it('draws the sea foam round the town, out past its riva', () => {
+    expect(MARKET_SHORE).toHaveLength(11);
+    for (const [x, z] of MARKET_SHORE) expect(Math.hypot(x, z)).toBeGreaterThan(MARKET_TOWN.riva);
   });
 
   it('finds the quiet bearing in the middle of the widest gap between seats', () => {

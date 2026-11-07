@@ -1,4 +1,4 @@
-import type { SeaPoint } from './islandShape';
+import type { FoamSegment, SeaPoint } from './islandShape';
 
 /**
  * An island base built in Blender (`IslandScenery.base`, scripts/blender/build-island.py): where it meets the sea, in
@@ -11,6 +11,10 @@ export interface IslandBaseShape {
   readonly headlandShore: readonly SeaPoint[];
   /** Columns standing in the sea apart from the headland (the sea arch's legs): x, z and radius. */
   readonly seaRocks: readonly (readonly [number, number, number])[];
+  /** The island's real waterline, cut at sea level in Blender, for the sea foam: [x0, z0, x1, z1] segments. */
+  readonly foam: readonly FoamSegment[];
+  /** The headland's, at turn 0 (it turns with the backdrop). */
+  readonly headlandFoam: readonly FoamSegment[];
 }
 
 export { SMUGGLER_PORT_BASE } from './islandBases/smuggler-port';

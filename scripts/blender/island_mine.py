@@ -126,7 +126,7 @@ def tilted_block(name, center, size, yaw, tilt_x, tilt_z, mat):
         out.append((cx + x, cy + y, cz + z))
     # corners indexed sx*4 + sy*2 + sz
     faces = [[0, 1, 3, 2], [4, 6, 7, 5], [0, 4, 5, 1], [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3]]
-    ob = mesh_from(name, out, faces, mat)
+    ob = mesh_from(name, out, faces, mat, convex=True)
     ob["after"] = True
     return ob
 

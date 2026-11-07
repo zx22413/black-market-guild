@@ -21,6 +21,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from blockout_kit import *  # noqa: E402,F403
 import blockout_kit as kit  # noqa: E402
+import market_houses as mh  # noqa: E402
 from island_kit import grow, inside, slab, walk, SEA, FOOT  # noqa: E402
 
 args = sys.argv[sys.argv.index("--") + 1 :]
@@ -565,6 +566,111 @@ def clear_of(x, z, frames, streets):
     return True
 
 
+# The town's blocks (§25.12): back to back between the square's paving and the town's wall, an inner row facing the
+# square (shops) and an outer row facing the riva (warehouses with hoists), cut by radial alleys every few houses.
+BLOCK = {"inner": 9.3, "outer": TOWN_R - 0.25, "split": 12.55}
+OVER = 0.26  # eaves past the walls, every side
+INNER_KINDS = ["venetian", "levantine", "dutch", "venetian", "levantine", "dutch", "tower"]
+OUTER_KINDS = ["warehouse", "dutch", "warehouse", "venetian", "dutch"]
+
+
+def house_plan(x, z, yaw, w, d, front, annex):
+    """The whole ground a house takes, as its four corners: walls, eaves all round, what stands out of its front
+    (awning, balcony, hoist, goods) and a lean-to on one side."""
+    f = mh.Frame(x, z, yaw, 0.0)
+    x0 = -w / 2 - OVER - (1.15 if annex < 0 else 0.0)
+    x1 = w / 2 + OVER + (1.15 if annex > 0 else 0.0)
+    z0, z1 = -d / 2 - OVER, d / 2 + front
+    return [(p[0], p[2]) for p in (f.p(x0, 0, z0), f.p(x1, 0, z0), f.p(x1, 0, z1), f.p(x0, 0, z1))]
+
+
+def plan_fits(plan, lo, hi):
+    """Every corner between the radii lo and hi (the square's paving, the block's split, the town's wall)."""
+    return all(lo <= math.hypot(x, z) <= hi for x, z in plan)
+
+
+def keep_out(frames, q):
+    """Reserve what no house may touch: each dock's water, landing and grand stairs with a margin, the street from the
+    stairs to the bazaar, the smugglers' alley at the quiet bearing."""
+    for frame in frames:
+        u_top = HEAD_U - LANDING - STAIR_RUN
+        mouth = RIVA_R - math.hypot(*frame[0]) + 1.2
+        FOOTPRINTS.append([at_frame(frame, u, v) for u, v in ((u_top - 0.4, -HALF - 0.2), (mouth, -HALF - 0.2), (mouth, HALF + 0.2), (u_top - 0.4, HALF + 0.2))])
+        top = at_frame(frame, u_top, 0)
+        a = math.atan2(top[1], top[0])
+        r1 = math.hypot(*top)
+        ux, uz = math.cos(a), math.sin(a)
+        vx, vz = -uz, ux
+        FOOTPRINTS.append([(ux * r + vx * v, uz * r + vz * v) for r, v in ((8.6, -1.6), (r1, -1.6), (r1, 1.6), (8.6, 1.6))])
+    ux, uz = math.cos(q), math.sin(q)
+    vx, vz = -uz, ux
+    FOOTPRINTS.append([(ux * r + vx * v, uz * r + vz * v) for r, v in ((9.0, -0.75), (TOWN_R + 0.4, -0.75), (TOWN_R + 0.4, 0.75), (9.0, 0.75))])
+
+
+def town_row(inner, k):
+    """One row of houses round the square. Each is tried at its width, then narrower, then the row moves on a little:
+    a house goes down only when its whole plan is free and inside its band, so none overlaps another, a loggia, a
+    column, a dock, a street or the alley (overlapping walls flicker and break the model)."""
+    lo, hi = (BLOCK["inner"], BLOCK["split"]) if inner else (BLOCK["split"], BLOCK["outer"])
+    a = rng.uniform(0, 0.2)
+    run = 0  # houses since the last alley
+    while a < 2 * math.pi:
+        near = math.sin(a)  # +z, toward the camera
+        kind = rng.choice(INNER_KINDS if inner else OUTER_KINDS)
+        if kind == "tower" and near > -0.2:
+            kind = "venetian"
+        shop = inner and kind != "tower" and rng.random() < 0.65
+        annex = rng.choice([0, 0, 0, -1, 1]) if kind in ("venetian", "warehouse") else 0
+        # What stands out of the front: an awning, a balcony, a hoist. The outer row faces the riva over the town's
+        # wall, so its hoists reach out over the drop and need no room on the paving.
+        front = (0.85 if shop or kind in ("dutch", "warehouse") else (0.5 if kind == "venetian" else OVER)) if inner else OVER
+        if kind == "tower":
+            w, d, h = 1.3, 1.3, rng.uniform(3.6, 4.4)
+        else:
+            d = rng.uniform(1.5, 2.0) if inner else rng.uniform(1.4, 1.75)
+            h = rng.uniform(1.8, 2.3) if near > 0.4 else rng.uniform(2.1, 3.3)
+        placed = False
+        for w in ((1.3,) if kind == "tower" else (rng.uniform(1.8, 2.8), 1.7, 1.4)):
+            if kind == "dutch":
+                w = min(w, 1.6)
+            span = w + 2 * OVER + (1.15 if annex else 0.0)
+            if inner:
+                r = lo + 0.05 + front + d / 2
+            else:
+                r = hi - 0.05 - OVER - d / 2
+            mid = a + (span / 2 + 0.05) / r
+            x, z = math.cos(mid) * r, math.sin(mid) * r
+            yaw = math.atan2(-math.cos(mid), -math.sin(mid)) if inner else math.atan2(math.cos(mid), math.sin(mid))
+            # Shift the plan so a lean-to on the left or right does not push into the next house's room.
+            plan = house_plan(x, z, yaw, w, d, front, annex)
+            if plan_fits(plan, lo, hi) and claim(plan):
+                mh.house(f"base-house-{k}", x, z, yaw, w, d, h, kind, rng, ground=G, shop=shop, annex=annex)
+                k += 1
+                run += 1
+                a += (span + 0.08) / r
+                if run >= rng.randint(2, 4):
+                    a += 0.8 / r  # an alley
+                    run = 0
+                placed = True
+                break
+        if not placed:
+            a += 0.3 / lo
+    return k
+
+
+def town_blocks(frames, q):
+    keep_out(frames, q)
+    k = town_row(True, 0)
+    town_row(False, k)
+    # A few little squares where the inner row left a gap: a tree or a well.
+    for j in range(40):
+        a = rng.uniform(0, 2 * math.pi)
+        r = rng.uniform(10.2, 11.6)
+        x, z = math.cos(a) * r, math.sin(a) * r
+        if claim(rect(x, z, 0.0, 1.8, 1.8)):
+            little_square(f"base-square-{j}", x, z)
+
+
 def direction_ab(n):
     FOOTPRINTS.clear()
     seats = DUMP["seats"]["4"]
@@ -621,14 +727,11 @@ def direction_ab(n):
             person(f"after-folk-{k}-{j}", x, G, z, rng.choice(["roofBlue", "roofGreen", "awningPurple", "ruby"]))
     # The town: houses in rings round the square, a lane between, their fronts on the square and on the riva; low near
     # the camera so the bazaar's foot still shows, taller behind. A gap at the quiet bearing is the smugglers' alley.
-    streets = [(q, 1.0)]
-    k = 0
-    for ring_r, faces_in in ((11.0, True), (14.0, False)):
-        k = town_ring(ring_r, faces_in, frames, streets, k)
+    town_blocks(frames, q)
     # Folk on the square's ring, the lane and the riva, and stalls on the riva.
     for j in range(26):
         a = rng.uniform(0, 2 * math.pi)
-        r = rng.choice([9.3, 12.6, 16.3])
+        r = rng.choice([9.3, 16.3])
         x, z = math.cos(a) * r, math.sin(a) * r
         if r > 15 and any(abs((x - f[0][0]) * f[2][0] + (z - f[0][1]) * f[2][1]) < HALF + 0.3 and ((x - f[0][0]) * f[1][0] + (z - f[0][1]) * f[1][1]) > HEAD_U - 1 for f in frames):
             continue
@@ -813,15 +916,9 @@ def soup(m, tags):
     return ob
 
 
-def build(n):
-    """Everything for n players; returns the objects made."""
-    start = set(kit.SCENE.objects)
-    sea = slab("sea", [(-60, -60), (60, -60), (60, 60), (-60, 60)], -3.2, SEA, "sea")
-    sea["before"] = True
-    CUTTERS.clear()
-    {"A": direction_a, "B": direction_b, "C": direction_c, "AB": direction_ab}[DIRECTION](n)
-    blocks = [ob for ob, _, _ in kit.PARTS if ob.name.startswith(("base-square", "base-city", "base-riva", "base-slothead", "base-wall", "base-arcade"))]
-    blocks = [] if DIRECTION == "AB" else blocks
+def apply_cuts():
+    """Cut the water stairs' wells out of the square's blocks (directions A and B; AB builds its stairs whole)."""
+    blocks = [] if DIRECTION == "AB" else [ob for ob, _, _ in kit.PARTS if ob.name.startswith(("base-square", "base-city", "base-riva", "base-slothead", "base-wall", "base-arcade"))]
     for ob in blocks:
         for c in CUTTERS:
             mod = ob.modifiers.new("cut", "BOOLEAN")
@@ -834,6 +931,17 @@ def build(n):
             bpy.ops.object.modifier_apply(modifier=mod.name)
     for c in CUTTERS:
         bpy.data.objects.remove(c)
+    CUTTERS.clear()
+
+
+def build(n):
+    """Everything for n players; returns the objects made."""
+    start = set(kit.SCENE.objects)
+    sea = slab("sea", [(-60, -60), (60, -60), (60, 60), (-60, 60)], -3.2, SEA, "sea")
+    sea["before"] = True
+    CUTTERS.clear()
+    {"A": direction_a, "B": direction_b, "C": direction_c, "AB": direction_ab}[DIRECTION](n)
+    apply_cuts()
     for k, b in enumerate(DUMP["seats"][str(n)]["berths"]):
         ship(f"ship-{k}", b)
     if STAIRS:
@@ -845,74 +953,76 @@ def build(n):
     return start
 
 
-setup_render()
-kit.SCENE.render.line_thickness = 1.0
+
+if __name__ == "__main__":  # run as the blockout; build-market.py imports the parts without rendering
+    setup_render()
+    kit.SCENE.render.line_thickness = 1.0
 
 
-def orbit(name, azimuth, elevation, target, scale, res=(1200, 900), dist=80):
-    a, e = math.radians(azimuth), math.radians(elevation)
-    t = Vector(target)
-    d = Vector((math.sin(a) * math.cos(e), math.sin(e), math.cos(a) * math.cos(e))) * dist
-    return camera(name, V(*(t + d)), V(*t), scale, res)
+    def orbit(name, azimuth, elevation, target, scale, res=(1200, 900), dist=80):
+        a, e = math.radians(azimuth), math.radians(elevation)
+        t = Vector(target)
+        d = Vector((math.sin(a) * math.cos(e), math.sin(e), math.cos(a) * math.cos(e))) * dist
+        return camera(name, V(*(t + d)), V(*t), scale, res)
 
 
-OUT = out_dir()
-VC = None
-RUNS = ((4, ("mkt-top", "mkt-front", "mkt-diag", "mkt-side", "dock")),) if STAIRS else ((4, ("top4", "dock", "close", "town")),) if DIRECTION == "AB" else ((4, ("top4", "dock", "close")), (3, ("top3",)))
-for n, views in RUNS:
-    # Start clean for each count.
-    for ob in list(kit.SCENE.objects):
-        if ob.type == "MESH":
-            bpy.data.objects.remove(ob)
-    kit.PARTS.clear()
-    build(n)
-    colour_parts()
-    VC = bpy.data.materials["vc"] if VC is None else VC
-    # The booleans leave an empty material slot first: give every part the one vertex-colour material.
-    for ob, _, _ in kit.PARTS:
-        ob.data.materials.clear()
-        ob.data.materials.append(VC)
-    for m in DUMP["before"]:
-        soup(m, ["before"]).data.materials.append(VC)
-    if STAIRS:
-        soup(DUMP["market"], ["before"]).data.materials.append(VC)
-        soup(DUMP["marketBare"], ["after"]).data.materials.append(VC)
-    else:
-        soup(DUMP["market"], ["before", "after"]).data.materials.append(VC)
-    soup(DUMP["seats"][str(n)]["piers"], ["before"]).data.materials.append(VC)
-    soup(DUMP["seats"][str(n)]["pile"], ["before"]).data.materials.append(VC)
-    for ob in kit.SCENE.objects:
-        if ob.type == "MESH":
-            if ob.name.startswith("after-"):
-                ob["after"] = True
-                if STAIRS:
-                    ob["before"] = True
-            for p in ob.data.polygons:
-                p.use_smooth = False
-    tris = sum(len(p.vertices) - 2 for ob in kit.SCENE.objects if ob.type == "MESH" and ob.name.startswith(("base-", "pave-")) for p in ob.data.polygons)
-    print(f"DIRECTION {DIRECTION} n={n}: ~{tris} triangles")
-    cams = {
-        "top4": camera("cam-top4", V(0, 80, 0.5), V(0, 0, 0.5), 50, (1100, 1100)),
-        "top3": camera("cam-top3", V(0, 80, 0.5), V(0, 0, 0.5), 50, (1100, 1100)),
-        "dock": orbit("cam-dock", 0, 42, (0, 2, 2), 44),
-        "close": orbit("cam-close", 18, 24, (0, 2.0, 13.0), 17),
-        "town": orbit("cam-town", 50, 30, (7.0, 3.0, 7.0), 18),
-        "mkt-top": camera("cam-mkt-top", V(0, 80, 0.0), V(0, 0, 0.0), 19, (1100, 1100)),
-        "mkt-front": orbit("cam-mkt-front", 8, 22, (0, 5.2, 5.0), 10),
-        "mkt-diag": orbit("cam-mkt-diag", 40, 30, (3.0, 5.4, 3.0), 10),
-        "mkt-side": orbit("cam-mkt-side", 62, 26, (3.4, 6.2, 3.0), 4.5),
-    }
-    for cam, _ in cams.values():
-        if cam.name.startswith(("cam-top", "cam-mkt-top")):
-            cam.rotation_euler = (0, 0, 0)
-    for state in ("before", "after"):
+    OUT = out_dir()
+    VC = None
+    RUNS = ((4, ("mkt-top", "mkt-front", "mkt-diag", "mkt-side", "dock")),) if STAIRS else ((4, ("top4", "dock", "close", "town")),) if DIRECTION == "AB" else ((4, ("top4", "dock", "close")), (3, ("top3",)))
+    for n, views in RUNS:
+        # Start clean for each count.
+        for ob in list(kit.SCENE.objects):
+            if ob.type == "MESH":
+                bpy.data.objects.remove(ob)
+        kit.PARTS.clear()
+        build(n)
+        colour_parts()
+        VC = bpy.data.materials["vc"] if VC is None else VC
+        # The booleans leave an empty material slot first: give every part the one vertex-colour material.
+        for ob, _, _ in kit.PARTS:
+            ob.data.materials.clear()
+            ob.data.materials.append(VC)
+        for m in DUMP["before"]:
+            soup(m, ["before"]).data.materials.append(VC)
+        if STAIRS:
+            soup(DUMP["market"], ["before"]).data.materials.append(VC)
+            soup(DUMP["marketBare"], ["after"]).data.materials.append(VC)
+        else:
+            soup(DUMP["market"], ["before", "after"]).data.materials.append(VC)
+        soup(DUMP["seats"][str(n)]["piers"], ["before"]).data.materials.append(VC)
+        soup(DUMP["seats"][str(n)]["pile"], ["before"]).data.materials.append(VC)
         for ob in kit.SCENE.objects:
             if ob.type == "MESH":
-                ob.hide_render = not ob.get(state, False) and not ob.name == "sea"
-        for v in views:
-            cam, (w, h) = cams[v]
-            kit.SCENE.camera = cam
-            kit.SCENE.render.resolution_x, kit.SCENE.render.resolution_y = w, h
-            kit.SCENE.render.filepath = os.path.join(OUT, f"{state}-{v}.png")
-            bpy.ops.render.render(write_still=True)
-print("RENDERED", OUT)
+                if ob.name.startswith("after-"):
+                    ob["after"] = True
+                    if STAIRS:
+                        ob["before"] = True
+                for p in ob.data.polygons:
+                    p.use_smooth = False
+        tris = sum(len(p.vertices) - 2 for ob in kit.SCENE.objects if ob.type == "MESH" and ob.name.startswith(("base-", "pave-")) for p in ob.data.polygons)
+        print(f"DIRECTION {DIRECTION} n={n}: ~{tris} triangles")
+        cams = {
+            "top4": camera("cam-top4", V(0, 80, 0.5), V(0, 0, 0.5), 50, (1100, 1100)),
+            "top3": camera("cam-top3", V(0, 80, 0.5), V(0, 0, 0.5), 50, (1100, 1100)),
+            "dock": orbit("cam-dock", 0, 42, (0, 2, 2), 44),
+            "close": orbit("cam-close", 18, 24, (0, 2.0, 13.0), 17),
+            "town": orbit("cam-town", 50, 30, (7.0, 3.0, 7.0), 18),
+            "mkt-top": camera("cam-mkt-top", V(0, 80, 0.0), V(0, 0, 0.0), 19, (1100, 1100)),
+            "mkt-front": orbit("cam-mkt-front", 8, 22, (0, 5.2, 5.0), 10),
+            "mkt-diag": orbit("cam-mkt-diag", 40, 30, (3.0, 5.4, 3.0), 10),
+            "mkt-side": orbit("cam-mkt-side", 62, 26, (3.4, 6.2, 3.0), 4.5),
+        }
+        for cam, _ in cams.values():
+            if cam.name.startswith(("cam-top", "cam-mkt-top")):
+                cam.rotation_euler = (0, 0, 0)
+        for state in ("before", "after"):
+            for ob in kit.SCENE.objects:
+                if ob.type == "MESH":
+                    ob.hide_render = not ob.get(state, False) and not ob.name == "sea"
+            for v in views:
+                cam, (w, h) = cams[v]
+                kit.SCENE.camera = cam
+                kit.SCENE.render.resolution_x, kit.SCENE.render.resolution_y = w, h
+                kit.SCENE.render.filepath = os.path.join(OUT, f"{state}-{v}.png")
+                bpy.ops.render.render(write_still=True)
+    print("RENDERED", OUT)

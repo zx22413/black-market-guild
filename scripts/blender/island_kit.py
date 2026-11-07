@@ -327,3 +327,96 @@ def cdt_terrain(prefix, plan, height, colour, spacing=1.1, seed=0, by_lowest=Fal
         kit.bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-4)
         kit.finish(bm, f"{prefix}-ground-{mat}", mat)["after"] = True
     return [(x, height(x, z, 0.0), z) for x, z in edge]
+
+
+def foam_segments(objects, sea=SEA, tol=0.12, min_len=0.9, budget=150):
+    """The waterline the sea foam hugs: every part that stands in the sea cut at sea level (in island space, x and z),
+    chained into lines, simplified (Douglas-Peucker, tolerance `tol`, raised until at most `budget` segments remain),
+    short loops (a pile, a bollard) dropped. Returns [(x0, z0, x1, z1)]."""
+    import bmesh as _bm
+
+    raw = []
+    for ob in objects:
+        zs = [v.co.z for v in ob.data.vertices]
+        if not zs or not (min(zs) < sea < max(zs)):
+            continue
+        b = _bm.new()
+        b.from_mesh(ob.data)
+        out = _bm.ops.bisect_plane(b, geom=b.verts[:] + b.edges[:] + b.faces[:], plane_co=(0, 0, sea), plane_no=(0, 0, 1))
+        for e in out["geom_cut"]:
+            if isinstance(e, _bm.types.BMEdge):
+                (a, c) = e.verts
+                if abs(a.co.z - sea) < 1e-4 and abs(c.co.z - sea) < 1e-4:
+                    raw.append(((a.co.x, -a.co.y), (c.co.x, -c.co.y)))
+        b.free()
+    key = lambda p: (round(p[0], 3), round(p[1], 3))
+    adj = {}
+    for a, c in raw:
+        ka, kc = key(a), key(c)
+        if ka == kc:
+            continue
+        adj.setdefault(ka, set()).add(kc)
+        adj.setdefault(kc, set()).add(ka)
+    used = set()
+    lines = []
+
+    def walk_from(start, nxt):
+        line = [start, nxt]
+        used.add(frozenset((start, nxt)))
+        while True:
+            cur = line[-1]
+            cands = [n for n in adj[cur] if frozenset((cur, n)) not in used]
+            if len(adj[cur]) != 2 or not cands:
+                break
+            n = cands[0]
+            used.add(frozenset((cur, n)))
+            line.append(n)
+            if n == line[0]:
+                break
+        return line
+
+    for p in adj:
+        if len(adj[p]) != 2:
+            for n in list(adj[p]):
+                if frozenset((p, n)) not in used:
+                    lines.append(walk_from(p, n))
+    for p in adj:
+        for n in list(adj[p]):
+            if frozenset((p, n)) not in used:
+                lines.append(walk_from(p, n))
+
+    def length(line):
+        return sum(math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(line, line[1:]))
+
+    def dp(pts, eps):
+        if len(pts) < 3:
+            return pts
+        (x0, z0), (x1, z1) = pts[0], pts[-1]
+        dx, dz = x1 - x0, z1 - z0
+        ln = math.hypot(dx, dz)
+        best, idx = -1.0, 0
+        for i in range(1, len(pts) - 1):
+            px, pz = pts[i]
+            d = abs(dx * (z0 - pz) - dz * (x0 - px)) / ln if ln > 1e-9 else math.hypot(px - x0, pz - z0)
+            if d > best:
+                best, idx = d, i
+        if best <= eps:
+            return [pts[0], pts[-1]]
+        return dp(pts[: idx + 1], eps)[:-1] + dp(pts[idx:], eps)
+
+    def simplify(line, eps):
+        if line[0] == line[-1] and len(line) > 3:  # a loop: split at its farthest point from the start
+            far = max(range(len(line)), key=lambda i: math.hypot(line[i][0] - line[0][0], line[i][1] - line[0][1]))
+            return dp(line[: far + 1], eps)[:-1] + dp(line[far:], eps)
+        return dp(line, eps)
+
+    lines = [l for l in lines if length(l) >= min_len]
+    eps = tol
+    while True:
+        segs = []
+        for l in lines:
+            s = simplify(l, eps)
+            segs += [(round(a[0], 2), round(a[1], 2), round(b[0], 2), round(b[1], 2)) for a, b in zip(s, s[1:]) if a != b]
+        if len(segs) <= budget or eps > 2.0:
+            return segs
+        eps *= 1.4

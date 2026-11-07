@@ -1,9 +1,9 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import { PlaneGeometry, type Mesh } from 'three';
-import type { SeaPoint } from './islandShape';
+import type { FoamSegment, SeaPoint } from './islandShape';
 import { perfFlags } from './perfFlags';
-import { createSeaMaterial, setShores } from './seaFoam';
+import { createSeaMaterial, setFoam, setShores } from './seaFoam';
 import { SEA_LEVEL, seaSink, waveHeight } from './seaWave';
 import { useSwell, useWavePhase } from './SwellContext';
 
@@ -15,6 +15,8 @@ interface SeaProps {
   readonly color: string;
   /** Island waterlines in world space, for the shore foam. */
   readonly shores: readonly (readonly SeaPoint[])[];
+  /** The islands' real waterlines as segments, when known (Blender-built bases); else the foam follows `shores`. */
+  readonly foam?: readonly (readonly FoamSegment[])[];
   /** How much the sea darkens toward the corners around the islands, 0..1. */
   readonly vignette?: number;
   /** White wave lines on open water, 0..1, and how faintly the foam glows, 0..1. */
@@ -26,7 +28,7 @@ interface SeaProps {
 const SKIRT_SIZE = 4000;
 const SKIRT_DROP = 0.6;
 
-export function Sea({ color, shores, vignette = 0, lines = 0, glow = 0 }: SeaProps) {
+export function Sea({ color, shores, foam, vignette = 0, lines = 0, glow = 0 }: SeaProps) {
   const swell = useSwell();
   const phase = useWavePhase();
   const mesh = useRef<Mesh>(null);
@@ -45,7 +47,7 @@ export function Sea({ color, shores, vignette = 0, lines = 0, glow = 0 }: SeaPro
   useEffect(() => {
     sea.material.color.set(color);
   }, [sea, color]);
-  useEffect(() => setShores(sea.uniforms, shores), [sea, shores]);
+  useEffect(() => (foam ? setFoam(sea.uniforms, foam) : setShores(sea.uniforms, shores)), [sea, shores, foam]);
   useEffect(() => {
     sea.uniforms.uVignette.value = vignette;
     sea.uniforms.uLines.value = lines;
