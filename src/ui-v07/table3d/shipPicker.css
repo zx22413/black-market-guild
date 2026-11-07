@@ -38,11 +38,26 @@
   font-family: var(--font-strong);
   color: #8a241c;
 }
+.ship-odds {
+  white-space: nowrap;
+}
+/* The rest time sits on the picture's corner, so the odds line keeps one line even with "沉 67→50%" on it. */
+.ship-hand .dep-card {
+  position: relative;
+}
 .ship-rest {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: 2px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: rgb(245 236 212 / 0.95);
   color: #6b5537;
+  line-height: 18px;
 }
 
 /* The strip also holds the dice table, so it is a little taller than the role strip; the ability stays on the header line, so the height is the same for every card. */
