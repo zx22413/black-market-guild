@@ -71,6 +71,7 @@ const STANDARD_SAIL = (() => {
     pieces: [bowed([head[0], head[1], [2.67, 2.55, z], [-2.67, 2.55, z]], [null, [0.08, 0, 0], [0, -0.28, 0], [-0.08, 0, 0]])],
     mat: 'canvas',
     belly: 0.55,
+    square: true,
     emblem: { art: 'albatross', u: 2.52, w: 1.0, size: 1.72, mat: 'slate' },
   } satisfies SailSpec;
 })();
@@ -226,6 +227,7 @@ function squareSail(mastZ: number, yard: number, foot: number, halfHead: number,
       pieces: [bowed([head[0], head[1], [halfFoot, foot, z], [-halfFoot, foot, z]], [null, [0.08, 0, 0], [0, -0.22, 0], [-0.08, 0, 0]])],
       mat: 'canvas',
       belly,
+      square: true,
       // In the sail's frame u runs along the yard from its port end and w down from it.
       ...(emblem ? { emblem: { art: 'whale-tail' as const, u: halfHead, w: (yard - foot) * 0.52, size: emblem.size, mat: emblem.mat } } : {}),
     },
@@ -435,6 +437,7 @@ const BREAKER: ShipDesign = {
       pieces: [bowed([[-1.52, 4.42, BREAKER_SAIL_Z], [1.52, 4.42, BREAKER_SAIL_Z], [1.62, 2.85, BREAKER_SAIL_Z], [-1.62, 2.85, BREAKER_SAIL_Z]], [null, [0.08, 0, 0], [0, -0.22, 0], [-0.08, 0, 0]])],
       mat: 'canvas',
       belly: 0.45,
+      square: true,
       // A teal roundel with a white wave (decided 2026-11-07).
       emblem: { art: 'wave', u: 1.52, w: 0.8, size: 1.32, mat: 'canal' },
     },

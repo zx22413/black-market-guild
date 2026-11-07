@@ -25,7 +25,7 @@ function clothPiece(spec: SailSpec, phase: number): ClothPiece {
   const cloth = sailCloth(spec);
   const [x, y, z] = cloth.axes;
   const matrix = new Matrix4().set(x[0], y[0], z[0], cloth.origin[0], x[1], y[1], z[1], cloth.origin[1], x[2], y[2], z[2], cloth.origin[2], 0, 0, 0, 1);
-  return { geometry: geometryFromParts(cloth.parts), matrix, bend: { span: cloth.span, belly: spec.belly, flutter: spec.flutter ?? 0, phase }, glow: spec.glow ?? false, ...(spec.emblem ? { emblem: spec.emblem } : {}) };
+  return { geometry: geometryFromParts(cloth.parts), matrix, bend: { span: cloth.span, belly: spec.belly, flutter: spec.flutter ?? 0, phase, square: spec.square ?? false }, glow: spec.glow ?? false, ...(spec.emblem ? { emblem: spec.emblem } : {}) };
 }
 
 /** The pennant at the masthead, flying aft. */

@@ -19,6 +19,11 @@ export interface SailSpec {
   readonly bands?: { readonly axis: 'u' | 'w' | 'fan'; readonly pattern: readonly { readonly mat: Mat; readonly width: number }[] };
   /** How far the middle of the cloth bulges out (signed: which side the wind fills it from). */
   readonly belly: number;
+  /**
+   * A square sail, sheeted at its foot as well as bent to its yard: it fills right down to the foot and out to the leeches
+   * instead of bulging only in its middle like a sail loose at the foot.
+   */
+  readonly square?: boolean;
   /** How far the free end flaps (rags, pennants). */
   readonly flutter?: number;
   /** Glows at night instead of taking the light (the ghost ship's rags). */

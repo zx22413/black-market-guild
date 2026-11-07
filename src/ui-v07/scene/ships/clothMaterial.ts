@@ -20,6 +20,8 @@ export interface ClothBend {
   readonly belly: number;
   readonly flutter: number;
   readonly phase: number;
+  /** A square sail's fuller cut (`SailSpec.square`). */
+  readonly square: boolean;
 }
 
 /**
@@ -35,6 +37,7 @@ function bend<M extends Material>(material: M, cloth: ClothBend, wind: Wind, kin
     uGale: { get value() { return wind.gale; } },
     uClothSpan: { value: new Vector3(u0, Math.max(u1 - u0, 1e-3), Math.max(cloth.span.w, 1e-3)) },
     uClothShape: { value: new Vector3(cloth.belly, cloth.flutter, cloth.phase) },
+    uClothSquare: { value: cloth.square ? 1 : 0 },
     // The emblem's square in the sail's frame: its centre (u, w) and size; and the art drawn on it.
     uEmblemRect: { value: emblem ? new Vector4(emblem.u, emblem.w, emblem.size, 0) : new Vector4(0, 0, 1, 0) },
     uEmblem: { value: emblem ? emblemTexture(emblem) : null },
@@ -42,7 +45,7 @@ function bend<M extends Material>(material: M, cloth: ClothBend, wind: Wind, kin
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nuniform float uClothTime;\nuniform float uWind;\nuniform float uGale;\nuniform vec3 uClothSpan;\nuniform vec3 uClothShape;\nvarying vec2 vClothUW;')
+      .replace('#include <common>', '#include <common>\nuniform float uClothTime;\nuniform float uWind;\nuniform float uGale;\nuniform vec3 uClothSpan;\nuniform vec3 uClothShape;\nuniform float uClothSquare;\nvarying vec2 vClothUW;')
       .replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
@@ -55,7 +58,9 @@ function bend<M extends Material>(material: M, cloth: ClothBend, wind: Wind, kin
         float clothFast = sin(uClothTime * 2.9 + uClothShape.z * 1.7) * 0.6 + sin(uClothTime * 4.7 + uClothShape.z) * 0.4;
         float clothGust = 1.0 + (0.26 + 0.14 * uGale) * clothSlow + 0.3 * uGale * clothFast;
         float clothFull = (0.35 + 0.65 * uWind) * (1.0 + 0.25 * uGale);
-        float clothArch = (1.0 - clothU * clothU) * sin(3.14159 * clothV);
+        // A loose-footed sail bulges only in its middle; a square sail fills down to its foot (deepest about two thirds
+        // down) and out toward its leeches.
+        float clothArch = mix((1.0 - clothU * clothU) * sin(3.14159 * clothV), (1.0 - 0.55 * clothU * clothU) * sin(3.14159 * 0.7 * clothV), uClothSquare);
         transformed.y += clothFull * uClothShape.x * clothArch * clothGust;
         // Ripples running down the cloth from the yard (pinned there), small on a fair day, rolling hard in a storm.
         float clothRipple = (0.08 + 0.32 * uGale) * (0.4 + 0.6 * uWind);
