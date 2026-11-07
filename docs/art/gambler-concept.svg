@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1800 2680" font-family="PingFang TC, Heiti TC, sans-serif">
+<!-- 孤注號設計稿 v2（2026-11-07，地中海 xebec）。圖是 scripts/blender/blockout-gambler.py 的 Blender 粗模正投影算繪，標註由 scripts/blender/compose-sheet.py 依 blockouts/gambler-sheet.json 疊上；引線起點是 3D 零件投影到畫面的真實位置。 -->
+<rect width="1800" height="2680" fill="#f5efe2"/>
+<text x="40" y="58" font-size="34" font-weight="700" fill="#3b2f2a">孤注號 設計稿 v2：地中海 xebec，Blender 粗模</text>
+<text x="40" y="94" font-size="18" fill="#6b5a50">辨識（剪影主特徵，沿用）：細長船身上一面超大、偏向右舷的紅白三角帆，帆桁又粗又彎、比船還長，桅杆前傾。xebec 的味道來自金邊長尖喙和往後挑出的船尾平台。</text>
+<text x="40" y="120" font-size="18" fill="#6b5a50">四張圖是同一個 3D 粗模（船空間：船頭 +z、龍骨 y = 0、甲板 DECK = 1.25）的正投影；帆、尾旗、骰子在遊戲裡是程式碼畫的，這裡是替身。</text>
+<rect x="360" y="170" width="770" height="770" rx="10" fill="#fbf7ee" stroke="#e2d6c2"/>
+<text x="374" y="200" font-size="20" font-weight="700" fill="#3b2f2a">側面（左舷，船頭朝右）</text>
+<line x1="368.0" y1="858.6" x2="1122.0" y2="858.6" stroke="#25878c" stroke-width="2" stroke-dasharray="8 6"/>
+<line x1="368.0" y1="803.0" x2="1122.0" y2="803.0" stroke="#a08a7a" stroke-width="2" stroke-dasharray="8 6"/>
+<line x1="368.0" y1="480.9" x2="1122.0" y2="480.9" stroke="#c0392b" stroke-width="2" stroke-dasharray="8 6"/>
+<line x1="368.0" y1="377.3" x2="1122.0" y2="377.3" stroke="#d68a1c" stroke-width="2" stroke-dasharray="8 6"/>
+<image x="360" y="170" width="770" height="770" xlink:href="blockouts/gambler/side.png"/>
+<text x="1116.0" y="850.6" font-size="15" text-anchor="end" stroke="#fbf7ee" stroke-width="4" paint-order="stroke" fill="#25878c">吃水線 DRAFT 0.5</text>
+<text x="1116.0" y="795.0" font-size="15" text-anchor="end" stroke="#fbf7ee" stroke-width="4" paint-order="stroke" fill="#6b5a50">甲板 DECK 1.25</text>
+<text x="1116.0" y="472.9" font-size="15" text-anchor="end" stroke="#fbf7ee" stroke-width="4" paint-order="stroke" fill="#c0392b">選船鏡頭 SHIP_BOX 頂 5.6</text>
+<text x="1116.0" y="369.3" font-size="15" text-anchor="end" stroke="#fbf7ee" stroke-width="4" paint-order="stroke" fill="#d68a1c">建議方案 A：帆頂降到約 7.0？</text>
+<rect x="40" y="990" width="540" height="660" rx="10" fill="#fbf7ee" stroke="#e2d6c2"/>
+<text x="54" y="1020" font-size="20" font-weight="700" fill="#3b2f2a">正面（從船頭看）</text>
+<image x="40" y="990" width="540" height="660" xlink:href="blockouts/gambler/front.png"/>
+<rect x="900" y="990" width="858" height="593" rx="10" fill="#fbf7ee" stroke="#e2d6c2"/>
+<text x="914" y="1020" font-size="20" font-weight="700" fill="#3b2f2a">俯視（船頭朝右，上方是右舷）</text>
+<line x1="908.0" y1="1208.0" x2="1750.0" y2="1208.0" stroke="#a08a7a" stroke-width="2" stroke-dasharray="8 6"/>
+<line x1="908.0" y1="1364.8" x2="1750.0" y2="1364.8" stroke="#a08a7a" stroke-width="2" stroke-dasharray="8 6"/>
+<image x="900" y="990" width="858" height="593" xlink:href="blockouts/gambler/top.png"/>
+<text x="1744.0" y="1200.0" font-size="15" text-anchor="end" stroke="#fbf7ee" stroke-width="4" paint-order="stroke" fill="#6b5a50">船寬 +0.95</text>
+<text x="1744.0" y="1356.8" font-size="15" text-anchor="end" stroke="#fbf7ee" stroke-width="4" paint-order="stroke" fill="#6b5a50">船寬 −0.95</text>
+<rect x="40" y="1720" width="726" height="660" rx="10" fill="#fbf7ee" stroke="#e2d6c2"/>
+<text x="54" y="1750" font-size="20" font-weight="700" fill="#3b2f2a">斜 45 度（船頭左前方、俯角 30 度）</text>
+<image x="40" y="1720" width="726" height="660" xlink:href="blockouts/gambler/oblique.png"/>
+<circle cx="515.5" cy="258.8" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="515.5,258.8 348.0,234.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="340" y="240" font-size="17" font-weight="700" text-anchor="end" fill="#3b2f2a">帆頂 8.6、尾旗掛在帆桁頂端</text>
+<text x="340" y="260" font-size="15" text-anchor="end" fill="#6b5a50">（選船鏡頭會切到，見待確認 1）</text>
+<circle cx="686.0" cy="602.7" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="686.0,602.7 348.0,394.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="340" y="400" font-size="17" font-weight="700" text-anchor="end" fill="#3b2f2a">紅白條紋大三角帆</text>
+<text x="340" y="420" font-size="15" text-anchor="end" fill="#6b5a50">條紋從帆角放射成扇形</text>
+<text x="340" y="440" font-size="15" text-anchor="end" fill="#6b5a50">前緣用短繩綁在帆桁上</text>
+<circle cx="412.1" cy="674.2" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="412.1,674.2 348.0,554.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="340" y="560" font-size="17" font-weight="700" text-anchor="end" fill="#3b2f2a">船尾燈籠</text>
+<text x="340" y="580" font-size="15" text-anchor="end" fill="#6b5a50">立在平台尾柱上，夜晚點亮</text>
+<circle cx="430.6" cy="718.7" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="430.6,718.7 348.0,654.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="340" y="660" font-size="17" font-weight="700" text-anchor="end" fill="#3b2f2a">船尾平台（往後挑出）</text>
+<text x="340" y="680" font-size="15" text-anchor="end" fill="#6b5a50">兩根外伸梁＋斜撐托著</text>
+<text x="340" y="700" font-size="15" text-anchor="end" fill="#6b5a50">金色欄杆</text>
+<circle cx="463.4" cy="752.7" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="463.4,752.7 348.0,754.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="340" y="760" font-size="17" font-weight="700" text-anchor="end" fill="#3b2f2a">船尾往上、往後翹</text>
+<text x="340" y="780" font-size="15" text-anchor="end" fill="#6b5a50">窄尾板外圍一圈金框</text>
+<circle cx="578.4" cy="769.7" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="578.4,769.7 348.0,844.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="340" y="850" font-size="17" font-weight="700" text-anchor="end" fill="#3b2f2a">大骰子（動態照舊）</text>
+<text x="340" y="870" font-size="15" text-anchor="end" fill="#6b5a50">放在金框艙口上</text>
+<circle cx="508.0" cy="858.6" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="508.0,858.6 348.0,934.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="340" y="940" font-size="17" font-weight="700" text-anchor="end" fill="#3b2f2a">船尾柱舵＋金色鐵箍</text>
+<circle cx="730.4" cy="420.8" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="730.4,420.8 1142.0,324.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="1150" y="330" font-size="17" font-weight="700" text-anchor="start" fill="#3b2f2a">帆桁加粗、往上彎</text>
+<text x="1150" y="350" font-size="15" text-anchor="start" fill="#6b5a50">比船還長（約 9.5）</text>
+<text x="1150" y="370" font-size="15" text-anchor="start" fill="#6b5a50">兩端與吊點有金箍、端帽</text>
+<circle cx="769.4" cy="673.4" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="769.4,673.4 1142.0,464.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="1150" y="470" font-size="17" font-weight="700" text-anchor="start" fill="#3b2f2a">桅杆前傾</text>
+<text x="1150" y="490" font-size="15" text-anchor="start" fill="#6b5a50">金色桅箍、桅腳箍座</text>
+<circle cx="885.7" cy="673.4" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="885.7,673.4 1142.0,574.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="1150" y="580" font-size="17" font-weight="700" text-anchor="start" fill="#3b2f2a">小三角前帆</text>
+<text x="1150" y="600" font-size="15" text-anchor="start" fill="#6b5a50">掛在前支索上，往左舷鼓</text>
+<circle cx="963.4" cy="769.0" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="963.4,769.0 1142.0,684.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="1150" y="690" font-size="17" font-weight="700" text-anchor="start" fill="#3b2f2a">金色船首欄</text>
+<text x="1150" y="710" font-size="15" text-anchor="start" fill="#6b5a50">從壓頂板彎下來接到喙上</text>
+<circle cx="1018.9" cy="788.2" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="1018.9,788.2 1142.0,784.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="1150" y="790" font-size="17" font-weight="700" text-anchor="start" fill="#3b2f2a">金邊長尖喙</text>
+<text x="1150" y="810" font-size="15" text-anchor="start" fill="#6b5a50">菱形斷面、往前收尖</text>
+<circle cx="1070.8" cy="771.9" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="1070.8,771.9 1142.0,874.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="1150" y="880" font-size="17" font-weight="700" text-anchor="start" fill="#3b2f2a">喙尖：金箍＋金頂飾</text>
+<text x="1150" y="900" font-size="15" text-anchor="start" fill="#6b5a50">前支索與帆角繩都拉到這裡</text>
+<circle cx="381.7" cy="1358.1" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="381.7,1358.1 592.0,1174.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="600" y="1180" font-size="17" font-weight="700" text-anchor="start" fill="#3b2f2a">三角帆整面往右舷鼓</text>
+<text x="600" y="1200" font-size="15" text-anchor="start" fill="#6b5a50">（左舷才有側支索）</text>
+<circle cx="372.2" cy="1511.0" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="372.2,1511.0 592.0,1324.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="600" y="1330" font-size="17" font-weight="700" text-anchor="start" fill="#3b2f2a">金色壓頂板（收邊）</text>
+<circle cx="374.7" cy="1545.9" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="374.7,1545.9 592.0,1374.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="600" y="1380" font-size="17" font-weight="700" text-anchor="start" fill="#3b2f2a">金色腰帶，凸出 0.09</text>
+<circle cx="372.2" cy="1554.8" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="372.2,1554.8 592.0,1424.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="600" y="1430" font-size="17" font-weight="700" text-anchor="start" fill="#3b2f2a">船身：紅色（明暗交錯）</text>
+<circle cx="371.6" cy="1573.9" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="371.6,1573.9 592.0,1474.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="600" y="1480" font-size="17" font-weight="700" text-anchor="start" fill="#3b2f2a">白色水線帶＋深色分界條</text>
+<circle cx="367.1" cy="1592.9" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="367.1,1592.9 592.0,1534.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="600" y="1540" font-size="17" font-weight="700" text-anchor="start" fill="#3b2f2a">船底：石板灰</text>
+<circle cx="1143.4" cy="1286.4" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="1143.4,1286.4 922.0,1634.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="930" y="1640" font-size="17" font-weight="700" text-anchor="start" fill="#3b2f2a">骰子在船尾甲板</text>
+<circle cx="1263.0" cy="1374.8" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="1263.0,1374.8 1152.0,1634.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="1160" y="1640" font-size="17" font-weight="700" text-anchor="start" fill="#3b2f2a">側支索只在左舷</text>
+<text x="1160" y="1660" font-size="15" text-anchor="start" fill="#6b5a50">落在舷外木台與滑輪上</text>
+<circle cx="1263.2" cy="1203.4" r="4.5" fill="#c0392b" stroke="#fff" stroke-width="1.5"/>
+<polyline points="1263.2,1203.4 1432.0,1634.0" fill="none" stroke="#a08a7a" stroke-width="1.5"/>
+<text x="1440" y="1640" font-size="17" font-weight="700" text-anchor="start" fill="#3b2f2a">帆在右舷那一側</text>
+<text x="800" y="1840" font-size="22" font-weight="700" fill="#3b2f2a">色票（SWATCHES）與分區</text>
+<defs><linearGradient id="sw0" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fc6c41"/><stop offset="1" stop-color="#d1544e"/></linearGradient></defs>
+<rect x="800" y="1862" width="56" height="38" rx="6" fill="url(#sw0)" stroke="#4a2f25" stroke-width="1.5"/>
+<text x="868" y="1878" font-size="16" font-weight="700" fill="#3b2f2a">roofRed</text>
+<text x="868" y="1897" font-size="14" fill="#6b5a50">船身、喙、帆的紅條紋（主色）</text>
+<defs><linearGradient id="sw1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fde4c7"/><stop offset="1" stop-color="#fce2c4"/></linearGradient></defs>
+<rect x="1180" y="1862" width="56" height="38" rx="6" fill="url(#sw1)" stroke="#4a2f25" stroke-width="1.5"/>
+<text x="1248" y="1878" font-size="16" font-weight="700" fill="#3b2f2a">canvas</text>
+<text x="1248" y="1897" font-size="14" fill="#6b5a50">帆的白條紋、前帆</text>
+<defs><linearGradient id="sw2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd263"/><stop offset="1" stop-color="#ffc044"/></linearGradient></defs>
+<rect x="800" y="1914" width="56" height="38" rx="6" fill="url(#sw2)" stroke="#4a2f25" stroke-width="1.5"/>
+<text x="868" y="1930" font-size="16" font-weight="700" fill="#3b2f2a">gold</text>
+<text x="868" y="1949" font-size="14" fill="#6b5a50">壓頂板、腰帶、喙邊、欄杆、桅箍（強調色）</text>
+<defs><linearGradient id="sw3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbfbfd"/><stop offset="1" stop-color="#bebed6"/></linearGradient></defs>
+<rect x="1180" y="1914" width="56" height="38" rx="6" fill="url(#sw3)" stroke="#4a2f25" stroke-width="1.5"/>
+<text x="1248" y="1930" font-size="16" font-weight="700" fill="#3b2f2a">marble</text>
+<text x="1248" y="1949" font-size="14" fill="#6b5a50">水線白帶、骰子</text>
+<defs><linearGradient id="sw4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#84899f"/><stop offset="1" stop-color="#636378"/></linearGradient></defs>
+<rect x="800" y="1966" width="56" height="38" rx="6" fill="url(#sw4)" stroke="#4a2f25" stroke-width="1.5"/>
+<text x="868" y="1982" font-size="16" font-weight="700" fill="#3b2f2a">slate</text>
+<text x="868" y="2001" font-size="14" fill="#6b5a50">船底（水線以下）</text>
+<defs><linearGradient id="sw5" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ad5f41"/><stop offset="1" stop-color="#845442"/></linearGradient></defs>
+<rect x="1180" y="1966" width="56" height="38" rx="6" fill="url(#sw5)" stroke="#4a2f25" stroke-width="1.5"/>
+<text x="1248" y="1982" font-size="16" font-weight="700" fill="#3b2f2a">woodDark</text>
+<text x="1248" y="2001" font-size="14" fill="#6b5a50">桅、帆桁、船首柱、舵、分界條</text>
+<defs><linearGradient id="sw6" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2bf99"/><stop offset="1" stop-color="#f0bc96"/></linearGradient></defs>
+<rect x="800" y="2018" width="56" height="38" rx="6" fill="url(#sw6)" stroke="#4a2f25" stroke-width="1.5"/>
+<text x="868" y="2034" font-size="16" font-weight="700" fill="#3b2f2a">deck</text>
+<text x="868" y="2053" font-size="14" fill="#6b5a50">甲板</text>
+<defs><linearGradient id="sw7" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0bc96"/><stop offset="1" stop-color="#ca845c"/></linearGradient></defs>
+<rect x="1180" y="2018" width="56" height="38" rx="6" fill="url(#sw7)" stroke="#4a2f25" stroke-width="1.5"/>
+<text x="1248" y="2034" font-size="16" font-weight="700" fill="#3b2f2a">rope</text>
+<text x="1248" y="2053" font-size="14" fill="#6b5a50">繩索、帆繩</text>
+<defs><linearGradient id="sw8" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#535666"/><stop offset="1" stop-color="#3b3e4a"/></linearGradient></defs>
+<rect x="800" y="2070" width="56" height="38" rx="6" fill="url(#sw8)" stroke="#4a2f25" stroke-width="1.5"/>
+<text x="868" y="2086" font-size="16" font-weight="700" fill="#3b2f2a">metal / dark</text>
+<text x="868" y="2105" font-size="14" fill="#6b5a50">燈籠、滑輪、骰點</text>
+<defs><linearGradient id="sw9" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e04f6a"/><stop offset="1" stop-color="#c03a55"/></linearGradient></defs>
+<rect x="1180" y="2070" width="56" height="38" rx="6" fill="url(#sw9)" stroke="#4a2f25" stroke-width="1.5"/>
+<text x="1248" y="2086" font-size="16" font-weight="700" fill="#3b2f2a">pennant（替身）</text>
+<text x="1248" y="2105" font-size="14" fill="#6b5a50">尾旗：遊戲裡是玩家色</text>
+<text x="800" y="2140" font-size="22" font-weight="700" fill="#3b2f2a">尺寸（粗模）</text>
+<text x="800" y="2172" font-size="16" fill="#3b2f2a">船身 z −2.85～3.2（喙尖到 4.85、船尾平台到約 −4.0），半寬 0.95（現在 0.85）</text>
+<text x="800" y="2202" font-size="16" fill="#3b2f2a">桅杆從 z 0.55 前傾到 1.2、桅頂 5.45；帆桁 (4.4, 2.15) → (−2.6, 8.6)，往上彎 0.38</text>
+<text x="800" y="2232" font-size="16" fill="#3b2f2a">收邊：壓頂板 0.15、腰帶 0.11、帆桁中段 0.2、船首柱 0.18、帆繩 0.08</text>
+<text x="800" y="2262" font-size="16" fill="#3b2f2a">約 5,800 個三角形</text>
+<text x="800" y="2310" font-size="22" font-weight="700" fill="#2e7d4f">已定案（2026-11-07 使用者確認）</text>
+<text x="800" y="2342" font-size="16" fill="#3b2f2a">1. 帆整面等比縮小，帆頂約 7.0（仍高於 SHIP_BOX 5.6，建模時再對選船鏡頭）。</text>
+<text x="800" y="2372" font-size="16" fill="#3b2f2a">2. 條紋改成從帆角放射的扇形，帆的著色器一起改。</text>
+<text x="800" y="2402" font-size="16" fill="#3b2f2a">3. 燈籠移到船尾平台尾柱上。</text>
+<text x="800" y="2432" font-size="16" fill="#3b2f2a">4. 撞色：海嘯號改綠金，孤注號維持紅白＋金。</text>
+</svg>

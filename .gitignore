@@ -32,3 +32,4 @@ public/audio/licensed/
 
 # Rendered promo videos and screenshots (scripts/trailer): big files, remade from the scripts
 promo-out/
+__pycache__/
