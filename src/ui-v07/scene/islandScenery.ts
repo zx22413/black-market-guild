@@ -2,7 +2,7 @@ import { LANDMARK_DESIGNS, landmarkParts, type LandmarkDesign, type LandmarkId }
 import { bounds } from '../../ui/scene/buildings/polyhedra';
 import type { IslandGround } from '../../ui/scene/IslandBase';
 import { HEADLAND_AT } from '../../ui/scene/buildings/islands/smugglerPort';
-import { LIGHTHOUSE_BASE, LUMBER_BASE, MINE_BASE, PIRATE_COVE_BASE, SMUGGLER_PORT_BASE, SPICE_ISLES_BASE, type IslandBaseShape } from '../../ui/scene/islandBaseShapes';
+import { FORTRESS_BASE, FREE_PORT_BASE, LIGHTHOUSE_BASE, LUMBER_BASE, MINE_BASE, PIRATE_COVE_BASE, SMUGGLER_PORT_BASE, SPICE_ISLES_BASE, type IslandBaseShape } from '../../ui/scene/islandBaseShapes';
 import type { IslandAnnex, SeaPoint, SeatShores } from '../../ui/scene/islandShape';
 import type { Vec3 } from '../../ui/scene/layout';
 import type { IslandId } from '../../v07/game';
@@ -48,6 +48,8 @@ export interface SceneryPiece {
 export interface IslandBaseModel {
   readonly model: string;
   readonly shape: IslandBaseShape;
+  /** False when nothing of the base turns with the backdrop (it stands on the body itself): no headland model. */
+  readonly headland?: boolean;
 }
 
 export interface IslandScenery {
@@ -160,11 +162,14 @@ export const ISLAND_SCENERY: Readonly<Partial<Record<IslandId, IslandScenery>>> 
     name: '自由港',
     // A cream-paved quay over warm ochre rock, so the painted houses stand out.
     ground: { top: '#fce2c4', cliff: '#ca845c' },
-    annex: { center: [0, -11.6], radii: [7.4, 3.8] },
+    // A cross-shaped town of brick quay walls with white coping, a low quay a step down by the water, a curved mole round
+    // a basin, and an arm each way for the houses to stand on (docs/art/island-base-research.md §24).
+    base: { model: 'free-port', shape: FREE_PORT_BASE, headland: false },
     pieces: [
       // The canal, its toll gate in place of the old customs booth, its boats and its townsfolk.
       { design: 'canal', at: [0, 0, 0], scale: 1, laidIn: true },
-      { design: 'willemstad-row', at: [0, RIM, -11], scale: 3, turn: 0.4, backdrop: true },
+      // On the square's paving, on the arm it is turned to.
+      { design: 'willemstad-row', at: [0, TURF, -11], scale: 3, turn: 0.4, backdrop: true },
       { design: 'rowboat', at: [-5.6, TURF, -3.6], scale: 1.4, turn: 2 },
     ],
   },
@@ -172,7 +177,10 @@ export const ISLAND_SCENERY: Readonly<Partial<Record<IslandId, IslandScenery>>> 
     name: '要塞島',
     // A sage garrison green, an even blend of the default grass #79b35a and slate #84899f, over grey rock.
     ground: { top: '#7e9e7c', cliff: '#797e97' },
-    annex: { center: [0, -13.8], radii: [7.6, 6.2] },
+    // A bastioned rampart (battered face, cordon, coping, sentry boxes) on a fractured limestone reef, a grass glacis
+    // round the parade ground, a tunnel gate from the water gate's landing, and a tombolo out to a watch rock; the star
+    // fort stands on its own limestone ledge (docs/art/island-base-research.md §24).
+    base: { model: 'fortress', shape: FORTRESS_BASE },
     pieces: [
       { design: 'guardhouse', at: [0.3, TURF, 3.25], scale: 2 },
       { design: 'star-fort', at: [0, RIM, -13.6], scale: 3.1, backdrop: true },

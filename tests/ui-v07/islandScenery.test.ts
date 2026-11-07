@@ -127,10 +127,12 @@ describe('backdrop side', () => {
     headings.forEach((h, i) => expect(-Math.cos(h + turns[i]!)).toBeLessThan(1e-9));
   });
 
-  it('gives an annex only to islands that have one, turned with the backdrop', () => {
-    expect(islandAnnex('spice-isles', 0)).toBeNull();
+  it('gives no annex now every island has a Blender-built base', () => {
     expect(islandAnnex(null, 0)).toBeNull();
-    expect(islandAnnex('free-port', Math.PI)).toMatchObject({ turn: backdropTurn(Math.PI) });
+    for (const island of Object.keys(ISLAND_SCENERY) as (keyof typeof ISLAND_SCENERY)[]) {
+      expect(ISLAND_SCENERY[island]?.base, island).toBeDefined();
+      expect(islandAnnex(island, Math.PI), island).toBeNull();
+    }
   });
 });
 

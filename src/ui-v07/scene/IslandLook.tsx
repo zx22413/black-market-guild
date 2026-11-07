@@ -20,7 +20,7 @@ for (const scenery of Object.values(ISLAND_SCENERY)) {
   if (!scenery?.base) continue;
   const { body, headland } = baseUrls(scenery.base.model);
   useGLTF.preload(body);
-  useGLTF.preload(headland);
+  if (scenery.base.headland !== false) useGLTF.preload(headland);
 }
 
 /**
@@ -46,7 +46,7 @@ export function islandLook(
     ...(urls ? { base: <IslandModel url={urls.body} /> } : {}),
     scenery: (
       <>
-        {urls && (
+        {urls && look.base?.headland !== false && (
           <group rotation={[0, turn, 0]} position={[0, -PLATEAU, 0]}>
             <IslandModel url={urls.headland} />
           </group>

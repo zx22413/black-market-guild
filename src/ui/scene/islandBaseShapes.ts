@@ -19,3 +19,5 @@ export { SPICE_ISLES_BASE } from './islandBases/spice-isles';
 export { PIRATE_COVE_BASE } from './islandBases/pirate-cove';
 export { MINE_BASE } from './islandBases/mine';
 export { LUMBER_BASE } from './islandBases/lumber';
+export { FREE_PORT_BASE } from './islandBases/free-port';
+export { FORTRESS_BASE } from './islandBases/fortress';

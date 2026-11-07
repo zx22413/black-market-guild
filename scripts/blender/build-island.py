@@ -5,7 +5,7 @@
 writes
 - public/models/islands/<island>-body.glb: the island that stays put, island space, drawn in place of IslandBase;
 - public/models/islands/<island>-headland.glb: the parts named by the module's HEADLAND_PREFIXES, island space at
-  turn 0, which turn with the backdrop;
+  turn 0, which turn with the backdrop (none if no part is named: set `headland: false` on the island's base);
 - src/ui/scene/islandBases/<island>.ts: their waterlines for the sea foam, and the rocks the module's `sea_rocks()`
   stands in the sea apart from the headland (for the scenery boats' loop test).
 
@@ -149,7 +149,11 @@ else:
 rocks = [(round(x, 2), round(z, 2), r) for x, z, r in getattr(isl, "sea_rocks", lambda: [])()]
 
 os.makedirs(OUT_MODELS, exist_ok=True)
+# An island whose backdrop stands on the body itself (the free port's houses on its square) has no headland model.
 for parts, name in ((body_parts, "body"), (head_parts, "headland")):
+    if not parts:
+        print(f"NO {name}: nothing to export")
+        continue
     ob = join(parts, name)
     tris = sum(len(p.vertices) - 2 for p in ob.data.polygons)
     bake(ob)
