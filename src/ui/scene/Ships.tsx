@@ -36,8 +36,21 @@ export function lanePose(angle: number, t: number, sideways = 0): LanePose {
  */
 const DOCK_DISTANCE = 3;
 
+/** How far behind the first (scene units) a guild's next ship waits at the market: a ship's length and a gap. */
+export const MARKET_QUEUE_GAP = 7;
+
+/**
+ * Which place in line a ship with this sideways berth takes at the market (0 in the dock, 1 behind it): the town's
+ * inner docks hold one ship each (docs/art/island-base-research.md §27), so a guild's ships queue along the lane
+ * there instead of riding side by side. A guild has at most two ships out at once (this round's and a freighter).
+ */
+export function marketQueue(berth: number): number {
+  return Math.max(0, Math.ceil(berth));
+}
+
 export function shipPose(angle: number, state: ShipState, berth = 0): LanePose {
   if (state === 'docked') return lanePose(angle, DOCK_DISTANCE / laneCurve(angle).getLength(), berth * BERTH_GAP);
+  if (state === 'arrived') return lanePose(angle, LANE_T.arrived - (marketQueue(berth) * MARKET_QUEUE_GAP) / laneCurve(angle).getLength());
   return lanePose(angle, LANE_T[state], berth * BERTH_GAP);
 }
 

@@ -8,7 +8,7 @@ import type { BeatSeat } from '../scene/beatStage';
 import { berthsOf } from '../scene/berth';
 import { TableCanvas, type TableShip } from '../scene/TableCanvas';
 
-// Dev-only: the five ship types on the table at /v07.html?dev=ships. Query: `state` docked | sailing (default docked),
+// Dev-only: the five ship types on the table at /v07.html?dev=ships. Query: `state` docked | sailing | arrived (default docked),
 // `weather` (moonless-night for the lanterns and the ghost ship's glow), `view` table (the game's camera) | close (circles
 // one ship; `ship` = standard | gambler | freighter | hidden | breaker) | side (beside that ship at deck height),
 // `islands` (comma-separated island ids for the four seats, e.g. smuggler-port,mine; blank keeps the default look),
@@ -34,7 +34,8 @@ function Camera({ target, view }: { readonly target: readonly [number, number, n
 
 export function ShipsPreview() {
   const q = new URLSearchParams(window.location.search);
-  const state = (q.get('state') === 'sailing' ? 'sailing' : 'docked') satisfies ShipState;
+  const asked = q.get('state');
+  const state = (asked === 'sailing' || asked === 'arrived' ? asked : 'docked') satisfies ShipState;
   const weather = (q.get('weather') ?? null) as VoyageEventId | null;
   const view = (['close', 'side'].includes(q.get('view') ?? '') ? q.get('view') : 'table') as 'table' | 'close' | 'side';
   const focus = (SHIP_TYPE_IDS as readonly string[]).includes(q.get('ship') ?? '') ? (q.get('ship') as ShipTypeId) : 'standard';

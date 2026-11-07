@@ -25,6 +25,7 @@ import { ASSET_BUILDING_SCALE, seatAngles } from '../../src/ui/scene/layout';
 import { MARKET_SHORE, MARKET_TOWN } from '../../src/ui/scene/islandBases/market';
 import { MARKET_GROUND, MARKET_RING, berthOf, contrabandPile, dockFrame, marketDock, quietBearing } from '../../src/ui/scene/marketDocks';
 import { lanternLitAt, pathLength } from '../../src/ui/scene/marketMotion';
+import { shipPose } from '../../src/ui/scene/Ships';
 
 const sub = (a: Vec3, b: Vec3): number[] => a.map((n, i) => n - b[i]!);
 const dot = (a: readonly number[], b: readonly number[]): number => a.reduce((s, n, i) => s + n * b[i]!, 0);
@@ -230,6 +231,20 @@ describe('market docks and porters', () => {
     for (const m of marks) {
       const out = Math.hypot(m.at[0], m.at[2]);
       expect((Math.sin(m.yaw) * m.at[0] + Math.cos(m.yaw) * m.at[2]) / out).toBeGreaterThan(0.99);
+    }
+  });
+
+  it("queues a guild's second ship behind the first at the market, out past the dock, never inside the town", () => {
+    for (const seat of seats) {
+      const [first, second] = [-0.5, 0.5].map((b) => shipPose(seat, 'arrived', b).position);
+      const berth = berthOf(seat).at;
+      expect(Math.hypot(first!.x - berth[0], first!.z - berth[2])).toBeLessThan(1e-6);
+      expect(Math.hypot(second!.x - first!.x, second!.z - first!.z)).toBeGreaterThan(6.5);
+      // Its bow, toward the island, still clear of the riva's outer edge.
+      const bow = Math.hypot(second!.x, second!.z) - 2.9;
+      expect(bow).toBeGreaterThan(MARKET_TOWN.riva);
+      // A lone ship lies in the dock.
+      expect(shipPose(seat, 'arrived', 0).position.distanceTo(first!)).toBeLessThan(1e-6);
     }
   });
 
