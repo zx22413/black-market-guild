@@ -5,9 +5,13 @@ import type { SailCloth, SailEmblem } from './cloth';
 /** Seconds on the table clock, shared by every sail's shader (set once a frame by `ShipModel`). */
 export const CLOTH_TIME = { value: 0 };
 
-/** How hard the wind fills a ship's sails: 0 becalmed at the dock … 1 under way. One per ship, eased by `ShipModel`. */
+/**
+ * How hard the wind fills a ship's sails: `value` 0 becalmed at the dock … 1 under way, and `gale` how rough the weather
+ * is (0 a fair day, about 0.6 a tailwind, 1 a storm). One per ship, both eased by `ShipModel`.
+ */
 export interface Wind {
   value: number;
+  gale: number;
 }
 
 /** What one sail needs from the shader: its extent in its own frame, how it bulges and flaps, and a phase so sails differ. */
@@ -27,7 +31,8 @@ function bend<M extends Material>(material: M, cloth: ClothBend, wind: Wind, kin
   const [u0, u1] = cloth.span.u;
   const uniforms = {
     uClothTime: CLOTH_TIME,
-    uWind: wind,
+    uWind: { get value() { return wind.value; } },
+    uGale: { get value() { return wind.gale; } },
     uClothSpan: { value: new Vector3(u0, Math.max(u1 - u0, 1e-3), Math.max(cloth.span.w, 1e-3)) },
     uClothShape: { value: new Vector3(cloth.belly, cloth.flutter, cloth.phase) },
     // The emblem's square in the sail's frame: its centre (u, w) and size; and the art drawn on it.
@@ -37,16 +42,26 @@ function bend<M extends Material>(material: M, cloth: ClothBend, wind: Wind, kin
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nuniform float uClothTime;\nuniform float uWind;\nuniform vec3 uClothSpan;\nuniform vec3 uClothShape;\nvarying vec2 vClothUW;')
+      .replace('#include <common>', '#include <common>\nuniform float uClothTime;\nuniform float uWind;\nuniform float uGale;\nuniform vec3 uClothSpan;\nuniform vec3 uClothShape;\nvarying vec2 vClothUW;')
       .replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
         vClothUW = vec2(transformed.x, transformed.z);
         float clothU = clamp((transformed.x - uClothSpan.x) / uClothSpan.y * 2.0 - 1.0, -1.0, 1.0);
         float clothV = clamp(transformed.z / uClothSpan.z, 0.0, 1.0);
-        float clothGust = 0.82 + 0.18 * sin(uClothTime * 1.3 + uClothShape.z);
-        transformed.y += (0.35 + 0.65 * uWind) * uClothShape.x * (1.0 - clothU * clothU) * sin(3.14159 * clothV) * clothGust;
-        transformed.y += uClothShape.y * clothV * sin(clothV * 5.0 - uClothTime * (3.0 + 3.0 * uWind) + uClothShape.z + clothU * 2.0);`,
+        // Breathing: a slow swell of the belly on a fair day, joined by quicker, deeper gusts as the weather roughens (two
+        // fixed frequencies blended by uGale, so easing the gale never jumps the phase).
+        float clothSlow = sin(uClothTime * 1.3 + uClothShape.z);
+        float clothFast = sin(uClothTime * 2.9 + uClothShape.z * 1.7) * 0.6 + sin(uClothTime * 4.7 + uClothShape.z) * 0.4;
+        float clothGust = 1.0 + (0.26 + 0.14 * uGale) * clothSlow + 0.3 * uGale * clothFast;
+        float clothFull = (0.35 + 0.65 * uWind) * (1.0 + 0.25 * uGale);
+        float clothArch = (1.0 - clothU * clothU) * sin(3.14159 * clothV);
+        transformed.y += clothFull * uClothShape.x * clothArch * clothGust;
+        // Ripples running down the cloth from the yard (pinned there), small on a fair day, rolling hard in a storm.
+        float clothRipple = (0.08 + 0.32 * uGale) * (0.4 + 0.6 * uWind);
+        float clothWave = mix(sin(clothV * 4.0 - uClothTime * 2.4 + clothU * 1.5 + uClothShape.z), sin(clothV * 6.0 - uClothTime * 5.2 + clothU * 2.5 + uClothShape.z), uGale);
+        transformed.y += uClothShape.x * clothRipple * clothV * sqrt(1.0 - clothU * clothU) * clothWave;
+        transformed.y += uClothShape.y * (1.0 + 0.6 * uGale) * clothV * sin(clothV * 5.0 - uClothTime * (3.0 + 3.0 * uWind) + uClothShape.z + clothU * 2.0);`,
       );
     if (emblem) {
       shader.fragmentShader = shader.fragmentShader

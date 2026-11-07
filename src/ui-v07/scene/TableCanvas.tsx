@@ -223,6 +223,11 @@ function asSceneShip(ship: TableShip, lane: number, berth: number): SceneShip {
 /** Each bolt of the storm over open sea lands with a close thunderclap. */
 const strikeThunder = () => soundEngine.playSfx('storm-bolt');
 
+/** How rough the weather is for the sails (ShipModel's `gale`): a tailwind fills them harder, a storm whips them. */
+function sailGale(weather: VoyageEventId | null): number {
+  return weather === 'storm' ? 1 : weather === 'tailwind' ? 0.6 : 0;
+}
+
 export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, pulses, market, litSeats }: TableCanvasProps) {
   const look = WEATHER[weather ?? 'clear'];
   const { angles, laneOf } = useTableLayout(seats);
@@ -298,7 +303,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
                   chosen={ship.chosen ?? false}
                   lantern={weather === 'moonless-night'}
                   onSelect={() => onSelectShip?.(ship.id)}
-                  model={<ShipModel type={ship.type ?? 'standard'} color={seats[lane]?.color ?? '#fcf4e2'} night={weather === 'moonless-night'} underway={ship.state === 'sailing' || ship.state === 'atSea'} />}
+                  model={<ShipModel type={ship.type ?? 'standard'} color={seats[lane]?.color ?? '#fcf4e2'} night={weather === 'moonless-night'} underway={ship.state === 'sailing' || ship.state === 'atSea'} gale={sailGale(weather)} />}
                 />
               );
               return <group key={ship.id}>{wrapShip ? wrapShip(ship.id, body) : body}</group>;

@@ -83,14 +83,16 @@ export interface ShipModelProps {
   readonly night: boolean;
   /** Sailing (not lying at a dock): fuller sails and livelier loops. */
   readonly underway: boolean;
+  /** How rough the weather is for the sails: 0 a fair day, about 0.6 a tailwind, 1 a storm (default 0). */
+  readonly gale?: number;
 }
 
 /** One of the five ship types (designs.ts), its keel at the origin and its bow toward +z, in table units. */
-export function ShipModel({ type, color, night, underway }: ShipModelProps) {
+export function ShipModel({ type, color, night, underway, gale = 0 }: ShipModelProps) {
   const design = SHIP_DESIGNS[type];
   const hull = cachedGeometry(design, design.parts);
   const rig = rigOf(type);
-  const wind = useMemo<Wind>(() => ({ value: underway ? 1 : 0 }), []);
+  const wind = useMemo<Wind>(() => ({ value: underway ? 1 : 0, gale }), []);
   const going = useRef(underway ? 1 : 0);
   const sails = useMemo(() => rig.sails.map((s) => sailMaterial(s.bend, wind, s.emblem)), [rig, wind]);
   const glows = useMemo(() => rig.sails.map((s) => (s.glow ? glowMaterial(s.bend, wind, '#7ff0d4') : null)), [rig, wind]);
@@ -102,6 +104,7 @@ export function ShipModel({ type, color, night, underway }: ShipModelProps) {
     CLOTH_TIME.value = clock.elapsedTime;
     going.current += ((underway ? 1 : 0) - going.current) * (1 - Math.exp(-delta * 1.2));
     wind.value = going.current;
+    wind.gale += (gale - wind.gale) * (1 - Math.exp(-delta * 0.8));
     if (body.current) personality(design, body.current, clock.elapsedTime, going.current);
   });
   const motion = design.motion;
