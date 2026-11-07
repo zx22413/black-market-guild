@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- 巨鯨號 (freighter) card art: a blue Dutch fluyt with a tall narrow stern, three masts, the whale on the mainsail and crates on deck; an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4fb0d6" /><stop offset="0.6" stop-color="#9fd4e0" /><stop offset="1" stop-color="#e3f4ee" />
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fb3b3" /><stop offset="1" stop-color="#1f7f88" /></linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sky)" />
+  <circle cx="60" cy="40" r="30" fill="#fff8d2" opacity="0.4" /><circle cx="60" cy="40" r="20" fill="#fff8d2" />
+  <path d="M290 64 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" /><path d="M296 62 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee" />
+  <rect y="196" width="400" height="104" fill="url(#sea)" />
+  <g fill="#e8fbf8" opacity="0.7"><rect x="324" y="204" width="56" height="3" rx="1.5" /><rect x="336" y="212" width="32" height="3" rx="1.5" /></g>
+  <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
+    <path d="M24 256 q8 -6 16 0 q8 6 16 0" /><path d="M160 276 q8 -6 16 0 q8 6 16 0" /><path d="M330 262 q8 -6 16 0 q8 6 16 0" />
+  </g>
+  <!-- rigging -->
+  <g stroke="#5a3420" stroke-width="1.5" opacity="0.7"><path d="M200 48 L352 148" /><path d="M200 48 L118 110" /><path d="M272 76 L352 148" /></g>
+  <path d="M322 166 L354 146" stroke="#5a3420" stroke-width="5" stroke-linecap="round" />
+  <!-- mizzen with its lateen -->
+  <rect x="139" y="78" width="5" height="96" fill="#5a3420" />
+  <path d="M142 84 L178 152 H142 Z" fill="#e2dccd" />
+  <!-- mainmast: topsail and the whale course -->
+  <rect x="197" y="46" width="6" height="128" fill="#5a3420" />
+  <path d="M200 44 v-12 l22 6 z" fill="#c8423a" />
+  <path d="M174 60 H226 Q234 78 226 98 H174 Q166 78 174 60 Z" fill="#f4efe6" />
+  <path d="M166 104 H234 Q244 128 234 152 H166 Q156 128 166 104 Z" fill="#f4efe6" />
+  <path d="M212 104 H234 Q244 128 234 152 H214 Q222 128 212 104 Z" fill="#e2dccd" />
+  <rect x="168" y="57" width="64" height="4" rx="2" fill="#5a3420" /><rect x="160" y="101" width="80" height="4" rx="2" fill="#5a3420" />
+  <circle cx="200" cy="128" r="17" fill="#3d5fa8" />
+  <path d="M188 132 Q190 120 202 121 Q210 122 212 128 L218 122 L216 132 L212 131 Q206 138 194 136 Q189 135 188 132 Z" fill="#f4efe6" />
+  <!-- foremast -->
+  <rect x="269" y="74" width="5" height="100" fill="#5a3420" />
+  <path d="M252 84 H290 Q296 98 290 112 H252 Q246 98 252 84 Z" fill="#f4efe6" />
+  <path d="M246 118 H296 Q304 136 296 154 H246 Q238 136 246 118 Z" fill="#f4efe6" />
+  <rect x="248" y="81" width="46" height="4" rx="2" fill="#5a3420" /><rect x="242" y="115" width="58" height="4" rx="2" fill="#5a3420" />
+  <!-- crates on deck -->
+  <rect x="214" y="154" width="22" height="18" fill="#a8744a" /><path d="M214 154 L236 172 M236 154 L214 172" stroke="#7a4a2a" stroke-width="2" />
+  <rect x="230" y="160" width="16" height="12" fill="#c9905a" />
+  <!-- the tall narrow stern, blue with lit windows and a lantern -->
+  <path d="M70 176 V118 Q70 106 82 104 H120 V176 Z" fill="#3d5fa8" />
+  <path d="M66 104 H124 V98 H66 Z" fill="#c8763f" />
+  <g fill="#f2c94c"><rect x="78" y="116" width="9" height="12" /><rect x="94" y="116" width="9" height="12" /><rect x="78" y="138" width="9" height="12" /><rect x="94" y="138" width="9" height="12" /></g>
+  <rect x="106" y="104" width="14" height="72" fill="#2f4c88" />
+  <path d="M78 98 V84" stroke="#2a2238" stroke-width="2" /><rect x="73" y="76" width="10" height="11" rx="2" fill="#2a2238" /><rect x="75.5" y="79" width="5" height="5" fill="#f2c94c" />
+  <!-- the long hull: blue topsides, a yellow wale, orange bottom -->
+  <path d="M68 168 L314 168 L330 156 L318 198 Q200 214 88 206 Z" fill="#3d5fa8" />
+  <path d="M66 168 L314 168 L330 156 L332 151 L312 163 L66 163 Z" fill="#c8763f" />
+  <path d="M74 186 L324 180 L322 187 L76 193 Z" fill="#f2c94c" />
+  <g fill="#2a2238"><rect x="120" y="194" width="8" height="6" /><rect x="160" y="194" width="8" height="6" /><rect x="200" y="193" width="8" height="6" /><rect x="240" y="192" width="8" height="6" /><rect x="280" y="190" width="8" height="6" /></g>
+  <path d="M88 206 Q200 214 318 198 L312 208 Q200 226 96 214 Z" fill="#c8763f" />
+  <g fill="#e8fbf8"><path d="M92 210 q-16 -2 -22 -10 q12 0 20 -4 z" /><path d="M312 206 q20 -2 30 -12 q-10 14 -30 18 z" /></g>
+</svg>

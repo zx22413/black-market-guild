@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- 幽靈號 (hidden) card art: a charcoal ghost ship in a pale fog, tattered grey sails, a gabled stern house and teal-glowing ports, weed on the hull; an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6f98a8" /><stop offset="0.6" stop-color="#a9c4c8" /><stop offset="1" stop-color="#dfe9e6" />
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4e9496" /><stop offset="1" stop-color="#2a5f68" /></linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sky)" />
+  <circle cx="64" cy="46" r="30" fill="#f4f6ee" opacity="0.35" /><circle cx="64" cy="46" r="20" fill="#f4f6ee" opacity="0.85" />
+  <rect y="196" width="400" height="104" fill="url(#sea)" />
+  <g fill="none" stroke="#bfe0dc" stroke-width="2.5" stroke-linecap="round" opacity="0.8">
+    <path d="M24 256 q8 -6 16 0 q8 6 16 0" /><path d="M160 276 q8 -6 16 0 q8 6 16 0" /><path d="M330 262 q8 -6 16 0 q8 6 16 0" />
+  </g>
+  <!-- rigging -->
+  <g stroke="#2a2a32" stroke-width="1.5" opacity="0.7"><path d="M210 62 L350 152" /><path d="M210 62 L140 98" /></g>
+  <path d="M322 166 L352 150" stroke="#2a2a32" stroke-width="5" stroke-linecap="round" />
+  <!-- the fore stub with a rag -->
+  <rect x="279" y="104" width="5" height="72" fill="#2a2a32" />
+  <path d="M268 112 H296 L294 146 L288 140 L282 150 L276 140 L270 146 Z" fill="#c9ccd0" />
+  <!-- mainmast and its torn sail -->
+  <rect x="207" y="58" width="6" height="120" fill="#2a2a32" />
+  <path d="M210 56 v-12 l18 3 l-6 3 l8 3 z" fill="#5c5c68" />
+  <path d="M172 72 H248 L246 146 L238 136 L230 152 L220 138 L210 152 L200 136 L190 150 L182 138 L174 146 Z" fill="#d4d7da" />
+  <path d="M226 72 H248 L246 146 L238 136 L230 152 L226 146 Z" fill="#b8bcc2" />
+  <g fill="#6f98a8"><path d="M190 96 l8 -4 l2 9 l-7 3 z" /><path d="M224 112 l6 2 l-2 7 l-6 -2 z" /></g>
+  <rect x="166" y="68" width="88" height="5" rx="2.5" fill="#2a2a32" />
+  <g fill="#9aa0aa"><rect x="180" y="67" width="4" height="7" /><rect x="198" y="67" width="4" height="7" /><rect x="218" y="67" width="4" height="7" /><rect x="236" y="67" width="4" height="7" /></g>
+  <!-- the gabled house on the stern -->
+  <rect x="82" y="124" width="58" height="52" fill="#4a4a54" /><rect x="122" y="124" width="18" height="52" fill="#3c3c46" />
+  <path d="M76 128 L111 94 L146 128 Z" fill="#5c5c68" /><path d="M111 94 L146 128 H136 L111 104 Z" fill="#4a4a54" />
+  <path d="M76 128 L111 94 L146 128 L142 130 L111 100 L80 130 Z" fill="#b8bcc2" />
+  <g fill="#7ff0d4"><rect x="92" y="136" width="10" height="12" /><rect x="108" y="136" width="10" height="12" /><rect x="105" y="110" width="8" height="9" /></g>
+  <!-- the charcoal hull, teal ports and hanging weed -->
+  <path d="M74 176 L304 176 L330 162 L314 200 Q200 214 92 208 Z" fill="#3a3a44" />
+  <path d="M72 176 L304 176 L330 162 L332 157 L302 171 L72 171 Z" fill="#9aa0aa" />
+  <path d="M80 188 L322 182 L321 186 L81 192 Z" fill="#9aa0aa" />
+  <g fill="#7ff0d4"><rect x="118" y="194" width="9" height="8" /><rect x="156" y="194" width="9" height="8" /><rect x="194" y="194" width="9" height="8" /><rect x="232" y="192" width="9" height="8" /><rect x="270" y="190" width="9" height="8" /></g>
+  <g fill="#3f8a5a"><path d="M140 192 l4 0 l-2 18 z" /><path d="M214 190 l4 0 l1 18 z" /><path d="M252 188 l4 0 l-3 16 z" /><path d="M100 196 l4 0 l-1 12 z" /></g>
+  <path d="M92 208 Q200 214 314 200 L308 208 Q200 224 98 214 Z" fill="#26262e" />
+  <!-- fog drifting across the hull -->
+  <g fill="#eef4f0" opacity="0.55"><rect x="-10" y="212" width="190" height="8" rx="4" /><rect x="230" y="220" width="190" height="8" rx="4" /><rect x="20" y="160" width="70" height="6" rx="3" /><rect x="300" y="120" width="90" height="6" rx="3" /></g>
+</svg>

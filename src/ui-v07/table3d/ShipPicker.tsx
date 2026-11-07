@@ -20,6 +20,9 @@ import './shipPicker.css';
 /** The ship card picked: a ship type, "不出航" ('none'), or nothing yet (null). */
 export type ShipPick = ShipTypeId | 'none' | null;
 
+/** The ship's own illustration on its card, in the card art's flat style (public/art/cards, SOURCES.md). */
+const shipArtUrl = (type: ShipTypeId): string => `${import.meta.env.BASE_URL}art/cards/ship-${type}.svg`;
+
 const signed = (n: number): string => `${n > 0 ? '+' : '−'}${Math.abs(n)}`;
 /** What the dice table's two row titles say when they are hovered or tapped (numbers come from the table itself). */
 const FINAL_VALUE_TEXT = '出航時擲一顆骰子，再加上航海事件、島嶼與護衛（+1）、海盜（−1）的修正，就是這艘船的最終值（最低 1）。最終值決定船沉不沉，以及拿到多少貨值。';
@@ -87,8 +90,8 @@ export function ShipHand({ cards, picked, todo, effect, revealed, fresh, onPick,
                 <ForbidIcon />
               </span>
             )}
-            <span className="dep-ic">
-              <img src={tokenIconUrl('ship')} alt="" />
+            <span className="dep-ic ship-art">
+              <img src={shipArtUrl(c.id)} alt="" />
             </span>
             <b>{SHIP_TYPE_LABELS[c.id]}</b>
             <span className="dep-fee" title={`船費 ${c.fee} G`}>

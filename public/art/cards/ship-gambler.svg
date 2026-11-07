@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- 孤注號 (gambler) card art: a slim orange dhow under one huge striped lateen sail, a lantern at the stern; an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4fb0d6" /><stop offset="0.6" stop-color="#9fd4e0" /><stop offset="1" stop-color="#e3f4ee" />
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fb3b3" /><stop offset="1" stop-color="#1f7f88" /></linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sky)" />
+  <defs><clipPath id="sail"><path d="M140 40 L302 150 Q260 160 218 170 Q160 120 140 40 Z" /></clipPath></defs>
+  <circle cx="330" cy="44" r="30" fill="#fff8d2" opacity="0.4" /><circle cx="330" cy="44" r="20" fill="#fff8d2" />
+  <path d="M30 104 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" /><path d="M36 102 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee" />
+  <rect y="196" width="400" height="104" fill="url(#sea)" />
+  <g fill="#e8fbf8" opacity="0.7"><rect x="324" y="204" width="56" height="3" rx="1.5" /><rect x="336" y="212" width="32" height="3" rx="1.5" /></g>
+  <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
+    <path d="M24 256 q8 -6 16 0 q8 6 16 0" /><path d="M160 276 q8 -6 16 0 q8 6 16 0" /><path d="M330 262 q8 -6 16 0 q8 6 16 0" />
+  </g>
+  <!-- the slanting mast and its stay -->
+  <path d="M222 178 L214 76" stroke="#5a3420" stroke-width="6" stroke-linecap="round" />
+  <path d="M214 80 L336 160" stroke="#5a3420" stroke-width="1.5" opacity="0.7" />
+  <!-- the lateen: cream with orange stripes fanning from the tack -->
+  <path d="M140 40 L302 150 Q260 160 218 170 Q160 120 140 40 Z" fill="#f4efe6" />
+  <g clip-path="url(#sail)" fill="#e8743a">
+    <path d="M302 150 L140.0 40.0 L141.1 44.6 L142.3 49.2 L143.6 53.7 L144.9 58.2 Z" /> <path d="M302 150 L150.8 75.5 L152.4 79.6 L154.0 83.7 L155.8 87.8 L157.6 91.8 Z" /> <path d="M302 150 L165.3 107.2 L167.4 110.9 L169.5 114.5 L171.7 118.1 L174.0 121.6 Z" /> <path d="M302 150 L183.6 135.1 L186.1 138.3 L188.7 141.5 L191.4 144.6 L194.1 147.7 Z" /> <path d="M302 150 L205.6 159.3 L208.6 162.1 L211.7 164.8 L214.8 167.4 L218.0 170.0 Z" />
+  </g>
+  <path d="M218 170 Q160 120 140 40 L148 46 Q170 120 226 166 Z" fill="#000000" opacity="0.08" />
+  <!-- the long yard, banded in yellow -->
+  <path d="M126 30 L318 156" stroke="#a8744a" stroke-width="6" stroke-linecap="round" />
+  <g stroke="#f2c94c" stroke-width="7"><path d="M160 52.3 l3 2" /><path d="M220 91.7 l3 2" /><path d="M280 131 l3 2" /></g>
+  <path d="M128 31 v-12 l20 6 z" fill="#c8423a" />
+  <!-- the stern rail and its lantern -->
+  <g fill="#f2c94c"><rect x="88" y="160" width="4" height="16" /><rect x="102" y="160" width="4" height="16" /><rect x="116" y="160" width="4" height="16" /><rect x="86" y="158" width="38" height="4" /></g>
+  <path d="M96 158 V134" stroke="#2a2238" stroke-width="2.5" />
+  <path d="M90 124 h12 l-2 -6 h-8 z" fill="#2a2238" /><rect x="90" y="124" width="12" height="12" rx="2" fill="#2a2238" /><rect x="93" y="127" width="6" height="6" fill="#f2c94c" />
+  <!-- the slim hull with a raked bow -->
+  <path d="M84 176 L300 176 L344 158 L320 196 Q200 212 100 204 Z" fill="#e8743a" />
+  <path d="M82 176 L300 176 L344 158 L346 153 L298 171 L82 171 Z" fill="#f2c94c" />
+  <path d="M100 196 Q200 206 324 190 L320 196 Q200 212 100 204 Z" fill="#f4efe6" />
+  <path d="M100 204 Q200 212 320 196 L314 204 Q200 222 106 212 Z" fill="#c45a2a" />
+  <g fill="#e8fbf8"><path d="M100 208 q-16 -2 -22 -10 q12 0 20 -4 z" /><path d="M318 202 q20 -2 32 -14 q-10 16 -32 20 z" /></g>
+</svg>

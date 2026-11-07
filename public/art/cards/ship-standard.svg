@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- 信天翁號 (standard) card art: a cog with crenellated castles fore and aft, one square sail with the albatross, a crow's nest; an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4fb0d6" /><stop offset="0.6" stop-color="#9fd4e0" /><stop offset="1" stop-color="#e3f4ee" />
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fb3b3" /><stop offset="1" stop-color="#1f7f88" /></linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sky)" />
+  <circle cx="336" cy="44" r="30" fill="#fff8d2" opacity="0.4" /><circle cx="336" cy="44" r="20" fill="#fff8d2" />
+  <path d="M40 78 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" /><path d="M46 76 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee" />
+  <g fill="none" stroke="#2a2238" stroke-width="1.8" stroke-linecap="round" opacity="0.6"><path d="M262 52 q6 -5 12 0 q6 -5 12 0" /><path d="M290 70 q4 -4 9 0 q4 -4 9 0" /></g>
+  <rect y="196" width="400" height="104" fill="url(#sea)" />
+  <g fill="#e8fbf8" opacity="0.7"><rect x="20" y="204" width="56" height="3" rx="1.5" /><rect x="32" y="212" width="32" height="3" rx="1.5" /></g>
+  <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
+    <path d="M24 250 q8 -6 16 0 q8 6 16 0" /><path d="M150 272 q8 -6 16 0 q8 6 16 0" /><path d="M330 256 q8 -6 16 0 q8 6 16 0" />
+  </g>
+  <!-- rigging -->
+  <g stroke="#5a3420" stroke-width="1.5" opacity="0.7"><path d="M200 62 L330 162" /><path d="M200 62 L94 134" /></g>
+  <!-- mast, crow's nest, yard and the albatross sail -->
+  <rect x="197" y="56" width="6" height="120" fill="#5a3420" />
+  <path d="M200 52 v-12 l22 6 z" fill="#c8423a" />
+  <rect x="185" y="54" width="30" height="5" fill="#f4efe6" /><path d="M185 59 h30 l-4 12 h-22 z" fill="#c8423a" />
+  <path d="M152 84 H248 Q262 118 248 154 H152 Q138 118 152 84 Z" fill="#f4efe6" />
+  <path d="M222 84 H248 Q262 118 248 154 H226 Q236 118 222 84 Z" fill="#e2dccd" />
+  <rect x="144" y="80" width="112" height="5" rx="2.5" fill="#5a3420" />
+  <circle cx="200" cy="118" r="21" fill="#2f3e5c" />
+  <path d="M182 122 Q190 104 200 116 Q210 104 218 122 Q209 114 200 124 Q191 114 182 122 Z" fill="#f4efe6" />
+  <!-- bowsprit -->
+  <path d="M306 168 L340 152" stroke="#5a3420" stroke-width="5" stroke-linecap="round" />
+  <!-- the stern castle (left) and the fore castle (right), crenellated in red and white -->
+  <rect x="86" y="140" width="64" height="38" fill="#e2b98a" /><rect x="132" y="140" width="18" height="38" fill="#c99a6a" />
+  <g fill="#3a2a22"><rect x="98" y="150" width="7" height="11" /><rect x="114" y="150" width="7" height="11" /></g>
+  <g fill="#c8423a"><rect x="84" y="130" width="10" height="10" /><rect x="104" y="130" width="10" height="10" /><rect x="124" y="130" width="10" height="10" /><rect x="144" y="130" width="8" height="10" /></g>
+  <g fill="#f4efe6"><rect x="94" y="132" width="10" height="8" /><rect x="114" y="132" width="10" height="8" /><rect x="134" y="132" width="10" height="8" /></g>
+  <rect x="254" y="146" width="58" height="32" fill="#e2b98a" /><rect x="294" y="146" width="18" height="32" fill="#c99a6a" />
+  <g fill="#3a2a22"><rect x="266" y="154" width="7" height="10" /></g>
+  <g fill="#c8423a"><rect x="252" y="136" width="10" height="10" /><rect x="272" y="136" width="10" height="10" /><rect x="292" y="136" width="10" height="10" /></g>
+  <g fill="#f4efe6"><rect x="262" y="138" width="10" height="8" /><rect x="282" y="138" width="10" height="8" /><rect x="302" y="138" width="10" height="8" /></g>
+  <!-- the round cog hull -->
+  <path d="M80 174 L320 174 L306 206 Q200 222 96 206 Z" fill="#c8763f" />
+  <path d="M80 174 L320 174 L318 168 L82 168 Z" fill="#f0dcae" />
+  <path d="M84 184 L316 184 L314 189 L86 189 Z" fill="#8a4a2a" />
+  <path d="M96 206 Q200 222 306 206 L300 214 Q200 230 104 214 Z" fill="#6b3f2a" />
+  <g fill="#e8fbf8"><path d="M96 210 q-16 -2 -22 -10 q12 0 20 -4 z" /><path d="M300 210 q20 -2 30 -12 q-10 14 -30 18 z" /></g>
+</svg>

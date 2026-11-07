@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- 海嘯號 (breaker) card art: a low galley with a bronze ram, a bank of oars, a striped stern canopy and the wave on its sail; an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4fb0d6" /><stop offset="0.6" stop-color="#9fd4e0" /><stop offset="1" stop-color="#e3f4ee" />
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fb3b3" /><stop offset="1" stop-color="#1f7f88" /></linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sky)" />
+  <circle cx="338" cy="42" r="30" fill="#fff8d2" opacity="0.4" /><circle cx="338" cy="42" r="20" fill="#fff8d2" />
+  <path d="M34 70 q14 -18 34 -8 q10 -16 30 -6 q20 -4 22 14 z" fill="#ffffff" /><path d="M40 68 q10 -6 22 -2 q14 -8 30 0 q14 -4 28 2 l2 2 h-84 z" fill="#cfe6ee" />
+  <rect y="196" width="400" height="104" fill="url(#sea)" />
+  <g fill="#e8fbf8" opacity="0.7"><rect x="324" y="204" width="56" height="3" rx="1.5" /><rect x="336" y="212" width="32" height="3" rx="1.5" /></g>
+  <g fill="none" stroke="#bdeee8" stroke-width="2.5" stroke-linecap="round">
+    <path d="M24 256 q8 -6 16 0 q8 6 16 0" /><path d="M160 276 q8 -6 16 0 q8 6 16 0" /><path d="M330 262 q8 -6 16 0 q8 6 16 0" />
+  </g>
+  <!-- rigging -->
+  <g stroke="#5a3420" stroke-width="1.5" opacity="0.7"><path d="M210 70 L306 168" /><path d="M210 70 L120 150" /></g>
+  <!-- mast and the wave sail -->
+  <rect x="207" y="66" width="6" height="114" fill="#5a3420" />
+  <path d="M210 62 v-12 l22 6 z" fill="#c8423a" />
+  <path d="M170 92 H250 Q260 120 250 148 H170 Q160 120 170 92 Z" fill="#f4efe6" />
+  <path d="M226 92 H250 Q260 120 250 148 H228 Q236 120 226 92 Z" fill="#e2dccd" />
+  <rect x="162" y="88" width="96" height="5" rx="2.5" fill="#5a3420" />
+  <g fill="#f2c94c"><rect x="160" y="87" width="5" height="7" rx="1" /><rect x="255" y="87" width="5" height="7" rx="1" /></g>
+  <circle cx="210" cy="120" r="18" fill="#2a9d9a" />
+  <path d="M196 126 Q200 110 212 112 Q222 114 220 122 Q214 116 210 122 Q216 124 224 126 Z" fill="#f4efe6" />
+  <!-- the striped canopy over the stern -->
+  <g fill="#a8744a"><rect x="98" y="150" width="4" height="28" /><rect x="138" y="150" width="4" height="28" /></g>
+  <path d="M90 154 Q120 124 150 154 Z" fill="#2f9a62" />
+  <path d="M104 140 Q120 128 136 140 L132 143 Q120 134 108 143 Z" fill="#f2c94c" />
+  <path d="M90 154 H150 V158 H90 Z" fill="#f2c94c" />
+  <!-- the curled stern post and the bow post -->
+  <path d="M86 180 Q64 168 70 148 Q76 136 86 144" fill="none" stroke="#a8744a" stroke-width="7" stroke-linecap="round" />
+  <circle cx="86" cy="144" r="5" fill="#f2c94c" />
+  <rect x="300" y="160" width="6" height="18" fill="#a8744a" /><circle cx="303" cy="158" r="5" fill="#f2c94c" />
+  <!-- the oars, down into the sea -->
+  <g stroke="#a8744a" stroke-width="3.5" stroke-linecap="round"><path d="M128 190 L110 236" /><path d="M156 190 L138 236" /><path d="M184 190 L166 236" /><path d="M212 190 L194 236" /><path d="M240 190 L222 236" /><path d="M268 188 L250 234" /></g>
+  <g fill="#7a4a2a"><ellipse cx="108" cy="240" rx="4" ry="7" transform="rotate(22 108 240)" /><ellipse cx="136" cy="240" rx="4" ry="7" transform="rotate(22 136 240)" /><ellipse cx="164" cy="240" rx="4" ry="7" transform="rotate(22 164 240)" /><ellipse cx="192" cy="240" rx="4" ry="7" transform="rotate(22 192 240)" /><ellipse cx="220" cy="240" rx="4" ry="7" transform="rotate(22 220 240)" /><ellipse cx="248" cy="238" rx="4" ry="7" transform="rotate(22 248 238)" /></g>
+  <!-- the low hull: wood above, a green band, yellow trims -->
+  <path d="M80 178 L304 178 L318 170 L308 200 Q200 214 96 206 L84 194 Z" fill="#8a5a3a" />
+  <path d="M78 178 L304 178 L318 170 L320 165 L302 173 L78 173 Z" fill="#f2c94c" />
+  <path d="M86 192 L312 186 L308 200 Q200 214 96 206 Z" fill="#2f9a62" />
+  <path d="M86 192 L312 186 L311 190 L87 196 Z" fill="#f2c94c" />
+  <g fill="#2a2238"><circle cx="130" cy="186" r="2.5" /><circle cx="158" cy="186" r="2.5" /><circle cx="186" cy="185" r="2.5" /><circle cx="214" cy="185" r="2.5" /><circle cx="242" cy="184" r="2.5" /><circle cx="270" cy="183" r="2.5" /></g>
+  <!-- the bronze ram at the waterline -->
+  <path d="M300 182 L316 174 L320 190 L346 195 L356 201 L344 207 L300 208 Z" fill="#d6a23a" />
+  <path d="M300 200 L350 199 L356 201 L344 207 L300 208 Z" fill="#b07f22" /><path d="M320 190 L346 195 L344 198 L320 194 Z" fill="#f2d27a" />
+  <g fill="#e8fbf8"><path d="M96 210 q-16 -2 -22 -10 q12 0 20 -4 z" /><path d="M352 208 q16 -2 24 -10 q-8 12 -24 14 z" /></g>
+</svg>
