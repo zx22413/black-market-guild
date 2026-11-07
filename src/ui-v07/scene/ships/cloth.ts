@@ -12,8 +12,11 @@ export interface SailSpec {
   /** Convex pieces of the cloth in ship space, all in the plane through the edge (a torn sail is several pieces). */
   readonly pieces: readonly (readonly Vec3[])[];
   readonly mat: Mat;
-  /** Coloured bands across the cloth, repeating: stripes along the yard (`u`) or down from it (`w`, a junk sail's battens). */
-  readonly bands?: { readonly axis: 'u' | 'w'; readonly pattern: readonly { readonly mat: Mat; readonly width: number }[] };
+  /**
+   * Coloured bands across the cloth, repeating: stripes along the yard (`u`), down from it (`w`, a junk sail's battens)
+   * or fanning out from the cloth's far corner (`fan`, a lateen's clew) to the edge, their widths measured along the edge.
+   */
+  readonly bands?: { readonly axis: 'u' | 'w' | 'fan'; readonly pattern: readonly { readonly mat: Mat; readonly width: number }[] };
   /** How far the middle of the cloth bulges out (signed: which side the wind fills it from). */
   readonly belly: number;
   /** How far the free end flaps (rags, pennants). */
@@ -26,7 +29,7 @@ export interface SailSpec {
 
 /** A painted device on a sail: which art, where it sits in the sail's frame, how big, and the colour of its disc. */
 export interface SailEmblem {
-  readonly art: 'whale-tail' | 'albatross';
+  readonly art: 'whale-tail' | 'albatross' | 'wave';
   readonly u: number;
   readonly w: number;
   readonly size: number;
@@ -142,13 +145,20 @@ export function sailCloth(spec: SailSpec): SailCloth {
   const us = flat.flat().map((p) => p[0]);
   const ws = flat.flat().map((p) => p[1]);
   const span = { u: [Math.min(...us), Math.max(...us)] as const, w: Math.max(...ws) };
-  const across = spec.bands?.axis === 'u' ? bandCuts(span.u[0], span.u[1], spec.bands) : { cuts: evenCuts(span.u[0], span.u[1]), matAt: () => null };
+  const fan = spec.bands?.axis === 'fan';
+  const across = spec.bands?.axis === 'u' || fan ? bandCuts(span.u[0], span.u[1], spec.bands) : { cuts: evenCuts(span.u[0], span.u[1]), matAt: () => null };
   const down = spec.bands?.axis === 'w' ? bandCuts(Math.min(...ws), span.w, spec.bands) : { cuts: evenCuts(Math.min(...ws), span.w), matAt: () => null };
+  // A fan's stripes are wedges from the far corner (deepest point) to the edge: a point's stripe is where the ray from the
+  // corner through it meets the edge, so a cut at edge position a is the half-plane on one side of the corner-to-a line.
+  const corner = flat.flat().reduce((best, p) => (p[1] > best[1] ? p : best));
+  const side = (a: number) => (p: Vec2) => (p[0] - corner[0]) * corner[1] + (a - corner[0]) * (p[1] - corner[1]);
   const parts: KitPart[] = [];
   for (const piece of flat) {
     for (let i = 0; i + 1 < across.cuts.length; i++) {
       const [u0, u1] = [across.cuts[i]!, across.cuts[i + 1]!];
-      const column = clip(clip(piece, (p) => p[0], u0), (p) => -p[0], -u1);
+      // The outer wedges reach past the edge's ends: a bowed leech projects beyond them along the rays.
+      const [f0, f1] = [i === 0 ? -1e3 : u0, i + 2 === across.cuts.length ? 1e3 : u1];
+      const column = fan ? clip(clip(piece, side(f0), 0), (p) => -side(f1)(p), 0) : clip(clip(piece, (p) => p[0], u0), (p) => -p[0], -u1);
       if (column.length < 3) continue;
       for (let j = 0; j + 1 < down.cuts.length; j++) {
         const [w0, w1] = [down.cuts[j]!, down.cuts[j + 1]!];

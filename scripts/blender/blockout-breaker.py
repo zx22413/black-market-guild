@@ -3,14 +3,15 @@
 Design stage (lowpoly-model skill step 1, blender-model skill step 0), like blockout-standard.py: a long, low lofted hull
 in ship space (three.js: y up, bow +z, keel at y = 0, DECK = 1.25), a big bronze ram at the waterline, two banks of oars
 (the upper bank pivoting on an outrigger frame, the lower one through framed ports in the hull), a high curled stern
-under a red-and-gold canopied command deck, and one small square sail with a teal wave roundel. The oars, the sail and
+under a green-and-gold canopied command deck, and one small square sail with a teal wave roundel. The oars, the sail and
 the pennant are drawn by code in the game (the oars row); here they are still stand-ins so the views read.
 Shared helpers, colour and renders: blockout_kit.py.
 
 Run headless (Blender 5.1+):
   /Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup \\
-      --python scripts/blender/blockout-breaker.py -- <out dir> [alt]
-`alt` swaps the red hull for the green-and-gold palette offered on the sheet as an alternative.
+      --python scripts/blender/blockout-breaker.py -- <out dir> [red]
+The paint is green and gold (decided 2026-11-07, to keep clear of 孤注號's red); `red` renders the first sheet's red.
+build-breaker.py imports this file for the hull, the ram, the stern, the oar mounts and the rig's details.
 """
 
 import math
@@ -20,9 +21,9 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from blockout_kit import *  # noqa: E402,F403
 
-ALT = sys.argv[sys.argv.index("--") + 2:] == ["alt"]
-# The main paint (hull sides, canopy stripes): red, or the green offered as an alternative to keep clear of 孤注號's red.
-PAINT = "leaf" if ALT else "roofRed"
+RED = sys.argv[sys.argv.index("--") + 2:] == ["red"]
+# The main paint (hull sides, canopy stripes): green (decided 2026-11-07), or the first sheet's red for comparison.
+PAINT = "roofRed" if RED else "leaf"
 
 HALF_BEAM = 1.0
 Z_AFT, Z_FWD = -3.0, 3.0  # hull ends at the rail
@@ -73,9 +74,20 @@ PROFILE = [(0.0, 0.0), (0.45, 0.05), (0.78, 0.18), (0.95, 0.4), (1.0, 0.7), (1.0
 COLUMNS = [Z_AFT + (Z_FWD - Z_AFT) * i / 28 for i in range(29)]
 
 
+BAND_YS = (DRAFT, 1.08)  # where the hull's colour bands meet: rows of the loft, so each band edge is one straight line
+
+
 def outer(z):
     b, y0, r = HALF_BEAM * width_k(z), keel_y(z), sheer(z)
-    return [(k * b, y0 + t * (r - y0)) for k, t in PROFILE]
+    pts = [(k * b, y0 + t * (r - y0)) for k, t in PROFILE]
+    for i, yb in enumerate(BAND_YS):
+        y = min(max(yb, y0 + 0.002 * (i + 1)), r - 0.002 * (len(BAND_YS) - i))
+        for (x0, ya), (x1, yc) in zip(pts, pts[1:]):
+            if ya <= y <= yc:
+                x = x0 + (x1 - x0) * ((y - ya) / (yc - ya) if yc > ya else 0)
+                break
+        pts.append((x, y))
+    return sorted(pts, key=lambda p: p[1])
 
 
 def outer_x(z, y):
@@ -119,7 +131,7 @@ def hull_band(center_y, normal_up):
         return "deck", 1.0
     if center_y < DRAFT:
         return "slate", 1.0
-    if center_y < 1.08:
+    if center_y < BAND_YS[1]:
         return PAINT, 0.9 if int(center_y / 0.14) % 2 else 1.0
     return "woodDark", 1.0
 
@@ -160,7 +172,7 @@ def stern_z(y):
 def build_trim():
     # A dark boot-top line where the grey bottom meets the paint, a gold wale where the paint meets the dark bulwark.
     strip("boot-top", DRAFT + 0.02, 0.07, 0.05, "woodDark", stern_z(0.6) + 0.08, stem_z(0.55) - 0.12, shade=0.85)
-    strip("wale", 1.08, 0.12, 0.09, "gold", stern_z(1.1) + 0.05, Z_FWD - 0.25)
+    strip("wale", 1.08, 0.12, 0.09, "gold", stern_z(1.1) + 0.05, Z_FWD - 0.03)
     # Cap rail: gold on the dark bulwark, overhanging in and out, ending in the bow post and under the command deck.
     zs = [z for z in COLUMNS if -2.0 <= z <= Z_FWD - 0.1]
     for side in (1, -1):
@@ -185,9 +197,7 @@ def build_trim():
 
 def build_bow():
     # Cutwater: a dark timber down the bow's leading edge from the post to the ram's bed.
-    pts = [(stem_z(y) + 0.06, y) for y in (0.45, 0.8, 1.15, sheer(Z_FWD))]
-    for i, ((z0, y0), (z1, y1)) in enumerate(zip(pts, pts[1:])):
-        beam(f"cutwater-{i}", (0, y0, z0), (0, y1, z1), 0.2, "woodDark", sides=4)
+    beam("cutwater", (0, 0.42, stem_z(0.45) + 0.06), (0, sheer(Z_FWD) + 0.02, Z_FWD + 0.06), 0.22, "woodDark", sides=4)
     # Ram bed: a dark wedge that carries the bronze forward of the cutwater, so the ram grows out of the hull.
     zb = stem_z(0.45)
     beam("ram-bed", (0, 0.5, zb - 0.6), (0, 0.5, zb + 0.35), 0.5, "woodDark", sides=4, taper=0.8, shade=0.85)
@@ -267,8 +277,14 @@ def build_stern():
         beam(f"rudder-loom-{s}", (s * (xq + 0.08), DECK + 0.3, zq), (s * (xq + 0.45), 0.45, -3.25), 0.11, "woodDark", sides=6)
         beam(f"rudder-collar-{s}", (s * (xq + 0.06), DECK + 0.12, zq + 0.02), (s * (xq + 0.12), DECK - 0.05, zq - 0.03), 0.18, "gold", sides=6)
         blade_box(f"rudder-blade-{s}", (s * (xq + 0.4), 0.55, -3.18), (s * (xq + 0.5), 0.15, -3.38), 0.34, 0.06, "woodDark")
-    # Stern lantern, hung from the curl over the command deck's after edge.
-    lx, ly, lz = 0, 2.85, -3.05
+
+
+LANTERN_ARM = ((0, 2.85, Z_AFT - 0.56), (0, 2.85, -3.05))  # from the curl aft over the command deck (designs.ts)
+
+
+def build_lantern_standin():
+    """Stern lantern, hung from the curl over the command deck's after edge (the GLB takes it from designs.ts)."""
+    lx, lz = 0, -3.05
     beam("lantern-arm", (0, 2.85, Z_AFT - 0.56), (0, 2.85, lz), 0.06, "metal", sides=4)
     beam("lantern-hook", (0, 2.85, lz), (0, 2.68, lz), 0.035, "metal", sides=4)
     box("lantern", (lx, 2.5, lz), (0.22, 0.3, 0.22), "metal", bevel=0.02)
@@ -310,9 +326,24 @@ def oar(name, lock, droop, inboard=0.35):
     return tip
 
 
-def build_oars():
-    droop_up = math.asin((OUTRIGGER_Y - DRAFT) / 2.2)
-    droop_lo = math.asin((PORT_Y - DRAFT) / 2.2)
+def oar_droops():
+    """How far each bank's oars hang from level so their blades reach the water at DRAFT, 2.2 out."""
+    return math.asin((OUTRIGGER_Y + 0.04 - DRAFT) / 2.2), math.asin((PORT_Y - DRAFT) / 2.2)
+
+
+def upper_locks():
+    """The upper bank's oar pivots (starboard): on the outrigger, by each thole pin."""
+    return [(OUTRIGGER_X, OUTRIGGER_Y + 0.04, z) for z in UPPER_ZS]
+
+
+def lower_locks():
+    """The lower bank's oar pivots (starboard): in the framed ports of the hull."""
+    return [(outer_x(z, PORT_Y) + 0.06, PORT_Y, z) for z in LOWER_ZS]
+
+
+def build_oar_mounts():
+    """What the oars work against, static: the outrigger frame on knees and struts with thole pins, and the framed
+    oar ports of the lower bank."""
     for s in (1, -1):
         # Outrigger: a thick dark rail outboard of the hull on knees, gold caps at its ends, a thole pin per oar.
         z0, z1 = UPPER_ZS[0] - 0.4, UPPER_ZS[-1] + 0.4
@@ -325,13 +356,25 @@ def build_oars():
             beam(f"outrigger-strut-{s}-{z:.2f}", (s * (xh + 0.02), 0.95, z), (s * (OUTRIGGER_X - 0.05), OUTRIGGER_Y - 0.12, z), 0.1, "woodDark", sides=4)
         for i, z in enumerate(UPPER_ZS):
             beam(f"thole-{s}-{i}", (s * OUTRIGGER_X, OUTRIGGER_Y, z + 0.09), (s * OUTRIGGER_X, OUTRIGGER_Y + 0.2, z + 0.09), 0.06, "metal", sides=4)
-            oar(f"oar-up-{s}-{i}", (s * OUTRIGGER_X, OUTRIGGER_Y + 0.04, z), droop_up)
-        # Lower bank: through framed ports in the painted hull.
         for i, z in enumerate(LOWER_ZS):
             xp = outer_x(z, PORT_Y)
             box(f"port-frame-{s}-{i}", (s * (xp + 0.02), PORT_Y, z), (0.08, 0.26, 0.26), "gold", bevel=0.02)
             box(f"port-hole-{s}-{i}", (s * (xp + 0.05), PORT_Y, z), (0.04, 0.16, 0.16), "dark", bevel=0.0)
-            oar(f"oar-lo-{s}-{i}", (s * (xp + 0.06), PORT_Y, z), droop_lo, inboard=0.12)
+
+
+def build_oar_standins():
+    """The oars at rest, blades in the water (the game draws and rows them: designs.ts BREAKER motion)."""
+    droop_up, droop_lo = oar_droops()
+    for s in (1, -1):
+        for i, (x, y, z) in enumerate(upper_locks()):
+            oar(f"oar-up-{s}-{i}", (s * x, y, z), droop_up)
+        for i, (x, y, z) in enumerate(lower_locks()):
+            oar(f"oar-lo-{s}-{i}", (s * x, y, z), droop_lo, inboard=0.12)
+
+
+def build_oars():
+    build_oar_mounts()
+    build_oar_standins()
 
 
 # ---------------------------------------------------------------- the rig: one mast, one small square sail
@@ -408,22 +451,38 @@ def build_emblem():
 
 
 def build_rig():
+    build_spars()
+    build_rig_dressing()
+
+
+def build_spars():
+    """Mast, yard, stays and the pennant stand-in: the GLB takes these from designs.ts."""
     beam("mast", (0, DECK - 0.1, MAST_Z), (0, MAST_TOP, MAST_Z), 0.2, "woodDark", sides=8, taper=0.7)
+    beam("yard", (-YARD_HALF, YARD_Y, MAST_Z + 0.15), (YARD_HALF, YARD_Y, MAST_Z + 0.15), 0.12, "woodDark", sides=8)
+    # Stays to the bow post and the stern curl.
+    beam("forestay", STAY_TOP, FORESTAY_FOOT, 0.04, "rope")
+    beam("backstay", STAY_TOP, BACKSTAY_FOOT, 0.04, "rope")
+    verts = [(0, 4.82, MAST_Z), (0, 5.08, MAST_Z), (0, 4.95, MAST_Z - 0.7), (0.02, 4.82, MAST_Z), (0.02, 5.08, MAST_Z), (0.02, 4.95, MAST_Z - 0.7)]
+    mesh_from("pennant", verts, [[0, 1, 2], [5, 4, 3], [0, 3, 4, 1], [1, 4, 5, 2], [2, 5, 3, 0]], "pennant")
+    beam("pennant-staff", (0, MAST_TOP, MAST_Z), (0, 5.1, MAST_Z), 0.04, "metal")
+
+
+STAY_TOP = (0, 4.8, MAST_Z)
+FORESTAY_FOOT = (0, sheer(Z_FWD) + 0.95, Z_FWD + 0.45)
+BACKSTAY_FOOT = (0, 3.15, Z_AFT - 0.5)
+
+
+def build_rig_dressing():
+    """Blender-only details round the spars: mast partner and ring, iron hoops, a gold cap, the yard's gold end bands and
+    its sling, and a gold band where each stay lands."""
     prism("mast-partner", (0, DECK - 0.02, MAST_Z), 0.25, 0.16, "woodDark", sides=8, top=0.8, shade=0.85)
     prism("mast-partner-ring", (0, DECK + 0.12, MAST_Z), 0.16, 0.07, "gold", sides=8)
     for y in (2.2, 3.1, 4.0):
         prism(f"mast-hoop-{y}", (0, y, MAST_Z), 0.125, 0.07, "metal", sides=8)
     prism("mast-cap", (0, MAST_TOP - 0.02, MAST_Z), 0.11, 0.12, "gold", sides=8)
-    beam("yard", (-YARD_HALF, YARD_Y, MAST_Z + 0.15), (YARD_HALF, YARD_Y, MAST_Z + 0.15), 0.12, "woodDark", sides=8)
     for s in (1, -1):
         beam(f"yard-band-{s}", (s * (YARD_HALF - 0.1), YARD_Y, MAST_Z + 0.15), (s * (YARD_HALF + 0.02), YARD_Y, MAST_Z + 0.15), 0.17, "gold", sides=8)
     box("yard-sling", (0, YARD_Y, MAST_Z + 0.07), (0.22, 0.2, 0.18), "metal", bevel=0.02)
-    # Stays to the bow post and the stern curl, each landing on a gold band.
-    beam("forestay", (0, 4.8, MAST_Z), (0, sheer(Z_FWD) + 0.95, Z_FWD + 0.45), 0.04, "rope")
-    beam("backstay", (0, 4.8, MAST_Z), (0, 3.15, Z_AFT - 0.5), 0.04, "rope")
-    verts = [(0, 4.82, MAST_Z), (0, 5.08, MAST_Z), (0, 4.95, MAST_Z - 0.7), (0.02, 4.82, MAST_Z), (0.02, 5.08, MAST_Z), (0.02, 4.95, MAST_Z - 0.7)]
-    mesh_from("pennant", verts, [[0, 1, 2], [5, 4, 3], [0, 3, 4, 1], [1, 4, 5, 2], [2, 5, 3, 0]], "pennant")
-    beam("pennant-staff", (0, MAST_TOP, MAST_Z), (0, 5.1, MAST_Z), 0.04, "metal")
 
 
 ANCHORS = {
@@ -462,25 +521,35 @@ ANCHORS = {
 }
 
 
-build_hull()
-build_trim()
-build_bow()
-build_stern()
-build_oars()
-build_sail()
-build_emblem()
-build_rig()
-finish_blockout(
-    ANCHORS,
-    band=hull_band,
-    skip=("hull", "sail", "emblem", "boot-top", "wale", "cap-rail", "pennant", "canopy-", "poop-edge", "bow-deck-edge"),
-    close_ups=lambda: {
-        "near-ram": near((0, 1.0, 3.3), -50, 20, 3.4),
-        "near-stern": near((0, 2.1, -2.6), -125, 22, 3.6),
-        "near-waist": near((-1.4, 1.1, -0.2), -75, 26, 3.8),
-    },
-    centre_y=2.4,
-    centre_z=0.35,
-    scale=11.0,
-    oblique_scale=10.6,
-)
+
+def build_ship_body():
+    """Everything static that the GLB keeps: the hull and its trims, the ram and bow post, the curled stern and its
+    command deck, and the oar mounts."""
+    build_hull()
+    build_trim()
+    build_bow()
+    build_stern()
+    build_oar_mounts()
+
+
+if __name__ == "__main__":
+    build_ship_body()
+    build_oar_standins()
+    build_lantern_standin()
+    build_sail()
+    build_emblem()
+    build_rig()
+    finish_blockout(
+        ANCHORS,
+        band=hull_band,
+        skip=("hull", "sail", "emblem", "boot-top", "wale", "cap-rail", "pennant", "canopy-", "poop-edge", "bow-deck-edge"),
+        close_ups=lambda: {
+            "near-ram": near((0, 1.0, 3.3), -50, 20, 3.4),
+            "near-stern": near((0, 2.1, -2.6), -125, 22, 3.6),
+            "near-waist": near((-1.4, 1.1, -0.2), -75, 26, 3.8),
+        },
+        centre_y=2.4,
+        centre_z=0.35,
+        scale=11.0,
+        oblique_scale=10.6,
+    )

@@ -21,16 +21,18 @@ HALF_BEAM = 0.95
 Z_AFT, Z_FWD = -2.85, 3.2  # hull ends at the rail (before the stern's kick and the beak)
 RAIL = 0.12
 MAST_FOOT = (0.0, DECK - 0.1, 0.55)
-MAST_HEAD = (0.0, 5.45, 1.2)
+MAST_HEAD = (0.0, 5.075, 1.143)  # on the same raked line as before, just above the yard's sling
 # The lateen: tack low over the beak, peak high aft, clew over the quarter (code-drawn sail; corners as in designs.ts).
-YARD_A = (0.3, 2.15, 4.4)
-YARD_B = (0.3, 8.6, -2.6)
-YARD_SAG = 0.38  # the yard bows up and forward
-CLEW = (0.6, 2.35, -2.5)
+# Scaled to 0.75 about (y 2.15, z 0.9) from the first blockout so the peak comes down from 8.6 to about 7.0 (decided
+# 2026-11-07); the yard is still longer than the hull.
+YARD_A = (0.3, 2.15, 3.53)
+YARD_B = (0.3, 6.99, -1.73)
+YARD_SAG = 0.285  # the yard bows up and forward
+CLEW = (0.6, 2.3, -1.65)
 SAIL_X = 0.38  # the sail hangs on the starboard side of the yard and fills out to starboard
-SAIL_BELLY = 0.75
+SAIL_BELLY = 0.6
 BEAK_TIP = (0.0, 1.62, 4.75)
-DIE = (0.0, DECK + 0.25, -1.75)
+DIE = (0.0, DECK + 0.25, -1.9)  # designs.ts GAMBLER_DIE
 DIE_SIZE = 0.5
 
 
@@ -215,6 +217,8 @@ def build_trim():
 
 
 def build_rudder():
+    """A sternpost rudder: a dark blade with two short iron pintles at its leading edge (not full-width straps, which
+    read as a ladder) and a gold cap on its head."""
     def post(y):
         return sternpost_z(y) - 0.11
 
@@ -222,8 +226,9 @@ def build_rudder():
     verts = [(-0.06, y, z) for z, y in blade] + [(0.06, y, z) for z, y in blade]
     faces = [[0, 1, 2, 3], [7, 6, 5, 4]] + [[i, (i + 1) % 4, 4 + (i + 1) % 4, 4 + i] for i in range(4)]
     mesh_from("rudder", verts, faces, "woodDark", shade=0.9)
-    for y in (0.3, 0.6, 0.85):
-        box(f"rudder-strap-{y}", (0, y, post(y) - 0.18), (0.16, 0.07, 0.46), "gold", bevel=0.01)
+    for y in (0.3, 0.75):
+        box(f"rudder-pintle-{y}", (0, y, post(y) - 0.05), (0.16, 0.08, 0.16), "metal", bevel=0.01)
+    box("rudder-head", (0, 0.98, post(0.98) - 0.06), (0.16, 0.08, 0.2), "gold", bevel=0.02)
 
 
 # ---------------------------------------------------------------- the beak (a long gilded spur)
@@ -281,12 +286,22 @@ def build_stern_platform():
             beam(f"platform-post-{s}-{z:.2f}", (s * 0.46, y, z), (s * 0.46, y + 0.38, z), 0.07, "gold", sides=4)
         beam(f"platform-rail-{s}", (s * 0.46, y + 0.38, z1 + 0.02), (s * 0.46, y + 0.38, z0 + 0.12), 0.07, "gold", sides=4)
     beam("platform-rail-aft", (-0.46, y + 0.38, z1 + 0.05), (0.46, y + 0.38, z1 + 0.05), 0.07, "gold", sides=4)
-    # Lantern on a post at the platform's aft edge.
+    return y, z1
+
+
+def platform_at():
+    zt = COLUMNS[0]
+    y = sheer(zt) - 0.12
+    return y, zt + stern_kick(zt, y) + 0.1 - 0.62
+
+
+def build_platform_lantern():
+    """Lantern on a post at the platform's aft edge (a stand-in: in the game the post and lantern come from designs.ts)."""
+    y, z1 = platform_at()
     beam("lantern-post", (0, y, z1 + 0.05), (0, y + 0.82, z1 + 0.05), 0.08, "woodDark", sides=4)
     box("lantern", (0, y + 0.98, z1 + 0.05), (0.22, 0.3, 0.22), "metal", bevel=0.02)
     box("lantern-glass", (0, y + 0.98, z1 + 0.05), (0.17, 0.2, 0.24), "gold", bevel=0.0)
     prism("lantern-cap", (0, y + 1.12, z1 + 0.05), 0.15, 0.1, "metal", sides=4, top=0.3)
-    return y, z1
 
 
 # ---------------------------------------------------------------- the rig: forward-raked mast, curved yard, lateen
@@ -315,9 +330,13 @@ def mast_at(y):
 
 def build_mast():
     beam("mast", MAST_FOOT, MAST_HEAD, 0.2, "woodDark", sides=8, taper=0.72)
+    build_mast_dressing()
+
+
+def build_mast_dressing():
     prism("mast-partner", (0, DECK - 0.02, mast_at(DECK)[2]), 0.22, 0.15, "woodDark", sides=8, top=0.8, shade=0.85)
     prism("mast-partner-ring", (0, DECK + 0.11, mast_at(DECK + 0.11)[2]), 0.15, 0.07, "gold", sides=8)
-    for y in (2.3, 3.4, 4.4):
+    for y in (2.3, 3.3, 4.2):
         c = mast_at(y)
         beam(f"mast-hoop-{y}", lerp(MAST_FOOT, MAST_HEAD, (y - 0.04 - MAST_FOOT[1]) / (MAST_HEAD[1] - MAST_FOOT[1])),
              lerp(MAST_FOOT, MAST_HEAD, (y + 0.04 - MAST_FOOT[1]) / (MAST_HEAD[1] - MAST_FOOT[1])), 0.24 - 0.012 * (y - 2), "gold", sides=8)
@@ -336,7 +355,7 @@ def build_yard():
     for nm, t0, t1, w in (("band-a", 0.04, 0.09, 0.16), ("band-b", 0.91, 0.96, 0.16), ("cap-a", -0.01, 0.015, 0.14), ("cap-b", 0.985, 1.01, 0.14)):
         beam(f"yard-{nm}", yard_at(t0), yard_at(t1), w, "gold", sides=8)
     # Sling: where the yard crosses the mast head, a block lashes it to the mast.
-    ts = min(range(101), key=lambda k: abs(yard_at(k / 100)[2] - 1.15)) / 100
+    ts = min(range(201), key=lambda k: abs(yard_at(k / 200)[2] - mast_at(yard_at(k / 200)[1])[2])) / 200
     sling = yard_at(ts)
     beam("yard-sling-band", yard_at(ts - 0.025), yard_at(ts + 0.025), 0.27, "gold", sides=8)
     box("yard-sling", ((sling[0]) / 2, sling[1] - 0.02, sling[2]), (0.3, 0.18, 0.18), "metal", bevel=0.02)
@@ -387,16 +406,24 @@ def build_lateen():
         pts = [sail_point(s, i / 8) for i in range(9)]
         for i in range(8):
             beam(f"lateen-hem-{nm}-{i}", pts[i], pts[i + 1], 0.08, "rope", sides=5)
-    # Robands: short lashings from the luff to the yard every so often.
+    build_robands(lambda s: sail_point(s, 0.0))
+
+
+def build_robands(luff):
+    """Short lashings from the curved yard down to the sail's luff (`luff(s)`, s 0 tack .. 1 peak) every so often."""
     for i in range(1, 9):
         s = i / 9
-        beam(f"roband-{i}", yard_at(s), sail_point(s, 0.0), 0.05, "rope", sides=4)
+        beam(f"roband-{i}", yard_at(s), luff(s), 0.05, "rope", sides=4)
+
+
+# The jib: small and well forward, its whole area above the yard, so in profile it reads apart from the lateen.
+JIB_HEAD = (0.0, 4.03, 2.2)
+JIB_TACK = (0.0, 1.97, 4.45)
+JIB_CLEW = (0.0, 2.75, 3.15)
 
 
 def build_jib():
-    head = (0.0, 4.9, 1.3)
-    tack = (0.0, BEAK_TIP[1] + 0.28, BEAK_TIP[2] - 0.15)
-    clew = (0.0, 2.0, 2.55)
+    head, tack, clew = JIB_HEAD, JIB_TACK, JIB_CLEW
     rows = 6
     verts, faces = [], []
     for layer, dx in ((0, 0.02), (1, -0.02)):
@@ -426,33 +453,53 @@ def build_jib():
     return tack
 
 
+SHEET_Z = -2.1
+SHROUD_ZS = (0.15, -0.75)
+
+
+def shroud_end(z):
+    """Where a port shroud lands: on top of its deadeye on the port chainwale (designs.ts GAMBLER_SHROUDS)."""
+    return (-(outer(0.0)[-1][0] + 0.16), sheer(0.0) - 0.16 + 0.18, z)
+
+
 def build_rigging(jib_tack, platform):
     # Forestay from the masthead to the beak, the jib's luff on it.
     beam("forestay", (0, MAST_HEAD[1] - 0.05, MAST_HEAD[2]), (0, BEAK_TIP[1] + 0.12, BEAK_TIP[2] - 0.05), 0.045, "rope")
     # Tack line: the yard's low end lashed down to the beak.
     beam("tack-line", yard_at(0.0), (0.12, BEAK_TIP[1] + 0.1, YARD_A[2] - 0.05), 0.05, "rope")
     # Sheet: clew down to a cleat on the starboard quarter rail.
-    zq = -2.1
-    beam("sheet", CLEW, (outer(zq)[-1][0], sheer(zq) + 0.12, zq), 0.045, "rope")
-    box("sheet-cleat", (outer(zq)[-1][0], sheer(zq) + 0.16, zq), (0.12, 0.08, 0.26), "woodDark", bevel=0.02)
-    # Shrouds only to port (the lateen fills to starboard): a chainwale with deadeyes on the port side.
+    beam("sheet", CLEW, (outer(SHEET_Z)[-1][0], sheer(SHEET_Z) + 0.12, SHEET_Z), 0.045, "rope")
+    for z in SHROUD_ZS:
+        beam(f"shroud-{z}", (0, 4.7, mast_at(4.7)[2]), shroud_end(z), 0.045, "rope")
+    build_rigging_dressing()
+
+
+def build_rigging_dressing():
+    """The sheet's cleat and the port chainwale with its deadeyes and chains (shrouds only to port: the lateen fills
+    to starboard)."""
+    box("sheet-cleat", (outer(SHEET_Z)[-1][0], sheer(SHEET_Z) + 0.16, SHEET_Z), (0.12, 0.08, 0.26), "woodDark", bevel=0.02)
     zc = 0.0
     cy = sheer(zc) - 0.16
     xw = outer(zc)[-1][0]
     box("chainwale", (-(xw + 0.1), cy, -0.3), (0.2, 0.1, 1.2), "woodDark", bevel=0.02, shade=0.85)
-    for z in (0.15, -0.75):
+    for z in SHROUD_ZS:
         x = -(xw + 0.16)
         prism(f"deadeye-{z}", (x, cy + 0.05, z), 0.065, 0.13, "dark", sides=6)
         beam(f"chain-{z}", (x, cy - 0.05, z), (x + 0.02, cy - 0.38, z), 0.035, "metal", sides=4)
-        beam(f"shroud-{z}", (0, 5.0, mast_at(5.0)[2]), (x, cy + 0.18, z), 0.045, "rope")
 
 
-def build_die():
-    """The gambler's die (code-drawn and animated in the game): a white die with dark pips on a gold-rimmed hatch."""
-    x, y, z = DIE
+def build_die_hatch():
+    """The gold-rimmed hatch the die stands on (the die itself is code-drawn and animated)."""
+    x, _, z = DIE
     box("die-hatch", (x, DECK + 0.04, z), (0.9, 0.12, 0.9), "woodDark", bevel=0.02, shade=0.85)
     plan_ring("die-hatch-rim", [(-0.5, z - 0.5), (0.5, z - 0.5), (0.5, z + 0.5), (-0.5, z + 0.5)],
               [(-0.4, z - 0.4), (0.4, z - 0.4), (0.4, z + 0.4), (-0.4, z + 0.4)], DECK - 0.02, DECK + 0.13, "gold")
+
+
+def build_die():
+    """The gambler's die stand-in: a white die with dark pips on the gold-rimmed hatch."""
+    build_die_hatch()
+    x, y, z = DIE
     h = DIE_SIZE / 2
     box("die", (x, y + 0.02, z), (DIE_SIZE, DIE_SIZE, DIE_SIZE), "marble", bevel=0.07)
     s = DIE_SIZE * 0.27
@@ -473,18 +520,15 @@ def build_pennant():
     mesh_from("pennant", verts, [[0, 1, 2], [5, 4, 3], [0, 3, 4, 1], [1, 4, 5, 2], [2, 5, 3, 0]], "pennant")
 
 
-build_hull()
-build_trim()
-build_rudder()
-build_beak()
-platform = build_stern_platform()
-build_mast()
-build_yard()
-build_lateen()
-jib_tack = build_jib()
-build_rigging(jib_tack, platform)
-build_die()
-build_pennant()
+
+def build_ship_body():
+    """Hull, trims, rudder, beak and stern platform: everything that is neither rig nor a code-drawn stand-in."""
+    build_hull()
+    build_trim()
+    build_rudder()
+    build_beak()
+    return build_stern_platform()
+
 
 PEAK = yard_at(1.0)
 ANCHORS = {
@@ -492,8 +536,8 @@ ANCHORS = {
     "finial": (0.0, BEAK_TIP[1] + 0.05, BEAK_TIP[2] + 0.15),
     "head_rail": (-0.18, sheer(Z_FWD) - 0.1, Z_FWD + 0.25),
     "stern": (-0.4, sheer(Z_AFT) - 0.2, Z_AFT + stern_kick(Z_AFT, 1.6) + 0.05),
-    "platform": (-0.46, platform[0] + 0.38, platform[1] + 0.3),
-    "lantern": (0, platform[0] + 0.98, platform[1] + 0.05),
+    "platform": (-0.46, platform_at()[0] + 0.38, platform_at()[1] + 0.3),
+    "lantern": (0, platform_at()[0] + 0.98, platform_at()[1] + 0.05),
     "rudder": (0, 0.5, sternpost_z(0.5) - 0.4),
     "yard": yard_at(0.62),
     "yard_mid": yard_at(0.3),
@@ -501,7 +545,7 @@ ANCHORS = {
     "lateen": sail_point(0.45, 0.45),
     "stripes": sail_point(0.7, 0.3),
     "hem": sail_point(1.0, 0.5),
-    "jib": (-0.15, 3.0, 2.4),
+    "jib": (-0.12, 3.1, 3.0),
     "mast": mast_at(3.0),
     "mast_head": MAST_HEAD,
     "die": (0, DIE[1] + 0.2, DIE[2]),
@@ -522,17 +566,28 @@ ANCHORS = {
     "low_peak": (0.3, 7.0, -2.6),
 }
 
-finish_blockout(
-    ANCHORS,
-    band=hull_band,
-    skip=("hull", "lateen", "jib", "rudder", "boot", "wale", "cap-rail", "pennant", "beak", "die-hatch-rim"),
-    close_ups=lambda: {
-        "near-bow": near((0, 1.7, 3.7), -60, 22, 3.6),
-        "near-stern": near((0, 1.7, -2.9), -130, 22, 3.4),
-        "near-waist": near((0, 1.8, -0.6), -75, 30, 4.4),
-    },
-    centre_y=4.6,
-    centre_z=0.5,
-    scale=10.4,
-    oblique_scale=12.6,
-)
+
+if __name__ == "__main__":
+    platform = build_ship_body()
+    build_platform_lantern()
+    build_mast()
+    build_yard()
+    build_lateen()
+    jib_tack = build_jib()
+    build_rigging(jib_tack, platform)
+    build_die()
+    build_pennant()
+    finish_blockout(
+        ANCHORS,
+        band=hull_band,
+        skip=("hull", "lateen", "jib", "rudder", "boot", "wale", "cap-rail", "pennant", "beak", "die-hatch-rim"),
+        close_ups=lambda: {
+            "near-bow": near((0, 1.7, 3.7), -60, 22, 3.6),
+            "near-stern": near((0, 1.7, -2.9), -130, 22, 3.4),
+            "near-waist": near((0, 1.8, -0.6), -75, 30, 4.4),
+        },
+        centre_y=4.6,
+        centre_z=0.5,
+        scale=10.4,
+        oblique_scale=12.6,
+    )

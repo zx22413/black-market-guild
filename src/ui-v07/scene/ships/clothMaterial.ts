@@ -102,7 +102,7 @@ function emblemTexture(emblem: SailEmblem): Texture {
   g.lineWidth = 5;
   g.strokeStyle = SWATCHES.canvas.top;
   g.stroke();
-  (emblem.art === 'albatross' ? drawAlbatross : drawFlukes)(g, c);
+  ({ 'whale-tail': drawFlukes, albatross: drawAlbatross, wave: drawWave } as const)[emblem.art](g, c);
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
   texture.wrapS = ClampToEdgeWrapping;
@@ -158,6 +158,27 @@ function drawAlbatross(g: CanvasRenderingContext2D, c: number): void {
   ] as const;
   path(bird, SWATCHES.canvas.top);
   for (const s of [1, -1]) path([[s * 0.74, -0.04], [s * 0.6, 0.08], [s * 0.6, 0.02]], SWATCHES.dark.top);
+}
+
+/**
+ * 海嘯號's wave (docs/art/breaker-concept.svg): a crest rising from the left and curling over to the right above a flat
+ * trough, in cream, inked. Points in sail units (y up) from the blockout; the disc spans the emblem's `size` (1.32).
+ */
+function drawWave(g: CanvasRenderingContext2D, c: number): void {
+  const unit = 194;
+  const wave = [
+    [-0.42, -0.2], [-0.3, -0.05], [-0.12, 0.14], [0.06, 0.26], [0.24, 0.27], [0.36, 0.18], [0.38, 0.06], [0.28, 0], [0.2, 0.07],
+    [0.22, 0.15], [0.12, 0.16], [0, 0.06], [-0.08, -0.12], [0, -0.22], [0.42, -0.22], [0.42, -0.32], [-0.42, -0.32],
+  ] as const;
+  g.beginPath();
+  wave.forEach(([x, y], i) => (i === 0 ? g.moveTo(c + x * unit, c - y * unit) : g.lineTo(c + x * unit, c - y * unit)));
+  g.closePath();
+  g.fillStyle = SWATCHES.canvas.top;
+  g.fill();
+  g.lineJoin = 'round';
+  g.lineWidth = 3.5;
+  g.strokeStyle = EMBLEM_INK;
+  g.stroke();
 }
 
 /** The owner's pennant, one flat colour. */

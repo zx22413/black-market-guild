@@ -36,6 +36,10 @@ FORE_YARD = ((-1.1, 3.1, FORE_Z + 0.22), (1.05, 2.88, FORE_Z + 0.12))
 HOLE_PORT = (-1.2, -0.2, 0.5, 0.98)  # z0, z1, y0, y1 of the big hole on the port side
 HOLE_STAR = (1.3, 2.0, 0.52, 0.98)  # a smaller one on the starboard bow
 WALE_Y = 0.84
+# The blockout draws the spars, ropes, rags and pennant itself; build-hidden.py sets this False and takes the spars and
+# ropes from designs.ts instead (the rags and pennant are code-drawn cloth in the game).
+SPARS = True
+GLOW = "ghostGlow"  # parts named `glow-...` light up at night in the game (build-hidden.py exports them as the `glow` mesh)
 
 
 # ---------------------------------------------------------------- the hull: low, long, a fine bow and a blunt stern
@@ -132,8 +136,8 @@ def hull_band(center_y, normal_up):
     if center_y < DRAFT:
         return "dark", 0.7
     if center_y < WALE_Y:
-        return "basalt", 0.88 if int(center_y / 0.14) % 2 else 1.0
-    return "dark", 1.0  # near-black upper strakes, so the teal ports glow out of them
+        return "slate", 0.84 if int(center_y / 0.14) % 2 else 0.96  # grey planks, alternating
+    return "dark", 0.9  # near-black upper strakes, so the teal ports glow out of them
 
 
 def surface_strip(name, y, h, proud, mat, zs, side, shade=1.0):
@@ -157,14 +161,14 @@ def stations(z0, z1):
 
 
 def build_trim():
-    # The wale: a near-black band between the dark planks and the slate strakes, broken where the port hole tore it.
+    # The wale: a pale band between the grey planks and the near-black upper strakes, broken where the port hole tore it.
     z0, z1 = post_z(-1, WALE_Y + 0.1) + 0.1, post_z(1, WALE_Y + 0.1) - 0.1
     hz0, hz1, hy0, hy1 = HOLE_PORT
-    surface_strip("wale-port-aft", WALE_Y, 0.13, 0.09, "slate", stations(z0, hz0 + 0.08), -1)
-    surface_strip("wale-port-fwd", WALE_Y, 0.13, 0.09, "slate", stations(hz1 - 0.12, z1), -1)
+    surface_strip("wale-port-aft", WALE_Y, 0.13, 0.09, "ghostCloth", stations(z0, hz0 + 0.08), -1)
+    surface_strip("wale-port-fwd", WALE_Y, 0.13, 0.09, "ghostCloth", stations(hz1 - 0.12, z1), -1)
     sz0, sz1 = HOLE_STAR[0], HOLE_STAR[1]
-    surface_strip("wale-star-aft", WALE_Y, 0.13, 0.09, "slate", stations(z0, sz0 + 0.08), 1)
-    surface_strip("wale-star-fwd", WALE_Y, 0.13, 0.09, "slate", stations(sz1 - 0.1, z1), 1)
+    surface_strip("wale-star-aft", WALE_Y, 0.13, 0.09, "ghostCloth", stations(z0, sz0 + 0.08), 1)
+    surface_strip("wale-star-fwd", WALE_Y, 0.13, 0.09, "ghostCloth", stations(sz1 - 0.1, z1), 1)
     # Cap rail: a pale board (ghostCloth) on the slate bulwark, from the tower to the bow.
     zs = stations(TOWER_FRONT - 0.1, Z_FWD - 0.12)
     for side in (1, -1):
@@ -242,7 +246,7 @@ def build_hole(name, spec, side, seed):
     z0, z1, y0, y1 = spec
     outline = jagged(z0, z1, y0, y1, seed)
     # The gap shows the hold lit teal from inside (the same ghost light as the ports), so it reads on the dark hull.
-    on_hull(f"hole-{name}", outline, side, 0.04, 0.08, "ghostGlow", shade=0.62)
+    on_hull(f"glow-hole-{name}", outline, side, 0.04, 0.08, GLOW, shade=0.62)
     # Ribs: pale old frames standing across the glow, running past its edges so they read as the ship's skeleton.
     count = 2
     for i in range(count):
@@ -271,7 +275,7 @@ def build_portholes():
             slope = (outer_x(z + 0.05, y) - outer_x(z - 0.05, y)) / 0.1
             yaw = math.atan(slope) * side
             box(f"port-frame-{side}-{z}", (side * (x + 0.02), y, z), (0.1, 0.3, 0.3), "stone", bevel=0.02, yaw=yaw)
-            box(f"port-glow-{side}-{z}", (side * (x + 0.05), y, z), (0.08, 0.18, 0.18), "ghostGlow", bevel=0.0, yaw=yaw)
+            box(f"glow-port-{side}-{z}", (side * (x + 0.05), y, z), (0.08, 0.18, 0.18), GLOW, bevel=0.0, yaw=yaw)
 
 
 def build_weed():
@@ -329,10 +333,10 @@ def glow_window(name, x, y, z, w, h, facing_x):
     """A window lit teal from inside, in a thick pale frame."""
     if facing_x:
         box(f"{name}-frame", (x, y, z), (0.08, h + 0.16, w + 0.16), "stone", bevel=0.02)
-        box(f"{name}-glow", (x + math.copysign(0.03, x), y, z), (0.06, h, w), "ghostGlow", bevel=0.0)
+        box(f"glow-{name}", (x + math.copysign(0.03, x), y, z), (0.06, h, w), GLOW, bevel=0.0)
     else:
         box(f"{name}-frame", (x, y, z), (w + 0.16, h + 0.16, 0.08), "stone", bevel=0.02)
-        box(f"{name}-glow", (x, y, z - 0.03), (w, h, 0.06), "ghostGlow", bevel=0.0)
+        box(f"glow-{name}", (x, y, z - 0.03), (w, h, 0.06), GLOW, bevel=0.0)
     beam(f"{name}-bar", (x, y - h / 2, z), (x, y + h / 2, z), 0.05, "dark", sides=4)
 
 
@@ -355,25 +359,29 @@ def build_tower():
     # Knees under the upper storey's overhang aft.
     for x in (-0.55, 0.55):
         beam(f"tower-knee-{x}", tw(x, mid - 0.35, -2.8), tw(x, mid + 0.1, -2.98), 0.14, "dark", sides=4)
-    # A crooked gable roof: dark slabs with pale barge boards and a pale ridge, sagging aft.
-    eave, ridge = TOWER_TOP + 0.12, TOWER_TOP + 0.85
-    za, zf = -3.15 + lean_z(TOWER_TOP), -1.72 + lean_z(TOWER_TOP)
+    # A crooked gable roof whose ridge runs athwartships, so from the side (the ship-select camera) it reads as a steep
+    # gable: dark slabs with pale barge boards along both gable ends, a pale ridge that sags to port, a dark eave board.
+    eave, ridge = TOWER_TOP + 0.12, TOWER_TOP + 1.0
+    zf, za = -1.72 + lean_z(TOWER_TOP), -3.15 + lean_z(TOWER_TOP)
+    zr = (zf + za) / 2
     sx = lean(TOWER_TOP) + 0.06
-    for side in (1, -1):
-        e, r = side * 1.08 + sx, sx
-        verts = [(e, eave, zf), (r, ridge, zf), (r, ridge - 0.08, za), (e, eave - 0.06, za)]
+    xs, xp = 1.02 + sx, -1.02 + sx
+    sag = 0.1  # the ridge droops to port
+    for nm, ze in (("fwd", zf), ("aft", za)):
+        verts = [(xs, eave, ze), (xs, ridge, zr), (xp, ridge - sag, zr), (xp, eave - sag * 0.5, ze)]
         verts += [(x, y - 0.1, z) for x, y, z in verts]
         faces = [[0, 1, 2, 3], [7, 6, 5, 4], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]]
-        mesh_from(f"roof-{side}", verts, faces, "basalt", shade=0.85)
-        beam(f"roof-barge-fwd-{side}", (e, eave - 0.03, zf + 0.02), (r, ridge + 0.02, zf + 0.02), 0.12, "ghostCloth", sides=4)
-        beam(f"roof-barge-aft-{side}", (e, eave - 0.09, za - 0.02), (r, ridge - 0.06, za - 0.02), 0.12, "ghostCloth", sides=4)
-        beam(f"roof-eave-{side}", (e, eave - 0.06, zf + 0.02), (e, eave - 0.12, za - 0.02), 0.11, "dark", sides=4)
-    beam("roof-ridge", (sx, ridge + 0.03, zf + 0.04), (sx, ridge - 0.05, za - 0.04), 0.13, "ghostCloth", sides=4)
-    # Gable ends: slate triangles under the roof, framing the stern gallery below.
-    for z, nm in ((-1.88 + lean_z(TOWER_TOP), "fwd"), (-2.95 + lean_z(TOWER_TOP), "aft")):
+        mesh_from(f"roof-{nm}", verts, faces, "basalt", shade=0.85)
+        beam(f"roof-eave-{nm}", (xs + 0.02, eave - 0.06, ze), (xp - 0.02, eave - sag * 0.5 - 0.06, ze), 0.11, "dark", sides=4)
+    for nm, x, dy in (("star", xs, 0.0), ("port", xp, sag)):
+        beam(f"roof-barge-fwd-{nm}", (x, eave - dy * 0.5 - 0.03, zf - 0.02), (x, ridge - dy + 0.02, zr), 0.12, "ghostCloth", sides=4)
+        beam(f"roof-barge-aft-{nm}", (x, eave - dy * 0.5 - 0.03, za + 0.02), (x, ridge - dy + 0.02, zr), 0.12, "ghostCloth", sides=4)
+    beam("roof-ridge", (xs + 0.04, ridge + 0.03, zr), (xp - 0.04, ridge - sag + 0.03, zr), 0.13, "ghostCloth", sides=4)
+    # Gable ends: slate triangles under the roof on both sides (the tower's upper walls stop at the eaves).
+    for nm, x, dy in (("star", 0.86 + sx, 0.0), ("port", -0.86 + sx, sag * 0.8)):
         yb = TOWER_TOP + 0.1
-        verts = [(-0.85 + sx, yb, z - 0.04), (0.85 + sx, yb, z - 0.04), (sx, ridge - 0.12, z - 0.04)]
-        verts += [(x, y, z + 0.04) for x, y, _ in verts]
+        verts = [(x - 0.04, yb, zf + 0.12), (x - 0.04, yb, za - 0.12), (x - 0.04, ridge - 0.14 - dy, zr)]
+        verts += [(x + 0.04, y, z) for _, y, z in verts]
         mesh_from(f"gable-{nm}", verts, [[0, 1, 2], [5, 4, 3], [0, 3, 4, 1], [1, 4, 5, 2], [2, 5, 3, 0]], "slate", shade=0.9)
     # Openings: a door onto the waist, a lit stern gallery, lit side windows.
     framed_opening("tower-door", tw(0, DECK + 0.38, TOWER_FRONT + 0.03), (0.44, 0.66), False)
@@ -397,12 +405,20 @@ def build_tower():
 HOOK = tw(0, DECK + 1.47, -3.45)
 
 
+LANTERN_WALL = -3.0
+
+
+def build_lantern_bracket():
+    """The plate and brace under the lantern's arm (the arm itself is in designs.ts: GHOST_ARM)."""
+    y = DECK + 1.45
+    box("lantern-plate", tw(0, y - 0.05, LANTERN_WALL - 0.03), (0.22, 0.32, 0.06), "stone", bevel=0.01)
+    beam("lantern-brace", tw(0, y - 0.35, LANTERN_WALL - 0.04), (HOOK[0], y, HOOK[2] + 0.2), 0.05, "dark", sides=4)
+
+
 def build_lantern():
     y = DECK + 1.45
-    wall = -3.0
-    box("lantern-plate", tw(0, y - 0.05, wall - 0.03), (0.22, 0.32, 0.06), "stone", bevel=0.01)
-    beam("lantern-arm", tw(0, y, wall - 0.04), (HOOK[0], y, HOOK[2]), 0.07, "dark", sides=4)
-    beam("lantern-brace", tw(0, y - 0.35, wall - 0.04), (HOOK[0], y, HOOK[2] + 0.2), 0.05, "dark", sides=4)
+    build_lantern_bracket()
+    beam("lantern-arm", tw(0, y, LANTERN_WALL - 0.04), (HOOK[0], y, HOOK[2]), 0.07, "dark", sides=4)
     lx, ly, lz = HOOK[0], HOOK[1] - 0.35, HOOK[2]
     beam("lantern-rope", HOOK, (lx, ly + 0.17, lz), 0.03, "rope", sides=4)
     box("lantern", (lx, ly, lz), (0.22, 0.3, 0.22), "dark", bevel=0.02)
@@ -417,7 +433,8 @@ def lerp(a, b, t):
 
 def build_main():
     foot = (0, DECK - 0.1, MAIN_Z)
-    beam("main-mast", foot, MAIN_HEAD, 0.22, "dark", sides=8, taper=0.7)
+    if SPARS:
+        beam("main-mast", foot, MAIN_HEAD, 0.22, "dark", sides=8, taper=0.7)
     prism("main-partner", (0, DECK - 0.02, MAIN_Z), 0.26, 0.16, "dark", sides=8, top=0.8)
     for t in (0.25, 0.5):
         p = lerp(foot, MAIN_HEAD, t)
@@ -425,7 +442,8 @@ def build_main():
     beam("main-cap", lerp(foot, MAIN_HEAD, 0.985), lerp(foot, MAIN_HEAD, 1.02), 0.2, "stone", sides=8)
     # Crooked yard, a sling where it crosses the mast, pale bands at its arms.
     a, b = MAIN_YARD
-    beam("main-yard", a, b, 0.13, "dark", sides=8)
+    if SPARS:
+        beam("main-yard", a, b, 0.13, "dark", sides=8)
     sling = lerp(a, b, 0.48)
     box("main-sling", (sling[0], sling[1], sling[2] - 0.08), (0.24, 0.22, 0.2), "stone", bevel=0.02)
     for t0, t1 in ((0.0, 0.05), (0.95, 1.0)):
@@ -434,6 +452,11 @@ def build_main():
     for i, (s0, s1, drop) in enumerate(((0.03, 0.18, 2.4), (0.24, 0.38, 1.6), (0.45, 0.6, 2.6), (0.66, 0.8, 1.9), (0.86, 0.98, 2.2))):
         p0, p1 = lerp(a, b, s0), lerp(a, b, s1)
         z = (p0[2] + p1[2]) / 2 + 0.12
+        for k, s in enumerate((s0 + 0.02, s1 - 0.02)):  # lashings where each rag is tied to the yard
+            p = lerp(a, b, s)
+            beam(f"rag-tie-{i}-{k}", (p[0] - 0.03, p[1], p[2]), (p[0] + 0.03, p[1], p[2]), 0.16, "rope", sides=6)
+        if not SPARS:
+            continue
         foot_pts = []
         for k in range(5):
             t = k / 4
@@ -454,10 +477,6 @@ def build_main():
         bmesh.ops.triangulate(bm, faces=[f0, f1])
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
         finish(bm, f"rag-main-{i}", "ghostCloth")
-        # Lashings where each rag is tied to the yard.
-        for k, s in enumerate((s0 + 0.02, s1 - 0.02)):  # (a float in a name: Blender parses ".digits" as a suffix)
-            p = lerp(a, b, s)
-            beam(f"rag-tie-{i}-{k}", (p[0] - 0.03, p[1], p[2]), (p[0] + 0.03, p[1], p[2]), 0.16, "rope", sides=6)
     # The one shroud left standing, on a chainwale with deadeyes; a backstay to the tower.
     for side, z in ((-1, -0.75), (1, -0.55)):
         cy = sheer(z) - 0.2
@@ -465,7 +484,10 @@ def build_main():
         x = side * (hull_rail_x(z) + 0.2)
         prism(f"deadeye-{side}", (x, cy + 0.05, z), 0.07, 0.14, "stone", sides=6)
         beam(f"chain-{side}", (x, cy - 0.05, z), (x - side * 0.02, cy - 0.4, z), 0.035, "metal", sides=4)
-        beam(f"shroud-{side}", lerp(foot, MAIN_HEAD, 0.9), (x, cy + 0.19, z), 0.04, "rope", sides=4)
+        if SPARS:
+            beam(f"shroud-{side}", lerp(foot, MAIN_HEAD, 0.9), (x, cy + 0.19, z), 0.04, "rope", sides=4)
+    if not SPARS:
+        return
     beam("backstay", lerp(foot, MAIN_HEAD, 0.95), tw(0, TOWER_TOP + 0.6, -2.4), 0.035, "rope", sides=4)
     # Pennant stand-in (code-drawn in the owner's colour).
     hx, hy, hz = MAIN_HEAD
@@ -486,43 +508,51 @@ def splintered_end(name, at, direction, width):
 
 def build_fore():
     foot = (0, DECK - 0.1, FORE_Z)
-    beam("fore-mast", foot, BREAK, 0.2, "dark", sides=8, taper=0.85)
+    if SPARS:
+        beam("fore-mast", foot, BREAK, 0.2, "dark", sides=8, taper=0.85)
     prism("fore-partner", (0, DECK - 0.02, FORE_Z), 0.24, 0.16, "dark", sides=8, top=0.8)
     up = (BREAK[0] - foot[0], BREAK[1] - foot[1], BREAK[2] - foot[2])
     splintered_end("fore-stub", BREAK, up, 0.17)
     # The snapped top: still hanging by its splinters at the break, folded forward and down over the bow.
     hinge = (BREAK[0] + 0.05, BREAK[1] - 0.02, BREAK[2] + 0.1)
-    beam("fore-top", hinge, FALLEN_TIP, 0.16, "dark", sides=8, taper=0.75)
+    if SPARS:
+        beam("fore-top", hinge, FALLEN_TIP, 0.16, "dark", sides=8, taper=0.75)
     back = (hinge[0] - FALLEN_TIP[0], hinge[1] - FALLEN_TIP[1], hinge[2] - FALLEN_TIP[2])
     splintered_end("fore-top-end", hinge, back, 0.16)
     beam("fore-top-cap", lerp(hinge, FALLEN_TIP, 0.96), lerp(hinge, FALLEN_TIP, 1.04), 0.17, "stone", sides=8)
     # Lashed down to the starboard rail so it does not swing (and does not float).
     rail = (hull_rail_x(2.6) - 0.02, sheer(2.6) + 0.13, 2.6)
-    beam("fore-lashing", lerp(hinge, FALLEN_TIP, 0.92), rail, 0.045, "rope", sides=4)
+    if SPARS:
+        beam("fore-lashing", lerp(hinge, FALLEN_TIP, 0.92), rail, 0.045, "rope", sides=4)
     box("fore-cleat", (rail[0], rail[1] + 0.03, rail[2]), (0.16, 0.08, 0.26), "dark", bevel=0.02)
     # The fore yard still hangs from the stub, crooked, with two rags.
     a, b = FORE_YARD
-    beam("fore-yard", a, b, 0.11, "dark", sides=8)
+    if SPARS:
+        beam("fore-yard", a, b, 0.11, "dark", sides=8)
     box("fore-sling", (0.0, (a[1] + b[1]) / 2, FORE_Z + 0.05), (0.22, 0.2, 0.2), "stone", bevel=0.02)
     for t0, t1 in ((0.0, 0.06), (0.94, 1.0)):
         beam(f"fore-yard-band-{t0}", lerp(a, b, t0), lerp(a, b, t1), 0.15, "ghostCloth", sides=8)
     for i, (s0, s1, drop) in enumerate(((0.04, 0.32, 0.95), (0.66, 0.95, 1.05))):
         p0, p1 = lerp(a, b, s0), lerp(a, b, s1)
         z = (p0[2] + p1[2]) / 2 + 0.12
+        for k, s in enumerate((s0 + 0.03, s1 - 0.03)):
+            p = lerp(a, b, s)
+            beam(f"rag-fore-tie-{i}-{k}", (p[0] - 0.03, p[1], p[2]), (p[0] + 0.03, p[1], p[2]), 0.14, "rope", sides=6)
+        if not SPARS:
+            continue
         outline = [(p0[0], p0[1] - 0.04), (p1[0], p1[1] - 0.04), (p1[0], p1[1] - drop * 0.8), ((p0[0] + p1[0]) / 2 + 0.05, p0[1] - drop), (p0[0], p0[1] - drop * 0.72)]
         n = len(outline)
         verts = [(x, y, z - 0.02) for x, y in outline] + [(x, y, z + 0.02) for x, y in outline]
         faces = [list(range(n)), list(range(n, 2 * n))[::-1]] + [[k, (k + 1) % n, n + (k + 1) % n, n + k] for k in range(n)]
         mesh_from(f"rag-fore-{i}", verts, faces, "ghostCloth")
-        for k, s in enumerate((s0 + 0.03, s1 - 0.03)):
-            p = lerp(a, b, s)
-            beam(f"rag-fore-tie-{i}-{k}", (p[0] - 0.03, p[1], p[2]), (p[0] + 0.03, p[1], p[2]), 0.14, "rope", sides=6)
     # A short bowsprit with a pale cap and an iron band where it leaves the stem.
     s0, s1 = (0, sheer(2.75) - 0.05, 2.75), (0, 2.15, 3.85)
-    beam("bowsprit", s0, s1, 0.14, "dark", sides=8, taper=0.75)
+    if SPARS:
+        beam("bowsprit", s0, s1, 0.14, "dark", sides=8, taper=0.75)
     beam("bowsprit-band", lerp(s0, s1, 0.33), lerp(s0, s1, 0.4), 0.22, "stone", sides=8)
     beam("bowsprit-cap", lerp(s0, s1, 0.93), lerp(s0, s1, 1.02), 0.15, "ghostCloth", sides=8)
-    beam("forestay", lerp((0, DECK - 0.1, MAIN_Z), MAIN_HEAD, 0.93), lerp(s0, s1, 0.95), 0.04, "rope", sides=4)
+    if SPARS:
+        beam("forestay", lerp((0, DECK - 0.1, MAIN_Z), MAIN_HEAD, 0.93), lerp(s0, s1, 0.95), 0.04, "rope", sides=4)
 
 
 def build_wisps():
@@ -575,26 +605,34 @@ ANCHORS = {
 }
 
 
-build_hull()
-build_trim()
-build_rudder()
-build_hole("port", HOLE_PORT, -1, 1)
-build_hole("star", HOLE_STAR, 1, 2)
-build_portholes()
-build_weed()
-build_tower()
-build_lantern()
-build_main()
-build_fore()
-build_wisps()
-finish_blockout(
-    ANCHORS,
-    band=hull_band,
-    skip=("hull", "rag-", "rudder", "wale", "cap-rail", "pennant", "hole-", "tower-", "roof-", "gable-", "wisp"),
-    close_ups=lambda: {
-        "near-bow": near((0, 2.2, 2.2), -55, 22, 3.8),
-        "near-stern": near((0, 2.2, -2.4), -125, 20, 4.0),
-        "near-waist": near((0, 1.4, -0.4), -80, 18, 4.0),
-        "near-starboard": near((0, 1.6, 1.4), 60, 18, 4.0),
-    },
-)
+
+
+def build_ship_body():
+    """The hull, its trims, holes, ports, weed, rudder and the racked tower: everything that is not rig or stand-in."""
+    build_hull()
+    build_trim()
+    build_rudder()
+    build_hole("port", HOLE_PORT, -1, 1)
+    build_hole("star", HOLE_STAR, 1, 2)
+    build_portholes()
+    build_weed()
+    build_tower()
+
+
+if __name__ == "__main__":
+    build_ship_body()
+    build_lantern()
+    build_main()
+    build_fore()
+    build_wisps()
+    finish_blockout(
+        ANCHORS,
+        band=hull_band,
+        skip=("hull", "rag-", "rudder", "wale", "cap-rail", "pennant", "glow-hole-", "tower-", "roof-", "gable-", "wisp"),
+        close_ups=lambda: {
+            "near-bow": near((0, 2.2, 2.2), -55, 22, 3.8),
+            "near-stern": near((0, 2.2, -2.4), -125, 20, 4.0),
+            "near-waist": near((0, 1.4, -0.4), -80, 18, 4.0),
+            "near-starboard": near((0, 1.6, 1.4), 60, 18, 4.0),
+        },
+    )

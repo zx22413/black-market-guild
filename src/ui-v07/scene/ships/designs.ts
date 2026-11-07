@@ -15,12 +15,21 @@ export interface Hinged {
   readonly pivot: Vec3;
 }
 
-/** A galley's oars: one oar (lying along +x from its lock, level), the locks on the +x side (mirrored to -x). */
+/**
+ * A galley's oars: one oar (lying along +x from its lock, level), the locks on the +x side (mirrored to -x). `locks` and
+ * `droop` are the upper bank's; `lower` is a second bank through ports lower in the hull, rowing a little behind.
+ */
 export interface ShipOars {
   readonly oar: readonly KitPart[];
   readonly locks: readonly Vec3[];
   /** How far the oars hang down from level (radians), blades in the water. */
   readonly droop: number;
+  readonly lower?: {
+    readonly locks: readonly Vec3[];
+    readonly droop: number;
+    /** How far behind the upper bank its stroke comes, as a share of a stroke. */
+    readonly lag: number;
+  };
 }
 
 export interface ShipDesign {
@@ -138,41 +147,55 @@ function die(center: Vec3): KitPart[] {
   return [{ kind: 'box', center, size: [DIE_SIZE, DIE_SIZE, DIE_SIZE], bevel: 0.07, mat: 'marble' }, ...pips];
 }
 
-const gamblerLantern = lanternHook([0, DECK, -2.75], 1, [0, 0, -0.35]);
 const GAMBLER_DIE: Vec3 = [0, DECK + DIE_SIZE / 2, -1.9];
+// The rig of the approved design (docs/art/gambler-concept.svg, scripts/blender/blockout-gambler.py): the lateen scaled
+// to 0.75 so its peak comes down from 8.6 to about 7.0 (decided 2026-11-07), the yard still longer than the hull. The
+// Blender hull (scripts/blender/build-gambler.py) adds the beak, the stern platform, a curved yard, the chainwale and
+// the trims; these parts are the rig it rebuilds and the code-built fallback.
+const GAMBLER_MAST_HEAD: Vec3 = [0, 5.075, 1.143];
+/** Where the port shrouds land: deadeyes on the port chainwale (the lateen fills to starboard). */
+const GAMBLER_SHROUDS: readonly Vec3[] = [[-1.081, 1.531, 0.15], [-1.081, 1.531, -0.75]];
+/** The lantern on a post at the aft edge of the stern platform (decided 2026-11-07). */
+const GAMBLER_LANTERN: Vec3 = [0, 3.02, -3.996];
 
 const GAMBLER: ShipDesign = {
   parts: [
     ...hull(GAMBLER_HULL, 'dark', 'roofRed'),
     ...gunwale(GAMBLER_HULL),
     rudder(-3),
-    spar([0, 1.15, 3.5], [0, 2.05, 5.5], 0.11),
-    spar([0, DECK, 0.4], [0, 5.65, 1.1], 0.16),
-    spar([0.26, 2.2, 4.4], [0.26, 8.6, -2.6], 0.11),
+    // The beak (the Blender hull's is a gilded spur).
+    spar([0, 1.5, 3.2], [0, 1.68, 4.75], 0.14),
+    spar([0, DECK, 0.566], GAMBLER_MAST_HEAD, 0.18),
+    spar([0.3, 2.15, 3.53], [0.3, 6.99, -1.73], 0.14),
     // Shrouds only on the port side: the lateen fills out to starboard.
-    rope([0, 5.5, 1.08], [-0.82, DECK + 0.24, 0.1]),
-    rope([0, 5.5, 1.08], [-0.7, DECK + 0.24, -1.2]),
-    rope([0, 5.6, 1.1], [0, 2.05, 5.45]),
-    rope([0.6, 1.75, -2.7], [0.55, DECK + 0.24, -2.4]),
-    ...gamblerLantern.parts,
+    ...GAMBLER_SHROUDS.map((end) => rope([0, 4.7, 1.087], end)),
+    rope([0, 5.025, 1.143], [0, 1.74, 4.7]),
+    // The tack lashed down to the beak, and the sheet from the clew to a cleat on the starboard quarter.
+    rope([0.3, 2.15, 3.53], [0.12, 1.72, 3.48]),
+    rope([0.6, 2.0, -1.8], [0.667, 1.943, -2.1]),
+    { kind: 'beam', from: [0.3, 6.97, -1.73], to: [0.3, 7.27, -1.77], width: 0.04, mat: 'metal' },
+    spar([0, 2.01, -3.996], [0, 2.83, -3.996], 0.08),
+    ...lanternFrame(GAMBLER_LANTERN),
   ],
   sails: [
     {
-      edge: [[0.34, 2.32, 4.28], [0.34, 8.45, -2.48]],
-      pieces: [bowed([[0.34, 2.32, 4.28], [0.34, 8.45, -2.48], [0.62, 1.95, -2.7]], [null, [0, 0, -0.5], [0, -0.45, 0]])],
+      edge: [[0.34, 2.277, 3.435], [0.34, 6.875, -1.635]],
+      pieces: [bowed([[0.34, 2.277, 3.435], [0.34, 6.875, -1.635], [0.62, 2.0, -1.8]], [null, [0, 0, -0.375], [0, -0.34, 0]])],
       mat: 'canvas',
-      bands: { axis: 'u', pattern: [{ mat: 'canvas', width: 0.75 }, { mat: 'roofRed', width: 0.75 }] },
-      belly: 0.75,
+      // Red and white stripes fanning out from the clew to the yard (decided 2026-11-07).
+      bands: { axis: 'fan', pattern: [{ mat: 'canvas', width: 0.855 }, { mat: 'roofRed', width: 0.855 }] },
+      belly: 0.6,
     },
     {
-      edge: [[0, 5.05, 1.25], [0, 2.0, 5.3]],
-      pieces: [bowed([[0, 5.05, 1.25], [0, 2.0, 5.3], [0, 1.72, 3.1]], [null, [0, -0.18, 0], [0, 0, -0.3]])],
+      // A small jib well forward, all of it above the yard, so in profile it reads apart from the lateen.
+      edge: [[0, 4.03, 2.2], [0, 1.97, 4.45]],
+      pieces: [bowed([[0, 4.03, 2.2], [0, 1.97, 4.45], [0, 2.75, 3.15]], [null, [0, -0.1, 0], [0, -0.04, -0.1]])],
       mat: 'canvas',
-      belly: 0.25,
+      belly: 0.2,
     },
   ],
-  pennant: [0.26, 8.6, -2.6],
-  lantern: gamblerLantern.at,
+  pennant: [0.3, 7.27, -1.77],
+  lantern: GAMBLER_LANTERN,
   motion: { kind: 'die', die: { parts: die(GAMBLER_DIE), pivot: GAMBLER_DIE } },
 };
 
@@ -300,11 +323,20 @@ function rags(from: Vec3, to: Vec3, strips: readonly (readonly [number, number, 
   }));
 }
 
-/** The yards cross ahead of their masts, so the rags hanging from them clear the masts. */
-const MAIN_YARD: readonly [Vec3, Vec3] = [[-1.75, 5.3, 0.1], [1.75, 5.85, -0.2]];
-const FORE_YARD: readonly [Vec3, Vec3] = [[-1.15, 3.5, 2.0], [1.15, 3.28, 1.9]];
-/** The ghost ship's lantern hangs from the hook on its stern arm and swings. */
-const GHOST_HOOK: Vec3 = [0, DECK + 2.73, -3.05];
+// The Blender hull (scripts/blender/build-hidden.py, design docs/art/hidden-concept.svg) adds the racked stern tower,
+// the holes, glowing ports and windows, weed, chainwales and the broken mast's splinters and bands; these parts are the
+// spars and ropes it rebuilds (numbers from blockout-hidden.py) and the code-built fallback.
+/** The mainmast leans to starboard and aft (its head lowered from 6.3 to 5.35 so the ship-select camera frames it). */
+const GHOST_MAIN_FOOT: Vec3 = [0, DECK, -0.15];
+const GHOST_MAIN_HEAD: Vec3 = [0.3, 5.35, -0.3];
+/** The yards cross ahead of their masts, crooked, so the rags hanging from them clear the masts. */
+const MAIN_YARD: readonly [Vec3, Vec3] = [[-1.7, 4.75, 0.02], [1.75, 5.2, -0.22]];
+const FORE_YARD: readonly [Vec3, Vec3] = [[-1.1, 3.1, 1.87], [1.05, 2.88, 1.77]];
+/** The foremast snapped at BREAK; its top hangs from the break folded forward over the bow, lashed to the rail. */
+const GHOST_BREAK: Vec3 = [0.06, 3.35, 1.68];
+const GHOST_FALLEN: readonly [Vec3, Vec3] = [[0.11, 3.33, 1.78], [0.62, 2.55, 2.55]];
+/** The ghost ship's lantern hangs from the hook on an arm off the racked tower's stern wall, clear of it as it swings. */
+const GHOST_HOOK: Vec3 = [0.232, 2.72, -3.667];
 const GHOST_LANTERN: Vec3 = lanternBelow(GHOST_HOOK);
 
 const GHOST: ShipDesign = {
@@ -314,27 +346,26 @@ const GHOST: ShipDesign = {
     ...ports(GHOST_HULL, [-1.2, 0.2], 'metal'),
     { kind: 'box', center: [0, DECK + 0.6, -1.95], size: [2.0, 1.2, 1.2], bevel: 0.04, mat: 'basalt' },
     { kind: 'box', center: [0, DECK + 1.5, -2.15], size: [1.6, 0.6, 0.8], bevel: 0.04, mat: 'basalt' },
-    { kind: 'box', center: [-0.45, DECK + 0.7, -2.57], size: [0.3, 0.36, 0.06], bevel: 0.01, mat: 'dark' },
-    { kind: 'box', center: [0.45, DECK + 0.7, -2.57], size: [0.3, 0.36, 0.06], bevel: 0.01, mat: 'dark' },
     rudder(-2.6),
-    spar([0, DECK + 1.8, -2.5], [0, DECK + 2.75, -2.5], 0.08),
-    spar([0, DECK + 2.75, -2.5], [0, DECK + 2.75, -3.05], 0.06),
-    spar([0, 1.15, 2.9], [0, 1.6, 3.7], 0.1),
-    spar([0, DECK, -0.2], [0.35, 6.3, -0.35], 0.17),
-    spar(MAIN_YARD[0], MAIN_YARD[1], 0.1),
-    spar([0, DECK, 1.6], [0.1, 3.9, 1.7], 0.16),
-    spar([0.1, 3.9, 1.7], [0.75, 3.2, 2.5], 0.13),
-    spar(FORE_YARD[0], FORE_YARD[1], 0.08),
-    rope([0.35, 6.2, -0.35], [0, 1.6, 3.65]),
-    rope([0.75, 3.2, 2.5], [0.8, 1.95, 2.6]),
-    rope([0.3, 5.6, -0.33], [-1.05, DECK + 0.24, -0.6]),
+    { ...spar([0.229, 2.7, -3.254], [0.232, 2.7, -3.667], 0.07), mat: 'dark' },
+    { ...spar([0, 1.827, 2.75], [0, 2.15, 3.85], 0.14), mat: 'dark' },
+    { ...spar(GHOST_MAIN_FOOT, GHOST_MAIN_HEAD, 0.2), mat: 'dark' },
+    { ...spar(MAIN_YARD[0], MAIN_YARD[1], 0.13), mat: 'dark' },
+    { ...spar([0, DECK, 1.65], GHOST_BREAK, 0.18), mat: 'dark' },
+    { ...spar(GHOST_FALLEN[0], GHOST_FALLEN[1], 0.16), mat: 'dark' },
+    { ...spar(FORE_YARD[0], FORE_YARD[1], 0.11), mat: 'dark' },
+    rope([0.279, 5.056, -0.289], [0, 2.134, 3.795]),
+    rope([0.579, 2.612, 2.488], [0.624, 1.962, 2.6]),
+    rope([0.27, 4.93, -0.285], [-1.355, 1.533, -0.75]),
+    rope([0.27, 4.93, -0.285], [1.363, 1.512, -0.55]),
+    rope([0.285, 5.14, -0.292], [0.36, 4.16, -2.715]),
   ],
   sails: [
-    ...rags(MAIN_YARD[0], MAIN_YARD[1], [[0.02, 0.18, 2.6], [0.24, 0.38, 1.7], [0.44, 0.58, 2.9], [0.64, 0.8, 2.0], [0.84, 0.98, 2.4]]),
+    ...rags(MAIN_YARD[0], MAIN_YARD[1], [[0.03, 0.18, 2.4], [0.24, 0.38, 1.6], [0.45, 0.6, 2.6], [0.66, 0.8, 1.9], [0.86, 0.98, 2.2]]),
     // The snapped foremast stands in the gap between two rags.
-    ...rags(FORE_YARD[0], FORE_YARD[1], [[0.04, 0.3, 1.4], [0.66, 0.95, 1.55]]),
+    ...rags(FORE_YARD[0], FORE_YARD[1], [[0.04, 0.32, 0.95], [0.66, 0.95, 1.05]]),
   ],
-  pennant: [0.35, 6.3, -0.35],
+  pennant: GHOST_MAIN_HEAD,
   motion: {
     kind: 'ghost',
     swing: { pivot: GHOST_HOOK, parts: [rope(GHOST_HOOK, [GHOST_LANTERN[0], GHOST_LANTERN[1] + 0.31, GHOST_LANTERN[2]]), ...lanternFrame(GHOST_LANTERN)] },
@@ -342,8 +373,11 @@ const GHOST: ShipDesign = {
   },
 };
 
-/* ---------- 海嘯號: a galley, a bronze ram at the waterline, banks of oars, a curled stern ---------- */
+/* ---------- 海嘯號: a green-and-gold war galley, a bronze ram at the waterline, two banks of oars, a curled stern ---------- */
 
+// The Blender hull (scripts/blender/build-breaker.py, design docs/art/breaker-concept.svg) adds the ram, the bow post and
+// platform, the scorpion-tail stern and its canopied command deck, the outriggers and the oar ports; these parts are the
+// rig it rebuilds and the code-built fallback. Green and gold, decided 2026-11-07 to keep clear of 孤注號's red.
 const BREAKER_HULL = mirrored([
   [0, 3.2],
   [0.65, 2.5],
@@ -351,62 +385,75 @@ const BREAKER_HULL = mirrored([
   [0.95, -2.3],
   [0.7, -3],
 ]);
-/** Oarlocks on the rail; the oars reach the water about 2.3 out. */
-const OAR_ZS = [-1.95, -1.15, -0.35, 0.45, 1.2] as const;
 const OAR_LENGTH = 2.3;
-const breakerLantern = lanternHook([0, DECK, -2.55], 1.15, [0, 0, -0.35]);
+const BREAKER_MAST_Z = 0.3;
+/** The upper bank pivots on the outriggers (x 1.45), the lower one in framed ports in the hull (blockout-breaker.py). */
+const UPPER_OARS: readonly Vec3[] = [-1.75, -0.95, -0.15, 0.65, 1.4].map((z): Vec3 => [1.45, DECK + 0.24, z]);
+const LOWER_OARS: readonly Vec3[] = [
+  [1.013, 0.98, -1.35],
+  [1.052, 0.98, -0.55],
+  [1.052, 0.98, 0.25],
+  [1.006, 0.98, 1.02],
+];
+/** The stern lantern hangs from an iron arm off the curl, over the command deck's after edge. */
+const BREAKER_LANTERN_ARM: readonly [Vec3, Vec3] = [[0, 2.85, -3.56], [0, 2.85, -3.05]];
+const BREAKER_LANTERN = lanternBelow(BREAKER_LANTERN_ARM[1]);
+const BREAKER_SAIL_Z = BREAKER_MAST_Z + 0.18;
 
 const BREAKER: ShipDesign = {
   parts: [
-    ...hull(BREAKER_HULL, 'woodDark', 'roofBlue'),
+    ...hull(BREAKER_HULL, 'woodDark', 'leaf'),
     ...gunwale(BREAKER_HULL),
     // The bronze ram at the waterline and its three blades.
-    { kind: 'beam', from: [0, 0.52, 2.6], to: [0, 0.5, 4.5], width: 0.42, sides: 4, mat: 'brass' },
-    { kind: 'beam', from: [0, 0.5, 3.9], to: [0.32, 0.5, 4.25], width: 0.13, mat: 'brass' },
-    { kind: 'beam', from: [0, 0.5, 3.9], to: [-0.32, 0.5, 4.25], width: 0.13, mat: 'brass' },
-    { kind: 'beam', from: [0, 0.5, 3.9], to: [0, 0.85, 4.25], width: 0.13, mat: 'brass' },
+    { kind: 'beam', from: [0, 0.52, 2.6], to: [0, 0.5, 4.45], width: 0.5, sides: 4, mat: 'brass' },
+    { kind: 'beam', from: [0, 0.5, 3.85], to: [0.5, 0.48, 4.42], width: 0.18, mat: 'brass' },
+    { kind: 'beam', from: [0, 0.5, 3.85], to: [-0.5, 0.48, 4.42], width: 0.18, mat: 'brass' },
+    { kind: 'beam', from: [0, 0.5, 3.85], to: [0, 0.98, 4.42], width: 0.18, mat: 'brass' },
     // The upswept bow post and the scorpion-tail stern.
     spar([0, 1.1, 2.95], [0, 2.3, 3.5], 0.22),
-    spar([0, 2.3, 3.5], [0, 2.55, 3.1], 0.17),
+    spar([0, 2.3, 3.5], [0, 2.55, 3.3], 0.17),
     spar([0, 1.0, -2.85], [0, 2.0, -3.55], 0.28),
-    spar([0, 2.0, -3.55], [0, 2.9, -3.35], 0.24),
-    spar([0, 2.9, -3.35], [0, 3.15, -2.85], 0.2),
-    // Painted eyes on the bow.
-    ...([1, -1] as const).flatMap((side): KitPart[] => [
-      { kind: 'box', center: [side * 0.69, 0.95, 2.3], size: [0.06, 0.24, 0.38], bevel: 0.02, mat: 'marble' },
-      { kind: 'box', center: [side * 0.715, 0.95, 2.34], size: [0.04, 0.14, 0.16], bevel: 0.01, mat: 'dark' },
-    ]),
+    spar([0, 2.0, -3.55], [0, 3.15, -3.5], 0.24),
+    spar([0, 3.15, -3.5], [0, 3.4, -2.88], 0.2),
     // Steering oars on both quarters.
     ...([1, -1] as const).flatMap((side): KitPart[] => [
-      { kind: 'beam', from: [side * 0.75, DECK + 0.1, -2.55], to: [side * 1.05, 0.35, -3.3], width: 0.1, mat: 'woodDark' },
-      { kind: 'box', center: [side * 1.02, 0.42, -3.25], size: [0.06, 0.45, 0.32], bevel: 0.01, mat: 'woodDark' },
+      { kind: 'beam', from: [side * 0.75, DECK + 0.1, -2.45], to: [side * 1.15, 0.45, -3.25], width: 0.11, mat: 'woodDark' },
+      { kind: 'box', center: [side * 1.12, 0.35, -3.28], size: [0.06, 0.4, 0.34], bevel: 0.01, mat: 'woodDark' },
     ]),
-    spar([0, DECK, 0.3], [0, 4.95, 0.3], 0.16),
-    spar([-1.6, 4.5, 0.4], [1.6, 4.5, 0.4], 0.09),
-    rope([0, 4.85, 0.3], [0, 2.4, 3.45]),
-    rope([0, 4.85, 0.3], [0, 2.8, -3.3]),
-    ...breakerLantern.parts,
+    spar([0, DECK, BREAKER_MAST_Z], [0, 4.95, BREAKER_MAST_Z], 0.18),
+    spar([-1.6, 4.5, BREAKER_MAST_Z + 0.15], [1.6, 4.5, BREAKER_MAST_Z + 0.15], 0.12),
+    // Stays to the bow post and to the stern curl.
+    rope([0, 4.8, BREAKER_MAST_Z], [0, 2.74, 3.45]),
+    rope([0, 4.8, BREAKER_MAST_Z], [0, 3.15, -3.5]),
+    { kind: 'beam', from: BREAKER_LANTERN_ARM[0], to: BREAKER_LANTERN_ARM[1], width: 0.06, sides: 4, mat: 'metal' },
+    rope(BREAKER_LANTERN_ARM[1], [0, BREAKER_LANTERN[1] + 0.31, BREAKER_LANTERN[2]]),
+    ...lanternFrame(BREAKER_LANTERN),
   ],
   sails: [
     {
-      edge: [[-1.5, 4.45, 0.47], [1.5, 4.45, 0.47]],
-      pieces: [bowed([[-1.5, 4.45, 0.47], [1.5, 4.45, 0.47], [1.65, 2.8, 0.47], [-1.65, 2.8, 0.47]], [null, [0.12, 0, 0], [0, -0.38, 0], [-0.12, 0, 0]])],
+      edge: [[-1.52, 4.42, BREAKER_SAIL_Z], [1.52, 4.42, BREAKER_SAIL_Z]],
+      pieces: [bowed([[-1.52, 4.42, BREAKER_SAIL_Z], [1.52, 4.42, BREAKER_SAIL_Z], [1.62, 2.85, BREAKER_SAIL_Z], [-1.62, 2.85, BREAKER_SAIL_Z]], [null, [0.08, 0, 0], [0, -0.22, 0], [-0.08, 0, 0]])],
       mat: 'canvas',
-      bands: { axis: 'u', pattern: [{ mat: 'canvas', width: 0.53 }, { mat: 'roofBlue', width: 0.53 }] },
-      belly: 0.5,
+      belly: 0.45,
+      // A teal roundel with a white wave (decided 2026-11-07).
+      emblem: { art: 'wave', u: 1.52, w: 0.8, size: 1.32, mat: 'canal' },
     },
   ],
-  pennant: [0, 4.95, 0.3],
-  lantern: breakerLantern.at,
+  pennant: [0, 4.95, BREAKER_MAST_Z],
+  lantern: BREAKER_LANTERN,
   motion: {
     kind: 'galley',
     oars: {
+      // A loom, a blade lying fore and aft (from above the banks read as the teeth of a comb) and a gold band at its neck.
       oar: [
-        { kind: 'beam', from: [-0.25, 0, 0], to: [OAR_LENGTH - 0.3, 0, 0], width: 0.07, sides: 6, mat: 'wood' },
-        { kind: 'box', center: [OAR_LENGTH - 0.12, 0, 0], size: [0.5, 0.22, 0.05], bevel: 0.01, mat: 'wood' },
+        { kind: 'beam', from: [-0.35, 0, 0], to: [OAR_LENGTH - 0.55, 0, 0], width: 0.08, sides: 4, mat: 'wood' },
+        { kind: 'box', center: [OAR_LENGTH - 0.3, 0, 0], size: [0.6, 0.06, 0.24], bevel: 0.01, mat: 'wood' },
+        { kind: 'box', center: [OAR_LENGTH - 0.58, 0, 0], size: [0.1, 0.13, 0.13], bevel: 0.01, mat: 'gold' },
       ],
-      locks: OAR_ZS.map((z): Vec3 => [halfBeam(BREAKER_HULL, z) * 0.955 + 0.04, DECK + 0.24, z]),
-      droop: 0.36,
+      locks: UPPER_OARS,
+      // Blades reach the water (DRAFT) 2.2 out from the lock.
+      droop: Math.asin((DECK + 0.24 - 0.5) / 2.2),
+      lower: { locks: LOWER_OARS, droop: Math.asin((0.98 - 0.5) / 2.2), lag: 0.12 },
     },
   },
 };

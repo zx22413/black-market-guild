@@ -237,33 +237,45 @@ export function GhostLantern({ swing, flame, underway, night, pulse }: { readonl
 
 /**
  * 海嘯號: the banks of oars. Under way they row hard in time, blades sweeping aft through the water and lifting clear on
- * the way back; at the dock they rest in the water, drifting a little with the swell.
+ * the way back, the lower bank a little behind the upper; at the dock they rest in the water, drifting with the swell.
  */
 export function GalleyOars({ oars, underway }: { readonly oars: ShipOars; readonly underway: Underway }) {
   const geometry = cachedGeometry(oars, oars.oar);
-  const groups = useRef<(Group | null)[]>([]);
+  const banks = useMemo(
+    () => [{ locks: oars.locks, droop: oars.droop, lag: 0 }, ...(oars.lower ? [oars.lower] : [])],
+    [oars],
+  );
+  const groups = useRef<(Group | null)[][]>(banks.map(() => []));
   const phase = useRef(0);
   useLiveFrame(({ clock }, delta) => {
     const u = underway.current;
     phase.current += delta * (0.25 + 0.65 * u);
-    const { sweep, lift } = oarSwing(1, phase.current);
     const drift = 0.06 * Math.sin(clock.elapsedTime * 0.8);
-    const s = sweep * (0.25 + 0.75 * u) + drift * (1 - u);
-    const l = lift * (0.2 + 0.8 * u);
-    for (const g of groups.current) g?.rotation.set(0, -s, -oars.droop + l, 'YXZ');
+    banks.forEach((bank, b) => {
+      const { sweep, lift } = oarSwing(1, phase.current - bank.lag);
+      const s = sweep * (0.25 + 0.75 * u) + drift * (1 - u);
+      const l = lift * (0.2 + 0.8 * u);
+      for (const g of groups.current[b] ?? []) g?.rotation.set(0, -s, -bank.droop + l, 'YXZ');
+    });
   });
-  const bank = (mirror: boolean) =>
-    oars.locks.map((lock, i) => (
-      <group key={i} position={[...lock]} ref={(g) => void (groups.current[(mirror ? oars.locks.length : 0) + i] = g)}>
-        <mesh geometry={geometry} castShadow dispose={null}>
-          <meshStandardMaterial vertexColors roughness={0.8} />
-        </mesh>
-      </group>
-    ));
+  const side = (mirror: boolean) =>
+    banks.flatMap((bank, b) =>
+      bank.locks.map((lock, i) => (
+        <group
+          key={`${b}-${i}`}
+          position={[...lock]}
+          ref={(g) => void ((groups.current[b] ??= [])[(mirror ? bank.locks.length : 0) + i] = g)}
+        >
+          <mesh geometry={geometry} castShadow dispose={null}>
+            <meshStandardMaterial vertexColors roughness={0.8} />
+          </mesh>
+        </group>
+      )),
+    );
   return (
     <>
-      {bank(false)}
-      <group scale={[-1, 1, 1]}>{bank(true)}</group>
+      {side(false)}
+      <group scale={[-1, 1, 1]}>{side(true)}</group>
     </>
   );
 }

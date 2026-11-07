@@ -100,6 +100,17 @@ describe('ship designs', () => {
     }
   });
 
+  it('rows two banks of galley oars, the lower one dipping into the water too', () => {
+    const motion = SHIP_DESIGNS.breaker.motion;
+    if (motion.kind !== 'galley') throw new Error('the breaker rows');
+    const lower = motion.oars.lower;
+    expect(lower?.locks.length).toBeGreaterThan(0);
+    for (const [x, y] of lower!.locks) {
+      expect(Math.abs(y - 2.2 * Math.sin(lower!.droop) - DRAFT)).toBeLessThan(0.3);
+      expect(x + 2.3).toBeLessThan(BERTH_GAP - 1.75);
+    }
+  });
+
   it('flies every pennant above the deck', () => {
     for (const type of SHIP_TYPE_IDS) expect(SHIP_DESIGNS[type].pennant[1]).toBeGreaterThan(DECK + 3);
   });

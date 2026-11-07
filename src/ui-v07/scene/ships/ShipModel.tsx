@@ -109,7 +109,7 @@ export function ShipModel({ type, color, night, underway }: ShipModelProps) {
   return (
     <group ref={body}>
       {glb ? (
-        <BlenderHull url={glb} {...(motion.kind === 'crane' ? { crane: { heel: motion.heel, reach: motion.reach, rise: motion.rise, swing: motion.swing, deck: DECK, underway: going } } : {})} />
+        <BlenderHull url={glb} night={night} {...(motion.kind === 'crane' ? { crane: { heel: motion.heel, reach: motion.reach, rise: motion.rise, swing: motion.swing, deck: DECK, underway: going } } : {})} />
       ) : (
         <mesh geometry={hull} castShadow receiveShadow dispose={null}>
           <meshStandardMaterial vertexColors roughness={0.8} />
