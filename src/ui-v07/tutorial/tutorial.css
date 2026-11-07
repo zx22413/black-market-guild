@@ -255,6 +255,12 @@
   inset: 0;
   z-index: 84;
 }
+/* While you act: everything but the lit parts is out of reach (the part cut out by clip-path takes no events). */
+.focus-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 84;
+}
 /* Your choice is complete: the lit 「提交」 breathes, and the todo says to press it. */
 .focus-mask.pulse .focus-ring {
   stroke-width: 3;

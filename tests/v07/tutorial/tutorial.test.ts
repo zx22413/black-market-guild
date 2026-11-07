@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DecisionContext } from '../../../src/v07/bots';
 import type { Action, MatchEvent } from '../../../src/v07/game';
-import { RULES_BUILDINGS, createMatch } from '../../../src/v07/game';
+import { RULES_V07, createMatch } from '../../../src/v07/game';
 import {
   BASICS,
   CUSTOMS,
@@ -121,9 +121,8 @@ describe('every tutorial', () => {
     }
   });
 
-  // TODO: the tutorial still teaches the building rules; it moves to the ship bays with its rewrite.
-  it('keeps the building-rule numbers of the official rules, only fewer rounds ', () => {
-    const created = createMatch({ seed: 1, players: [{ id: 'a', name: 'a' }, { id: 'b', name: 'b' }, { id: 'c', name: 'c' }], rules: RULES_BUILDINGS });
+  it('keeps the numbers of the official ship-bay rules, only fewer rounds', () => {
+    const created = createMatch({ seed: 1, players: [{ id: 'a', name: 'a' }, { id: 'b', name: 'b' }, { id: 'c', name: 'c' }], rules: RULES_V07 });
     expect(created.ok).toBe(true);
     for (const script of TUTORIALS) {
       const official = created.ok ? created.value.state.rules : null;
@@ -180,13 +179,13 @@ describe('basics: the guided match', () => {
     expect(market(2).priceAfter.wood).toBeLessThan(market(2).priceBefore.wood);
   });
 
-  it('round 3: you build the shipyard and a tailwind brings your 1 home', () => {
-    expect(events.find((e) => e.type === 'buildings-built' && e.round === 3)).toMatchObject({ builds: [{ playerId: 'p1', building: 'shipyard' }] });
-    expect(modifiers(events, 3, 'r3-p1')).toMatchObject({ base: 1, event: 1, final: 2 });
+  it('round 3: you sail the gambler and a tailwind lifts your 4 to a 5, which pays', () => {
+    expect(events.find((e) => e.type === 'voyage-event-revealed' && e.round === 3)).toMatchObject({ event: 'tailwind' });
+    expect(modifiers(events, 3, 'r3-p1')).toMatchObject({ base: 4, event: 1, final: 5 });
     expect(outcome(events, 'r3-p1')).toMatchObject({ outcome: 'arrived' });
   });
 
-  it('holds for every load you may pick: wanted in round 2, the shipyard affordable in round 3', () => {
+  it('holds for every load you may pick: you are wanted in round 2, the gambler affordable in round 3', () => {
     const first = everyChoice(BASICS, 1, 'invest');
     const second = everyChoice(BASICS, 2, 'invest');
     expect(first.length).toBeGreaterThan(1);
@@ -194,8 +193,9 @@ describe('basics: the guided match', () => {
     first.forEach((_, i) =>
       second.forEach((__, j) => {
         const log = playTutorial(BASICS, (c) => c.legalActions[c.view.round === 1 ? i : c.view.round === 2 ? j : 0]!);
-        expect(log.events.find((e) => e.type === 'wanted-marked' && e.round === 2)).toMatchObject({ players: ['p1'] });
-        expect(log.events.find((e) => e.type === 'buildings-built' && e.round === 3)).toMatchObject({ builds: [{ playerId: 'p1', building: 'shipyard' }] });
+        // A tie at the top marks both players as wanted, so you are among them.
+        expect(log.events.find((e) => e.type === 'wanted-marked' && e.round === 2)).toMatchObject({ players: expect.arrayContaining(['p1']) });
+        expect(outcome(log.events, 'r3-p1')).toMatchObject({ outcome: 'arrived' });
       }),
     );
   });

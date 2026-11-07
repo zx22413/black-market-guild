@@ -1,5 +1,5 @@
 import type { DecisionContext } from '../bots';
-import type { Action, BuildingId, DecisionPhase, GoodId, Goods, IslandId, PlayerId, RoleId, Rules, VoyageEventId } from '../game';
+import type { Action, DecisionPhase, GoodId, Goods, IslandId, PlayerId, RoleId, Rules, ShipTypeId, VoyageEventId } from '../game';
 
 // The beginner tutorial (docs/tutorial-outline.md): a scripted match whose hidden draws are fixed
 // and whose bots follow a plan, so every lesson plays out as written. A script never sets anything
@@ -10,7 +10,8 @@ export type TutorialId = 'basics' | 'guard' | 'pirate' | 'customs' | 'smuggler' 
 
 /** One seat's choices for one round; anything left out means: stay in port, deploy nothing. */
 export interface SeatPlan {
-  readonly build?: BuildingId;
+  /** The ship type it sails; the standard 信天翁號 when left out. */
+  readonly ship?: ShipTypeId;
   readonly load?: Partial<Goods>;
   /** A role and the owner of the ship it targets. */
   readonly role?: readonly [RoleId, PlayerId];
@@ -96,8 +97,10 @@ export type FocusTarget =
   | { readonly kind: 'restock'; readonly good: GoodId }
   /** A choice in the list at your ship after it is picked: a good customs names, a role a diplomat guesses. */
   | { readonly kind: 'naming'; readonly value: string }
-  /** A building's card in the building list, or the button that opens the list while it is closed. */
-  | { readonly kind: 'build'; readonly building: BuildingId }
+  /** A ship's card in the ship pick. */
+  | { readonly kind: 'ship'; readonly ship: ShipTypeId }
+  /** The button that goes from the ship pick on to loading the cargo. */
+  | { readonly kind: 'ship-next' }
   /** The market card of a resolution: how each price moved. */
   | { readonly kind: 'market-card' }
   /** The voyage beat's tag over a ship: its die, steps and result.  */

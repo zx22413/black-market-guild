@@ -159,7 +159,7 @@ const trait = (patch: Partial<IslandTrait>): IslandTrait => ({ ...NEUTRAL_TRAIT,
 
 /**
  * The V0.7.1 rules with the four buildings, as they were before the ship bays replaced them (2026-11-05). Kept for the
- * tutorial (not yet rewritten) and the tests of the building code; the game itself plays `RULES_V07`.
+ * tests of the building code; the game itself plays `RULES_V07`.
  */
 export const RULES_BUILDINGS: Rules = {
   version: 'V0.7.1-buildings',
@@ -277,7 +277,7 @@ export function shipFinalCap(rules: Rules, type: ShipTypeId): number {
  * actually be filled. The buildings stay in the data (`buildings`) for `RULES_BUILDINGS`, but no building is offered.
  * Islands (§11.2): shipyard island (was the lumber camp), free port, smuggler port and lighthouse work on the ship choice.
  * Decided 2026-11-05: these are the formal rules (the numbers get tuned after human playtests); the economy is not retuned.
- * TODO: the tutorial and the rulebook still teach RULES_BUILDINGS.
+ * TODO: the rulebook still teaches RULES_BUILDINGS (the tutorial plays these rules since 2026-11-07).
  */
 export const RULES_V07: Rules = {
   ...RULES_BUILDINGS,

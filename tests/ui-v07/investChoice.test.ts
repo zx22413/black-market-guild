@@ -120,11 +120,12 @@ describe('investment choice on the island (only legal actions)', () => {
     expect(actionFor(options, dropped)).toBeDefined();
   });
 
-  it('reminds about customs (any good can be named), the wanted mark and spice left behind', () => {
+  it('reminds about the wanted mark and spice left behind, and says nothing generic about customs', () => {
     const { context, options } = scenario();
     const withArms = loadOne(options, EMPTY_CHOICE, 'arms');
     const texts = investNotes(context, withArms).map((n) => n.text);
-    expect(texts).toContain('海關可能指名船上的一種貨，船抵達時整塊沒收');
+    // Customs is on the role cards: an ordinary ship carries no note about it.
+    expect(texts.some((t) => t.includes('海關'))).toBe(false);
     // Nothing is said about guards confiscating arms any more (§9.4: a guard takes no goods).
     expect(texts.some((t) => t.includes('護衛'))).toBe(false);
     expect(investNotes(context, EMPTY_CHOICE).some((n) => n.text.includes('海關'))).toBe(false);
@@ -136,7 +137,6 @@ describe('investment choice on the island (only legal actions)', () => {
     const { context, options } = scenario();
     const notes = investNotes(context, loadOne(options, EMPTY_CHOICE, 'arms'));
     for (const note of notes) expect(note.chips.length, note.text).toBeGreaterThan(0);
-    expect(notes.find((n) => n.text.includes('海關'))?.chips).toEqual([{ kind: 'role', role: 'customs' }, { kind: 'alert' }]);
     expect(notes.find((n) => n.text.includes('香料'))?.chips).toEqual([{ kind: 'good', good: 'spice', count: 1 }, { kind: 'alert' }]);
   });
 
@@ -147,7 +147,7 @@ describe('investment choice on the island (only legal actions)', () => {
     const hidden = loadOne(options, withShipType(options, EMPTY_CHOICE, 'hidden'), 'wood');
     expect(investNotes(context, hidden).map((n) => n.text)).toContain('幽靈號：海關指名這艘船的貨無效');
     const standard = loadOne(options, withShipType(options, EMPTY_CHOICE, 'standard'), 'wood');
-    expect(investNotes(context, standard).map((n) => n.text)).toContain('海關可能指名船上的一種貨，船抵達時整塊沒收');
+    expect(investNotes(context, standard).some((n) => n.text.includes('海關'))).toBe(false);
   });
 
   it('tells the Spice Isles that a ship with spice pays 25 G more, and shows it in the summary', () => {

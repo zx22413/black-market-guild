@@ -1,5 +1,5 @@
 import type { DecisionContext } from '../bots';
-import { GOODS, type Action, type GoodId, type BuildingId, type Goods, type PlayerId, type RoleId } from '../game';
+import { GOODS, type Action, type GoodId, type ShipTypeId, type Goods, type PlayerId, type RoleId } from '../game';
 import { shipOf } from './play';
 
 // Which of your legal actions a tutorial step keeps. Load limits keep every smaller load too, so
@@ -7,20 +7,17 @@ import { shipOf } from './play';
 
 const units = (g: Goods): number => GOODS.reduce((n, k) => n + g[k], 0);
 
-/** Sail with at most `max` of each good (at least one crate), building `build`. */
+/** Sail `ship` with at most `max` of each good (at least one crate). */
 export const loadWithin =
-  (max: Partial<Goods>, build: BuildingId | null = null) =>
+  (max: Partial<Goods>, ship: ShipTypeId = 'standard') =>
   (action: Action): boolean =>
-    action.type === 'invest' && action.build === build && units(action.load) > 0 && GOODS.every((g) => action.load[g] <= (max[g] ?? 0));
+    action.type === 'invest' && (action.shipType ?? 'standard') === ship && units(action.load) > 0 && GOODS.every((g) => action.load[g] <= (max[g] ?? 0));
 
-/**
- * Build `build`, with any load the rules allow. Staying in port is kept too: the table picks the
- * building while the ship is still empty, then adds crates one at a time.
- */
-export const buildThen =
-  (build: BuildingId) =>
+/** Sail `ship` with any load the rules allow (the table picks the ship first, then adds crates one at a time). */
+export const sailing =
+  (ship: ShipTypeId) =>
   (action: Action): boolean =>
-    action.type === 'invest' && action.build === build;
+    action.type === 'invest' && (action.shipType ?? 'standard') === ship && units(action.load) > 0;
 
 /** Deploy `role` on the ship of one of `owners`; `orNone` also keeps deploying nothing. */
 export const roleOn =
@@ -39,7 +36,7 @@ export const customsNaming =
 export const loadWhere =
   (test: (load: Goods) => boolean) =>
   (action: Action): boolean =>
-    action.type === 'invest' && action.build === null && test(action.load);
+    action.type === 'invest' && test(action.load);
 
 export const unitsOf = units;
 

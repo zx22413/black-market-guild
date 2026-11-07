@@ -1,4 +1,4 @@
-import { RULES_BUILDINGS, type BuildingId, type GoodId, type Goods, type PlayerId, type RoleId, type Rules } from '../game';
+import { RULES_V07, type GoodId, type Goods, type PlayerId, type RoleId, type Rules, type ShipTypeId } from '../game';
 import type { FocusTarget, TutorialSeat } from './types';
 
 // The table every tutorial uses: you on the Lumber island (docs/tutorial-outline.md §4), three
@@ -15,14 +15,13 @@ export const BOT = { vande: 'p2', tide: 'p3', anchor: 'p4' } as const;
 export const nameOf = (id: string): string => SEATS[Number(id.slice(1)) - 1]?.name ?? id;
 
 /** The official rules, only with fewer rounds: a tutorial is not a whole match. */
-// TODO: the tutorial still teaches the buildings, so it plays the rules with them (game-design.md §10) until it is rewritten.
-export const shortRules = (rounds: number): Rules => ({ ...RULES_BUILDINGS, rounds });
+export const shortRules = (rounds: number): Rules => ({ ...RULES_V07, rounds });
 
 export const goods = (partial: Partial<Goods>): Goods => ({ wood: 0, iron: 0, spice: 0, arms: 0, ...partial });
 
 /** Rule numbers quoted in the host's lines, so the words follow the rules when they change. */
-export const R = RULES_BUILDINGS;
-export const fee = (role: keyof typeof RULES_BUILDINGS.roles.fees): number => R.roles.fees[role];
+export const R = RULES_V07;
+export const fee = (role: keyof typeof RULES_V07.roles.fees): number => R.roles.fees[role];
 
 /** Focus targets for the host's steps. */
 export const F = {
@@ -30,7 +29,8 @@ export const F = {
   price: (good: GoodId): FocusTarget => ({ kind: 'price', good }),
   island: (player: PlayerId): FocusTarget => ({ kind: 'island', player }),
   plate: (player: PlayerId): FocusTarget => ({ kind: 'plate', player }),
-  build: (building: BuildingId): FocusTarget => ({ kind: 'build', building }),
+  ship: (ship: ShipTypeId): FocusTarget => ({ kind: 'ship', ship }),
+  shipNext: { kind: 'ship-next' },
   role: (role: RoleId | 'none'): FocusTarget => ({ kind: 'role', role }),
   target: (player: PlayerId): FocusTarget => ({ kind: 'target', player }),
   naming: (value: string): FocusTarget => ({ kind: 'naming', value }),

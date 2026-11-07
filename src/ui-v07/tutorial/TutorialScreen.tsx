@@ -49,13 +49,15 @@ export function TutorialScreen({ script, next, onReplay, onNext, onExit }: Tutor
   // itself puts up in the middle of the table (the die diagram, the voyage event card).
   const card = useRef<HTMLElement>(null);
   const [spot, setSpot] = useState<CSSProperties>({});
+  const standing = useRef<{ left: number; top: number } | undefined>(undefined);
   const lit = useRef<readonly Hole[]>([]);
   const place = useCallback(() => {
     const el = card.current;
     if (!el) return;
     const covered = [...document.querySelectorAll<HTMLElement>(KEEP_CLEAR)].map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0);
     const holes = [...lit.current, ...covered.map((r): Hole => ({ x: r.left - CLEAR_GAP, y: r.top - CLEAR_GAP, width: r.width + 2 * CLEAR_GAP, height: r.height + 2 * CLEAR_GAP }))];
-    const at = placeCard(holes, { width: window.innerWidth, height: window.innerHeight }, { width: el.offsetWidth, height: el.offsetHeight }, window.innerWidth <= 640 ? CARD_MARGIN_PHONE : CARD_MARGIN);
+    const at = placeCard(holes, { width: window.innerWidth, height: window.innerHeight }, { width: el.offsetWidth, height: el.offsetHeight }, window.innerWidth <= 640 ? CARD_MARGIN_PHONE : CARD_MARGIN, standing.current);
+    standing.current = at;
     setSpot((s) => (s.left === at.left && s.top === at.top ? s : { left: at.left, top: at.top }));
   }, []);
   const onHoles = useCallback(
@@ -134,7 +136,7 @@ export function TutorialScreen({ script, next, onReplay, onNext, onExit }: Tutor
       {ready && (
         <>
           {blocking && <div className="coach-block" aria-hidden="true" onPointerDown={() => setNudge((n) => n + 1)} />}
-          <FocusMask solid={coach.step?.diagram !== undefined} targets={coach.focus} guide={coach.guide} pulse={coach.pulse} onHoles={onHoles} />
+          <FocusMask gate={!(coach.step !== null && coach.number === coach.total)} solid={coach.step?.diagram !== undefined} targets={coach.focus} guide={coach.guide} pulse={coach.pulse} onHoles={onHoles} />
           {coach.step?.diagram && <DieDiagram successMin={coach.step.diagram.successMin} dieMax={coach.step.diagram.dieMax} />}
           <CoachCard ref={card} style={spot} view={coach} onRead={session.read} onSkip={onExit} endActions={endActions} nudge={nudge} />
         </>

@@ -3,8 +3,9 @@ import type { FocusTarget } from '../../v07/tutorial';
 import { currentGuide, easeHole, focusSelectors, holeAround, mergeHoles, type Hole } from './focus';
 
 // The tutorial's spotlight: the screen goes dark except for what the host is talking about. It
-// follows its targets every frame (islands move with the camera), never takes clicks, and shows
-// nothing when none of the targets is on screen.
+// follows its targets every frame (islands move with the camera) and shows nothing when none of
+// the targets is on screen. The mask itself takes no clicks; with `gate` an invisible shield covers
+// the rest of the screen, so only what is lit can be pressed or hovered.
 
 const PAD = 10;
 const GLIDE = 0.3;
@@ -54,12 +55,19 @@ function measure(targets: readonly FocusTarget[]): Hole[] {
   );
 }
 
+/** A shield over the whole screen with the lit rectangles cut out: clipped-away parts take no clicks and no hover. */
+function gateClip(holes: readonly Hole[]): string {
+  const cuts = holes.map((h) => `M${h.x} ${h.y}h${h.width}v${h.height}h${-h.width}Z`).join('');
+  return `path(evenodd, 'M0 0H${window.innerWidth}V${window.innerHeight}H0Z${cuts}')`;
+}
+
 /** `pulse`: the lit part is what to press now (「提交」), so its ring breathes. */
 export function FocusMask({
   targets,
   guide = null,
   pulse = false,
   solid = false,
+  gate = false,
   onHoles,
 }: {
   readonly targets: readonly FocusTarget[];
@@ -68,6 +76,8 @@ export function FocusMask({
   readonly pulse?: boolean;
   /** Dim the whole table (a picture is up in the middle), lighting nothing. */
   readonly solid?: boolean;
+  /** Only what is lit can be pressed or hovered (not while only a tap hint is lit: then any click goes on). */
+  readonly gate?: boolean;
   /** Told where the lit rectangles are whenever they move (the host's card keeps clear of them). */
   readonly onHoles?: (holes: readonly Hole[]) => void;
 }) {
@@ -98,6 +108,8 @@ export function FocusMask({
   if (solid) return <svg className="focus-mask" aria-hidden="true"><rect className="focus-dark" width="100%" height="100%" /></svg>;
   if (holes.length === 0) return null;
   return (
+    <>
+      {gate && !ringOnly && <div className="focus-gate" aria-hidden="true" style={{ clipPath: gateClip(holes) }} />}
     <svg className={`focus-mask ${pulse ? 'pulse' : ''}`} aria-hidden="true">
       <defs>
         <mask id="focus-holes">
@@ -112,5 +124,6 @@ export function FocusMask({
         <rect key={i} className="focus-ring" x={h.x} y={h.y} width={h.width} height={h.height} rx={12} />
       ))}
     </svg>
+    </>
   );
 }

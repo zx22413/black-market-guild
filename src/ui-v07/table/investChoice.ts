@@ -194,13 +194,9 @@ export function investNotes(context: DecisionContext, choice: InvestChoice): Inv
     if (choice.build === 'shipyard') notes.push({ at: 'ship', text: '造船廠當回合生效：可裝貨量 +1', label: '裝貨量', chips: [{ kind: 'ship', text: '+1' }] });
   }
   if (unitsOf(choice.load) > 0) {
-    // §9.4: a customs officer names one good of an arriving ship and takes all of it. Ship-bay experiment: a hidden ship is out of their reach.
+    // Ship-bay experiment: a hidden ship is out of customs' reach. (No note for the ordinary ship: customs is on the role cards.)
     const hidden = view.rules.ships.enabled === 1 && choice.shipType != null && view.rules.ships.types[choice.shipType].secret === 1;
-    notes.push(
-      hidden
-        ? { at: 'ship', text: '幽靈號：海關指名這艘船的貨無效', label: '海關無效', chips: [{ kind: 'role', role: 'customs' }, { kind: 'ship', text: '無效' }] }
-        : { at: 'ship', text: '海關可能指名船上的一種貨，船抵達時整塊沒收', label: '可能被沒收', chips: [{ kind: 'role', role: 'customs' }, { kind: 'alert' }] },
-    );
+    if (hidden) notes.push({ at: 'ship', text: '幽靈號：海關指名這艘船的貨無效', label: '海關無效', chips: [{ kind: 'role', role: 'customs' }, { kind: 'ship', text: '無效' }] });
   }
   // §11.2: the spice isles charge a ship that carries spice.
   const spiceFee = traitOf(view.rules, player.island).spiceShipFee;

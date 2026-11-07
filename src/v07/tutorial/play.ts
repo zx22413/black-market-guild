@@ -8,6 +8,7 @@ import { YOU, type SeatPlan, type TutorialScript, type YouPhase } from './types'
 // offered, so a script that no longer fits the rules fails loudly instead of playing something else.
 
 const fullGoods = (partial: Partial<Goods> = {}): Goods => ({ wood: 0, iron: 0, spice: 0, arms: 0, ...partial });
+const units = (g: Goods): number => GOODS.reduce((n, k) => n + g[k], 0);
 const sameGoods = (a: Goods, b: Goods): boolean => GOODS.every((g) => a[g] === b[g]);
 
 /** The ship a player sailed this round, as the views name it. */
@@ -19,7 +20,7 @@ export function shipOf(context: DecisionContext, owner: PlayerId): ShipId | null
 export function fitsPlan(context: DecisionContext, plan: SeatPlan, action: Action): boolean {
   switch (action.type) {
     case 'invest':
-      return action.build === (plan.build ?? null) && sameGoods(action.load, fullGoods(plan.load));
+      return sameGoods(action.load, fullGoods(plan.load)) && (units(action.load) === 0 || (action.shipType ?? 'standard') === (plan.ship ?? 'standard'));
     case 'deploy-role':
       return plan.role === undefined
         ? action.role === null

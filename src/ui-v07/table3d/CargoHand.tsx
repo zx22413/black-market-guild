@@ -30,16 +30,17 @@ export function CargoHand({ cards, todo, onLoad, onUnload }: CargoHandProps) {
           type="button"
           className={`dep-card cargo-card good-${c.good} ${c.loadable ? '' : 'off'} ${c.loaded > 0 ? 'has' : ''}`}
           data-cargo-card={c.good}
+          data-loaded={c.loaded}
           aria-disabled={!c.loadable}
           title={c.reason ?? `裝一箱${GOOD_LABELS[c.good]}上船`}
           onClick={() => c.loadable && onLoad(c.good)}
         >
           {c.spoils ? (
-            <span className="cargo-flag warn" title="沒裝上船，回合結束會壞掉" role="img" aria-label="沒裝會壞掉">
+            <span className="cargo-flag warn" data-restock={c.good} title="沒裝上船，回合結束會壞掉" role="img" aria-label="沒裝會壞掉">
               <AlertIcon />
             </span>
           ) : c.restock !== null ? (
-            <span className="cargo-flag" title={restockTitle(c.restock)} role="img" aria-label={restockTitle(c.restock)}>
+            <span className="cargo-flag" data-restock={c.good} title={restockTitle(c.restock)} role="img" aria-label={restockTitle(c.restock)}>
               <ClockIcon />
               {c.restock === 0 ? '–' : c.restock}
             </span>

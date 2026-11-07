@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DecisionContext } from '../../src/v07/bots';
-import { BASICS, TUTORIALS, allowedFor, playTutorial, scriptedAction, youChoose, type TutorialScript } from '../../src/v07/tutorial';
-import { EMPTY_CHOICE, actionFor, buildOptions, canLoad, investOptions, loadOne, withBuild, type InvestChoice } from '../../src/ui-v07/table/investChoice';
+import { TUTORIALS, allowedFor, playTutorial, scriptedAction, youChoose, type TutorialScript } from '../../src/v07/tutorial';
+import { EMPTY_CHOICE, actionFor, canLoad, investOptions, loadOne, withShipType, type InvestChoice } from '../../src/ui-v07/table/investChoice';
 import { roleCards, targetsFor } from '../../src/ui-v07/table/deployChoice';
 import { GOODS, type Action } from '../../src/v07/game';
 
@@ -19,16 +19,12 @@ function yourDecisions(script: TutorialScript): DecisionContext[] {
   return seen;
 }
 
-/** Builds the demo investment the way the 3D island does: building first, then one crate at a time. */
+/** Builds the demo investment the way the 3D island does: the ship first, then one crate at a time. */
 function clickInvest(context: DecisionContext, demo: Action): Action | undefined {
   if (demo.type !== 'invest') return undefined;
   const options = investOptions(context);
   let choice: InvestChoice = EMPTY_CHOICE;
-  if (demo.build !== null) {
-    const card = buildOptions(context, options, choice.load).find((b) => b.id === demo.build);
-    if (!card?.legal) return undefined;
-    choice = withBuild(options, choice, demo.build);
-  }
+  if (demo.shipType !== undefined) choice = withShipType(options, choice, demo.shipType);
   for (const g of GOODS) {
     for (let i = 0; i < demo.load[g]; i += 1) {
       if (!canLoad(options, choice, g)) return undefined;
@@ -39,19 +35,13 @@ function clickInvest(context: DecisionContext, demo: Action): Action | undefined
 }
 
 describe('tutorial decisions on the table', () => {
-  it('lets you click every demo investment together, building first', () => {
+  it('lets you click every demo investment together, ship first', () => {
     for (const script of TUTORIALS) {
       for (const context of yourDecisions(script).filter((c) => c.decision.phase === 'invest')) {
         const demo = scriptedAction(script, context);
         expect(clickInvest(context, demo), `${script.id} round ${context.view.round}`).toEqual(demo);
       }
     }
-  });
-
-  it('keeps the shipyard choosable on an empty ship in round 3 of the guided match', () => {
-    const context = yourDecisions(BASICS).find((c) => c.view.round === 3)!;
-    const card = buildOptions(context, investOptions(context)).find((b) => b.id === 'shipyard');
-    expect(card?.legal).toBe(true);
   });
 
   it('offers the demo role and its target among the role cards', () => {

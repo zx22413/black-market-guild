@@ -4,17 +4,18 @@ import type { FocusTarget } from '../../v07/tutorial';
 // is the set of invisible marks around it, see table3d/islandMarks.tsx).
 
 /**
- * The elements to light, best first: a target with a fallback (a building's card, or while the
- * list is closed the button that opens it) lights the first one on screen.
+ * The elements to light, best first (a target may name several; the first one on screen is lit).
  */
 export function focusSelectors(target: FocusTarget): readonly string[] {
-  return target.kind === 'build' ? [`[data-focus="build-${target.building}"]`, '[data-focus="build-open"]'] : [focusSelector(target)];
+  return [focusSelector(target)];
 }
 
 export function focusSelector(target: FocusTarget): string {
   switch (target.kind) {
-    case 'build':
-      return `[data-focus="build-${target.building}"]`;
+    case 'ship':
+      return `[data-ship-card="${target.ship}"]`;
+    case 'ship-next':
+      return '[data-focus="ship-next"]';
     case 'role':
       return `[data-role-card="${target.role}"]`;
     case 'target':
@@ -22,7 +23,7 @@ export function focusSelector(target: FocusTarget): string {
     case 'naming':
       return `[data-bet="${target.value}"]`;
     case 'crate':
-      return `[data-crate="${target.good}"]`;
+      return `[data-cargo-card="${target.good}"]`;
     case 'restock':
       return `[data-restock="${target.good}"]`;
     case 'price':
@@ -106,8 +107,9 @@ const overlapArea = (a: Hole, b: Hole): number =>
 /**
  * Where the host's card goes so it covers as little of what is lit as possible: the first of the
  * four corners (top left first, under the menu bar) that covers nothing, else the one covering least.
+ * The corner it already stands in (`stay`) is kept while it covers nothing, so the card does not hop around.
  */
-export function placeCard(holes: readonly Hole[], view: { readonly width: number; readonly height: number }, card: { readonly width: number; readonly height: number }, margin: { readonly side: number; readonly top: number; readonly bottom: number }): Spot {
+export function placeCard(holes: readonly Hole[], view: { readonly width: number; readonly height: number }, card: { readonly width: number; readonly height: number }, margin: { readonly side: number; readonly top: number; readonly bottom: number }, stay?: Spot): Spot {
   const right = Math.max(margin.side, view.width - margin.side - card.width);
   const bottom = Math.max(margin.top, view.height - margin.bottom - card.height);
   const spots: Spot[] = [
@@ -117,6 +119,8 @@ export function placeCard(holes: readonly Hole[], view: { readonly width: number
     { left: right, top: bottom },
   ];
   const covered = (s: Spot) => holes.reduce((n, h) => n + overlapArea({ x: s.left, y: s.top, width: card.width, height: card.height }, h), 0);
+  const kept = stay === undefined ? undefined : spots.find((s) => s.left === stay.left && s.top === stay.top);
+  if (kept !== undefined && covered(kept) === 0) return kept;
   return spots.find((s) => covered(s) === 0) ?? spots.reduce((best, s) => (covered(s) < covered(best) ? s : best));
 }
 

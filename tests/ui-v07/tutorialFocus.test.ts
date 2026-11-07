@@ -15,8 +15,10 @@ describe('tutorial focus', () => {
     expect(focusSelector({ kind: 'plate', player: 'p1' })).toBe('[data-focus="plate-p1"]');
     expect(focusSelector({ kind: 'advance' })).toBe('[data-focus="advance"]');
     expect(focusSelector({ kind: 'event' })).toBe('[data-focus="event"]');
-    // A building: its card in the open list first, else the button that opens the list.
-    expect(focusSelectors({ kind: 'build', building: 'shipyard' })).toEqual(['[data-focus="build-shipyard"]', '[data-focus="build-open"]']);
+    // A ship's card in the ship pick, the button that moves on to loading, and a cargo card.
+    expect(focusSelector({ kind: 'ship', ship: 'gambler' })).toBe('[data-ship-card="gambler"]');
+    expect(focusSelector({ kind: 'ship-next' })).toBe('[data-focus="ship-next"]');
+    expect(focusSelector({ kind: 'crate', good: 'wood', count: 1 })).toBe('[data-cargo-card="wood"]');
     expect(focusSelectors({ kind: 'rank' })).toEqual(['[data-focus="rank"]']);
   });
 
@@ -55,6 +57,16 @@ describe('tutorial focus', () => {
     const topLeftFree = { x: 0, y: 300, width: 1000, height: 500 };
     expect(placeCard([everywhere], view, card, margin)).toEqual({ left: 16, top: 64 });
     expect(placeCard([topLeftFree], view, card, margin)).toEqual({ left: 16, top: 64 });
+  });
+
+  it('keeps the host card where it stands while that corner covers nothing lit', () => {
+    const view = { width: 1000, height: 800 };
+    const card = { width: 300, height: 200 };
+    const margin = { side: 16, top: 64, bottom: 110 };
+    const bottomLeft = { left: 16, top: 490 };
+    expect(placeCard([], view, card, margin, bottomLeft)).toEqual(bottomLeft);
+    // Something lit moves under it: it leaves for the first free corner.
+    expect(placeCard([{ x: 0, y: 450, width: 400, height: 300 }], view, card, margin, bottomLeft)).toEqual({ left: 16, top: 64 });
   });
 
   it('marks a target done by its element: picked, or enough crates on the ship', () => {
