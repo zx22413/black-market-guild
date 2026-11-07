@@ -17,3 +17,5 @@ export { SMUGGLER_PORT_BASE } from './islandBases/smuggler-port';
 export { LIGHTHOUSE_BASE } from './islandBases/lighthouse';
 export { SPICE_ISLES_BASE } from './islandBases/spice-isles';
 export { PIRATE_COVE_BASE } from './islandBases/pirate-cove';
+export { MINE_BASE } from './islandBases/mine';
+export { LUMBER_BASE } from './islandBases/lumber';

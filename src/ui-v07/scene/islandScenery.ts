@@ -2,7 +2,7 @@ import { LANDMARK_DESIGNS, landmarkParts, type LandmarkDesign, type LandmarkId }
 import { bounds } from '../../ui/scene/buildings/polyhedra';
 import type { IslandGround } from '../../ui/scene/IslandBase';
 import { HEADLAND_AT } from '../../ui/scene/buildings/islands/smugglerPort';
-import { LIGHTHOUSE_BASE, PIRATE_COVE_BASE, SMUGGLER_PORT_BASE, SPICE_ISLES_BASE, type IslandBaseShape } from '../../ui/scene/islandBaseShapes';
+import { LIGHTHOUSE_BASE, LUMBER_BASE, MINE_BASE, PIRATE_COVE_BASE, SMUGGLER_PORT_BASE, SPICE_ISLES_BASE, type IslandBaseShape } from '../../ui/scene/islandBaseShapes';
 import type { IslandAnnex, SeaPoint, SeatShores } from '../../ui/scene/islandShape';
 import type { Vec3 } from '../../ui/scene/layout';
 import type { IslandId } from '../../v07/game';
@@ -94,7 +94,9 @@ export const ISLAND_SCENERY: Readonly<Partial<Record<IslandId, IslandScenery>>> 
   mine: {
     name: '礦山島',
     ground: { top: '#868ba1', cliff: '#636378' },
-    annex: { center: [0, -12.6], radii: [11.5, 6] },
+    // Fractured grey rock like the mountain's, a small square quarry pit, an incline railway to the wharf, a spoil fan,
+    // and a natural talus at the mountain's foot (docs/art/island-base-research.md §19–22).
+    base: { model: 'mine', shape: MINE_BASE },
     pieces: [
       { design: 'shaft-house', at: [0.3, TURF, 2.42], scale: 2 },
       { design: 'mountain', at: [0, SEA_FOOT, -11.2], scale: 6, backdrop: true },
@@ -141,7 +143,9 @@ export const ISLAND_SCENERY: Readonly<Partial<Record<IslandId, IslandScenery>>> 
     name: '船塢島',
     // A mossy forest floor: an even blend of the colormap's forest green #248d6d and dark wood #845442.
     ground: { top: '#547057', cliff: '#845442' },
-    annex: { center: [0, -11.6], radii: [7.4, 3.8] },
+    // Ice-worn pink granite domes with spruce on their crowns, a log slide, a crib wharf, skerries, and a granite knoll
+    // for the windmill (docs/art/island-base-research.md §19).
+    base: { model: 'lumber', shape: LUMBER_BASE },
     pieces: [
       { design: 'saw-pit', at: [0.3, TURF, 3.25], scale: 2 },
       { design: 'paltrok', at: [0, RIM, -11.4], scale: 2.8, turn: 0.55, backdrop: true },

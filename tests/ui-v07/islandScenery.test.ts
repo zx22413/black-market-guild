@@ -130,7 +130,7 @@ describe('backdrop side', () => {
   it('gives an annex only to islands that have one, turned with the backdrop', () => {
     expect(islandAnnex('spice-isles', 0)).toBeNull();
     expect(islandAnnex(null, 0)).toBeNull();
-    expect(islandAnnex('mine', Math.PI)).toMatchObject({ turn: backdropTurn(Math.PI) });
+    expect(islandAnnex('free-port', Math.PI)).toMatchObject({ turn: backdropTurn(Math.PI) });
   });
 });
 
