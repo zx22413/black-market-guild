@@ -1,33 +1,46 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
-  <!-- Broker card art: a backlit silhouette, an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 400 300">
+  <!-- Diplomat card art: a backlit envoy raising a sealed letter while four figures wait in the arcades, an AI-written flat vector placeholder, see public/art/SOURCES.md. -->
   <defs>
-    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6a4a6e"/><stop offset="1" stop-color="#f3c27a"/></linearGradient>
-    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a6a4a"/><stop offset="1" stop-color="#4a3424"/></linearGradient>
-    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5"><stop offset="0.55" stop-color="#fff0c8" stop-opacity="0.55"/><stop offset="1" stop-color="#fff0c8" stop-opacity="0"/></radialGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a3a62"/><stop offset="1" stop-color="#e2a87e"/></linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5e4a5a"/><stop offset="1" stop-color="#2e2232"/></linearGradient>
+    <linearGradient id="lamp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0b878"/><stop offset="1" stop-color="#9a5a4a"/></linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5"><stop offset="0.55" stop-color="#f8e2c0" stop-opacity="0.55"/><stop offset="1" stop-color="#f8e2c0" stop-opacity="0"/></radialGradient>
+    <path id="fig" d="M146 72 Q200 56 254 72 Q200 84 146 72 Z M174 68 Q176 42 200 40 Q224 42 226 68 Z M184 74 Q182 100 200 104 Q218 100 216 74 Z M200 102 Q172 104 162 118 Q150 170 138 270 Q160 282 186 278 L188 290 L206 290 L208 264 L214 264 L216 290 L234 290 L234 252 L240 196 L238 122 Q228 104 200 102 Z M230 112 L262 92 L270 100 L240 132 Z"/>
+    <path id="lurk" d="M0 0 Q-14 0 -16 14 L-16 40 L16 40 L16 14 Q14 0 0 0 Z"/>
   </defs>
   <rect width="400" height="300" fill="url(#sky)"/>
   <circle cx="196" cy="118" r="128" fill="url(#halo)"/>
-  <circle cx="196" cy="118" r="78" fill="#fff0c8"/>
-  <rect y="214" width="400" height="86" fill="url(#sea)"/>
-  <g fill="#7a5a3e">
-    <rect x="20" y="150" width="56" height="64"/><path d="M14 152 L48 126 L82 152 Z"/>
-    <rect x="300" y="138" width="80" height="76"/><path d="M294 140 L340 110 L386 140 Z"/>
+  <circle cx="196" cy="118" r="78" fill="#f8e2c0"/>
+  <rect y="214" width="400" height="86" fill="url(#ground)"/>
+  <!-- the arcades of the harbour office, each arch hiding someone -->
+  <g fill="#3a2c44">
+    <path d="M0 110 H118 V214 H0 Z"/><path d="M282 110 H400 V214 H282 Z"/>
+    <path d="M-4 112 L60 92 L124 112 Z M276 112 L340 92 L404 112 Z"/>
   </g>
-  <g fill="#f6d68c" opacity="0.6"><rect x="36" y="170" width="10" height="14"/><rect x="316" y="160" width="12" height="14"/><rect x="352" y="160" width="12" height="14"/></g>
-  <path d="M180 66 L180 20 Q200 16 220 20 L220 66 Q236 66 240 70 Q200 78 160 70 Q164 66 180 66 Z M182 72 Q182 102 200 104 Q218 102 218 72 Z M200 104 Q172 106 162 124 Q150 146 152 176 Q154 204 172 216 L170 252 L166 290 L184 290 L188 254 L198 222 L204 222 L212 254 L216 290 L234 290 L230 252 L230 216 Q248 204 250 176 Q252 150 240 126 L262 106 L270 84 L282 84 L278 100 L262 136 Q256 150 244 152 Q232 112 200 104 Z M160 140 Q140 160 142 196 L148 198 Q150 168 166 152 Z M140 196 L136 290 L142 290 L148 196 Z" fill="#ffe0a0" transform="translate(-3 -2)"/>
-  <path d="M180 66 L180 20 Q200 16 220 20 L220 66 Q236 66 240 70 Q200 78 160 70 Q164 66 180 66 Z M182 72 Q182 102 200 104 Q218 102 218 72 Z M200 104 Q172 106 162 124 Q150 146 152 176 Q154 204 172 216 L170 252 L166 290 L184 290 L188 254 L198 222 L204 222 L212 254 L216 290 L234 290 L230 252 L230 216 Q248 204 250 176 Q252 150 240 126 L262 106 L270 84 L282 84 L278 100 L262 136 Q256 150 244 152 Q232 112 200 104 Z M160 140 Q140 160 142 196 L148 198 Q150 168 166 152 Z M140 196 L136 290 L142 290 L148 196 Z" fill="#ffe0a0" transform="translate(3 -2)" opacity="0.6"/>
-  <path d="M180 66 L180 20 Q200 16 220 20 L220 66 Q236 66 240 70 Q200 78 160 70 Q164 66 180 66 Z M182 72 Q182 102 200 104 Q218 102 218 72 Z M200 104 Q172 106 162 124 Q150 146 152 176 Q154 204 172 216 L170 252 L166 290 L184 290 L188 254 L198 222 L204 222 L212 254 L216 290 L234 290 L230 252 L230 216 Q248 204 250 176 Q252 150 240 126 L262 106 L270 84 L282 84 L278 100 L262 136 Q256 150 244 152 Q232 112 200 104 Z M160 140 Q140 160 142 196 L148 198 Q150 168 166 152 Z M140 196 L136 290 L142 290 L148 196 Z" fill="#2a2030"/>
-  <!-- accents: the hat band, a waistcoat in purple, the gold watch chain, the monocle, the coin -->
-  <rect x="180" y="54" width="40" height="8" fill="#7a4aa8"/>
-  <path d="M190 106 L200 124 L210 106 Z" fill="#efe6d0"/>
-  <path d="M180 132 Q200 124 220 132 L224 196 Q200 206 176 196 Z" fill="#5a3a7a"/>
-  <path d="M184 168 Q200 182 216 168" fill="none" stroke="#e8b84a" stroke-width="2.5"/>
-  <g fill="#e8b84a"><circle cx="200" cy="146" r="2.2"/><circle cx="200" cy="160" r="2.2"/><circle cx="200" cy="186" r="2.2"/></g>
-  <path d="M186 92 Q193 86 200 92 Q207 86 214 92 Q207 98 200 95 Q193 98 186 92 Z" fill="#cfc6b6"/>
-  <circle cx="208" cy="82" r="5.5" fill="none" stroke="#f2c94c" stroke-width="2.5"/>
-  <circle cx="208" cy="82" r="1.6" fill="#ffffff"/>
-  <path d="M213 86 Q220 100 214 112" fill="none" stroke="#f2c94c" stroke-width="1.6"/>
-  <circle cx="276" cy="74" r="14" fill="#f2c94c"/><circle cx="276" cy="74" r="8.5" fill="none" stroke="#c99a2e" stroke-width="2"/>
-  <circle cx="276" cy="74" r="24" fill="#fff3c4" opacity="0.3"/>
-  <circle cx="139" cy="196" r="5" fill="#e8b84a"/>
+  <g fill="url(#lamp)">
+    <path d="M12 214 V158 Q12 136 34 136 Q56 136 56 158 V214 Z"/><path d="M66 214 V158 Q66 136 88 136 Q110 136 110 158 V214 Z"/>
+    <path d="M290 214 V158 Q290 136 312 136 Q334 136 334 158 V214 Z"/><path d="M344 214 V158 Q344 136 366 136 Q388 136 388 158 V214 Z"/>
+  </g>
+  <!-- four lurkers, one per role a diplomat can name: shako, tricorn, hood, peaked cap -->
+  <g fill="#0e0b14">
+    <g transform="translate(34 174)"><use href="#lurk"/><path d="M-9 -2 L-8 -20 L8 -20 L9 -2 Z"/><path d="M-1 -20 Q-4 -28 1 -32 Q4 -26 2 -20 Z" fill="#7a2a26"/></g>
+    <g transform="translate(88 174)"><use href="#lurk"/><path d="M-18 -2 Q-8 -2 -4 -10 Q0 -16 4 -10 Q8 -2 18 -2 Q10 4 0 2 Q-10 4 -18 -2 Z"/></g>
+    <g transform="translate(312 172)"><path d="M-17 42 Q-20 10 -8 -6 Q0 -14 8 -6 Q20 10 17 42 Z"/></g>
+    <g transform="translate(366 174)"><use href="#lurk"/><path d="M-12 -2 Q-4 -10 10 -6 L11 0 L-12 2 Z M6 -2 L16 0 L12 3 Z"/></g>
+  </g>
+  <use href="#fig" fill="#ffe0b0" transform="translate(-3 -2)"/>
+  <use href="#fig" fill="#ffe0b0" transform="translate(3 -2)" opacity="0.6"/>
+  <use href="#fig" fill="#2a2030"/>
+  <!-- accents: the plume and hat band, the sash of office, the letter with its purple wax seal -->
+  <path d="M220 56 Q248 30 276 40 Q252 42 226 64 Z" fill="#8a5ab8"/>
+  <path d="M176 64 H224" stroke="#e8b84a" stroke-width="3"/>
+  <path d="M168 120 L232 200 L222 206 L162 134 Z" fill="#6a3f92"/>
+  <circle cx="230" cy="202" r="4" fill="#e8b84a"/>
+  <circle cx="278" cy="84" r="26" fill="#fff3d4" opacity="0.3"/>
+  <g transform="rotate(-12 278 84)">
+    <rect x="258" y="70" width="42" height="28" rx="2" fill="#efe6d0"/>
+    <path d="M258 70 L279 86 L300 70" fill="none" stroke="#c8b898" stroke-width="2"/>
+    <circle cx="279" cy="88" r="6.5" fill="#6a3f92"/><circle cx="279" cy="88" r="3" fill="#e8b84a"/>
+    <path d="M276 94 L272 106 L278 102 Z M282 94 L286 106 L280 102 Z" fill="#6a3f92"/>
+  </g>
 </svg>

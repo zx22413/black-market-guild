@@ -1,7 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Intel Merchant icon: the card's silhouette head, rim-lit; an AI-written placeholder, see public/art/SOURCES.md. -->
-  <path d="M2 28 Q16 25 20 14 Q30 6 40 14 Q44 25 58 28 Q48 34 30 32 Q12 34 2 28 Z M20 30 Q19 50 29 54 Q39 50 38 30 Z" fill="#ffe2a8" transform="translate(-1.5 -1)"/>
-  <path d="M2 28 Q16 25 20 14 Q30 6 40 14 Q44 25 58 28 Q48 34 30 32 Q12 34 2 28 Z M20 30 Q19 50 29 54 Q39 50 38 30 Z" fill="#ffe2a8" transform="translate(1.5 -1)" opacity="0.6"/>
-  <path d="M2 28 Q16 25 20 14 Q30 6 40 14 Q44 25 58 28 Q48 34 30 32 Q12 34 2 28 Z M20 30 Q19 50 29 54 Q39 50 38 30 Z" fill="#231c2b"/>
-  <path d="M32 40 L44 37 L44 46 L33 47 Z" fill="#a8741f"/><path d="M44 35 L62 31 L62 48 L44 47 Z" fill="#f2cf7a"/><ellipse cx="62" cy="39.5" rx="2" ry="8" fill="#cfeff2"/><path d="M14 30 Q30 26 46 30" fill="none" stroke="#8a5a3a" stroke-width="2"/><path d="M24 54 Q12 54 4 60 Q16 58 28 58 Z" fill="#3f8a6a"/>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 64 64">
+  <!-- Customs icon: the card's silhouette head under the peaked cap, rim-lit, and the red seal; an AI-written placeholder, see public/art/SOURCES.md. -->
+  <defs><path id="h" d="M8 20 Q26 4 52 12 L54 24 L46 32 L16 32 L10 28 Z M38 28 L62 32 L56 40 L38 38 Z M17 32 Q16 56 31 61 Q46 56 46 32 Z"/></defs>
+  <use href="#h" fill="#ffe2a8" transform="translate(-1.5 -1)"/>
+  <use href="#h" fill="#ffe2a8" transform="translate(1.5 -1)" opacity="0.6"/>
+  <use href="#h" fill="#231c2b"/>
+  <path d="M10 28 H48" stroke="#e8b84a" stroke-width="2.5"/><path d="M30 13 L35 18 L30 23 L25 18 Z" fill="#e8b84a"/>
+  <circle cx="49" cy="51" r="13" fill="#b2392f"/><circle cx="49" cy="51" r="7.5" fill="none" stroke="#e8907e" stroke-width="2.4"/><path d="M45 51 l3 3 l5 -6" fill="none" stroke="#f3c6b8" stroke-width="2.2" stroke-linecap="round"/>
 </svg>
