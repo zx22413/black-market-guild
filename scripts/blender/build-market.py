@@ -35,7 +35,7 @@ REPO = kit.REPO
 OUT_MODEL = os.path.join(REPO, "public/models/islands/market-body.glb")
 OUT_SHAPE = os.path.join(REPO, "src/ui/scene/islandBases/market.ts")
 AO_STRENGTH = 0.45
-AO_WEIGHTS = {"base-city-pave": 0.2, "base-riva-pave": 0.2, "pave-": 0.2, "base-slotquay": 0.3, "base-landing": 0.3}
+AO_WEIGHTS = {"base-city-pave": 0.2, "base-riva-pave": 0.2, "pave-": 0.2}
 SHORE_POINTS = 11
 SKIP = ("after-",)  # townsfolk and the pile: the game draws them
 

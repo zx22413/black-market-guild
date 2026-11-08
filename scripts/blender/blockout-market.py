@@ -366,9 +366,10 @@ HALF = SLOT["water"] / 2 + SLOT["quay"]
 HOUSE_COLOURS = ["ochre", "rose", "sky", "plaster", "ochre", "rose", "plaster", "leaf"]
 
 
-def cut_outline(radius, frames, head_u, wobble=0.02, n=48):
+def cut_outline(radius, frames, head_u, wobble=0.02, n=48, half=HALF):
     """A round of straight walls `radius` out with a slot cut along every berth's keel line from `head_u` (behind the
-    bow) out to the sea, `HALF` either side."""
+    bow) out to the sea, `half` either side (`HALF` by default: the dock with its side quays). A narrower `half` keeps
+    the side quays as arms `HALF` wide out to the slot's mouth."""
     base = [(math.cos(2 * math.pi * k / n) * radius * (1 + wobble * math.sin(k * 2.3)), math.sin(2 * math.pi * k / n) * radius * (1 + wobble * math.sin(k * 2.3))) for k in range(n)]
     keep = []
     for p in base:
@@ -386,7 +387,11 @@ def cut_outline(radius, frames, head_u, wobble=0.02, n=48):
                 (bx, bz), (ux, uz), (vx, vz) = frames[cut]
                 s = 1 if (ux * vz - uz * vx) > 0 else -1
                 mouth = radius - math.hypot(bx, bz) + 1.2
-                for v, u in ((-HALF, mouth), (-HALF, head_u), (HALF, head_u), (HALF, mouth)):
+                corners = ((-half, head_u), (half, head_u))
+                corners = ((-half, mouth),) + corners + ((half, mouth),)
+                if half < HALF:
+                    corners = ((-HALF, mouth),) + corners + ((HALF, mouth),)
+                for v, u in corners:
                     out.append((bx + ux * u + vx * v * s, bz + uz * u + vz * v * s))
             continue
         out.append(p)
@@ -676,22 +681,21 @@ def direction_ab(n):
     seats = DUMP["seats"]["4"]
     frames = [slot_frame(b) for b in seats["berths"]]
     q = seats["quiet"]
-    # The town at the square's level, cut by the slots and their stairs; the riva a step down round it, cut by the slots.
+    # The town at the square's level, cut by the slots and their stairs; the riva a step down round it, cut by the
+    # slots' water only, so its paving runs on as each slot's side quays and the landing at the stairs' foot. (Separate
+    # quay and landing blocks on top of the riva shared its height and flickered: one block, one top.)
     town = cut_outline(TOWN_R, frames, HEAD_U - LANDING - STAIR_RUN)
-    riva = cut_outline(RIVA_R, frames, HEAD_U, wobble=0.015)
+    riva = cut_outline(RIVA_R, frames, HEAD_U, wobble=0.015, half=SLOT["water"] / 2)
     walled("base-riva", riva, LOW, pave="quayPave")
     walled("base-city", town, G)
     market_ring()
     for k, frame in enumerate(frames):
-        # The slot's side quays and its landing, a step up from the water, bollards along them.
+        # Bollards along the slot's side quays (the riva's paving either side of the water).
         for side in (-1, 1):
-            v0, v1 = side * SLOT["water"] / 2, side * HALF
-            mouth = RIVA_R - math.hypot(*frame[0]) + 1.2
-            walled(f"base-slotquay-{k}{side}", [at_frame(frame, u, v) for u, v in ((HEAD_U - LANDING, v0), (mouth, v0), (mouth, v1), (HEAD_U - LANDING, v1))], LOW, pave="quayPave")
+            v0 = side * SLOT["water"] / 2
             for j, u in enumerate((1.0, 3.6)):
                 x, z = at_frame(frame, u, v0 + side * 0.3)
                 bollard(f"base-bollard-{k}{side}{j}", x, LOW + 0.03, z)
-        walled(f"base-landing-{k}", [at_frame(frame, u, v) for u, v in ((HEAD_U - LANDING, -SLOT["water"] / 2), (HEAD_U, -SLOT["water"] / 2), (HEAD_U, SLOT["water"] / 2), (HEAD_U - LANDING, SLOT["water"] / 2))], LOW, pave="quayPave")
         # The grand stairs, the whole slot wide, from the landing up to the square: where arrivals are met.
         (bx, bz), (ux, uz), (vx, vz) = frame
         yaw = math.atan2(ux, uz)
