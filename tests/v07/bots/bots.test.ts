@@ -22,7 +22,7 @@ function lineupBots(players: number, seed: number) {
 }
 
 describe('V0.7 bots in full matches', () => {
-  it.each([3, 4])('finish %i-player matches with only legal actions', (players) => {
+  it.each([4])('finish %i-player matches with only legal actions', (players) => {
     for (let seed = 1; seed <= 25; seed += 1) {
       const { state, actions } = playBots(seed, lineupBots(players, seed));
       expect(state.phase).toBe('game-over');
@@ -54,7 +54,7 @@ describe('V0.7 bots in full matches', () => {
   });
 
   it('decide from a plain JSON copy of the view (no hidden state behind it)', () => {
-    let state = start(3);
+    let state = start(4);
     const bot = createHeuristicBot('balanced', 3);
     const [decision] = getPendingDecisions(state);
     const view = JSON.parse(JSON.stringify(getPlayerView(state, decision!.playerId)));
@@ -64,7 +64,7 @@ describe('V0.7 bots in full matches', () => {
   });
 
   it('random bots also finish matches', () => {
-    const { state } = playBots(4, [createRandomBot(1), createRandomBot(2), createRandomBot(3)]);
+    const { state } = playBots(4, [createRandomBot(1), createRandomBot(2), createRandomBot(3), createRandomBot(4)]);
     expect(state.phase).toBe('game-over');
   });
 });
@@ -76,7 +76,7 @@ describe('V0.7 bot factory and helpers', () => {
   });
 
   it('throw when there is nothing to choose', () => {
-    const state = start(3);
+    const state = start(4);
     const decision = { playerId: 'p1', phase: 'invest' as const };
     const context = { view: getPlayerView(state, 'p1'), decision, legalActions: [] };
     expect(() => createRandomBot(1).decide(context)).toThrow(/no legal action/);
@@ -92,7 +92,7 @@ describe('V0.7 bot factory and helpers', () => {
   });
 
   it('accepts a custom personality', () => {
-    const { state } = playBots(2, [createHeuristicBot({ ...PERSONALITIES.balanced, temperature: 0 }, 1), createBot('cautious', 2), createBot('builder', 3)]);
+    const { state } = playBots(2, [createHeuristicBot({ ...PERSONALITIES.balanced, temperature: 0 }, 1), createBot('cautious', 2), createBot('builder', 3), createBot('aggressive', 4)]);
     expect(state.phase).toBe('game-over');
   });
 
@@ -125,7 +125,7 @@ describe('V0.7 bot decisions', () => {
   });
 
   it('ships spice rather than letting it spoil', () => {
-    const state = edit(start(3), 'p1', { island: null, stock: G(1, 0, 1) });
+    const state = edit(start(4), 'p1', { island: null, stock: G(1, 0, 1) });
     const view = getPlayerView(state, 'p1');
     const persona = PERSONALITIES.balanced;
     const ship: Action = { type: 'invest', playerId: 'p1', build: null, load: G(1, 0, 1) };
@@ -134,7 +134,7 @@ describe('V0.7 bot decisions', () => {
   });
 
   it('only passes when nobody sails', () => {
-    let state = start(3);
+    let state = start(4);
     for (const p of state.players) {
       state = apply(state, { type: 'invest', playerId: p.id, build: null, load: G(0) }).state;
     }
@@ -145,9 +145,9 @@ describe('V0.7 bot decisions', () => {
   });
 
   it('values guards, pirates, smugglers and customs by ship and island', () => {
-    let state = start(3, undefined, { p1: 'mine', p2: 'mine', p3: 'smuggler-port' });
+    let state = start(4, undefined, { p1: 'mine', p2: 'mine', p3: 'smuggler-port' });
     state = edit(edit(state, 'p3', { stock: G(0, 0, 0, 2) }), 'p1', { stock: G(1, 2) });
-    for (const [id, load] of [['p1', G(1, 2)], ['p2', G(1)], ['p3', G(0, 0, 0, 2)]] as const) {
+    for (const [id, load] of [['p1', G(1, 2)], ['p2', G(1)], ['p3', G(0, 0, 0, 2)], ['p4', G(0)]] as const) {
       state = apply(state, { type: 'invest', playerId: id, build: null, load }).state;
     }
     const persona = PERSONALITIES.balanced;
@@ -171,6 +171,6 @@ describe('V0.7 bot decisions', () => {
   });
 
   it('plays a scripted round without errors from the helpers', () => {
-    expect(playRound(start(3)).state.round).toBe(2);
+    expect(playRound(start(4)).state.round).toBe(2);
   });
 });

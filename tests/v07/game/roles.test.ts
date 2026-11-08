@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { applyAction, getLegalActions, getPlayerView, type MatchState } from '../../../src/v07/game';
 import { G, apply, cash, edit, find, plain, playRound, withDemand, withWanted } from './helpers';
 
-const ready = (players = 3) => withDemand(plain(players).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(players)), G(2, 2, 2, 1));
+const ready = (players = 4) => withDemand(plain(players).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(players)), G(2, 2, 2, 1));
 
 function modifiers(events: ReturnType<typeof playRound>['events'], owner: string) {
   return find(events, 'voyage-modifiers')[0]!.modifiers.find((m) => m.shipId.endsWith(`-${owner}`))!;
@@ -33,12 +33,12 @@ describe('§9.1 voyage modifiers', () => {
   });
 
   it('sinks only a final value of 1: a 2 arrives (§9.1)', () => {
-    const { events } = playRound(ready(3), { loads: { p1: G(1), p2: G(1) }, rolls: { p1: 2, p2: 1 } });
+    const { events } = playRound(ready(4), { loads: { p1: G(1), p2: G(1) }, rolls: { p1: 2, p2: 1 } });
     expect(find(events, 'ship-resolved').map((e) => e.outcome)).toEqual(['arrived', 'sank']);
   });
 
   it('applies fortress guards +2 and pirate cove pirates -2 (§11.2)', () => {
-    let state = edit(ready(3), 'p2', { island: 'fortress' });
+    let state = edit(ready(4), 'p2', { island: 'fortress' });
     state = edit(state, 'p3', { island: 'pirate-cove' });
     const { events } = playRound(state, { loads: { p2: G(1) }, rolls: { p2: 4 }, roles: { p2: ['guard', 'p2'], p3: ['pirate', 'p2'] } });
     expect(modifiers(events, 'p2')).toMatchObject({ guard: 2, pirate: -2, final: 4 });
@@ -52,7 +52,7 @@ describe('§9.1 voyage modifiers', () => {
     ['black-market-rush', 0],
     ['calm-seas', 0],
   ] as const)('%s changes a guarded, pirated ship by %i (§12)', (voyageEvent, expected) => {
-    const { events } = playRound(ready(3), { loads: { p1: G(1) }, rolls: { p1: 3 }, roles: { p2: ['pirate', 'p1'], p1: ['guard', 'p1'] }, voyageEvent });
+    const { events } = playRound(ready(4), { loads: { p1: G(1) }, rolls: { p1: 3 }, roles: { p2: ['pirate', 'p1'], p1: ['guard', 'p1'] }, voyageEvent });
     expect(modifiers(events, 'p1').event).toBe(expected);
   });
 });
@@ -65,7 +65,7 @@ describe('§9.1 the ship dice table', () => {
     [5, 187],
     [6, 250],
   ])('a ship with a final value of %i earns %i G from 2 wood worth 250 G', (roll, sale) => {
-    const { events } = playRound(ready(3), { loads: { p1: G(2) }, rolls: { p1: roll } });
+    const { events } = playRound(ready(4), { loads: { p1: G(2) }, rolls: { p1: roll } });
     expect(cash(events, 'sale', 'p1')).toBe(sale);
   });
 });
@@ -88,13 +88,13 @@ describe('§9.2 fees and §9.3 cooldowns', () => {
   });
 
   it('hides unaffordable roles', () => {
-    const state = rolePhase(edit(ready(3), 'p3', { cash: 30 }));
+    const state = rolePhase(edit(ready(4), 'p3', { cash: 30 }));
     const roles = new Set(getLegalActions(state, 'p3').map((a) => (a.type === 'deploy-role' ? a.role : 'x')));
     expect(roles).toEqual(new Set([null, 'customs', 'smuggler']));
   });
 
   it('cools a role down for two rounds, the fortress guard for one', () => {
-    let state = edit(ready(3), 'p3', { island: 'fortress' });
+    let state = edit(ready(4), 'p3', { island: 'fortress' });
     const all = ['p1', 'p2', 'p3'];
     const loads = { p1: G(1), p2: G(1), p3: G(1) };
     state = playRound(state, { loads, roles: { p2: ['guard', 'p2'], p3: ['guard', 'p3'] } }).state;
@@ -114,7 +114,7 @@ describe('§9.2 fees and §9.3 cooldowns', () => {
 
 describe('§9.4 roles', () => {
   it('lets a guard defend only its own ship and customs board only others', () => {
-    const state = rolePhase(ready(3));
+    const state = rolePhase(ready(4));
     const targets = (id: string, role: string) =>
       getLegalActions(state, id).flatMap((a) => (a.type === 'deploy-role' && a.role === role ? [a.targetShipId] : []));
     expect(new Set(targets('p1', 'guard'))).toEqual(new Set(['r1-p1']));
@@ -130,18 +130,18 @@ describe('§9.4 roles', () => {
 
   it('takes the named good first, scaled by the final value, and leaves the rest to the owner', () => {
     // Arms 200 G and one wood 150 G (arrivals 1 < demand 2 lifts wood one step); the lighthouse is not involved.
-    const full = playRound(ready(3), { loads: { p1: G(1, 0, 0, 1) }, rolls: { p1: 6 }, roles: { p2: ['customs', 'p1'] }, named: { p2: 'arms' } });
+    const full = playRound(ready(4), { loads: { p1: G(1, 0, 0, 1) }, rolls: { p1: 6 }, roles: { p2: ['customs', 'p1'] }, named: { p2: 'arms' } });
     expect(cash(full.events, 'goods-confiscated', 'p2')).toBe(200);
     expect(cash(full.events, 'sale', 'p1')).toBe(150);
     expect(find(full.events, 'goods-confiscated')).toEqual([{ type: 'goods-confiscated', round: 1, shipId: 'r1-p1', good: 'arms', units: 1, customs: ['p2'] }]);
     expect(find(full.events, 'market-settled')[0]!.arrived.arms).toBe(1);
-    const low = playRound(ready(3), { loads: { p1: G(1, 0, 0, 1) }, rolls: { p1: 2 }, roles: { p2: ['customs', 'p1'] }, named: { p2: 'arms' } });
+    const low = playRound(ready(4), { loads: { p1: G(1, 0, 0, 1) }, rolls: { p1: 2 }, roles: { p2: ['customs', 'p1'] }, named: { p2: 'arms' } });
     expect(cash(low.events, 'goods-confiscated', 'p2')).toBe(60);
     expect(cash(low.events, 'sale', 'p1')).toBe(45);
   });
 
   it('takes nothing for a good that is not aboard, but still charges the fee', () => {
-    const { events } = playRound(ready(3), { loads: { p1: G(1) }, roles: { p2: ['customs', 'p1'] }, named: { p2: 'arms' } });
+    const { events } = playRound(ready(4), { loads: { p1: G(1) }, roles: { p2: ['customs', 'p1'] }, named: { p2: 'arms' } });
     expect(find(events, 'goods-confiscated')).toEqual([]);
     expect(cash(events, 'role-fee', 'p2')).toBe(-25);
   });
@@ -158,21 +158,21 @@ describe('§9.4 roles', () => {
 
   it('lets pirates take a share of a sunk ship, with the wanted bonus (§9.4, §9.6)', () => {
     // Nothing arrives against a demand of 2, so wood rises to 150 G: 2 wood are worth 300 G, and final value 1 pays 70% of it.
-    const sunk = playRound(ready(3), { loads: { p1: G(2) }, rolls: { p1: 2 }, roles: { p2: ['pirate', 'p1'] } });
+    const sunk = playRound(ready(4), { loads: { p1: G(2) }, rolls: { p1: 2 }, roles: { p2: ['pirate', 'p1'] } });
     expect(cash(sunk.events, 'pirate-loot', 'p2')).toBe(210);
     // Two pirates split it; a wanted owner adds the bank's 100 G first.
-    const wanted = playRound(withWanted(ready(3), ['p1']), { loads: { p1: G(2) }, rolls: { p1: 3 }, roles: { p2: ['pirate', 'p1'], p3: ['pirate', 'p1'] } });
+    const wanted = playRound(withWanted(ready(4), ['p1']), { loads: { p1: G(2) }, rolls: { p1: 3 }, roles: { p2: ['pirate', 'p1'], p3: ['pirate', 'p1'] } });
     expect(cash(wanted.events, 'pirate-loot', 'p2')).toBe(155);
     expect(cash(wanted.events, 'pirate-loot', 'p3')).toBe(155);
   });
 
   it('lets pirates take 50% of the income of a ship that just arrives on a 2, and nothing on a 3', () => {
-    const two = playRound(ready(3), { loads: { p1: G(2) }, rolls: { p1: 3 }, roles: { p2: ['pirate', 'p1'] } });
+    const two = playRound(ready(4), { loads: { p1: G(2) }, rolls: { p1: 3 }, roles: { p2: ['pirate', 'p1'] } });
     expect(modifiers(two.events, 'p1').final).toBe(2);
     // 250 G x 30% = 75 G; pirates take half (37), the owner keeps the rest.
     expect(cash(two.events, 'pirate-loot', 'p2')).toBe(37);
     expect(cash(two.events, 'sale', 'p1')).toBe(38);
-    const three = playRound(ready(3), { loads: { p1: G(2) }, rolls: { p1: 4 }, roles: { p2: ['pirate', 'p1'] } });
+    const three = playRound(ready(4), { loads: { p1: G(2) }, rolls: { p1: 4 }, roles: { p2: ['pirate', 'p1'] } });
     expect(modifiers(three.events, 'p1').final).toBe(3);
     expect(cash(three.events, 'pirate-loot', 'p2')).toBe(0);
   });

@@ -318,6 +318,18 @@
   color: #2b2116;
   cursor: pointer;
 }
+.beat-foot button {
+  white-space: nowrap;
+}
+.beat-card.result .beat-foot {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+@media (max-width: 640px) {
+  .beat-card.result .beat-foot button {
+    padding: 6px 10px;
+  }
+}
 .result-wait {
   align-self: center;
   margin-right: auto;
@@ -3414,6 +3426,10 @@ button.inv-stack:hover {
 .beat3d-pin > .inv-stack {
   transform: translate(-50%, 6px);
 }
+.note-badge > button,
+.note-label {
+  white-space: nowrap;
+}
 .note-label {
   font-size: var(--fs-note);
   font-weight: 700;
@@ -3561,8 +3577,19 @@ button .info-tip-anchor {
   justify-content: center;
   gap: 8px;
 }
+.feedback-choices button,
+.feedback-send button {
+  padding: 6px 14px;
+  border: 1px solid #b9a77d;
+  border-radius: 999px;
+  background: #efe3c4;
+  color: #2b2116;
+  white-space: nowrap;
+  cursor: pointer;
+}
 .feedback-choices button.on {
-  outline: 2px solid currentColor;
+  outline: 2px solid #e0a63c;
+  background: #fff3c9;
 }
 .feedback-box textarea {
   width: 100%;

@@ -22,7 +22,7 @@ function contextOf(state: MatchState, playerId = 'p1'): DecisionContext {
 
 /** Round-1 investment of p1 under the ship-bay rules, on an island that changes neither fee nor capacity. */
 function scenario(patch: Parameters<typeof edit>[2] = {}, event: VoyageEventId | null = null, island: 'mine' | 'lighthouse' = 'mine') {
-  const base = edit(start(3, RULES_V07, { p1: island }), 'p1', { cash: 1000, stock: G(3, 3, 3, 3), buildings: [], ...patch });
+  const base = edit(start(4, RULES_V07, { p1: island }), 'p1', { cash: 1000, stock: G(3, 3, 3, 3), buildings: [], ...patch });
   const state = { ...base, roundState: { ...base.roundState, voyageEvent: event } };
   return contextOf(state);
 }
@@ -31,7 +31,7 @@ const card = (context: DecisionContext, id: string) => shipCards(context).find((
 
 describe('ship cards (ship-bay experiment)', () => {
   it('offers none while the experiment is off', () => {
-    const state = edit(start(3, undefined, { p1: 'mine' }), 'p1', { cash: 1000 });
+    const state = edit(start(4, undefined, { p1: 'mine' }), 'p1', { cash: 1000 });
     expect(shipCards(contextOf(state))).toEqual([]);
   });
 

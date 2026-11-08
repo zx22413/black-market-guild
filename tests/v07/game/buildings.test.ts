@@ -3,11 +3,11 @@ import { RULES_V07, buildingValue, type MatchState } from '../../../src/v07/game
 import { computeResult } from '../../../src/v07/game/scoring';
 import { G, cash, edit, find, plain, playRound, stockOf, withDemand, withPrices } from './helpers';
 
-const ready = (players = 3) => withDemand(plain(players).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(players)), G(2, 2, 2, 1));
+const ready = (players = 4) => withDemand(plain(players).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(players)), G(2, 2, 2, 1));
 
 describe('§10.2 buildings', () => {
   it('pays for buildings in cash and goods', () => {
-    const { events, state } = playRound(ready(3), { builds: { p1: 'exchange', p2: 'shipyard', p3: 'salvage' } });
+    const { events, state } = playRound(ready(4), { builds: { p1: 'exchange', p2: 'shipyard', p3: 'salvage' } });
     expect(cash(events, 'build', 'p1')).toBe(-150);
     expect(find(events, 'buildings-built')[0]!.builds).toHaveLength(3);
     // Round 2 produces nothing, and the spice in the warehouse spoils.
@@ -17,12 +17,12 @@ describe('§10.2 buildings', () => {
   });
 
   it('insurance pays its owner in cash when their ship sinks, and nothing when it arrives', () => {
-    const state = edit(ready(3), 'p1', { buildings: ['insurance'] });
+    const state = edit(ready(4), 'p1', { buildings: ['insurance'] });
     const sunk = playRound(state, { loads: { p1: G(1) }, rolls: { p1: 1 } });
     expect(cash(sunk.events, 'insurance', 'p1')).toBe(RULES_V07.buildings.insurance.payout);
     const safe = playRound(state, { loads: { p1: G(1) }, rolls: { p1: 6 } });
     expect(cash(safe.events, 'insurance', 'p1')).toBe(0);
-    const bare = playRound(ready(3), { loads: { p1: G(1) }, rolls: { p1: 1 } });
+    const bare = playRound(ready(4), { loads: { p1: G(1) }, rolls: { p1: 1 } });
     expect(cash(bare.events, 'insurance', 'p1')).toBe(0);
   });
 
@@ -52,7 +52,7 @@ describe('§10.2 buildings', () => {
     const state = edit(ready(4), 'p4', { buildings: ['exchange'] });
     const { events } = playRound(state, { loads: { p1: G(2, 1), p2: G(1, 1), p4: G(1) } });
     expect(cash(events, 'exchange-commission', 'p4')).toBe(60);
-    const few = playRound(edit(ready(3), 'p3', { buildings: ['exchange'] }), { loads: { p1: G(1), p2: G(1) }, rolls: { p2: 1 } });
+    const few = playRound(edit(ready(4), 'p3', { buildings: ['exchange'] }), { loads: { p1: G(1), p2: G(1) }, rolls: { p2: 1 } });
     expect(cash(few.events, 'exchange-commission', 'p3')).toBe(15);
   });
 });
@@ -75,7 +75,7 @@ describe('§13 final wealth', () => {
   });
 
   it('ends after round 6 with the result', () => {
-    let state: MatchState = ready(3);
+    let state: MatchState = ready(4);
     let ended = false;
     while (state.phase !== 'game-over') {
       const r = playRound(state);
@@ -84,6 +84,6 @@ describe('§13 final wealth', () => {
     }
     expect(ended).toBe(true);
     expect(state.round).toBe(6);
-    expect(state.result?.winners).toHaveLength(3);
+    expect(state.result?.winners).toHaveLength(4);
   });
 });

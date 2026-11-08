@@ -5,7 +5,7 @@ import { G, apply, cash, edit, find, plain, playRound, withDemand } from './help
 /** The ship bays (rules.ships): five ship types, each with its own payout curve. Test values pending a human playtest (game-design.md §8.1). */
 const typed: Rules = RULES_V07;
 
-const ready = () => withDemand(plain(3, typed).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(3, typed)), G(2, 2, 2, 1));
+const ready = () => withDemand(plain(4, typed).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(4, typed)), G(2, 2, 2, 1));
 
 const modifiers = (events: ReturnType<typeof playRound>['events']) => find(events, 'voyage-modifiers')[0]!.modifiers[0]!;
 
@@ -29,7 +29,7 @@ describe('experiment: ship types', () => {
   });
 
   it('offers no building: the ship types replace them (the old rules with buildings still offer them)', () => {
-    const rich = (rules: Rules) => edit(plain(3, rules), 'p1', { cash: 2000, stock: G(5, 5, 5, 5) });
+    const rich = (rules: Rules) => edit(plain(4, rules), 'p1', { cash: 2000, stock: G(5, 5, 5, 5) });
     const builds = (rules: Rules) => getLegalActions(rich(rules), 'p1').filter((a) => a.type === 'invest' && a.build !== null);
     expect(builds(RULES_BUILDINGS).length).toBeGreaterThan(0);
     expect(builds(typed)).toEqual([]);

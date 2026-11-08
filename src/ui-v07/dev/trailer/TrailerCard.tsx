@@ -38,7 +38,7 @@ function Genre() {
   return (
     <div className="trailer-card genre">
       <p className="genre-kind">
-        <span>3～4 人的</span>
+        <span>4 人的</span>
         <span>
           <em>航運貿易</em> × <em>心理博弈</em>
         </span>

@@ -231,16 +231,15 @@ interface LobbyProps {
 
 function Lobby({ code, viaLink, client, state, onLeave, onView }: LobbyProps) {
   const room = state.room;
-  const [seats, setSeats] = useState(4);
   const decisionSeconds = room?.decisionSeconds ?? DEFAULT_DECISION_SECONDS;
   const joined = room?.joined ?? false;
   const connected = state.connection === 'open';
   const members = room?.members ?? [];
   // Someone sitting down or leaving the lobby.
   useCountSound(members.length, 'ui-join', 'ui-leave');
-  const seatOptions = room ? [3, 4].filter((n) => n >= Math.max(room.minSeats, members.length) && n <= room.maxSeats) : [];
-  const chosenSeats = seatOptions.includes(seats) ? seats : (seatOptions.at(-1) ?? seats);
-  const shownSeats = room?.isHost ? chosenSeats : (room?.maxSeats ?? 4);
+  // The table is always four seats (game-design §3): bots fill whoever is missing.
+  const chosenSeats = room?.maxSeats ?? 4;
+  const shownSeats = chosenSeats;
   const cards = seatCards(members, shownSeats);
   // The menu table mirrors the seat cards: a flag for everyone who sat down, mist over open seats.
   const tableKey = cards.map((c) => (c.kind === 'member' ? `m:${c.name}` : 'e')).join('|');
@@ -274,13 +273,6 @@ function Lobby({ code, viaLink, client, state, onLeave, onView }: LobbyProps) {
           <NameRow client={client} joined={joined} connected={connected} code={code} isHost={room.isHost} viaLink={viaLink} />
           {room.isHost ? (
             <div className="menu-foot">
-              <div className="menu-kind" role="radiogroup" aria-label="座位數">
-                {seatOptions.map((n) => (
-                  <button key={n} type="button" role="radio" aria-checked={n === chosenSeats} className={n === chosenSeats ? 'on' : ''} onClick={() => setSeats(n)}>
-                    {n} 人局
-                  </button>
-                ))}
-              </div>
               <div className="menu-kind" role="radiogroup" aria-label="每個決定的限時">
                 {DECISION_SECONDS_CHOICES.map((n) => (
                   <button key={n} type="button" role="radio" aria-checked={n === decisionSeconds} className={n === decisionSeconds ? 'on' : ''} onClick={() => client.setLimit(n)}>

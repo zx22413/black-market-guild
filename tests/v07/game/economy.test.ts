@@ -34,16 +34,16 @@ describe('§6 production and warehouse', () => {
   });
 
   it('announces production and keeps goods across rounds, except spice (§6.3)', () => {
-    const state = stocked(plain(3), G(2, 2, 1, 0));
+    const state = stocked(plain(4), G(2, 2, 1, 0));
     const { state: next, events } = playRound(state);
-    expect(find(events, 'spice-spoiled')[0]?.spoiled).toEqual({ p1: 1, p2: 1, p3: 1 });
+    expect(find(events, 'spice-spoiled')[0]?.spoiled).toEqual({ p1: 1, p2: 1, p3: 1, p4: 1 });
     // Round 2 produces nothing; the spice already in the warehouse spoils.
     expect(find(events, 'goods-produced')[0]?.produced.p1).toEqual(G(0));
     expect(stockOf(next, 'p1')).toEqual(G(2, 2, 0, 0));
   });
 
   it('keeps spice on the spice isles (§11.2)', () => {
-    const state = edit(stocked(plain(3), G(0, 0, 2, 0)), 'p1', { island: 'spice-isles' });
+    const state = edit(stocked(plain(4), G(0, 0, 2, 0)), 'p1', { island: 'spice-isles' });
     const { state: next } = playRound(state);
     expect(stockOf(next, 'p1').spice).toBe(3);
     expect(stockOf(next, 'p2').spice).toBe(0);
@@ -52,7 +52,7 @@ describe('§6 production and warehouse', () => {
 
 describe('§7 black market prices', () => {
   it('moves each price by arrivals against demand and sells this round at the new price', () => {
-    const state = withDemand(stocked(plain(3)), G(1, 1, 1, 0));
+    const state = withDemand(stocked(plain(4)), G(1, 1, 1, 0));
     const { state: next, events } = playRound(state, { loads: { p1: G(2), p2: G(1) } });
     const settled = find(events, 'market-settled')[0]!;
     expect(settled.arrived).toEqual(G(3));
@@ -65,20 +65,20 @@ describe('§7 black market prices', () => {
   });
 
   it('moves spice two steps and clamps prices to the track', () => {
-    const state = withPrices(withDemand(stocked(plain(3)), G(1, 1, 3, 0)), G(6, 0, 3, 3));
+    const state = withPrices(withDemand(stocked(plain(4)), G(1, 1, 3, 0)), G(6, 0, 3, 3));
     const { events } = playRound(state, { loads: { p1: G(0, 2, 1) } });
     expect(find(events, 'market-settled')[0]!.priceAfter).toEqual(G(6, 0, 5, 3));
     expect(cash(events, 'sale', 'p1')).toBe(2 * 75 + 200);
   });
 
   it('ignores sunk cargo when counting arrivals', () => {
-    const state = withDemand(stocked(plain(3)), G(1, 1, 1, 0));
+    const state = withDemand(stocked(plain(4)), G(1, 1, 1, 0));
     const { events } = playRound(state, { loads: { p1: G(2) }, rolls: { p1: 1 } });
     expect(find(events, 'market-settled')[0]!.arrived).toEqual(G(0));
   });
 
   it('gives the spice isles only half of a spice rise (§11.2)', () => {
-    const state = edit(withDemand(stocked(plain(3)), G(1, 1, 3, 0)), 'p1', { island: 'spice-isles' });
+    const state = edit(withDemand(stocked(plain(4)), G(1, 1, 3, 0)), 'p1', { island: 'spice-isles' });
     const { events } = playRound(state, { loads: { p1: G(0, 0, 1), p2: G(0, 0, 1) } });
     expect(cash(events, 'sale', 'p1')).toBe(175);
     expect(cash(events, 'sale', 'p2')).toBe(200);
@@ -87,7 +87,7 @@ describe('§7 black market prices', () => {
 
 describe('§8 sailing and §10.1 building', () => {
   it('offers loads within capacity and stock, with the ship cost affordable', () => {
-    const state = edit(stocked(plain(3), G(5, 0, 0, 0)), 'p1', { cash: 120 });
+    const state = edit(stocked(plain(4), G(5, 0, 0, 0)), 'p1', { cash: 120 });
     const loads = getLegalActions(state, 'p1').flatMap((a) => (a.type === 'invest' && a.build === null ? [a.load.wood] : []));
     expect(loads).toEqual([0, 1, 2, 3]);
     // A shipyard (100 G + 2 wood) adds capacity this round, but then the ship cost is unaffordable.
@@ -96,7 +96,7 @@ describe('§8 sailing and §10.1 building', () => {
   });
 
   it('counts a shipyard built this round and the free port drawback toward capacity', () => {
-    const state = stocked(plain(3), G(9, 0, 0, 0));
+    const state = stocked(plain(4), G(9, 0, 0, 0));
     const max = (s: MatchState, id: string, build: string | null) =>
       Math.max(...getLegalActions(s, id).flatMap((a) => (a.type === 'invest' && a.build === build ? [a.load.wood] : [])));
     expect(max(state, 'p1', 'shipyard')).toBe(4);
@@ -104,12 +104,13 @@ describe('§8 sailing and §10.1 building', () => {
   });
 
   it('builds before loading, charges ship costs and keeps cargo secret until resolution', () => {
-    let state = stocked(plain(3), G(2, 2, 1, 0));
+    let state = stocked(plain(4), G(2, 2, 1, 0));
     state = edit(state, 'p2', { island: 'lighthouse' });
     state = edit(state, 'p3', { island: 'free-port' });
     let r = apply(state, { type: 'invest', playerId: 'p1', build: 'insurance', load: G(1, 1) });
     r = apply(r.state, { type: 'invest', playerId: 'p2', build: null, load: G(1) });
     r = apply(r.state, { type: 'invest', playerId: 'p3', build: null, load: G(0, 0, 1) });
+    r = apply(r.state, { type: 'invest', playerId: 'p4', build: null, load: G(0) });
     expect(cashOf(r.state, 'p1')).toBe(1000 - 100 - 100);
     expect(cashOf(r.state, 'p2')).toBe(1000 - 150);
     expect(cashOf(r.state, 'p3')).toBe(1000 - 50);
@@ -125,25 +126,25 @@ describe('§8 sailing and §10.1 building', () => {
   });
 
   it('limits buildings to two per player', () => {
-    const state = edit(stocked(plain(3), G(9, 9, 0, 0)), 'p1', { buildings: ['shipyard', 'salvage'] });
+    const state = edit(stocked(plain(4), G(9, 9, 0, 0)), 'p1', { buildings: ['shipyard', 'salvage'] });
     expect(getLegalActions(state, 'p1').every((a) => a.type === 'invest' && a.build === null)).toBe(true);
     expect(getLegalActions(state, 'p2').some((a) => a.type === 'invest' && a.build === 'exchange')).toBe(true);
   });
 
   it('still opens role deployment when nobody sails, with only "no role" to choose (§9.2)', () => {
-    let state = stocked(plain(3));
+    let state = stocked(plain(4));
     for (const p of state.players) {
       state = apply(state, { type: 'invest', playerId: p.id, build: null, load: G(0) }).state;
     }
     expect(state.phase).toBe('role-deployment');
     const roles = new Set(getLegalActions(state, 'p1').map((a) => (a.type === 'deploy-role' ? a.role : 'x')));
     expect(roles).toEqual(new Set([null]));
-    const { state: next } = playRound(stocked(plain(3)));
+    const { state: next } = playRound(stocked(plain(4)));
     expect(next.round).toBe(2);
   });
 
   it('opens with an empty wanted list and marks the cash leader later (§9.6)', () => {
-    const state = withDemand(stocked(start(3)), G(2, 2, 2, 0));
+    const state = withDemand(stocked(start(4)), G(2, 2, 2, 0));
     expect(state.roundState.wanted).toEqual([]);
     const { state: next } = playRound(edit(state, 'p1', { island: null }), { loads: { p1: G(2) } });
     expect(next.roundState.wanted).toEqual(['p1']);

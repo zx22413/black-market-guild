@@ -30,7 +30,7 @@ describe('§3 match setup and §11.1 island draft', () => {
   });
 
   it('reveals all choices together and opens round 1 with that island production', () => {
-    let { state } = draft(3);
+    let { state } = draft(4);
     const choices = Object.fromEntries(state.players.map((p) => [p.id, state.islandOffers[p.id]![1]!]));
     let events: unknown[] = [];
     for (const p of state.players) {
@@ -45,7 +45,7 @@ describe('§3 match setup and §11.1 island draft', () => {
   });
 
   it('rejects islands that were not offered and repeated choices', () => {
-    const { state } = draft(3);
+    const { state } = draft(4);
     const other = ISLAND_IDS.find((i) => !state.islandOffers.p1!.includes(i))!;
     expect(applyAction(state, { type: 'choose-island', playerId: 'p1', island: other }).ok).toBe(false);
     const once = apply(state, { type: 'choose-island', playerId: 'p1', island: state.islandOffers.p1![0]! }).state;
@@ -58,30 +58,27 @@ describe('§3 match setup and §11.1 island draft', () => {
     const players = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `p${i}`, name: `p${i}` }));
     expect(createMatch({ seed: 1, players: players(2) }).ok).toBe(false);
     expect(createMatch({ seed: 1, players: players(5) }).ok).toBe(false);
-    expect(createMatch({ seed: 0.5, players: players(3) }).ok).toBe(false);
+    expect(createMatch({ seed: 0.5, players: players(4) }).ok).toBe(false);
     expect(createMatch({ seed: 1, players: [...players(2), { id: 'p0', name: 'x' }] }).ok).toBe(false);
     expect(createMatch({ seed: 1, players: [...players(2), { id: ' ', name: 'x' }] }).ok).toBe(false);
-    expect(createMatch({ seed: 1, players: players(3), rules: { ...RULES_V07, rounds: 0 } }).ok).toBe(false);
-    expect(createMatch({ seed: 1, players: players(3), rules: { ...RULES_V07, price: { ...RULES_V07.price, tracks: { ...RULES_V07.price.tracks, arms: { ...RULES_V07.price.tracks.arms, start: 9 } } } } }).ok).toBe(false);
-    expect(createMatch({ seed: 1, players: players(3), rules: { ...RULES_V07, rounds: 40 } }).ok).toBe(false);
+    expect(createMatch({ seed: 1, players: players(4), rules: { ...RULES_V07, rounds: 0 } }).ok).toBe(false);
+    expect(createMatch({ seed: 1, players: players(4), rules: { ...RULES_V07, price: { ...RULES_V07.price, tracks: { ...RULES_V07.price.tracks, arms: { ...RULES_V07.price.tracks.arms, start: 9 } } } } }).ok).toBe(false);
+    expect(createMatch({ seed: 1, players: players(4), rules: { ...RULES_V07, rounds: 40 } }).ok).toBe(false);
   });
 });
 
 describe('§7.2 demand deck', () => {
-  it('holds one card per combination: 12 for 3 players and 54 for 4', () => {
-    const three = buildDemandDeck(RULES_V07, 3);
+  it('holds one card per combination: 54 for 4 players, none for any other count', () => {
     const four = buildDemandDeck(RULES_V07, 4);
-    expect(three).toHaveLength(12);
     expect(four).toHaveLength(54);
-    expect(three).toContainEqual(G(1, 2, 2, 0));
     expect(four).toContainEqual(G(2, 3, 3, 2));
     expect(four.every((c) => c.wood <= 2)).toBe(true);
-    expect(three.every((c) => c.wood === 1 && c.arms <= 2)).toBe(true);
+    expect(buildDemandDeck(RULES_V07, 3)).toEqual([]);
     expect(buildDemandDeck(RULES_V07, 5)).toEqual([]);
   });
 
   it('reveals one card at each round start with the current prices', () => {
-    let { state } = draft(3);
+    let { state } = draft(4);
     const top = state.demandDeck[0];
     let events: ReturnType<typeof apply>['events'] = [];
     for (const p of state.players) {

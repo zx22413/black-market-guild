@@ -10,6 +10,7 @@ function playedMatch() {
       { kind: 'bot', name: 'A', strategy: 'balanced' },
       { kind: 'bot', name: 'B', strategy: 'aggressive' },
       { kind: 'bot', name: 'C', strategy: 'cautious' },
+      { kind: 'bot', name: 'D', strategy: 'builder' },
     ],
   });
   const controllers = Object.fromEntries(Object.entries(setup.bots).map(([id, bot]) => [id, { decide: (c: Parameters<typeof bot.decide>[0]) => bot.decide(c), ...(bot.onEvents ? { onEvents: bot.onEvents.bind(bot) } : {}) }]));

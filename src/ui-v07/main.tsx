@@ -11,7 +11,7 @@ const Beat3DPreview = import.meta.env.DEV ? lazy(() => import('./dev/Beat3DPrevi
 const Round3DPreview = import.meta.env.DEV ? lazy(() => import('./dev/Round3DPreview').then((m) => ({ default: m.Round3DPreview }))) : null;
 // The island cards on their own: /v07.html?dev=island-cards (&island=lighthouse).
 const IslandCardsPreview = import.meta.env.DEV ? lazy(() => import('./dev/IslandCardsPreview').then((m) => ({ default: m.IslandCardsPreview }))) : null;
-// The market island up close: /v07.html?dev=market (&view=back|top|far, &weather=moonless-night, &players=3).
+// The market island up close: /v07.html?dev=market (&view=back|top|far, &weather=moonless-night).
 // The ship-select camera sketch: /v07.html?dev=ship-select (&view=side|three|high|wide, &flip=1).
 const ShipSelectPreview = import.meta.env.DEV ? lazy(() => import('./dev/ShipSelectPreview').then((m) => ({ default: m.ShipSelectPreview }))) : null;
 // The five ship types and their loops: /v07.html?dev=ships (&state=sailing, &view=close|side&ship=gambler, &weather=moonless-night).

@@ -163,7 +163,7 @@ const trait = (patch: Partial<IslandTrait>): IslandTrait => ({ ...NEUTRAL_TRAIT,
  */
 export const RULES_BUILDINGS: Rules = {
   version: 'V0.7.1-buildings',
-  players: { min: 3, max: 4 }, // §3
+  players: { min: 4, max: 4 }, // §3 (fixed at four since 2026-11-08)
   rounds: 6, // §3
   startingCash: 1000, // §3
   startingStock: goods({ wood: 1, iron: 1 }), // §3
@@ -181,7 +181,6 @@ export const RULES_BUILDINGS: Rules = {
   },
   demand: {
     // §7.2
-    3: { min: goods({ wood: 1, iron: 1, spice: 1, arms: 0 }), max: goods({ wood: 1, iron: 2, spice: 2, arms: 2 }) },
     4: { min: goods({ wood: 1, iron: 1, spice: 1, arms: 0 }), max: goods({ wood: 2, iron: 3, spice: 3, arms: 2 }) },
   },
   capacity: { base: 3, shipyardBonus: 1 }, // §8

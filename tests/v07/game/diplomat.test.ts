@@ -4,7 +4,7 @@ import { G, apply, cash, cashOf, edit, find, plain, playRound, withDemand } from
 
 const ready = () =>
   withDemand(
-    plain(3).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(3)),
+    plain(4).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(4)),
     G(2, 2, 2, 1),
   );
 

@@ -29,7 +29,7 @@ function contextOf(state: MatchState, playerId = 'p1'): DecisionContext {
 
 /** Round-1 investment for p1 on an island without traits that change capacity or ship cost. */
 function scenario(patch: Parameters<typeof edit>[2] = {}) {
-  const state = edit(start(3, undefined, { p1: 'lumber' }), 'p1', { cash: 1000, stock: G(2, 2, 1, 1), buildings: [], ...patch });
+  const state = edit(start(4, undefined, { p1: 'lumber' }), 'p1', { cash: 1000, stock: G(2, 2, 1, 1), buildings: [], ...patch });
   const context = contextOf(state);
   return { context, options: investOptions(context) };
 }
@@ -141,7 +141,7 @@ describe('investment choice on the island (only legal actions)', () => {
   });
 
   it('says a hidden ship is out of the customs\' reach (ship-bay experiment)', () => {
-    const state = edit(start(3, RULES_V07, { p1: 'lumber' }), 'p1', { cash: 1000, stock: G(2, 2, 1, 1), buildings: [] });
+    const state = edit(start(4, RULES_V07, { p1: 'lumber' }), 'p1', { cash: 1000, stock: G(2, 2, 1, 1), buildings: [] });
     const context = contextOf(state);
     const options = investOptions(context);
     const hidden = loadOne(options, withShipType(options, EMPTY_CHOICE, 'hidden'), 'wood');
@@ -151,7 +151,7 @@ describe('investment choice on the island (only legal actions)', () => {
   });
 
   it('tells the Spice Isles that a ship with spice pays 25 G more, and shows it in the summary', () => {
-    const state = edit(start(3, RULES_V07, { p1: 'spice-isles' }), 'p1', { cash: 1000, stock: G(2, 2, 2, 1), buildings: [] });
+    const state = edit(start(4, RULES_V07, { p1: 'spice-isles' }), 'p1', { cash: 1000, stock: G(2, 2, 2, 1), buildings: [] });
     const context = contextOf(state);
     const options = investOptions(context);
     const ship = withShipType(options, EMPTY_CHOICE, 'standard');
@@ -166,7 +166,7 @@ describe('investment choice on the island (only legal actions)', () => {
   });
 
   it('tells a wanted player what it costs, as §9.6 says it', () => {
-    const state = withWanted(edit(start(3, undefined, { p1: 'lumber' }), 'p1', { cash: 1000, stock: G(2, 2, 1, 1) }), ['p1']);
+    const state = withWanted(edit(start(4, undefined, { p1: 'lumber' }), 'p1', { cash: 1000, stock: G(2, 2, 1, 1) }), ['p1']);
     const context = contextOf(state);
     const options = investOptions(context);
     const texts = investNotes(context, loadOne(options, EMPTY_CHOICE, 'wood')).map((n) => n.text);
@@ -175,7 +175,7 @@ describe('investment choice on the island (only legal actions)', () => {
   });
 
   it('does not warn about spoiling spice on the Spice Isles (§11.2)', () => {
-    const state = edit(start(3, undefined, { p1: 'spice-isles' }), 'p1', { stock: G(0, 0, 2, 0) });
+    const state = edit(start(4, undefined, { p1: 'spice-isles' }), 'p1', { stock: G(0, 0, 2, 0) });
     expect(investNotes(contextOf(state), EMPTY_CHOICE).some((n) => n.text.includes('香料'))).toBe(false);
   });
 

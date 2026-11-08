@@ -31,9 +31,9 @@ function apply(state: MatchState, action: Action): MatchState {
 
 /** Round 1 at role deployment: every player sails with one wood. */
 function deploying(islands: Parameters<typeof start>[2] = {}): MatchState {
-  let state = start(3, undefined, { p1: 'lumber', p2: 'lumber', p3: 'lumber', ...islands });
-  for (const id of ['p1', 'p2', 'p3']) state = edit(state, id, { stock: G(1, 1, 1, 0) });
-  for (const id of ['p1', 'p2', 'p3']) state = apply(state, { type: 'invest', playerId: id, build: null, load: G(1) });
+  let state = start(4, undefined, { p1: 'lumber', p2: 'lumber', p3: 'lumber', ...islands });
+  for (const id of ['p1', 'p2', 'p3', 'p4']) state = edit(state, id, { stock: G(1, 1, 1, 0) });
+  for (const id of ['p1', 'p2', 'p3', 'p4']) state = apply(state, { type: 'invest', playerId: id, build: null, load: G(1) });
   return state;
 }
 
@@ -91,25 +91,25 @@ describe('role deployment choice (only legal actions)', () => {
   });
 
   it('tells the customs officer that only its own ship sails (it cannot name its own cargo)', () => {
-    let state = start(3, RULES_V07, { p1: 'mine', p2: 'mine', p3: 'mine' });
-    for (const id of ['p1', 'p2', 'p3']) state = edit(state, id, { stock: G(1, 1, 1, 0) });
+    let state = start(4, RULES_V07, { p1: 'mine', p2: 'mine', p3: 'mine' });
+    for (const id of ['p1', 'p2', 'p3', 'p4']) state = edit(state, id, { stock: G(1, 1, 1, 0) });
     state = apply(state, { type: 'invest', playerId: 'p1', build: null, load: G(1), shipType: 'standard' });
-    for (const id of ['p2', 'p3']) state = apply(state, { type: 'invest', playerId: id, build: null, load: G(0) });
+    for (const id of ['p2', 'p3', 'p4']) state = apply(state, { type: 'invest', playerId: id, build: null, load: G(0) });
     const cards = roleCards(contextOf(state), deployOptions(contextOf(state)));
     expect(cards.find((c) => c.id === 'customs')!.reason).toBe('海關只能針對別人的船，這回合只有你的船出航');
     expect(cards.find((c) => c.id === 'guard')!.legal).toBe(true);
   });
 
   it('keeps the plain reason for guard and diplomat when the own ship is not at sea', () => {
-    const state = start(3, RULES_V07, { p1: 'mine', p2: 'mine', p3: 'mine' });
-    const sailed = ['p1', 'p2', 'p3'].reduce((s, id) => apply(edit(s, id, { stock: G(1, 1, 1, 0) }), { type: 'invest', playerId: id, build: null, load: id === 'p1' ? G(0) : G(1), shipType: id === 'p1' ? undefined : 'standard' } as Action), state);
+    const state = start(4, RULES_V07, { p1: 'mine', p2: 'mine', p3: 'mine' });
+    const sailed = ['p1', 'p2', 'p3', 'p4'].reduce((s, id) => apply(edit(s, id, { stock: G(1, 1, 1, 0) }), { type: 'invest', playerId: id, build: null, load: id === 'p1' ? G(0) : G(1), shipType: id === 'p1' ? undefined : 'standard' } as Action), state);
     const cards = roleCards(contextOf(sailed), deployOptions(contextOf(sailed)));
     expect(cards.find((c) => c.id === 'guard')!.reason).toBe('沒有可選的目標');
   });
 
   it('a smuggler may board any ship, its own to cover', () => {
     const options = deployOptions(contextOf(deploying()));
-    expect(targetsFor(options, 'smuggler').sort()).toEqual(['r1-p1', 'r1-p2', 'r1-p3']);
+    expect(targetsFor(options, 'smuggler').sort()).toEqual(['r1-p1', 'r1-p2', 'r1-p3', 'r1-p4']);
   });
 
   it('says why a ship cannot be picked for the role, and nothing for the ships that can be', () => {
@@ -152,7 +152,9 @@ describe('role reveal arrows', () => {
     const p2 = contextOf(state, 'p2');
     state = apply(state, deployActionFor(deployOptions(p2), { ...pickRole('guard'), target: 'r1-p2' })!);
     const p3 = contextOf(state, 'p3');
-    const result = applyAction(state, deployActionFor(deployOptions(p3), pickRole('none'))!);
+    state = apply(state, deployActionFor(deployOptions(p3), pickRole('none'))!);
+    const p4 = contextOf(state, 'p4');
+    const result = applyAction(state, deployActionFor(deployOptions(p4), pickRole('none'))!);
     if (!result.ok) throw new Error(result.error.message);
     const events = [...result.value.events];
     const groups = revealGroups(events, 1);

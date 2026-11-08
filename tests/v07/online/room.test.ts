@@ -97,7 +97,7 @@ describe('V0.7 online room', () => {
     const lobby = ctx.last(GUEST, 'sync');
     expect(lobby?.type === 'sync' && lobby.room.members.map((m) => m.name)).toEqual(['房主', '客人']);
 
-    ctx.send(GUEST, { type: 'start', seats: 3 });
+    ctx.send(GUEST, { type: 'start', seats: 4 });
     expect(ctx.last(GUEST, 'error')).toMatchObject({ code: 'not-host' });
 
     ctx.send(HOST, { type: 'start', seats: 4 });
@@ -124,7 +124,7 @@ describe('V0.7 online room', () => {
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'hello', token: HOST, protocol: PROTOCOL_VERSION });
     const sync = ctx.last(HOST, 'sync');
-    expect(sync?.type === 'sync' && [sync.room.minSeats, sync.room.maxSeats]).toEqual([3, 4]);
+    expect(sync?.type === 'sync' && [sync.room.minSeats, sync.room.maxSeats]).toEqual([4, 4]);
     ctx.send(HOST, { type: 'hello', token: HOST, protocol: 3 });
     expect(ctx.last(HOST, 'error')).toMatchObject({ code: 'outdated' });
   });
@@ -133,7 +133,7 @@ describe('V0.7 online room', () => {
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'join', name: 'A' });
     ctx.send(GUEST, { type: 'join', name: 'B' });
-    ctx.send(HOST, { type: 'start', seats: 3 });
+    ctx.send(HOST, { type: 'start', seats: 4 });
     await tick();
     for (const [token, id] of [[HOST, 'p1'], [GUEST, 'p2']] as const) {
       const request = ctx.last(token, 'request');
@@ -149,7 +149,7 @@ describe('V0.7 online room', () => {
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'join', name: 'A' });
     ctx.send(GUEST, { type: 'join', name: 'B' });
-    ctx.send(HOST, { type: 'start', seats: 3 });
+    ctx.send(HOST, { type: 'start', seats: 4 });
     await playOut(ctx, [HOST, GUEST]);
     for (const [token, id] of [
       [HOST, 'p1'],
@@ -165,7 +165,7 @@ describe('V0.7 online room', () => {
   it('refuses actions that were not offered and keeps the request open', async () => {
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'join', name: 'A' });
-    ctx.send(HOST, { type: 'start', seats: 3 });
+    ctx.send(HOST, { type: 'start', seats: 4 });
     await tick();
     const request = ctx.last(HOST, 'request');
     if (request?.type !== 'request') throw new Error('no request');
@@ -183,7 +183,7 @@ describe('V0.7 online room', () => {
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'join', name: 'A' });
     ctx.send(GUEST, { type: 'join', name: 'B' });
-    ctx.send(HOST, { type: 'start', seats: 3 });
+    ctx.send(HOST, { type: 'start', seats: 4 });
     await tick();
     expect(ctx.last(GUEST, 'waiting')).toEqual({ type: 'waiting', players: ['p1', 'p2'] });
     const request = ctx.last(GUEST, 'request');
@@ -198,7 +198,7 @@ describe('V0.7 online room', () => {
   it('keeps late arrivals out of a started match and tells outdated tabs to reload', () => {
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'join', name: 'A' });
-    ctx.send(HOST, { type: 'start', seats: 3 });
+    ctx.send(HOST, { type: 'start', seats: 4 });
     ctx.send(LATE, { type: 'join', name: 'C' });
     expect(ctx.last(LATE, 'error')).toMatchObject({ code: 'already-started' });
     ctx.send(LATE, { type: 'hello', token: LATE, protocol: PROTOCOL_VERSION });
@@ -223,7 +223,7 @@ describe('playing again in the same room', () => {
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'join', name: '房主' });
     ctx.send(GUEST, { type: 'join', name: '客人' });
-    ctx.send(HOST, { type: 'start', seats: 3 });
+    ctx.send(HOST, { type: 'start', seats: 4 });
 
     ctx.send(HOST, { type: 'rematch' });
     expect(ctx.last(HOST, 'error')).toMatchObject({ code: 'not-finished' });
@@ -243,7 +243,7 @@ describe('playing again in the same room', () => {
   it('starts a fresh match after the rematch and lets newcomers join the lobby', async () => {
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'join', name: '房主' });
-    ctx.send(HOST, { type: 'start', seats: 3 });
+    ctx.send(HOST, { type: 'start', seats: 4 });
     await playOut(ctx, [HOST]);
     ctx.send(HOST, { type: 'rematch' });
     ctx.send(LATE, { type: 'join', name: '晚到' });
@@ -266,7 +266,7 @@ describe('leaving a lobby', () => {
     expect(lobby?.type === 'sync' && lobby.room.members.map((m) => m.name)).toEqual(['房主']);
     expect(ctx.last(GUEST, 'sync')).toMatchObject({ room: { joined: false } });
 
-    ctx.send(HOST, { type: 'start', seats: 3 });
+    ctx.send(HOST, { type: 'start', seats: 4 });
     ctx.send(HOST, { type: 'leave' });
     expect(ctx.last(HOST, 'error')).toMatchObject({ code: 'already-started' });
   });
@@ -276,7 +276,7 @@ describe('leaving a lobby', () => {
     ctx.send(HOST, { type: 'join', name: '房主' });
     ctx.send(GUEST, { type: 'join', name: '客人' });
     ctx.send(LATE, { type: 'join', name: '走了' });
-    ctx.send(HOST, { type: 'start', seats: 3 });
+    ctx.send(HOST, { type: 'start', seats: 4 });
     await playOut(ctx, [HOST, GUEST, LATE]);
     ctx.send(HOST, { type: 'rematch' });
     const lobby = ctx.last(GUEST, 'sync');
@@ -287,7 +287,7 @@ describe('leaving a lobby', () => {
   it('tells people who only watched the match that the lobby is open again', async () => {
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'join', name: '房主' });
-    ctx.send(HOST, { type: 'start', seats: 3 });
+    ctx.send(HOST, { type: 'start', seats: 4 });
     ctx.send(LATE, { type: 'hello', token: LATE, protocol: PROTOCOL_VERSION });
     await playOut(ctx, [HOST]);
     ctx.send(HOST, { type: 'rematch' });
@@ -300,18 +300,18 @@ describe('protocol parsing', () => {
     expect(parseClientMessage(JSON.stringify({ type: 'hello', token: HOST, protocol: 1 }))).toMatchObject({ type: 'hello' });
     expect(parseClientMessage(JSON.stringify({ type: 'hello', token: 'short', protocol: 1 }))).toBeNull();
     expect(parseClientMessage('not json')).toBeNull();
-    expect(parseClientMessage(JSON.stringify({ type: 'start', seats: 3.5 }))).toBeNull();
+    expect(parseClientMessage(JSON.stringify({ type: 'start', seats: 4.5 }))).toBeNull();
     expect(parseClientMessage(JSON.stringify({ type: 'rematch' }))).toEqual({ type: 'rematch' });
     expect(parseClientMessage(JSON.stringify({ type: 'leave' }))).toEqual({ type: 'leave' });
     expect(parseClientMessage(JSON.stringify({ type: 'resume' }))).toEqual({ type: 'resume' });
     expect(parseClientMessage(JSON.stringify({ type: 'shown', requestId: 3 }))).toEqual({ type: 'shown', requestId: 3 });
     expect(parseClientMessage(JSON.stringify({ type: 'shown', requestId: 'x' }))).toBeNull();
-    expect(parseClientMessage(JSON.stringify({ type: 'start', seats: 3, decisionSeconds: 60 }))).toEqual({
+    expect(parseClientMessage(JSON.stringify({ type: 'start', seats: 4, decisionSeconds: 60 }))).toEqual({
       type: 'start',
-      seats: 3,
+      seats: 4,
       decisionSeconds: 60,
     });
-    expect(parseClientMessage(JSON.stringify({ type: 'start', seats: 3, decisionSeconds: '60' }))).toBeNull();
+    expect(parseClientMessage(JSON.stringify({ type: 'start', seats: 4, decisionSeconds: '60' }))).toBeNull();
     expect(parseClientMessage(JSON.stringify({ type: 'limit', decisionSeconds: 60 }))).toEqual({ type: 'limit', decisionSeconds: 60 });
     expect(parseClientMessage(JSON.stringify({ type: 'limit', decisionSeconds: 1.5 }))).toBeNull();
     expect(parseClientMessage(JSON.stringify({ type: 'limit' }))).toBeNull();
@@ -345,7 +345,7 @@ function answer(ctx: ReturnType<typeof makeRoom>, token: string, request: Online
 async function soloMatch(decisionSeconds?: number) {
   const ctx = makeRoom();
   ctx.send(HOST, { type: 'join', name: '房主' });
-  ctx.send(HOST, decisionSeconds === undefined ? { type: 'start', seats: 3 } : { type: 'start', seats: 3, decisionSeconds });
+  ctx.send(HOST, decisionSeconds === undefined ? { type: 'start', seats: 4 } : { type: 'start', seats: 4, decisionSeconds });
   await tick();
   return ctx;
 }
@@ -396,7 +396,7 @@ describe('decision time limits and takeover (game-design §15)', () => {
   it('refuses a time limit that is not on offer', () => {
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'join', name: '房主' });
-    ctx.send(HOST, { type: 'start', seats: 3, decisionSeconds: 90 });
+    ctx.send(HOST, { type: 'start', seats: 4, decisionSeconds: 90 });
     expect(ctx.last(HOST, 'error')).toMatchObject({ code: 'bad-time-limit' });
   });
 
@@ -447,7 +447,7 @@ describe('decision time limits and takeover (game-design §15)', () => {
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'join', name: '房主' });
     ctx.send(GUEST, { type: 'join', name: '客人' });
-    ctx.send(HOST, { type: 'start', seats: 3, decisionSeconds: 60 });
+    ctx.send(HOST, { type: 'start', seats: 4, decisionSeconds: 60 });
     await tick();
     answer(ctx, GUEST, openRequests(ctx, GUEST)[0]!);
     await expire(ctx, HOST);
@@ -472,7 +472,7 @@ describe('decision time limits and takeover (game-design §15)', () => {
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'join', name: '房主' });
     ctx.send(GUEST, { type: 'join', name: '客人' });
-    ctx.send(HOST, { type: 'start', seats: 3, decisionSeconds: 60 });
+    ctx.send(HOST, { type: 'start', seats: 4, decisionSeconds: 60 });
     await tick();
     // The guest drops: after the grace period their draft goes to the bot and they are under takeover.
     ctx.setOnline(GUEST, false);
@@ -522,7 +522,7 @@ describe('decision time limits and takeover (game-design §15)', () => {
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'join', name: '房主' });
     ctx.send(GUEST, { type: 'join', name: '客人' });
-    ctx.send(HOST, { type: 'start', seats: 3, decisionSeconds: 60 });
+    ctx.send(HOST, { type: 'start', seats: 4, decisionSeconds: 60 });
     await tick();
     showOpen(ctx, GUEST);
     ctx.advance(30_000);
@@ -544,7 +544,7 @@ describe('decision time limits and takeover (game-design §15)', () => {
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'join', name: '房主' });
     ctx.send(GUEST, { type: 'join', name: '客人' });
-    ctx.send(HOST, { type: 'start', seats: 3, decisionSeconds: 60 });
+    ctx.send(HOST, { type: 'start', seats: 4, decisionSeconds: 60 });
     await tick();
     showOpen(ctx, GUEST);
     ctx.setOnline(GUEST, false);
@@ -625,7 +625,7 @@ describe('lobby time limit is shared (game-design §15.1)', () => {
     ctx.send(HOST, { type: 'limit', decisionSeconds: 300 });
     expect(syncOf(ctx, GUEST)?.decisionSeconds).toBe(300);
     expect(syncOf(ctx, HOST)?.decisionSeconds).toBe(300);
-    ctx.send(HOST, { type: 'start', seats: 3 });
+    ctx.send(HOST, { type: 'start', seats: 4 });
     await tick();
     expect(syncOf(ctx, GUEST)?.match?.decisionSeconds).toBe(300);
   });
@@ -639,7 +639,7 @@ describe('lobby time limit is shared (game-design §15.1)', () => {
     ctx.send(HOST, { type: 'limit', decisionSeconds: 90 });
     expect(ctx.last(HOST, 'error')).toMatchObject({ code: 'bad-time-limit' });
     expect(syncOf(ctx, HOST)?.decisionSeconds).toBe(DEFAULT_DECISION_SECONDS);
-    ctx.send(HOST, { type: 'start', seats: 3 });
+    ctx.send(HOST, { type: 'start', seats: 4 });
     await tick();
     ctx.send(HOST, { type: 'limit', decisionSeconds: 60 });
     expect(syncOf(ctx, HOST)?.match?.decisionSeconds).toBe(DEFAULT_DECISION_SECONDS);
@@ -656,7 +656,7 @@ describe('everyone sees the remaining time of seats still deciding (game-design 
     const ctx = makeRoom();
     ctx.send(GUEST, { type: 'hello', token: GUEST, protocol: PROTOCOL_VERSION });
     ctx.send(HOST, { type: 'join', name: '房主' });
-    ctx.send(HOST, { type: 'start', seats: 3, decisionSeconds: 60 });
+    ctx.send(HOST, { type: 'start', seats: 4, decisionSeconds: 60 });
     await tick();
     expect(clocksOf(ctx, GUEST)).toEqual([{ seat: 'p1', timeLeftMs: null }]);
     showOpen(ctx, HOST);
@@ -670,7 +670,7 @@ describe('everyone sees the remaining time of seats still deciding (game-design 
     const ctx = makeRoom();
     ctx.send(GUEST, { type: 'hello', token: GUEST, protocol: PROTOCOL_VERSION });
     ctx.send(HOST, { type: 'join', name: '房主' });
-    ctx.send(HOST, { type: 'start', seats: 3, decisionSeconds: 60 });
+    ctx.send(HOST, { type: 'start', seats: 4, decisionSeconds: 60 });
     await tick();
     showOpen(ctx, HOST);
     ctx.setOnline(HOST, false);

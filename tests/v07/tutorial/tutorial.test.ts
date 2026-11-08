@@ -122,7 +122,7 @@ describe('every tutorial', () => {
   });
 
   it('keeps the numbers of the official ship-bay rules, only fewer rounds', () => {
-    const created = createMatch({ seed: 1, players: [{ id: 'a', name: 'a' }, { id: 'b', name: 'b' }, { id: 'c', name: 'c' }], rules: RULES_V07 });
+    const created = createMatch({ seed: 1, players: [{ id: 'a', name: 'a' }, { id: 'b', name: 'b' }, { id: 'c', name: 'c' }, { id: 'd', name: 'd' }], rules: RULES_V07 });
     expect(created.ok).toBe(true);
     for (const script of TUTORIALS) {
       const official = created.ok ? created.value.state.rules : null;

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getPlayerView, type MatchState } from '../../../src/v07/game';
 import { G, apply, edit, plain, playRound, withDemand } from './helpers';
 
-const ready = () => withDemand(plain(3).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(3)), G(2, 2, 2, 1));
+const ready = () => withDemand(plain(4).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(4)), G(2, 2, 2, 1));
 
 describe('§4 information', () => {
   it('hides deployments until the reveal and shows who has submitted', () => {

@@ -5,7 +5,7 @@ import { G, cash, edit, find, plain, playRound, withDemand, withPrices } from '.
 // §11.2 in the ship bays: the islands that work on the ship choice (draft numbers, game-design.md §11.2).
 
 const ready = (island: IslandId | null) => {
-  const base = withDemand(plain(3, RULES_V07).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(3, RULES_V07)), G(2, 2, 2, 1));
+  const base = withDemand(plain(4, RULES_V07).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(4, RULES_V07)), G(2, 2, 2, 1));
   return edit(base, 'p1', { island });
 };
 const modifier = (state: MatchState, plan: Parameters<typeof playRound>[1]) => find(playRound(state, plan).events, 'voyage-modifiers')[0]!.modifiers[0]!;
@@ -127,7 +127,7 @@ describe('spice isles (ship bays)', () => {
   });
 
   it('keeps the old half-rise drawback in the building rules', () => {
-    const old = edit(withDemand(plain(3, RULES_BUILDINGS).players.reduce((st, p) => edit(st, p.id, { stock: G(3, 3, 1, 1) }), plain(3, RULES_BUILDINGS)), G(2, 2, 2, 1)), 'p1', { island: 'spice-isles' });
+    const old = edit(withDemand(plain(4, RULES_BUILDINGS).players.reduce((st, p) => edit(st, p.id, { stock: G(3, 3, 1, 1) }), plain(4, RULES_BUILDINGS)), G(2, 2, 2, 1)), 'p1', { island: 'spice-isles' });
     expect(cash(playRound(old, { loads: { p1: G(0, 0, 1) }, rolls: { p1: 6 } }).events, 'sale', 'p1')).toBe(175);
   });
 });

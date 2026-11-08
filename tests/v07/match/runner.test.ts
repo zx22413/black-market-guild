@@ -126,8 +126,8 @@ describe('runMatchSync with random bots', () => {
 });
 
 describe('runMatchSync with strategy bots', () => {
-  it('plays 3- and 4-player matches with every personality', () => {
-    for (const count of [3, 4]) {
+  it('plays 4-player matches with every personality', () => {
+    for (const count of [4]) {
       const seats: SeatConfig[] = (['balanced', 'cautious', 'aggressive', 'builder'] as const)
         .slice(0, count)
         .map((strategy) => ({ kind: 'bot', name: strategy, strategy }));

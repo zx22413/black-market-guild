@@ -6,7 +6,7 @@ import { EMPTY_CHOICE, investOptions, loadOne, withShipType } from '../../src/ui
 import { G, edit, start } from '../v07/game/helpers';
 
 function scenario(island: IslandId, stock = G(2, 2, 1, 1), cash = 1000) {
-  const state = edit(start(3, RULES_V07, { p1: island }), 'p1', { cash, stock, buildings: [] });
+  const state = edit(start(4, RULES_V07, { p1: island }), 'p1', { cash, stock, buildings: [] });
   const decision = getPendingDecisions(state).find((d) => d.playerId === 'p1')!;
   const context: DecisionContext = { view: getPlayerView(state, 'p1'), decision, legalActions: getLegalActions(state, 'p1') };
   return { context, options: investOptions(context) };

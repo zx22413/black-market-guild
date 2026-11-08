@@ -5,13 +5,13 @@ import { G, apply, cash, edit, find, plain, playRound, withDemand } from './help
 // game-design.md §8.1: roles may be deployed on a freighter that is still at sea; the fee and the cooldown count in
 // the round they are deployed, the effect comes with the freighter's arrival.
 
-const ready = () => withDemand(plain(3, RULES_V07).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(3, RULES_V07)), G(2, 2, 2, 1));
+const ready = () => withDemand(plain(4, RULES_V07).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(4, RULES_V07)), G(2, 2, 2, 1));
 
 /** Round 1 at the role deployment, p1 having launched a freighter with 2 wood and nobody else sailing. */
 function deploying(): MatchState {
   let state = ready();
   state = apply(state, { type: 'invest', playerId: 'p1', build: null, load: G(2), shipType: 'freighter' }).state;
-  for (const id of ['p2', 'p3']) state = apply(state, { type: 'invest', playerId: id, build: null, load: G(0) }).state;
+  for (const id of ['p2', 'p3', 'p4']) state = apply(state, { type: 'invest', playerId: id, build: null, load: G(0) }).state;
   return state;
 }
 
@@ -65,11 +65,11 @@ describe('roles pre-deployed on a freighter at sea', () => {
   it('adds to the roles deployed on the freighter once it has arrived', () => {
     const launched = playRound(ready(), { loads: { p1: G(2) }, shipTypes: { p1: 'freighter' }, roles: { p1: ['guard', 'p1'] } });
     let state = launched.state;
-    for (const id of ['p1', 'p2', 'p3']) state = apply(state, { type: 'invest', playerId: id, build: null, load: G(0) }).state;
+    for (const id of ['p1', 'p2', 'p3', 'p4']) state = apply(state, { type: 'invest', playerId: id, build: null, load: G(0) }).state;
     // The freighter is in this round's voyage now: a pirate can aim at it again, next to the guard that came along.
     expect(state.roundState.ships.map((s) => s.id)).toEqual(['r1-p1']);
     state = { ...state, roundState: { ...state.roundState, voyageEvent: 'calm-seas', ships: state.roundState.ships.map((s) => ({ ...s, rawRoll: 3 })) } };
-    const steps: [string, RoleId | null][] = [['p1', null], ['p2', 'pirate'], ['p3', null]];
+    const steps: [string, RoleId | null][] = [['p1', null], ['p2', 'pirate'], ['p3', null], ['p4', null]];
     let events: ReturnType<typeof apply>['events'] = [];
     for (const [id, role] of steps) {
       const r = apply(state, { type: 'deploy-role', playerId: id, role, targetShipId: role === null ? null : 'r1-p1', namedGood: null });
@@ -96,7 +96,7 @@ describe('roles pre-deployed on a freighter at sea', () => {
     const next = launched.state.players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), launched.state);
     expect(next.round).toBe(2);
     const withShip = apply(next, { type: 'invest', playerId: 'p1', build: null, load: G(1), shipType: 'standard' }).state;
-    for (const id of ['p2', 'p3']) apply(withShip, { type: 'invest', playerId: id, build: null, load: G(0) });
+    for (const id of ['p2', 'p3', 'p4']) apply(withShip, { type: 'invest', playerId: id, build: null, load: G(0) });
     expect(targetsOf(withShip, 'p1', 'guard')).toEqual([]);
   });
 });

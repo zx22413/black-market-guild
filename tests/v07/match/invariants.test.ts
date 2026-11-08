@@ -33,7 +33,7 @@ function watchedBot(inner: Bot, violations: string[]): Bot {
 
 const SEEDS = Array.from({ length: 60 }, (_, i) => i + 1);
 
-describe.each([3, 4])('%i random bots over many seeds (V0.7 rules)', (count) => {
+describe.each([4])('%i random bots over many seeds (V0.7 rules)', (count) => {
   it.each(SEEDS)('seed %i keeps every invariant', (seed) => {
     const setup = setupFromSeats({ seed, seats: seats(count), rules: RULES_V07 });
     const violations: string[] = [];

@@ -1,6 +1,5 @@
 import { useState, type CSSProperties } from 'react';
 import { BOT_STRATEGIES, type BotStrategy } from '../../v07/bots';
-import { RULES_V07 } from '../../v07/game';
 import type { SeatConfig } from '../../v07/match';
 import { PLAYER_COLORS } from '../../ui/scene/tableModel';
 import type { SessionOptions } from '../session/gameSession';
@@ -27,9 +26,8 @@ const human = (name: string): SeatDraft => ({ kind: 'local-human', name, strateg
 const bot = (i: number, strategy: BotStrategy = 'balanced'): SeatDraft => ({ kind: 'bot', name: BOT_NAMES[i] ?? `Bot ${i + 1}`, strategy });
 
 const PRESETS: readonly { readonly label: string; readonly note: string; readonly seats: readonly SeatDraft[] }[] = [
-  { label: '1 對 2', note: '你對兩台電腦', seats: [human('你'), bot(1), bot(2, 'aggressive')] },
   { label: '1 對 3', note: '你對三台電腦', seats: [human('你'), bot(1), bot(2, 'aggressive'), bot(3, 'builder')] },
-  { label: '同機輪流', note: '一台裝置傳著玩', seats: [human('玩家一'), human('玩家二'), human('玩家三')] },
+  { label: '同機輪流', note: '一台裝置傳著玩', seats: [human('玩家一'), human('玩家二'), human('玩家三'), human('玩家四')] },
   { label: '觀戰', note: '看四台電腦對打', seats: [bot(0), bot(1, 'cautious'), bot(2, 'aggressive'), bot(3, 'builder')] },
 ];
 
@@ -47,8 +45,8 @@ interface LocalSetupProps {
 
 /** Single player and hot seat: pick a preset, adjust the seats if you like, start. */
 export function LocalSetup({ onStart, onBack }: LocalSetupProps) {
-  const [preset, setPreset] = useState(1);
-  const [seats, setSeats] = useState<readonly SeatDraft[]>(PRESETS[1]!.seats);
+  const [preset, setPreset] = useState(0);
+  const [seats, setSeats] = useState<readonly SeatDraft[]>(PRESETS[0]!.seats);
   const [seed, setSeed] = useState(randomSeed);
 
   return (
@@ -98,7 +96,6 @@ export function LocalSetup({ onStart, onBack }: LocalSetupProps) {
 }
 
 function SeatList({ seats, onChange }: { readonly seats: readonly SeatDraft[]; readonly onChange: (seats: readonly SeatDraft[]) => void }) {
-  const { min, max } = RULES_V07.players;
   const update = (index: number, patch: Partial<SeatDraft>) => onChange(seats.map((s, i) => (i === index ? { ...s, ...patch } : s)));
   return (
     <ol className="menu-seat-list">
@@ -122,20 +119,8 @@ function SeatList({ seats, onChange }: { readonly seats: readonly SeatDraft[]; r
             </select>
           )}
           <input value={seat.name} maxLength={12} placeholder="商會名稱" onChange={(e) => update(i, { name: e.target.value })} />
-          {seats.length > min && (
-            <button type="button" className="menu-x" aria-label={`移除座位 ${i + 1}`} onClick={() => onChange(seats.filter((_, j) => j !== i))}>
-              ✕
-            </button>
-          )}
         </li>
       ))}
-      {seats.length < max && (
-        <li>
-          <button type="button" className="menu-small" onClick={() => onChange([...seats, bot(seats.length)])}>
-            ＋ 新增座位
-          </button>
-        </li>
-      )}
     </ol>
   );
 }

@@ -49,7 +49,7 @@ export function playRandom(seed: number, players: number): Played {
 }
 
 describe('V0.7 random matches', () => {
-  it.each([3, 4])('finish with %i players and keep the invariants', (players) => {
+  it.each([4])('finish with %i players and keep the invariants', (players) => {
     for (let seed = 1; seed <= 60; seed += 1) {
       const { state, events } = playRandom(seed, players);
       expect(state.round).toBe(6);

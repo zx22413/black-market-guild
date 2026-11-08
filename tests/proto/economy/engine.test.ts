@@ -47,13 +47,13 @@ describe('economy prototype setup', () => {
   it('rejects invalid configurations', () => {
     const players = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `p${i}`, name: `p${i}` }));
     expect(createEconomyMatch({ seed: 1, players: players(2) }).ok).toBe(false);
-    expect(createEconomyMatch({ seed: 1.5, players: players(3) }).ok).toBe(false);
+    expect(createEconomyMatch({ seed: 1.5, players: players(4) }).ok).toBe(false);
     expect(createEconomyMatch({ seed: 1, players: [...players(2), { id: 'p0', name: 'x' }] }).ok).toBe(false);
     const fee = { ...ECONOMY_RULES, roles: { ...ECONOMY_RULES.roles, smuggler: { ...ECONOMY_RULES.roles.smuggler, fee: 10 } } };
-    expect(createEconomyMatch({ seed: 1, players: players(3), rules: fee }).ok).toBe(false);
+    expect(createEconomyMatch({ seed: 1, players: players(4), rules: fee }).ok).toBe(false);
     const price = { ...ECONOMY_RULES, price: { ...ECONOMY_RULES.price, start: G(9, 3, 3, 3) } };
-    expect(createEconomyMatch({ seed: 1, players: players(3), rules: price }).ok).toBe(false);
-    expect(createEconomyMatch({ seed: 1, players: players(3), rules: { ...ECONOMY_RULES, rounds: 20 } }).ok).toBe(false);
+    expect(createEconomyMatch({ seed: 1, players: players(4), rules: price }).ok).toBe(false);
+    expect(createEconomyMatch({ seed: 1, players: players(4), rules: { ...ECONOMY_RULES, rounds: 20 } }).ok).toBe(false);
   });
 });
 

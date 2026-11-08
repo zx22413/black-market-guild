@@ -37,7 +37,7 @@ export function apply(state: MatchState, action: Action): Played {
 }
 
 /** A new match still in the island draft. */
-export function draft(players = 3, rules?: Rules, seed = 7): Played {
+export function draft(players = 4, rules?: Rules, seed = 7): Played {
   // The mechanics tests pin the numbers of the rules with buildings (game-design.md before 2026-11-05); the ship bays (the default) have their own tests.
   const created = createMatch({ seed, players: IDS.slice(0, players).map((id) => ({ id, name: id })), rules: rules ?? RULES_BUILDINGS });
   if (!created.ok) {
@@ -50,7 +50,7 @@ export function draft(players = 3, rules?: Rules, seed = 7): Played {
  * Round 1, investment phase. Everyone keeps their first offered island; `islands` then overrides
  * islands for scenario tests (round-1 production already used the drafted island).
  */
-export function start(players = 3, rules?: Rules, islands: Readonly<Partial<Record<string, IslandId>>> = {}): MatchState {
+export function start(players = 4, rules?: Rules, islands: Readonly<Partial<Record<string, IslandId>>> = {}): MatchState {
   let state = draft(players, rules).state;
   for (const p of state.players) {
     state = apply(state, { type: 'choose-island', playerId: p.id, island: state.islandOffers[p.id]![0]! }).state;
@@ -81,7 +81,7 @@ export function withWanted(state: MatchState, wanted: readonly string[]): MatchS
 }
 
 /** Neutral islands are not dealt in play; this strips traits for scenario tests that need plain rules. */
-export function plain(players = 3, rules?: Rules): MatchState {
+export function plain(players = 4, rules?: Rules): MatchState {
   const state = start(players, rules);
   return { ...state, players: state.players.map((p) => ({ ...p, island: null })) };
 }
