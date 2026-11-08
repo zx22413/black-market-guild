@@ -4,7 +4,7 @@ import { ArrowIcon } from '../table3d/icons';
 import { GOODS, type PlayerId, type ShipTypeId } from '../../v07/game';
 import { CASH_REASON_LABELS, ISLAND_LABELS, ROLE_LABELS, SHIP_TYPE_LABELS, VOYAGE_EVENT_LABELS } from '../labels';
 import { shipMeter } from './shipMeter';
-import type { BeatView } from './beatTimeline';
+import { dieTop, type BeatView } from './beatTimeline';
 import type { BeatStep, ShipBeat } from './shipBeat';
 import { useBeatPlayback, type BeatPlayback } from './useBeatPlayback';
 import './beat.css';
@@ -17,7 +17,7 @@ type Names = Readonly<Record<PlayerId, string>>;
 
 export const signed = (n: number): string => (n > 0 ? `+${n}` : `−${-n}`);
 
-export function stepTitle(step: BeatStep, names: Names): { readonly name: string; readonly who: string } {
+export function stepTitle(step: BeatStep, names: Names, top = 6): { readonly name: string; readonly who: string } {
   const who = step.actors.map((id) => names[id] ?? id).join('、');
   switch (step.kind) {
     case 'guard':
@@ -29,7 +29,7 @@ export function stepTitle(step: BeatStep, names: Names): { readonly name: string
     case 'island':
       return { name: step.source ? (ISLAND_LABELS[step.source as keyof typeof ISLAND_LABELS] ?? '島嶼') : '島嶼', who: '島嶼特色' };
     case 'clamp':
-      return { name: '骰值上下限', who: '最低 1、最高 6' };
+      return { name: '骰值上下限', who: `最低 1、最高 ${top}` };
   }
 }
 
@@ -65,14 +65,14 @@ const TUMBLE_FACE_MS = 65;
  * The start die's tumble: random faces, never the same twice running, until it lands on `value`.
  * Only when the start value first shows (`rolls`), not when a modifier moves it.
  */
-function useTumble(value: number | null, rolls: boolean): number | null {
+function useTumble(value: number | null, rolls: boolean, top: number): number | null {
   const [face, setFace] = useState<number | null>(null);
   // Before paint, so the real value never flashes ahead of the tumble.
   useLayoutEffect(() => {
     if (!rolls || value === null) return undefined;
     let shown = value;
     const next = () => {
-      shown = ((shown + Math.floor(Math.random() * 5)) % 6) + 1;
+      shown = ((shown + Math.floor(Math.random() * (top - 1))) % top) + 1;
       setFace(shown);
     };
     next();
@@ -86,14 +86,14 @@ function useTumble(value: number | null, rolls: boolean): number | null {
       clearTimeout(land);
       setFace(null);
     };
-  }, [value, rolls]);
+  }, [value, rolls, top]);
   return face;
 }
 
-export function BeatDie({ value, step, stepsShown, type }: { readonly value: number | null; readonly step: BeatStep | null; readonly stepsShown: number; readonly type: ShipTypeId }) {
+export function BeatDie({ value, step, stepsShown, type, top = 6 }: { readonly value: number | null; readonly step: BeatStep | null; readonly stepsShown: number; readonly type: ShipTypeId; readonly top?: number }) {
   const meter = shipMeter(type);
   const sinkMax = Math.max(0, ...meter.filter((c) => c.sinks).map((c) => c.value));
-  const tumbling = useTumble(value, stepsShown === 0);
+  const tumbling = useTumble(value, stepsShown === 0, Math.max(top, meter.length));
   const face = tumbling ?? value;
   return (
     <div className="beat-dice">
@@ -153,7 +153,7 @@ export function BeatCard({ beat, playback, names, viewer, onDone }: BeatCardProp
           {current && <Actor step={current} />}
           {current?.kind === 'pirate' && <span className="beat-flash" />}
         </div>
-        <BeatDie value={view.die} step={lastStep} stepsShown={view.stepsShown} type={beat.type} />
+        <BeatDie value={view.die} step={lastStep} stepsShown={view.stepsShown} type={beat.type} top={dieTop(beat)} />
       </div>
 
       <div className="beat-caption" aria-live="polite">
@@ -161,8 +161,8 @@ export function BeatCard({ beat, playback, names, viewer, onDone }: BeatCardProp
         {view.showStart && !lastStep && !view.showOutcome && <span className="beat-big">起始骰值 {beat.start}</span>}
         {current && (
           <span key={view.stepsShown} className="beat-big">
-            {stepTitle(current, names).name} <b className={current.delta > 0 ? 'up' : 'down'}>{signed(current.delta)}</b>
-            <small>{stepTitle(current, names).who}</small>
+            {stepTitle(current, names, dieTop(beat)).name} <b className={current.delta > 0 ? 'up' : 'down'}>{signed(current.delta)}</b>
+            <small>{stepTitle(current, names, dieTop(beat)).who}</small>
           </span>
         )}
         {view.showOutcome && <span className={`beat-stamp ${sank ? 'down' : 'up'}`}>{sank ? '沉沒' : '抵達'}</span>}
@@ -173,7 +173,7 @@ export function BeatCard({ beat, playback, names, viewer, onDone }: BeatCardProp
         {beat.steps.slice(0, view.stepsShown).map((s, i) => (
           <span key={i}>
             <ArrowIcon />
-            {stepTitle(s, names).name} {signed(s.delta)}
+            {stepTitle(s, names, dieTop(beat)).name} {signed(s.delta)}
           </span>
         ))}
         {view.showOutcome && (

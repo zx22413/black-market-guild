@@ -1,3 +1,4 @@
+import { RULES_V07, shipFinalCap } from '../../v07/game';
 import type { ShipBeat } from './shipBeat';
 import { SHOW_TEMPO, slowed } from '../scene/showTempo';
 
@@ -78,13 +79,23 @@ export interface BeatView {
   readonly showStart: boolean;
   /** Modifier steps applied so far. */
   readonly stepsShown: number;
-  /** The die value on screen (clamped to 1–6), or null before the start cue. */
+  /** The die value on screen (clamped to 1 and the ship's top, see `dieTop`), or null before the start cue. */
   readonly die: number | null;
   readonly showOutcome: boolean;
   readonly showCargo: boolean;
   readonly cashShown: number;
   readonly goodsShown: number;
   readonly done: boolean;
+}
+
+/**
+ * The highest value the die shows for this beat: the die's top face, or for an uncapped type (the tsunami) its
+ * meter's top (9). Never below the beat's own final, so an island that lifts the cap still shows what it paid.
+ */
+export function dieTop(beat: ShipBeat): number {
+  const cap = shipFinalCap(RULES_V07, beat.type);
+  const meterTop = Math.max(...Object.keys(RULES_V07.ships.types[beat.type].curve).map(Number));
+  return Math.max(Math.min(cap, meterTop), RULES_V07.sailing.dieMax, beat.final);
 }
 
 export function beatView(beat: ShipBeat, cues: readonly Cue[], started: number): BeatView {
@@ -97,7 +108,7 @@ export function beatView(beat: ShipBeat, cues: readonly Cue[], started: number):
     started,
     showStart,
     stepsShown,
-    die: !showStart ? null : current ? Math.min(6, Math.max(1, current.value)) : beat.start,
+    die: !showStart ? null : current ? Math.min(dieTop(beat), Math.max(1, current.value)) : beat.start,
     showOutcome: count('outcome') > 0,
     showCargo: count('cargo') > 0,
     cashShown: count('cash'),
