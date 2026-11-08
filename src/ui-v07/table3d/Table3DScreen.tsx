@@ -23,8 +23,8 @@ import { MarketStrip } from './MarketStrip';
 import { RankRail } from './RankRail';
 import { ResultCard, type Rematch } from './ResultCard';
 import { VoyageEventChip } from './VoyageEventCard';
-import { resumePoint } from './replay';
-import { SPECTATOR_ISLANDS_SECONDS, SPECTATOR_REVEAL_SECONDS, useAutoAdvance } from './useAutoAdvance';
+import { catchUpTarget, resumePoint } from './replay';
+import { SPECTATOR_CATCHUP_SECONDS, SPECTATOR_ISLANDS_SECONDS, SPECTATOR_REVEAL_SECONDS, useAutoAdvance } from './useAutoAdvance';
 import { resultRows } from './resultModel';
 import { RulesPanel } from './RulesPanel';
 import { SealSubmit } from './SealSubmit';
@@ -144,6 +144,10 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     if (autoplay && resolvingRound !== null) setDismissed(resolvingRound);
   }, [autoplay, resolvingRound]);
   const holding = resolvingRound !== null;
+  // A spectator presses nothing and the room does not wait for the replay: once it has run on for a
+  // while after the room moved to the next round, the table jumps to the live round.
+  const catchUp = spectator ? catchUpTarget(snap.events, resolvingRound) : null;
+  useAutoAdvance(catchUp === null ? null : `catch-up-${resolvingRound}`, SPECTATOR_CATCHUP_SECONDS, () => setDismissed((d) => Math.max(d, catchUp ?? d)));
 
   const ids = useMemo(() => snap.players.map((p) => p.id), [snap.players]);
   const names = useMemo(() => new Map(snap.players.map((p) => [p.id, p.name])), [snap.players]);
@@ -192,7 +196,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     viewer: hotSeat ? null : viewer,
     nameOf,
     weather: weatherEvent?.type === 'voyage-event-revealed' ? weatherEvent.event : null,
-    onFinish: () => setDismissed(resolvingRound ?? 0),
+    onFinish: () => setDismissed((d) => Math.max(d, resolvingRound ?? d)),
     ...(spectator ? { autoFlow: true, autoAdvanceSeconds: SPECTATOR_REVEAL_SECONDS } : autoAdvanceSeconds === undefined ? {} : { autoAdvanceSeconds }),
   });
   const events = useMemo(() => snap.events.slice(0, resolution.cutoff), [snap.events, resolution.cutoff]);
