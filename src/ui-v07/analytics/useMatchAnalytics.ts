@@ -6,7 +6,8 @@ import { matchMode, roleCounts, roundStats, statsSeat, whereInMatch } from './ma
 // Statistics of one match screen: its start, every round's end, its end, or where it was left,
 // and how long the 3D table took to load. Mounted once per match by MatchView.
 
-export function useMatchAnalytics(session: GameSession): { readonly onReady: () => void } {
+/** `enabled` is false for someone on an online spectator stand: they are not playing, so nothing is counted. */
+export function useMatchAnalytics(session: GameSession, enabled = true): { readonly onReady: () => void } {
   const snap = useSyncExternalStore(session.subscribe, session.getSnapshot);
   const startedAt = useRef(Date.now());
   const done = useRef({ started: false, ready: false, ended: false, quit: false, rounds: new Set<number>() });
@@ -17,7 +18,7 @@ export function useMatchAnalytics(session: GameSession): { readonly onReady: () 
   const seat = statsSeat(snap.players);
 
   useEffect(() => {
-    if (done.current.started) return;
+    if (!enabled || done.current.started) return;
     done.current.started = true;
     track('match_start', { mode, seats: snap.players.length, nth: nextMatchNumber() });
     // Started once per mount; the players never change within a match.
@@ -25,7 +26,7 @@ export function useMatchAnalytics(session: GameSession): { readonly onReady: () 
   }, []);
 
   useEffect(() => {
-    if (seat === null) return;
+    if (!enabled || seat === null) return;
     const ids = snap.players.map((p) => p.id);
     roundStats(snap.events, ids, snap.startingCash, seat).forEach((r) => {
       if (done.current.rounds.has(r.round)) return;
@@ -51,7 +52,7 @@ export function useMatchAnalytics(session: GameSession): { readonly onReady: () 
   // Left before the end: by the exit button (unmount) or by closing the page.
   useEffect(() => {
     const quit = () => {
-      if (done.current.ended || done.current.quit) return;
+      if (!enabled || done.current.ended || done.current.quit) return;
       done.current.quit = true;
       const at = whereInMatch(latest.current.events);
       track('match_quit', { mode: matchMode(latest.current.players), round: at.round, phase: at.phase });
@@ -69,7 +70,7 @@ export function useMatchAnalytics(session: GameSession): { readonly onReady: () 
 
   return {
     onReady: () => {
-      if (done.current.ready) return;
+      if (!enabled || done.current.ready) return;
       done.current.ready = true;
       track('table_ready', { mode, ms: Date.now() - startedAt.current });
     },

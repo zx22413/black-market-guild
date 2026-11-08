@@ -1,13 +1,16 @@
 import type { DecisionContext } from '../bots';
 import type { Action, DecisionPhase, MatchEvent, MatchResult, PlayerId, PrivateEvent } from '../game';
 
-/** Bumped whenever messages change shape; a stale tab is told to reload. 2 = V0.7 rules, 3 = rematch, 4 = timers and takeover, 5 = shared lobby limit and public clocks, 6 = ship bays (ship types, arriving freighters, island changes). */
-export const PROTOCOL_VERSION = 6;
+/** Bumped whenever messages change shape; a stale tab is told to reload. 2 = V0.7 rules, 3 = rematch, 4 = timers and takeover, 5 = shared lobby limit and public clocks, 6 = ship bays (ship types, arriving freighters, island changes), 7 = the spectator stand. */
+export const PROTOCOL_VERSION = 7;
 
 /** Largest client message the server reads; actions are small JSON objects. */
 export const MAX_MESSAGE_BYTES = 16_384;
 
 export const NAME_MAX_LENGTH = 12;
+
+/** People who can stand on the spectator stand of one room at once (a limit of the room, not a game rule). */
+export const MAX_SPECTATORS = 12;
 
 /** Decision time limits the host may pick (docs/game-design.md §15.1). */
 export const DECISION_SECONDS_CHOICES = [60, 120, 300] as const;
@@ -82,6 +85,10 @@ export interface RoomSnapshot {
   readonly phase: RoomPhase;
   readonly members: readonly RoomMemberInfo[];
   readonly joined: boolean;
+  /** People on the spectator stand, in the order they stepped up. */
+  readonly spectators: readonly RoomMemberInfo[];
+  /** This connection stands on the spectator stand. */
+  readonly spectating: boolean;
   readonly isHost: boolean;
   /** The host closed the lobby to newcomers. */
   readonly locked: boolean;
@@ -95,6 +102,8 @@ export interface RoomSnapshot {
 export type ClientMessage =
   | { readonly type: 'hello'; readonly token: string; readonly protocol: number }
   | { readonly type: 'join'; readonly name: string }
+  /** Lobby only: takes a place on the spectator stand (leaving the seat, if one was taken). */
+  | { readonly type: 'spectate'; readonly name: string }
   /** `decisionSeconds` is one of DECISION_SECONDS_CHOICES; DEFAULT_DECISION_SECONDS when left out. */
   | { readonly type: 'start'; readonly seats: number; readonly decisionSeconds?: number }
   /** Host only, in the lobby: picks the decision limit (one of DECISION_SECONDS_CHOICES) for everyone to see. */
@@ -193,6 +202,8 @@ export function parseClientMessage(raw: string): ClientMessage | null {
         : null;
     case 'join':
       return typeof data.name === 'string' ? { type: 'join', name: data.name } : null;
+    case 'spectate':
+      return typeof data.name === 'string' ? { type: 'spectate', name: data.name } : null;
     case 'start':
       if (!Number.isInteger(data.seats)) return null;
       if (data.decisionSeconds === undefined) return { type: 'start', seats: data.seats as number };

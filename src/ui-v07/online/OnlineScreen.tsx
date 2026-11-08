@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type FormEvent } from 'react';
-import { DECISION_SECONDS_CHOICES, DEFAULT_DECISION_SECONDS, ROOM_CODE_LENGTH, isRoomCode } from '../../v07/online';
+import { DECISION_SECONDS_CHOICES, DEFAULT_DECISION_SECONDS, MAX_SPECTATORS, ROOM_CODE_LENGTH, isRoomCode } from '../../v07/online';
 import { PLAYER_COLORS } from '../../ui/scene/tableModel';
 import { MatchView } from '../table/MatchView';
 import type { Rematch } from '../table3d/ResultCard';
 import { useLaunchOnStart } from '../menu/launch';
 import type { MenuView } from '../menu/menuSeats';
 import { seatCards, type SeatCard } from './lobbySeats';
+import type { RoomMemberInfo } from '../../v07/online';
 import { MatchClock } from './MatchClock';
 import { limitLabel } from './clockText';
 import { turnstileToken } from './turnstile';
@@ -153,6 +154,8 @@ function CopyLink({ code }: { readonly code: string }) {
 
 interface NameRowProps {
   readonly client: OnlineClient;
+  readonly name: string;
+  readonly onName: (name: string) => void;
   readonly joined: boolean;
   readonly connected: boolean;
   /** For the statistics: sitting down as the host, and whether the room came from a link. */
@@ -161,8 +164,8 @@ interface NameRowProps {
   readonly viaLink: boolean;
 }
 
-function NameRow({ client, joined, connected, code, isHost, viaLink }: NameRowProps) {
-  const [name, setName] = useState(savedName);
+function NameRow({ client, name, onName, joined, connected, code, isHost, viaLink }: NameRowProps) {
+  const setName = onName;
   return (
     <form
       className="menu-row"
@@ -183,6 +186,43 @@ function NameRow({ client, joined, connected, code, isHost, viaLink }: NameRowPr
 /** The seat's guild colour (the colour it gets at the table), for the name plate's ribbon. */
 function seatRibbon(index: number): CSSProperties {
   return { '--seat': PLAYER_COLORS[index % PLAYER_COLORS.length] } as CSSProperties;
+}
+
+interface StandProps {
+  readonly client: OnlineClient;
+  readonly name: string;
+  readonly spectators: readonly RoomMemberInfo[];
+  readonly max: number;
+  readonly spectating: boolean;
+  readonly connected: boolean;
+}
+
+/** The spectator stand: anyone, the host too, can step up here instead of taking a seat. */
+function Stand({ client, name, spectators, max, spectating, connected }: StandProps) {
+  return (
+    <section className={`menu-stand ${spectating ? 'on' : ''}`} aria-label="觀眾席">
+      <header>
+        <strong>觀眾席</strong>
+        <small>
+          {spectators.length}/{max}・看整桌對局，不用按任何按鈕，自動進行
+        </small>
+      </header>
+      {spectators.length > 0 && (
+        <ul>
+          {spectators.map((s, i) => (
+            <li key={i} className={s.online ? '' : 'away'}>
+              {s.name}
+              {s.isHost && <small>・房主</small>}
+              {!s.online && <small>・離線</small>}
+            </li>
+          ))}
+        </ul>
+      )}
+      <button type="button" className="menu-small" disabled={name.trim().length === 0 || !connected || (!spectating && spectators.length >= max)} onClick={() => client.spectate(name)}>
+        {spectating ? '改名（觀眾席）' : '坐到觀眾席'}
+      </button>
+    </section>
+  );
 }
 
 interface SeatsProps {
@@ -233,6 +273,8 @@ function Lobby({ code, viaLink, client, state, onLeave, onView }: LobbyProps) {
   const room = state.room;
   const decisionSeconds = room?.decisionSeconds ?? DEFAULT_DECISION_SECONDS;
   const joined = room?.joined ?? false;
+  const spectating = room?.spectating ?? false;
+  const [name, setName] = useState(savedName);
   const connected = state.connection === 'open';
   const members = room?.members ?? [];
   // Someone sitting down or leaving the lobby.
@@ -270,7 +312,8 @@ function Lobby({ code, viaLink, client, state, onLeave, onView }: LobbyProps) {
           ) : (
             room.locked && <p className="menu-note">房主已鎖房，新的人無法入座。</p>
           )}
-          <NameRow client={client} joined={joined} connected={connected} code={code} isHost={room.isHost} viaLink={viaLink} />
+          <Stand client={client} name={name} spectators={room.spectators} max={MAX_SPECTATORS} spectating={spectating} connected={connected} />
+          <NameRow client={client} name={name} onName={setName} joined={joined} connected={connected} code={code} isHost={room.isHost} viaLink={viaLink} />
           {room.isHost ? (
             <div className="menu-foot">
               <div className="menu-kind" role="radiogroup" aria-label="每個決定的限時">
@@ -280,16 +323,16 @@ function Lobby({ code, viaLink, client, state, onLeave, onView }: LobbyProps) {
                   </button>
                 ))}
               </div>
-              <button type="button" className="menu-go" disabled={!joined || !connected} onClick={() => client.start(chosenSeats)}>
+              <button type="button" className="menu-go" disabled={(!joined && !spectating) || !connected} onClick={() => client.start(chosenSeats)}>
                 開始對局
               </button>
             </div>
           ) : (
-            <p className="menu-note">{joined ? `等房主開始對局…（每個決定限時 ${limitLabel(decisionSeconds)}，由房主選）` : '輸入名稱後按「入座」'}</p>
+            <p className="menu-note">{joined || spectating ? `等房主開始對局…（每個決定限時 ${limitLabel(decisionSeconds)}，由房主選）` : '輸入名稱後按「入座」，或到觀眾席看'}</p>
           )}
         </>
       )}
-      {room && room.phase !== 'lobby' && room.match?.you === null && <p className="menu-note">這個房間的對局已經開始，無法再加入。</p>}
+      {room && room.phase !== 'lobby' && room.match?.you === null && !spectating && <p className="menu-note">這個房間的對局已經開始，無法再加入。</p>}
       <div className="menu-foot">
         <button type="button" className="menu-small" onClick={onLeave}>
           離開房間
@@ -358,7 +401,9 @@ function RoomView({ code, viaLink, client, onLeave, onView }: RoomViewProps) {
       takeover: state.wasTakenOver,
     });
   }, [finishedMatch, code, state.timeoutCount, state.wasTakenOver]);
-  const session = state.room?.match?.you ? client.getSession() : null;
+  // A seat, or a place on the spectator stand: both see the running table.
+  const watching = state.room?.spectating ?? false;
+  const session = state.room?.match?.you || watching ? client.getSession() : null;
   // A match started while we watched the lobby: the menu table sends the ships out first.
   const launching = useLaunchOnStart(state.room?.phase ?? null) && session !== null;
   const seatCount = state.room?.match?.players.length ?? 0;
@@ -376,7 +421,7 @@ function RoomView({ code, viaLink, client, onLeave, onView }: RoomViewProps) {
       <>
         {state.connection !== 'open' && <div className="v7-banner">{CONNECTION_LABELS[state.connection]}</div>}
         {/* Leaving mid-match keeps the room on the main menu as "back to the room". */}
-        <MatchView key={matchKey(session)} session={session} onExit={() => onLeave(finished)} rematch={rematch} autoAdvanceSeconds={RESOLUTION_AUTO_SECONDS} />
+        <MatchView key={matchKey(session)} session={session} onExit={() => onLeave(finished)} rematch={rematch} autoAdvanceSeconds={RESOLUTION_AUTO_SECONDS} spectator={watching} />
         <MatchClock state={state} client={client} />
       </>
     );

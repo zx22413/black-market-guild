@@ -577,6 +577,44 @@
 .menu-lock[aria-pressed='true'] {
   color: var(--m-wax);
 }
+/* The spectator stand under the seats. */
+.menu-stand {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px dashed var(--m-wood);
+  border-radius: 10px;
+}
+.menu-stand.on {
+  border-style: solid;
+  background: var(--m-on);
+}
+.menu-stand header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+.menu-stand small {
+  color: var(--m-soft);
+  font-size: var(--fs-note);
+}
+.menu-stand ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.menu-stand li.away {
+  opacity: 0.65;
+}
+.menu-stand .menu-small {
+  align-self: flex-start;
+}
 /* Turnstile's box, empty (and so taking no room) unless Cloudflare asks for a click. */
 .menu-challenge:empty {
   display: none;

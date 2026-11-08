@@ -88,10 +88,12 @@ export interface IslandRevealProps {
   /** Seats in table order (you first). */
   readonly seats: readonly { readonly id: PlayerId; readonly name: string; readonly color: string; readonly isViewer: boolean }[];
   readonly onClose: () => void;
+  /** A spectator's reveal closes by itself: no button, only the seconds left (null before the count starts). */
+  readonly watchingLeft?: number | null;
 }
 
 /** Everyone's island, dealt and turned up one by one (§11.1), with what each one does. */
-export function IslandReveal({ islands, seats, onClose }: IslandRevealProps) {
+export function IslandReveal({ islands, seats, onClose, watchingLeft }: IslandRevealProps) {
   // Tap a guild's island to read its full rule text.
   const [open, setOpen] = useState<PlayerId | null>(null);
   useSoundOnce('islands-reveal');
@@ -120,9 +122,13 @@ export function IslandReveal({ islands, seats, onClose }: IslandRevealProps) {
           })}
         </div>
         <footer className="beat-foot">
-          <button type="button" className="primary" onClick={onClose}>
-            開始
-          </button>
+          {watchingLeft === undefined ? (
+            <button type="button" className="primary" onClick={onClose}>
+              開始
+            </button>
+          ) : (
+            <small>{watchingLeft === null ? '稍後自動開始' : `${watchingLeft} 秒後自動開始`}</small>
+          )}
         </footer>
       </div>
     </div>

@@ -23,6 +23,7 @@ import { MarketStrip } from './MarketStrip';
 import { RankRail } from './RankRail';
 import { ResultCard, type Rematch } from './ResultCard';
 import { VoyageEventChip } from './VoyageEventCard';
+import { SPECTATOR_ISLANDS_SECONDS, SPECTATOR_REVEAL_SECONDS, useAutoAdvance } from './useAutoAdvance';
 import { resultRows } from './resultModel';
 import { RulesPanel } from './RulesPanel';
 import { SealSubmit } from './SealSubmit';
@@ -81,6 +82,8 @@ export interface Table3DScreenProps {
   readonly onCalm?: (calm: boolean) => void;
   /** Online rooms: the resolution's presses (「開始航程」, the bill) go on by themselves after this many seconds. */
   readonly autoAdvanceSeconds?: number;
+  /** Online spectator stand: every press the show waits for goes on by itself, and no button asks for one. */
+  readonly spectator?: boolean;
   /** Told when a round's voyage has shown the result of a player's ship. */
   readonly onVoyage?: (round: number, owner: PlayerId) => void;
   /** Hold the voyage on the ship being shown (the tutorial host is talking about it). */
@@ -95,7 +98,7 @@ export interface Table3DScreenProps {
   readonly hideEvent?: boolean;
 }
 
-export function Table3DScreen({ session, onExit, rematch, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, skipIslandMoments = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdShow = false, holdVoyage = false, onVoyage, onStarted, onCalm, autoAdvanceSeconds }: Table3DScreenProps) {
+export function Table3DScreen({ session, onExit, rematch, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, skipIslandMoments = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdShow = false, holdVoyage = false, onVoyage, onStarted, onCalm, autoAdvanceSeconds, spectator = false }: Table3DScreenProps) {
   const snap = useSession(session);
   const [ready, setReady] = useState(false);
 
@@ -122,6 +125,8 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const chosen = snap.events.find((e) => e.type === 'islands-chosen');
   const [islandsSeen, setIslandsSeen] = useState(skipIslandReveal);
   const showIslands = !autoplay && chosen?.type === 'islands-chosen' && !islandsSeen;
+  // A spectator presses nothing: the reveal closes by itself.
+  const islandsLeft = useAutoAdvance(spectator && ready && showIslands ? 'islands' : null, SPECTATOR_ISLANDS_SECONDS, () => setIslandsSeen(true));
 
   // A round is resolved in one go once the last decision is in; replay it step by step and hold
   // the table until it has been seen.
@@ -151,6 +156,8 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const handoffTo = hotSeat && request && !unlocked && !holding && !showIslands && !autoplay ? seatOnScreen : null;
 
   const seatsBoard = useMemo(() => buildBoard(ids, snap.startingCash, snap.events), [ids, snap.events, snap.startingCash]);
+  // Nobody at this device plays (spectator stand, bot match): the nearest seat is only the camera's side, not "你".
+  const noViewer = people.length === 0;
   const seats = useMemo(
     () =>
       beatSeats(
@@ -158,8 +165,8 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
         facing,
         Object.fromEntries(ids.map((id) => [id, seatsBoard.players[id]?.buildings ?? []])),
         Object.fromEntries(ids.map((id) => [id, seatsBoard.players[id]?.island ?? null])),
-      ),
-    [snap.players, facing, ids, seatsBoard],
+      ).map((seat) => (noViewer ? { ...seat, isViewer: false } : seat)),
+    [snap.players, facing, ids, seatsBoard, noViewer],
   );
   const { angles, laneOf } = useTableLayout(seats);
   const colorOf = (id: PlayerId) => seats.find((s) => s.id === id)?.color ?? '#888';
@@ -186,7 +193,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     nameOf,
     weather: weatherEvent?.type === 'voyage-event-revealed' ? weatherEvent.event : null,
     onFinish: () => setDismissed(resolvingRound ?? 0),
-    ...(autoAdvanceSeconds === undefined ? {} : { autoAdvanceSeconds }),
+    ...(spectator ? { autoFlow: true, autoAdvanceSeconds: SPECTATOR_REVEAL_SECONDS } : autoAdvanceSeconds === undefined ? {} : { autoAdvanceSeconds }),
   });
   const events = useMemo(() => snap.events.slice(0, resolution.cutoff), [snap.events, resolution.cutoff]);
   useEffect(() => {
@@ -322,7 +329,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     (id) => berths.get(id as ShipId) ?? 0,
   ).map((pin) => (closeUp || resolution.pins.some((p) => p.id === `badges-${pin.id.slice(4)}`) ? { ...pin, hidden: true } : pin));
   const pins = [...plates.map(stepAside), ...seaTags, marketBadgePin(), ...badgesNow.map(stepAside), ...moments.pins, ...(step?.pins ?? []), ...resolution.pins, ...marks];
-  const camera = step?.camera ?? resolution.camera ?? overviewPoints(angles, seats.map((s) => s.island));
+  const camera = step?.camera ?? resolution.camera ?? overviewPoints(angles, seats.map((s) => s.island), noViewer);
 
   const marketRef = useRef<HTMLDivElement>(null);
   const dockRef = useRef<HTMLDivElement>(null);
@@ -488,7 +495,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
       {/* The voyage event is public from the round's start (§5): it stays in view while investing and deploying. */}
       {ready && !holding && !finished && board.round > 0 && board.voyageEvent && <VoyageEventChip event={board.voyageEvent} />}
       {ready && drafting && <IslandDraft key={drafting.id} context={drafting.context} onSubmit={(a) => session.submit(drafting.id, a)} />}
-      {ready && showIslands && chosen?.type === 'islands-chosen' && <IslandReveal islands={chosen.islands} seats={seats} onClose={() => setIslandsSeen(true)} />}
+      {ready && showIslands && chosen?.type === 'islands-chosen' && <IslandReveal islands={chosen.islands} seats={seats} onClose={() => setIslandsSeen(true)} {...(spectator ? { watchingLeft: islandsLeft } : {})} />}
       {resultUp && (
         <ResultCard
           rows={rows}

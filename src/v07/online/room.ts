@@ -6,6 +6,7 @@ import {
   DECISION_SHOW_CAP_SECONDS,
   DEFAULT_DECISION_SECONDS,
   DISCONNECT_GRACE_SECONDS,
+  MAX_SPECTATORS,
   PROTOCOL_VERSION,
   TAKEOVER_AFTER_TIMEOUTS,
   cleanName,
@@ -13,6 +14,7 @@ import {
   type ErrorCode,
   type OnlineMatch,
   type OnlineRequest,
+  type RoomMemberInfo,
   type RoomPhase,
   type RoomSnapshot,
   type SeatClock,
@@ -93,6 +95,8 @@ export interface RoomOptions {
 export class Room {
   private phase: RoomPhase = 'lobby';
   private members: readonly Member[] = [];
+  /** The spectator stand (lobby only): people who watch the match without a seat. */
+  private spectators: readonly Member[] = [];
   private match: MatchRecord | null = null;
   private pending: readonly Pending[] = [];
   /** People the host sent out; they may watch but never sit down in this room again. */
@@ -119,6 +123,9 @@ export class Room {
         return;
       case 'join':
         this.join(token, message.name);
+        return;
+      case 'spectate':
+        this.spectate(token, message.name);
         return;
       case 'start':
         this.start(token, message.seats, message.decisionSeconds ?? this.lobbySeconds, seed);
@@ -170,12 +177,10 @@ export class Room {
   snapshotFor(token: string): RoomSnapshot {
     return {
       phase: this.phase,
-      members: this.members.map((m) => ({
-        name: m.name,
-        isHost: m.token === this.options.hostToken,
-        online: this.options.isOnline(m.token),
-      })),
+      members: this.members.map((m) => this.info(m)),
       joined: this.members.some((m) => m.token === token),
+      spectators: this.spectators.map((m) => this.info(m)),
+      spectating: this.spectators.some((m) => m.token === token),
       isHost: token === this.options.hostToken,
       locked: this.locked,
       decisionSeconds: this.lobbySeconds,
@@ -183,6 +188,10 @@ export class Room {
       maxSeats: RULES_V07.players.max,
       match: this.match ? this.matchFor(token, this.match) : null,
     };
+  }
+
+  private info(m: Member): RoomMemberInfo {
+    return { name: m.name, isHost: m.token === this.options.hostToken, online: this.options.isOnline(m.token) };
   }
 
   private matchFor(token: string, match: MatchRecord): OnlineMatch {
@@ -239,7 +248,33 @@ export class Room {
       this.fail(token, 'room-full', '房間已滿');
       return;
     }
+    this.spectators = this.spectators.filter((m) => m.token !== token);
     this.members = [...this.members, { token, name }];
+    this.syncAll();
+  }
+
+  /** Steps up onto the stand; a seat taken before is given up. Open to everyone but the people the host sent out of a seat. */
+  private spectate(token: string, rawName: string): void {
+    const name = cleanName(rawName);
+    if (name === null) {
+      this.fail(token, 'bad-name', '請輸入名稱');
+      return;
+    }
+    if (this.phase !== 'lobby') {
+      this.fail(token, 'already-started', '對局已經開始，無法加入');
+      return;
+    }
+    if (this.spectators.some((m) => m.token === token)) {
+      this.spectators = this.spectators.map((m) => (m.token === token ? { token, name } : m));
+      this.syncAll();
+      return;
+    }
+    if (this.spectators.length >= MAX_SPECTATORS) {
+      this.fail(token, 'room-full', '觀眾席已滿');
+      return;
+    }
+    this.members = this.members.filter((m) => m.token !== token);
+    this.spectators = [...this.spectators, { token, name }];
     this.syncAll();
   }
 
@@ -338,6 +373,7 @@ export class Room {
     this.match = null;
     // Nobody waits for someone who already went home; they can sit down again if they come back.
     this.members = this.members.filter((m) => m.token === token || this.options.isOnline(m.token));
+    this.spectators = this.spectators.filter((m) => m.token === token || this.options.isOnline(m.token));
     this.syncAll();
   }
 
@@ -388,6 +424,7 @@ export class Room {
       return;
     }
     this.members = this.members.filter((m) => m.token !== token);
+    this.spectators = this.spectators.filter((m) => m.token !== token);
     this.syncAll();
     // The leaver is no longer a member; make sure they see their seat is gone.
     if (!this.knownTokens().includes(token)) this.sync(token);
@@ -555,6 +592,8 @@ export class Room {
 
   /** No person is connected and deciding for themself (all gone or all under takeover). */
   private nobodyDeciding(match: MatchRecord): boolean {
+    // A match of bots only (everybody stands and watches) has nobody to wait for: it just plays.
+    if (match.players.every((p) => p.token === null)) return false;
     return !match.players.some((p) => p.token !== null && this.options.isOnline(p.token) && !match.takeover.has(p.id));
   }
 
@@ -629,7 +668,7 @@ export class Room {
   }
 
   private knownTokens(): readonly string[] {
-    return [...new Set([this.options.hostToken, ...this.members.map((m) => m.token), ...this.seen])];
+    return [...new Set([this.options.hostToken, ...this.members.map((m) => m.token), ...this.spectators.map((m) => m.token), ...this.seen])];
   }
 
   private sync(token: string): void {

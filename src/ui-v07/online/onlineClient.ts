@@ -29,6 +29,8 @@ export interface OnlineClient {
   getState(): OnlineState;
   subscribe(listener: () => void): () => void;
   join(name: string): void;
+  /** Lobby only: moves to the spectator stand (giving up a seat, if there was one). */
+  spectate(name: string): void;
   start(seats: number): void;
   /** Host only, in the lobby: picks the decision limit everyone sees. */
   setLimit(decisionSeconds: number): void;
@@ -48,6 +50,9 @@ export interface OnlineClient {
 }
 
 const RETRY_MS = [500, 1000, 2000, 4000, 8000];
+
+/** What the browser remembers about a room when it stood on the spectator stand (a seat is remembered as '1'). */
+const STAND = 'stand';
 
 function storageGet(key: string): string | null {
   try {
@@ -258,10 +263,12 @@ export function connectRoom(code: string): OnlineClient {
     }
     const room = applyMessage(state.room, message);
     update({ room, deadlines: nextDeadlines(state.deadlines, message), seatDeadlines: nextSeatDeadlines(state.seatDeadlines, message), ...(message.type === 'sync' ? { notice: null } : {}) });
-    if (room?.joined) saveLastRoom(code);
+    if (room?.joined || room?.spectating) saveLastRoom(code);
     // After a server restart the lobby forgets people; rejoin whoever had joined this room.
-    if (message.type === 'sync' && !room?.joined && room?.phase === 'lobby' && storageGet(`bmg7.joined.${code}`)) {
-      send({ type: 'join', name: savedName() });
+    if (message.type === 'sync' && !room?.joined && !room?.spectating && room?.phase === 'lobby') {
+      const was = storageGet(`bmg7.joined.${code}`);
+      if (was === STAND) send({ type: 'spectate', name: savedName() });
+      else if (was) send({ type: 'join', name: savedName() });
     }
   };
 
@@ -315,6 +322,11 @@ export function connectRoom(code: string): OnlineClient {
       saveName(name);
       storageSet(`bmg7.joined.${code}`, '1');
       send({ type: 'join', name });
+    },
+    spectate: (name) => {
+      saveName(name);
+      storageSet(`bmg7.joined.${code}`, STAND);
+      send({ type: 'spectate', name });
     },
     start: (seats) => send({ type: 'start', seats }),
     setLimit: (decisionSeconds) => send({ type: 'limit', decisionSeconds }),

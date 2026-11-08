@@ -82,6 +82,8 @@ export interface ResolutionInput {
   readonly onFinish: () => void;
   /** Online rooms: seconds the two presses (「開始航程」, the bill) wait before going on by themselves. */
   readonly autoAdvanceSeconds?: number;
+  /** An online spectator: no button asks for a press (the show goes on by itself after `autoAdvanceSeconds`). */
+  readonly autoFlow?: boolean;
 }
 
 export interface Resolution {
@@ -174,7 +176,7 @@ export function stageShipState(stage: ResolutionStage, beatIndex: number, voyage
 }
 
 export function useRoundResolution(input: ResolutionInput): Resolution {
-  const { events, privateEvents, round, paused, seats, angles, laneOf, viewer, nameOf, weather, onFinish, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdVoyage = false, autoAdvanceSeconds } = input;
+  const { events, privateEvents, round, paused, seats, angles, laneOf, viewer, nameOf, weather, onFinish, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdVoyage = false, autoAdvanceSeconds, autoFlow = false } = input;
   // Who is wanted this round (§9.6, marked at the round's start): a red flag goes up on their
   // islands for a moment, then the voyage event's card (§5 step 5), then the roles are revealed.
   const wantedIds = useMemo(() => events.flatMap((e) => (e.type === 'wanted-marked' && e.round === round ? e.players : [])), [events, round]);
@@ -382,11 +384,12 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   const current = groups[Math.max(0, groupsShown - 1)];
   const allRevealed = groupsShown >= groups.length;
   // Only a press the show waits for is what the tutorial lights: the event card moves on by itself.
-  const go = (label: string, action: () => void, waits = true) => (
-    <button type="button" className="primary glow" {...(waits ? { 'data-focus': 'advance' } : {})} onClick={action}>
-      {label}
-    </button>
-  );
+  const go = (label: string, action: () => void, waits = true) =>
+    autoFlow ? null : (
+      <button type="button" className="primary glow" {...(waits ? { 'data-focus': 'advance' } : {})} onClick={action}>
+        {label}
+      </button>
+    );
   const owner = beat ? (beat.owner === viewer ? '你' : nameOf(beat.owner)) : '';
   const wantedSeats = wantedIds.map((id) => ({ name: id === viewer ? '你' : nameOf(id), color: colorOf(id) }));
   const bar = (

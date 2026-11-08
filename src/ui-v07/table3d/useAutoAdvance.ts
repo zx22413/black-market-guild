@@ -7,6 +7,10 @@ import { useEffect, useRef, useState } from 'react';
 /** Seconds a resolution waits for its press in an online room before going on by itself. */
 export const RESOLUTION_AUTO_SECONDS = 20;
 
+/** Seconds an online spectator's table holds the islands' reveal, and the finished role reveal, before going on by itself. */
+export const SPECTATOR_ISLANDS_SECONDS = 8;
+export const SPECTATOR_REVEAL_SECONDS = 3;
+
 /** 「開始航程」 → 「開始航程（12）」 while a countdown runs. */
 export function countdownLabel(label: string, secondsLeft: number | null): string {
   return secondsLeft === null ? label : `${label}（${secondsLeft}）`;

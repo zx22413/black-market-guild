@@ -30,7 +30,7 @@
 2. ~~**斷線與超時規則**~~：2026-10-28 完成，規則在 `game-design.md` 第 15 節（限時、託管、暫停），伺服器在 `src/v07/online/room.ts`、`timeout.ts`，介面在 `src/ui-v07/online/MatchClock.tsx`，規則書有「連線」章。
 3. **自動部署**：等第 1 項完成、部署不會中斷對局之後再考慮。選項：Cloudflare Workers Builds 連 GitHub（使用者要在 Cloudflare 後台授權），或只在 push 到 `release` 分支時部署。直接「push main 就部署」不建議，因為使用者與其他 session 常常推 main。
 4. **換裝置回到座位**：座位以瀏覽器 `localStorage` 的隨機 token 辨識，換手機、換瀏覽器或用無痕模式就回不去。可考慮「房主把座位重新指派給新連線」或座位專屬的重連連結。
-5. **房間管理**：沒有離開座位、踢人、房主轉移、觀戰、中途加入。（「再來一局」回同一個大廳已完成，2026-10-23。）
+5. **房間管理**：沒有房主轉移、中途加入（觀眾席已於 2026-11-08 完成，只能在大廳進出）。（「再來一局」回同一個大廳已完成，2026-10-23。）
 6. ~~**房間清理**~~：2026-10-28 完成。房間沒人連線滿 1 小時、或建立滿 24 小時，由 Durable Object alarm 刪除（`game-design.md` 第 15.3 節；判斷在 `src/v07/online/expiry.ts`，alarm 在 `server/rooms.ts`）。之前建立的舊房間，下次有人連線時才開始計時。
 7. ~~**速率限制**~~：2026-10-28 完成：開放建房，加上 Turnstile、每 IP 建房與連線頻率、每間房連線數、每條連線訊息頻率上限、來源檢查（`server/limits.ts`，說明見 `public-launch-plan.md` 第 5 節）。
 8. **對局結束後把完整紀錄存到 R2**（接在第 1 項之後做）：每局結束時把座位設定、seed、規則版本、行動紀錄與結果存成一個 JSON 檔，放進 R2（Cloudflare 物件儲存，下載流量不收費，帳號已開通；現有的 `lbdog-os-blueprint-content` 是別的專案的，要另開一個 bucket）。用途：以 `replayMatch` 重播或分享對局、賽後覆盤、收集真人對局數據，和 `docs/simulations/` 的 Bot 模擬對照平衡。注意：

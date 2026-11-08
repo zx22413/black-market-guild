@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   DECISION_SHOW_CAP_SECONDS,
   DEFAULT_DECISION_SECONDS,
+  MAX_SPECTATORS,
   PROTOCOL_VERSION,
   Room,
   type RoomClock,
@@ -119,8 +120,8 @@ describe('V0.7 online room', () => {
     expect(events.at(-1)).toMatchObject({ type: 'match-ended' });
   });
 
-  it('speaks protocol 6 with the V0.7.1 ship-bay rules', () => {
-    expect(PROTOCOL_VERSION).toBe(6);
+  it('speaks protocol 7 with the V0.7.1 ship-bay rules and the spectator stand', () => {
+    expect(PROTOCOL_VERSION).toBe(7);
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'hello', token: HOST, protocol: PROTOCOL_VERSION });
     const sync = ctx.last(HOST, 'sync');
@@ -681,5 +682,106 @@ describe('everyone sees the remaining time of seats still deciding (game-design 
     answer(ctx, HOST, openRequests(ctx, HOST)[0]!);
     await tick();
     expect(clocksOf(ctx, GUEST)?.find((c) => c.seat === 'p1' && c.timeLeftMs === 60_000)).toBeUndefined();
+  });
+});
+
+describe('the spectator stand', () => {
+  const lobbyOf = (ctx: ReturnType<typeof makeRoom>, token: string) => {
+    const sync = ctx.last(token, 'sync');
+    if (sync?.type !== 'sync') throw new Error('no sync');
+    return sync.room;
+  };
+
+  it('lets anyone, the host included, move to the stand and back to a seat', () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'join', name: '房主' });
+    ctx.send(HOST, { type: 'spectate', name: '房主' });
+    expect(lobbyOf(ctx, HOST)).toMatchObject({ joined: false, spectating: true, isHost: true });
+    expect(lobbyOf(ctx, HOST).members).toEqual([]);
+    expect(lobbyOf(ctx, HOST).spectators).toEqual([{ name: '房主', isHost: true, online: true }]);
+
+    ctx.send(GUEST, { type: 'spectate', name: '  客人\u0007 ' });
+    expect(lobbyOf(ctx, GUEST).spectators.map((s) => s.name)).toEqual(['房主', '客人']);
+
+    ctx.send(GUEST, { type: 'join', name: '客人' });
+    expect(lobbyOf(ctx, GUEST)).toMatchObject({ joined: true, spectating: false });
+    expect(lobbyOf(ctx, GUEST).spectators.map((s) => s.name)).toEqual(['房主']);
+    expect(lobbyOf(ctx, GUEST).members.map((m) => m.name)).toEqual(['客人']);
+
+    ctx.send(GUEST, { type: 'spectate', name: '客人' });
+    expect(lobbyOf(ctx, GUEST).members).toEqual([]);
+    expect(lobbyOf(ctx, HOST).spectators.map((s) => s.name)).toEqual(['房主', '客人']);
+  });
+
+  it('needs a usable name, and has room for a limited crowd', () => {
+    const ctx = makeRoom();
+    ctx.send(GUEST, { type: 'spectate', name: '   ' });
+    expect(ctx.last(GUEST, 'error')).toMatchObject({ code: 'bad-name' });
+    for (let i = 0; i < MAX_SPECTATORS; i++) ctx.send(`crowd-token-${String(i).padStart(8, '0')}`, { type: 'spectate', name: `看${i}` });
+    ctx.send(LATE, { type: 'spectate', name: '太多' });
+    expect(ctx.last(LATE, 'error')).toMatchObject({ code: 'room-full' });
+    expect(lobbyOf(ctx, HOST).spectators).toHaveLength(MAX_SPECTATORS);
+  });
+
+  it('starts with the host on the stand: four seats for the others and bots, and a view of the whole table', async () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'spectate', name: '房主' });
+    ctx.send(GUEST, { type: 'join', name: '客人' });
+    ctx.send(HOST, { type: 'start', seats: 4 });
+    const started = lobbyOf(ctx, HOST);
+    expect(started.match?.you).toBeNull();
+    expect(started.spectating).toBe(true);
+    expect(started.match?.players.map((p) => p.kind)).toEqual(['remote', 'bot', 'bot', 'bot']);
+
+    await playOut(ctx, [GUEST]);
+    const hostMessages = ctx.of(HOST);
+    expect(hostMessages.some((m) => m.type === 'request' || m.type === 'private')).toBe(false);
+    expect(hostMessages.flatMap((m) => (m.type === 'events' ? m.events : [])).at(-1)).toMatchObject({ type: 'match-ended' });
+    expect(ctx.last(HOST, 'ended')).toMatchObject({ error: null });
+  });
+
+  it('plays a match of four bots to the end while everybody stands and watches', async () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'spectate', name: '房主' });
+    ctx.send(GUEST, { type: 'spectate', name: '客人' });
+    ctx.send(HOST, { type: 'start', seats: 4 });
+    expect(lobbyOf(ctx, HOST).match?.players.every((p) => p.kind === 'bot')).toBe(true);
+    for (let i = 0; i < 50 && !ctx.last(GUEST, 'ended'); i++) await tick();
+    expect(ctx.last(GUEST, 'ended')).toMatchObject({ error: null });
+    expect(lobbyOf(ctx, GUEST).match?.paused).toBe(false);
+  });
+
+  it('keeps people from taking a stand once the match has started', async () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'join', name: '房主' });
+    ctx.send(HOST, { type: 'start', seats: 4 });
+    ctx.send(LATE, { type: 'spectate', name: '遲到' });
+    expect(ctx.last(LATE, 'error')).toMatchObject({ code: 'already-started' });
+  });
+
+  it('lets a spectator leave the lobby, and keeps online spectators for the rematch', async () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'join', name: '房主' });
+    ctx.send(GUEST, { type: 'spectate', name: '客人' });
+    ctx.send(LATE, { type: 'spectate', name: '走了' });
+    ctx.send(LATE, { type: 'leave' });
+    expect(lobbyOf(ctx, HOST).spectators.map((s) => s.name)).toEqual(['客人']);
+
+    ctx.send(HOST, { type: 'start', seats: 4 });
+    await playOut(ctx, [HOST]);
+    ctx.setOnline(GUEST, false);
+    ctx.send(HOST, { type: 'rematch' });
+    expect(lobbyOf(ctx, HOST).spectators).toEqual([]);
+    ctx.send(GUEST, { type: 'spectate', name: '客人' });
+    ctx.send(HOST, { type: 'start', seats: 4 });
+    await playOut(ctx, [HOST]);
+    ctx.setOnline(GUEST, true);
+    ctx.send(HOST, { type: 'rematch' });
+    expect(lobbyOf(ctx, HOST).spectators.map((s) => s.name)).toEqual(['客人']);
+  });
+
+  it('parses the spectate message', () => {
+    expect(parseClientMessage(JSON.stringify({ type: 'spectate', name: '看' }))).toEqual({ type: 'spectate', name: '看' });
+    expect(parseClientMessage(JSON.stringify({ type: 'spectate' }))).toBeNull();
   });
 });

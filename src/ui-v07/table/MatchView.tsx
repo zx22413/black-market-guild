@@ -20,14 +20,16 @@ interface MatchViewProps {
   readonly rematch?: Rematch | undefined;
   /** Online rooms: the resolution's presses go on by themselves after this many seconds. */
   readonly autoAdvanceSeconds?: number;
+  /** Online spectator stand: the table plays itself, with no presses to wait for and nothing counted. */
+  readonly spectator?: boolean;
 }
 
-export function MatchView({ session, onExit, rematch, autoAdvanceSeconds }: MatchViewProps) {
-  const { onReady } = useMatchAnalytics(session);
+export function MatchView({ session, onExit, rematch, autoAdvanceSeconds, spectator = false }: MatchViewProps) {
+  const { onReady } = useMatchAnalytics(session, !spectator);
   if (panelUi()) return <TableScreen session={session} onExit={onExit} />;
   return (
     <Suspense fallback={<div style={LOADING_STYLE}>整理港口中…</div>}>
-      <Table3DScreen session={session} onExit={onExit} rematch={rematch} onReady={onReady} {...(autoAdvanceSeconds === undefined ? {} : { autoAdvanceSeconds })} />
+      <Table3DScreen session={session} onExit={onExit} rematch={rematch} onReady={onReady} spectator={spectator} {...(autoAdvanceSeconds === undefined ? {} : { autoAdvanceSeconds })} />
     </Suspense>
   );
 }

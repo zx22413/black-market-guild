@@ -117,13 +117,14 @@ export function useTableLayout(seats: readonly BeatSeat[]) {
 }
 
 /** Every island rim, and the top of each chosen island's backdrop: the whole table in view. */
-export function overviewPoints(angles: readonly number[], islands: readonly (IslandId | null)[] = []): FitPoint[] {
+/** `framePlates`: frame the plates under the islands even on a wide screen (a table whose nearest seat is no one's own, so its plate shows the warehouse too). */
+export function overviewPoints(angles: readonly number[], islands: readonly (IslandId | null)[] = [], framePlates = false): FitPoint[] {
   const tops = angles.flatMap((a, i): FitPoint[] => {
     const top = backdropTop(islands[i] ?? null, playerIslandHeading(a));
     return top ? [{ position: islandPoint(a, top) }] : [];
   });
   // On a phone the plates hang under their islands (a plate's height is roughly 3 units of table), so the lowest one is framed too.
-  const plates = typeof window !== 'undefined' && window.innerWidth <= PHONE_WIDTH ? angles.map((a): FitPoint => ({ position: [platePosition(a)[0], 0, platePosition(a)[2] + PLATE_DROP] })) : [];
+  const plates = framePlates || (typeof window !== 'undefined' && window.innerWidth <= PHONE_WIDTH) ? angles.map((a): FitPoint => ({ position: [platePosition(a)[0], 0, platePosition(a)[2] + PLATE_DROP] })) : [];
   return [...around([0, 0, 0], TARGET_ISLAND_RADIUS), ...angles.flatMap((a) => around(seatPosition(a), PLAYER_ISLAND_RADIUS + 1.5)), ...tops, ...plates];
 }
 

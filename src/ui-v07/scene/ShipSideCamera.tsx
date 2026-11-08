@@ -6,11 +6,13 @@ import { playerIslandHeading } from '../../ui/scene/islandShape';
 import { seatPosition } from '../../ui/scene/layout';
 import { shipPose } from '../../ui/scene/Ships';
 import type { ShipTypeId } from '../../v07/game';
+import { applyPose, DIVE_MS, Flight, recordPose, type CameraPose } from './cameraHandoff';
 
 // The ship-bay experiment's two shots of your own docked ship (docs/proposals/2026-11-ship-bays.md): a
 // close-up from the open sea while you pick the ship, and a wider one that takes in the warehouse
 // while you load it. The camera glides between them. It looks across the ship from the side away from
-// the island, so the island and its warehouse stand behind it.
+// the island, so the island and its warehouse stand behind it. Taking over from the table camera, it dives
+// from where that one stood down to the ship (cameraHandoff) instead of cutting.
 
 export type ShipShot = 'ship' | 'cargo';
 
@@ -75,9 +77,18 @@ export function ShipSideCamera({ angle, shot, safe, ship }: { readonly angle: nu
   // A stand-in camera to measure how big the ship comes out on screen before the real one is placed.
   const probe = useMemo(() => new PerspectiveCamera(FOV, 1, 0.1, 500), []);
   const point = useMemo(() => new Vector3(), []);
+  // The dive from the table camera, started on the first frame (undefined until then, null when there is none).
+  const flight = useRef<Flight | null | undefined>(undefined);
   // The camera is shared with the framing camera: hand it back as it was.
-  useEffect(() => () => camera.clearViewOffset(), [camera]);
+  useEffect(
+    () => () => {
+      flight.current?.stop();
+      camera.clearViewOffset();
+    },
+    [camera],
+  );
   useFrame((_, delta) => {
+    if (flight.current === undefined) flight.current = Flight.start('table', camera, DIVE_MS);
     const to = RIGS[shot];
     const k = 1 - Math.exp(-Math.min(delta, 0.1) * GLIDE);
     const now = (at.current ??= to);
@@ -145,16 +156,24 @@ export function ShipSideCamera({ angle, shot, safe, ship }: { readonly angle: nu
     place(probe, back);
     let topPx = Infinity;
     for (const c of corners) topPx = Math.min(topPx, ((1 - point.set(...c).project(probe).y) / 2) * height);
-    if (camera.fov !== FOV) {
-      camera.fov = FOV;
-      camera.updateProjectionMatrix();
-    }
     // Moving the middle of the picture to the middle of the free room: a view offset of (x, y) pushes the picture by (−x, −y).
     const x = safe ? (safe.right - safe.left) / 2 : 0;
     const y = !safe ? 0 : shot === 'ship' ? topPx - (safe.top + TOP_MARGIN) : (safe.bottom - safe.top) / 2;
-    if (camera.view?.offsetX !== x || camera.view?.offsetY !== y || camera.view?.fullWidth !== width || camera.view?.fullHeight !== height) {
-      camera.setViewOffset(width, height, x, y, width, height);
+    const own: CameraPose = { position: [camera.position.x, camera.position.y, camera.position.z], aim: [ax, next.aim, az], fov: FOV, offset: [x, y] };
+    const flying = flight.current?.step(delta, own) ?? null;
+    if (!flying) flight.current = null;
+    if (flying) {
+      applyPose(camera, flying, width, height);
+    } else {
+      if (camera.fov !== FOV) {
+        camera.fov = FOV;
+        camera.updateProjectionMatrix();
+      }
+      if (camera.view?.offsetX !== x || camera.view?.offsetY !== y || camera.view?.fullWidth !== width || camera.view?.fullHeight !== height) {
+        camera.setViewOffset(width, height, x, y, width, height);
+      }
     }
+    recordPose('ship', camera, flying ?? own);
   });
   return null;
 }

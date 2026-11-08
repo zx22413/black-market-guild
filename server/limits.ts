@@ -14,8 +14,8 @@ export const CONNECT_RULE: WindowRule = { limit: 30, windowMs: 60 * 1000 };
 export const MESSAGE_RULE: WindowRule = { limit: 50, windowMs: 10 * 1000 };
 /** Statistics batches one IP address may send (the game sends one every 30 seconds at most). */
 export const EVENTS_RULE: WindowRule = { limit: 20, windowMs: 60 * 1000 };
-/** Connections one room holds at once: four seats with room for reloads and second tabs. */
-export const MAX_ROOM_SOCKETS = 8;
+/** Connections one room holds at once: four seats and the spectator stand (MAX_SPECTATORS), with room for reloads and second tabs. */
+export const MAX_ROOM_SOCKETS = 24;
 
 /**
  * Sliding window: whether one more hit fits, and the hits to keep (only those still inside the
