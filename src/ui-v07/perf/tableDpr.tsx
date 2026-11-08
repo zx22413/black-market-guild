@@ -1,7 +1,8 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { Quaternion, Vector3 } from 'three';
 import { perfFlags, subscribePerfFlags } from '../../ui/scene/perfFlags';
-import { PHONE_FRAME_MS, UNCAPPED_FRAME_MS, WINDOW_MS, isPhone, judgeWindow, phoneDprLevels, startState, type DprState } from './dprPolicy';
+import { IDLE_AFTER_MS, PHONE_FRAME_MS, UNCAPPED_FRAME_MS, WINDOW_MS, isPhone, judgeWindow, phoneDprLevels, phoneFrameMs, startState, type DprState } from './dprPolicy';
 
 /** Longest frame (ms) that counts: a longer gap is a hidden tab or a scene being loaded, not drawing speed. */
 const IGNORE_OVER_MS = 250;
@@ -25,6 +26,9 @@ export const framesCapped = phone !== null;
 
 /** The frame time (ms) the table is aiming at now: the phone's cap, or full speed on a desktop or when the panel lifts the cap. */
 const targetFrameMs = (): number => (phone && !perfFlags.uncapped ? PHONE_FRAME_MS : UNCAPPED_FRAME_MS);
+
+/** Whether the limiter is in its idle (slower) rhythm: frame times then say nothing about how sharp the picture can be. */
+let idle = false;
 
 const listeners = new Set<() => void>();
 const subscribe = (listener: () => void): (() => void) => {
@@ -66,9 +70,15 @@ export function AdaptiveDpr() {
 
 function Watch({ phone: p }: { readonly phone: Phone }) {
   const sample = useRef({ total: 0, count: 0, span: 0 });
+  const wasIdle = useRef(false);
   useFrame((_, delta) => {
     const ms = delta * 1000;
-    if (ms > IGNORE_OVER_MS) return;
+    if (idle !== wasIdle.current) {
+      // Entering or leaving idle: what was measured so far belongs to the other rhythm.
+      wasIdle.current = idle;
+      sample.current = { total: 0, count: 0, span: 0 };
+    }
+    if (idle || ms > IGNORE_OVER_MS) return;
     const w = sample.current;
     w.total += ms;
     w.count += 1;
@@ -83,25 +93,48 @@ function Watch({ phone: p }: { readonly phone: Phone }) {
   return null;
 }
 
+const WAKE_EVENTS = ['pointerdown', 'pointermove', 'touchstart', 'touchmove', 'wheel', 'keydown'] as const;
+
 /**
  * Inside a canvas whose `frameloop` is "never" (only on a phone, see `framesCapped`): draws a frame
  * on the display's own timing but no more often than the phone's cap, so the GPU idles between
- * frames. The 10% slack lets a 60Hz screen deliver every second tick as 33ms despite timer jitter.
+ * frames. The cap is 30fps; after `IDLE_AFTER_MS` with no touch and a still camera it drops to 20fps,
+ * and any touch or camera move brings 30fps back at once. The 10% slack lets a 60Hz screen deliver
+ * every second tick as 33ms despite timer jitter.
  */
 export function FrameLimiter() {
   const advance = useThree((s) => s.advance);
+  const camera = useThree((s) => s.camera);
   useEffect(() => {
     let raf = 0;
     let last = -Infinity;
+    let lastWake = performance.now();
+    const seenPosition = new Vector3().copy(camera.position);
+    const seenRotation = new Quaternion().copy(camera.quaternion);
+    const wake = () => {
+      lastWake = performance.now();
+    };
+    WAKE_EVENTS.forEach((e) => window.addEventListener(e, wake, { passive: true }));
     const tick = (now: number) => {
       raf = requestAnimationFrame(tick);
-      if (now - last < (perfFlags.uncapped ? 0 : PHONE_FRAME_MS * 0.9)) return;
+      const idleFor = now - lastWake;
+      idle = !perfFlags.uncapped && idleFor >= IDLE_AFTER_MS;
+      if (now - last < (perfFlags.uncapped ? 0 : phoneFrameMs(idleFor) * 0.9)) return;
       last = now;
       // With frameloop "never" r3f reads the timestamp as seconds (rAF gives ms): ms here ran everything 1000x fast.
       advance(now / 1000);
+      if (!camera.position.equals(seenPosition) || !camera.quaternion.equals(seenRotation)) {
+        seenPosition.copy(camera.position);
+        seenRotation.copy(camera.quaternion);
+        lastWake = now;
+      }
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [advance]);
+    return () => {
+      cancelAnimationFrame(raf);
+      idle = false;
+      WAKE_EVENTS.forEach((e) => window.removeEventListener(e, wake));
+    };
+  }, [advance, camera]);
   return null;
 }

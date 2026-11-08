@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FAST_MS, GOOD_WINDOWS, MAX_GOOD_WINDOWS, PHONE_FRAME_MS, SLOW_MS, goodWindowsFor, isPhone, judgeWindow, phoneDprLevels, startState } from '../../src/ui-v07/perf/dprPolicy';
+import { FAST_MS, GOOD_WINDOWS, MAX_GOOD_WINDOWS, IDLE_AFTER_MS, IDLE_FRAME_MS, PHONE_FRAME_MS, SLOW_MS, phoneFrameMs, goodWindowsFor, isPhone, judgeWindow, phoneDprLevels, startState } from '../../src/ui-v07/perf/dprPolicy';
 
 const LEVELS = phoneDprLevels(3);
 
@@ -86,5 +86,17 @@ describe('judgeWindow at a capped frame time', () => {
 
   it('counts a 33ms average as slow when the cap is lifted', () => {
     expect(judgeWindow(top, 33.5, LEVELS).level).toBe(top.level - 1);
+  });
+});
+
+describe('phoneFrameMs', () => {
+  it('keeps the 30fps cap while the player is active', () => {
+    expect(phoneFrameMs(0)).toBe(PHONE_FRAME_MS);
+    expect(phoneFrameMs(IDLE_AFTER_MS - 1)).toBe(PHONE_FRAME_MS);
+  });
+
+  it('drops to 20fps once the phone has been left alone long enough', () => {
+    expect(phoneFrameMs(IDLE_AFTER_MS)).toBe(IDLE_FRAME_MS);
+    expect(IDLE_FRAME_MS).toBeGreaterThan(PHONE_FRAME_MS);
   });
 });

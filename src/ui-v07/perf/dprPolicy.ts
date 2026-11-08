@@ -28,6 +28,13 @@ export const UNCAPPED_FRAME_MS = 1000 / 60;
  * scale with the frame time being aimed at, so a phone that holds 30fps counts as "fast".
  */
 export const PHONE_FRAME_MS = 1000 / 30;
+/** A phone left alone this long (no touch, camera still) drops to its idle frame rate. */
+export const IDLE_AFTER_MS = 2000;
+/** Idle frame time (ms): 20fps. Most of a match is spent waiting for a decision, so this is where the heat goes. */
+export const IDLE_FRAME_MS = 1000 / 20;
+
+/** The frame time a phone aims at after `idleMs` without touch or camera movement. */
+export const phoneFrameMs = (idleMs: number): number => (idleMs >= IDLE_AFTER_MS ? IDLE_FRAME_MS : PHONE_FRAME_MS);
 /** How long one verdict looks at the frames, in ms. */
 export const WINDOW_MS = 2000;
 /** Good windows in a row before stepping up (10s of headroom), when no step up has had to be undone. */
