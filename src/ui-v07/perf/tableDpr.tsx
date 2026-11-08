@@ -97,7 +97,8 @@ export function FrameLimiter() {
       raf = requestAnimationFrame(tick);
       if (now - last < (perfFlags.uncapped ? 0 : PHONE_FRAME_MS * 0.9)) return;
       last = now;
-      advance(now);
+      // With frameloop "never" r3f reads the timestamp as seconds (rAF gives ms): ms here ran everything 1000x fast.
+      advance(now / 1000);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
