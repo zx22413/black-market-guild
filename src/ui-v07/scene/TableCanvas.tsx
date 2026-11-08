@@ -264,7 +264,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
 
   return (
     <div className={`beat3d ${dim ? 'dim' : ''}`} onClick={onClick}>
-      <Canvas shadows dpr={dpr} frameloop={framesCapped ? 'never' : 'always'} camera={{ position: [0, 82, 60], fov: 38 }} onCreated={() => setReady(true)}>
+      <Canvas shadows dpr={dpr} frameloop={framesCapped ? 'never' : 'always'} camera={{ position: [0, 82, 60], fov: 38, near: 2 }} onCreated={() => setReady(true)}>
         {camera ?? <FocusCamera points={cameraPoints} safe={safe} />}
         <color attach="background" args={[look.sky]} />
         <WeatherFog color={look.sky} near={look.fogNear} far={look.fogFar} />

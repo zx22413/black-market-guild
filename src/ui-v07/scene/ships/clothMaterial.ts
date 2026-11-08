@@ -66,7 +66,11 @@ function bend<M extends Material>(material: M, cloth: ClothBend, wind: Wind, kin
         float clothRipple = (0.08 + 0.32 * uGale) * (0.4 + 0.6 * uWind);
         float clothWave = mix(sin(clothV * 4.0 - uClothTime * 2.4 + clothU * 1.5 + uClothShape.z), sin(clothV * 6.0 - uClothTime * 5.2 + clothU * 2.5 + uClothShape.z), uGale);
         transformed.y += uClothShape.x * clothRipple * clothV * sqrt(1.0 - clothU * clothU) * clothWave;
-        transformed.y += uClothShape.y * (1.0 + 0.6 * uGale) * clothV * sin(clothV * 5.0 - uClothTime * (3.0 + 3.0 * uWind) + uClothShape.z + clothU * 2.0);`,
+        // Two fixed frequencies blended by uWind (never uClothTime * f(uWind)): the clock is large late in a match, so a
+        // frequency that eases as the ship docks or sails would sweep the phase by hundreds of radians a second and the
+        // rags would thrash for as long as the easing lasts.
+        float clothFlap = mix(sin(clothV * 5.0 - uClothTime * 3.0 + uClothShape.z + clothU * 2.0), sin(clothV * 5.0 - uClothTime * 6.0 + uClothShape.z + clothU * 2.0), uWind);
+        transformed.y += uClothShape.y * (1.0 + 0.6 * uGale) * clothV * clothFlap;`,
       );
     if (emblem) {
       shader.fragmentShader = shader.fragmentShader
