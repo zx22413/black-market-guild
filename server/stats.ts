@@ -76,7 +76,7 @@ async function collect(db: D1Database, since: string) {
     ),
     one(db, `SELECT COUNT(DISTINCT client) AS n FROM events WHERE name = 'visit' AND NOT (${NOT_A_PLAYER})`),
   ]);
-  const [daily, quits, tutorials, chapters, likes, comments, errors, ready, modes, sources, welcome] = await Promise.all([
+  const [daily, quits, quitPhases, tutorials, chapters, roleUse, likes, comments, errors, ready, modes, sources, welcome] = await Promise.all([
     all(
       db,
       `SELECT day, json_extract(data, '$.device') AS device, COUNT(DISTINCT client) AS n FROM events
@@ -84,6 +84,8 @@ async function collect(db: D1Database, since: string) {
       since,
     ),
     all(db, `SELECT json_extract(data, '$.round') AS round, COUNT(*) AS n FROM events WHERE name = 'match_quit' GROUP BY round ORDER BY round`),
+    // The phase a match was left in; since V0.7.1 the investment is split into invest-ship and invest-cargo.
+    all(db, `SELECT json_extract(data, '$.phase') AS phase, COUNT(*) AS n FROM events WHERE name = 'match_quit' GROUP BY phase ORDER BY n DESC`),
     all(
       db,
       `SELECT json_extract(data, '$.lesson') AS lesson,
@@ -91,6 +93,17 @@ async function collect(db: D1Database, since: string) {
          FROM events WHERE name IN ('tutorial_start', 'tutorial_done') GROUP BY lesson ORDER BY started DESC`,
     ),
     all(db, `SELECT json_extract(data, '$.chapter') AS chapter, COUNT(*) AS n FROM events WHERE name = 'rules_open' GROUP BY chapter ORDER BY n DESC`),
+    // How often each role was deployed, summed over finished matches (the roles field of match_end).
+    all(
+      db,
+      `SELECT 'guard' AS role, SUM(json_extract(data, '$.roles.guard')) AS n FROM events WHERE name = 'match_end'
+       UNION ALL SELECT 'pirate', SUM(json_extract(data, '$.roles.pirate')) FROM events WHERE name = 'match_end'
+       UNION ALL SELECT 'smuggler', SUM(json_extract(data, '$.roles.smuggler')) FROM events WHERE name = 'match_end'
+       UNION ALL SELECT 'customs', SUM(json_extract(data, '$.roles.customs')) FROM events WHERE name = 'match_end'
+       UNION ALL SELECT 'diplomat', SUM(json_extract(data, '$.roles.diplomat')) FROM events WHERE name = 'match_end'
+       UNION ALL SELECT 'intel', SUM(json_extract(data, '$.roles.intel')) FROM events WHERE name = 'match_end'
+       UNION ALL SELECT 'broker', SUM(json_extract(data, '$.roles.broker')) FROM events WHERE name = 'match_end'`,
+    ),
     all(db, `SELECT json_extract(data, '$.like') AS like, COUNT(*) AS n FROM events WHERE name = 'feedback' GROUP BY like`),
     all(
       db,
@@ -133,8 +146,10 @@ async function collect(db: D1Database, since: string) {
     bots,
     daily,
     quits,
+    quitPhases,
     tutorials,
     chapters,
+    roleUse,
     likes,
     comments,
     errors,

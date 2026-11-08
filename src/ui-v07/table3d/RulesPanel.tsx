@@ -138,8 +138,13 @@ interface RulesPanelProps {
 
 export function RulesPanel({ onClose: close, where = 'table' }: RulesPanelProps) {
   const [tab, setTab] = useState<RulesTab>('roles');
-  // Which chapters people look up: a hint at what confuses them.
-  useEffect(() => track('rules_open', { chapter: tab, where }), [tab, where]);
+  // Which chapters people look up: a hint at what confuses them. The book opens on the roles page by
+  // itself, so that first view is logged as 'open' and only a chapter picked after it counts as a read.
+  const opened = useRef(false);
+  useEffect(() => {
+    track('rules_open', { chapter: opened.current ? tab : 'open', where });
+    opened.current = true;
+  }, [tab, where]);
   // The book opens, turns to a chapter and shuts with the sounds of a real one.
   const onClose = useCallback(() => {
     soundEngine.playSfx('book-close');

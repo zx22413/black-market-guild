@@ -2,6 +2,7 @@ import { useEffect, useRef, useSyncExternalStore } from 'react';
 import type { GameSession } from '../session/gameSession';
 import { flushNow, nextMatchNumber, track } from './track';
 import { matchMode, roleCounts, roundStats, statsSeat, whereInMatch } from './matchStats';
+import { currentInvestStage, splitInvestPhase } from './investStage';
 
 // Statistics of one match screen: its start, every round's end, its end, or where it was left,
 // and how long the 3D table took to load. Mounted once per match by MatchView.
@@ -55,7 +56,7 @@ export function useMatchAnalytics(session: GameSession, enabled = true): { reado
       if (!enabled || done.current.ended || done.current.quit) return;
       done.current.quit = true;
       const at = whereInMatch(latest.current.events);
-      track('match_quit', { mode: matchMode(latest.current.players), round: at.round, phase: at.phase });
+      track('match_quit', { mode: matchMode(latest.current.players), round: at.round, phase: splitInvestPhase(at.phase, currentInvestStage()) });
     };
     const onLeave = () => {
       quit();

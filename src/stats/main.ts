@@ -1,3 +1,4 @@
+import { quitPhaseLabel, quitPhaseOrder } from './phases';
 import './stats.css';
 
 // The /stats dashboard (docs/online/public-launch-plan.md §4.4): asks for the admin key once,
@@ -17,8 +18,10 @@ interface Stats {
   readonly funnel: Readonly<Record<'visitors' | 'started' | 'finished' | 'again' | 'invited' | 'guestsFinished', number>>;
   readonly daily: readonly Row[];
   readonly quits: readonly Row[];
+  readonly quitPhases: readonly Row[];
   readonly tutorials: readonly Row[];
   readonly chapters: readonly Row[];
+  readonly roleUse: readonly Row[];
   readonly likes: readonly Row[];
   readonly comments: readonly Row[];
   readonly errors: readonly Row[];
@@ -35,13 +38,24 @@ const LESSONS: Readonly<Record<string, string>> = {
   basics: '基礎',
   guard: '護衛',
   pirate: '海盜',
-  intel: '情報商人',
+  customs: '海關',
   smuggler: '走私商人',
-  'arms-cover': '軍火掩護',
-  broker: '莊家',
+  diplomat: '外交官',
+  intel: '情報商人（V0.7）',
+  'arms-cover': '軍火掩護（V0.7）',
+  broker: '莊家（V0.7）',
   islands: '開局選島',
 };
-const CHAPTERS: Readonly<Record<string, string>> = { roles: '角色', islands: '島嶼', buildings: '建築', goods: '貨品', events: '事件', score: '計分', online: '連線' };
+const ROLE_NAMES: Readonly<Record<string, string>> = {
+  guard: '護衛',
+  pirate: '海盜',
+  smuggler: '走私商人',
+  customs: '海關',
+  diplomat: '外交官',
+  intel: '情報商人（V0.7）',
+  broker: '莊家（V0.7）',
+};
+const CHAPTERS: Readonly<Record<string, string>> = { roles: '角色', islands: '島嶼', ships: '船', buildings: '建築（舊）', goods: '貨品', events: '事件', score: '計分', online: '連線' };
 const MODES: Readonly<Record<string, string>> = { local: '單機', hotseat: '同機輪流', online: '線上' };
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Readonly<Record<string, string>> = {}, ...children: (Node | string)[]): HTMLElementTagNameMap[K] {
@@ -54,8 +68,8 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Readonly<Recor
 const num = (value: unknown): number => Number(value ?? 0) || 0;
 const pct = (part: number, whole: number): string => (whole > 0 ? `${Math.round((part / whole) * 100)}%` : '—');
 
-function card(title: string, body: Node, wide = false): HTMLElement {
-  return el('section', { class: wide ? 'card wide' : 'card' }, el('h2', {}, title), body);
+function card(title: string, body: Node, wide = false, note?: string): HTMLElement {
+  return el('section', { class: wide ? 'card wide' : 'card' }, el('h2', {}, title), body, ...(note ? [el('p', { class: 'empty' }, note)] : []));
 }
 
 /** Horizontal bars: one per item, scaled to the largest. */
@@ -182,6 +196,10 @@ function render(stats: Stats): void {
       card('從哪裡來（人數）', bars(stats.sources.map((s) => ({ label: String(s.source ?? '') || '直接開網址', value: num(s.n) })))),
       card('中途離開時的回合', bars(stats.quits.map((q) => ({ label: num(q.round) === 0 ? '開局前' : `第 ${num(q.round)} 回合`, value: num(q.n) })))),
       card(
+        '中途離開時的階段',
+        bars([...stats.quitPhases].sort((a, b) => quitPhaseOrder(a.phase) - quitPhaseOrder(b.phase)).map((q) => ({ label: quitPhaseLabel(q.phase), value: num(q.n) }))),
+      ),
+      card(
         '各模式完成率',
         bars(stats.modes.map((m) => ({ label: MODES[String(m.mode)] ?? String(m.mode), value: num(m.finished), note: `${num(m.finished)}/${num(m.started)}（${pct(num(m.finished), num(m.started))}）` }))),
       ),
@@ -190,7 +208,13 @@ function render(stats: Stats): void {
         bars(stats.tutorials.map((t) => ({ label: LESSONS[String(t.lesson)] ?? String(t.lesson), value: num(t.done), note: `${num(t.done)}/${num(t.started)}` }))),
       ),
       card('第一次遊玩提示', welcomeBars(stats.welcome)),
-      card('規則書最常翻的章節', bars(stats.chapters.map((c) => ({ label: CHAPTERS[String(c.chapter)] ?? String(c.chapter), value: num(c.n) })))),
+      card(
+        '規則書最常翻的章節',
+        bars(stats.chapters.filter((c) => c.chapter !== 'open').map((c) => ({ label: CHAPTERS[String(c.chapter)] ?? String(c.chapter), value: num(c.n) }))),
+        false,
+        '只算翻頁。「打開書本」另計，因為書一打開就是角色頁；改版前的紀錄把這次開啟算進角色，角色的數字會偏高。',
+      ),
+      card('各角色出手次數（完成的對局）', bars(stats.roleUse.filter((r) => num(r.n) > 0).map((r) => ({ label: ROLE_NAMES[String(r.role)] ?? String(r.role), value: num(r.n) })))),
       card(
         '3D 桌面載入時間（平均）',
         bars(stats.ready.map((r) => ({ label: MODES[String(r.mode)] ?? String(r.mode), value: num(r.avg), note: `${(num(r.avg) / 1000).toFixed(1)} 秒` }))),

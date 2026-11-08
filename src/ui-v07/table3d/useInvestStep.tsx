@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { setInvestStage } from '../analytics/investStage';
 import { GOODS, producedFor, type BuildingId, type GoodId, type ShipTypeId } from '../../v07/game';
 import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
 import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
@@ -122,6 +123,13 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     const opening = requestId === null ? [] : [setTimeout(() => soundEngine.playSfx('round-open'), 0), setTimeout(() => producing.current && soundEngine.playSfx('produce'), ROUND_OPEN_MS), ...pops];
     return () => [timer, ...opening].forEach(clearTimeout);
   }, [requestId]);
+
+  // The quit statistic splits the investment into picking the ship and loading the cargo (analytics/investStage).
+  const typedRules = context?.view.rules.ships.enabled === 1;
+  // Not cleared on unmount: leaving by the exit button unmounts the match, and its quit record reads this after.
+  useEffect(() => {
+    setInvestStage(requestId !== null && typedRules ? phase : null);
+  }, [requestId, typedRules, phase]);
 
   // The building list closes on a click anywhere outside it (the table included).
   useEffect(() => {

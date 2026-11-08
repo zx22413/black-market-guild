@@ -15,6 +15,16 @@ describe('analytics events', () => {
     expect(checkData('match_end', { roles: { guard: 2, pirate: -1, cheat: 3 } })).toEqual({ roles: { guard: 2 } });
   });
 
+  it('counts the V0.7.1 roles customs and diplomat, which the first whitelist dropped', () => {
+    expect(checkData('match_end', { roles: { customs: 1, diplomat: 2, guard: 1 } })).toEqual({ roles: { customs: 1, diplomat: 2, guard: 1 } });
+  });
+
+  it('keeps the split investment phases of a left match, and the dev log open', () => {
+    expect(checkData('match_quit', { mode: 'local', round: 1, phase: 'invest-ship' })).toEqual({ mode: 'local', round: 1, phase: 'invest-ship' });
+    expect(checkData('match_quit', { mode: 'online', round: 2, phase: 'invest-cargo' })).toEqual({ mode: 'online', round: 2, phase: 'invest-cargo' });
+    expect(checkData('devlog_open', { version: 'V0.7.1', other: 'x' })).toEqual({ version: 'V0.7.1' });
+  });
+
   it('cuts long text and control characters', () => {
     const data = checkData('feedback', { like: false, text: `${'很'.repeat(250)}\u0007`, mode: 'local' });
     expect([...(data.text as string)]).toHaveLength(200);

@@ -15,7 +15,8 @@ const mode: Field = { kind: 'enum', values: MODES };
 const text = (max: number): Field => ({ kind: 'text', max });
 const int = (min: number, max: number): Field => ({ kind: 'int', min, max });
 const bool: Field = { kind: 'bool' };
-const ROLES = ['guard', 'pirate', 'intel', 'smuggler', 'broker'];
+// intel and broker are the V0.7 roles, kept so a client on an older build still reports.
+const ROLES = ['guard', 'pirate', 'customs', 'smuggler', 'diplomat', 'intel', 'broker'];
 
 export const EVENTS = {
   visit: { device: { kind: 'enum', values: ['phone', 'desktop'] }, first: bool, days: int(0, 100_000), from: text(80) },
