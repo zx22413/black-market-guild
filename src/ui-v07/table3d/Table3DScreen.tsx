@@ -23,6 +23,7 @@ import { MarketStrip } from './MarketStrip';
 import { RankRail } from './RankRail';
 import { ResultCard, type Rematch } from './ResultCard';
 import { VoyageEventChip } from './VoyageEventCard';
+import { resumePoint } from './replay';
 import { SPECTATOR_ISLANDS_SECONDS, SPECTATOR_REVEAL_SECONDS, useAutoAdvance } from './useAutoAdvance';
 import { resultRows } from './resultModel';
 import { RulesPanel } from './RulesPanel';
@@ -125,14 +126,16 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
 
   // Island draft, then everyone's islands revealed at once, before round 1.
   const chosen = snap.events.find((e) => e.type === 'islands-chosen');
-  const [islandsSeen, setIslandsSeen] = useState(skipIslandReveal);
+  // Mounting into a match already under way (reload, waking phone) skips what is already over.
+  const [resumed] = useState(() => (autoplay ? { roundsSeen: 0, islandsSeen: false } : resumePoint(snap.events)));
+  const [islandsSeen, setIslandsSeen] = useState(skipIslandReveal || resumed.islandsSeen);
   const showIslands = !autoplay && chosen?.type === 'islands-chosen' && !islandsSeen;
   // A spectator presses nothing: the reveal closes by itself.
   const islandsLeft = useAutoAdvance(spectator && ready && showIslands ? 'islands' : null, SPECTATOR_ISLANDS_SECONDS, () => setIslandsSeen(true));
 
   // A round is resolved in one go once the last decision is in; replay it step by step and hold
   // the table until it has been seen.
-  const [dismissed, setDismissed] = useState(0);
+  const [dismissed, setDismissed] = useState(resumed.roundsSeen);
   const resolvingRound = useMemo(() => {
     const rounds = snap.events.flatMap((e) => (e.type === 'roles-revealed' && e.round > dismissed ? [e.round] : []));
     return rounds.length > 0 ? Math.min(...rounds) : null;
