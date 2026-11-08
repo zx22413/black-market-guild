@@ -264,4 +264,4 @@ node --experimental-websocket --import tsx scripts/trailer/make.ts --format tall
 
 ## 9. V0.7.1 改版公告（2026-11-08）
 
-介紹貼文（本文件第 3～4 節、[`fb-posts.md`](fb-posts.md)、[`youtube.md`](youtube.md)）已改寫成 V0.7.1 的說法（五艘船、海關與外交官、固定 4 人）。**已發過文的平台**（巴哈獨立板與桌遊板、itch.io、YouTube、IG／FB 限動）改發改版公告，草稿與新圖片素材在 [`update-v071.md`](update-v071.md)；新圖在 `promo-out/v071/`。**線上版部署 V0.7.1 之前都不要發**（部署與規則書的待辦見該文件開頭）。
+介紹貼文（本文件第 3～4 節、[`fb-posts.md`](fb-posts.md)、[`youtube.md`](youtube.md)）已改寫成 V0.7.1 的說法（五艘船、海關與外交官、固定 4 人）。**已發過文的平台**（巴哈獨立板與桌遊板、itch.io、YouTube、IG／FB 限動）改發改版公告，草稿與新圖片素材在 [`update-v071.md`](update-v071.md)；新圖（含選船、骰值表、裝貨、出航的遊戲畫面，全是新島基）在 `promo-out/v071/`；第 5 節表格裡 10 月的封面與截圖是 V0.7 的畫面，已過時。**線上版部署 V0.7.1 之前都不要發**（部署與規則書的待辦見該文件開頭）。

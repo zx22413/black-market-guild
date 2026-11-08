@@ -27,10 +27,10 @@ import '../menu/menu.css';
 // Captured to public/og-card.png with headless Chrome (docs/online/public-launch-plan.md §9).
 
 const SEATS: readonly BeatSeat[] = [
-  { id: 'og-1' as PlayerId, name: '', color: PLAYER_COLORS[0], buildings: ['shipyard', 'exchange'], island: 'spice-isles', isViewer: false },
-  { id: 'og-2' as PlayerId, name: '', color: PLAYER_COLORS[1], buildings: ['salvage'], island: 'pirate-cove', isViewer: false },
-  { id: 'og-3' as PlayerId, name: '', color: PLAYER_COLORS[2], buildings: ['insurance', 'shipyard'], island: 'fortress', isViewer: false },
-  { id: 'og-4' as PlayerId, name: '', color: PLAYER_COLORS[3], buildings: ['exchange'], island: 'lighthouse', isViewer: false },
+  { id: 'og-1' as PlayerId, name: '', color: PLAYER_COLORS[0], buildings: [], island: 'spice-isles', isViewer: false },
+  { id: 'og-2' as PlayerId, name: '', color: PLAYER_COLORS[1], buildings: [], island: 'pirate-cove', isViewer: false },
+  { id: 'og-3' as PlayerId, name: '', color: PLAYER_COLORS[2], buildings: [], island: 'fortress', isViewer: false },
+  { id: 'og-4' as PlayerId, name: '', color: PLAYER_COLORS[3], buildings: [], island: 'lighthouse', isViewer: false },
 ];
 const ALL_LIT: ReadonlySet<PlayerId> = new Set(SEATS.map((s) => s.id));
 /**

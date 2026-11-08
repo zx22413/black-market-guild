@@ -27,7 +27,7 @@
 
 素材在 `promo-out/`（不進版本控制，可依 launch-kit 第 5 節重做）。
 
-**V0.7.1 的新圖在 `promo-out/v071/`：** `cover-v071-1920x1080.jpg`（五艘船並排）、`ship-*.jpg`（五艘船近照）、`menu-table.jpg`（新大廳與桌面）、`devlog-popup.jpg`；做法見 [`update-v071.md`](update-v071.md)。**宣傳片 `trailer-v6.mp4` 拍的是 V0.7（有建築、情報商人與莊家），尚未重拍**；重拍前建議改放封面圖或多張船的圖，影片只在說明裡註明是舊版畫面。留言可補的截圖改成新圖：獨立遊戲社團放 `ship-gambler.jpg`、`menu-table.jpg`；桌遊社團放 `ship-freighter.jpg`、`cover-v071-1920x1080.jpg`；AI 社團放 `ship-hidden.jpg`、`ship-breaker.jpg`。
+**V0.7.1 的新圖在 `promo-out/v071/`**（清單與用途見 [`update-v071.md`](update-v071.md)）：遊戲畫面 `game-*.jpg`（選船、骰值表、裝貨、出航、抵達）、`cover-*.jpg`、`ship-*.jpg`、`menu-table.jpg`，全都是新島基。**宣傳片 `trailer-v6.mp4` 拍的是 V0.7（有建築、情報商人與莊家），尚未重拍**；重拍前建議改放封面圖或多張船的圖，影片只在說明裡註明是舊版畫面。留言可補的截圖改成新圖：獨立遊戲社團放 `game-voyage-arrive.jpg`、`menu-table.jpg`；桌遊社團放 `game-ship-gambler.jpg`、`game-cargo.jpg`；AI 社團放 `ship-hidden.jpg`、`ship-breaker.jpg`。
 
 ## 1. 獨立遊戲開發社團
 

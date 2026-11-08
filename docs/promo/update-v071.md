@@ -13,12 +13,32 @@
 
 ## 素材（`promo-out/v071/`，不進版本控制，可重做）
 
-| 檔案 | 用在哪裡 |
+所有有島的圖都用 V0.7.1 的新島基與巴扎港小鎮重拍；`promo-out/` 根目錄裡 10 月拍的舊封面、`screenshots/01～07`、GIF 與兩支宣傳片都是 V0.7 的畫面（舊島、建築、舊角色），**不要再用**。
+
+**遊戲畫面截圖（真實的一局，船是主角）：**
+
+| 檔案 | 內容 |
+| --- | --- |
+| `game-ship-pick.jpg` | 選船：信天翁號的特寫與五艘船的手牌（船費、沉船機率）。公告主圖建議用這張 |
+| `game-ship-gambler.jpg` | 指到孤注號：右側的骰值表（5 賺 125%、6 賺 250%）。最能說明「風險自己挑」 |
+| `game-ship-freighter.jpg` | 指到巨鯨號：不會沉、載量 +2 |
+| `game-cargo.jpg` | 裝貨：貨物牌與船上的貨箱、船費與餘額 |
+| `game-fleet-sailing.jpg` | 全桌各島的船出航（新島基與黑市小鎮的全景） |
+| `game-voyage-arrive.jpg` | 孤注號骰到 5「抵達」，帶骰值與修正算式 |
+| `game-voyage-pirate.jpg` | 海嘯號被海盜 −2，帶骰值表 |
+| `game-islands.jpg` | 各商會的島：四張島卡公開 |
+
+**船與大廳：**
+
+| 檔案 | 內容 |
 | --- | --- |
 | `cover-v071-1920x1080.jpg` | 公告封面：五艘船並排。巴哈列表縮圖取第一張靜態圖，放這張；YouTube 社群貼文、itch 開發日誌、FB／Threads 配圖 |
-| `ship-standard.jpg`、`ship-gambler.jpg`、`ship-freighter.jpg`、`ship-hidden.jpg`、`ship-breaker.jpg` | 五艘船的近照（信天翁、孤注、巨鯨、幽靈、海嘯），拆開講一艘一則或當留言補圖 |
-| `devlog-popup.jpg` | 大廳的「開發日誌」彈窗，說明「遊戲裡也看得到完整更新內容」 |
-| `menu-table.jpg` | 新版大廳與桌面（八座新島基與巴扎港小鎮），限動、橫幅 |
+| `ship-standard.jpg`、`ship-gambler.jpg`、`ship-freighter.jpg`、`ship-hidden.jpg`、`ship-breaker.jpg` | 五艘船的近照，背景是新的島 |
+| `menu-table.jpg`、`devlog-popup.jpg` | 新版大廳與桌面；大廳的開發日誌彈窗 |
+| `cover-wide-1920x1080.jpg`、`cover-itch-1260x1000.jpg`、`cover-tall-1080x1920.jpg` | 商店封面（大廳標題卡疊在新島上）：YouTube 縮圖、itch.io 封面、直式（限動、Shorts 縮圖） |
+| `og-card.jpg` | 分享連結封面的重拍版；**船還是舊模型，尚未取代 `public/og-card.jpg`**，見待辦 |
+
+**配圖建議：** 巴哈獨立板用 `cover-v071`、`game-ship-pick`、`game-ship-gambler`、`game-voyage-arrive`；巴哈桌遊板用 `game-ship-gambler`、`game-ship-freighter`（機制討論，圖多比海報重要）；IG／FB 限動用 `game-ship-pick` 或 `cover-tall`。
 
 重做：先 `npm run dev`，再執行
 
@@ -66,7 +86,7 @@ node --experimental-websocket --import tsx scripts/promo/v071-shots.ts --out pro
 試玩：https://contrabay.lbdog.uk/?src=bahamut-indie
 ```
 
-圖：第一張放 `cover-v071-1920x1080.jpg`，之後依序放 `ship-gambler.jpg`、`ship-freighter.jpg`、`devlog-popup.jpg`（單張上限 600KB，需先壓縮）。
+圖：第一張放 `cover-v071-1920x1080.jpg`，之後依序放 `game-ship-pick.jpg`、`game-ship-gambler.jpg`、`game-voyage-arrive.jpg`（單張上限 600KB，需先壓縮）。
 
 ## 二、巴哈姆特・桌遊板（機制討論版）
 
@@ -159,6 +179,7 @@ Play: https://contrabay.lbdog.uk/?src=itch
 ## 待辦
 
 - ~~規則書改成船艙版~~（2026-11-08 完成）。
+- `public/og-card.jpg`（分享連結封面）：重拍版的巴扎港已是新小鎮，但畫面前景的船仍是舊的 Kenney 模型，要先在 `OgCardPreview` 換成自製的船模再取代。
 - 重拍宣傳片（直式與橫式）：`TRAILER` 劇本與分鏡改成新角色與選船畫面，片中的「情報商人」「莊家」「建築」要全換掉。
 - 角色卡插圖目前海關、外交官仍暫用舊情報商人、莊家的圖；截圖時避開角色卡特寫，或先換圖。
 - 發完看 `/stats` 的「從哪裡來」，以及玩家第一局在選船那一步有沒有離開。
