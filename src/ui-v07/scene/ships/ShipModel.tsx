@@ -85,11 +85,14 @@ export interface ShipModelProps {
   readonly underway: boolean;
   /** How rough the weather is for the sails: 0 a fair day, about 0.6 a tailwind, 1 a storm (default 0). */
   readonly gale?: number;
+  /** Fog or storm: too dark to see by, so the ghost ship lights up as at night (other ships stay as they are). */
+  readonly murk?: boolean;
 }
 
 /** One of the five ship types (designs.ts), its keel at the origin and its bow toward +z, in table units. */
-export function ShipModel({ type, color, night, underway, gale = 0 }: ShipModelProps) {
+export function ShipModel({ type, color, night: moonless, underway, gale = 0, murk = false }: ShipModelProps) {
   const design = SHIP_DESIGNS[type];
+  const night = moonless || (murk && design.motion.kind === 'ghost');
   const hull = cachedGeometry(design, design.parts);
   const rig = rigOf(type);
   const wind = useMemo<Wind>(() => ({ value: underway ? 1 : 0, gale }), []);

@@ -45,7 +45,7 @@ export const BUILDING_TEXT: Readonly<Record<BuildingId, string>> = {
 export const wantedText = (lootBonus: number): string => `通緝中：現金最多。海盜取走他船上的貨值時（最終值 1 或 2），另從銀行多拿 ${lootBonus} G`;
 
 /** How the final standing is counted (§13); also what the rules panel says under 計分. */
-export const WEALTH_RULE_TEXT = '總財富 ＝ 現金 ＋ 持有建築現金成本的一半；倉庫裡的材料不計分。同分比現金，現金也相同就並列。';
+export const WEALTH_RULE_TEXT = '總財富 ＝ 現金；倉庫裡的材料與海上的貨不計分。同分並列。';
 
 export const ISLAND_LABELS: Readonly<Record<IslandId, string>> = {
   'spice-isles': '香料群島',

@@ -165,7 +165,7 @@ export function RankRail({ seats, board, rules, cashOf, status, rankStep, forceO
                   {board.wanted.includes(seat.id) && <WantedMark />}
                   <StatusMark label={note} />
                 </span>
-                <b className="rank-wealth" title={`現金 ${s.cash.toLocaleString()} G ＋ 建築 ${s.buildingValue} G（半價）`}>
+                <b className="rank-wealth" title={s.buildingValue > 0 ? `現金 ${s.cash.toLocaleString()} G ＋ 建築 ${s.buildingValue} G（半價）` : `現金 ${s.cash.toLocaleString()} G`}>
                   {s.wealth.toLocaleString()} G
                 </b>
               </div>

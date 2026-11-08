@@ -318,7 +318,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
                   chosen={ship.chosen ?? false}
                   lantern={weather === 'moonless-night'}
                   onSelect={() => onSelectShip?.(ship.id)}
-                  model={<ShipModel type={ship.type ?? 'standard'} color={seats[lane]?.color ?? '#fcf4e2'} night={weather === 'moonless-night'} underway={ship.state === 'sailing' || ship.state === 'atSea'} gale={sailGale(weather)} />}
+                  model={<ShipModel type={ship.type ?? 'standard'} color={seats[lane]?.color ?? '#fcf4e2'} night={weather === 'moonless-night'} underway={ship.state === 'sailing' || ship.state === 'atSea'} gale={sailGale(weather)} murk={weather === 'storm' || weather === 'sea-fog'} />}
                 />
               );
               return <group key={ship.id}>{wrapShip ? wrapShip(ship.id, body) : body}</group>;

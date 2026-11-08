@@ -9,6 +9,7 @@ interface ResultPanelProps {
 
 /** §13: wealth = cash + half the cash cost of held buildings. */
 export function ResultPanel({ result, nameOf, onRestart }: ResultPanelProps) {
+  const showBuildings = result.standings.some((s) => s.buildingValue > 0);
   return (
     <Card title="最終結算" className="v7-result">
       <p>
@@ -20,7 +21,7 @@ export function ResultPanel({ result, nameOf, onRestart }: ResultPanelProps) {
             <th>名次</th>
             <th>商會</th>
             <th>現金</th>
-            <th>建築估值</th>
+            {showBuildings && <th>建築估值</th>}
             <th>總財富</th>
           </tr>
         </thead>
@@ -30,7 +31,7 @@ export function ResultPanel({ result, nameOf, onRestart }: ResultPanelProps) {
               <td>{s.rank}</td>
               <td>{nameOf(s.playerId)}</td>
               <td>{s.cash} G</td>
-              <td>{s.buildingValue} G</td>
+              {showBuildings && <td>{s.buildingValue} G</td>}
               <td>
                 <strong>{s.wealth} G</strong>
               </td>
