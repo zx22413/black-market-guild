@@ -48,7 +48,7 @@
 node --experimental-websocket --import tsx scripts/promo/v071-shots.ts --out promo-out/v071 --base http://localhost:5173
 ```
 
-**還沒有的：** 宣傳片 `trailer-v6.mp4` 是 V0.7（建築與舊角色）拍的，**V0.7.1 的影片尚未重拍**。公告先用圖片；影片要重拍需要新的 `TRAILER` 劇本（`src/v07/tutorial/trailer.ts` 與 `scripts/trailer/plan.ts` 還是舊角色），見下方「待辦」。
+**宣傳片：** 2026-11-08 用 V0.7.1 重拍：`promo-out/trailer-v7.mp4`（橫式）與 `trailer-tall-v3.mp4`（直式），多了選船鏡頭，船都是信天翁號。根目錄的 `trailer-v6.mp4`、`trailer-tall-v2.mp4` 是 V0.7 的，不要再用。
 
 ## 一、巴哈姆特・獨立遊戲板（公告）
 
@@ -120,7 +120,7 @@ https://contrabay.lbdog.uk/?src=bahamut-bg
 
 ## 三、YouTube（社群貼文 / 置頂留言）
 
-宣傳片是 V0.7，**說明欄與置頂留言要補一句版本**，避免有人看完影片發現遊戲不一樣。
+已上傳的宣傳片若還是 V0.7 的舊片，**說明欄與置頂留言要補一句版本**，避免有人看完影片發現遊戲不一樣；換成 `trailer-v7.mp4` 後就不必。
 
 置頂留言：
 
@@ -181,6 +181,6 @@ Play: https://contrabay.lbdog.uk/?src=itch
 ## 待辦
 
 - ~~規則書改成船艙版~~（2026-11-08 完成）。
-- 重拍宣傳片（直式與橫式）：`TRAILER` 劇本與分鏡改成新角色與選船畫面，片中的「情報商人」「莊家」「建築」要全換掉。
+- ~~重拍宣傳片（直式與橫式）~~（2026-11-08 完成：`trailer-v7.mp4`、`trailer-tall-v3.mp4`）。沉船畫面的殘骸仍是遊戲內的舊 Kenney 模型。
 - **大廳的小船還是舊的 Kenney 模型**（`src/ui-v07/menu/MenuProps.tsx` 的 `MenuShip`）：`menu-table.jpg`、`devlog-popup.jpg` 和三張 `cover-*.jpg` 裡島邊的小船因此是舊樣式；要先把它換成 `ShipModel` 再重拍。
 - 發完看 `/stats` 的「從哪裡來」，以及玩家第一局在選船那一步有沒有離開。

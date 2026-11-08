@@ -13,10 +13,10 @@
 
 ## 影片與圖片
 
-三個社團都放影片 `promo-out/trailer-v6.mp4`（1920×1080、約 32 秒、28 MB），直接在貼文裡**原生上傳**，不要貼 YouTube 連結，原生上傳在 FB 的觸及通常比外連好。字幕已燒進畫面，靜音自動播放也看得懂。
+三個社團都放影片 `promo-out/trailer-v7.mp4`（1920×1080、約 35 秒、38 MB，V0.7.1），直接在貼文裡**原生上傳**，不要貼 YouTube 連結，原生上傳在 FB 的觸及通常比外連好。字幕已燒進畫面，靜音自動播放也看得懂。
 
 - 影片裡結尾的 QR Code 是 `?src=video`，不分社團；要分社團請讓大家點貼文內文的連結。
-- 手機版直式影片 `trailer-tall-v2.mp4`（24 MB）在手機動態上佔的畫面較大，可以在其中一個社團試試看，比較兩邊反應。
+- 手機版直式影片 `trailer-tall-v3.mp4`（32 MB）在手機動態上佔的畫面較大，可以在其中一個社團試試看，比較兩邊反應。
 - FB 一則貼文通常是影片或多張圖二選一。截圖改放第一則留言（自己留言），或等有人問再貼。
 
 | 社團 | 影片之外，留言可補的截圖 |
@@ -27,7 +27,7 @@
 
 素材在 `promo-out/`（不進版本控制，可依 launch-kit 第 5 節重做）。
 
-**V0.7.1 的新圖在 `promo-out/v071/`**（清單與用途見 [`update-v071.md`](update-v071.md)）：遊戲畫面 `game-*.jpg`（選船、骰值表、裝貨、角色手牌、出航、抵達）、`cover-*.jpg`、`ship-*.jpg`、`menu-table.jpg`，全都是新島基。**宣傳片 `trailer-v6.mp4` 拍的是 V0.7（有建築、情報商人與莊家），尚未重拍**；重拍前建議改放封面圖或多張船的圖，影片只在說明裡註明是舊版畫面。留言可補的截圖改成新圖：獨立遊戲社團放 `game-voyage-arrive.jpg`、`menu-table.jpg`；桌遊社團放 `game-ship-gambler.jpg`、`game-cargo.jpg`；AI 社團放 `ship-hidden.jpg`、`ship-breaker.jpg`。
+**V0.7.1 的新圖在 `promo-out/v071/`**（清單與用途見 [`update-v071.md`](update-v071.md)）：遊戲畫面 `game-*.jpg`（選船、骰值表、裝貨、角色手牌、出航、抵達）、`cover-*.jpg`、`ship-*.jpg`、`menu-table.jpg`，全都是新島基。宣傳片已於 2026-11-08 用 V0.7.1 重拍（`trailer-v7.mp4`、`trailer-tall-v3.mp4`），舊的 `trailer-v6`、`trailer-tall-v2` 不要再用。留言可補的截圖改成新圖：獨立遊戲社團放 `game-voyage-arrive.jpg`、`menu-table.jpg`；桌遊社團放 `game-ship-gambler.jpg`、`game-cargo.jpg`；AI 社團放 `ship-hidden.jpg`、`ship-breaker.jpg`。
 
 ## 1. 獨立遊戲開發社團
 
