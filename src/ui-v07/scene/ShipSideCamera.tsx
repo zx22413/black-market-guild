@@ -1,12 +1,12 @@
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { PerspectiveCamera, Vector3 } from 'three';
 import type { SafeArea } from '../../ui/scene/CameraRig';
 import { playerIslandHeading } from '../../ui/scene/islandShape';
 import { seatPosition } from '../../ui/scene/layout';
 import { shipPose } from '../../ui/scene/Ships';
 import type { ShipTypeId } from '../../v07/game';
-import { applyPose, DIVE_MS, Flight, recordPose, type CameraPose } from './cameraHandoff';
+import { applyPose, DIVE_MS, Flight, keepFlightThroughRemount, recordPose, type CameraPose } from './cameraHandoff';
 
 // The ship-bay experiment's two shots of your own docked ship (docs/proposals/2026-11-ship-bays.md): a
 // close-up from the open sea while you pick the ship, and a wider one that takes in the warehouse
@@ -77,19 +77,20 @@ export function ShipSideCamera({ angle, shot, safe, ship }: { readonly angle: nu
   // A stand-in camera to measure how big the ship comes out on screen before the real one is placed.
   const probe = useMemo(() => new PerspectiveCamera(FOV, 1, 0.1, 500), []);
   const point = useMemo(() => new Vector3(), []);
-  // The dive from the table camera (null when there is none), started as the rig mounts: in the same commit as the
-  // step that brought it, so the DOM knows at once that the camera is flying (cameraHandoff).
-  const flight = useRef<Flight | null>(null);
-  useLayoutEffect(() => {
-    flight.current = Flight.start('table', camera, DIVE_MS);
+  // The dive from the table camera, started on the rig's first frame (undefined until then, null when there is none).
+  // It ends only when the rig unmounts (a passive effect): the canvas's Suspense hiding the tree for a moment while a
+  // model loads runs layout cleanups, which would end the dive just as it starts.
+  const flight = useRef<Flight | null | undefined>(undefined);
+  useEffect(() => {
+    const leave = keepFlightThroughRemount(flight);
     return () => {
-      flight.current?.stop();
-      flight.current = null;
+      leave();
+      // The camera is shared with the framing camera: hand it back as it was.
+      camera.clearViewOffset();
     };
   }, [camera]);
-  // The camera is shared with the framing camera: hand it back as it was.
-  useEffect(() => () => camera.clearViewOffset(), [camera]);
   useFrame((_, delta) => {
+    if (flight.current === undefined) flight.current = Flight.start('table', camera, DIVE_MS);
     const to = RIGS[shot];
     const k = 1 - Math.exp(-Math.min(delta, 0.1) * GLIDE);
     const now = (at.current ??= to);

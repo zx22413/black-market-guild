@@ -1,8 +1,8 @@
 import { useFrame, useThree } from '@react-three/fiber';
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import type { PerspectiveCamera } from 'three';
 import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
-import { applyPose, CLIMB_MS, Flight, recordPose, type CameraPose } from './cameraHandoff';
+import { applyPose, CLIMB_MS, Flight, keepFlightThroughRemount, recordPose, type CameraPose } from './cameraHandoff';
 import { frame, placeCamera, type Framing } from './focusMath';
 
 /** Share of the remaining way per 60 Hz frame; slower than V0.6's 0.12 so a close-up reads as a camera move. */
@@ -22,16 +22,10 @@ export function FocusCamera({ points, safe }: { readonly points: readonly FitPoi
   const { width, height } = useThree((s) => s.size);
   const target = useRef<Framing | null>(null);
   const current = useRef<Framing | null>(null);
-  // The climb from the ship close-up (null when there is none), started as the rig mounts: in the same commit as the
-  // step change, so the next step knows at once that the camera is flying and waits to deal its cards (StepArrival).
-  const flight = useRef<Flight | null>(null);
-  useLayoutEffect(() => {
-    flight.current = Flight.start('ship', camera, CLIMB_MS);
-    return () => {
-      flight.current?.stop();
-      flight.current = null;
-    };
-  }, [camera]);
+  // The climb from the ship close-up, started on the rig's first frame (undefined until then, null when there is none).
+  // It ends only when the rig unmounts (a passive effect), not when the canvas's Suspense hides the tree for a moment.
+  const flight = useRef<Flight | null | undefined>(undefined);
+  useEffect(() => keepFlightThroughRemount(flight), [camera]);
 
   useLayoutEffect(() => {
     camera.aspect = width / height;
@@ -45,6 +39,7 @@ export function FocusCamera({ points, safe }: { readonly points: readonly FitPoi
   }, [camera, width, height, points, safe]);
 
   useFrame((_, delta) => {
+    if (flight.current === undefined) flight.current = Flight.start('ship', camera, CLIMB_MS);
     const to = target.current;
     const at = current.current;
     if (!to || !at) return;
