@@ -11,9 +11,11 @@ import { mark, markReady } from './director';
 // capture films it and notes the moments the edit cuts to.
 
 const STEPS: readonly ClickStep[] = [
-  // Round 1: load wood and spice, seal it.
-  { selector: '[data-crate="wood"]', wait: 900, mark: 'invest-wood' },
-  { selector: '[data-crate="spice"]', wait: 250, mark: 'invest-spice' },
+  // Round 1: pick 信天翁號, go on to the cargo, load wood and spice, seal it.
+  { selector: '[data-ship-card="standard"]', wait: 900, mark: 'ship-pick' },
+  { selector: '[data-focus="ship-next"]', wait: 500, mark: 'ship-next' },
+  { selector: '[data-cargo-card="wood"]', wait: 600, mark: 'invest-wood' },
+  { selector: '[data-cargo-card="spice"]', wait: 250, mark: 'invest-spice' },
   { selector: '[data-focus="submit"]', wait: 350, mark: 'invest-seal', last: true },
   // Round 2: your guard on your own ship, sealed.
   { selector: '[data-role-card="guard"]', wait: 900, mark: 'deploy-guard' },

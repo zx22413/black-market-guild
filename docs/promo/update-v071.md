@@ -23,6 +23,8 @@
 | `game-ship-gambler.jpg` | 指到孤注號：右側的骰值表（5 賺 125%、6 賺 250%）。最能說明「風險自己挑」 |
 | `game-ship-freighter.jpg` | 指到巨鯨號：不會沉、載量 +2 |
 | `game-cargo.jpg` | 裝貨：貨物牌與船上的貨箱、船費與餘額 |
+| `game-roles.jpg` | 部署角色：五張角色手牌，海關與外交官已是新插圖 |
+| `game-roles-customs.jpg` | 點選海關：說明列與可選目標船（「＋」） |
 | `game-fleet-sailing.jpg` | 全桌各島的船出航（新島基與黑市小鎮的全景） |
 | `game-voyage-arrive.jpg` | 孤注號骰到 5「抵達」，帶骰值與修正算式 |
 | `game-voyage-pirate.jpg` | 海嘯號被海盜 −2，帶骰值表 |
@@ -36,9 +38,9 @@
 | `ship-standard.jpg`、`ship-gambler.jpg`、`ship-freighter.jpg`、`ship-hidden.jpg`、`ship-breaker.jpg` | 五艘船的近照，背景是新的島 |
 | `menu-table.jpg`、`devlog-popup.jpg` | 新版大廳與桌面；大廳的開發日誌彈窗 |
 | `cover-wide-1920x1080.jpg`、`cover-itch-1260x1000.jpg`、`cover-tall-1080x1920.jpg` | 商店封面（大廳標題卡疊在新島上）：YouTube 縮圖、itch.io 封面、直式（限動、Shorts 縮圖） |
-| `og-card.jpg` | 分享連結封面的重拍版；**船還是舊模型，尚未取代 `public/og-card.jpg`**，見待辦 |
+| `og-card.jpg` | 分享連結封面（同 `public/og-card.jpg`）：新巴扎港小鎮，前景是孤注號、左邊是信天翁號，都是自製船模 |
 
-**配圖建議：** 巴哈獨立板用 `cover-v071`、`game-ship-pick`、`game-ship-gambler`、`game-voyage-arrive`；巴哈桌遊板用 `game-ship-gambler`、`game-ship-freighter`（機制討論，圖多比海報重要）；IG／FB 限動用 `game-ship-pick` 或 `cover-tall`。
+**配圖建議（有角色卡的 `game-roles*.jpg` 適合桌遊社團與機制討論）：** 巴哈獨立板用 `cover-v071`、`game-ship-pick`、`game-ship-gambler`、`game-voyage-arrive`；巴哈桌遊板用 `game-ship-gambler`、`game-ship-freighter`（機制討論，圖多比海報重要）；IG／FB 限動用 `game-ship-pick` 或 `cover-tall`。
 
 重做：先 `npm run dev`，再執行
 
@@ -179,7 +181,6 @@ Play: https://contrabay.lbdog.uk/?src=itch
 ## 待辦
 
 - ~~規則書改成船艙版~~（2026-11-08 完成）。
-- `public/og-card.jpg`（分享連結封面）：重拍版的巴扎港已是新小鎮，但畫面前景的船仍是舊的 Kenney 模型，要先在 `OgCardPreview` 換成自製的船模再取代。
 - 重拍宣傳片（直式與橫式）：`TRAILER` 劇本與分鏡改成新角色與選船畫面，片中的「情報商人」「莊家」「建築」要全換掉。
-- 角色卡插圖目前海關、外交官仍暫用舊情報商人、莊家的圖；截圖時避開角色卡特寫，或先換圖。
+- **大廳的小船還是舊的 Kenney 模型**（`src/ui-v07/menu/MenuProps.tsx` 的 `MenuShip`）：`menu-table.jpg`、`devlog-popup.jpg` 和三張 `cover-*.jpg` 裡島邊的小船因此是舊樣式；要先把它換成 `ShipModel` 再重拍。
 - 發完看 `/stats` 的「從哪裡來」，以及玩家第一局在選船那一步有沒有離開。

@@ -66,13 +66,13 @@ await viewport(540, 960, 2);
 await open('/v07.html?dev=trailer&part=cover&format=tall', 7000);
 await save('cover-tall-1080x1920');
 await viewport(1200, 630, 1);
-await open('/v07.html?dev=og-card', 9000);
+await open('/v07.html?dev=og-card', 16000);
 await save('og-card');
 await viewport(1920, 1080, 1);
 
 // A real match (you against three bots, seed 3) played up to the voyage, for the screenshots that
 // show the ship choice: the islands revealed, the ship hand, a ship's dice table, loading cargo, and
-// frames of the voyage (the role hand is left out: its customs and diplomat art is still the old one).
+// frames of the voyage. The role hand is in too now that customs and diplomat have their own art.
 const waitFor = async (expression: string, timeout = 40_000): Promise<void> => {
   const started = Date.now();
   while (!(await evaluate<boolean>(expression))) {
@@ -90,6 +90,7 @@ const press = (expression: string) => evaluate(`${expression}?.click()`);
 
 await open('/v07.html?dev=round3d&seed=3', 2000);
 await waitFor(`document.querySelectorAll('.isle-slot').length === 2`);
+await sleep(1500);
 await press(`document.querySelectorAll('.isle-slot')[1]`);
 await sleep(800);
 await waitFor(`!!${byText('選定', true)}`);
@@ -120,7 +121,12 @@ await sleep(1500);
 await save('game-cargo');
 await press(`document.querySelector('.seal-submit')`);
 await waitFor(`!!document.querySelector('.dep-card.none')`);
-await sleep(2500);
+await sleep(3000);
+await save('game-roles');
+// Customs: the card picked, then a rival's ship, for the goods it can name.
+await press(`document.querySelectorAll('.dep-card')[0]`);
+await sleep(1500);
+await save('game-roles-customs');
 await press(`document.querySelector('.dep-card.none')`);
 await sleep(800);
 await press(`document.querySelector('.seal-submit')`);

@@ -3,12 +3,12 @@ import { useMemo, useRef } from 'react';
 import { Vector3, type Group } from 'three';
 import type { PlayerId } from '../../../v07/game';
 import { laneCurve, seatAngles } from '../../../ui/scene/layout';
-import { Model } from '../../../ui/scene/Model';
 import { lanePose } from '../../../ui/scene/Ships';
 import { SEA_LEVEL, seaSurfaceY } from '../../../ui/scene/seaWave';
 import { useSwell, useWavePhase } from '../../../ui/scene/SwellContext';
 import { PLAYER_COLORS } from '../../../ui/scene/tableModel';
 import type { BeatSeat } from '../../scene/beatStage';
+import { ShipModel } from '../../scene/ships/ShipModel';
 import { TableCanvas } from '../../scene/TableCanvas';
 import { MENU_BERTH } from '../../menu/menuMotion';
 import { markReady } from './director';
@@ -43,7 +43,8 @@ const END_START = 0.35;
 let startAt = START;
 const progress = (s: number): number => Math.min(MENU_BERTH, startAt + (s / VOYAGE) * MENU_BERTH);
 
-function SailingShip({ angle, index }: { readonly angle: number; readonly index: number }) {
+/** Every ship in the opening and the end shot is the standard 信天翁號, in its owner's colour. */
+function SailingShip({ angle, index, storm }: { readonly angle: number; readonly index: number; readonly storm: boolean }) {
   const group = useRef<Group>(null);
   const swell = useSwell();
   const phase = useWavePhase();
@@ -61,7 +62,7 @@ function SailingShip({ angle, index }: { readonly angle: number; readonly index:
   });
   return (
     <group ref={group}>
-      <Model name="ship-medium" scale={0.546} />
+      <ShipModel type="standard" color={SEATS[index]?.color ?? PLAYER_COLORS[0]} night={false} underway gale={storm ? 1 : 0} murk={storm} />
     </group>
   );
 }
@@ -132,7 +133,7 @@ export function TrailerOpening({ ending = false, tall = false }: { readonly endi
     >
       {ending ? <EndCamera tall={tall} /> : <DirectorCamera angle={angles[0] ?? 0} tall={tall} />}
       {angles.map((angle, i) => (
-        <SailingShip key={i} angle={angle} index={i} />
+        <SailingShip key={i} angle={angle} index={i} storm={!ending} />
       ))}
     </TableCanvas>
   );

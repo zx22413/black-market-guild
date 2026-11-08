@@ -1,18 +1,18 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import type { Group } from 'three';
-import type { PlayerId, VoyageEventId } from '../../v07/game';
+import type { PlayerId, ShipTypeId, VoyageEventId } from '../../v07/game';
 import { GOODS } from '../../v07/game';
 import { seatAngles } from '../../ui/scene/layout';
-import { Model } from '../../ui/scene/Model';
 import { lanePose } from '../../ui/scene/Ships';
-import { seaSurfaceY } from '../../ui/scene/seaWave';
+import { SEA_LEVEL, seaSurfaceY } from '../../ui/scene/seaWave';
 import { useSwell, useWavePhase } from '../../ui/scene/SwellContext';
 import { PLAYER_COLORS } from '../../ui/scene/tableModel';
 import type { MarketShow } from '../../ui/scene/MarketIsland';
 import { GOOD_COLORS } from '../scene/CrateModel';
 import type { BeatSeat } from '../scene/beatStage';
 import { TableCanvas } from '../scene/TableCanvas';
+import { ShipModel } from '../scene/ships/ShipModel';
 import { MENU_BERTH, menuPrices } from '../menu/menuMotion';
 import { IslandFlag } from '../menu/MenuProps';
 import { CinnabarChop, GameTitle } from '../skin/titleMark';
@@ -33,11 +33,13 @@ const SEATS: readonly BeatSeat[] = [
   { id: 'og-4' as PlayerId, name: '', color: PLAYER_COLORS[3], buildings: [], island: 'lighthouse', isViewer: false },
 ];
 const ALL_LIT: ReadonlySet<PlayerId> = new Set(SEATS.map((s) => s.id));
-/**
- * How deep the hulls sit below the water. The table's ships ride SEA_LEVEL above the surface,
- * which reads right from the table's high cameras; this low camera would see them float.
- */
-const DRAFT = Number(new URLSearchParams(window.location.search).get('draft') ?? 0.2);
+/** How deep the keels sit below the water's rest level: the table's own draft (scene/Ships `DRAFT`), so these hulls ride like the game's. */
+const DRAFT = Number(new URLSearchParams(window.location.search).get('draft') ?? 0.5);
+/** The five ship types are the game's own models; the lane ships and the hero are picked to show the range. */
+const LANE_TYPES: readonly ShipTypeId[] = ['standard', 'freighter', 'breaker', 'hidden'];
+const HERO_TYPE: ShipTypeId = 'gambler';
+/** A tailwind's sail fill (ShipModel `gale`). */
+const GALE = 0.6;
 /** The hulls' lean in the wind and the hero's bow lifted by a wave (radians). */
 const HEEL = Number(new URLSearchParams(window.location.search).get('heel') ?? 0.08);
 const PITCH = Number(new URLSearchParams(window.location.search).get('pitch') ?? -0.05);
@@ -52,7 +54,7 @@ interface Shot {
   readonly weather: VoyageEventId | null;
 }
 /** A tailwind: higher swell with foam and wind streaks, the right sea for full canvas. */
-const SAIL: Shot = { cam: [22, 4, 34], look: [-24, 8, -2], t: [0.45, 0.5, 0.55, 0.66], hero: [11.6, 18.2, 2.2], weather: 'tailwind' };
+const SAIL: Shot = { cam: [22, 4, 34], look: [-24, 8, -2], t: [0.45, 0.5, 0.55, 0.66], hero: [8.6, 18.2, 2.2], weather: 'tailwind' };
 const SHOTS: Readonly<Record<'sail' | 'night', Shot>> = { sail: SAIL, night: { ...SAIL, weather: 'moonless-night' } };
 
 const vec = (raw: string | null): Vec | null => {
@@ -70,14 +72,14 @@ function Camera({ cam, look }: { readonly cam: Vec; readonly look: Vec }) {
 }
 
 /** A ship held at a spot of the sea, riding the swell. */
-function HeroShip({ x, z, yaw }: { readonly x: number; readonly z: number; readonly yaw: number }) {
+function HeroShip({ x, z, yaw, color }: { readonly x: number; readonly z: number; readonly yaw: number; readonly color: string }) {
   const group = useRef<Group>(null);
   const swell = useSwell();
   const phase = useWavePhase();
   useFrame(() => {
     const g = group.current;
     if (!g) return;
-    g.position.set(x, seaSurfaceY(x, z, phase.current, swell.current.height) - DRAFT, z);
+    g.position.set(x, seaSurfaceY(x, z, phase.current, swell.current.height) - SEA_LEVEL - DRAFT, z);
     // Heeled by the wind and lifted at the bow by a wave: it reads as sailing, not parked.
     g.rotation.order = 'YXZ';
     g.rotation.y = yaw;
@@ -86,13 +88,13 @@ function HeroShip({ x, z, yaw }: { readonly x: number; readonly z: number; reado
   });
   return (
     <group ref={group}>
-      <Model name="ship-medium" scale={0.546} />
+      <ShipModel type={HERO_TYPE} color={color} night={false} underway gale={GALE} />
     </group>
   );
 }
 
 /** A ship held at one spot of its lane, riding the swell like the menu's ships. */
-function FrozenShip({ angle, t }: { readonly angle: number; readonly t: number }) {
+function FrozenShip({ angle, t, type, color, night }: { readonly angle: number; readonly t: number; readonly type: ShipTypeId; readonly color: string; readonly night: boolean }) {
   const group = useRef<Group>(null);
   const swell = useSwell();
   const phase = useWavePhase();
@@ -100,14 +102,14 @@ function FrozenShip({ angle, t }: { readonly angle: number; readonly t: number }
     const g = group.current;
     if (!g) return;
     const pose = lanePose(angle, t * MENU_BERTH);
-    g.position.set(pose.position.x, seaSurfaceY(pose.position.x, pose.position.z, phase.current, swell.current.height) - DRAFT, pose.position.z);
+    g.position.set(pose.position.x, seaSurfaceY(pose.position.x, pose.position.z, phase.current, swell.current.height) - SEA_LEVEL - DRAFT, pose.position.z);
     g.rotation.order = 'YXZ';
     g.rotation.y = pose.heading;
     g.rotation.z = HEEL * 0.7;
   });
   return (
     <group ref={group}>
-      <Model name="ship-medium" scale={0.546} />
+      <ShipModel type={type} color={color} night={night} underway gale={GALE} />
     </group>
   );
 }
@@ -155,10 +157,10 @@ export function OgCardPreview() {
           market={market}
           {...(night ? { litSeats: ALL_LIT } : {})}
         >
-          <HeroShip x={hero[0]} z={hero[1]} yaw={hero[2]} />
+          <HeroShip x={hero[0]} z={hero[1]} yaw={hero[2]} color={SEATS[0]!.color} />
           {angles.map((angle, i) => (
             <group key={i}>
-              <FrozenShip angle={angle} t={t[i] ?? 0.4} />
+              <FrozenShip angle={angle} t={t[i] ?? 0.4} type={LANE_TYPES[i] ?? 'standard'} color={SEATS[i]!.color} night={night} />
               <IslandFlag angle={angle} color={SEATS[i]!.color} raised still />
             </group>
           ))}
