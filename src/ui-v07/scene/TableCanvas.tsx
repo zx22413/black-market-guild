@@ -27,7 +27,7 @@ import { CrestSpray, ShoreSpray } from '../../ui/scene/Spray';
 import { Storm } from '../../ui/scene/Storm';
 import { soundEngine } from '../audio/soundEngine';
 import { PerfProbe } from '../perf/PerfProbe';
-import { AdaptiveDpr, useTableDpr } from '../perf/tableDpr';
+import { AdaptiveDpr, FrameLimiter, framesCapped, useTableDpr } from '../perf/tableDpr';
 import { SwellProvider } from '../../ui/scene/SwellContext';
 import type { SceneShip, ShipState } from '../../ui/scene/tableModel';
 import { WEATHER, fillOf } from '../../ui/scene/weather';
@@ -264,7 +264,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
 
   return (
     <div className={`beat3d ${dim ? 'dim' : ''}`} onClick={onClick}>
-      <Canvas shadows dpr={dpr} camera={{ position: [0, 82, 60], fov: 38 }} onCreated={() => setReady(true)}>
+      <Canvas shadows dpr={dpr} frameloop={framesCapped ? 'never' : 'always'} camera={{ position: [0, 82, 60], fov: 38 }} onCreated={() => setReady(true)}>
         {camera ?? <FocusCamera points={cameraPoints} safe={safe} />}
         <color attach="background" args={[look.sky]} />
         <WeatherFog color={look.sky} near={look.fogNear} far={look.fogFar} />
@@ -333,6 +333,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
         <PinTracker pins={pins} elements={labels} />
         <PerfProbe />
         <AdaptiveDpr />
+        {framesCapped && <FrameLimiter />}
       </Canvas>
       {ready && (
         <div className="beat3d-labels">

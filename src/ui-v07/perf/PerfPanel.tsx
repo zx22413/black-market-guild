@@ -49,6 +49,7 @@ export function PerfPanel() {
             <Toggle label="no shadow" on={view.shadowsOff} onClick={() => setSwitch({ shadowsOff: !view.shadowsOff })} />
             <Toggle label="no blur" on={view.noBlur} onClick={() => setSwitch({ noBlur: !view.noBlur })} />
             <Toggle label="no css fx" on={view.noFx} onClick={() => setSwitch({ noFx: !view.noFx })} />
+            <Toggle label="uncap fps" on={view.uncapped} onClick={() => setSwitch({ uncapped: !view.uncapped })} />
           </div>
           <div className="perf-row">
             <span>dpr</span>

@@ -9,9 +9,11 @@ export interface PerfFlags {
   shadowsOff: boolean;
   /** Pixel ratio the canvas is forced to; null leaves the game's own (adaptive) choice. */
   dprCap: number | null;
+  /** Let a phone draw as fast as it can instead of at its 30fps cap (to compare heat and smoothness). */
+  uncapped: boolean;
 }
 
-export const perfFlags: PerfFlags = { seaFrozen: false, shadowsOff: false, dprCap: null };
+export const perfFlags: PerfFlags = { seaFrozen: false, shadowsOff: false, dprCap: null, uncapped: false };
 
 const listeners = new Set<() => void>();
 

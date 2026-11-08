@@ -22,12 +22,13 @@ export interface PerfView {
   readonly dprCap: number | null;
   readonly noBlur: boolean;
   readonly noFx: boolean;
+  readonly uncapped: boolean;
 }
 
 /** `?perf=1` turns the panel on; nothing of it is loaded otherwise. */
 export const perfEnabled = (search: string): boolean => new URLSearchParams(search).get('perf') === '1';
 
-let view: PerfView = { frames: null, render: null, seaFrozen: false, shadowsOff: false, dprCap: null, noBlur: false, noFx: false };
+let view: PerfView = { frames: null, render: null, seaFrozen: false, shadowsOff: false, dprCap: null, noBlur: false, noFx: false, uncapped: false };
 const listeners = new Set<() => void>();
 
 const emit = (next: PerfView): void => {
@@ -46,11 +47,12 @@ export function publishMeasure(frames: FrameSummary | null, render: RenderStats)
 }
 
 /** Flips one switch: the canvas ones go through the shared flags, the CSS ones through root classes. */
-export function setSwitch(change: Partial<Pick<PerfView, 'seaFrozen' | 'shadowsOff' | 'dprCap' | 'noBlur' | 'noFx'>>): void {
+export function setSwitch(change: Partial<Pick<PerfView, 'seaFrozen' | 'shadowsOff' | 'dprCap' | 'noBlur' | 'noFx' | 'uncapped'>>): void {
   const next = { ...view, ...change };
   perfFlags.seaFrozen = next.seaFrozen;
   perfFlags.shadowsOff = next.shadowsOff;
   perfFlags.dprCap = next.dprCap;
+  perfFlags.uncapped = next.uncapped;
   const root = document.documentElement.classList;
   root.toggle('perf-no-blur', next.noBlur);
   root.toggle('perf-no-fx', next.noFx);

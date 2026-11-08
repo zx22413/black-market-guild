@@ -1,7 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { perfFlags, subscribePerfFlags } from '../../ui/scene/perfFlags';
-import { WINDOW_MS, isPhone, judgeWindow, phoneDprLevels, startState, type DprState } from './dprPolicy';
+import { PHONE_FRAME_MS, UNCAPPED_FRAME_MS, WINDOW_MS, isPhone, judgeWindow, phoneDprLevels, startState, type DprState } from './dprPolicy';
 
 /** Longest frame (ms) that counts: a longer gap is a hidden tab or a scene being loaded, not drawing speed. */
 const IGNORE_OVER_MS = 250;
@@ -19,6 +19,12 @@ const phone: Phone | null = (() => {
   const levels = phoneDprLevels(window.devicePixelRatio || 1);
   return { levels, state: startState(levels) };
 })();
+
+/** Whether this device is a phone, whose table draws at a capped frame rate (see FrameLimiter). */
+export const framesCapped = phone !== null;
+
+/** The frame time (ms) the table is aiming at now: the phone's cap, or full speed on a desktop or when the panel lifts the cap. */
+const targetFrameMs = (): number => (phone && !perfFlags.uncapped ? PHONE_FRAME_MS : UNCAPPED_FRAME_MS);
 
 const listeners = new Set<() => void>();
 const subscribe = (listener: () => void): (() => void) => {
@@ -68,11 +74,33 @@ function Watch({ phone: p }: { readonly phone: Phone }) {
     w.count += 1;
     w.span += ms;
     if (w.span < WINDOW_MS) return;
-    const next = judgeWindow(p.state, w.total / w.count, p.levels);
+    const next = judgeWindow(p.state, w.total / w.count, p.levels, targetFrameMs());
     sample.current = { total: 0, count: 0, span: 0 };
     const changed = next.level !== p.state.level;
     p.state = next;
     if (changed) listeners.forEach((l) => l());
   });
+  return null;
+}
+
+/**
+ * Inside a canvas whose `frameloop` is "never" (only on a phone, see `framesCapped`): draws a frame
+ * on the display's own timing but no more often than the phone's cap, so the GPU idles between
+ * frames. The 10% slack lets a 60Hz screen deliver every second tick as 33ms despite timer jitter.
+ */
+export function FrameLimiter() {
+  const advance = useThree((s) => s.advance);
+  useEffect(() => {
+    let raf = 0;
+    let last = -Infinity;
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      if (now - last < (perfFlags.uncapped ? 0 : PHONE_FRAME_MS * 0.9)) return;
+      last = now;
+      advance(now);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [advance]);
   return null;
 }

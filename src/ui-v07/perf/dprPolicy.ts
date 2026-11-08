@@ -16,10 +16,18 @@ export function isPhone(coarsePointer: boolean, shortSide: number): boolean {
   return coarsePointer && shortSide <= 820;
 }
 
-/** Average frame time (ms) above which the picture is too slow: about 45fps. */
+/** Average frame time (ms) above which the picture is too slow: about 45fps (at the uncapped 60fps target). */
 export const SLOW_MS = 22;
-/** Average frame time (ms) at or below which there is room to be sharper again: about 57fps. */
+/** Average frame time (ms) at or below which there is room to be sharper again: about 57fps (at the uncapped 60fps target). */
 export const FAST_MS = 17.5;
+/** The frame time (ms) SLOW_MS and FAST_MS were set for: 60fps. */
+export const UNCAPPED_FRAME_MS = 1000 / 60;
+/**
+ * A phone draws at most 30fps (33ms a frame): it runs the GPU half as hard, which keeps it much
+ * cooler, and the table (a slow-moving board) hardly looks different. The verdict thresholds above
+ * scale with the frame time being aimed at, so a phone that holds 30fps counts as "fast".
+ */
+export const PHONE_FRAME_MS = 1000 / 30;
 /** How long one verdict looks at the frames, in ms. */
 export const WINDOW_MS = 2000;
 /** Good windows in a row before stepping up (10s of headroom), when no step up has had to be undone. */
@@ -41,13 +49,14 @@ export interface DprState {
 
 export const startState = (levels: readonly number[]): DprState => ({ level: levels.length - 1, good: 0, flips: 0, climbed: false });
 
-/** One verdict from a window's average frame time: step down when slow, up after enough good windows. */
-export function judgeWindow(state: DprState, avgMs: number, levels: readonly number[]): DprState {
-  if (avgMs > SLOW_MS) {
+/** One verdict from a window's average frame time: step down when slow, up after enough good windows. `frameMs` is the frame time being aimed at. */
+export function judgeWindow(state: DprState, avgMs: number, levels: readonly number[], frameMs: number = UNCAPPED_FRAME_MS): DprState {
+  const scale = frameMs / UNCAPPED_FRAME_MS;
+  if (avgMs > SLOW_MS * scale) {
     if (state.level === 0) return { ...state, good: 0 };
     return { level: state.level - 1, good: 0, flips: state.climbed ? state.flips + 1 : state.flips, climbed: false };
   }
-  if (avgMs <= FAST_MS && state.level < levels.length - 1) {
+  if (avgMs <= FAST_MS * scale && state.level < levels.length - 1) {
     const good = state.good + 1;
     return good >= goodWindowsFor(state.flips) ? { ...state, level: state.level + 1, good: 0, climbed: true } : { ...state, good };
   }

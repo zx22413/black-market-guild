@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FAST_MS, GOOD_WINDOWS, MAX_GOOD_WINDOWS, SLOW_MS, goodWindowsFor, isPhone, judgeWindow, phoneDprLevels, startState } from '../../src/ui-v07/perf/dprPolicy';
+import { FAST_MS, GOOD_WINDOWS, MAX_GOOD_WINDOWS, PHONE_FRAME_MS, SLOW_MS, goodWindowsFor, isPhone, judgeWindow, phoneDprLevels, startState } from '../../src/ui-v07/perf/dprPolicy';
 
 const LEVELS = phoneDprLevels(3);
 
@@ -70,5 +70,21 @@ describe('judgeWindow', () => {
     }
     for (let i = 0; i < MAX_GOOD_WINDOWS; i++) s = judgeWindow(s, FAST_MS, LEVELS);
     expect(s.level).toBe(2);
+  });
+});
+
+describe('judgeWindow at a capped frame time', () => {
+  const top = startState(LEVELS);
+
+  it('treats a phone holding its 30fps cap as fast, not slow', () => {
+    expect(judgeWindow(top, 33.5, LEVELS, PHONE_FRAME_MS).level).toBe(top.level);
+  });
+
+  it('steps down when a phone falls well below its cap', () => {
+    expect(judgeWindow(top, 50, LEVELS, PHONE_FRAME_MS).level).toBe(top.level - 1);
+  });
+
+  it('counts a 33ms average as slow when the cap is lifted', () => {
+    expect(judgeWindow(top, 33.5, LEVELS).level).toBe(top.level - 1);
   });
 });
