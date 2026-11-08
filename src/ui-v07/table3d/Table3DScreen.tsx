@@ -148,11 +148,6 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
 
   const phase = request?.context.decision.phase;
   const free = !holding && !showIslands && unlocked && !autoplay;
-  // The decision is on screen now: an online room starts its clock from here, not from when it was sent.
-  const shownId = free && ready && request ? request.id : null;
-  useEffect(() => {
-    if (shownId !== null) session.decisionShown?.(shownId);
-  }, [shownId, session]);
   const drafting = free && phase === 'island-choice' ? request : null;
   // Who still has to confirm the device before their decision shows (hot-seat).
   const handoffTo = hotSeat && request && !unlocked && !holding && !showIslands && !autoplay ? seatOnScreen : null;
@@ -228,6 +223,12 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     skipFirstOpening: islandMarks,
     skip: skipIslandMoments,
   });
+  // The decision is really usable now: loaded, replay over, and the island moments before it played
+  // (the draft has none). An online room starts its clock from here, not from when it was sent.
+  const shownId = free && ready && request && (phase === 'island-choice' || !moments.blocking) ? request.id : null;
+  useEffect(() => {
+    if (shownId !== null) session.decisionShown?.(shownId);
+  }, [shownId, session]);
   // A submitted decision stays on the bar under its sealed seal while the others decide: submitting
   // keeps the step's chips (SealSubmit), and the next decision or the round's show replaces them.
   const sealable = useRef<ReactNode>(null);
