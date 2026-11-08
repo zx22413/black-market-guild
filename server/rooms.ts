@@ -50,6 +50,7 @@ export interface OnlineModule<M extends ClientMessageLike = ClientMessageLike> {
     readonly send: (token: string, message: unknown) => void;
     readonly isOnline: (token: string) => boolean;
     readonly clock: { now(): number; after(ms: number, run: () => void): () => void };
+    readonly log?: (line: string) => void;
   }): ServerRoom<M>;
 }
 
@@ -207,6 +208,7 @@ export abstract class RoomObjectBase extends DurableObject<Env> {
       hostToken,
       send: (token, message) => this.send(token, message),
       isOnline: (token) => [...this.sockets.values()].includes(token),
+      log: (line) => console.log(line),
       clock: {
         now: () => Date.now(),
         after: (ms, run) => {

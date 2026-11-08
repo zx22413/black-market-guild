@@ -84,6 +84,8 @@ export interface RoomOptions {
   /** Tokens with at least one open connection. */
   readonly isOnline: (token: string) => boolean;
   readonly clock: RoomClock;
+  /** Diagnostics: why each decision was settled (a person, the clock, or a takeover bot). */
+  readonly log?: (line: string) => void;
 }
 
 /**
@@ -466,6 +468,7 @@ export class Room {
     }
     const seat = pending.request.context.decision.playerId;
     if (this.match) this.match.timeouts = { ...this.match.timeouts, [seat]: 0 };
+    this.note(pending, 'submit');
     this.settle(pending, legal);
   }
 
@@ -482,6 +485,7 @@ export class Room {
     }
     if (!this.options.isOnline(pending.token)) this.startGrace(match, seat);
     if (match.takeover.has(seat)) {
+      this.note(pending, 'takeover-bot');
       this.settle(pending, this.botAction(match, pending.request.context));
       return;
     }
@@ -555,8 +559,14 @@ export class Room {
       if (this.nobodyDeciding(match)) this.pause(match);
       this.broadcastSeats(match);
     }
+    this.note(pending, `timeout#${timeouts}${takeover ? '+takeover' : ''}`);
     this.options.send(pending.token, { type: 'timed-out', phase: context.decision.phase, takeover });
     this.settle(pending, action);
+  }
+
+  private note(pending: Pending, by: string): void {
+    const { decision } = pending.request.context;
+    this.options.log?.(`settle seat=${decision.playerId} phase=${decision.phase} by=${by} shown=${pending.shown} online=${this.options.isOnline(pending.token)} at=${this.options.clock.now()}`);
   }
 
   private settle(pending: Pending, action: Action): void {
