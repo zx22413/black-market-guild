@@ -1,5 +1,5 @@
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import type { PerspectiveCamera } from 'three';
 import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
 import { applyPose, CLIMB_MS, Flight, recordPose, type CameraPose } from './cameraHandoff';
@@ -22,9 +22,16 @@ export function FocusCamera({ points, safe }: { readonly points: readonly FitPoi
   const { width, height } = useThree((s) => s.size);
   const target = useRef<Framing | null>(null);
   const current = useRef<Framing | null>(null);
-  // The climb from the ship close-up, started on the first frame (undefined until then, null when there is none).
-  const flight = useRef<Flight | null | undefined>(undefined);
-  useEffect(() => () => flight.current?.stop(), []);
+  // The climb from the ship close-up (null when there is none), started as the rig mounts: in the same commit as the
+  // step change, so the next step knows at once that the camera is flying and waits to deal its cards (StepArrival).
+  const flight = useRef<Flight | null>(null);
+  useLayoutEffect(() => {
+    flight.current = Flight.start('ship', camera, CLIMB_MS);
+    return () => {
+      flight.current?.stop();
+      flight.current = null;
+    };
+  }, [camera]);
 
   useLayoutEffect(() => {
     camera.aspect = width / height;
@@ -38,17 +45,17 @@ export function FocusCamera({ points, safe }: { readonly points: readonly FitPoi
   }, [camera, width, height, points, safe]);
 
   useFrame((_, delta) => {
-    if (flight.current === undefined) flight.current = Flight.start('ship', camera, CLIMB_MS);
     const to = target.current;
     const at = current.current;
     if (!to || !at) return;
     const k = 1 - (1 - GLIDE) ** (Math.min(delta, 0.1) * 60);
     const next = { x: at.x + (to.x - at.x) * k, z: at.z + (to.z - at.z) * k, distance: at.distance + (to.distance - at.distance) * k };
     const settled = Math.abs(next.distance - at.distance) + Math.abs(next.x - at.x) + Math.abs(next.z - at.z) < 1e-3;
-    if (!settled) current.current = next;
-    if (!settled || flight.current) placeCamera(camera, current.current);
-    const own = poseOf(camera, current.current);
-    const flying = flight.current?.step(delta, own) ?? null;
+    const now = settled ? at : next;
+    current.current = now;
+    if (!settled || flight.current) placeCamera(camera, now);
+    const own = poseOf(camera, now);
+    const flying = flight.current?.step(own) ?? null;
     if (flying) applyPose(camera, flying, width, height);
     else if (flight.current) {
       // The climb is over: the table camera stands on its own again.

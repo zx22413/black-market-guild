@@ -1,0 +1,142 @@
+/* How a decision step comes on screen (StepArrival.tsx): the step's title, the hand dealt in, and the UI kept out of the
+   picture while the camera flies between the table and the ship (cameraHandoff). */
+
+/* While the camera flies, the table's labels (name plates, island badges, ship buttons), the standings, the hand and the
+   bar are hidden; once it lands they fade back in. */
+html.camera-flying .beat3d-labels,
+html.camera-flying .rank-rail,
+html.camera-flying .rank-fold,
+html.camera-flying .dep-dock,
+html.camera-flying .inv-bar {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+html:not(.camera-flying) :is(.beat3d-labels, .rank-rail, .rank-fold, .dep-dock, .inv-bar) {
+  animation: step-ui-in 260ms ease-out;
+}
+@keyframes step-ui-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.step-arrival {
+  position: fixed;
+  inset: 0;
+  z-index: 41;
+  pointer-events: none;
+}
+
+/* The step's title, in the middle of the screen for a moment. */
+.step-arrival-title {
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 34px 12px;
+  color: var(--ink, #f1ead8);
+  background: linear-gradient(90deg, transparent, rgb(16 36 43 / 82%) 18%, rgb(16 36 43 / 82%) 82%, transparent);
+  border-block: 1px solid rgb(224 166 60 / 70%);
+  font-family: var(--font-strong);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 50%);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  animation: arrival-title var(--title-ms, 1500ms) ease var(--title-delay, 0ms) forwards;
+}
+.step-arrival-title small {
+  font-size: var(--fs-note, 12px);
+  letter-spacing: 0.2em;
+  color: var(--accent, #e0a63c);
+}
+.step-arrival-title strong {
+  font-size: 26px;
+  letter-spacing: 0.12em;
+}
+@keyframes arrival-title {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.12);
+    letter-spacing: 0.3em;
+  }
+  18%,
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -54%) scale(1);
+  }
+}
+
+/* A hand is dealt in one card after another (`backwards` lets go of the cards after it, so hovering and picking move them
+   as usual); its own frame (the gold "still to do" glow) waits for the first card, or it would glow empty. */
+.dep-hand.arriving {
+  animation: arrival-fade 200ms linear var(--deal-delay, 0ms) backwards;
+}
+.dep-hand.arriving .dep-card {
+  animation: arrival-deal 380ms cubic-bezier(0.2, 0.8, 0.3, 1.15) backwards;
+  animation-delay: var(--deal-delay, 0ms);
+}
+.dep-hand.arriving .dep-card:nth-child(2) {
+  animation-delay: calc(var(--deal-delay, 0ms) + var(--deal-step, 70ms));
+}
+.dep-hand.arriving .dep-card:nth-child(3) {
+  animation-delay: calc(var(--deal-delay, 0ms) + 2 * var(--deal-step, 70ms));
+}
+.dep-hand.arriving .dep-card:nth-child(4) {
+  animation-delay: calc(var(--deal-delay, 0ms) + 3 * var(--deal-step, 70ms));
+}
+.dep-hand.arriving .dep-card:nth-child(5) {
+  animation-delay: calc(var(--deal-delay, 0ms) + 4 * var(--deal-step, 70ms));
+}
+.dep-hand.arriving .dep-card:nth-child(6) {
+  animation-delay: calc(var(--deal-delay, 0ms) + 5 * var(--deal-step, 70ms));
+}
+.dep-hand.arriving .dep-card:nth-child(n + 7) {
+  animation-delay: calc(var(--deal-delay, 0ms) + 6 * var(--deal-step, 70ms));
+}
+@keyframes arrival-deal {
+  from {
+    opacity: 0;
+    transform: translateY(70px) rotate(4deg);
+  }
+}
+@keyframes arrival-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* The description strip or card slides in with the hand (the ship's card beside the ship, the strip above a hand). */
+.dep-strip.arriving {
+  animation: arrival-info 420ms cubic-bezier(0.2, 0.8, 0.3, 1) var(--deal-delay, 0ms) backwards;
+}
+@keyframes arrival-info {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+}
+
+/* The action bar's buttons come in with the hand. */
+.beat-preview:has(.step-arrival) .inv-bar > * {
+  animation: arrival-fade 300ms linear var(--bar-delay, 0ms) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step-arrival {
+    display: none;
+  }
+  .dep-hand.arriving,
+  .dep-hand.arriving .dep-card,
+  .dep-strip.arriving,
+  .beat-preview:has(.step-arrival) .inv-bar > *,
+  html:not(.camera-flying) :is(.beat3d-labels, .rank-rail, .rank-fold, .dep-dock, .inv-bar) {
+    animation: none;
+  }
+}

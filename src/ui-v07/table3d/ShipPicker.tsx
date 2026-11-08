@@ -5,6 +5,8 @@ import { SHIP_TYPE_LABELS, SHIP_TYPE_TEXT } from '../labels';
 import type { ShipCard, ShipEffect } from '../table/shipChoice';
 import { ClockIcon, ForbidIcon, IconDisc, tokenIconUrl } from './icons';
 import { InfoTip } from './InfoTip';
+import { SHIP_DEAL_DELAY_MS } from './ShipArrival';
+import { dealStyle } from './StepArrival';
 import './shipPicker.css';
 
 // The ship pick of the ship-bay experiment (docs/proposals/2026-11-ship-bays.md): a hand with one card per ship
@@ -64,11 +66,13 @@ interface ShipHandProps {
   readonly onPick: (pick: ShipTypeId | 'none') => void;
   /** The card the pointer is on (null when it leaves): the info card describes it. Only a mouse peeks by hovering, as in the role hand. */
   readonly onPeek: (pick: ShipPick) => void;
+  /** While the camera dives in (ShipArrival): the cards are dealt in one after another as it lands. */
+  readonly arriving?: boolean;
 }
 
-export function ShipHand({ cards, picked, todo, effect, revealed, fresh, onPick, onPeek }: ShipHandProps) {
+export function ShipHand({ cards, picked, todo, effect, revealed, fresh, onPick, onPeek, arriving = false }: ShipHandProps) {
   return (
-    <div className={`dep-hand ship-hand ${todo ? 'todo' : ''} ${picked !== null ? 'picked' : ''}`} onPointerLeave={(e) => e.pointerType === 'mouse' && onPeek(null)}>
+    <div className={`dep-hand ship-hand ${todo ? 'todo' : ''} ${picked !== null ? 'picked' : ''} ${arriving ? 'arriving' : ''}`} {...(arriving ? { style: dealStyle(SHIP_DEAL_DELAY_MS) } : {})} onPointerLeave={(e) => e.pointerType === 'mouse' && onPeek(null)}>
       {cards.map((c) => {
         const withEffect = effect.total !== 0 && revealed.has(c.id);
         return (
@@ -143,9 +147,11 @@ interface ShipInfoProps {
   readonly fresh: ShipTypeId | null;
   /** 'side': the card beside the ship; 'strip': the strip above the hand, folded to its header until tapped. */
   readonly layout: 'side' | 'strip';
+  /** While the camera dives in (ShipArrival): the card comes in with the hand. */
+  readonly arriving?: boolean;
 }
 
-export function ShipInfo({ cards, shown, effect, revealed, fresh, layout }: ShipInfoProps) {
+export function ShipInfo({ cards, shown, effect, revealed, fresh, layout, arriving = false }: ShipInfoProps) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const token = useRef<HTMLSpanElement>(null);
@@ -153,7 +159,8 @@ export function ShipInfo({ cards, shown, effect, revealed, fresh, layout }: Ship
   const side = layout === 'side';
   const rolled = card !== undefined && effect.total !== 0 && revealed.has(card.id);
   const play = card !== undefined && fresh === card.id;
-  const frame = side ? 'dep-strip ship-strip ship-info' : `dep-strip ship-strip ${open ? 'open' : ''}`;
+  const frame = `${side ? 'dep-strip ship-strip ship-info' : `dep-strip ship-strip ${open ? 'open' : ''}`} ${arriving ? 'arriving' : ''}`;
+  const arrive = arriving ? { style: dealStyle(SHIP_DEAL_DELAY_MS) } : {};
 
   // A strip folded to its header would play its show unseen: it opens for it.
   useEffect(() => {
@@ -180,13 +187,13 @@ export function ShipInfo({ cards, shown, effect, revealed, fresh, layout }: Ship
 
   if (shown === null) {
     return (
-      <div className={`${frame} idle`}>
+      <div className={`${frame} idle`} {...arrive}>
         <p>選一艘船出航，或選「不出航」。</p>
       </div>
     );
   }
   return (
-    <div ref={root} className={frame} aria-live="polite" {...(side ? {} : { onClick: () => setOpen((v) => !v) })}>
+    <div ref={root} className={frame} {...arrive} aria-live="polite" {...(side ? {} : { onClick: () => setOpen((v) => !v) })}>
       {play &&
         // In the body: the phone's dock is moved by a transform, which would carry a fixed child with it.
         createPortal(

@@ -1,5 +1,5 @@
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { PerspectiveCamera, Vector3 } from 'three';
 import type { SafeArea } from '../../ui/scene/CameraRig';
 import { playerIslandHeading } from '../../ui/scene/islandShape';
@@ -77,18 +77,19 @@ export function ShipSideCamera({ angle, shot, safe, ship }: { readonly angle: nu
   // A stand-in camera to measure how big the ship comes out on screen before the real one is placed.
   const probe = useMemo(() => new PerspectiveCamera(FOV, 1, 0.1, 500), []);
   const point = useMemo(() => new Vector3(), []);
-  // The dive from the table camera, started on the first frame (undefined until then, null when there is none).
-  const flight = useRef<Flight | null | undefined>(undefined);
-  // The camera is shared with the framing camera: hand it back as it was.
-  useEffect(
-    () => () => {
+  // The dive from the table camera (null when there is none), started as the rig mounts: in the same commit as the
+  // step that brought it, so the DOM knows at once that the camera is flying (cameraHandoff).
+  const flight = useRef<Flight | null>(null);
+  useLayoutEffect(() => {
+    flight.current = Flight.start('table', camera, DIVE_MS);
+    return () => {
       flight.current?.stop();
-      camera.clearViewOffset();
-    },
-    [camera],
-  );
+      flight.current = null;
+    };
+  }, [camera]);
+  // The camera is shared with the framing camera: hand it back as it was.
+  useEffect(() => () => camera.clearViewOffset(), [camera]);
   useFrame((_, delta) => {
-    if (flight.current === undefined) flight.current = Flight.start('table', camera, DIVE_MS);
     const to = RIGS[shot];
     const k = 1 - Math.exp(-Math.min(delta, 0.1) * GLIDE);
     const now = (at.current ??= to);
@@ -160,7 +161,7 @@ export function ShipSideCamera({ angle, shot, safe, ship }: { readonly angle: nu
     const x = safe ? (safe.right - safe.left) / 2 : 0;
     const y = !safe ? 0 : shot === 'ship' ? topPx - (safe.top + TOP_MARGIN) : (safe.bottom - safe.top) / 2;
     const own: CameraPose = { position: [camera.position.x, camera.position.y, camera.position.z], aim: [ax, next.aim, az], fov: FOV, offset: [x, y] };
-    const flying = flight.current?.step(delta, own) ?? null;
+    const flying = flight.current?.step(own) ?? null;
     if (!flying) flight.current = null;
     if (flying) {
       applyPose(camera, flying, width, height);

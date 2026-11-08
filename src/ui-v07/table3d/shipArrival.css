@@ -1,0 +1,21 @@
+/* The 2D half of the dive into the ship pick (ShipArrival.tsx): the breaking wave over the lens (WaveWipe.tsx). The title
+   and the deal are stepArrival.css. */
+
+.ship-arrival {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ship-arrival .wave-wipe {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ship-arrival {
+    display: none;
+  }
+}

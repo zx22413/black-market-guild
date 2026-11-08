@@ -44,6 +44,7 @@ import { LockHint } from './LockHint';
 import { usePhone } from './usePhone';
 import { SealSubmit } from './SealSubmit';
 import { CargoHand } from './CargoHand';
+import { ShipArrival, useShipArrival } from './ShipArrival';
 import { ShipHand, ShipInfo, type ShipPick } from './ShipPicker';
 import { soundEngine } from '../audio/soundEngine';
 import { OWN_PLATE_REACH, type StageEnv, type StageParts } from './stage';
@@ -131,6 +132,10 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     document.addEventListener('pointerdown', close);
     return () => document.removeEventListener('pointerdown', close);
   }, [picking]);
+
+  // Ship bays: the camera dives from the table to the ship as the pick opens (cameraHandoff); a wave, the step's
+  // title and the dealt hand go with it (ShipArrival). Once per investment, and only into the ship pick.
+  const arriving = useShipArrival(context?.view.rules.ships.enabled === 1 && phase === 'ship' ? requestId : null);
 
   // What the choice would submit, for whoever follows along (the tutorial lights 「提交」 when it fits).
   const draft = active ? (actionFor(options, choice) ?? null) : null;
@@ -474,8 +479,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const shipPicked: ShipPick = shipDecided ? (choice.shipType ?? 'none') : null;
   // The ship on the dock (hovered or picked), so the side shot frames a taller one from further back.
   const shownShip = typed && (peekShip ?? shipPicked) && (peekShip ?? shipPicked) !== 'none' ? ((peekShip ?? shipPicked) as ShipTypeId) : undefined;
-  const shipInfo = <ShipInfo cards={shipOptions} shown={peekShip ?? shipPicked} effect={shipFx} revealed={revealed} fresh={freshShip} layout={phone ? 'strip' : 'side'} />;
-  const shipHand = <ShipHand cards={shipOptions} picked={shipPicked} todo={!shipDecided} effect={shipFx} revealed={revealed} fresh={freshShip} onPick={pickShip} onPeek={setPeekShip} />;
+  const shipInfo = <ShipInfo cards={shipOptions} shown={peekShip ?? shipPicked} effect={shipFx} revealed={revealed} fresh={freshShip} layout={phone ? 'strip' : 'side'} arriving={arriving && shipPhase} />;
+  const shipHand = <ShipHand cards={shipOptions} picked={shipPicked} todo={!shipDecided} effect={shipFx} revealed={revealed} fresh={freshShip} onPick={pickShip} onPeek={setPeekShip} arriving={arriving && shipPhase} />;
   return {
     // Ship bays: the ship's note is the only label; the stacks, clocks and warehouse note are on the cargo cards.
     pins: shipPhase ? [] : typed ? pins.filter((p) => p.id === 'ship-note') : pins,
@@ -523,6 +528,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     overlay: (
       <>
         {phone && cards}
+        {arriving && shipPhase && <ShipArrival round={board.round} />}
         {shipPhase && !phone && shipInfo}
         {reminding && (
           <ReminderDialog

@@ -20,10 +20,19 @@ export type RigName = 'table' | 'ship';
 
 /** A pose older than this (ms) is from an earlier screen, not the rig just let go: the new rig cuts. */
 export const HANDOFF_FRESH_MS = 500;
+/**
+ * Dev only: `?slowmo=N` plays the dive and the climb N times slower, camera and 2D alike, to check them frame by frame.
+ * Always 1 in a build.
+ */
+export const SLOWMO: number = (() => {
+  if (!import.meta.env.DEV || typeof location === 'undefined') return 1;
+  const n = Number(new URLSearchParams(location.search).get('slowmo'));
+  return Number.isFinite(n) && n >= 1 ? n : 1;
+})();
 /** The dive from the table down to the ship (ms). */
-export const DIVE_MS = 1100;
+export const DIVE_MS = 1100 * SLOWMO;
 /** The climb from the ship back to the table (ms). */
-export const CLIMB_MS = 1000;
+export const CLIMB_MS = 1000 * SLOWMO;
 
 interface Record {
   readonly rig: RigName;
@@ -99,15 +108,42 @@ export function viewOffsetOf(camera: PerspectiveCamera): readonly [number, numbe
   return camera.view?.enabled ? [camera.view.offsetX, camera.view.offsetY] : [0, 0];
 }
 
+// Whether a flight is on, for the DOM around the canvas: the table's labels, the hand and the bar stay out of the
+// picture while the camera moves (shipArrival.css `html.camera-flying`), and a step waits for it to end before it
+// deals its cards (useStepArrival).
+let flights = 0;
+const flightListeners = new Set<() => void>();
+/** The class on the root while a flight is on. */
+export const FLYING_CLASS = 'camera-flying';
+
+function setFlights(n: number): void {
+  flights = Math.max(0, n);
+  if (typeof document !== 'undefined') document.documentElement.classList.toggle(FLYING_CLASS, flights > 0);
+  flightListeners.forEach((fn) => fn());
+}
+
+/** Whether the camera is flying between the two rigs right now. */
+export function isFlying(): boolean {
+  return flights > 0;
+}
+
+/** Calls `fn` whenever a flight starts or ends; returns the unsubscribe. */
+export function subscribeFlight(fn: () => void): () => void {
+  flightListeners.add(fn);
+  return () => flightListeners.delete(fn);
+}
+
 const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
  * A flight in progress inside a rig: started from the other rig's last pose when there is a fresh one (and motion is
- * welcome), it runs for `duration` ms of frame time; any tap or key ends it at once.
+ * welcome), it runs for `duration` ms of wall-clock time from its first frame, so it stays in step with the CSS half
+ * (ShipArrival) even when frames drop; any tap or key ends it at once.
  */
 export class Flight {
-  private elapsed = 0;
+  private startedAt: number | null = null;
   private skipped = false;
+  private live = true;
   private readonly onSkip = (): void => {
     this.skipped = true;
   };
@@ -118,6 +154,7 @@ export class Flight {
   ) {
     window.addEventListener('pointerdown', this.onSkip, { passive: true });
     window.addEventListener('keydown', this.onSkip);
+    setFlights(flights + 1);
   }
 
   static start(from: RigName, camera: PerspectiveCamera, duration: number): Flight | null {
@@ -127,9 +164,9 @@ export class Flight {
   }
 
   /** The pose for this frame on the way to `to`, or null once the flight is over (the rig then places the camera itself). */
-  step(delta: number, to: CameraPose): CameraPose | null {
-    this.elapsed += Math.min(delta, 0.1) * 1000;
-    const t = this.skipped ? 1 : this.elapsed / this.duration;
+  step(to: CameraPose, now: number = performance.now()): CameraPose | null {
+    this.startedAt ??= now;
+    const t = this.skipped ? 1 : (now - this.startedAt) / this.duration;
     if (t >= 1) {
       this.stop();
       return null;
@@ -138,7 +175,10 @@ export class Flight {
   }
 
   stop(): void {
+    if (!this.live) return;
+    this.live = false;
     window.removeEventListener('pointerdown', this.onSkip);
     window.removeEventListener('keydown', this.onSkip);
+    setFlights(flights - 1);
   }
 }
