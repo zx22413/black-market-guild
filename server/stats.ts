@@ -62,6 +62,9 @@ async function openOnlineMatches(db: D1Database, now: number): Promise<OpenMatch
   return rows.map((r) => ({ client: String(r.client), started: Number(r.started), last: Number(r.last ?? r.started), round: r.round === null ? null : Number(r.round) }));
 }
 
+/** The role ids the statistics count: the V0.7.1 five and the V0.7 two older builds may still report. */
+const ROLE_KEYS = ['guard', 'pirate', 'smuggler', 'customs', 'diplomat', 'intel', 'broker'] as const;
+
 async function collect(db: D1Database, since: string) {
   const [visitors, started, finished, again, invited, guestsFinished, bots] = await Promise.all([
     one(db, `SELECT COUNT(DISTINCT client) AS n FROM events WHERE name = 'visit' AND ${NOT_A_PLAYER}`),
@@ -76,7 +79,7 @@ async function collect(db: D1Database, since: string) {
     ),
     one(db, `SELECT COUNT(DISTINCT client) AS n FROM events WHERE name = 'visit' AND NOT (${NOT_A_PLAYER})`),
   ]);
-  const [daily, quits, quitPhases, tutorials, chapters, roleUse, likes, comments, errors, ready, modes, sources, welcome] = await Promise.all([
+  const [daily, quits, quitPhases, tutorials, chapters, roleSums, likes, comments, errors, ready, modes, sources, welcome] = await Promise.all([
     all(
       db,
       `SELECT day, json_extract(data, '$.device') AS device, COUNT(DISTINCT client) AS n FROM events
@@ -94,15 +97,11 @@ async function collect(db: D1Database, since: string) {
     ),
     all(db, `SELECT json_extract(data, '$.chapter') AS chapter, COUNT(*) AS n FROM events WHERE name = 'rules_open' GROUP BY chapter ORDER BY n DESC`),
     // How often each role was deployed, summed over finished matches (the roles field of match_end).
+    // One row of sums: D1 allows only five terms in a compound SELECT.
     all(
       db,
-      `SELECT 'guard' AS role, SUM(json_extract(data, '$.roles.guard')) AS n FROM events WHERE name = 'match_end'
-       UNION ALL SELECT 'pirate', SUM(json_extract(data, '$.roles.pirate')) FROM events WHERE name = 'match_end'
-       UNION ALL SELECT 'smuggler', SUM(json_extract(data, '$.roles.smuggler')) FROM events WHERE name = 'match_end'
-       UNION ALL SELECT 'customs', SUM(json_extract(data, '$.roles.customs')) FROM events WHERE name = 'match_end'
-       UNION ALL SELECT 'diplomat', SUM(json_extract(data, '$.roles.diplomat')) FROM events WHERE name = 'match_end'
-       UNION ALL SELECT 'intel', SUM(json_extract(data, '$.roles.intel')) FROM events WHERE name = 'match_end'
-       UNION ALL SELECT 'broker', SUM(json_extract(data, '$.roles.broker')) FROM events WHERE name = 'match_end'`,
+      `SELECT ${ROLE_KEYS.map((r) => `SUM(json_extract(data, '$.roles.${r}')) AS ${r}`).join(', ')}
+         FROM events WHERE name = 'match_end'`,
     ),
     all(db, `SELECT json_extract(data, '$.like') AS like, COUNT(*) AS n FROM events WHERE name = 'feedback' GROUP BY like`),
     all(
@@ -149,7 +148,7 @@ async function collect(db: D1Database, since: string) {
     quitPhases,
     tutorials,
     chapters,
-    roleUse,
+    roleUse: ROLE_KEYS.map((role) => ({ role, n: Number(roleSums[0]?.[role] ?? 0) })),
     likes,
     comments,
     errors,
