@@ -1,6 +1,6 @@
 # 暗潮商戰（Contrabay）
 
-《暗潮商戰》（Contrabay，舊名《黑市商會》／Black Market Guild）是一款供 3～4 人遊玩（2 人模式規劃中）的商業、航運與心理博弈策略遊戲。玩家在每回合面對公開的市場條件，決定獨資或合資出航，並以秘密角色部署影響商船的命運與彼此的收益。
+《暗潮商戰》（Contrabay，舊名《黑市商會》／Black Market Guild）是一款供 4 人遊玩（真人或 Bot 補位；不做 2、3 人局）的商業、航運與心理博弈策略遊戲。玩家在每回合面對公開的市場條件，決定獨資或合資出航，並以秘密角色部署影響商船的命運與彼此的收益。
 
 目前專案以 [V0.7 遊戲設計文件](docs/game-design.md) 為唯一的 gameplay 規則基準。V0.7 的規則引擎（`src/v07`）、3D 桌面介面（`src/ui-v07`）與線上房間（Cloudflare Worker）都已可遊玩；V0.6 的 `src/game`／`src/ui` 保留作對照（[封存的 V0.6 規則](docs/archive/game-design-v0.6.md)），不再部署。
 
