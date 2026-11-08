@@ -132,7 +132,12 @@ def glacis_height(x, z):
     """The glacis: from the rampart's top it rises inward, long and gentle, to just under the parade ground's kerb;
     cut down along the cutting."""
     d = coast_distance(WALL, x, z) if inside(WALL, x, z) else 0.0
-    y = min(TURF - 0.08, WALL_TOP + 0.04 + max(0.0, d - 0.5) * 0.45)
+    # Under the coping (its slab spans WALL_TOP - 0.06 .. + 0.14) the turf stays well clear of the slab's top (0.1 would
+    # flicker on a phone's shallow depth buffer); under the parade ground (slab TURF - 0.4 .. TURF) it sinks into the slab
+    # (0.3 clear of its top) instead of lying 0.08 below it, where the grass and the sand fought for the same pixels.
+    y = min(TURF - 0.08, WALL_TOP - 0.02 + max(0.0, d - 0.5) * 0.45)
+    if inside(YARD, x, z):
+        y = min(y, TURF - 0.38)
     dist, bed = polyline_distance(CUT, x, z)
     if dist < CUT_W / 2 + 0.25:
         y = min(y, bed - 0.08)
