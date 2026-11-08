@@ -23,6 +23,7 @@ interface Os {
 interface Process {
   on(event: 'exit', listener: () => void): void;
   readonly argv: readonly string[];
+  cwd(): string;
   readonly env: Readonly<Record<string, string | undefined>>;
 }
 
