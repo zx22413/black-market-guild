@@ -1,8 +1,8 @@
 import type { DecisionContext } from '../bots';
 import type { Action, DecisionPhase, MatchEvent, MatchResult, PlayerId, PrivateEvent } from '../game';
 
-/** Bumped whenever messages change shape; a stale tab is told to reload. 2 = V0.7 rules, 3 = rematch, 4 = timers and takeover, 5 = shared lobby limit and public clocks, 6 = ship bays (ship types, arriving freighters, island changes), 7 = the spectator stand. */
-export const PROTOCOL_VERSION = 7;
+/** Bumped whenever messages change shape; a stale tab is told to reload. 2 = V0.7 rules, 3 = rematch, 4 = timers and takeover, 5 = shared lobby limit and public clocks, 6 = ship bays (ship types, arriving freighters, island changes), 7 = the spectator stand, 8 = the replay heartbeat. */
+export const PROTOCOL_VERSION = 8;
 
 /** Largest client message the server reads; actions are small JSON objects. */
 export const MAX_MESSAGE_BYTES = 16_384;
@@ -116,6 +116,8 @@ export type ClientMessage =
   | { readonly type: 'lock'; readonly locked: boolean }
   /** The table now shows this decision: its clock may start. */
   | { readonly type: 'shown'; readonly requestId: number }
+  /** The table is still replaying a decided round (sent now and then): decisions owed to this person wait for it, past the show cap. */
+  | { readonly type: 'replaying' }
   /** Host only, after the match ended: back to the lobby with the same people. */
   | { readonly type: 'rematch' }
   /** Gives up a seat in the lobby; a running match keeps its seats. */
@@ -220,6 +222,8 @@ export function parseClientMessage(raw: string): ClientMessage | null {
       return typeof data.locked === 'boolean' ? { type: 'lock', locked: data.locked } : null;
     case 'shown':
       return Number.isInteger(data.requestId) ? { type: 'shown', requestId: data.requestId as number } : null;
+    case 'replaying':
+      return { type: 'replaying' };
     case 'rematch':
       return { type: 'rematch' };
     case 'leave':

@@ -139,6 +139,9 @@ export class Room {
       case 'shown':
         this.shown(token, message.requestId);
         return;
+      case 'replaying':
+        this.replaying(token);
+        return;
       case 'kick':
         this.kick(token, message.member);
         return;
@@ -517,6 +520,18 @@ export class Room {
     this.replace(pending, next);
     this.options.send(next.token, { type: 'clock', requestId, timeLeftMs: match.decisionSeconds * 1000 });
     this.broadcastClocks();
+  }
+
+  /** The table is busy replaying: a decision not shown yet gets the full cap again from now. */
+  private replaying(token: string): void {
+    const match = this.match;
+    if (!match || match.paused) return;
+    this.pending
+      .filter((p) => p.token === token && !p.shown)
+      .forEach((p) => {
+        p.cancel?.();
+        this.replace(p, { ...p, cancel: this.options.clock.after(DECISION_SHOW_CAP_SECONDS * 1000, () => this.startClock(match, p.request.id)) });
+      });
   }
 
   private shown(token: string, requestId: number): void {

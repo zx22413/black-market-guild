@@ -60,9 +60,11 @@ function useSeatSeconds(deadlines: OnlineState['seatDeadlines']): Readonly<Recor
 interface MatchClockProps {
   readonly state: OnlineState;
   readonly client: OnlineClient;
+  /** The table is still replaying a round that is already decided: the room's clocks are for the next decision, so they stay hidden. */
+  readonly replaying?: boolean;
 }
 
-export function MatchClock({ state, client }: MatchClockProps) {
+export function MatchClock({ state, client, replaying = false }: MatchClockProps) {
   const match = state.room?.match ?? null;
   const running = match !== null && match.result === null && match.error === null;
   const request = running ? (match.requests[0] ?? null) : null;
@@ -90,7 +92,7 @@ export function MatchClock({ state, client }: MatchClockProps) {
         </div>
       )}
       {others.length > 0 && <div className="mc-others">託管中：{others.map((p) => p.name).join('、')}</div>}
-      {deciding.length > 0 && (
+      {deciding.length > 0 && !replaying && (
         <ul className="mc-waits" aria-label="其他玩家的決定剩餘時間">
           {deciding.map((c) => {
             const left = seatSeconds[c.seat] ?? null;

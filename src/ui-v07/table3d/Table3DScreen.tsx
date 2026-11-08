@@ -60,6 +60,8 @@ export interface Table3DScreenProps {
   readonly showResult?: boolean;
   /** Told what has finished playing: the last round whose resolution was seen, and the match's end. */
   readonly onShown?: (shownRound: number, ended: boolean) => void;
+  /** Told while an already decided round is still being replayed on this table (online: the room may be deciding the next one). */
+  readonly onReplaying?: (replaying: boolean) => void;
   /** Rounds in this match (the tutorial plays fewer than the official count). */
   readonly rounds?: number;
   /** Skip the reveal of everyone's islands before round 1. */
@@ -98,7 +100,7 @@ export interface Table3DScreenProps {
   readonly hideEvent?: boolean;
 }
 
-export function Table3DScreen({ session, onExit, rematch, autoplay = false, showResult = true, onShown, rounds = RULES_V07.rounds, skipIslandReveal = false, skipIslandMoments = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdShow = false, holdVoyage = false, onVoyage, onStarted, onCalm, autoAdvanceSeconds, spectator = false }: Table3DScreenProps) {
+export function Table3DScreen({ session, onExit, rematch, autoplay = false, showResult = true, onShown, onReplaying, rounds = RULES_V07.rounds, skipIslandReveal = false, skipIslandMoments = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdShow = false, holdVoyage = false, onVoyage, onStarted, onCalm, autoAdvanceSeconds, spectator = false }: Table3DScreenProps) {
   const snap = useSession(session);
   const [ready, setReady] = useState(false);
 
@@ -359,6 +361,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
 
   const finished = !holding && snap.result !== null;
   useEffect(() => onShown?.(dismissed, finished), [onShown, dismissed, finished]);
+  useEffect(() => onReplaying?.(holding), [onReplaying, holding]);
   const resultUp = ready && finished && showResult;
   // While a round resolves (and on the result) the music steps aside for the effects and the
   // voyage event; it comes back as the next round opens. Leaving the table lets it go.

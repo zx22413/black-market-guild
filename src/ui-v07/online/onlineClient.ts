@@ -36,6 +36,8 @@ export interface OnlineClient {
   setLimit(decisionSeconds: number): void;
   /** 「取消託管」: take this seat back from the bot. */
   resume(): void;
+  /** The table is still replaying a decided round: tells the room not to count that time against the next decision. */
+  replaying(): void;
   /** Host only, after the match: everyone goes back to this room's lobby. */
   rematch(): void;
   /** Host only, in the lobby: sends a member (by their place in the list) out for good. */
@@ -331,6 +333,7 @@ export function connectRoom(code: string): OnlineClient {
     start: (seats) => send({ type: 'start', seats }),
     setLimit: (decisionSeconds) => send({ type: 'limit', decisionSeconds }),
     resume: () => send({ type: 'resume' }),
+    replaying: () => send({ type: 'replaying' }),
     rematch: () => send({ type: 'rematch' }),
     kick: (member) => send({ type: 'kick', member }),
     lock: (locked) => send({ type: 'lock', locked }),

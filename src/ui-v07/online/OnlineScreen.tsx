@@ -29,6 +29,9 @@ const CONNECTION_LABELS: Readonly<Record<OnlineState['connection'], string>> = {
 };
 
 /** Puts the room code in the address bar so the page itself is the invite link. */
+/** How often a replaying table reports it (the room's show cap is 90 seconds). */
+const REPLAY_BEAT_MS = 20_000;
+
 function setRoomInUrl(code: string | null): void {
   const url = new URL(location.href);
   if (code) url.searchParams.set('room', code);
@@ -403,6 +406,15 @@ function RoomView({ code, viaLink, client, onLeave, onView }: RoomViewProps) {
   }, [finishedMatch, code, state.timeoutCount, state.wasTakenOver]);
   // A seat, or a place on the spectator stand: both see the running table.
   const watching = state.room?.spectating ?? false;
+  // The table replays a round at its own pace; the room's clocks belong to the decision after it.
+  const [replaying, setReplaying] = useState(false);
+  // Say so now and then, well inside the room's show cap, so a long replay never starts the clock.
+  useEffect(() => {
+    if (!replaying) return;
+    client.replaying();
+    const timer = setInterval(() => client.replaying(), REPLAY_BEAT_MS);
+    return () => clearInterval(timer);
+  }, [replaying, client]);
   const session = state.room?.match?.you || watching ? client.getSession() : null;
   // A match started while we watched the lobby: the menu table sends the ships out first.
   const launching = useLaunchOnStart(state.room?.phase ?? null) && session !== null;
@@ -421,8 +433,8 @@ function RoomView({ code, viaLink, client, onLeave, onView }: RoomViewProps) {
       <>
         {state.connection !== 'open' && <div className="v7-banner">{CONNECTION_LABELS[state.connection]}</div>}
         {/* Leaving mid-match keeps the room on the main menu as "back to the room". */}
-        <MatchView key={matchKey(session)} session={session} onExit={() => onLeave(finished)} rematch={rematch} autoAdvanceSeconds={RESOLUTION_AUTO_SECONDS} spectator={watching} />
-        <MatchClock state={state} client={client} />
+        <MatchView key={matchKey(session)} session={session} onExit={() => onLeave(finished)} rematch={rematch} autoAdvanceSeconds={RESOLUTION_AUTO_SECONDS} spectator={watching} onReplaying={setReplaying} />
+        <MatchClock state={state} client={client} replaying={replaying} />
       </>
     );
   }

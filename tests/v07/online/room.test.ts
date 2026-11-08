@@ -121,7 +121,7 @@ describe('V0.7 online room', () => {
   });
 
   it('speaks protocol 7 with the V0.7.1 ship-bay rules and the spectator stand', () => {
-    expect(PROTOCOL_VERSION).toBe(7);
+    expect(PROTOCOL_VERSION).toBe(8);
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'hello', token: HOST, protocol: PROTOCOL_VERSION });
     const sync = ctx.last(HOST, 'sync');
@@ -307,6 +307,7 @@ describe('protocol parsing', () => {
     expect(parseClientMessage(JSON.stringify({ type: 'resume' }))).toEqual({ type: 'resume' });
     expect(parseClientMessage(JSON.stringify({ type: 'shown', requestId: 3 }))).toEqual({ type: 'shown', requestId: 3 });
     expect(parseClientMessage(JSON.stringify({ type: 'shown', requestId: 'x' }))).toBeNull();
+    expect(parseClientMessage(JSON.stringify({ type: 'replaying' }))).toEqual({ type: 'replaying' });
     expect(parseClientMessage(JSON.stringify({ type: 'start', seats: 4, decisionSeconds: 60 }))).toEqual({
       type: 'start',
       seats: 4,
@@ -392,6 +393,20 @@ describe('decision time limits and takeover (game-design §15)', () => {
     expect(ctx.last(HOST, 'clock')).toMatchObject({ timeLeftMs: 60_000 });
     await expire(ctx, HOST);
     expect(ctx.last(HOST, 'timed-out')).toMatchObject({ phase: 'island-choice' });
+  });
+
+  it('keeps waiting while the table still replays the last round, so a long replay never burns the limit', async () => {
+    const ctx = await soloMatch(60);
+    // A replay longer than the cap, reported every 30 seconds.
+    for (let i = 0; i < 6; i++) {
+      ctx.advance(30_000);
+      ctx.send(HOST, { type: 'replaying' });
+    }
+    expect(ctx.last(HOST, 'clock')).toBeUndefined();
+    expect(ctx.last(HOST, 'timed-out')).toBeUndefined();
+    // Once the reports stop, the cap runs from the last one.
+    ctx.advance(DECISION_SHOW_CAP_SECONDS * 1000);
+    expect(ctx.last(HOST, 'clock')).toMatchObject({ timeLeftMs: 60_000 });
   });
 
   it('refuses a time limit that is not on offer', () => {
