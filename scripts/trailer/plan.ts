@@ -54,32 +54,34 @@ export const shotIn = (shot: Shot, format: Format): Shot => (format === 'tall' &
 export const SHOTS: readonly Shot[] = [
   // Storm, your ship setting out, the crane up over the table.
   { name: 'open', take: 'open', from: 0, to: 4600, slow: 1 },
-  // Round 1: you load wood and spice and seal it.
-  { name: 'invest', take: 'game', from: 900, to: 3600, slow: 0.75 },
+  // Round 1: you pick 信天翁號 from the five ships and go on to the cargo.
+  { name: 'ship', take: 'game', from: 700, to: 2950, slow: 0.75 },
+  // You load wood and spice and seal it.
+  { name: 'invest', take: 'game', from: 3000, to: 6000, slow: 0.75 },
   // The market card: everyone brought wood and spice, both prices fall.
-  { name: 'market', take: 'game', from: 34000, to: 37000, slow: 0.7, tall: 117 },
+  { name: 'market', take: 'game', from: 37000, to: 40800, slow: 0.7, tall: 100 },
   // Round 2: your guard on your own ship, sealed.
-  { name: 'deploy', take: 'game', from: 51300, to: 54000, slow: 0.75, tall: 200 },
+  { name: 'deploy', take: 'game', from: 53700, to: 56800, slow: 0.75, tall: 100 },
   // The voyage event: a storm.
-  { name: 'storm', take: 'game', from: 54900, to: 56100, slow: 1, tall: 200 },
-  // The reveal: every role at the table is on your ship.
-  { name: 'reveal', take: 'game', from: 58300, to: 63600, slow: 0.45, tall: 250 },
+  { name: 'storm', take: 'game', from: 59450, to: 60650, slow: 1, tall: 100 },
+  // The reveal: every role at the table lands on your ship, one by one.
+  { name: 'reveal', take: 'game', from: 63200, to: 71000, slow: 0.36, tall: 100 },
   // Your ship: 4, guard +1, pirate −1, storm −1, arrives on a 3.
-  { name: 'yours', take: 'game', from: 67000, to: 74400, slow: 0.75, tall: 267 },
+  { name: 'yours', take: 'game', from: 72300, to: 79700, slow: 0.75, tall: 100 },
   // 凡德商行's ship: the die on the table, then the montage with no labels (the strike page's bolt
   // lands at 2950 ms): close on the hull, the bolt from low on the water in slow motion, the wreck
   // going down; back to the table for its 「沉沒」.
-  { name: 'rival-die', take: 'game', from: 78300, to: 79900, slow: 1, tall: 283 },
+  { name: 'rival-die', take: 'game', from: 84000, to: 85600, slow: 1, tall: 100 },
   { name: 'montage-wait', take: 'strike-close', from: 2250, to: 2900, slow: 1 },
   { name: 'montage-bolt', take: 'strike-low', from: 2900, to: 3500, slow: 2 },
   { name: 'montage-wreck', take: 'strike-close', from: 4300, to: 5500, slow: 1 },
-  { name: 'rival-sink', take: 'game', from: 81100, to: 82300, slow: 1, tall: 283 },
+  { name: 'rival-sink', take: 'game', from: 87000, to: 88600, slow: 1, tall: 100 },
   // Clear sky under the end card, held on it.
   { name: 'end', take: 'end', from: 0, to: 6000, slow: 1 },
 ];
 
 /** The cut order differs from the game's: the rival sinks before your ship's close call. */
-export const ORDER: readonly string[] = ['open', 'invest', 'market', 'deploy', 'storm', 'reveal', 'rival-die', 'montage-wait', 'montage-bolt', 'montage-wreck', 'rival-sink', 'yours', 'end'];
+export const ORDER: readonly string[] = ['open', 'ship', 'invest', 'market', 'deploy', 'storm', 'reveal', 'rival-die', 'montage-wait', 'montage-bolt', 'montage-wreck', 'rival-sink', 'yours', 'end'];
 
 export interface Card {
   /** Query for the card page (scripts/trailer/still.ts). */
@@ -95,7 +97,8 @@ export interface Card {
 
 export const CARDS: readonly Card[] = [
   { card: 'genre', shot: 'open', at: 2.1 },
-  { card: 'caption', text: '生產貨物，裝船出航', shot: 'invest', at: 0.1 },
+  { card: 'caption', text: '每回合挑一艘[船]', shot: 'ship', at: 0.1, place: 'top' },
+  { card: 'caption', text: '生產貨物，裝船出航', shot: 'invest', at: 0.1, place: 'top' },
   { card: 'caption', text: '大家運同一種貨，價格就[崩]', shot: 'market', at: 0.1 },
   { card: 'caption', text: '所有人[秘密]派出角色', shot: 'deploy', at: 0.1, place: 'top' },
   { card: 'caption', text: '所有角色，都盯上[你的船]', shot: 'reveal', at: 0.1 },
@@ -129,11 +132,11 @@ export interface Bed {
 
 export const BEDS: readonly Bed[] = [
   // The storm comes first wherever it blows: alone under the opening, and up front all through round 2.
-  { file: 'event-storm.ogg', from: ['open', 0], to: ['invest', 0.3], gain: 0.75, fadeIn: 0.2, fadeOut: 0.5 },
+  { file: 'event-storm.ogg', from: ['open', 0], to: ['ship', 0.3], gain: 0.75, fadeIn: 0.2, fadeOut: 0.5 },
   { file: 'event-storm.ogg', from: ['storm', 0], to: ['end', 0.5], gain: 0.75, fadeIn: 0.4, fadeOut: 1 },
   // The menu's tune from the first loading of crates to the end card, held low under the storm,
   // fading out as the fanfare fades in.
-  { file: 'music-cover.ogg', from: ['invest', -0.2], to: ['end', 1.2], gain: 0.75, fadeIn: 0.5, fadeOut: 1.4, duck: { from: ['storm', 0], to: ['end', 0], level: 0.4 } },
+  { file: 'music-cover.ogg', from: ['ship', -0.2], to: ['end', 1.2], gain: 0.75, fadeIn: 0.5, fadeOut: 1.4, duck: { from: ['storm', 0], to: ['end', 0], level: 0.4 } },
 ];
 
 /** Extra one-shots: the opening thunder, the wreck going down, the fanfare fading in under the end card. */
