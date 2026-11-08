@@ -22,7 +22,13 @@ const hash = (i: number, salt: number) => {
   return x - Math.floor(x);
 };
 
-/** A soft, lumpy white puff: several overlapping radial gradients fading to clear at the edge. */
+/**
+ * A soft, lumpy puff, drawn as an opaque grey-scale mask (white = solid, black = clear) that the
+ * material reads as its `alphaMap`. It is not drawn with a real alpha channel on purpose: a canvas
+ * stores semi-transparent pixels premultiplied, and uploading them as straight colour on iOS
+ * Safari divides the tiny premultiplied values back up, leaving coloured and black speckle in the
+ * faint tails of every lump (worst when the camera is close).
+ */
 function puffTexture(variant: number): CanvasTexture {
   const size = 256;
   const canvas = document.createElement('canvas');
@@ -30,6 +36,8 @@ function puffTexture(variant: number): CanvasTexture {
   canvas.height = size;
   const ctx = canvas.getContext('2d');
   if (ctx) {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, size, size);
     for (let i = 0; i < 7; i++) {
       const cx = size * (0.3 + hash(i, variant * 3 + 1) * 0.4);
       const cy = size * (0.3 + hash(i, variant * 3 + 2) * 0.4);
@@ -92,7 +100,7 @@ export function SeaFog() {
           {bank.puffs.map((puff, j) => (
             <mesh key={j} position={[puff.dx, puff.height, puff.dz]} rotation={[-Math.PI / 2, 0, WIND_TURN]} scale={[puff.size * STRETCH.along, puff.size * STRETCH.across, 1]}>
               <planeGeometry />
-              <meshBasicMaterial map={textures[puff.texture] ?? null} color="#f3f6f6" transparent opacity={0} depthWrite={false} />
+              <meshBasicMaterial alphaMap={textures[puff.texture] ?? null} color="#f3f6f6" transparent opacity={0} depthWrite={false} />
             </mesh>
           ))}
         </group>
