@@ -91,6 +91,11 @@ export function MatchClock({ state, client, replaying = false }: MatchClockProps
           </button>
         </div>
       )}
+      {match.paused && (
+        <div className="mc-others" role="status">
+          對局暫停：沒有玩家在線上，有人回來就繼續{state.room?.spectating ? '；兩分鐘後沒人回來，由電腦接手打完' : ''}
+        </div>
+      )}
       {others.length > 0 && <div className="mc-others">託管中：{others.map((p) => p.name).join('、')}</div>}
       {deciding.length > 0 && !replaying && (
         <ul className="mc-waits" aria-label="其他玩家的決定剩餘時間">

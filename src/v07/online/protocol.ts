@@ -19,6 +19,8 @@ export const DEFAULT_DECISION_SECONDS = 120;
 export const TAKEOVER_AFTER_TIMEOUTS = 2;
 /** The clock starts when the table shows a decision, or this long after it was sent at the latest (§15.1). */
 export const DECISION_SHOW_CAP_SECONDS = 90;
+/** With only spectators online, a paused match waits this long for a player, then the takeover bots play it on (§15.2). */
+export const SPECTATOR_PLAYON_SECONDS = 120;
 /** A dropped connection goes to takeover only after this long, so a reload does not (§15.2). */
 export const DISCONNECT_GRACE_SECONDS = 15;
 

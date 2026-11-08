@@ -5,6 +5,7 @@ import {
   MAX_SPECTATORS,
   PROTOCOL_VERSION,
   Room,
+  SPECTATOR_PLAYON_SECONDS,
   type RoomClock,
   cleanName,
   isRoomCode,
@@ -532,6 +533,46 @@ describe('decision time limits and takeover (game-design §15)', () => {
     expect(sync?.type === 'sync' && sync.room.match?.paused).toBe(false);
     expect(sync?.type === 'sync' && sync.room.match?.takeover).toEqual([]);
     expect(sync?.type === 'sync' && sync.room.match?.requests[0]?.timeLeftMs).toBe(60_000);
+  });
+
+  it('lets the bots play the match on once only spectators are left for two minutes', async () => {
+    const ctx = makeRoom();
+    ctx.send(HOST, { type: 'spectate', name: '房主' });
+    ctx.send(GUEST, { type: 'join', name: '客人' });
+    ctx.send(HOST, { type: 'start', seats: 4, decisionSeconds: 60 });
+    await tick();
+    showOpen(ctx, GUEST);
+    ctx.setOnline(GUEST, false);
+    ctx.advance(60_000);
+    await tick();
+    // Paused: nothing moves while the spectator waits for the player to come back.
+    expect(ctx.last(HOST, 'ended')).toBeUndefined();
+    expect(ctx.last(HOST, 'seats')).toMatchObject({ paused: true });
+
+    ctx.advance(SPECTATOR_PLAYON_SECONDS * 1000);
+    for (let i = 0; i < 200 && !ctx.last(HOST, 'ended'); i++) await tick();
+    expect(ctx.last(HOST, 'ended')).toMatchObject({ error: null });
+  });
+
+  it('keeps waiting when a player comes back inside the two minutes, and never plays on without spectators', async () => {
+    const back = makeRoom();
+    back.send(HOST, { type: 'spectate', name: '房主' });
+    back.send(GUEST, { type: 'join', name: '客人' });
+    back.send(HOST, { type: 'start', seats: 4, decisionSeconds: 60 });
+    await tick();
+    back.setOnline(GUEST, false);
+    back.advance(30_000);
+    back.setOnline(GUEST, true);
+    back.send(GUEST, { type: 'hello', token: GUEST, protocol: PROTOCOL_VERSION });
+    back.advance(SPECTATOR_PLAYON_SECONDS * 1000);
+    await tick();
+    expect(back.last(HOST, 'ended')).toBeUndefined();
+
+    const alone = await soloMatch(60);
+    alone.setOnline(HOST, false);
+    alone.advance(SPECTATOR_PLAYON_SECONDS * 1000 * 5);
+    await tick();
+    expect(alone.last(HOST, 'ended')).toBeUndefined();
   });
 
   it('gives a fresh full limit to a person still seated when the match goes on', async () => {

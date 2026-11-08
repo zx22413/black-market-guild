@@ -7,6 +7,7 @@ import {
   DEFAULT_DECISION_SECONDS,
   DISCONNECT_GRACE_SECONDS,
   MAX_SPECTATORS,
+  SPECTATOR_PLAYON_SECONDS,
   PROTOCOL_VERSION,
   TAKEOVER_AFTER_TIMEOUTS,
   cleanName,
@@ -68,6 +69,10 @@ interface MatchRecord {
   /** Seats whose person dropped and is inside the grace period; each cancels its timer. */
   grace: ReadonlyMap<PlayerId, () => void>;
   paused: boolean;
+  /** Only spectators were left: every seat is under takeover and the bots play the match on (§15.2). */
+  playOn: boolean;
+  /** Cancels the pending wait before the bots play on. */
+  playOnTimer: (() => void) | null;
 }
 
 /** Time for decision limits; injected so the room stays free of host APIs and tests can fast-forward. */
@@ -169,6 +174,7 @@ export class Room {
     if (this.phase !== 'playing' || !match) return;
     if (this.nobodyDeciding(match)) {
       if (!match.paused) this.pause(match);
+      else this.armPlayOn(match);
       return;
     }
     match.players.forEach((p) => {
@@ -335,6 +341,8 @@ export class Room {
       bots: new Map(),
       grace: new Map(),
       paused: false,
+      playOn: false,
+      playOnTimer: null,
     };
     this.match = match;
     this.phase = 'playing';
@@ -389,6 +397,7 @@ export class Room {
     if (!match || seat === undefined || this.phase !== 'playing' || !match.takeover.has(seat)) return;
     match.takeover = new Set([...match.takeover].filter((id) => id !== seat));
     match.timeouts = { ...match.timeouts, [seat]: 0 };
+    match.playOn = false;
     if (match.paused) {
       this.goOn(match);
       return;
@@ -618,12 +627,14 @@ export class Room {
   /** No person is connected and deciding for themself (all gone or all under takeover). */
   private nobodyDeciding(match: MatchRecord): boolean {
     // A match of bots only (everybody stands and watches) has nobody to wait for: it just plays.
-    if (match.players.every((p) => p.token === null)) return false;
+    if (match.players.every((p) => p.token === null) || match.playOn) return false;
     return !match.players.some((p) => p.token !== null && this.options.isOnline(p.token) && !match.takeover.has(p.id));
   }
 
   /** Someone decides again: every owed decision is routed afresh (full limits), and everyone resyncs. */
   private goOn(match: MatchRecord): void {
+    match.playOnTimer?.();
+    match.playOnTimer = null;
     match.paused = false;
     this.pending.forEach((p) => this.dispatch(match, p));
     this.broadcastSeats(match);
@@ -640,6 +651,27 @@ export class Room {
       this.replace(p, { ...p, deadline: null, cancel: null });
     });
     this.broadcastClocks();
+    this.broadcastSeats(match);
+    this.armPlayOn(match);
+  }
+
+  /** Paused with people still watching: after a while the takeover bots play the match on for them. */
+  private armPlayOn(match: MatchRecord): void {
+    if (match.playOnTimer !== null || !this.hasSpectatorOnline()) return;
+    match.playOnTimer = this.options.clock.after(SPECTATOR_PLAYON_SECONDS * 1000, () => {
+      match.playOnTimer = null;
+      if (this.match !== match || !match.paused || !this.hasSpectatorOnline()) return;
+      match.playOn = true;
+      match.players.forEach((p) => {
+        if (p.token !== null) this.enterTakeover(match, p.id);
+      });
+      this.options.log?.('play-on: only spectators are left, the takeover bots play the match on');
+      this.goOn(match);
+    });
+  }
+
+  private hasSpectatorOnline(): boolean {
+    return this.spectators.some((m) => this.options.isOnline(m.token));
   }
 
   private replace(old: Pending, next: Pending): void {

@@ -27,21 +27,15 @@ describe('where a table mounted mid-match picks up', () => {
 });
 
 describe('an online spectator falling behind the room', () => {
-  const events = [
-    ev({ type: 'round-started', round: 1 }),
-    ev({ type: 'roles-revealed', round: 1 }),
-    ev({ type: 'round-ended', round: 1 }),
-    ev({ type: 'round-started', round: 2 }),
-  ];
+  const round = (n: number) => [ev({ type: 'round-started', round: n }), ev({ type: 'roles-revealed', round: n }), ev({ type: 'round-ended', round: n })];
 
-  it('stays on the replay while it is still the newest news', () => {
-    expect(catchUpTarget(events.slice(0, 2), 1)).toBeNull();
-    expect(catchUpTarget(events, null)).toBeNull();
+  it('stays on the replay while it is the newest resolution, however far the room has moved on', () => {
+    expect(catchUpTarget([...round(1), ev({ type: 'round-started', round: 2 })], 1)).toBeNull();
+    expect(catchUpTarget(round(1), null)).toBeNull();
   });
 
-  it('jumps to the latest finished round once the room has begun the next one', () => {
-    expect(catchUpTarget(events, 1)).toBe(1);
-    const later = [...events, ev({ type: 'roles-revealed', round: 2 }), ev({ type: 'round-ended', round: 2 }), ev({ type: 'round-started', round: 3 })];
-    expect(catchUpTarget(later, 1)).toBe(2);
+  it('skips to just before the newest resolved round, so that one still plays in full', () => {
+    expect(catchUpTarget([...round(1), ...round(2)], 1)).toBe(1);
+    expect(catchUpTarget([...round(1), ...round(2), ...round(3)], 1)).toBe(2);
   });
 });

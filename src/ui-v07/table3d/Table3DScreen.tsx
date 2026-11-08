@@ -144,8 +144,8 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     if (autoplay && resolvingRound !== null) setDismissed(resolvingRound);
   }, [autoplay, resolvingRound]);
   const holding = resolvingRound !== null;
-  // A spectator presses nothing and the room does not wait for the replay: once it has run on for a
-  // while after the room moved to the next round, the table jumps to the live round.
+  // A spectator presses nothing and the room does not wait for the replay: once the room has resolved
+  // a newer round and the replay still runs on, the table skips ahead so the newest round plays in full.
   const catchUp = spectator ? catchUpTarget(snap.events, resolvingRound) : null;
   useAutoAdvance(catchUp === null ? null : `catch-up-${resolvingRound}`, SPECTATOR_CATCHUP_SECONDS, () => setDismissed((d) => Math.max(d, catchUp ?? d)));
 
