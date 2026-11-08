@@ -3,16 +3,17 @@ import { isFlying, SLOWMO, subscribeFlight } from '../scene/cameraHandoff';
 import './stepArrival.css';
 
 // How a decision step comes on screen (the ship pick and the role pick): a title in the middle of the table says what
-// the step is and which round it is, and the hand's cards are dealt in one after another. The ship pick times it with the
-// camera's dive (ShipArrival); the role pick waits until the camera has climbed back to the table (useStepArrival). While
-// the camera flies, the table's labels, the hand and the bar stay hidden (stepArrival.css `html.camera-flying`).
+// the step is and which round it is, and the hand's cards are dealt in one after another. Both wait until the camera has
+// landed (useStepArrival): the ship pick after its dive (with its wave, ShipArrival), the role pick after the climb back
+// to the table. While the camera flies, the table's labels, the hand and the bar stay hidden (stepArrival.css
+// `html.camera-flying`).
 
 /** How long the title stays (ms). */
 export const TITLE_MS = 1500 * SLOWMO;
 /** The gap between two cards of the deal (ms). */
 export const DEAL_STEP_MS = 70 * SLOWMO;
-/** The role pick: its cards come in this long after the title (ms). */
-const ROLE_DEAL_DELAY_MS = 180 * SLOWMO;
+/** The cards come in this long after the title (ms). */
+const DEAL_DELAY_MS = 180 * SLOWMO;
 
 const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -46,24 +47,31 @@ export function ArrivalTitle({ round, text, delay, dealDelay }: ArrivalTitleProp
 }
 
 /**
- * The role pick's arrival for `key` (one per decision, e.g. the request id): it starts once the camera is not flying
- * (useful right after the ship pick, when the camera climbs back to the table) and plays the title and the deal; a tap
- * or a key ends it at once. Off when `key` is null or motion is unwelcome.
+ * A step's arrival for `key` (one per decision, e.g. the request id): `waiting` while the camera still flies (the hand
+ * stays hidden, so it never shows before it is dealt), then `playing` the title and the deal; a tap or a key ends it at
+ * once. Both off when `key` is null or motion is unwelcome.
  */
-export function useStepArrival(key: string | number | null): boolean {
+export function useStepArrival(key: string | number | null): StepArrival {
   const flying = useSyncExternalStore(subscribeFlight, isFlying, () => false);
   const [startedFor, setStartedFor] = useState<string | number | null>(null);
   const [doneFor, setDoneFor] = useState<string | number | null>(null);
   const live = key !== null && doneFor !== key && !reducedMotion();
   const playing = live && startedFor === key;
-  // Read the flight itself, not the render's copy: the climb starts in the same commit that brings the step in.
+  // Read the flight itself, not the render's copy, and only two frames on: the camera rigs live in the canvas, whose
+  // tree commits after the page's, so the flight that goes with this step may start just after the step does.
   useEffect(() => {
-    if (live && !playing && !isFlying()) setStartedFor(key);
+    if (!live || playing) return undefined;
+    let raf = requestAnimationFrame(() => {
+      raf = requestAnimationFrame(() => {
+        if (!isFlying()) setStartedFor(key);
+      });
+    });
+    return () => cancelAnimationFrame(raf);
   }, [live, playing, flying, key]);
   useEffect(() => {
     if (!playing || key === null) return undefined;
     const done = () => setDoneFor(key);
-    const timer = window.setTimeout(done, ROLE_DEAL_DELAY_MS + TITLE_MS);
+    const timer = window.setTimeout(done, DEAL_DELAY_MS + TITLE_MS);
     window.addEventListener('pointerdown', done, { passive: true });
     window.addEventListener('keydown', done);
     return () => {
@@ -72,8 +80,20 @@ export function useStepArrival(key: string | number | null): boolean {
       window.removeEventListener('keydown', done);
     };
   }, [playing, key]);
-  return playing;
+  return { waiting: live && !playing, playing };
 }
 
-/** The role pick's title (`useStepArrival`), and the deal's timing for its hand and strip. */
-export const ROLE_ARRIVAL = { titleDelay: 0, dealDelay: ROLE_DEAL_DELAY_MS } as const;
+/** Where a step's arrival is (`useStepArrival`). */
+export interface StepArrival {
+  readonly waiting: boolean;
+  readonly playing: boolean;
+}
+
+/** The class and style for a hand or strip during a step's arrival: hidden while waiting, dealt while playing. */
+export function arrivalProps(arrival: StepArrival): { readonly className: string; readonly style?: CSSProperties } {
+  if (arrival.playing) return { className: 'arriving', style: dealStyle(STEP_ARRIVAL.dealDelay) };
+  return { className: arrival.waiting ? 'arrival-wait' : '' };
+}
+
+/** When a step's title and its deal start once it arrives (`useStepArrival`), in ms. */
+export const STEP_ARRIVAL = { titleDelay: 0, dealDelay: DEAL_DELAY_MS } as const;

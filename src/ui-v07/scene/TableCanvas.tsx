@@ -20,6 +20,7 @@ import { VoyageShip, lanePose } from '../../ui/scene/Ships';
 import { berthsOf } from './berth';
 import { SeaPassage } from './SeaPassage';
 import { ShipModel } from './ships/ShipModel';
+import { ShipWarmup } from './ShipWarmup';
 
 /** Where along its lane a ship rests (same as LANE_T in src/ui/scene/Ships.tsx). */
 const LANE_POINT: Readonly<Record<ShipState, number>> = { docked: 0, atSea: 0.3, sailing: 0.5, sunk: 0.5, arrived: 0.86 };
@@ -328,7 +329,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
               <SeaPassage key={`passage-${ship.id}`} angle={angles[laneOf(ship.owner)]!} color={seats[laneOf(ship.owner)]?.color ?? '#fcf4e2'} state={ship.state} berth={berths.get(ship.id) ?? 0} />
             ))}
             {children}
-            <EffectWarmup seatAngles={angles} onDone={onReady} />
+            <EffectWarmup seatAngles={angles} onDone={onReady} extra={<ShipWarmup />} />
           </Suspense>
         </SwellProvider>
         <PinTracker pins={pins} elements={labels} />

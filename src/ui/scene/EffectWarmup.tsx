@@ -30,8 +30,10 @@ const PASS_GAP = 2;
  *
  * One copy of each effect stands in a scene that is never drawn, with its per-frame work off (see
  * `useLiveFrame`). They stay mounted: disposing their materials would free the programs again.
+ * `extra` adds more to that scene: things a table shows only later (V0.7's ship models and cargo
+ * crates, which first appear when the camera dives to the ship pick and would stall that flight).
  */
-export function EffectWarmup({ seatAngles, onDone }: { readonly seatAngles: readonly number[]; readonly onDone: () => void }) {
+export function EffectWarmup({ seatAngles, onDone, extra }: { readonly seatAngles: readonly number[]; readonly onDone: () => void; readonly extra?: ReactNode }) {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
   const camera = useThree((s) => s.camera);
@@ -56,6 +58,7 @@ export function EffectWarmup({ seatAngles, onDone }: { readonly seatAngles: read
           <Wind />
           <SeaFog />
           <GoldRush />
+          {extra}
         </>,
         stages.effects,
       )}

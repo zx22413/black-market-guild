@@ -7,8 +7,8 @@ import { GOOD_LABELS } from '../labels';
 
 /** What a good can be used for (§6.1). */
 const USE: Readonly<Record<GoodId, string>> = {
-  wood: '蓋建築、販售',
-  iron: '蓋建築、販售',
+  wood: '只能販售',
+  iron: '只能販售',
   spice: '只能販售',
   arms: '只能販售',
 };

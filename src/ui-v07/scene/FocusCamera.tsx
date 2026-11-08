@@ -55,7 +55,7 @@ export function FocusCamera({ points, safe }: { readonly points: readonly FitPoi
     current.current = now;
     if (!settled || flight.current) placeCamera(camera, now);
     const own = poseOf(camera, now);
-    const flying = flight.current?.step(own) ?? null;
+    const flying = flight.current?.step(own, delta) ?? null;
     if (flying) applyPose(camera, flying, width, height);
     else if (flight.current) {
       // The climb is over: the table camera stands on its own again.

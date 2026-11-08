@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { GOODS, RULES_V07, type BuildingId, type IslandId, type RoleId, type VoyageEventId } from '../../v07/game';
-import { BUILDING_LABELS, BUILDING_TEXT, GOOD_LABELS, ISLAND_LABELS, ISLAND_TEXT, ROLE_LABELS, VOYAGE_EVENT_LABELS, VOYAGE_EVENT_TEXT, WEALTH_RULE_TEXT } from '../labels';
+import { GOODS, RULES_V07, SHIP_TYPE_IDS, type IslandId, type RoleId, type VoyageEventId } from '../../v07/game';
+import { GOOD_LABELS, ISLAND_LABELS, ISLAND_TEXT, ROLE_LABELS, SHIP_TYPE_LABELS, VOYAGE_EVENT_LABELS, VOYAGE_EVENT_TEXT, WEALTH_RULE_TEXT } from '../labels';
 import { soundEngine } from '../audio/soundEngine';
 import { useSoundOnce } from '../audio/useUiSounds';
 import { BrassCorner } from '../skin/ornaments';
 import { goodDetail, marketRule } from '../table/goodText';
 import { roleDetail } from '../table/roleText';
+import { shipDetail, shipRuleIntro } from '../table/shipText';
 import { GoodIcon } from './GoodIcon';
 import { CloseIcon, IconDisc } from './icons';
 import { IslandGlance } from './IslandGlance';
@@ -19,12 +20,12 @@ import './rulesBook.css';
 // book's thumb-index tabs are the chapter tabs (rulesBook.css). Every sentence comes from the texts
 // the table already uses (labels.ts, roleText.ts, goodText.ts), so the book can never say something else.
 
-export type RulesTab = 'roles' | 'islands' | 'buildings' | 'goods' | 'events' | 'score' | 'online';
+export type RulesTab = 'roles' | 'islands' | 'ships' | 'goods' | 'events' | 'score' | 'online';
 
 export const RULES_TABS: readonly { readonly id: RulesTab; readonly label: string }[] = [
   { id: 'roles', label: '角色' },
   { id: 'islands', label: '島嶼' },
-  { id: 'buildings', label: '建築' },
+  { id: 'ships', label: '船' },
   { id: 'goods', label: '貨品' },
   { id: 'events', label: '事件' },
   { id: 'score', label: '計分' },
@@ -64,13 +65,17 @@ export function RulesEntries({ tab }: { readonly tab: RulesTab }) {
           ))}
         </>
       );
-    case 'buildings':
+    case 'ships':
       return (
         <>
-          {keysOf<BuildingId>(BUILDING_LABELS).map((building) => (
-            <li key={building}>
-              <b>{BUILDING_LABELS[building]}</b>
-              <p>{BUILDING_TEXT[building]}</p>
+          <li>
+            <b>選船與出航</b>
+            <p>{shipRuleIntro(RULES_V07)}</p>
+          </li>
+          {SHIP_TYPE_IDS.map((ship) => (
+            <li key={ship}>
+              <b>{SHIP_TYPE_LABELS[ship]}</b>
+              <p>{shipDetail(ship, RULES_V07)}</p>
             </li>
           ))}
         </>

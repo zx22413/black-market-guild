@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { SLOWMO } from '../scene/cameraHandoff';
+import { flightElapsed, SLOWMO } from '../scene/cameraHandoff';
 import { BANDS, bandSpan, crestAt, dropAt, sprayFor, WIPE_MS, type Band } from './waveWipeMath';
 
 // The breaking wave over the lens (waveWipeMath has the shapes and the timing): drawn on one canvas, frame by frame, by
@@ -204,9 +204,27 @@ export function drawFrame(g: CanvasRenderingContext2D, t: number, w: number, h: 
   g.globalAlpha = 1;
 }
 
-/** The wave over the lens, starting `delay` ms after it mounts. */
-export function WaveWipe({ delay }: { readonly delay: number }) {
+/** How long to wait for the camera's flight to start before giving up on the wave (ms): the canvas may mount first. */
+const FLIGHT_WAIT_MS = 500;
+
+interface WaveWipeProps {
+  /** When the wave starts, in ms of the camera's flight (cameraHandoff's `flightElapsed`). */
+  readonly delay: number;
+  /** When the crest band covers the screen, in ms of the wipe's own time: `onSplash` fires then. */
+  readonly splashAt: number;
+  readonly onSplash: () => void;
+  /** Called once the wave has passed, or when there is no flight to go with. */
+  readonly onDone: () => void;
+}
+
+/**
+ * The wave over the lens. It runs on the camera's flight clock (`flightElapsed`), not on its own, so a frame that
+ * stalls pauses both together; after the flight lands, the tail finishes on wall-clock time.
+ */
+export function WaveWipe({ delay, splashAt, onSplash, onDone }: WaveWipeProps) {
   const canvas = useRef<HTMLCanvasElement>(null);
+  const handlers = useRef({ onSplash, onDone });
+  handlers.current = { onSplash, onDone };
   useEffect(() => {
     const el = canvas.current;
     const g = el?.getContext('2d');
@@ -219,19 +237,38 @@ export function WaveWipe({ delay }: { readonly delay: number }) {
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     const grain = g.createPattern(grainTile(), 'repeat');
     const spray = sprayFor(w, h, SPRAY_COUNT);
-    const start = performance.now() + delay;
+    const mounted = performance.now();
+    let last: { readonly clock: number; readonly at: number } | null = null;
+    let splashed = false;
     let raf = 0;
+    const finish = () => {
+      g.clearRect(0, 0, w, h);
+      handlers.current.onDone();
+    };
     const tick = (now: number) => {
-      const t = (now - start) / SLOWMO;
+      const flying = flightElapsed();
+      if (flying !== null) last = { clock: flying, at: now };
+      // After the flight lands the clock carries on from where it stopped.
+      const clock = flying ?? (last ? last.clock + (now - last.at) : null);
+      if (clock === null) {
+        if (now - mounted > FLIGHT_WAIT_MS) finish();
+        else raf = requestAnimationFrame(tick);
+        return;
+      }
+      const t = (clock - delay) / SLOWMO;
       if (t > WIPE_MS) {
-        g.clearRect(0, 0, w, h);
+        finish();
         return;
       }
       raf = requestAnimationFrame(tick);
+      if (!splashed && t >= splashAt) {
+        splashed = true;
+        handlers.current.onSplash();
+      }
       if (t >= 0) drawFrame(g, t, w, h, grain, spray);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [delay]);
+  }, [delay, splashAt]);
   return <canvas ref={canvas} className="wave-wipe" aria-hidden="true" />;
 }

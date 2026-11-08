@@ -21,7 +21,7 @@ export const ROLE_LABELS: Readonly<Record<RoleId, string>> = {
 export const ROLE_TEXT: Readonly<Record<RoleId, string>> = {
   customs: '指名別人船上的一種貨；船抵達時優先拿走該貨的價值，也抓走私商人。',
   guard: '只守自己的船：目標船 +1。',
-  pirate: '目標船 −1。最終值 1 的船沉沒、最終值 2 的船勉強抵達時，鎖定它的海盜分走一部分價值。',
+  pirate: '目標船 −1。船沉沒、或最終值很低（1、2）而勉強抵達時，鎖定它的海盜分走一部分價值。',
   smuggler: '搭別人的船夾帶私貨，平安抵達又沒有海關時抽走船東的收入；派在自己的船上則掩護船上的貨不被海關沒收。',
   diplomat: '守自己的船並猜一個角色：猜中則作廢它並向對手拿錢，猜錯退一半部署費。',
 };

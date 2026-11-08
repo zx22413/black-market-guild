@@ -161,7 +161,7 @@ export function ShipSideCamera({ angle, shot, safe, ship }: { readonly angle: nu
     const x = safe ? (safe.right - safe.left) / 2 : 0;
     const y = !safe ? 0 : shot === 'ship' ? topPx - (safe.top + TOP_MARGIN) : (safe.bottom - safe.top) / 2;
     const own: CameraPose = { position: [camera.position.x, camera.position.y, camera.position.z], aim: [ax, next.aim, az], fov: FOV, offset: [x, y] };
-    const flying = flight.current?.step(own) ?? null;
+    const flying = flight.current?.step(own, delta) ?? null;
     if (!flying) flight.current = null;
     if (flying) {
       applyPose(camera, flying, width, height);

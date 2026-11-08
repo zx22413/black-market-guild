@@ -127,6 +127,17 @@ export function isFlying(): boolean {
   return flights > 0;
 }
 
+/** The flight in progress, if any (the newest when two overlap). */
+let current: Flight | null = null;
+
+/**
+ * How far the flight in progress has come (ms of its own clock), or null when none is on. The 2D half of the dive (the
+ * wave, WaveWipe) runs on this clock, so it stays with the camera even when a frame stalls.
+ */
+export function flightElapsed(): number | null {
+  return current?.elapsedMs ?? null;
+}
+
 /** Calls `fn` whenever a flight starts or ends; returns the unsubscribe. */
 export function subscribeFlight(fn: () => void): () => void {
   flightListeners.add(fn);
@@ -135,13 +146,16 @@ export function subscribeFlight(fn: () => void): () => void {
 
 const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/** The most a single frame advances a flight (ms): a frame that stalls (a model or shader appearing) pauses the flight instead of eating it. */
+export const MAX_FLIGHT_STEP_MS = 40;
+
 /**
  * A flight in progress inside a rig: started from the other rig's last pose when there is a fresh one (and motion is
- * welcome), it runs for `duration` ms of wall-clock time from its first frame, so it stays in step with the CSS half
- * (ShipArrival) even when frames drop; any tap or key ends it at once.
+ * welcome), it runs for `duration` ms of its own clock, which advances with each frame but never more than
+ * `MAX_FLIGHT_STEP_MS` at once, so a stalled frame never skips the flight; any tap or key ends it at once.
  */
 export class Flight {
-  private startedAt: number | null = null;
+  private elapsed = 0;
   private skipped = false;
   private live = true;
   private readonly onSkip = (): void => {
@@ -154,7 +168,14 @@ export class Flight {
   ) {
     window.addEventListener('pointerdown', this.onSkip, { passive: true });
     window.addEventListener('keydown', this.onSkip);
+    current = this;
+    (globalThis as unknown as { __fl?: unknown[] }).__fl?.push(['start', duration, Math.round(performance.now())]);
     setFlights(flights + 1);
+  }
+
+  /** How far it has come (ms of its own clock). */
+  get elapsedMs(): number {
+    return this.elapsed;
   }
 
   static start(from: RigName, camera: PerspectiveCamera, duration: number): Flight | null {
@@ -164,9 +185,9 @@ export class Flight {
   }
 
   /** The pose for this frame on the way to `to`, or null once the flight is over (the rig then places the camera itself). */
-  step(to: CameraPose, now: number = performance.now()): CameraPose | null {
-    this.startedAt ??= now;
-    const t = this.skipped ? 1 : (now - this.startedAt) / this.duration;
+  step(to: CameraPose, delta: number): CameraPose | null {
+    this.elapsed = this.skipped ? this.duration : this.elapsed + Math.min(delta * 1000, MAX_FLIGHT_STEP_MS);
+    const t = this.elapsed / this.duration;
     if (t >= 1) {
       this.stop();
       return null;
@@ -179,6 +200,8 @@ export class Flight {
     this.live = false;
     window.removeEventListener('pointerdown', this.onSkip);
     window.removeEventListener('keydown', this.onSkip);
+    if (current === this) current = null;
+    (globalThis as unknown as { __fl?: unknown[] }).__fl?.push(['stop', Math.round(this.elapsed), this.skipped, Math.round(performance.now()), new Error().stack?.split('\n').slice(2, 5).join(' | ')]);
     setFlights(flights - 1);
   }
 }

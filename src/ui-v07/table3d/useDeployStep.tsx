@@ -30,7 +30,7 @@ import { LockHint } from './LockHint';
 import { SealSubmit } from './SealSubmit';
 import { roleIconUrl } from './RoleBadges';
 import { ShipBets } from './ShipBets';
-import { ArrivalTitle, dealStyle, ROLE_ARRIVAL, useStepArrival } from './StepArrival';
+import { ArrivalTitle, arrivalProps, STEP_ARRIVAL, useStepArrival } from './StepArrival';
 import { DashedArrows } from './RoleArrows';
 import { pickArrows } from './revealModel';
 import { shipName, type StageEnv, type StageParts } from './stage';
@@ -69,8 +69,9 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
 
   // Ship bays: the role pick comes in like the ship pick, once the camera is back over the table: the step's title and
   // the dealt hand (StepArrival). The tutorial (the building rules) keeps its plain hand.
-  const arriving = useStepArrival(context?.view.rules.ships.enabled === 1 ? requestId : null);
-  const arrive = arriving ? { style: dealStyle(ROLE_ARRIVAL.dealDelay) } : {};
+  const arrival = useStepArrival(context?.view.rules.ships.enabled === 1 ? requestId : null);
+  const { className: arriveClass, style: arriveStyle } = arrivalProps(arrival);
+  const arrive = arriveStyle ? { style: arriveStyle } : {};
 
   // What the choice would submit, for whoever follows along (the tutorial lights 「提交」 when it fits).
   const draft = active ? (deployActionFor(options, choice) ?? null) : null;
@@ -191,7 +192,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   const strip =
     shown === null ? (
       // Nothing pointed at yet: the strip still says what your ship carries, so a smuggler is chosen knowing it.
-      <div className={`dep-strip idle ${arriving ? 'arriving' : ''}`} {...arrive}>
+      <div className={`dep-strip idle ${arriveClass}`} {...arrive}>
         <header>
           <b>你的船上</b>
           <CargoChip cargo={cargo} />
@@ -200,7 +201,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
         {noRoleReason && <p className="why">沒有角色可以選：{noRoleReason}，只能「不部署」。</p>}
       </div>
     ) : (
-      <div className={`dep-strip ${stripOpen ? 'open' : ''} ${arriving ? 'arriving' : ''}`} {...arrive} aria-live="polite" onClick={() => setStripOpen((v) => !v)}>
+      <div className={`dep-strip ${stripOpen ? 'open' : ''} ${arriveClass}`} {...arrive} aria-live="polite" onClick={() => setStripOpen((v) => !v)}>
         {shown === 'none' && (
           <>
             <header>
@@ -234,7 +235,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     );
 
   const hand = (
-    <div className={`dep-hand ${todo.role ? 'todo' : ''} ${choice.role !== null ? 'picked' : ''} ${arriving ? 'arriving' : ''}`} {...arrive} onPointerLeave={(e) => e.pointerType === 'mouse' && setPeek(null)}>
+    <div className={`dep-hand ${todo.role ? 'todo' : ''} ${choice.role !== null ? 'picked' : ''} ${arriveClass}`} {...arrive} onPointerLeave={(e) => e.pointerType === 'mouse' && setPeek(null)}>
       {cards.map((c) => (
         <button
           key={c.id}
@@ -324,7 +325,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     sealedChips: chips,
     overlay: (
       <>
-        {arriving && <ArrivalTitle round={board.round} text="選擇部署的角色" delay={ROLE_ARRIVAL.titleDelay} dealDelay={ROLE_ARRIVAL.dealDelay} />}
+        {arrival.playing && <ArrivalTitle round={board.round} text="選擇部署的角色" delay={STEP_ARRIVAL.titleDelay} dealDelay={STEP_ARRIVAL.dealDelay} />}
         {reminding && (
           <ReminderDialog
             title="還沒選角色"

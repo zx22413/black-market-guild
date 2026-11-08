@@ -5,8 +5,7 @@ import { SHIP_TYPE_LABELS, SHIP_TYPE_TEXT } from '../labels';
 import type { ShipCard, ShipEffect } from '../table/shipChoice';
 import { ClockIcon, ForbidIcon, IconDisc, tokenIconUrl } from './icons';
 import { InfoTip } from './InfoTip';
-import { SHIP_DEAL_DELAY_MS } from './ShipArrival';
-import { dealStyle } from './StepArrival';
+import { arrivalProps, type StepArrival } from './StepArrival';
 import './shipPicker.css';
 
 // The ship pick of the ship-bay experiment (docs/proposals/2026-11-ship-bays.md): a hand with one card per ship
@@ -21,6 +20,8 @@ import './shipPicker.css';
 
 /** The ship card picked: a ship type, "不出航" ('none'), or nothing yet (null). */
 export type ShipPick = ShipTypeId | 'none' | null;
+
+const NO_ARRIVAL: StepArrival = { waiting: false, playing: false };
 
 /** The ship's own illustration on its card, in the card art's flat style (public/art/cards, SOURCES.md). */
 const shipArtUrl = (type: ShipTypeId): string => `${import.meta.env.BASE_URL}art/cards/ship-${type}.svg`;
@@ -66,13 +67,14 @@ interface ShipHandProps {
   readonly onPick: (pick: ShipTypeId | 'none') => void;
   /** The card the pointer is on (null when it leaves): the info card describes it. Only a mouse peeks by hovering, as in the role hand. */
   readonly onPeek: (pick: ShipPick) => void;
-  /** While the camera dives in (ShipArrival): the cards are dealt in one after another as it lands. */
-  readonly arriving?: boolean;
+  /** The step's arrival (StepArrival): hidden while the camera dives in, dealt one card after another once it lands. */
+  readonly arrival?: StepArrival;
 }
 
-export function ShipHand({ cards, picked, todo, effect, revealed, fresh, onPick, onPeek, arriving = false }: ShipHandProps) {
+export function ShipHand({ cards, picked, todo, effect, revealed, fresh, onPick, onPeek, arrival = NO_ARRIVAL }: ShipHandProps) {
+  const arrive = arrivalProps(arrival);
   return (
-    <div className={`dep-hand ship-hand ${todo ? 'todo' : ''} ${picked !== null ? 'picked' : ''} ${arriving ? 'arriving' : ''}`} {...(arriving ? { style: dealStyle(SHIP_DEAL_DELAY_MS) } : {})} onPointerLeave={(e) => e.pointerType === 'mouse' && onPeek(null)}>
+    <div className={`dep-hand ship-hand ${todo ? 'todo' : ''} ${picked !== null ? 'picked' : ''} ${arrive.className}`} {...(arrive.style ? { style: arrive.style } : {})} onPointerLeave={(e) => e.pointerType === 'mouse' && onPeek(null)}>
       {cards.map((c) => {
         const withEffect = effect.total !== 0 && revealed.has(c.id);
         return (
@@ -147,11 +149,11 @@ interface ShipInfoProps {
   readonly fresh: ShipTypeId | null;
   /** 'side': the card beside the ship; 'strip': the strip above the hand, folded to its header until tapped. */
   readonly layout: 'side' | 'strip';
-  /** While the camera dives in (ShipArrival): the card comes in with the hand. */
-  readonly arriving?: boolean;
+  /** The step's arrival (StepArrival): the card comes in with the hand. */
+  readonly arrival?: StepArrival;
 }
 
-export function ShipInfo({ cards, shown, effect, revealed, fresh, layout, arriving = false }: ShipInfoProps) {
+export function ShipInfo({ cards, shown, effect, revealed, fresh, layout, arrival = NO_ARRIVAL }: ShipInfoProps) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const token = useRef<HTMLSpanElement>(null);
@@ -159,8 +161,9 @@ export function ShipInfo({ cards, shown, effect, revealed, fresh, layout, arrivi
   const side = layout === 'side';
   const rolled = card !== undefined && effect.total !== 0 && revealed.has(card.id);
   const play = card !== undefined && fresh === card.id;
-  const frame = `${side ? 'dep-strip ship-strip ship-info' : `dep-strip ship-strip ${open ? 'open' : ''}`} ${arriving ? 'arriving' : ''}`;
-  const arrive = arriving ? { style: dealStyle(SHIP_DEAL_DELAY_MS) } : {};
+  const frame = `${side ? 'dep-strip ship-strip ship-info' : `dep-strip ship-strip ${open ? 'open' : ''}`} ${arrivalProps(arrival).className}`;
+  const arriveStyle = arrivalProps(arrival).style;
+  const arrive = arriveStyle ? { style: arriveStyle } : {};
 
   // A strip folded to its header would play its show unseen: it opens for it.
   useEffect(() => {

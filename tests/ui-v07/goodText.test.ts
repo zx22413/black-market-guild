@@ -21,7 +21,8 @@ describe('goods text', () => {
     for (const g of GOODS) expect(goodDetail(g, RULES_V07).length).toBeGreaterThan(20);
     expect(goodDetail('spice', RULES_V07)).toContain('壞掉');
     expect(goodDetail('arms', RULES_V07)).not.toContain('護衛');
-    expect(goodDetail('iron', RULES_V07)).toContain('蓋建築');
+    expect(goodDetail('iron', RULES_V07)).toContain('只能販售');
+    expect(goodDetail('iron', RULES_V07)).not.toContain('蓋建築');
   });
 
   it('describes each price track from the rules (§7.1)', () => {

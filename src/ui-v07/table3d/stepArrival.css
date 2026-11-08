@@ -73,6 +73,12 @@ html:not(.camera-flying) :is(.beat3d-labels, .rank-rail, .rank-fold, .dep-dock, 
   }
 }
 
+/* Before the camera lands, the hand and its strip wait out of sight. */
+.dep-hand.arrival-wait,
+.dep-strip.arrival-wait {
+  opacity: 0;
+}
+
 /* A hand is dealt in one card after another (`backwards` lets go of the cards after it, so hovering and picking move them
    as usual); its own frame (the gold "still to do" glow) waits for the first card, or it would glow empty. */
 .dep-hand.arriving {

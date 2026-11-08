@@ -13,7 +13,7 @@ export function roleDetail(role: RoleId, rules: Rules): string {
     case 'guard':
       return `目標：自己出航的船。目標船 +${guard.modifier}。只守自己，沒有護航費。`;
     case 'pirate':
-      return `目標：任一艘出航的船（含自己的）。目標船 ${pirate.modifier < 0 ? '−' : '+'}${Math.abs(pirate.modifier)}。最終值 1 的船沉沒，鎖定它的海盜均分貨值的 ${pct(1)}%；最終值 2 的船抵達，海盜均分船東收入的 ${pct(2)}%；船上有通緝者再 +${rules.wanted.lootBonus} G（銀行付）。`;
+      return `目標：任一艘出航的船（含自己的）。目標船 ${pirate.modifier < 0 ? '−' : '+'}${Math.abs(pirate.modifier)}。船沉沒時，鎖定它的海盜均分貨值的 ${pct(1)}%；船抵達時，最終值 1（只有巨鯨號）均分船東收入的 ${pct(1)}%，最終值 2 均分 ${pct(2)}%，3 以上拿不到；船東是通緝者時再 +${rules.wanted.lootBonus} G（銀行付）。`;
     case 'smuggler':
       return `目標：別人的船，或自己的船（只為掩護）。搭別人的船，平安抵達又沒有海關，抽走船東 ${smuggler.goodsValue} G；有海關就被抓、罰 ${smuggler.fine} G。派在自己的船上，海關對這艘船的沒收不生效（走私港的軍火除外）。`;
     case 'diplomat':
