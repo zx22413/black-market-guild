@@ -6,12 +6,15 @@ import { markTutorialAsked, shouldAskTutorial } from '../tutorial/welcome';
 import { track } from '../analytics/track';
 import { WelcomePrompt } from './WelcomePrompt';
 import { PrivacyNote } from '../analytics/PrivacyNote';
+import { LATEST_VERSION } from '../devlog/entries';
+import { hasUnseenDevLog } from '../devlog/seen';
 
 // The title panel over the live table: one big "back to the room" when this browser was in an
 // online room, then single player, online, and the tutorial (marked as the place to start until
 // its first lesson is done). The rule book is a small button in the corner.
 
 const RulesPanel = lazy(() => import('../table3d/RulesPanel').then((m) => ({ default: m.RulesPanel })));
+const DevLogPanel = lazy(() => import('../devlog/DevLogPanel').then((m) => ({ default: m.DevLogPanel })));
 
 interface MainMenuProps {
   /** The online room this browser last sat in, if any. */
@@ -24,6 +27,8 @@ interface MainMenuProps {
 
 export function MainMenu({ lastRoom, onRejoin, onLocal, onOnline, onTutorial }: MainMenuProps) {
   const [rules, setRules] = useState(false);
+  const [devlog, setDevlog] = useState(false);
+  const [unseen, setUnseen] = useState(() => hasUnseenDevLog(LATEST_VERSION));
   const newcomer = !isLessonDone('basics');
   const [welcome, setWelcome] = useState(() => shouldAskTutorial(!newcomer));
   const answer = (pick: string, then?: () => void) => {
@@ -69,9 +74,25 @@ export function MainMenu({ lastRoom, onRejoin, onLocal, onOnline, onTutorial }: 
         <button type="button" className="menu-icon" onClick={() => setRules(true)}>
           規則書
         </button>
+        <button
+          type="button"
+          className="menu-icon"
+          onClick={() => {
+            setUnseen(false);
+            setDevlog(true);
+          }}
+        >
+          開發日誌
+          {unseen && <span className="devlog-dot" role="img" aria-label="有新內容" />}
+        </button>
       </footer>
       <PrivacyNote />
       {welcome && <WelcomePrompt onTutorial={() => answer('welcome-tutorial', onTutorial)} onSkip={() => answer('welcome-skip')} />}
+      {devlog && (
+        <Suspense fallback={null}>
+          <DevLogPanel onClose={() => setDevlog(false)} />
+        </Suspense>
+      )}
       {rules && (
         <Suspense fallback={null}>
           <RulesPanel onClose={() => setRules(false)} where="menu" />

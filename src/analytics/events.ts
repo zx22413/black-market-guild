@@ -35,6 +35,7 @@ export const EVENTS = {
   },
   match_quit: { mode, round: int(0, 50), phase: text(30) },
   rules_open: { chapter: text(20), where: { kind: 'enum', values: ['menu', 'table'] } },
+  devlog_open: { version: text(20) },
   room_create: {},
   invite_copy: {},
   room_join: { role: { kind: 'enum', values: ['host', 'guest'] }, link: bool, room: text(8) },

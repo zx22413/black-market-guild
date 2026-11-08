@@ -1,0 +1,95 @@
+/* The dev-log popup over the main menu; borrows the menu panel's wood and parchment variables. */
+.devlog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(5 20 25 / 0.55);
+}
+.menu-panel.devlog-card {
+  margin: 0;
+  width: min(560px, 100%);
+  max-height: min(80vh, 720px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+.devlog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.devlog-head h2 {
+  margin: 0;
+}
+.devlog-close {
+  padding: 4px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--m-soft);
+}
+.devlog-close:hover {
+  border-color: var(--m-wood);
+}
+.devlog-close svg {
+  width: 1.2em;
+  height: 1.2em;
+}
+.devlog-scroll {
+  overflow-y: auto;
+  padding-right: 6px;
+  overscroll-behavior: contain;
+}
+.devlog-entry + .devlog-entry {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--m-wood);
+}
+.devlog-entry h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.devlog-version {
+  font-size: 1.15rem;
+}
+.devlog-entry time {
+  margin-left: auto;
+  color: var(--m-soft);
+  font-size: var(--fs-note);
+  font-weight: 400;
+}
+.devlog-title {
+  margin: 4px 0 0;
+  font-weight: 700;
+}
+.devlog-summary {
+  margin: 4px 0 0;
+  color: var(--m-soft);
+}
+.devlog-entry h4 {
+  margin: 12px 0 4px;
+  color: var(--m-wax);
+}
+.devlog-entry ul {
+  margin: 0;
+  padding-left: 1.2em;
+}
+.devlog-entry li + li {
+  margin-top: 4px;
+}
+/* The unread dot on the menu button. */
+.menu-icon .devlog-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 5px;
+  border-radius: 50%;
+  background: var(--m-wax);
+  vertical-align: middle;
+}
