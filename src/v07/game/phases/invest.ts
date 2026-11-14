@@ -4,7 +4,7 @@ import { addGoods, subtractGoods, units } from '../goods';
 import { shipCostFor } from '../islands';
 import { shipDelay } from '../rules';
 import { nextInt, type RngState } from '../rng';
-import { applyMaterial } from '../v08';
+import { applyMaterial, practiced, skillLevel } from '../v08';
 import type { Action, Build, GoodId, MatchEvent, MatchState, PlayerId, PrivateEvent, Ship, Step } from '../types';
 
 type Invest = Extract<Action, { type: 'invest' }>;
@@ -123,8 +123,16 @@ function sail(action: Invest): StepFn {
       stock: subtractGoods(p.stock, action.privateLoad === undefined ? action.load : addGoods(action.load, action.privateLoad)),
       lastShip: { ...p.lastShip, [action.shipType ?? 'standard']: current.round },
     }));
+    // V0.8 prototype (v08.levelUp): an opened skill counts the launch and may level up before this voyage.
+    const type = action.shipType ?? 'standard';
+    const practice = practiced(current.rules, playerOf(unloaded, action.playerId), type);
+    const trained = updatePlayer(unloaded, action.playerId, () => practice.player);
     const loaded = action.privateLoad === undefined ? action.load : addGoods(action.load, action.privateLoad);
-    const cost = shipCostFor(current.rules, playerOf(current, action.playerId).island, action.shipType, loaded);
-    return changeCash(unloaded, action.playerId, -cost, 'ship-cost', `r${current.round}-${action.playerId}`);
+    const cost = shipCostFor(current.rules, playerOf(current, action.playerId).island, action.shipType, loaded, skillLevel(current.rules, playerOf(trained, action.playerId), type));
+    const paid = changeCash(trained, action.playerId, -cost, 'ship-cost', `r${current.round}-${action.playerId}`);
+    const leveled: MatchEvent[] = practice.leveled
+      ? [{ type: 'v08-effect', round: current.round, playerId: action.playerId, shipId: `r${current.round}-${action.playerId}`, effect: 'level-up', crates: 0, value: 0 }]
+      : [];
+    return { state: paid.state, events: [...leveled, ...paid.events] };
   };
 }

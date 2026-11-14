@@ -25,9 +25,11 @@ export function roleFee(rules: Rules, island: IslandId | null, role: RoleId): nu
 }
 
 /** The ship fee of one launch; `load` (when known) adds the island's spice fee for a ship that carries spice. */
-export function shipCostFor(rules: Rules, island: IslandId | null, type: ShipTypeId = 'standard', load?: Goods): number {
+export function shipCostFor(rules: Rules, island: IslandId | null, type: ShipTypeId = 'standard', load?: Goods, skill = 0): number {
   const t = traitOf(rules, island);
-  const base = rules.ships.enabled === 1 ? (t.freeShips.includes(type) ? 0 : rules.ships.types[type].fee) : rules.shipCost;
+  // V0.8 prototype (v08.hidden.feeFreeL1): an opened hidden-ship skill waives the ship's own fee (island changes still apply).
+  const waived = rules.v08.skills === 1 && type === 'hidden' && skill >= 1 && rules.v08.hidden.feeFreeL1 === 1;
+  const base = rules.ships.enabled === 1 ? (t.freeShips.includes(type) || waived ? 0 : rules.ships.types[type].fee) : rules.shipCost;
   return Math.max(0, base + t.shipCostDelta + (load !== undefined && load.spice > 0 ? t.spiceShipFee : 0));
 }
 

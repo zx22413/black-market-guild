@@ -117,8 +117,8 @@ function paidAt(state: MatchState, ship: Ship, terms: CrateTerms): number {
   return Math.floor((value * terms.percent) / 100);
 }
 
-function roll(state: MatchState): { value: number; rng: RngState } {
-  const step = nextInt(state.rng, state.rules.sailing.dieMin, state.rules.sailing.dieMax);
+function roll(state: MatchState, sides?: number): { value: number; rng: RngState } {
+  const step = sides === undefined ? nextInt(state.rng, state.rules.sailing.dieMin, state.rules.sailing.dieMax) : nextInt(state.rng, 1, sides);
   return { value: step.value, rng: step.state };
 }
 
@@ -129,7 +129,9 @@ function roll(state: MatchState): { value: number; rng: RngState } {
 function rollSkills(state: MatchState, ship: Ship): Rolled {
   const level = crateContext(state, ship).level;
   if (ship.type === 'breaker' && ship.rawRoll >= extraDieFrom(state.rules, level)) {
-    const extra = roll(state);
+    // v08.breaker.extraDieSides: the extra die is 1dN (6 rolls the normal die exactly as before).
+    const sides = state.rules.v08.breaker.extraDieSides;
+    const extra = roll(state, sides === state.rules.sailing.dieMax && state.rules.sailing.dieMin === 1 ? undefined : sides);
     const next = { ...ship, rawRoll: ship.rawRoll + extra.value };
     const gain = paidAt(state, next, termsOf(state, next)) - paidAt(state, ship, termsOf(state, ship));
     return { state: { ...state, rng: extra.rng }, ship: next, events: [effect(state, ship, 'extra-die', extra.value, gain)] };

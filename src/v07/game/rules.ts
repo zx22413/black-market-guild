@@ -340,7 +340,12 @@ export const RULES_V08_PROTO: Rules = {
       upgrade: { wood: 1, iron: 2, spice: 0, arms: 0 },
       build: { ...V08_OFF.costs.build, repairyard: { wood: 2, iron: 1, spice: 0, arms: 0 } },
     },
-    hidden: { ...V08_OFF.hidden, privateArrives: 1, privateLoses: 1 },
+    hidden: { ...V08_OFF.hidden, privateL1: 0, privateL2: 1, privateArrives: 1, privateLoses: 1, selfCoverL1: 1 },
+    // 2026-11-15: the breaker's extra die is 1d3; the hidden ship's level 1 covers it like the owner's own smuggler (no
+    // role, no cooldown) and only level 2 adds one private crate (the inspection still reaches uncovered private crates).
+    breaker: { ...V08_OFF.breaker, extraDieSides: 3 },
     inspection: { enabled: 1, allowance: 0 },
+    // 2026-11-15: skills level up by use (2 launches after opening) instead of the material upgrade.
+    levelUp: { byLaunches: 2 },
   },
 };

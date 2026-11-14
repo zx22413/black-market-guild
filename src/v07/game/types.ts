@@ -135,6 +135,8 @@ export interface PlayerState {
   readonly lastShip: Readonly<Partial<Record<ShipTypeId, number>>>;
   /** V0.8 prototype: opened ship skills and their level (1 or 2). */
   readonly skills?: Readonly<Partial<Record<ShipTypeId, number>>>;
+  /** V0.8 prototype (v08.levelUp): launches of each opened ship type since it was opened. */
+  readonly practice?: Readonly<Partial<Record<ShipTypeId, number>>>;
   /** V0.8 prototype: the player's one building. */
   readonly facility?: V08BuildingId;
 }
@@ -236,6 +238,7 @@ export const V08_EFFECTS = [
   'pirate-toll',
   'customs-halved',
   'inspected',
+  'level-up',
 ] as const;
 export type V08Effect = (typeof V08_EFFECTS)[number];
 

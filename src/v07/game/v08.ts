@@ -57,7 +57,9 @@ export function materialOptions(rules: Rules, player: PlayerState): MaterialActi
     if (opened.length < rules.v08.maxSkills) {
       SHIP_TYPE_IDS.filter((t) => !opened.includes(t)).forEach((ship) => options.push({ kind: 'open', ship }));
     }
-    opened.filter((t) => (skills[t] ?? 0) < rules.v08.maxLevel).forEach((ship) => options.push({ kind: 'upgrade', ship }));
+    if (rules.v08.levelUp.byLaunches === 0) {
+      opened.filter((t) => (skills[t] ?? 0) < rules.v08.maxLevel).forEach((ship) => options.push({ kind: 'upgrade', ship }));
+    }
   }
   if (buildingsOn(rules) && player.facility === undefined && rules.v08.maxBuildings > 0) {
     V08_BUILDING_IDS.forEach((building) => options.push({ kind: 'build', building }));
@@ -73,6 +75,22 @@ export function applyMaterial(rules: Rules, player: PlayerState, material: Mater
   }
   const level = (player.skills?.[material.ship] ?? 0) + 1;
   return { ...player, stock, skills: { ...player.skills, [material.ship]: level } };
+}
+
+/**
+ * V0.8 prototype (v08.levelUp): the player after launching a ship of `type`. An opened skill counts the launch, and
+ * reaches the next level once the count passes `byLaunches` (so launch N + 1 already sails at level 2).
+ */
+export function practiced(rules: Rules, player: PlayerState, type: ShipTypeId): { readonly player: PlayerState; readonly leveled: boolean } {
+  const { byLaunches } = rules.v08.levelUp;
+  const level = skillLevel(rules, player, type);
+  if (byLaunches === 0 || level === 0) return { player, leveled: false };
+  const count = (player.practice?.[type] ?? 0) + 1;
+  const leveled = level < rules.v08.maxLevel && count > byLaunches;
+  return {
+    player: { ...player, practice: { ...player.practice, [type]: count }, ...(leveled ? { skills: { ...player.skills, [type]: level + 1 } } : {}) },
+    leveled,
+  };
 }
 
 /** Hidden 「私貨艙」: private crates a hidden ship may carry at this skill level. */

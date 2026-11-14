@@ -56,7 +56,10 @@ function inspectArms(state: MatchState, ships: readonly Ship[], arrivedArms: num
   const { inspection } = state.rules.v08;
   const excess = arrivedArms - state.roundState.demand.arms - inspection.allowance;
   if (inspection.enabled !== 1 || excess <= 0) return { ships, events: [] };
-  const armsOf = (ship: Ship): number => arrivedCrates(ship).arms + (ship.privateCargo?.arms ?? 0);
+  // v08.hidden.privateSafeFromInspectionL2: a level-2 hidden ship's private crates are out of reach.
+  const privateSafe = (ship: Ship): boolean =>
+    state.rules.v08.hidden.privateSafeFromInspectionL2 === 1 && ship.type === 'hidden' && skillLevel(state.rules, playerOf(state, ship.owner), 'hidden') >= 2;
+  const armsOf = (ship: Ship): number => arrivedCrates(ship).arms + (privateSafe(ship) ? 0 : (ship.privateCargo?.arms ?? 0));
   const left = new Map(ships.map((ship) => [ship.id, armsOf(ship)]));
   const open = ships.filter((ship) => !covered(state, ship, 'arms'));
   const taken = new Map<string, number>();
@@ -179,7 +182,12 @@ interface Seizure {
 
 /** §9.5: the owner's own smuggler aboard covers the ship's goods from customs, except arms at the smuggler port. */
 const covered = (state: MatchState, ship: Ship, good: GoodId): boolean =>
-  deployed(state, ship, 'smuggler').includes(ship.owner) && !(good === 'arms' && traitOf(state.rules, playerOf(state, ship.owner).island).armsUncoverable === 1);
+  (deployed(state, ship, 'smuggler').includes(ship.owner) || selfCovered(state, ship)) &&
+  !(good === 'arms' && traitOf(state.rules, playerOf(state, ship.owner).island).armsUncoverable === 1);
+
+/** V0.8 prototype (v08.hidden.selfCoverL1): an opened hidden-ship skill covers the ship without a smuggler. */
+const selfCovered = (state: MatchState, ship: Ship): boolean =>
+  state.rules.v08.hidden.selfCoverL1 === 1 && ship.type === 'hidden' && skillLevel(state.rules, playerOf(state, ship.owner), 'hidden') >= 1;
 
 /** §9.4: each customs officer on this ship takes the good it names, if that good is aboard and not covered. */
 function seizures(state: MatchState, ship: Ship): Seizure[] {

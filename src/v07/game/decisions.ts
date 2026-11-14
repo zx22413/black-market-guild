@@ -152,7 +152,7 @@ function shipVariants(state: MatchState, player: PlayerState, base: InvestAction
           .map((privateLoad): InvestAction => ({ ...ship, privateLoad }))
       : [];
   const raised: InvestAction[] = shipType === 'gambler' && level > 0 ? [{ ...ship, raise: true }] : [];
-  return [ship, ...raised, ...privates].filter((a) => player.cash >= shipCostFor(rules, player.island, shipType, addGoods(a.load, a.privateLoad ?? NO_PRIVATE)));
+  return [ship, ...raised, ...privates].filter((a) => player.cash >= shipCostFor(rules, player.island, shipType, addGoods(a.load, a.privateLoad ?? NO_PRIVATE), level));
 }
 
 const NO_PRIVATE = { wood: 0, iron: 0, spice: 0, arms: 0 } as const;

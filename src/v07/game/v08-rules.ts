@@ -40,9 +40,14 @@ export interface V08Rules {
   /**
    * `privateArrives`: 1 = private crates count toward the round's arrival volume (they move prices like any cargo).
    * `privateLoses`: 1 = private crates join the crate table's losses (highest price first, with the regular cargo).
+   * `privateSafeFromInspectionL2`: 1 = at level 2 the private crates are never inspected (v08.inspection).
+   * `feeFreeL1`: 1 = an opened skill (any level) waives the hidden ship's own fee.
+   * `selfCoverL1`: 1 = an opened skill covers the hidden ship as if the owner's smuggler were aboard (no role, no cooldown;
+   *   the smuggler port's arms stay uncoverable).
    */
-  readonly hidden: { readonly privateL1: number; readonly privateL2: number; readonly privateArrives: number; readonly privateLoses: number };
-  readonly breaker: { readonly extraFromL1: number; readonly extraFromL2: number };
+  readonly hidden: { readonly privateL1: number; readonly privateL2: number; readonly privateArrives: number; readonly privateLoses: number; readonly privateSafeFromInspectionL2: number; readonly feeFreeL1: number; readonly selfCoverL1: number };
+  /** `extraDieSides`: the extra die is 1d`extraDieSides` (6 = a normal die). */
+  readonly breaker: { readonly extraFromL1: number; readonly extraFromL2: number; readonly extraDieSides: number };
   readonly repairyard: { readonly fromFinal: number; readonly toFinal: number; readonly save: number };
   readonly armory: { readonly lootPercent: number };
   /**
@@ -51,6 +56,11 @@ export interface V08Rules {
    * The owner's own smuggler covers the ship (not at the smuggler port, §11.2). Seized crates still count as arrived.
    */
   readonly inspection: { readonly enabled: number; readonly allowance: number };
+  /**
+   * Levelling: 0 = a skill reaches level 2 by the material upgrade (costs.upgrade). N > 0 = no material upgrade; an
+   * opened skill reaches level 2 by itself once its ship type has launched N times since it was opened (from launch N + 1).
+   */
+  readonly levelUp: { readonly byLaunches: number };
 }
 
 const g = (partial: Partial<Record<GoodId, number>>): Goods => ({ wood: 0, iron: 0, spice: 0, arms: 0, ...partial });
@@ -82,9 +92,10 @@ export const V08_OFF: V08Rules = {
   maxBuildings: 1,
   standard: { rerollAtMostL2: 3 },
   freighter: { salvageL1: 1, salvageL2: 2 },
-  hidden: { privateL1: 1, privateL2: 2, privateArrives: 0, privateLoses: 0 },
-  breaker: { extraFromL1: 6, extraFromL2: 5 },
+  hidden: { privateL1: 1, privateL2: 2, privateArrives: 0, privateLoses: 0, privateSafeFromInspectionL2: 0, feeFreeL1: 0, selfCoverL1: 0 },
+  breaker: { extraFromL1: 6, extraFromL2: 5, extraDieSides: 6 },
   repairyard: { fromFinal: 2, toFinal: 3, save: 1 },
   armory: { lootPercent: 35 },
   inspection: { enabled: 0, allowance: 0 },
+  levelUp: { byLaunches: 0 },
 };

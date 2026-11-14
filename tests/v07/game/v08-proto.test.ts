@@ -20,6 +20,8 @@ import { G, cash, edit, find, plain, playRound, withDemand } from './helpers';
 const V08 = RULES_V08_PROTO;
 
 const ready = (rules = V08): MatchState => withDemand(plain(4, rules).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(4, rules)), G(2, 2, 2, 1));
+/** The prototype without the hidden ship's self-cover (v08.hidden.selfCoverL1). */
+const NO_SELF_COVER = { ...V08, v08: { ...V08.v08, hidden: { ...V08.v08.hidden, selfCoverL1: 0 } } };
 /** The prototype before the 2026-11-14 tuning: private crates stayed out of the arrival volume. */
 const PRIVATE_OUTSIDE = { ...V08, v08: { ...V08.v08, hidden: { ...V08.v08.hidden, privateArrives: 0 } } };
 const resolved = (events: ReturnType<typeof playRound>['events'], shipId = 'r1-p1') => find(events, 'ship-resolved').find((e) => e.shipId === shipId)!;
@@ -93,10 +95,25 @@ describe('V0.8 prototype: material actions', () => {
     expect(actions.some((a) => a.material?.kind === 'upgrade')).toBe(false);
   });
 
-  it('allows two opened ship types, upgrades to level 2 and one building per match', () => {
-    const two = edit(ready(), 'p1', { skills: { standard: 1, gambler: 2 }, facility: 'armory', stock: G(5, 5, 5, 5) });
+  it('allows two opened ship types, upgrades to level 2 and one building per match (material upgrades)', () => {
+    const byMaterials = { ...V08, v08: { ...V08.v08, levelUp: { byLaunches: 0 } } };
+    const two = edit(ready(byMaterials), 'p1', { skills: { standard: 1, gambler: 2 }, facility: 'armory', stock: G(5, 5, 5, 5) });
     const kinds = invests(two).flatMap((a) => (a.material === undefined ? [] : [JSON.stringify(a.material)]));
     expect(new Set(kinds)).toEqual(new Set([JSON.stringify({ kind: 'upgrade', ship: 'standard' })]));
+  });
+
+  it('levels an opened skill up by use: the launch after the second sails at level 2, with no material upgrade', () => {
+    const skillOf = (state: MatchState) => state.players.find((p) => p.id === 'p1')!;
+    const r1 = playRound(ready(), { loads: { p1: G(1) }, rolls: { p1: 6 }, invest: { p1: { material: { kind: 'open', ship: 'standard' } } } });
+    const r2 = playRound(r1.state, { loads: { p1: G(1) }, rolls: { p1: 6 } });
+    expect(skillOf(r2.state)).toMatchObject({ skills: { standard: 1 }, practice: { standard: 2 } });
+    expect(getLegalActions(r2.state, 'p1').some((a) => a.type === 'invest' && a.material?.kind === 'upgrade')).toBe(false);
+    const r3 = playRound(r2.state, { loads: { p1: G(1) }, rolls: { p1: 6 } });
+    expect(effects(r3.events, 'level-up')).toHaveLength(1);
+    expect(skillOf(r3.state)).toMatchObject({ skills: { standard: 2 }, practice: { standard: 3 } });
+    // Other ship types do not count toward the opened one.
+    const other = playRound(r1.state, { loads: { p1: G(1) }, shipTypes: { p1: 'breaker' }, rolls: { p1: 6 } });
+    expect(skillOf(other.state).practice).toEqual({ standard: 1 });
   });
 
   it('applies the action publicly and counts it from this round on', () => {
@@ -135,6 +152,34 @@ describe('V0.8 prototype: arms inspection (軍火超量查緝)', () => {
     expect(seized(armsRound(port, { roles: { p1: ['smuggler', 'p1'] } }).events)).toEqual({ p1: 2 });
   });
 
+  it("reaches a hidden ship's private crates too (regular crates first) when it is not self-covered", () => {
+    const state = edit(edit(ready(NO_SELF_COVER), 'p1', { skills: { hidden: 2 }, stock: G(3, 3, 1, 3) }), 'p2', { stock: G(3, 3, 1, 3) });
+    // p1: 1 regular + 1 private arms (level 2; its 40 G fee leaves p1 poorer); p2: 2 arms. 4 arrive against 1: 3 seized.
+    const { events } = playRound(state, {
+      loads: { p1: G(0, 0, 0, 1), p2: G(0, 0, 0, 2) },
+      shipTypes: { p1: 'hidden' },
+      invest: { p1: { privateLoad: G(0, 0, 0, 1) } },
+      rolls: { p1: 6, p2: 6 },
+    });
+    // 2 vs 2 → richer p2, then p1 2 vs p2 1 → p1's regular crate, then 1 vs 1 → p2.
+    expect(seized(events)).toEqual({ p1: 1, p2: 2 });
+    // Regular crates go first: p1's private arms survive and sell.
+    expect(effects(events, 'private-sold')).toHaveLength(1);
+  });
+
+  it("spares a level-2 hidden ship's private crates when hidden.privateSafeFromInspectionL2 is 1", () => {
+    const safe = { ...NO_SELF_COVER, v08: { ...NO_SELF_COVER.v08, hidden: { ...NO_SELF_COVER.v08.hidden, privateSafeFromInspectionL2: 1 } } };
+    const state = edit(edit(ready(safe), 'p1', { skills: { hidden: 2 }, stock: G(3, 3, 1, 3) }), 'p2', { stock: G(3, 3, 1, 3) });
+    const { events } = playRound(state, {
+      loads: { p1: G(0, 0, 0, 1), p2: G(0, 0, 0, 2) },
+      shipTypes: { p1: 'hidden' },
+      invest: { p1: { privateLoad: G(0, 0, 0, 1) } },
+      rolls: { p1: 6, p2: 6 },
+    });
+    expect(seized(events)).toEqual({ p1: 1, p2: 2 });
+    expect(resolved(events).privateCargo).toEqual(G(0, 0, 0, 1));
+  });
+
   it('is off in the live rules and spares arms within demand + allowance', () => {
     expect(RULES_V07.v08.inspection.enabled).toBe(0);
     const lenient = { ...V08, v08: { ...V08.v08, inspection: { enabled: 1, allowance: 2 } } };
@@ -169,7 +214,7 @@ describe('V0.8 prototype: ship skills', () => {
   });
 
   const privateRound = (rules = V08) =>
-    playRound(edit(ready(rules), 'p1', { skills: { hidden: 1 } }), {
+    playRound(edit(ready(rules), 'p1', { skills: { hidden: 2 } }), {
       loads: { p1: G(1) },
       shipTypes: { p1: 'hidden' },
       invest: { p1: { privateLoad: G(0, 0, 0, 1) } },
@@ -178,7 +223,7 @@ describe('V0.8 prototype: ship skills', () => {
     });
 
   it('carries private crates on the hidden ship: sold in full and safe from customs', () => {
-    const state = edit(ready(), 'p1', { skills: { hidden: 1 } });
+    const state = edit(ready(), 'p1', { skills: { hidden: 2 } });
     expect(invests(state).some((a) => a.material === undefined && a.shipType === 'hidden' && a.privateLoad !== undefined && a.privateLoad.arms + a.privateLoad.wood + a.privateLoad.iron + a.privateLoad.spice > 1)).toBe(false);
     const { events } = privateRound();
     // The private arms count toward arrivals: 1 against a demand of 1 stays at 200; wood 1 against 2 rises to 150.
@@ -189,7 +234,7 @@ describe('V0.8 prototype: ship skills', () => {
   });
 
   it('loses private crates with the regular cargo, highest price first', () => {
-    const four = playRound(edit(ready(), 'p1', { skills: { hidden: 1 } }), {
+    const four = playRound(edit(ready(), 'p1', { skills: { hidden: 2 } }), {
       loads: { p1: G(1) },
       shipTypes: { p1: 'hidden' },
       invest: { p1: { privateLoad: G(0, 0, 0, 1) } },
@@ -199,7 +244,7 @@ describe('V0.8 prototype: ship skills', () => {
     expect(resolved(four.events)).toMatchObject({ outcome: 'arrived', lost: G(0), privateCargo: G(0) });
     expect(find(four.events, 'market-settled')[0]!.arrived).toEqual(G(1));
     const outside = { ...V08, v08: { ...V08.v08, hidden: { ...V08.v08.hidden, privateLoses: 0 } } };
-    const kept = playRound(edit(ready(outside), 'p1', { skills: { hidden: 1 } }), {
+    const kept = playRound(edit(ready(outside), 'p1', { skills: { hidden: 2 } }), {
       loads: { p1: G(1) },
       shipTypes: { p1: 'hidden' },
       invest: { p1: { privateLoad: G(0, 0, 0, 1) } },
@@ -216,11 +261,31 @@ describe('V0.8 prototype: ship skills', () => {
     expect(cash(events, 'sale', 'p1')).toBe(150 + 235);
   });
 
+  it('adds the private crate only at level 2, and can waive the hidden ship fee from level 1 (hidden.feeFreeL1)', () => {
+    const l1 = edit(ready(), 'p1', { skills: { hidden: 1 } });
+    expect(invests(l1).some((a) => a.shipType === 'hidden' && a.privateLoad !== undefined)).toBe(false);
+    const feeFree = { ...V08, v08: { ...V08.v08, hidden: { ...V08.v08.hidden, feeFreeL1: 1 } } };
+    const waived = edit(ready(feeFree), 'p1', { skills: { hidden: 1 } });
+    expect(cash(playRound(waived, { loads: { p1: G(1) }, shipTypes: { p1: 'hidden' }, rolls: { p1: 6 } }).events, 'ship-cost', 'p1')).toBe(0);
+    expect(cash(playRound(l1, { loads: { p1: G(1) }, shipTypes: { p1: 'hidden' }, rolls: { p1: 6 } }).events, 'ship-cost', 'p1')).toBe(-40);
+  });
+
+  it('covers an opened hidden ship from the arms inspection without a smuggler, except at the smuggler port', () => {
+    const round = (state: MatchState) =>
+      playRound(edit(state, 'p1', { stock: G(3, 3, 1, 3) }), { loads: { p1: G(0, 0, 0, 2), p2: G(0, 0, 0, 1) }, shipTypes: { p1: 'hidden' }, rolls: { p1: 6, p2: 6 } });
+    const opened = edit(ready(), 'p1', { skills: { hidden: 1 } });
+    expect(Object.fromEntries(effects(round(opened).events, 'inspected').map((e) => [e.playerId, e.crates]))).toEqual({ p2: 1 });
+    const port = edit(opened, 'p1', { island: 'smuggler-port' });
+    expect(Object.fromEntries(effects(round(port).events, 'inspected').map((e) => [e.playerId, e.crates]))).toEqual({ p1: 2 });
+  });
+
   it('rolls the breaker one more die on a 6 (level 2: on a 5 or 6) before the modifiers', () => {
     const l1 = edit(ready(), 'p1', { skills: { breaker: 1 } });
     const six = playRound(l1, { loads: { p1: G(1) }, shipTypes: { p1: 'breaker' }, rolls: { p1: 6 } });
     const extra = effects(six.events, 'extra-die')[0]!.crates;
+    // The prototype baseline rolls the extra die as 1d3.
     expect(extra).toBeGreaterThanOrEqual(1);
+    expect(extra).toBeLessThanOrEqual(3);
     expect(find(six.events, 'voyage-modifiers')[0]!.modifiers[0]!.base).toBe(6 + extra);
     expect(effects(playRound(l1, { loads: { p1: G(1) }, shipTypes: { p1: 'breaker' }, rolls: { p1: 5 } }).events, 'extra-die')).toHaveLength(0);
     const l2 = edit(ready(), 'p1', { skills: { breaker: 2 } });

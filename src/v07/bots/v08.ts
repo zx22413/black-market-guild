@@ -90,7 +90,9 @@ function finals(view: PlayerView, plan: Plan, cache: V08Cache): readonly (readon
   const add = (final: number, p: number) => out.set(final, (out.get(final) ?? 0) + p);
   for (let raw = dieMin; raw <= dieMax; raw += 1) {
     if (plan.type === 'breaker' && raw >= extraDieFrom(rules, plan.level)) {
-      for (let extra = dieMin; extra <= dieMax; extra += 1) add(finalOf(raw + extra), 1 / faces / faces);
+      // v08.breaker.extraDieSides: the extra die is 1dN.
+      const sides = rules.v08.breaker.extraDieSides;
+      for (let extra = 1; extra <= sides; extra += 1) add(finalOf(raw + extra), 1 / faces / sides);
       continue;
     }
     const final = finalOf(raw);
@@ -119,6 +121,11 @@ function priceFor(view: PlayerView, good: GoodId, shipped: number, cache: V08Cac
  * 軍火超量查緝: the share of my `arms` crates expected to be seized, guessing the others' arrivals from their public
  * warehouses and spreading the excess over every arriving crate (the real rule takes from the biggest load first).
  */
+/** v08.hidden.selfCoverL1: an opened hidden skill covers the ship's arms from the inspection (not at the smuggler port). */
+function selfCovers(view: PlayerView, plan: Pick<Plan, 'type' | 'level' | 'island'>): boolean {
+  return view.rules.v08.hidden.selfCoverL1 === 1 && plan.type === 'hidden' && plan.level >= 1 && traitOf(view.rules, plan.island).armsUncoverable !== 1;
+}
+
 function inspectionShare(view: PlayerView, arms: number): number {
   const { inspection } = view.rules.v08;
   if (inspection.enabled !== 1 || arms === 0) return 0;
@@ -137,7 +144,9 @@ function loadOutlook(view: PlayerView, plan: Plan, load: Goods, privateLoad: Goo
   if (hit !== undefined) return hit;
   const { rules } = view;
   const secret = rules.ships.types[plan.type].secret === 1;
-  const inspected = inspectionShare(view, load.arms + privateLoad.arms);
+  // A level-2 hidden ship's private crates are safe from the inspection (v08.hidden.privateSafeFromInspectionL2).
+  const privateSafe = rules.v08.hidden.privateSafeFromInspectionL2 === 1 && plan.type === 'hidden' && plan.level >= 2;
+  const inspected = selfCovers(view, plan) ? 0 : inspectionShare(view, load.arms + (privateSafe ? 0 : privateLoad.arms));
   // Arms beyond demand may be inspected (v08.inspection), hidden ship or not.
   const kept = (g: GoodId) => (g === 'arms' ? 1 - inspected : 1);
   const unit = (g: GoodId) => {
@@ -215,7 +224,11 @@ function voyageWorth(view: PlayerView, player: PublicPlayer, type: ShipTypeId, l
         ? (typicalShare(view, plan, crates + extra, cache) * (crates + extra) - typicalShare(view, plan, crates, cache) * crates) * price
         : extra * price * (1 - sinkChance(view, plan, cache));
   const salvage = type === 'freighter' ? salvageCount(view.rules, level) * otherSinks(view) * price : 0;
-  return share * crates * price + privateCrates + salvage;
+  // v08.hidden.feeFreeL1: an opened hidden skill saves the ship's own fee on every voyage.
+  const feeSaved = type === 'hidden' ? shipCostFor(view.rules, player.island, type, undefined, 0) - shipCostFor(view.rules, player.island, type, undefined, level) : 0;
+  // v08.hidden.selfCoverL1: about one arms crate a voyage kept from the inspection.
+  const coverSaved = selfCovers(view, plan) ? inspectionShare(view, 1) * currentPrice(view, 'arms') : 0;
+  return share * crates * price + privateCrates + salvage + feeSaved + coverSaved;
 }
 
 /** Voyages left after this round's (a material action already counts on this round's ship through the outlook). */
@@ -267,7 +280,17 @@ function materialWorth(view: PlayerView, material: MaterialAction, persona: Pers
   } else {
     const level = skillLevel(rules, player, material.ship);
     const gain = voyageWorth(view, player, material.ship, level + 1, facility, cache) - voyageWorth(view, player, material.ship, level, facility, cache);
-    perVoyage = gain * TYPE_USE[material.ship] * (persona.shipTaste?.[material.ship] ?? 1);
+    const taste = TYPE_USE[material.ship] * (persona.shipTaste?.[material.ship] ?? 1);
+    const { byLaunches } = rules.v08.levelUp;
+    if (material.kind === 'open' && byLaunches > 0) {
+      // Levelling by use: the first `byLaunches` uses sail at level 1, the rest at level 2.
+      const uses = futureVoyages(view) * taste + 1;
+      const gain2 = voyageWorth(view, player, material.ship, 2, facility, cache) - voyageWorth(view, player, material.ship, 0, facility, cache);
+      const worth = Math.max(0, gain * Math.min(uses, byLaunches) + gain2 * Math.max(0, uses - byLaunches)) * persona.builder;
+      cache.materials.set(key, worth);
+      return worth;
+    }
+    perVoyage = gain * taste;
   }
   const worth = Math.max(0, perVoyage) * futureVoyages(view) * persona.builder;
   cache.materials.set(key, worth);
@@ -339,7 +362,7 @@ export function scoreInvestV08(view: PlayerView, action: Invest, persona: Person
       modifier: expectedOwnModifier(view, trait.ownShipModifier, rules.ships.types[type].delay > 0),
     };
     const loaded = add(action.load, privateLoad);
-    score -= shipCostFor(rules, player.island, type, loaded);
+    score -= shipCostFor(rules, player.island, type, loaded, level);
     const outlook = loadOutlook(view, plan, action.load, privateLoad, action.protect ?? null, cache);
     score += outlook.income - persona.risk * (outlook.sunk + 0.5 * outlook.lost);
     if (type === 'freighter') {

@@ -34,6 +34,8 @@ export interface PublicPlayer {
   readonly lastShip: Readonly<Partial<Record<ShipTypeId, number>>>;
   /** V0.8 prototype: opened ship skills and the building (public when taken). */
   readonly skills?: Readonly<Partial<Record<ShipTypeId, number>>>;
+  /** V0.8 prototype (v08.levelUp): launches since opening, public like the launches themselves. */
+  readonly practice?: Readonly<Partial<Record<ShipTypeId, number>>>;
   readonly facility?: V08BuildingId;
 }
 
@@ -109,6 +111,7 @@ export function getPlayerView(state: MatchState, playerId: PlayerId): PlayerView
       lastUsed: p.lastUsed,
       lastShip: p.lastShip,
       ...(p.skills === undefined ? {} : { skills: p.skills }),
+      ...(p.practice === undefined ? {} : { practice: p.practice }),
       ...(p.facility === undefined ? {} : { facility: p.facility }),
     })),
     myStock: me.stock,
