@@ -1,4 +1,4 @@
-import { BUILDING_IDS, GOODS, ROLE_IDS, roleFee, type Goods, type PlayerId, type ShipId } from '../src/v07/game';
+import { BUILDING_IDS, GOODS, ROLE_IDS, roleFee, v08On, type Goods, type MatchEvent, type PlayerId, type ShipId } from '../src/v07/game';
 import type { MatchLog } from '../src/v07/match';
 
 /** Wins, seats and wealth of one strategy or island. */
@@ -42,6 +42,22 @@ export interface SimStats {
   shipTypes: Record<string, { count: number; sank: number; sales: number; units: number }>;
   armsConfiscatedUnits: number;
   armsConfiscatedCash: number;
+  /** V0.8 prototype (rules.v08): only filled when a v08 switch is on. */
+  v08: V08Stats;
+}
+
+/** V0.8 prototype statistics, from public events only. */
+export interface V08Stats {
+  /** Per ship type: crates loaded (regular + private), crates lost on arrival, raised launches. */
+  crates: Record<string, { loaded: number; privateLoaded: number; lost: number; raised: number }>;
+  /** Per strategy, per ship type: launches. */
+  typeByStrategy: Record<string, Record<string, number>>;
+  /** Per strategy, per material action (e.g. open:standard, upgrade:hidden, build:armory): count and sum of rounds. */
+  materials: Record<string, Record<string, { count: number; roundSum: number }>>;
+  /** Per effect: triggers, crates involved and G (gained, or denied for the armory). */
+  effects: Record<string, { count: number; crates: number; value: number }>;
+  /** Per good: how often the price went up, stayed, went down. */
+  priceMoves: Record<string, { up: number; flat: number; down: number }>;
 }
 
 const units = (goods: Goods) => GOODS.reduce((sum, g) => sum + goods[g], 0);
@@ -80,7 +96,57 @@ export function emptyStats(steps: number): SimStats {
     shipTypes: {},
     armsConfiscatedUnits: 0,
     armsConfiscatedCash: 0,
+    v08: { crates: {}, typeByStrategy: {}, materials: {}, effects: {}, priceMoves: Object.fromEntries(GOODS.map((g) => [g, { up: 0, flat: 0, down: 0 }])) },
   };
+}
+
+/** V0.8 prototype: material actions, crates, effects and price moves. Mutates `stats` (local accumulator). */
+function addV08Event(stats: SimStats, event: MatchEvent, strategyOf: (playerId: PlayerId) => string, typeOf: ReadonlyMap<ShipId, string>): void {
+  const v = stats.v08;
+  const crates = (type: string) => (v.crates[type] ??= { loaded: 0, privateLoaded: 0, lost: 0, raised: 0 });
+  switch (event.type) {
+    case 'materials-used':
+      for (const use of event.uses) {
+        const key = use.material.kind === 'build' ? `build:${use.material.building}` : `${use.material.kind}:${use.material.ship}`;
+        const byKey = (v.materials[strategyOf(use.playerId)] ??= {});
+        const entry = (byKey[key] ??= { count: 0, roundSum: 0 });
+        entry.count += 1;
+        entry.roundSum += event.round;
+      }
+      break;
+    case 'ships-launched':
+      for (const ship of event.ships) {
+        const byType = (v.typeByStrategy[strategyOf(ship.owner)] ??= {});
+        byType[ship.type] = (byType[ship.type] ?? 0) + 1;
+        crates(ship.type).raised += ship.raised === true ? 1 : 0;
+      }
+      break;
+    case 'ship-resolved': {
+      const entry = crates(typeOf.get(event.shipId) ?? 'standard');
+      entry.loaded += units(event.cargo);
+      entry.privateLoaded += event.privateCargo === undefined ? 0 : units(event.privateCargo);
+      entry.lost += event.lost === undefined ? 0 : units(event.lost);
+      break;
+    }
+    case 'v08-effect': {
+      const entry = (v.effects[event.effect] ??= { count: 0, crates: 0, value: 0 });
+      entry.count += 1;
+      entry.crates += event.crates;
+      entry.value += event.value;
+      break;
+    }
+    case 'market-settled':
+      for (const g of GOODS) {
+        const move = v.priceMoves[g]!;
+        const d = event.priceAfter[g] - event.priceBefore[g];
+        if (d > 0) move.up += 1;
+        else if (d < 0) move.down += 1;
+        else move.flat += 1;
+      }
+      break;
+    default:
+      break;
+  }
 }
 
 function addStandings(stats: SimStats, log: MatchLog, strategyOf: (playerId: PlayerId) => string): void {
@@ -116,7 +182,12 @@ export function addMatch(stats: SimStats, log: MatchLog, strategyOf: (playerId: 
   const sank = new Set<ShipId>();
   const smuggled = new Set<ShipId>();
   const typeOf = new Map<ShipId, string>();
+  const v08 = v08On(rules);
   for (const event of log.events) {
+    if (v08) {
+      if (event.type === 'ships-launched') event.ships.forEach((s) => typeOf.set(s.id, s.type));
+      addV08Event(stats, event, strategyOf, typeOf);
+    }
     switch (event.type) {
       case 'buildings-built':
         event.builds.forEach((b) => {

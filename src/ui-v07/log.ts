@@ -67,6 +67,10 @@ export function eventLine(event: MatchEvent, ctx: LogContext): string | null {
       return '對局結束';
     case 'phase-started':
     case 'round-ended':
+    // V0.8 simulation prototype only (never in the live rules).
+    case 'materials-used':
+    case 'trade-protected':
+    case 'v08-effect':
       return null;
   }
 }

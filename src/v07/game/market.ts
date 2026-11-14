@@ -1,9 +1,9 @@
 import { chain, changeCash, holds, payAll, playerOf, updatePlayer, type StepFn } from './cash';
-import { addGoods, mapGoods, nextPriceStep, only, priceAt, units } from './goods';
+import { addGoods, mapGoods, nextPriceStep, only, priceAt, subtractGoods, units } from './goods';
 import { traitOf } from './islands';
-import { effectiveDeployments, voyageModifier } from './resolution';
-import { shipIncomePercent } from './rules';
-import { GOODS, type GoodId, type Goods, type MatchEvent, type MatchState, type PlayerId, type RoleId, type Ship, type Step } from './types';
+import { crateContext, effectiveDeployments, termsOf, voyageModifier } from './resolution';
+import { GOODS, type GoodId, type Goods, type MatchEvent, type MatchState, type PlayerId, type RoleId, type Ship, type Step, type V08Effect } from './types';
+import { crateTerms, facilityOf, hasVariant, protectedGoods, salvageCount, skillLevel, skillsOn, takeHighest } from './v08';
 
 interface Prices {
   readonly before: Goods;
@@ -21,18 +21,88 @@ export function settleMarket(state: MatchState): Step {
   const { demand } = state.roundState;
   const arrivedShips = ships.filter((s) => s.outcome === 'arrived');
   const sunkShips = ships.filter((s) => s.outcome === 'sank');
-  const arrived = arrivedShips.reduce((sum, s) => addGoods(sum, s.cargo), mapGoods(() => 0));
+  // V0.8 prototype: lost crates never arrive; crates a freighter salvages do (private crates never count).
+  const claims = salvageClaims(state, arrivedShips, sunkShips);
+  const landed = arrivedShips.reduce((sum, s) => addGoods(sum, arrivedCrates(s)), mapGoods(() => 0));
+  const arrived = claims.reduce((sum, c) => addGoods(sum, c.goods), landed);
   const prices: Prices = { before: state.prices, after: mapGoods((g) => nextPriceStep(rules, g, state.prices[g], arrived[g], demand[g])) };
   const settled: MatchEvent = { type: 'market-settled', round: state.round, demand, arrived, priceBefore: prices.before, priceAfter: prices.after };
+  const protect = state.roundState.protect;
+  const named: MatchEvent[] = protect === undefined ? [] : [{ type: 'trade-protected', round: state.round, protect }];
   const result = chain({ ...state, prices: prices.after }, [
     ...arrivedShips.map((ship) => settleArrival(ship, prices)),
+    ...claims.map((claim) => paySalvage(claim, prices)),
     ...sunkShips.map((ship) => settleSinking(ship, prices)),
     payCommission,
     payInsurance,
     salvage(sunkShips, prices.after),
     spoilSpice,
   ]);
-  return { state: result.state, events: [settled, ...result.events] };
+  return { state: result.state, events: [settled, ...named, ...result.events] };
+}
+
+/** V0.8 prototype: the crates that reached the market (all of them unless the crate rules lost some). */
+function arrivedCrates(ship: Ship): Goods {
+  return ship.lost === undefined ? ship.cargo : subtractGoods(ship.cargo, ship.lost);
+}
+
+const v08Effect = (state: MatchState, playerId: PlayerId, shipId: string | null, effect: V08Effect, crates: number, value: number): MatchEvent => ({
+  type: 'v08-effect',
+  round: state.round,
+  playerId,
+  shipId,
+  effect,
+  crates,
+  value,
+});
+
+interface SalvageClaim {
+  readonly playerId: PlayerId;
+  readonly shipId: string;
+  readonly goods: Goods;
+}
+
+/**
+ * V0.8 prototype, freighter 「拾荒」: each arriving freighter whose owner opened the skill takes, from every other player's
+ * ship that sank this round, its highest-price crates (price before the market change), paid by the bank.
+ */
+function salvageClaims(state: MatchState, arrivedShips: readonly Ship[], sunkShips: readonly Ship[]): SalvageClaim[] {
+  if (!skillsOn(state.rules)) return [];
+  return arrivedShips
+    .filter((f) => f.type === 'freighter')
+    .flatMap((f) => {
+      const count = salvageCount(state.rules, skillLevel(state.rules, playerOf(state, f.owner), 'freighter'));
+      return count === 0
+        ? []
+        : sunkShips
+            .filter((s) => s.owner !== f.owner)
+            .map((s) => ({ playerId: f.owner, shipId: f.id, goods: takeHighest(state.rules, s.cargo, count, state.prices) }))
+            .filter((c) => units(c.goods) > 0);
+    });
+}
+
+/** V0.8 prototype: salvaged crates sell at the new price, in full, untouched by roles. */
+function paySalvage(claim: SalvageClaim, prices: Prices): StepFn {
+  return (state) => {
+    const value = GOODS.reduce((sum, g) => sum + claim.goods[g] * salePrice(state, claim.playerId, g, prices), 0);
+    const paid = chain(state, payAll([{ playerId: claim.playerId, amount: value }], 'salvage-sale', claim.shipId));
+    return { state: paid.state, events: [v08Effect(state, claim.playerId, claim.shipId, 'salvage', units(claim.goods), value), ...paid.events] };
+  };
+}
+
+/** V0.8 prototype, tradehouse: a protected good that drops sells the owner's own crates at the pre-change price. */
+function ownSalePrice(state: MatchState, playerId: PlayerId, good: GoodId, prices: Prices): number {
+  const owner = playerOf(state, playerId);
+  const kept = protectedGoods(state.rules, owner.island, facilityOf(state.rules, owner), state.roundState.protect?.[playerId]);
+  return kept.includes(good) && prices.after[good] < prices.before[good]
+    ? salePrice(state, playerId, good, { before: prices.before, after: prices.before })
+    : salePrice(state, playerId, good, prices);
+}
+
+/** V0.8 prototype, smuggler port + armory: customs takes only half of the named good's value from this owner's ships. */
+function customsHalved(state: MatchState, ship: Ship): boolean {
+  const owner = playerOf(state, ship.owner);
+  return hasVariant(state.rules, owner.island, facilityOf(state.rules, owner), 'smuggler-port', 'armory');
 }
 
 function deployed(state: MatchState, ship: Ship, role: RoleId): PlayerId[] {
@@ -80,7 +150,7 @@ function seizures(state: MatchState, ship: Ship): Seizure[] {
       return [];
     }
     const named = officers.filter((d) => d.namedGood === good).map((d) => d.playerId);
-    return named.length > 0 && ship.cargo[good] > 0 ? [{ good, customs: named }] : [];
+    return named.length > 0 && arrivedCrates(ship)[good] > 0 ? [{ good, customs: named }] : [];
   });
 }
 
@@ -88,10 +158,15 @@ function seizures(state: MatchState, ship: Ship): Seizure[] {
 function settleArrival(ship: Ship, prices: Prices): StepFn {
   return (state) => {
     const found = seizures(state, ship);
-    const sold = found.reduce<Goods>((left, s) => ({ ...left, [s.good]: 0 }), ship.cargo);
-    const full = GOODS.reduce((sum, g) => sum + sold[g] * salePrice(state, ship.owner, g, prices), 0);
+    const sold = found.reduce<Goods>((left, s) => ({ ...left, [s.good]: 0 }), arrivedCrates(ship));
+    const full = GOODS.reduce((sum, g) => sum + sold[g] * ownSalePrice(state, ship.owner, g, prices), 0);
     const final = voyageModifier(state, ship).final;
-    const gross = Math.floor((full * shipIncomePercent(state.rules, ship.type, final)) / 100);
+    const { percent } = termsOf(state, ship);
+    // V0.8 prototype: private crates sell in full; the smuggler port's armory keeps half of what customs would take.
+    const privateIncome = ship.privateCargo === undefined ? 0 : GOODS.reduce((sum, g) => sum + ship.privateCargo![g] * salePrice(state, ship.owner, g, prices), 0);
+    const halved = customsHalved(state, ship);
+    const kept = halved ? found.reduce((sum, s) => sum + keptHalf(seizedValue(state, ship, s.good, prices)), 0) : 0;
+    const gross = Math.floor((full * percent) / 100) + privateIncome + kept;
     const customs = deployed(state, ship, 'customs');
     const pirates = deployed(state, ship, 'pirate').filter((id) => id !== ship.owner);
     const lootShare = pirates.length === 0 ? 0 : Math.min(gross, Math.floor((gross * (state.rules.roles.pirate.lootPercentByFinal[final] ?? 0)) / 100));
@@ -100,7 +175,8 @@ function settleArrival(ship: Ship, prices: Prices): StepFn {
     const proceeds = gross - lootShare;
     const smugglers = takers(state, ship);
     return chain(state, [
-      ...confiscateGoods(ship, found, prices),
+      (s) => ({ state: s, events: arrivalEffects(s, ship, prices, { sold, percent, privateIncome, kept }) }),
+      ...confiscateGoods(ship, found, prices, halved),
       ...(smugglers.length === 0
         ? payAll([{ playerId: ship.owner, amount: proceeds }], 'sale', ship.id)
         : customs.length > 0
@@ -111,6 +187,36 @@ function settleArrival(ship: Ship, prices: Prices): StepFn {
   };
 }
 
+/** V0.8 prototype: what is left to the owner when customs takes only half (rounded down) of a good's value. */
+const keptHalf = (value: number): number => value - Math.floor(value / 2);
+
+/** V0.8 prototype: report events for what a skill, building or variant did on an arriving ship. */
+function arrivalEffects(
+  state: MatchState,
+  ship: Ship,
+  prices: Prices,
+  sale: { readonly sold: Goods; readonly percent: number; readonly privateIncome: number; readonly kept: number },
+): MatchEvent[] {
+  const events: MatchEvent[] = [];
+  if (sale.privateIncome > 0) {
+    events.push(v08Effect(state, ship.owner, ship.id, 'private-sold', units(ship.privateCargo!), sale.privateIncome));
+  }
+  if (sale.kept > 0) {
+    events.push(v08Effect(state, ship.owner, ship.id, 'customs-halved', 0, sale.kept));
+  }
+  const plain = GOODS.reduce((sum, g) => sum + sale.sold[g] * salePrice(state, ship.owner, g, prices), 0);
+  const own = GOODS.reduce((sum, g) => sum + sale.sold[g] * ownSalePrice(state, ship.owner, g, prices), 0);
+  if (own > plain) {
+    events.push(v08Effect(state, ship.owner, ship.id, 'tradehouse', 0, Math.floor((own * sale.percent) / 100) - Math.floor((plain * sale.percent) / 100)));
+  }
+  if (ship.raised === true) {
+    const unraised = crateTerms(state.rules, ship.type, voyageModifier(state, ship).final, { ...crateContext(state, ship), raised: false });
+    const plainIncome = unraised.sinks ? 0 : Math.floor((own * unraised.percent) / 100);
+    events.push(v08Effect(state, ship.owner, ship.id, 'raise-won', units(ship.cargo), Math.floor((own * sale.percent) / 100) - plainIncome));
+  }
+  return events;
+}
+
 /** §9.6: pirates hitting a wanted owner's ship get the bank's bonus on top. */
 const wantedBonus = (state: MatchState, ship: Ship): number => (state.roundState.wanted.includes(ship.owner) ? state.rules.wanted.lootBonus : 0);
 
@@ -119,14 +225,15 @@ const wantedBonus = (state: MatchState, ship: Ship): number => (state.roundState
  * income (rules.sailing.arrivalIncomePercent), so customs and the owner split the ship's value between them.
  */
 function seizedValue(state: MatchState, ship: Ship, good: GoodId, prices: Prices): number {
-  return Math.floor((ship.cargo[good] * priceAt(state.rules, good, prices.after[good]) * shipIncomePercent(state.rules, ship.type, voyageModifier(state, ship).final)) / 100);
+  return Math.floor((arrivedCrates(ship)[good] * priceAt(state.rules, good, prices.after[good]) * termsOf(state, ship).percent) / 100);
 }
 
-function confiscateGoods(ship: Ship, found: readonly Seizure[], prices: Prices): StepFn[] {
+function confiscateGoods(ship: Ship, found: readonly Seizure[], prices: Prices, halved = false): StepFn[] {
   return found.map(({ good, customs }): StepFn => (state) => {
-    const each = Math.floor(seizedValue(state, ship, good, prices) / customs.length);
+    const value = seizedValue(state, ship, good, prices);
+    const each = Math.floor((halved ? Math.floor(value / 2) : value) / customs.length);
     const paid = chain(state, payAll(customs.map((playerId) => ({ playerId, amount: each })), 'goods-confiscated', ship.id));
-    return { state: paid.state, events: [{ type: 'goods-confiscated', round: state.round, shipId: ship.id, good, units: ship.cargo[good], customs }, ...paid.events] };
+    return { state: paid.state, events: [{ type: 'goods-confiscated', round: state.round, shipId: ship.id, good, units: arrivedCrates(ship)[good], customs }, ...paid.events] };
   });
 }
 
@@ -165,16 +272,25 @@ function settleSinking(ship: Ship, prices: Prices): StepFn {
   return (state) => {
     const pirates = deployed(state, ship, 'pirate');
     const smugglers = takers(state, ship);
-    const lost: MatchEvent[] =
-      smugglers.length > 0 ? [{ type: 'smuggling-settled', round: state.round, shipId: ship.id, smugglers, result: pirates.length > 0 ? 'seized' : 'lost' }] : [];
+    const raised: MatchEvent[] = ship.raised === true ? [raiseLost(state, ship, prices)] : [];
+    const lost: MatchEvent[] = [
+      ...raised,
+      ...(smugglers.length > 0 ? [{ type: 'smuggling-settled' as const, round: state.round, shipId: ship.id, smugglers, result: pirates.length > 0 ? ('seized' as const) : ('lost' as const) }] : []),
+    ];
     if (pirates.length === 0) {
       return { state, events: lost };
     }
     const final = voyageModifier(state, ship).final;
-    const cargoValue = GOODS.reduce((sum, g) => sum + ship.cargo[g] * priceAt(state.rules, g, prices.after[g]), 0);
+    // V0.8 prototype: a hidden ship's private crates sink with it and count toward the loot.
+    const aboard = ship.privateCargo === undefined ? ship.cargo : addGoods(ship.cargo, ship.privateCargo);
+    const cargoValue = GOODS.reduce((sum, g) => sum + aboard[g] * priceAt(state.rules, g, prices.after[g]), 0);
     // Experiment (rules.ships): any sunk ship pays pirates what a final value of 1 does.
     const sunkAs = state.rules.ships.enabled === 1 ? 1 : final;
-    const share = Math.floor((cargoValue * (state.rules.roles.pirate.lootPercentByFinal[sunkAs] ?? 0)) / 100);
+    const normal = state.rules.roles.pirate.lootPercentByFinal[sunkAs] ?? 0;
+    // V0.8 prototype, armory: the owner's sunk ship gives pirates a smaller share.
+    const armory = facilityOf(state.rules, playerOf(state, ship.owner)) === 'armory';
+    const share = Math.floor((cargoValue * (armory ? Math.min(normal, state.rules.v08.armory.lootPercent) : normal)) / 100);
+    if (armory) lost.push(v08Effect(state, ship.owner, ship.id, 'armory', 0, Math.floor((cargoValue * normal) / 100) - share));
     const loot = Math.floor((share + wantedBonus(state, ship)) / pirates.length);
     const seized = Math.floor(goodsValue(state) / pirates.length) * smugglers.length;
     const paid = chain(state, [
@@ -183,6 +299,13 @@ function settleSinking(ship: Ship, prices: Prices): StepFn {
     ]);
     return { state: paid.state, events: [...lost, ...paid.events] };
   };
+}
+
+/** V0.8 prototype: a raised gambler sank; its value is minus what the unraised gambler would have paid. */
+function raiseLost(state: MatchState, ship: Ship, prices: Prices): MatchEvent {
+  const unraised = crateTerms(state.rules, ship.type, voyageModifier(state, ship).final, { ...crateContext(state, ship), raised: false });
+  const value = GOODS.reduce((sum, g) => sum + ship.cargo[g] * ownSalePrice(state, ship.owner, g, prices), 0);
+  return v08Effect(state, ship.owner, ship.id, 'raise-lost', units(ship.cargo), unraised.sinks ? 0 : -Math.floor((value * unraised.percent) / 100));
 }
 
 /** §10.2: the exchange earns a commission per unit of other players' goods that arrived, capped. */

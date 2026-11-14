@@ -116,6 +116,9 @@ export const CASH_REASON_LABELS: Readonly<Record<CashReason, string>> = {
   'exchange-commission': '交易所佣金',
   'diplomat-take': '外交官猜中（向對手拿錢）',
   'diplomat-refund': '外交官猜錯（退還部署費）',
+  // V0.8 simulation prototype only (never in the live rules).
+  'salvage-sale': '拾荒（賣出撈到的貨）',
+  'pirate-toll': '海盜部署費（軍械庫）',
 };
 
 /** A good's price-track cell to G per unit: the display of §7.1 (each good has its own track). */

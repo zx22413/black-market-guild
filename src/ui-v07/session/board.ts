@@ -216,6 +216,10 @@ export function applyEvent(board: Board, event: MatchEvent, rules: Rules = RULES
       return { ...board, result: event.result };
     case 'phase-started':
     case 'round-ended':
+    // V0.8 simulation prototype only (never in the live rules).
+    case 'materials-used':
+    case 'trade-protected':
+    case 'v08-effect':
       return board;
   }
 }

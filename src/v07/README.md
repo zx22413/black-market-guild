@@ -26,6 +26,19 @@
 
 測試在 `tests/v07/game/`，依設計文件章節分檔。
 
+## V0.8 模擬原型（`game/v08-rules.ts`、`game/v08.ts`、`bots/v08.ts`）
+
+**實驗，不是規則。** 依 `docs/proposals/2026-11-v08-decision-index.md` §3.1 的討論做成的 Bot 模擬原型，所有數字都是測試值。規則物件多了 `rules.v08`，開關 `crates`、`skills`、`buildings`、`islandVariants` 在 `RULES_V07`、`RULES_BUILDINGS` 都是 0（線上對局行為不變）；`RULES_V08_PROTO` 全開。`npm run simulate -- --v08` 用它跑，`--set v08.…=數字` 可調任何值（例：`--set v08.raise.multiplier=350`、`--set v08.tables.standard.lose.2=1`）。
+
+| 開關 | 內容 |
+| --- | --- |
+| `crates` | 每單位貨是一箱：最終值查表決定沉沒或丟幾箱（先丟本回合變價前最貴的，同價依 `GOODS` 順序）與倍率；只有抵達的箱算到港量。表在 `v08.tables`（最終值超出表的範圍用最近的一格；-1 = 沉沒）。 |
+| `skills` | 投資時可做一個材料行動（開船技能 1 木 1 鐵、升級 2 木 1 鐵，最多開 2 種船）；信天翁號重擲、孤注號加注（`raise`）、巨鯨號拾荒、幽靈號私貨艙（`privateLoad`）、海嘯號加骰。 |
+| `buildings` | 每局最多一棟：修船廠（2 木）、軍械庫（2 軍火）、商行（2 香料，每次投資指名保價的貨 `protect`）。 |
+| `islandVariants` | 船塢島＋修船廠、要塞島＋軍械庫、香料群島＋商行、走私港＋軍械庫。 |
+
+材料行動與加注、私貨、保價都在 `invest` 行動的可選欄位裡，合法性照樣由 `getLegalActions` 列舉。公開事件多了 `materials-used`、`trade-protected` 與只給報表用的 `v08-effect`（技能、建築、島嶼變體的觸發與估計金額）；`ship-resolved` 多了 `lost`、`privateCargo`。Bot 的估分在 `bots/v08.ts`（以每次決定的快取估算貨箱期望值、材料行動在剩餘航程的價值、加注、保價貨）。測試在 `tests/v07/game/v08-proto.test.ts` 與 `tests/v07/bots/v08.test.ts`。
+
 ## `bots/`
 
 V0.7 的 Bot，由原型 `src/proto/economy/bots` 移植。介面與 V0.6 相同：`decide(DecisionContext) → Action`，`DecisionContext` 只有自己的 `PlayerView`、待決定事項與合法行動；自己船上的貨（`view.ships[].cargo`）已在視角裡，不需要讀 `MatchState`。

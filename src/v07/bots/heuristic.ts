@@ -2,6 +2,7 @@ import {
   GOODS,
   buildingCost,
   createRng,
+  materialsOn,
   roleFee,
   shipCostFor,
   traitOf,
@@ -33,6 +34,7 @@ import {
 import { islandWorth } from './islands';
 import { PERSONALITIES, type Personality, type PersonalityName } from './personality';
 import type { Bot } from './types';
+import { V08Cache, scoreInvestV08 } from './v08';
 
 type Invest = Extract<Action, { type: 'invest' }>;
 type Deploy = Extract<Action, { type: 'deploy-role' }>;
@@ -146,12 +148,13 @@ function scoreDeploy(view: PlayerView, action: Deploy, persona: Personality): nu
   }
 }
 
-export function scoreAction(view: PlayerView, action: Action, persona: Personality): number {
+export function scoreAction(view: PlayerView, action: Action, persona: Personality, cache: V08Cache = new V08Cache()): number {
   switch (action.type) {
     case 'choose-island':
       return islandWorth(view, action.island, persona);
     case 'invest':
-      return scoreInvest(view, action, persona);
+      // V0.8 prototype (rules.v08): material actions and crate voyages have their own scoring.
+      return materialsOn(view.rules) || view.rules.v08.crates === 1 ? scoreInvestV08(view, action, persona, cache) : scoreInvest(view, action, persona);
     case 'deploy-role':
       return scoreDeploy(view, action, persona);
   }
@@ -166,7 +169,8 @@ export function createHeuristicBot(personality: PersonalityName | Personality, s
       if (legalActions.length === 0) {
         throw new Error(`${view.playerId} has no legal action in ${view.phase}`);
       }
-      const scores = legalActions.map((a) => scoreAction(view, a, persona));
+      const cache = new V08Cache();
+      const scores = legalActions.map((a) => scoreAction(view, a, persona, cache));
       return choose(legalActions, scores, persona.temperature, rng);
     },
   };

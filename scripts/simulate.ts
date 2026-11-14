@@ -2,14 +2,16 @@
  * Runs many V0.7.1 bot-only matches (the ship bays) and prints a Markdown balance report.
  * Usage: npm run simulate -- [--matches 1000] [--players 4] [--seed 1]
  *        [--lineup balanced,cautious,aggressive,builder]
- *        [--set roles.pirate.loot=150 ...] [--summary] [--buildings]
+ *        [--set roles.pirate.loot=150 ...] [--summary] [--buildings] [--v08]
  * `--set` overrides any numeric rule (repeatable) to test balance ideas without editing
  * the rules; `--summary` prints one Markdown table row of key metrics instead of a report.
  * `--buildings` plays the old rules with the four buildings (RULES_BUILDINGS) instead of the ship bays.
+ * `--v08` plays the V0.8 simulation prototype (RULES_V08_PROTO: crate voyages, ship skills, material buildings; not rules);
+ * its numbers are under `v08.` for `--set` (e.g. `--set v08.raise.multiplier=350`).
  * Seats rotate every match so each strategy plays every seat position.
  */
 import { BOT_STRATEGIES, type BotStrategy } from '../src/v07/bots';
-import { BUILDING_IDS, GOODS, ROLE_IDS, RULES_BUILDINGS, RULES_V07, priceAt, type Rules } from '../src/v07/game';
+import { BUILDING_IDS, GOODS, ROLE_IDS, RULES_BUILDINGS, RULES_V07, RULES_V08_PROTO, SHIP_TYPE_IDS, priceAt, v08On, type Rules } from '../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../src/v07/match';
 import { addMatch, emptyStats, type SimStats } from './sim-stats';
 
@@ -61,7 +63,7 @@ function parseOptions(): Options {
     seed: Number.parseInt(get('seed') ?? '1', 10),
     lineup,
     overrides,
-    rules: applyOverrides(argv.includes('--buildings') ? RULES_BUILDINGS : RULES_V07, overrides),
+    rules: applyOverrides(argv.includes('--v08') ? RULES_V08_PROTO : argv.includes('--buildings') ? RULES_BUILDINGS : RULES_V07, overrides),
     summary: argv.includes('--summary'),
   };
   if (![options.matches, options.players, options.seed].every(Number.isInteger)) {
@@ -98,7 +100,7 @@ function table(header: readonly string[], rows: readonly (readonly (string | num
 }
 
 const BUILDING_LABELS: Record<string, string> = { shipyard: '造船廠', insurance: '航運保險', salvage: '打撈公司', exchange: '貿易交易所' };
-const ROLE_LABELS: Record<string, string> = { intel: '情報商人', guard: '護衛', pirate: '海盜', smuggler: '走私商人', broker: '莊家' };
+const ROLE_LABELS: Record<string, string> = { customs: '海關', guard: '護衛', pirate: '海盜', smuggler: '走私商人', diplomat: '外交官' };
 const GOOD_LABELS: Record<string, string> = { wood: '木材', iron: '鐵礦', spice: '香料', arms: '軍火' };
 const ISLAND_LABELS: Record<string, string> = {
   'spice-isles': '香料群島',
@@ -199,6 +201,89 @@ function roleSection(s: SimStats): string[] {
   ];
 }
 
+const SHIP_LABELS: Record<string, string> = { standard: '信天翁號', gambler: '孤注號', freighter: '巨鯨號', hidden: '幽靈號', breaker: '海嘯號' };
+const EFFECT_LABELS: Record<string, string> = {
+  reroll: '好兆頭重擲',
+  'reroll-saved': '重擲後免於沉沒',
+  'extra-die': '巨浪加骰（貨箱欄＝加骰點數）',
+  'raise-won': '加注成功（G＝比不加注多賺）',
+  'raise-lost': '加注沉沒（G＝不加注本來能賺）',
+  salvage: '拾荒（賣出撈到的貨）',
+  'private-sold': '私貨艙賣出',
+  repairyard: '修船廠少丟的箱',
+  armory: '軍械庫（G＝海盜少拿）',
+  tradehouse: '商行保價多賺',
+  'pirate-toll': '要塞島軍械庫收海盜部署費',
+  'customs-halved': '走私港軍械庫保住的海關半數',
+};
+
+/** V0.8 prototype section: ship types, crates, material adoption, effects and price moves. */
+function v08Section(options: Options, s: SimStats): string[] {
+  const v = s.v08;
+  const strategies = [...new Set(options.lineup)];
+  const materialKeys = [...new Set(Object.values(v.materials).flatMap((m) => Object.keys(m)))].sort();
+  const totalShips = Object.values(s.shipTypes).reduce((n, e) => n + e.count, 0);
+  return [
+    '## 5. V0.8 原型（實驗，不是規則）',
+    '',
+    '船型：',
+    '',
+    ...table(
+      ['船型', '出航', '佔比', '沉沒率', '每艘裝箱（含私貨）', '其中私貨', '抵達船平均丟箱', '加注次數'],
+      SHIP_TYPE_IDS.map((t) => {
+        const e = s.shipTypes[t] ?? { count: 0, sank: 0, sales: 0, units: 0 };
+        const c = v.crates[t] ?? { loaded: 0, privateLoaded: 0, lost: 0, raised: 0 };
+        return [SHIP_LABELS[t]!, e.count, pct(e.count, totalShips), pct(e.sank, e.count), per(c.loaded + c.privateLoaded, e.count), per(c.privateLoaded, e.count), per(c.lost, e.count - e.sank), c.raised];
+      }),
+    ),
+    '',
+    '各策略的船型使用（佔該策略出航次數）：',
+    '',
+    ...table(
+      ['策略', ...SHIP_TYPE_IDS.map((t) => SHIP_LABELS[t]!)],
+      strategies.map((st) => {
+        const byType = v.typeByStrategy[st] ?? {};
+        const total = Object.values(byType).reduce((a, b) => a + b, 0);
+        return [st, ...SHIP_TYPE_IDS.map((t) => pct(byType[t] ?? 0, total))];
+      }),
+    ),
+    '',
+    '材料行動（每座位次數／平均回合）：',
+    '',
+    ...table(
+      ['行動', ...strategies],
+      materialKeys.map((key) => [
+        key,
+        ...strategies.map((st) => {
+          const e = v.materials[st]?.[key];
+          const seats = s.byStrategy[st]?.seats ?? 0;
+          return e === undefined ? '—' : `${per(e.count, seats)}／R${per(e.roundSum, e.count)}`;
+        }),
+      ]),
+    ),
+    '',
+    '技能與建築的效果（全部對局合計）：',
+    '',
+    ...table(
+      ['效果', '次數', '每局', '貨箱', 'G 合計', '每次 G'],
+      Object.entries(v.effects)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([k, e]) => [EFFECT_LABELS[k] ?? k, e.count, per(e.count, s.matches), e.crates, e.value, per(e.value, e.count)]),
+    ),
+    '',
+    '價格變動（每種商品每回合）：',
+    '',
+    ...table(
+      ['商品', '上漲', '持平', '下跌'],
+      GOODS.map((g) => {
+        const m = v.priceMoves[g]!;
+        const total = m.up + m.flat + m.down;
+        return [GOOD_LABELS[g]!, pct(m.up, total), pct(m.flat, total), pct(m.down, total)];
+      }),
+    ),
+  ];
+}
+
 function report(options: Options, s: SimStats): string {
   const { rules } = options;
   return [
@@ -222,6 +307,7 @@ function report(options: Options, s: SimStats): string {
     '',
     ...roleSection(s),
     '',
+    ...(v08On(rules) ? [...v08Section(options, s), ''] : []),
     '> 模擬結果只反映目前 Bot 的決策方式，作為使用者決策的參考，不代表真人玩家行為。',
   ].join('\n');
 }
@@ -238,7 +324,16 @@ function summaryRow(options: Options, s: SimStats): string {
   return `| ${options.overrides.join(' ') || '現行規則'} | ${(100 * Math.min(...winRates)).toFixed(1)}–${(100 * Math.max(...winRates)).toFixed(1)}% | ${wealth.toFixed(0)} | ${pct(
     s.ships,
     s.playerRounds,
-  )} | ${buildingRates} | ${roleRates} | ${pirateNet(s).toFixed(0)} |`;
+  )} | ${buildingRates} | ${roleRates} | ${pirateNet(s).toFixed(0)} |${v08On(options.rules) ? v08Summary(s) : ''}`;
+}
+
+/** V0.8 prototype extra columns: ship sink rate, ship-type shares, material actions per seat, leftover goods per seat. */
+function v08Summary(s: SimStats): string {
+  const ships = Object.values(s.shipTypes).reduce((n, e) => n + e.count, 0);
+  const sank = Object.values(s.shipTypes).reduce((n, e) => n + e.sank, 0);
+  const shares = SHIP_TYPE_IDS.map((t) => pct(s.shipTypes[t]?.count ?? 0, ships)).join(' / ');
+  const materials = Object.values(s.v08.materials).reduce((n, m) => n + Object.values(m).reduce((k, e) => k + e.count, 0), 0);
+  return ` ${pct(sank, ships)} | ${shares} | ${per(materials, s.seats)} | ${per(s.unsoldUnits, s.seats)} |`;
 }
 
 const options = parseOptions();

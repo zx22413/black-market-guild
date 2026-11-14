@@ -100,6 +100,8 @@ export interface RoundPlan {
   /** The good a customs officer names, by player. */
   readonly named?: Readonly<Record<string, GoodId>>;
   readonly voyageEvent?: VoyageEventId;
+  /** V0.8 prototype: extra invest fields by player (material action, raise, private crates, protected good). */
+  readonly invest?: Readonly<Record<string, Pick<Extract<Action, { type: 'invest' }>, 'material' | 'raise' | 'privateLoad' | 'protect'>>>;
 }
 
 const shipOf = (state: MatchState, owner: string) => `r${state.round}-${owner}`;
@@ -119,7 +121,7 @@ export function playRound(state: MatchState, plan: RoundPlan = {}): Played {
     const load = plan.loads?.[p.id] ?? G(0);
     const sails = load.wood + load.iron + load.spice + load.arms > 0;
     const shipType = plan.shipTypes?.[p.id] ?? (sails && current.rules.ships.enabled === 1 ? 'standard' : undefined);
-    step({ type: 'invest', playerId: p.id, build: plan.builds?.[p.id] ?? null, load, ...(sails && shipType !== undefined ? { shipType } : {}) });
+    step({ type: 'invest', playerId: p.id, build: plan.builds?.[p.id] ?? null, load, ...(sails && shipType !== undefined ? { shipType } : {}), ...plan.invest?.[p.id] });
   }
   const owner = (shipId: string) => shipId.split('-')[1]!;
   current = {

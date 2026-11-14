@@ -1,6 +1,7 @@
 import { chain, changeCash, playerOf } from '../cash';
 import { roleFee } from '../islands';
 import { ROLE_IDS, type Deployment, type MatchState, type Step } from '../types';
+import { facilityOf, hasVariant } from '../v08';
 
 /**
  * §9.2-9.4: locks the secret deployments. Cooldowns are recorded at the reveal so nothing leaks
@@ -40,7 +41,7 @@ export function revealRoles(state: MatchState): Step {
         group
           .map((d) => ({ d, fee: roleFee(current.rules, playerOf(current, d.playerId).island, role) }))
           .filter(({ fee }) => fee > 0)
-          .map(({ d, fee }) => (inner: MatchState) => changeCash(inner, d.playerId, -fee, 'role-fee', null)),
+          .flatMap(({ d, fee }) => [(inner: MatchState) => changeCash(inner, d.playerId, -fee, 'role-fee', null), ...pirateToll(current, d, fee)]),
       );
       return {
         state: fees.state,
@@ -88,3 +89,18 @@ const applyDiplomats = (current: MatchState): Step => {
   const paid = chain(current, steps);
   return { state: { ...paid.state, roundState: { ...paid.state.roundState, deployments: deployments.filter((x) => !voided.has(x)) } }, events: paid.events };
 };
+
+/** V0.8 prototype, fortress + armory: a pirate on this owner's ship pays its fee to the owner instead of the bank. */
+function pirateToll(state: MatchState, d: Deployment, fee: number): ((s: MatchState) => Step)[] {
+  if (d.role !== 'pirate') return [];
+  const ship = [...state.roundState.ships, ...state.transit].find((s) => s.id === d.targetShipId);
+  if (ship === undefined || ship.owner === d.playerId) return [];
+  const owner = playerOf(state, ship.owner);
+  if (!hasVariant(state.rules, owner.island, facilityOf(state.rules, owner), 'fortress', 'armory')) return [];
+  return [
+    (s) => {
+      const paid = changeCash(s, ship.owner, fee, 'pirate-toll', ship.id);
+      return { state: paid.state, events: [...paid.events, { type: 'v08-effect', round: s.round, playerId: ship.owner, shipId: ship.id, effect: 'pirate-toll', crates: 0, value: fee }] };
+    },
+  ];
+}

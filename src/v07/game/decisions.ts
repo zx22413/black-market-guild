@@ -1,7 +1,8 @@
 import { playerOf } from './cash';
-import { covers, enumerateGoods, subtractGoods, units } from './goods';
+import { addGoods, covers, enumerateGoods, subtractGoods, units } from './goods';
 import { capacityFor, cooldownFor, roleFee, shipCostFor } from './islands';
 import { shipDelay, shipTypeAvailable, type Rules } from './rules';
+import { applyMaterial, facilityOf, materialOptions, materialsOn, privateCapacity, skillLevel } from './v08';
 import {
   BUILDING_IDS,
   GOODS,
@@ -17,6 +18,8 @@ import {
   type PlayerState,
   type ShipTypeId,
   type RoleId,
+  type GoodId,
+  type MaterialAction,
 } from './types';
 
 export function buildingCost(rules: Rules, building: BuildingId): Goods {
@@ -67,6 +70,9 @@ export function getLegalActions(state: MatchState, playerId: PlayerId): Action[]
  */
 function investOptions(state: MatchState, playerId: PlayerId): Action[] {
   const { rules } = state;
+  if (materialsOn(rules)) {
+    return investOptionsV08(state, playerId);
+  }
   const player = playerOf(state, playerId);
   const typed = rules.ships.enabled === 1;
   const builds: (BuildingId | null)[] = [
@@ -98,6 +104,58 @@ function investOptions(state: MatchState, playerId: PlayerId): Action[] {
     });
   });
 }
+
+/**
+ * V0.8 prototype (rules.v08): no material action or one the warehouse can pay for, then any load from what is left, as
+ * in the ship bays. A gambler with its skill open may also raise; a hidden ship with its skill open may add private crates
+ * from what is left; a tradehouse owner names one good to protect. Skills and buildings count from this submission on.
+ */
+function investOptionsV08(state: MatchState, playerId: PlayerId): Action[] {
+  const { rules } = state;
+  const player = playerOf(state, playerId);
+  const capacity = capacityFor(rules, player.buildings, player.island);
+  const room = (shipType: ShipTypeId): number => capacity + rules.ships.types[shipType].capacity;
+  const widest = Math.max(...SHIP_TYPE_IDS.map(room));
+  const materials: (MaterialAction | undefined)[] = [undefined, ...materialOptions(rules, player)];
+  return materials.flatMap((material) => {
+    const after = material === undefined ? player : applyMaterial(rules, player, material);
+    const facility = facilityOf(rules, after);
+    const protects: (GoodId | undefined)[] = facility === 'tradehouse' ? [...GOODS] : [undefined];
+    const extras = { ...(material === undefined ? {} : { material }) };
+    return enumerateGoods(after.stock, widest).flatMap((load): Action[] => {
+      const base = { type: 'invest' as const, playerId, build: null, load, ...extras };
+      const sails =
+        units(load) === 0
+          ? [base]
+          : SHIP_TYPE_IDS.filter(
+              (shipType) =>
+                units(load) <= room(shipType) &&
+                state.round + shipDelay(rules, shipType) <= rules.rounds &&
+                shipTypeAvailable(rules, shipType, player.lastShip[shipType], state.round),
+            ).flatMap((shipType) => shipVariants(state, after, base, shipType));
+      return sails.flatMap((action) => protects.map((protect) => (protect === undefined ? action : { ...action, protect })));
+    });
+  });
+}
+
+type InvestAction = Extract<Action, { type: 'invest' }>;
+
+/** One sailing load on one ship type: plain, raised (gambler skill) or with private crates (hidden skill), if affordable. */
+function shipVariants(state: MatchState, player: PlayerState, base: InvestAction, shipType: ShipTypeId): InvestAction[] {
+  const { rules } = state;
+  const level = skillLevel(rules, player, shipType);
+  const ship: InvestAction = { ...base, shipType };
+  const privates =
+    shipType === 'hidden' && level > 0
+      ? enumerateGoods(subtractGoods(player.stock, base.load), privateCapacity(rules, level))
+          .filter((p) => units(p) > 0)
+          .map((privateLoad): InvestAction => ({ ...ship, privateLoad }))
+      : [];
+  const raised: InvestAction[] = shipType === 'gambler' && level > 0 ? [{ ...ship, raise: true }] : [];
+  return [ship, ...raised, ...privates].filter((a) => player.cash >= shipCostFor(rules, player.island, shipType, addGoods(a.load, a.privateLoad ?? NO_PRIVATE)));
+}
+
+const NO_PRIVATE = { wood: 0, iron: 0, spice: 0, arms: 0 } as const;
 
 /** §9.3: a role used in round r returns in round r + cooldown + 1. */
 export function roleAvailable(state: MatchState, player: PlayerState, role: RoleId): boolean {
@@ -151,9 +209,18 @@ export function actionKey(action: Action): string {
     case 'choose-island':
       return `${action.type}|${action.playerId}|${action.island}`;
     case 'invest':
-      return `${action.type}|${action.playerId}|${action.build}|${GOODS.map((g) => action.load[g]).join(',')}|${action.shipType ?? 'none'}`;
+      return `${action.type}|${action.playerId}|${action.build}|${GOODS.map((g) => action.load[g]).join(',')}|${action.shipType ?? 'none'}${v08Key(action)}`;
     case 'deploy-role': {
       return `${action.type}|${action.playerId}|${action.role}|${action.targetShipId}|${action.namedGood ?? 'none'}|${action.guessRole ?? 'none'}`;
     }
   }
+}
+
+/** V0.8 prototype: the extra fields of an invest action, empty when there are none (the V0.7.1 keys are unchanged). */
+function v08Key(action: Extract<Action, { type: 'invest' }>): string {
+  const material = action.material === undefined ? '' : `|m:${action.material.kind}:${action.material.kind === 'build' ? action.material.building : action.material.ship}`;
+  const raise = action.raise === true ? '|raise' : '';
+  const privateLoad = action.privateLoad === undefined ? '' : `|p:${GOODS.map((g) => action.privateLoad![g]).join(',')}`;
+  const protect = action.protect === undefined ? '' : `|t:${action.protect}`;
+  return material + raise + privateLoad + protect;
 }

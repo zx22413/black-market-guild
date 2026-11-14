@@ -27,6 +27,16 @@ export type RoleId = (typeof ROLE_IDS)[number];
 export const SHIP_TYPE_IDS = ['standard', 'gambler', 'freighter', 'hidden', 'breaker'] as const;
 export type ShipTypeId = (typeof SHIP_TYPE_IDS)[number];
 
+/** V0.8 prototype (v08-rules.ts, not a rule): the buildings bought with materials, at most one per match. */
+export const V08_BUILDING_IDS = ['repairyard', 'armory', 'tradehouse'] as const;
+export type V08BuildingId = (typeof V08_BUILDING_IDS)[number];
+
+/** V0.8 prototype: the one material action a player may take in an invest submission. */
+export type MaterialAction =
+  | { readonly kind: 'open'; readonly ship: ShipTypeId }
+  | { readonly kind: 'upgrade'; readonly ship: ShipTypeId }
+  | { readonly kind: 'build'; readonly building: V08BuildingId };
+
 /** §11.2 */
 export const ISLAND_IDS = ['spice-isles', 'pirate-cove', 'lumber', 'mine', 'smuggler-port', 'free-port', 'fortress', 'lighthouse'] as const;
 export type IslandId = (typeof ISLAND_IDS)[number];
@@ -50,6 +60,14 @@ export type Action =
       readonly load: Goods;
       /** Experiment (rules.ships.enabled): the ship type; present exactly when something is loaded. */
       readonly shipType?: ShipTypeId;
+      /** V0.8 prototype (rules.v08): one material action, paid from the warehouse before loading. */
+      readonly material?: MaterialAction;
+      /** V0.8 prototype: a gambler with its skill open declares 「加注」 (public with the ship type). */
+      readonly raise?: true;
+      /** V0.8 prototype: the hidden ship's private crates (its skill's extra hold). */
+      readonly privateLoad?: Goods;
+      /** V0.8 prototype: a tradehouse owner's protected good, secret until the market settles. */
+      readonly protect?: GoodId;
     }
   | {
       readonly type: 'deploy-role';
@@ -85,6 +103,12 @@ export interface Ship {
   /** Hidden raw 1d6. */
   readonly rawRoll: number;
   readonly outcome: VoyageOutcome | null;
+  /** V0.8 prototype: a raised gambler. */
+  readonly raised?: true;
+  /** V0.8 prototype: the hidden ship's private crates (secret like the cargo). */
+  readonly privateCargo?: Goods;
+  /** V0.8 prototype (rules.v08.crates): crates lost on the voyage, set when the ship is resolved. */
+  readonly lost?: Goods;
 }
 
 /** A locked role deployment (§9). */
@@ -109,6 +133,10 @@ export interface PlayerState {
   readonly lastUsed: Readonly<Partial<Record<RoleId, number>>>;
   /** Experiment (rules.ships): round each ship type was last launched, for cooldowns. */
   readonly lastShip: Readonly<Partial<Record<ShipTypeId, number>>>;
+  /** V0.8 prototype: opened ship skills and their level (1 or 2). */
+  readonly skills?: Readonly<Partial<Record<ShipTypeId, number>>>;
+  /** V0.8 prototype: the player's one building. */
+  readonly facility?: V08BuildingId;
 }
 
 export interface Build {
@@ -135,6 +163,8 @@ export interface RoundState {
    */
   readonly carried: readonly Deployment[];
   readonly rolesRevealed: boolean;
+  /** V0.8 prototype: each tradehouse owner's protected good this round (secret until the market settles). */
+  readonly protect?: Readonly<Record<PlayerId, GoodId>>;
 }
 
 export interface Standing {
@@ -185,7 +215,28 @@ export type CashReason =
   | 'insurance'
   | 'exchange-commission'
   | 'diplomat-take'
-  | 'diplomat-refund';
+  | 'diplomat-refund'
+  /** V0.8 prototype: crates a freighter salvaged, paid by the bank. */
+  | 'salvage-sale'
+  /** V0.8 prototype (fortress + armory): a pirate's deployment fee paid to the targeted owner. */
+  | 'pirate-toll';
+
+/** V0.8 prototype: what a skill, building or island variant did, for the simulation report. `value` is G gained (or denied). */
+export const V08_EFFECTS = [
+  'reroll',
+  'reroll-saved',
+  'extra-die',
+  'raise-won',
+  'raise-lost',
+  'salvage',
+  'private-sold',
+  'repairyard',
+  'armory',
+  'tradehouse',
+  'pirate-toll',
+  'customs-halved',
+] as const;
+export type V08Effect = (typeof V08_EFFECTS)[number];
 
 /** Public resolution summary for one ship (§4 結算起始骰值與修正, §9.1). */
 export interface VoyageModifier {
@@ -204,6 +255,8 @@ export interface PublicShip {
   readonly owner: PlayerId;
   readonly type: ShipTypeId;
   readonly outcome: VoyageOutcome | null;
+  /** V0.8 prototype: a raised gambler (public at launch). */
+  readonly raised?: true;
 }
 
 /** Public events in playback order. Never contain hidden information. */
@@ -242,6 +295,9 @@ export type MatchEvent =
       readonly outcome: VoyageOutcome;
       /** Cargo becomes public here (§4). */
       readonly cargo: Goods;
+      /** V0.8 prototype: crates lost on the voyage, and the hidden ship's private crates. */
+      readonly lost?: Goods;
+      readonly privateCargo?: Goods;
     }
   | {
       readonly type: 'goods-confiscated';
@@ -268,6 +324,20 @@ export type MatchEvent =
     }
   | { readonly type: 'goods-salvaged'; readonly round: number; readonly playerId: PlayerId; readonly good: GoodId; readonly shipId: ShipId }
   | { readonly type: 'spice-spoiled'; readonly round: number; readonly spoiled: Readonly<Record<PlayerId, number>> }
+  /** V0.8 prototype: the material actions everyone took this round. */
+  | { readonly type: 'materials-used'; readonly round: number; readonly uses: readonly { readonly playerId: PlayerId; readonly material: MaterialAction }[] }
+  /** V0.8 prototype: tradehouse owners' protected goods, revealed when the market settles. */
+  | { readonly type: 'trade-protected'; readonly round: number; readonly protect: Readonly<Record<PlayerId, GoodId>> }
+  /** V0.8 prototype: a skill, building or island variant took effect (report only; the cash moves are their own events). */
+  | {
+      readonly type: 'v08-effect';
+      readonly round: number;
+      readonly playerId: PlayerId;
+      readonly shipId: ShipId | null;
+      readonly effect: V08Effect;
+      readonly crates: number;
+      readonly value: number;
+    }
   | { readonly type: 'round-ended'; readonly round: number }
   | { readonly type: 'match-ended'; readonly result: MatchResult };
 

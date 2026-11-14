@@ -1,4 +1,5 @@
 import type { BuildingId, GoodId, Goods, IslandId, RoleId, ShipTypeId, VoyageEventId } from './types';
+import { V08_OFF, type V08Rules } from './v08-rules';
 
 /**
  * All V0.7.1 rule numbers. Each value cites its section in docs/game-design.md, the source of
@@ -130,6 +131,8 @@ export interface Rules {
     readonly moonlessNight: number;
     readonly blackMarketRushGoodsValue: number;
   };
+  /** V0.8 simulation prototype (v08-rules.ts): experiments, all off outside RULES_V08_PROTO. Not rules. */
+  readonly v08: V08Rules;
 }
 
 const goods = (partial: Partial<Record<GoodId, number>>): Goods => ({ wood: 0, iron: 0, spice: 0, arms: 0, ...partial });
@@ -243,6 +246,7 @@ export const RULES_BUILDINGS: Rules = {
     moonlessNight: -1,
     blackMarketRushGoodsValue: 150,
   },
+  v08: V08_OFF,
 };
 
 /** §9.1: the percent of its cargo's value an arrived ship is worth at this final value (100 when unlisted). */
@@ -310,3 +314,13 @@ export function shipDelay(rules: Rules, type: ShipTypeId): number {
 export function shipTypeAvailable(rules: Rules, type: ShipTypeId, lastLaunched: number | undefined, round: number): boolean {
   return rules.ships.enabled !== 1 || lastLaunched === undefined || round - lastLaunched > rules.ships.types[type].cooldown;
 }
+
+/**
+ * V0.8 simulation prototype (v08-rules.ts): RULES_V07 with crate-count voyages, ship skills, buildings bought with
+ * materials and the island variants all on. Test values for bot simulations only (`simulate --v08`), NOT rules.
+ */
+export const RULES_V08_PROTO: Rules = {
+  ...RULES_V07,
+  version: 'V0.8-proto',
+  v08: { ...V08_OFF, crates: 1, skills: 1, buildings: 1, islandVariants: 1 },
+};

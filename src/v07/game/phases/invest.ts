@@ -1,10 +1,11 @@
 import { chain, changeCash, playerOf, updatePlayer, type StepFn } from '../cash';
 import { buildingCost } from '../decisions';
-import { subtractGoods, units } from '../goods';
+import { addGoods, subtractGoods, units } from '../goods';
 import { shipCostFor } from '../islands';
 import { shipDelay } from '../rules';
 import { nextInt, type RngState } from '../rng';
-import type { Action, Build, MatchState, PrivateEvent, Ship, Step } from '../types';
+import { applyMaterial } from '../v08';
+import type { Action, Build, GoodId, MatchEvent, MatchState, PlayerId, PrivateEvent, Ship, Step } from '../types';
 
 type Invest = Extract<Action, { type: 'invest' }>;
 
@@ -24,13 +25,29 @@ export function resolveInvest(state: MatchState): Step {
   const actions = state.players.map((p) => investOf(state, p.id));
   const builds: Build[] = actions.flatMap((a) => (a.build === null ? [] : [{ playerId: a.playerId, building: a.build }]));
   const built = chain(state, builds.map(build));
+  // V0.8 prototype: material actions are paid from the warehouse before loading.
+  const materials = useMaterials(built.state, actions);
   const sailing = actions.filter((a) => units(a.load) > 0);
-  const launched = chain({ ...built.state, roundState: { ...built.state.roundState, builds } }, sailing.map(sail));
+  const protect = protections(actions);
+  const launched = chain(
+    { ...materials.state, roundState: { ...materials.state.roundState, builds, ...(protect === null ? {} : { protect }) } },
+    sailing.map(sail),
+  );
   const rolled = rollDice(
     launched.state,
     sailing.map((a) => {
       const type = a.shipType ?? 'standard';
-      return { id: `r${state.round}-${a.playerId}`, owner: a.playerId, cargo: a.load, type, arriveRound: state.round + shipDelay(state.rules, type), rawRoll: 0, outcome: null };
+      return {
+        id: `r${state.round}-${a.playerId}`,
+        owner: a.playerId,
+        cargo: a.load,
+        type,
+        arriveRound: state.round + shipDelay(state.rules, type),
+        rawRoll: 0,
+        outcome: null,
+        ...(a.raise === true ? { raised: true as const } : {}),
+        ...(a.privateLoad === undefined ? {} : { privateCargo: a.privateLoad }),
+      };
     }),
   );
   const { ships } = rolled;
@@ -45,11 +62,12 @@ export function resolveInvest(state: MatchState): Step {
     },
     events: [
       ...built.events,
+      ...materials.events,
       ...(builds.length > 0 ? [{ type: 'buildings-built' as const, round: state.round, builds }] : []),
       {
         type: 'ships-launched',
         round: state.round,
-        ships: ships.map((s) => ({ id: s.id, owner: s.owner, type: s.type, outcome: null })),
+        ships: ships.map((s) => ({ id: s.id, owner: s.owner, type: s.type, outcome: null, ...(s.raised === true ? { raised: true as const } : {}) })),
         stayedInPort: state.players.map((p) => p.id).filter((id) => !ships.some((s) => s.owner === id)),
       },
       ...launched.events,
@@ -81,14 +99,32 @@ function build({ playerId, building }: Build): StepFn {
   };
 }
 
+/** V0.8 prototype: pays and applies every material action (public), before anyone loads. */
+function useMaterials(state: MatchState, actions: readonly Invest[]): Step {
+  const uses = actions.flatMap((a) => (a.material === undefined ? [] : [{ playerId: a.playerId, material: a.material }]));
+  if (uses.length === 0) {
+    return { state, events: [] };
+  }
+  const next = uses.reduce((s, use) => updatePlayer(s, use.playerId, (p) => applyMaterial(s.rules, p, use.material)), state);
+  const events: MatchEvent[] = [{ type: 'materials-used', round: state.round, uses }];
+  return { state: next, events };
+}
+
+/** V0.8 prototype: the tradehouse owners' protected goods, kept secret in the round state until the market settles. */
+function protections(actions: readonly Invest[]): Record<PlayerId, GoodId> | null {
+  const named = actions.flatMap((a) => (a.protect === undefined ? [] : [[a.playerId, a.protect] as const]));
+  return named.length === 0 ? null : Object.fromEntries(named);
+}
+
 function sail(action: Invest): StepFn {
   return (current) => {
     const unloaded = updatePlayer(current, action.playerId, (p) => ({
       ...p,
-      stock: subtractGoods(p.stock, action.load),
+      stock: subtractGoods(p.stock, action.privateLoad === undefined ? action.load : addGoods(action.load, action.privateLoad)),
       lastShip: { ...p.lastShip, [action.shipType ?? 'standard']: current.round },
     }));
-    const cost = shipCostFor(current.rules, playerOf(current, action.playerId).island, action.shipType, action.load);
+    const loaded = action.privateLoad === undefined ? action.load : addGoods(action.load, action.privateLoad);
+    const cost = shipCostFor(current.rules, playerOf(current, action.playerId).island, action.shipType, loaded);
     return changeCash(unloaded, action.playerId, -cost, 'ship-cost', `r${current.round}-${action.playerId}`);
   };
 }

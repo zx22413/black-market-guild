@@ -5,8 +5,30 @@ export type { MatchConfig } from './engine';
 export { getPendingDecisions, getLegalActions, buildingCost, GUESSABLE_ROLES } from './decisions';
 export { getPlayerView } from './view';
 export type { PlayerView, PublicPlayer, ViewShip } from './view';
-export { RULES_V07, RULES_BUILDINGS, NEUTRAL_TRAIT, arrivalIncomePercent, shipDelay, shipFinalCap, shipTypeAvailable, shipIncomePercent, shipSinks } from './rules';
+export { RULES_V07, RULES_BUILDINGS, RULES_V08_PROTO, NEUTRAL_TRAIT, arrivalIncomePercent, shipDelay, shipFinalCap, shipTypeAvailable, shipIncomePercent, shipSinks } from './rules';
 export type { BuildingRule, IslandTrait, Rules } from './rules';
+export type { CrateTable, V08Rules } from './v08-rules';
+export { V08_OFF } from './v08-rules';
+export {
+  applyMaterial,
+  byPriceDesc,
+  crateTerms,
+  cratesOn,
+  extraDieFrom,
+  facilityOf,
+  hasVariant,
+  materialCost,
+  materialOptions,
+  materialsOn,
+  privateCapacity,
+  protectedGoods,
+  rerolls,
+  salvageCount,
+  skillLevel,
+  takeHighest,
+  v08On,
+} from './v08';
+export type { CrateContext, CrateTerms } from './v08';
 export { buildingValue } from './scoring';
 export { priceAt } from './goods';
 export { capacityFor, cooldownFor, producedFor, roleFee, shipCostFor, shipFinalCapFor, traitOf } from './islands';
