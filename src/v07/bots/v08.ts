@@ -131,7 +131,10 @@ function loadOutlook(view: PlayerView, plan: Plan, load: Goods, privateLoad: Goo
     return price * (secret ? 1 : 1 - seizureRisk(g));
   };
   const cargoValue = GOODS.reduce((sum, g) => sum + load[g] * unit(g), 0);
-  const privateValue = GOODS.reduce((sum, g) => sum + privateLoad[g] * priceFor(view, g, 0, cache), 0);
+  // Private crates move the price like cargo when they count as arrivals (hidden.privateArrives).
+  const privateUnit = (g: GoodId) => priceFor(view, g, rules.v08.hidden.privateArrives === 1 ? load[g] + privateLoad[g] : 0, cache);
+  const privateValue = GOODS.reduce((sum, g) => sum + privateLoad[g] * privateUnit(g), 0);
+  const privateLoses = rules.v08.hidden.privateLoses === 1;
   let income = 0;
   let sunk = 0;
   let lostValue = 0;
@@ -141,10 +144,13 @@ function loadOutlook(view: PlayerView, plan: Plan, load: Goods, privateLoad: Goo
       sunk += p * (cargoValue + privateValue);
       continue;
     }
-    const lost = takeHighest(rules, load, terms.lose, view.prices);
+    // With hidden.privateLoses the private crates join the pool the losses come from (regular crates of a good first).
+    const pool = privateLoses ? takeHighest(rules, add(load, privateLoad), terms.lose, view.prices) : takeHighest(rules, load, terms.lose, view.prices);
+    const lost: Goods = { wood: Math.min(pool.wood, load.wood), iron: Math.min(pool.iron, load.iron), spice: Math.min(pool.spice, load.spice), arms: Math.min(pool.arms, load.arms) };
     const lostHere = GOODS.reduce((sum, g) => sum + lost[g] * unit(g), 0);
-    lostValue += p * lostHere;
-    income += p * (((cargoValue - lostHere) * terms.percent) / 100 + privateValue);
+    const privateLost = privateLoses ? GOODS.reduce((sum, g) => sum + (pool[g] - lost[g]) * privateUnit(g), 0) : 0;
+    lostValue += p * (lostHere + privateLost);
+    income += p * (((cargoValue - lostHere) * terms.percent) / 100 + privateValue - privateLost);
   }
   const result = { income, sunk, lost: lostValue };
   cache.loads.set(key, result);
@@ -185,7 +191,14 @@ function voyageWorth(view: PlayerView, player: PublicPlayer, type: ShipTypeId, l
   const raised =
     type === 'gambler' && level > 0 ? RAISE_SWINGS.reduce((sum, [shift, w]) => sum + w * Math.max(0, raiseEdge(view, { ...plan, modifier: plan.modifier + shift }, crates, cache)), 0) : 0;
   const share = typicalShare(view, plan, crates, cache) + raised;
-  const privateCrates = type === 'hidden' ? privateCapacity(view.rules, level) * price * (1 - sinkChance(view, plan, cache)) : 0;
+  const extra = type === 'hidden' ? privateCapacity(view.rules, level) : 0;
+  // Private crates that join the losses are worth what one more crate adds to a full load; otherwise they sell unless sunk.
+  const privateCrates =
+    extra === 0
+      ? 0
+      : view.rules.v08.hidden.privateLoses === 1
+        ? (typicalShare(view, plan, crates + extra, cache) * (crates + extra) - typicalShare(view, plan, crates, cache) * crates) * price
+        : extra * price * (1 - sinkChance(view, plan, cache));
   const salvage = type === 'freighter' ? salvageCount(view.rules, level) * otherSinks(view) * price : 0;
   return share * crates * price + privateCrates + salvage;
 }

@@ -37,7 +37,11 @@ export interface V08Rules {
   readonly maxBuildings: number;
   readonly standard: { readonly rerollAtMostL2: number };
   readonly freighter: { readonly salvageL1: number; readonly salvageL2: number };
-  readonly hidden: { readonly privateL1: number; readonly privateL2: number };
+  /**
+   * `privateArrives`: 1 = private crates count toward the round's arrival volume (they move prices like any cargo).
+   * `privateLoses`: 1 = private crates join the crate table's losses (highest price first, with the regular cargo).
+   */
+  readonly hidden: { readonly privateL1: number; readonly privateL2: number; readonly privateArrives: number; readonly privateLoses: number };
   readonly breaker: { readonly extraFromL1: number; readonly extraFromL2: number };
   readonly repairyard: { readonly fromFinal: number; readonly toFinal: number; readonly save: number };
   readonly armory: { readonly lootPercent: number };
@@ -72,7 +76,7 @@ export const V08_OFF: V08Rules = {
   maxBuildings: 1,
   standard: { rerollAtMostL2: 3 },
   freighter: { salvageL1: 1, salvageL2: 2 },
-  hidden: { privateL1: 1, privateL2: 2 },
+  hidden: { privateL1: 1, privateL2: 2, privateArrives: 0, privateLoses: 0 },
   breaker: { extraFromL1: 6, extraFromL2: 5 },
   repairyard: { fromFinal: 2, toFinal: 3, save: 1 },
   armory: { lootPercent: 35 },

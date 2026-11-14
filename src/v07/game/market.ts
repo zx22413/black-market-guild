@@ -21,10 +21,14 @@ export function settleMarket(state: MatchState): Step {
   const { demand } = state.roundState;
   const arrivedShips = ships.filter((s) => s.outcome === 'arrived');
   const sunkShips = ships.filter((s) => s.outcome === 'sank');
-  // V0.8 prototype: lost crates never arrive; crates a freighter salvages do (private crates never count).
+  // V0.8 prototype: lost crates never arrive; crates a freighter salvages do; private crates only with hidden.privateArrives.
   const claims = salvageClaims(state, arrivedShips, sunkShips);
   const landed = arrivedShips.reduce((sum, s) => addGoods(sum, arrivedCrates(s)), mapGoods(() => 0));
-  const arrived = claims.reduce((sum, c) => addGoods(sum, c.goods), landed);
+  const privateLanded =
+    rules.v08.hidden.privateArrives === 1
+      ? arrivedShips.reduce((sum, s) => (s.privateCargo === undefined ? sum : addGoods(sum, s.privateCargo)), landed)
+      : landed;
+  const arrived = claims.reduce((sum, c) => addGoods(sum, c.goods), privateLanded);
   const prices: Prices = { before: state.prices, after: mapGoods((g) => nextPriceStep(rules, g, state.prices[g], arrived[g], demand[g])) };
   const settled: MatchEvent = { type: 'market-settled', round: state.round, demand, arrived, priceBefore: prices.before, priceAfter: prices.after };
   const protect = state.roundState.protect;

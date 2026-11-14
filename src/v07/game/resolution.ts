@@ -1,6 +1,6 @@
 import { holds, playerOf } from './cash';
 import { shipFinalCapFor, traitOf } from './islands';
-import { priceAt } from './goods';
+import { mapGoods, priceAt } from './goods';
 import { nextInt, type RngState } from './rng';
 import { shipSinks } from './rules';
 import { GOODS, type Deployment, type MatchEvent, type MatchState, type Ship, type Step, type VoyageModifier, type VoyageOutcome } from './types';
@@ -146,6 +146,20 @@ function rollSkills(state: MatchState, ship: Ship): Rolled {
   return { state, ship, events: [] };
 }
 
+/**
+ * V0.8 prototype: the crates an arrived ship loses. With hidden.privateLoses the private crates join the pool (highest
+ * price first, regular crates of a good before private ones); `privateCargo` then keeps only the private crates that arrive.
+ */
+function loseCrates(state: MatchState, ship: Ship, count: number): Pick<Ship, 'lost' | 'privateCargo'> {
+  const priv = ship.privateCargo;
+  if (priv === undefined || state.rules.v08.hidden.privateLoses !== 1) {
+    return { lost: takeHighest(state.rules, ship.cargo, count, state.prices), ...(priv === undefined ? {} : { privateCargo: priv }) };
+  }
+  const pool = takeHighest(state.rules, mapGoods((g) => ship.cargo[g] + priv[g]), count, state.prices);
+  const lost = mapGoods((g) => Math.min(pool[g], ship.cargo[g]));
+  return { lost, privateCargo: mapGoods((g) => priv[g] - (pool[g] - lost[g])) };
+}
+
 function resolveVoyagesV08(state: MatchState): Step {
   let current = state;
   const skillEvents: MatchEvent[] = [];
@@ -165,8 +179,8 @@ function resolveVoyagesV08(state: MatchState): Step {
       skillEvents.push(effect(current, ship, 'repairyard', saved, paidAt(current, ship, terms) - paidAt(current, ship, without)));
     }
     // Lost crates go highest price first, at the price before this round's market change.
-    const lost = terms.sinks ? undefined : takeHighest(current.rules, ship.cargo, terms.lose, current.prices);
-    return { ...ship, outcome: terms.sinks ? 'sank' : 'arrived', ...(lost === undefined ? {} : { lost }) };
+    if (terms.sinks) return { ...ship, outcome: 'sank' };
+    return { ...ship, outcome: 'arrived', ...loseCrates(current, ship, terms.lose) };
   });
   return {
     state: { ...current, roundState: { ...current.roundState, ships } },

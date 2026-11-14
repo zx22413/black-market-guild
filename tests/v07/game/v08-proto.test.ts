@@ -19,7 +19,9 @@ import { G, cash, edit, find, plain, playRound, withDemand } from './helpers';
 /** V0.8 simulation prototype (src/v07/game/v08-rules.ts): test values, not rules. */
 const V08 = RULES_V08_PROTO;
 
-const ready = (): MatchState => withDemand(plain(4, V08).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(4, V08)), G(2, 2, 2, 1));
+const ready = (rules = V08): MatchState => withDemand(plain(4, rules).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(4, rules)), G(2, 2, 2, 1));
+/** The prototype before the 2026-11-14 tuning: private crates stayed out of the arrival volume. */
+const PRIVATE_OUTSIDE = { ...V08, v08: { ...V08.v08, hidden: { ...V08.v08.hidden, privateArrives: 0 } } };
 const resolved = (events: ReturnType<typeof playRound>['events'], shipId = 'r1-p1') => find(events, 'ship-resolved').find((e) => e.shipId === shipId)!;
 const effects = (events: ReturnType<typeof playRound>['events'], effect: string) => find(events, 'v08-effect').filter((e) => e.effect === effect);
 const invests = (state: MatchState, playerId = 'p1') => getLegalActions(state, playerId).filter((a): a is Extract<Action, { type: 'invest' }> => a.type === 'invest');
@@ -131,21 +133,52 @@ describe('V0.8 prototype: ship skills', () => {
     expect(() => playRound(ready(), { loads: { p1: G(2) }, shipTypes: { p1: 'gambler' }, invest: { p1: { raise: true } } })).toThrow(/illegal/);
   });
 
-  it('carries private crates on the hidden ship: sold in full, outside the arrival volume, safe from customs', () => {
-    const state = edit(ready(), 'p1', { skills: { hidden: 1 } });
-    expect(invests(state).some((a) => a.material === undefined && a.shipType === 'hidden' && a.privateLoad !== undefined && a.privateLoad.arms + a.privateLoad.wood + a.privateLoad.iron + a.privateLoad.spice > 1)).toBe(false);
-    const { events } = playRound(state, {
+  const privateRound = (rules = V08) =>
+    playRound(edit(ready(rules), 'p1', { skills: { hidden: 1 } }), {
       loads: { p1: G(1) },
       shipTypes: { p1: 'hidden' },
       invest: { p1: { privateLoad: G(0, 0, 0, 1) } },
       roles: { p2: ['customs', 'p1'] },
       named: { p2: 'arms' },
     });
-    // Arms did not arrive against a demand of 1, so it rises to 235; wood 1 against 2 rises to 150.
-    expect(find(events, 'market-settled')[0]!.arrived).toEqual(G(1));
-    expect(cash(events, 'sale', 'p1')).toBe(150 + 235);
+
+  it('carries private crates on the hidden ship: sold in full and safe from customs', () => {
+    const state = edit(ready(), 'p1', { skills: { hidden: 1 } });
+    expect(invests(state).some((a) => a.material === undefined && a.shipType === 'hidden' && a.privateLoad !== undefined && a.privateLoad.arms + a.privateLoad.wood + a.privateLoad.iron + a.privateLoad.spice > 1)).toBe(false);
+    const { events } = privateRound();
+    // The private arms count toward arrivals: 1 against a demand of 1 stays at 200; wood 1 against 2 rises to 150.
+    expect(find(events, 'market-settled')[0]!.arrived).toEqual(G(1, 0, 0, 1));
+    expect(cash(events, 'sale', 'p1')).toBe(150 + 200);
     expect(find(events, 'goods-confiscated')).toEqual([]);
     expect(resolved(events).privateCargo).toEqual(G(0, 0, 0, 1));
+  });
+
+  it('loses private crates with the regular cargo, highest price first', () => {
+    const four = playRound(edit(ready(), 'p1', { skills: { hidden: 1 } }), {
+      loads: { p1: G(1) },
+      shipTypes: { p1: 'hidden' },
+      invest: { p1: { privateLoad: G(0, 0, 0, 1) } },
+      rolls: { p1: 4 },
+    });
+    // A 4 loses one crate: the private arms (200) before the wood (125).
+    expect(resolved(four.events)).toMatchObject({ outcome: 'arrived', lost: G(0), privateCargo: G(0) });
+    expect(find(four.events, 'market-settled')[0]!.arrived).toEqual(G(1));
+    const outside = { ...V08, v08: { ...V08.v08, hidden: { ...V08.v08.hidden, privateLoses: 0 } } };
+    const kept = playRound(edit(ready(outside), 'p1', { skills: { hidden: 1 } }), {
+      loads: { p1: G(1) },
+      shipTypes: { p1: 'hidden' },
+      invest: { p1: { privateLoad: G(0, 0, 0, 1) } },
+      rolls: { p1: 4 },
+    });
+    // Without privateLoses the private arms are safe and the wood is lost instead.
+    expect(resolved(kept.events)).toMatchObject({ lost: G(1), privateCargo: G(0, 0, 0, 1) });
+  });
+
+  it('keeps private crates out of the arrival volume when hidden.privateArrives is 0', () => {
+    const { events } = privateRound(PRIVATE_OUTSIDE);
+    // Arms did not arrive against a demand of 1, so it rises to 235.
+    expect(find(events, 'market-settled')[0]!.arrived).toEqual(G(1));
+    expect(cash(events, 'sale', 'p1')).toBe(150 + 235);
   });
 
   it('rolls the breaker one more die on a 6 (level 2: on a 5 or 6) before the modifiers', () => {

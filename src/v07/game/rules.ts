@@ -322,5 +322,6 @@ export function shipTypeAvailable(rules: Rules, type: ShipTypeId, lastLaunched: 
 export const RULES_V08_PROTO: Rules = {
   ...RULES_V07,
   version: 'V0.8-proto',
-  v08: { ...V08_OFF, crates: 1, skills: 1, buildings: 1, islandVariants: 1 },
+  // 2026-11-14 user choices after tuning: private crates count toward arrival volume and join the crate losses.
+  v08: { ...V08_OFF, crates: 1, skills: 1, buildings: 1, islandVariants: 1, hidden: { ...V08_OFF.hidden, privateArrives: 1, privateLoses: 1 } },
 };
