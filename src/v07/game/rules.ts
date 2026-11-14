@@ -323,8 +323,15 @@ export const RULES_V08_PROTO: Rules = {
   ...RULES_V07,
   version: 'V0.8-proto',
   // 2026-11-14 tuning baseline (docs/proposals/2026-11-playtest-feedback-and-direction.md §10.9), test values only:
-  // the gambler's fee drops to 50 G.
-  ships: { ...RULES_V07.ships, types: { ...RULES_V07.ships.types, gambler: { ...RULES_V07.ships.types.gambler, fee: 50 } } },
+  // the gambler's fee drops to 50 G; the freighter, the steadiest ship, costs 75 G (2026-11-15).
+  ships: {
+    ...RULES_V07.ships,
+    types: {
+      ...RULES_V07.ships.types,
+      gambler: { ...RULES_V07.ships.types.gambler, fee: 50 },
+      freighter: { ...RULES_V07.ships.types.freighter, fee: 75 },
+    },
+  },
   // Private crates count toward arrival volume and join the crate losses; arms beyond demand are inspected (the owner's
   // smuggler covers them); the breaker's top multipliers are lower; the repairyard costs 2 wood + 1 iron; opening a ship
   // skill costs 2 iron and upgrading 1 wood + 2 iron (so the mine island can afford them).
@@ -344,6 +351,8 @@ export const RULES_V08_PROTO: Rules = {
     // 2026-11-15: the breaker's extra die is 1d3; the hidden ship's level 1 covers it like the owner's own smuggler (no
     // role, no cooldown) and only level 2 adds one private crate (the inspection still reaches uncovered private crates).
     breaker: { ...V08_OFF.breaker, extraDieSides: 3 },
+    // 2026-11-15: a sunk ship's crates can be salvaged only once (no crates out of thin air for several freighters).
+    freighter: { ...V08_OFF.freighter, salvageShared: 1 },
     inspection: { enabled: 1, allowance: 0 },
     // 2026-11-15: skills level up by use (2 launches after opening) instead of the material upgrade.
     levelUp: { byLaunches: 2 },

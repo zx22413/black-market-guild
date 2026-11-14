@@ -114,6 +114,7 @@ interface SalvageClaim {
  */
 function salvageClaims(state: MatchState, arrivedShips: readonly Ship[], sunkShips: readonly Ship[]): SalvageClaim[] {
   if (!skillsOn(state.rules)) return [];
+  if (state.rules.v08.freighter.salvageShared === 1) return sharedSalvage(state, arrivedShips, sunkShips);
   return arrivedShips
     .filter((f) => f.type === 'freighter')
     .flatMap((f) => {
@@ -125,6 +126,33 @@ function salvageClaims(state: MatchState, arrivedShips: readonly Ship[], sunkShi
             .map((s) => ({ playerId: f.owner, shipId: f.id, goods: takeHighest(state.rules, s.cargo, count, state.prices) }))
             .filter((c) => units(c.goods) > 0);
     });
+}
+
+/**
+ * V0.8 prototype (v08.freighter.salvageShared): each sunk ship's crates are one pool. The arriving freighters take from it
+ * in turn, one crate at a time (highest price first, freighters in ship order), each up to its skill's count, until the
+ * pool runs out.
+ */
+function sharedSalvage(state: MatchState, arrivedShips: readonly Ship[], sunkShips: readonly Ship[]): SalvageClaim[] {
+  const salvagers = arrivedShips
+    .filter((f) => f.type === 'freighter')
+    .map((f) => ({ ship: f, count: salvageCount(state.rules, skillLevel(state.rules, playerOf(state, f.owner), 'freighter')) }))
+    .filter((f) => f.count > 0);
+  return sunkShips.flatMap((sunk) => {
+    const takers = salvagers.filter((f) => f.ship.owner !== sunk.owner);
+    const taken = takers.map(() => mapGoods(() => 0));
+    let pool = sunk.cargo;
+    const rounds = Math.max(0, ...takers.map((f) => f.count));
+    for (let turn = 0; turn < rounds; turn += 1) {
+      takers.forEach((f, i) => {
+        if (turn >= f.count || units(pool) === 0) return;
+        const crate = takeHighest(state.rules, pool, 1, state.prices);
+        pool = subtractGoods(pool, crate);
+        taken[i] = addGoods(taken[i]!, crate);
+      });
+    }
+    return takers.map((f, i) => ({ playerId: f.ship.owner, shipId: f.ship.id, goods: taken[i]! })).filter((c) => units(c.goods) > 0);
+  });
 }
 
 /** V0.8 prototype: salvaged crates sell at the new price, in full, untouched by roles. */

@@ -36,7 +36,8 @@ export interface V08Rules {
   readonly maxLevel: number;
   readonly maxBuildings: number;
   readonly standard: { readonly rerollAtMostL2: number };
-  readonly freighter: { readonly salvageL1: number; readonly salvageL2: number };
+  /** `salvageShared`: 1 = a sunk ship's crates can be salvaged only once, shared by the arriving freighters in turn. */
+  readonly freighter: { readonly salvageL1: number; readonly salvageL2: number; readonly salvageShared: number };
   /**
    * `privateArrives`: 1 = private crates count toward the round's arrival volume (they move prices like any cargo).
    * `privateLoses`: 1 = private crates join the crate table's losses (highest price first, with the regular cargo).
@@ -91,7 +92,7 @@ export const V08_OFF: V08Rules = {
   maxLevel: 2,
   maxBuildings: 1,
   standard: { rerollAtMostL2: 3 },
-  freighter: { salvageL1: 1, salvageL2: 2 },
+  freighter: { salvageL1: 1, salvageL2: 2, salvageShared: 0 },
   hidden: { privateL1: 1, privateL2: 2, privateArrives: 0, privateLoses: 0, privateSafeFromInspectionL2: 0, feeFreeL1: 0, selfCoverL1: 0 },
   breaker: { extraFromL1: 6, extraFromL2: 5, extraDieSides: 6 },
   repairyard: { fromFinal: 2, toFinal: 3, save: 1 },

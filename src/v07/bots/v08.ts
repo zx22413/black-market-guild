@@ -206,6 +206,16 @@ function sinkChance(view: PlayerView, plan: Plan, cache: V08Cache): number {
 
 const otherSinks = (view: PlayerView): number => (view.players.length - 1) * SAIL_RATE * OTHER_SINK;
 
+/**
+ * Crates I expect to salvage from each sunk ship: with shared salvage (v08.freighter.salvageShared) the opponents who
+ * opened the freighter skill take from the same pool, so my share shrinks (a sunk ship holds about 3 crates).
+ */
+function salvageShare(view: PlayerView, count: number): number {
+  if (view.rules.v08.freighter.salvageShared !== 1) return count;
+  const rivals = view.players.filter((p) => p.id !== view.playerId && (p.skills?.freighter ?? 0) > 0).length * SAIL_RATE * 0.5;
+  return Math.min(count, 3 / (1 + rivals));
+}
+
 /** One voyage on `type` with a skill at `level`: its expected value over a typical full load. */
 function voyageWorth(view: PlayerView, player: PublicPlayer, type: ShipTypeId, level: number, facility: V08BuildingId | null, cache: V08Cache): number {
   const crates = shipCrates(view, player, type);
@@ -223,7 +233,7 @@ function voyageWorth(view: PlayerView, player: PublicPlayer, type: ShipTypeId, l
       : view.rules.v08.hidden.privateLoses === 1
         ? (typicalShare(view, plan, crates + extra, cache) * (crates + extra) - typicalShare(view, plan, crates, cache) * crates) * price
         : extra * price * (1 - sinkChance(view, plan, cache));
-  const salvage = type === 'freighter' ? salvageCount(view.rules, level) * otherSinks(view) * price : 0;
+  const salvage = type === 'freighter' ? salvageShare(view, salvageCount(view.rules, level)) * otherSinks(view) * price : 0;
   // v08.hidden.feeFreeL1: an opened hidden skill saves the ship's own fee on every voyage.
   const feeSaved = type === 'hidden' ? shipCostFor(view.rules, player.island, type, undefined, 0) - shipCostFor(view.rules, player.island, type, undefined, level) : 0;
   // v08.hidden.selfCoverL1: about one arms crate a voyage kept from the inspection.
@@ -261,6 +271,19 @@ function buildingExtras(view: PlayerView, player: PublicPlayer, building: V08Bui
   }
 }
 
+/** Spread of a round's ship values (events, roles, prices), in G: how soft the maximum in fleetBest is. */
+const FLEET_SPREAD = 80;
+
+/**
+ * My best voyage this match, roughly: a soft maximum (log-sum-exp) over the ship types of a typical voyage's value
+ * net of the ship fee, at the given skill levels. A type that is rarely my best counts little.
+ */
+function fleetBest(view: PlayerView, player: PublicPlayer, levelOf: (type: ShipTypeId) => number, facility: V08BuildingId | null, cache: V08Cache): number {
+  const values = SHIP_TYPE_IDS.map((t) => voyageWorth(view, player, t, levelOf(t), facility, cache) - shipCostFor(view.rules, player.island, t, undefined, levelOf(t)));
+  const top = Math.max(...values);
+  return top + FLEET_SPREAD * Math.log(values.reduce((sum, v) => sum + Math.exp((v - top) / FLEET_SPREAD), 0));
+}
+
 /** The expected gain, over the voyages after this one, of taking a material action (before its materials' cost). */
 function materialWorth(view: PlayerView, material: MaterialAction, persona: Personality, cache: V08Cache): number {
   const key = material.kind === 'build' ? `b|${material.building}` : `${material.kind}|${material.ship}`;
@@ -283,10 +306,14 @@ function materialWorth(view: PlayerView, material: MaterialAction, persona: Pers
     const taste = TYPE_USE[material.ship] * (persona.shipTaste?.[material.ship] ?? 1);
     const { byLaunches } = rules.v08.levelUp;
     if (material.kind === 'open' && byLaunches > 0) {
-      // Levelling by use: the first `byLaunches` uses sail at level 1, the rest at level 2.
-      const uses = futureVoyages(view) * taste + 1;
-      const gain2 = voyageWorth(view, player, material.ship, 2, facility, cache) - voyageWorth(view, player, material.ship, 0, facility, cache);
-      const worth = Math.max(0, gain * Math.min(uses, byLaunches) + gain2 * Math.max(0, uses - byLaunches)) * persona.builder;
+      // Levelling by use. A skill only pays on voyages where its ship is the one I sail, so value it by how much it lifts
+      // my best voyage (a soft maximum over the ship types, net of fees), not by an assumed share of use. The first
+      // `byLaunches` uses sail at level 1, the rest at level 2; the gambler rests every other round.
+      const base = fleetBest(view, player, (t) => skillLevel(rules, player, t), facility, cache);
+      const lift = (level: number) => fleetBest(view, player, (t) => (t === material.ship ? level : skillLevel(rules, player, t)), facility, cache) - base;
+      const uses = (futureVoyages(view) + 1) * (material.ship === 'gambler' ? 0.5 : 1);
+      const worth =
+        Math.max(0, lift(1) * Math.min(uses, byLaunches) + lift(2) * Math.max(0, uses - byLaunches)) * persona.builder * (persona.shipTaste?.[material.ship] ?? 1);
       cache.materials.set(key, worth);
       return worth;
     }
@@ -366,7 +393,7 @@ export function scoreInvestV08(view: PlayerView, action: Invest, persona: Person
     const outlook = loadOutlook(view, plan, action.load, privateLoad, action.protect ?? null, cache);
     score += outlook.income - persona.risk * (outlook.sunk + 0.5 * outlook.lost);
     if (type === 'freighter') {
-      score += salvageCount(rules, level) * otherSinks(view) * averagePrice(view);
+      score += salvageShare(view, salvageCount(rules, level)) * otherSinks(view) * averagePrice(view);
     }
     if (action.raise === true) {
       const cargo = GOODS.reduce((sum, g) => sum + action.load[g] * currentPrice(view, g), 0);

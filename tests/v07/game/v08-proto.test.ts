@@ -302,6 +302,22 @@ describe('V0.8 prototype: ship skills', () => {
     expect(cash(events, 'salvage-sale', 'p1')).toBe(priceAt(V08, 'arms', market.priceAfter.arms));
     expect(effects(events, 'salvage')[0]).toMatchObject({ playerId: 'p1', crates: 1 });
   });
+
+  it('salvages each sunk ship only once: arriving freighters share its crates in turn', () => {
+    const skilled = edit(edit(ready(), 'p1', { skills: { freighter: 1 } }), 'p2', { skills: { freighter: 1 } });
+    const launched = playRound(skilled, { loads: { p1: G(2), p2: G(2) }, shipTypes: { p1: 'freighter', p2: 'freighter' } });
+    const sinks = (state: MatchState) => playRound(edit(state, 'p3', { stock: G(0, 0, 0, 1) }), { loads: { p3: G(0, 0, 0, 1) }, rolls: { p1: 6, p2: 6, p3: 1 } });
+    // p3's ship sinks with one crate: p1 (first in ship order) takes it, p2 gets nothing.
+    expect(effects(sinks(launched.state).events, 'salvage').map((e) => [e.playerId, e.crates])).toEqual([['p1', 1]]);
+    // Without sharing, the bank gives each freighter its own crate.
+    const separate = { ...V08, v08: { ...V08.v08, freighter: { ...V08.v08.freighter, salvageShared: 0 } } };
+    const skilledSeparate = edit(edit(ready(separate), 'p1', { skills: { freighter: 1 } }), 'p2', { skills: { freighter: 1 } });
+    const launchedSeparate = playRound(skilledSeparate, { loads: { p1: G(2), p2: G(2) }, shipTypes: { p1: 'freighter', p2: 'freighter' } });
+    expect(effects(sinks(launchedSeparate.state).events, 'salvage').map((e) => [e.playerId, e.crates])).toEqual([
+      ['p1', 1],
+      ['p2', 1],
+    ]);
+  });
 });
 
 describe('V0.8 prototype: buildings and island variants', () => {
