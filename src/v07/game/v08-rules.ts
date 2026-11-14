@@ -45,6 +45,12 @@ export interface V08Rules {
   readonly breaker: { readonly extraFromL1: number; readonly extraFromL2: number };
   readonly repairyard: { readonly fromFinal: number; readonly toFinal: number; readonly save: number };
   readonly armory: { readonly lootPercent: number };
+  /**
+   * 軍火超量查緝: 1 = arriving arms beyond demand + `allowance` are seized by the bank (not a role, so hidden ships too),
+   * one crate at a time from the uncovered ship with the most arms left (ties: richer owner first, then ship order).
+   * The owner's own smuggler covers the ship (not at the smuggler port, §11.2). Seized crates still count as arrived.
+   */
+  readonly inspection: { readonly enabled: number; readonly allowance: number };
 }
 
 const g = (partial: Partial<Record<GoodId, number>>): Goods => ({ wood: 0, iron: 0, spice: 0, arms: 0, ...partial });
@@ -80,4 +86,5 @@ export const V08_OFF: V08Rules = {
   breaker: { extraFromL1: 6, extraFromL2: 5 },
   repairyard: { fromFinal: 2, toFinal: 3, save: 1 },
   armory: { lootPercent: 35 },
+  inspection: { enabled: 0, allowance: 0 },
 };

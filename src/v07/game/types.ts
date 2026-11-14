@@ -235,6 +235,7 @@ export const V08_EFFECTS = [
   'tradehouse',
   'pirate-toll',
   'customs-halved',
+  'inspected',
 ] as const;
 export type V08Effect = (typeof V08_EFFECTS)[number];
 

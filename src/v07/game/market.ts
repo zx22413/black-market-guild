@@ -33,8 +33,10 @@ export function settleMarket(state: MatchState): Step {
   const settled: MatchEvent = { type: 'market-settled', round: state.round, demand, arrived, priceBefore: prices.before, priceAfter: prices.after };
   const protect = state.roundState.protect;
   const named: MatchEvent[] = protect === undefined ? [] : [{ type: 'trade-protected', round: state.round, protect }];
+  const inspected = inspectArms(state, arrivedShips, arrived.arms, prices);
   const result = chain({ ...state, prices: prices.after }, [
-    ...arrivedShips.map((ship) => settleArrival(ship, prices)),
+    (s) => ({ state: s, events: inspected.events }),
+    ...inspected.ships.map((ship) => settleArrival(ship, prices)),
     ...claims.map((claim) => paySalvage(claim, prices)),
     ...sunkShips.map((ship) => settleSinking(ship, prices)),
     payCommission,
@@ -43,6 +45,43 @@ export function settleMarket(state: MatchState): Step {
     spoilSpice,
   ]);
   return { state: result.state, events: [settled, ...named, ...result.events] };
+}
+
+/**
+ * V0.8 prototype, 軍火超量查緝 (v08.inspection): arriving arms beyond demand + allowance are seized by the bank, one crate
+ * at a time from the uncovered ship with the most arms left (ties: richer owner first, then ship order). Regular crates
+ * go before private ones; seized crates are added to the ship's lost crates, so the owner, customs and pirates never see them.
+ */
+function inspectArms(state: MatchState, ships: readonly Ship[], arrivedArms: number, prices: Prices): { ships: readonly Ship[]; events: MatchEvent[] } {
+  const { inspection } = state.rules.v08;
+  const excess = arrivedArms - state.roundState.demand.arms - inspection.allowance;
+  if (inspection.enabled !== 1 || excess <= 0) return { ships, events: [] };
+  const armsOf = (ship: Ship): number => arrivedCrates(ship).arms + (ship.privateCargo?.arms ?? 0);
+  const left = new Map(ships.map((ship) => [ship.id, armsOf(ship)]));
+  const open = ships.filter((ship) => !covered(state, ship, 'arms'));
+  const taken = new Map<string, number>();
+  for (let remaining = excess; remaining > 0; remaining -= 1) {
+    const pick = open
+      .filter((ship) => (left.get(ship.id) ?? 0) > 0)
+      .sort((a, b) => (left.get(b.id) ?? 0) - (left.get(a.id) ?? 0) || playerOf(state, b.owner).cash - playerOf(state, a.owner).cash)[0];
+    if (pick === undefined) break;
+    left.set(pick.id, (left.get(pick.id) ?? 0) - 1);
+    taken.set(pick.id, (taken.get(pick.id) ?? 0) + 1);
+  }
+  const price = priceAt(state.rules, 'arms', prices.after.arms);
+  const events = ships.flatMap((ship) => {
+    const n = taken.get(ship.id) ?? 0;
+    return n === 0 ? [] : [v08Effect(state, ship.owner, ship.id, 'inspected', n, n * price)];
+  });
+  const seized = ships.map((ship): Ship => {
+    const n = taken.get(ship.id) ?? 0;
+    if (n === 0) return ship;
+    const regular = Math.min(n, arrivedCrates(ship).arms);
+    const lost = addGoods(ship.lost ?? mapGoods(() => 0), { ...mapGoods(() => 0), arms: regular });
+    const privateCargo = ship.privateCargo === undefined ? undefined : { ...ship.privateCargo, arms: ship.privateCargo.arms - (n - regular) };
+    return { ...ship, lost, ...(privateCargo === undefined ? {} : { privateCargo }) };
+  });
+  return { ships: seized, events };
 }
 
 /** V0.8 prototype: the crates that reached the market (all of them unless the crate rules lost some). */

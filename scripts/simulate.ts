@@ -215,6 +215,7 @@ const EFFECT_LABELS: Record<string, string> = {
   tradehouse: '商行保價多賺',
   'pirate-toll': '要塞島軍械庫收海盜部署費',
   'customs-halved': '走私港軍械庫保住的海關半數',
+  inspected: '軍火超量查緝（G＝船東損失）',
 };
 
 /** V0.8 prototype section: ship types, crates, material adoption, effects and price moves. */

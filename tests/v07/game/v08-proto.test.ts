@@ -107,6 +107,40 @@ describe('V0.8 prototype: material actions', () => {
   });
 });
 
+describe('V0.8 prototype: arms inspection (軍火超量查緝)', () => {
+  // Arms demand 1. p1 ships 2 arms, p2 ships 1: 3 arrive, so 2 are seized.
+  const armsRound = (state: MatchState, extra: Parameters<typeof playRound>[1] = {}) =>
+    playRound(edit(state, 'p1', { stock: G(3, 3, 1, 3) }), { loads: { p1: G(0, 0, 0, 2), p2: G(0, 0, 0, 1) }, rolls: { p1: 6, p2: 6 }, ...extra });
+  const seized = (events: ReturnType<typeof playRound>['events']) => Object.fromEntries(effects(events, 'inspected').map((e) => [e.playerId, e.crates]));
+
+  it('seizes arms beyond demand from the ship with the most, ties going to the richer owner, then ship order', () => {
+    const { events } = armsRound(ready());
+    // p1 2 → 1, then p1 and p2 tie at 1 with equal cash: ship order takes p1's.
+    expect(seized(events)).toEqual({ p1: 2 });
+    // Seized crates still count as arrived: arms 3 against 1 drops to 165, which p2 sells.
+    expect(find(events, 'market-settled')[0]!.arrived.arms).toBe(3);
+    expect(cash(events, 'sale', 'p1')).toBe(0);
+    expect(cash(events, 'sale', 'p2')).toBe(165);
+  });
+
+  it('reaches the hidden ship, which customs cannot', () => {
+    // The hidden ship's 40 G fee leaves p1 poorer, so the tie goes to p2.
+    expect(seized(armsRound(ready(), { shipTypes: { p1: 'hidden' } }).events)).toEqual({ p1: 1, p2: 1 });
+  });
+
+  it("lets the owner's own smuggler cover the ship, except at the smuggler port", () => {
+    expect(seized(armsRound(ready(), { roles: { p1: ['smuggler', 'p1'] } }).events)).toEqual({ p2: 1 });
+    const port = edit(ready(), 'p1', { island: 'smuggler-port' });
+    expect(seized(armsRound(port, { roles: { p1: ['smuggler', 'p1'] } }).events)).toEqual({ p1: 2 });
+  });
+
+  it('is off in the live rules and spares arms within demand + allowance', () => {
+    expect(RULES_V07.v08.inspection.enabled).toBe(0);
+    const lenient = { ...V08, v08: { ...V08.v08, inspection: { enabled: 1, allowance: 2 } } };
+    expect(seized(armsRound(ready(lenient)).events)).toEqual({});
+  });
+});
+
 describe('V0.8 prototype: ship skills', () => {
   it('rerolls a sinking standard ship once from the match rng (level 2: any final of 3 or less)', () => {
     const l1 = edit(ready(), 'p1', { skills: { standard: 1 } });

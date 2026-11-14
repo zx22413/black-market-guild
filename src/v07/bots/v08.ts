@@ -116,6 +116,18 @@ function priceFor(view: PlayerView, good: GoodId, shipped: number, cache: V08Cac
 }
 
 /**
+ * 軍火超量查緝: the share of my `arms` crates expected to be seized, guessing the others' arrivals from their public
+ * warehouses and spreading the excess over every arriving crate (the real rule takes from the biggest load first).
+ */
+function inspectionShare(view: PlayerView, arms: number): number {
+  const { inspection } = view.rules.v08;
+  if (inspection.enabled !== 1 || arms === 0) return 0;
+  const total = othersExpectedArrivals(view, 'arms') + arms;
+  const excess = total - view.demand.arms - inspection.allowance;
+  return excess <= 0 ? 0 : Math.min(1, excess / total);
+}
+
+/**
  * Expected income of a load on a ship (crates lost highest price first), the expected value sunk, and the expected value
  * of crates lost on arrival. Private crates sell in full when the ship arrives; a protected good keeps today's price.
  */
@@ -125,14 +137,17 @@ function loadOutlook(view: PlayerView, plan: Plan, load: Goods, privateLoad: Goo
   if (hit !== undefined) return hit;
   const { rules } = view;
   const secret = rules.ships.types[plan.type].secret === 1;
+  const inspected = inspectionShare(view, load.arms + privateLoad.arms);
+  // Arms beyond demand may be inspected (v08.inspection), hidden ship or not.
+  const kept = (g: GoodId) => (g === 'arms' ? 1 - inspected : 1);
   const unit = (g: GoodId) => {
     const expected = priceFor(view, g, load[g], cache);
     const price = protect === g ? Math.max(expected, currentPrice(view, g)) : expected;
-    return price * (secret ? 1 : 1 - seizureRisk(g));
+    return price * (secret ? 1 : 1 - seizureRisk(g)) * kept(g);
   };
   const cargoValue = GOODS.reduce((sum, g) => sum + load[g] * unit(g), 0);
   // Private crates move the price like cargo when they count as arrivals (hidden.privateArrives).
-  const privateUnit = (g: GoodId) => priceFor(view, g, rules.v08.hidden.privateArrives === 1 ? load[g] + privateLoad[g] : 0, cache);
+  const privateUnit = (g: GoodId) => priceFor(view, g, rules.v08.hidden.privateArrives === 1 ? load[g] + privateLoad[g] : 0, cache) * kept(g);
   const privateValue = GOODS.reduce((sum, g) => sum + privateLoad[g] * privateUnit(g), 0);
   const privateLoses = rules.v08.hidden.privateLoses === 1;
   let income = 0;
