@@ -322,14 +322,24 @@ export function shipTypeAvailable(rules: Rules, type: ShipTypeId, lastLaunched: 
 export const RULES_V08_PROTO: Rules = {
   ...RULES_V07,
   version: 'V0.8-proto',
-  // 2026-11-14 user choices after tuning: private crates count toward arrival volume and join the crate losses;
-  // arms beyond demand are inspected (the owner's smuggler covers them).
+  // 2026-11-14 tuning baseline (docs/proposals/2026-11-playtest-feedback-and-direction.md §10.9), test values only:
+  // the gambler's fee drops to 50 G.
+  ships: { ...RULES_V07.ships, types: { ...RULES_V07.ships.types, gambler: { ...RULES_V07.ships.types.gambler, fee: 50 } } },
+  // Private crates count toward arrival volume and join the crate losses; arms beyond demand are inspected (the owner's
+  // smuggler covers them); the breaker's top multipliers are lower; the repairyard costs 2 wood + 1 iron; opening a ship
+  // skill costs 2 iron and upgrading 1 wood + 2 iron (so the mine island can afford them).
   v08: {
     ...V08_OFF,
     crates: 1,
     skills: 1,
     buildings: 1,
     islandVariants: 1,
+    tables: { ...V08_OFF.tables, breaker: { ...V08_OFF.tables.breaker, multiplier: { ...V08_OFF.tables.breaker.multiplier, 7: 150, 8: 200, 9: 250 } } },
+    costs: {
+      open: { wood: 0, iron: 2, spice: 0, arms: 0 },
+      upgrade: { wood: 1, iron: 2, spice: 0, arms: 0 },
+      build: { ...V08_OFF.costs.build, repairyard: { wood: 2, iron: 1, spice: 0, arms: 0 } },
+    },
     hidden: { ...V08_OFF.hidden, privateArrives: 1, privateLoses: 1 },
     inspection: { enabled: 1, allowance: 0 },
   },

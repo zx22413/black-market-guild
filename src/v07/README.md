@@ -28,7 +28,7 @@
 
 ## V0.8 模擬原型（`game/v08-rules.ts`、`game/v08.ts`、`bots/v08.ts`）
 
-**實驗，不是規則。** 依 `docs/proposals/2026-11-v08-decision-index.md` §3.1 的討論做成的 Bot 模擬原型，所有數字都是測試值。規則物件多了 `rules.v08`，開關 `crates`、`skills`、`buildings`、`islandVariants` 在 `RULES_V07`、`RULES_BUILDINGS` 都是 0（線上對局行為不變）；`RULES_V08_PROTO` 全開。`npm run simulate -- --v08` 用它跑，`--set v08.…=數字` 可調任何值（例：`--set v08.raise.multiplier=350`、`--set v08.tables.standard.lose.2=1`）。
+**實驗，不是規則。** 依 `docs/proposals/2026-11-v08-decision-index.md` §3.1 的討論做成的 Bot 模擬原型，所有數字都是測試值。規則物件多了 `rules.v08`，開關 `crates`、`skills`、`buildings`、`islandVariants` 在 `RULES_V07`、`RULES_BUILDINGS` 都是 0（線上對局行為不變）；`RULES_V08_PROTO` 全開，並帶 2026-11-14 調整後的基準（孤注號船費 50 G、海嘯號 7／8／9+ 倍率 150／200／250%、私貨算進到港量且照掉貨表、軍火超量查緝 `v08.inspection`、開啟 2 鐵、強化 1 木 2 鐵、修船廠 2 木 1 鐵；見 `docs/proposals/2026-11-playtest-feedback-and-direction.md` §10.9）。`npm run simulate -- --v08` 用它跑，`--set v08.…=數字` 可調任何值（例：`--set v08.raise.multiplier=350`、`--set v08.tables.standard.lose.2=1`）。
 
 | 開關 | 內容 |
 | --- | --- |

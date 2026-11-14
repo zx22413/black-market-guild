@@ -64,7 +64,7 @@ describe('V0.8 prototype: crate-count voyages', () => {
 
   it('lets the breaker multiply past 6 and the freighter lose one crate more without sinking', () => {
     const breaker = playRound(ready(), { loads: { p1: G(2) }, shipTypes: { p1: 'breaker' }, rolls: { p1: 6 }, roles: { p1: ['guard', 'p1'] }, voyageEvent: 'tailwind' });
-    expect(cash(breaker.events, 'sale', 'p1')).toBe(625); // final 8: x2.5 of 250
+    expect(cash(breaker.events, 'sale', 'p1')).toBe(500); // final 8: x2 of 250 (the tuned multiplier)
     const launched = playRound(ready(), { loads: { p1: G(2, 2) }, shipTypes: { p1: 'freighter' } });
     const arrived = playRound(launched.state, { rolls: { p1: 1 }, voyageEvent: 'storm' });
     // Wood and iron cost the same: ties lose in good order.
@@ -85,9 +85,10 @@ describe('V0.8 prototype: material actions', () => {
     const actions = invests(ready());
     const opened = actions.filter((a) => a.material?.kind === 'open' && a.material.ship === 'standard');
     expect(opened.length).toBeGreaterThan(0);
-    expect(opened.some((a) => a.load.wood === 3)).toBe(false);
-    expect(opened.some((a) => a.load.wood === 2)).toBe(true);
-    // Only the repairyard is affordable (2 wood); the armory needs 2 arms and the tradehouse 2 spice.
+    // Opening costs 2 iron: 1 of the 3 is left to load.
+    expect(opened.some((a) => a.load.iron === 2)).toBe(false);
+    expect(opened.some((a) => a.load.iron === 1)).toBe(true);
+    // Only the repairyard is affordable (2 wood + 1 iron); the armory needs 2 arms and the tradehouse 2 spice.
     expect(new Set(actions.flatMap((a) => (a.material?.kind === 'build' ? [a.material.building] : [])))).toEqual(new Set(['repairyard']));
     expect(actions.some((a) => a.material?.kind === 'upgrade')).toBe(false);
   });
