@@ -2,6 +2,8 @@ import {
   GOODS,
   buildingCost,
   createRng,
+  darkNight,
+  pirateModifier,
   materialsOn,
   roleFee,
   shipCostFor,
@@ -30,6 +32,8 @@ import {
   perUnitCost,
   seizureRisk,
   stakeOn,
+  isFinal,
+  survivingUnits,
 } from './estimates';
 import { islandWorth } from './islands';
 import { PERSONALITIES, type Personality, type PersonalityName } from './personality';
@@ -45,7 +49,7 @@ function scoreInvest(view: PlayerView, action: Invest, persona: Personality): nu
   const trait = traitOf(rules, player.island);
   const insured = player.buildings.includes('insurance') || action.build === 'insurance';
   const cost = action.build === null ? null : buildingCost(rules, action.build);
-  const lastRound = view.round >= rules.rounds;
+  const lastRound = isFinal(view);
   const shippedUnits = GOODS.reduce((sum, g) => sum + action.load[g], 0);
   let score = shippedUnits > 0 ? -shipCostFor(rules, player.island, action.shipType, action.load) : 0;
   // Experiment (rules.ships): the ship type's payout curve replaces the plain arrive-or-sink odds.
@@ -71,7 +75,8 @@ function scoreInvest(view: PlayerView, action: Invest, persona: Personality): nu
     // §6.3: spice spoils at round end (Spice Isles excepted); leftovers are worthless after round 6.
     const spoils = lastRound || (g === 'spice' && trait.keepsSpice !== 1);
     const keepEach = spoils ? 0 : Math.max(0, currentPrice(view, g) * keepP - keepCost) * persona.patience;
-    score += (view.myStock[g] - (cost?.[g] ?? 0) - shipped) * keepEach;
+    // V0.8 prototype (暗潮將至): only what survives the round's warehouse loss is worth keeping.
+    score += survivingUnits(view, view.myStock[g] - (cost?.[g] ?? 0) - shipped) * keepEach;
   }
   if (insured && shippedUnits > 0) {
     score += (1 - p) * rules.buildings.insurance.payout;
@@ -123,13 +128,17 @@ function scoreDeploy(view: PlayerView, action: Deploy, persona: Personality): nu
   const stake = stakeOn(view, ship);
   const base = arriveChance(rules, 0);
   const fee = roleFee(rules, player.island, action.role);
+  // V0.8 prototype (v08.events): a phase II moonless night voids guards and the owner's own smuggler cover.
+  const dark = darkNight(view.events, view.voyageEvent);
   switch (action.role) {
     case 'guard': {
+      if (dark) return -fee;
       const guarded = arriveChance(rules, rules.roles.guard.modifier + trait.guardModifier);
       return (guarded - base) * stake - fee;
     }
     case 'pirate': {
-      const modifier = rules.roles.pirate.modifier + trait.pirateModifier;
+      // V0.8 prototype (海盜伏擊): a phase II sea fog strengthens every pirate.
+      const modifier = pirateModifier(rules, view.events, view.voyageEvent) + trait.pirateModifier;
       const attacked = arriveChance(rules, modifier);
       const loot = expectedLoot(rules, modifier, guessedCargoValue(view, ship), carriesWanted(view, ship) ? rules.wanted.lootBonus : 0);
       const salvage = player.buildings.includes('salvage') && stake === 0 ? (base - attacked) * averagePrice(view) * base : 0;
@@ -137,6 +146,7 @@ function scoreDeploy(view: PlayerView, action: Deploy, persona: Personality): nu
     }
     case 'smuggler': {
       if (ship.owner === view.playerId) {
+        if (dark) return -fee;
         // §9.5: covering my own ship; worth it for the share of its cargo customs might name (the smuggler port cannot cover arms).
         return stake * 0.15 * base * (trait.armsUncoverable === 1 ? 0.5 : 1) - fee;
       }

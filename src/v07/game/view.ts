@@ -1,5 +1,6 @@
 import { getPendingDecisions, roleAvailable } from './decisions';
 import type { Rules } from './rules';
+import { eventsOn, publicEvents } from './v08-events';
 import {
   ROLE_IDS,
   type Action,
@@ -12,6 +13,7 @@ import {
   type MatchState,
   type Phase,
   type PlayerId,
+  type PublicEvents,
   type RoleId,
   type ShipId,
   type ShipTypeId,
@@ -81,6 +83,8 @@ export interface PlayerView {
   /** Roles I may deploy this round under the cooldown (§9.3), regardless of cash. */
   readonly myAvailableRoles: readonly RoleId[];
   readonly voyageDeckRemaining: number;
+  /** V0.8 prototype (v08.events): phase, advances drawn, the final round and its effect; absent when the switch is off. */
+  readonly events?: PublicEvents;
   /** Players who already submitted in the current phase; their choices stay hidden. */
   readonly submittedPlayerIds: readonly PlayerId[];
   readonly mySubmission: Action | null;
@@ -95,11 +99,13 @@ export function getPlayerView(state: MatchState, playerId: PlayerId): PlayerView
   }
   const { roundState } = state;
   const { submissions } = roundState;
+  const events = publicEvents(state);
   return {
     playerId,
     rules: state.rules,
     round: state.round,
-    totalRounds: state.rules.rounds,
+    // V0.8 prototype (v08.events): the known final round, else the round cap.
+    totalRounds: eventsOn(state.rules) ? (state.v08Events?.finalRound ?? state.rules.v08.events.maxRounds) : state.rules.rounds,
     phase: state.phase,
     players: state.players.map((p) => ({
       id: p.id,
@@ -133,7 +139,8 @@ export function getPlayerView(state: MatchState, playerId: PlayerId): PlayerView
     revealedRoles: roundState.rolesRevealed ? ROLE_IDS.flatMap((role) => roundState.deployments.filter((d) => d.role === role)) : [],
     myDeployment: roundState.deployments.find((d) => d.playerId === playerId) ?? null,
     myAvailableRoles: state.round > 0 ? ROLE_IDS.filter((role) => roleAvailable(state, me, role)) : [],
-    voyageDeckRemaining: state.voyageDeck.length,
+    voyageDeckRemaining: state.v08Events?.deck.length ?? state.voyageDeck.length,
+    ...(events === undefined ? {} : { events }),
     submittedPlayerIds: state.players.map((p) => p.id).filter((id) => submissions[id] !== undefined),
     mySubmission: submissions[playerId] ?? null,
     pendingDecision: getPendingDecisions(state).find((d) => d.playerId === playerId)?.phase ?? null,

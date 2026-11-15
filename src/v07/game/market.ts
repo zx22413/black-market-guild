@@ -3,6 +3,7 @@ import { addGoods, mapGoods, nextPriceStep, only, priceAt, subtractGoods, units 
 import { traitOf } from './islands';
 import { crateContext, effectiveDeployments, termsOf, voyageModifier } from './resolution';
 import { GOODS, type GoodId, type Goods, type MatchEvent, type MatchState, type PlayerId, type RoleId, type Ship, type Step, type V08Effect } from './types';
+import { darkNight, eventPriceStep, inspectionAllowance, publicEvents, rushValue } from './v08-events';
 import { crateTerms, facilityOf, hasVariant, protectedGoods, salvageCount, skillLevel, skillsOn, takeHighest } from './v08';
 
 interface Prices {
@@ -29,7 +30,11 @@ export function settleMarket(state: MatchState): Step {
       ? arrivedShips.reduce((sum, s) => (s.privateCargo === undefined ? sum : addGoods(sum, s.privateCargo)), landed)
       : landed;
   const arrived = claims.reduce((sum, c) => addGoods(sum, c.goods), privateLanded);
-  const prices: Prices = { before: state.prices, after: mapGoods((g) => nextPriceStep(rules, g, state.prices[g], arrived[g], demand[g])) };
+  // V0.8 prototype (v08.events): 貨滿為患 doubles drops, 黑市大開 stops them; off, eventPriceStep is nextPriceStep.
+  const pe = publicEvents(state);
+  const event = state.roundState.voyageEvent;
+  const next = (g: GoodId) => (pe === undefined ? nextPriceStep(rules, g, state.prices[g], arrived[g], demand[g]) : eventPriceStep(rules, pe, event, g, state.prices[g], arrived[g], demand[g]));
+  const prices: Prices = { before: state.prices, after: mapGoods(next) };
   const settled: MatchEvent = { type: 'market-settled', round: state.round, demand, arrived, priceBefore: prices.before, priceAfter: prices.after };
   const protect = state.roundState.protect;
   const named: MatchEvent[] = protect === undefined ? [] : [{ type: 'trade-protected', round: state.round, protect }];
@@ -43,6 +48,7 @@ export function settleMarket(state: MatchState): Step {
     payInsurance,
     salvage(sunkShips, prices.after),
     spoilSpice,
+    darkTideLoss,
   ]);
   return { state: result.state, events: [settled, ...named, ...result.events] };
 }
@@ -54,7 +60,8 @@ export function settleMarket(state: MatchState): Step {
  */
 function inspectArms(state: MatchState, ships: readonly Ship[], arrivedArms: number, prices: Prices): { ships: readonly Ship[]; events: MatchEvent[] } {
   const { inspection } = state.rules.v08;
-  const excess = arrivedArms - state.roundState.demand.arms - inspection.allowance;
+  // V0.8 prototype (嚴查, v08.events): a phase II black-market rush lowers the allowance.
+  const excess = arrivedArms - state.roundState.demand.arms - inspectionAllowance(state.rules, publicEvents(state), state.roundState.voyageEvent);
   if (inspection.enabled !== 1 || excess <= 0) return { ships, events: [] };
   // v08.hidden.privateSafeFromInspectionL2: a level-2 hidden ship's private crates are out of reach.
   const privateSafe = (ship: Ship): boolean =>
@@ -185,7 +192,8 @@ function deployed(state: MatchState, ship: Ship, role: RoleId): PlayerId[] {
 
 /** §9.5: smuggled goods value, raised by the black-market rush (§12). */
 function goodsValue(state: MatchState): number {
-  return state.roundState.voyageEvent === 'black-market-rush' ? state.rules.voyageEvents.blackMarketRushGoodsValue : state.rules.roles.smuggler.goodsValue;
+  // V0.8 prototype (v08.events): only the phase I rush raises it.
+  return rushValue(state.rules, publicEvents(state), state.roundState.voyageEvent);
 }
 
 /** §7.3, §11.2: sale price at the new step; the old spice isles got half (rounded down) of a rise, the ship-bay ones sell cells higher. */
@@ -210,7 +218,7 @@ interface Seizure {
 
 /** §9.5: the owner's own smuggler aboard covers the ship's goods from customs, except arms at the smuggler port. */
 const covered = (state: MatchState, ship: Ship, good: GoodId): boolean =>
-  (deployed(state, ship, 'smuggler').includes(ship.owner) || selfCovered(state, ship)) &&
+  ((deployed(state, ship, 'smuggler').includes(ship.owner) && !darkNight(publicEvents(state), state.roundState.voyageEvent)) || selfCovered(state, ship)) &&
   !(good === 'arms' && traitOf(state.rules, playerOf(state, ship.owner).island).armsUncoverable === 1);
 
 /** V0.8 prototype (v08.hidden.selfCoverL1): an opened hidden-ship skill covers the ship without a smuggler. */
@@ -464,4 +472,21 @@ const spoilSpice: StepFn = (state) => {
     state: { ...state, players },
     events: Object.keys(spoiled).length > 0 ? [{ type: 'spice-spoiled', round: state.round, spoiled }] : [],
   };
+};
+
+/**
+ * V0.8 prototype (「暗潮將至」, v08.events): at the end of that round (after the spice spoils) every player loses
+ * `warehouseLossPercent` percent, rounded down, of each good still in the warehouse.
+ */
+const darkTideLoss: StepFn = (state) => {
+  if (publicEvents(state)?.darkTide !== true) return { state, events: [] };
+  const percent = state.rules.v08.events.warehouseLossPercent;
+  const lost: Record<PlayerId, Goods> = {};
+  const players = state.players.map((p) => {
+    const gone = mapGoods((g) => Math.floor((p.stock[g] * percent) / 100));
+    if (units(gone) === 0) return p;
+    lost[p.id] = gone;
+    return { ...p, stock: subtractGoods(p.stock, gone) };
+  });
+  return { state: { ...state, players }, events: [{ type: 'dark-tide-loss', round: state.round, lost }] };
 };

@@ -3,6 +3,7 @@ import { addGoods, covers, enumerateGoods, subtractGoods, units } from './goods'
 import { capacityFor, cooldownFor, roleFee, shipCostFor } from './islands';
 import { shipDelay, shipTypeAvailable, type Rules } from './rules';
 import { applyMaterial, facilityOf, materialOptions, materialsOn, privateCapacity, skillLevel } from './v08';
+import { arrivesInTime } from './v08-events';
 import {
   BUILDING_IDS,
   GOODS,
@@ -99,7 +100,7 @@ function investOptions(state: MatchState, playerId: PlayerId): Action[] {
       // Experiment (rules.ships): a sailing player also picks a ship type they can pay for and fill.
       return (typed ? SHIP_TYPE_IDS : ([undefined] as const))
         // A delayed ship must still arrive before the match ends.
-        .filter((shipType) => cash >= shipCostFor(rules, player.island, shipType, load) && units(load) <= room(shipType) && state.round + shipDelay(rules, shipType ?? 'standard') <= rules.rounds && shipTypeAvailable(rules, shipType ?? 'standard', player.lastShip[shipType ?? 'standard'], state.round))
+        .filter((shipType) => cash >= shipCostFor(rules, player.island, shipType, load) && units(load) <= room(shipType) && arrivesInTime(state, shipDelay(rules, shipType ?? 'standard')) && shipTypeAvailable(rules, shipType ?? 'standard', player.lastShip[shipType ?? 'standard'], state.round))
         .map((shipType): Action => (shipType === undefined ? { type: 'invest', playerId, build, load } : { type: 'invest', playerId, build, load, shipType }));
     });
   });
@@ -130,7 +131,7 @@ function investOptionsV08(state: MatchState, playerId: PlayerId): Action[] {
           : SHIP_TYPE_IDS.filter(
               (shipType) =>
                 units(load) <= room(shipType) &&
-                state.round + shipDelay(rules, shipType) <= rules.rounds &&
+                arrivesInTime(state, shipDelay(rules, shipType)) &&
                 shipTypeAvailable(rules, shipType, player.lastShip[shipType], state.round),
             ).flatMap((shipType) => shipVariants(state, after, base, shipType));
       return sails.flatMap((action) => protects.map((protect) => (protect === undefined ? action : { ...action, protect })));

@@ -17,7 +17,8 @@ import {
 import { G, cash, edit, find, plain, playRound, withDemand } from './helpers';
 
 /** V0.8 simulation prototype (src/v07/game/v08-rules.ts): test values, not rules. */
-const V08 = RULES_V08_PROTO;
+// These tests cover the other prototype switches on the fixed six rounds; the event deck has its own tests (v08-events.test.ts).
+const V08 = { ...RULES_V08_PROTO, v08: { ...RULES_V08_PROTO.v08, events: { ...RULES_V08_PROTO.v08.events, enabled: 0 } } };
 
 const ready = (rules = V08): MatchState => withDemand(plain(4, rules).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(4, rules)), G(2, 2, 2, 1));
 /** The prototype without the hidden ship's self-cover (v08.hidden.selfCoverL1). */
@@ -96,15 +97,25 @@ describe('V0.8 prototype: material actions', () => {
   });
 
   it('allows two opened ship types, upgrades to level 2 and one building per match (material upgrades)', () => {
-    const byMaterials = { ...V08, v08: { ...V08.v08, levelUp: { byLaunches: 0 } } };
+    const byMaterials = { ...V08, v08: { ...V08.v08, maxLevel: 2, levelUp: { byLaunches: 0 } } };
     const two = edit(ready(byMaterials), 'p1', { skills: { standard: 1, gambler: 2 }, facility: 'armory', stock: G(5, 5, 5, 5) });
     const kinds = invests(two).flatMap((a) => (a.material === undefined ? [] : [JSON.stringify(a.material)]));
     expect(new Set(kinds)).toEqual(new Set([JSON.stringify({ kind: 'upgrade', ship: 'standard' })]));
   });
 
-  it('levels an opened skill up by use: the launch after the second sails at level 2, with no material upgrade', () => {
+  it('keeps every skill at level 1 in the prototype baseline', () => {
+    const opened = edit(ready(), 'p1', { skills: { standard: 1 }, stock: G(5, 5, 5, 5) });
+    expect(invests(opened).some((a) => a.material?.kind === 'upgrade')).toBe(false);
+    const r1 = playRound(opened, { loads: { p1: G(1) }, rolls: { p1: 6 } });
+    const r2 = playRound(r1.state, { loads: { p1: G(1) }, rolls: { p1: 6 } });
+    expect(effects(r2.events, 'level-up')).toEqual([]);
+    expect(r2.state.players.find((p) => p.id === 'p1')!.skills).toEqual({ standard: 1 });
+  });
+
+  it('levels an opened skill up by use when v08.levelUp is on: the launch after the second sails at level 2', () => {
+    const levelling = { ...V08, v08: { ...V08.v08, maxLevel: 2, levelUp: { byLaunches: 2 } } };
     const skillOf = (state: MatchState) => state.players.find((p) => p.id === 'p1')!;
-    const r1 = playRound(ready(), { loads: { p1: G(1) }, rolls: { p1: 6 }, invest: { p1: { material: { kind: 'open', ship: 'standard' } } } });
+    const r1 = playRound(ready(levelling), { loads: { p1: G(1) }, rolls: { p1: 6 }, invest: { p1: { material: { kind: 'open', ship: 'standard' } } } });
     const r2 = playRound(r1.state, { loads: { p1: G(1) }, rolls: { p1: 6 } });
     expect(skillOf(r2.state)).toMatchObject({ skills: { standard: 1 }, practice: { standard: 2 } });
     expect(getLegalActions(r2.state, 'p1').some((a) => a.type === 'invest' && a.material?.kind === 'upgrade')).toBe(false);

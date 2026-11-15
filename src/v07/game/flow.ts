@@ -7,6 +7,7 @@ import { resolveInvest } from './phases/invest';
 import { resolveDeployment, revealRoles } from './phases/roles';
 import { resolveVoyages, revealVoyageEvent } from './resolution';
 import { computeResult } from './scoring';
+import { isFinalRound } from './v08-events';
 import type { Action, DecisionPhase, Goods, MatchEvent, MatchState, PlayerId, PrivateEvent, RoundState, Step, Transition } from './types';
 
 type RoundStep = { readonly kind: 'decision'; readonly phase: DecisionPhase } | { readonly kind: 'auto'; readonly run: (state: MatchState) => Step };
@@ -97,7 +98,8 @@ function runFrom(state: MatchState, index: number, events: readonly MatchEvent[]
 
 function finishRound(state: MatchState, events: readonly MatchEvent[], privateEvents: readonly PrivateEvent[]): Transition {
   const ended: MatchEvent[] = [...events, { type: 'round-ended', round: state.round }];
-  if (state.round < state.rules.rounds) {
+  // V0.8 prototype (v08.events): the event deck decides the last round; otherwise it is round rules.rounds.
+  if (!isFinalRound(state)) {
     const next = openRound(state, state.round + 1);
     return { state: next.state, events: [...ended, ...next.events], privateEvents: [...privateEvents, ...next.privateEvents] };
   }

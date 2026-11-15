@@ -35,7 +35,8 @@ export interface V08Rules {
   readonly maxSkills: number;
   readonly maxLevel: number;
   readonly maxBuildings: number;
-  readonly standard: { readonly rerollAtMostL2: number };
+  /** Rerolls at level 1 when sinking or the final is at most `rerollAtMostL1` (0 = only when sinking), at level 2 up to `rerollAtMostL2`. */
+  readonly standard: { readonly rerollAtMostL1: number; readonly rerollAtMostL2: number };
   /** `salvageShared`: 1 = a sunk ship's crates can be salvaged only once, shared by the arriving freighters in turn. */
   readonly freighter: { readonly salvageL1: number; readonly salvageL2: number; readonly salvageShared: number };
   /**
@@ -62,6 +63,38 @@ export interface V08Rules {
    * opened skill reaches level 2 by itself once its ship type has launched N times since it was opened (from launch N + 1).
    */
   readonly levelUp: { readonly byLaunches: number };
+  /**
+   * 事件牌庫與兩階段 (docs/proposals/2026-11-v08-decision-index.md §0.2–0.3): 1 = the match length comes from the deck.
+   * Two advance cards: the 1st (「暗潮將至」) at a uniformly random round in firstAdvanceFrom–firstAdvanceTo, the 2nd (the
+   * final round) in secondAdvanceFrom–secondAdvanceTo; every other round draws a shuffled regular voyage event. From the
+   * round after the 1st advance the match is in phase II, where the regular events have boss versions.
+   */
+  readonly events: V08EventRules;
+}
+
+export interface V08EventRules {
+  readonly enabled: number;
+  readonly firstAdvanceFrom: number;
+  readonly firstAdvanceTo: number;
+  readonly secondAdvanceFrom: number;
+  readonly secondAdvanceTo: number;
+  /** Safety cap: the match ends after this round even without the 2nd advance. */
+  readonly maxRounds: number;
+  /** 「暗潮將至」: percent (floor, per good) of each warehouse good lost at the end of that round. */
+  readonly warehouseLossPercent: number;
+  /** 「黑市大開」: every good's demand rises by this much in the final round (and no price drops). */
+  readonly openMarketDemand: number;
+  /** 「最後一搏」: raw dice in the final round are the best of this many d6. */
+  readonly lastGambleDice: number;
+  /** Phase II boss versions. */
+  readonly bossStorm: number;
+  readonly bossTailwind: number;
+  /** 「海盜伏擊」(sea fog): each pirate's modifier instead of rules.roles.pirate.modifier. */
+  readonly bossPirate: number;
+  /** 「嚴查」(black-market rush): added to v08.inspection.allowance. */
+  readonly bossInspectionAllowance: number;
+  /** 「貨滿為患」(calm seas): price drops move this many times as many cells. */
+  readonly bossDropMultiplier: number;
 }
 
 const g = (partial: Partial<Record<GoodId, number>>): Goods => ({ wood: 0, iron: 0, spice: 0, arms: 0, ...partial });
@@ -91,7 +124,7 @@ export const V08_OFF: V08Rules = {
   maxSkills: 2,
   maxLevel: 2,
   maxBuildings: 1,
-  standard: { rerollAtMostL2: 3 },
+  standard: { rerollAtMostL1: 0, rerollAtMostL2: 3 },
   freighter: { salvageL1: 1, salvageL2: 2, salvageShared: 0 },
   hidden: { privateL1: 1, privateL2: 2, privateArrives: 0, privateLoses: 0, privateSafeFromInspectionL2: 0, feeFreeL1: 0, selfCoverL1: 0 },
   breaker: { extraFromL1: 6, extraFromL2: 5, extraDieSides: 6 },
@@ -99,4 +132,20 @@ export const V08_OFF: V08Rules = {
   armory: { lootPercent: 35 },
   inspection: { enabled: 0, allowance: 0 },
   levelUp: { byLaunches: 0 },
+  events: {
+    enabled: 0,
+    firstAdvanceFrom: 3,
+    firstAdvanceTo: 5,
+    secondAdvanceFrom: 6,
+    secondAdvanceTo: 10,
+    maxRounds: 10,
+    warehouseLossPercent: 50,
+    openMarketDemand: 1,
+    lastGambleDice: 2,
+    bossStorm: -2,
+    bossTailwind: 2,
+    bossPirate: -2,
+    bossInspectionAllowance: -1,
+    bossDropMultiplier: 2,
+  },
 };

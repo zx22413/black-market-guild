@@ -4,6 +4,7 @@ import { addGoods, subtractGoods, units } from '../goods';
 import { shipCostFor } from '../islands';
 import { shipDelay } from '../rules';
 import { nextInt, type RngState } from '../rng';
+import { diceToRoll, publicEvents } from '../v08-events';
 import { applyMaterial, practiced, skillLevel } from '../v08';
 import type { Action, Build, GoodId, MatchEvent, MatchState, PlayerId, PrivateEvent, Ship, Step } from '../types';
 
@@ -78,11 +79,17 @@ export function resolveInvest(state: MatchState): Step {
 
 function rollDice(state: MatchState, ships: readonly Ship[]): { ships: Ship[]; rng: RngState } {
   const { dieMin, dieMax } = state.rules.sailing;
+  // V0.8 prototype (最後一搏, v08.events): the final round's raw dice are the best of several.
+  const dice = diceToRoll(state.rules, publicEvents(state));
   let rng = state.rng;
   const rolled = ships.map((ship) => {
-    const step = nextInt(rng, dieMin, dieMax);
-    rng = step.state;
-    return { ...ship, rawRoll: step.value };
+    let raw = Number.NEGATIVE_INFINITY;
+    for (let k = 0; k < dice; k += 1) {
+      const step = nextInt(rng, dieMin, dieMax);
+      rng = step.state;
+      raw = Math.max(raw, step.value);
+    }
+    return { ...ship, rawRoll: raw };
   });
   return { ships: rolled, rng };
 }

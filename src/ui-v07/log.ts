@@ -71,6 +71,11 @@ export function eventLine(event: MatchEvent, ctx: LogContext): string | null {
     case 'materials-used':
     case 'trade-protected':
     case 'v08-effect':
+    case 'dark-tide-rising':
+    case 'final-round':
+    case 'phase-two-started':
+    case 'boss-event':
+    case 'dark-tide-loss':
       return null;
   }
 }

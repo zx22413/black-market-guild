@@ -1,4 +1,4 @@
-import { GOODS, capacityFor, priceAt, shipIncomePercent, shipSinks, type BuildingId, type GoodId, type PlayerView, type PublicPlayer, type Rules, type ShipTypeId, type ViewShip } from '../game';
+import { GOODS, capacityFor, dropMultiplier, eventShift, noPriceDrop, priceAt, shipIncomePercent, shipSinks, type BuildingId, type GoodId, type PlayerView, type PublicPlayer, type Rules, type ShipTypeId, type ViewShip } from '../game';
 
 // Expected-value estimates from public information only (ported from src/proto/economy/bots).
 // They are deliberately rough: simulation results reflect this way of deciding, not real players.
@@ -63,9 +63,9 @@ export function curveOutlook(rules: Rules, type: ShipTypeId, modifier: number, i
 
 /** The modifier a bot expects on its own ship this round: its island and the voyage event, which is public from the round's start (§5). */
 export function expectedOwnModifier(view: PlayerView, islandModifier: number, delayed = false): number {
-  const { voyageEvents } = view.rules;
-  // A ship that arrives next round meets next round's event, which nobody knows yet.
-  const event = delayed ? 0 : view.voyageEvent === 'tailwind' ? voyageEvents.tailwind : view.voyageEvent === 'storm' ? voyageEvents.storm : 0;
+  // A ship that arrives next round meets next round's event, which nobody knows yet. V0.8 prototype (v08.events): the
+  // phase II storm and tailwind are stronger.
+  const event = delayed ? 0 : eventShift(view.rules, view.events, view.voyageEvent);
   return islandModifier + event;
 }
 
@@ -121,7 +121,9 @@ export function shiftValue(view: PlayerView, good: GoodId, delta: number, mine: 
 /** Expected sale price (§7.3) if I ship `mine` units, guessing the others from their public stock. */
 export function expectedPrice(view: PlayerView, good: GoodId, mine: number): number {
   const arrivals = (othersExpectedLoad(view, good) + mine) * arriveChance(view.rules, 0);
-  const delta = Math.max(-1, Math.min(1, view.demand[good] - arrivals)) * view.rules.price.volatility[good];
+  const raw = Math.max(-1, Math.min(1, view.demand[good] - arrivals)) * view.rules.price.volatility[good];
+  // V0.8 prototype (v08.events): 貨滿為患 doubles drops, 黑市大開 stops them (both 1 / false with the switch off).
+  const delta = raw >= 0 ? raw : noPriceDrop(view.events) ? 0 : raw * dropMultiplier(view.rules, view.events, view.voyageEvent);
   return priceOfStep(view.rules, good, view.prices[good] + delta);
 }
 
@@ -134,7 +136,7 @@ export function perUnitCost(rules: Rules): number {
 /** Rough value of a building over the rounds it will work, plus its end-game value (§10.2, §13). */
 export function buildingWorth(view: PlayerView, building: BuildingId): number {
   const { rules } = view;
-  const roundsLeft = rules.rounds - view.round + 1;
+  const roundsLeft = expectedRoundsLeft(view) + 1;
   const p = arriveChance(rules, 0);
   const price = averagePrice(view);
   const endValue = rules.buildings.costs[building].cash * rules.buildings.valueRatio;
@@ -194,4 +196,35 @@ export function seizureShare(rules: Rules): number {
 
 export function carriesWanted(view: PlayerView, ship: ViewShip): boolean {
   return view.wanted.includes(ship.owner);
+}
+
+/** Whether this is the match's last round (V0.8 prototype v08.events: known once its card is revealed). */
+export function isFinal(view: PlayerView): boolean {
+  return view.events === undefined ? view.round >= view.rules.rounds : view.events.finalRound || view.round >= view.rules.v08.events.maxRounds;
+}
+
+/**
+ * Rounds expected after this one. V0.8 prototype (v08.events): the 2nd advance sits at a uniformly random round of its
+ * window, so while it has not come it is equally likely at any round of the window after this one (capped by
+ * maxRounds and by the cards left in the deck).
+ */
+export function expectedRoundsLeft(view: PlayerView): number {
+  if (view.events === undefined) return Math.max(0, view.rules.rounds - view.round);
+  if (isFinal(view)) return 0;
+  const e = view.rules.v08.events;
+  const last = Math.min(e.secondAdvanceTo, e.maxRounds, view.round + view.events.deckRemaining);
+  const first = Math.min(last, Math.max(e.secondAdvanceFrom, view.round + 1));
+  return Math.max(0, (first + last) / 2 - view.round);
+}
+
+/** Rounds a match is expected to last, for the island draft (V0.8 prototype: the middle of the 2nd advance's window). */
+export function expectedMatchRounds(rules: Rules): number {
+  if (rules.v08.events.enabled !== 1) return rules.rounds;
+  const e = rules.v08.events;
+  return Math.round((Math.max(e.secondAdvanceFrom, 1) + Math.min(e.secondAdvanceTo, e.maxRounds)) / 2);
+}
+
+/** Units of a kept good left after this round: 「暗潮將至」 takes a share of each good at its end (V0.8 prototype). */
+export function survivingUnits(view: PlayerView, kept: number): number {
+  return view.events?.darkTide === true ? kept - Math.floor((kept * view.rules.v08.events.warehouseLossPercent) / 100) : kept;
 }

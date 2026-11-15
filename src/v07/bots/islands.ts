@@ -1,5 +1,5 @@
 import { GOODS, ROLE_IDS, capacityFor, cooldownFor, producedFor, roleFee, traitOf, type GoodId, type IslandId, type PlayerView, type RoleId, type Rules } from '../game';
-import { ARMS_SEIZURE_RISK, arriveChance, averagePrice, curveOutlook, expectedLoot, perUnitCost, seizureRisk } from './estimates';
+import { ARMS_SEIZURE_RISK, arriveChance, averagePrice, curveOutlook, expectedLoot, expectedMatchRounds, perUnitCost, seizureRisk } from './estimates';
 import type { Personality } from './personality';
 
 // Island draft (§11.1): estimate what each island's trait (§11.2) is worth over the whole match,
@@ -89,7 +89,9 @@ function roleUses(rules: Rules, island: IslandId | null, role: RoleId): number {
 
 /** Estimated worth in G of drafting `island`, from the view's rules, prices and player count. */
 export function islandWorth(view: PlayerView, island: IslandId, persona: Personality): number {
-  const { rules } = view;
+  // V0.8 prototype (v08.events): the match length comes from the event deck; value the island over its expected length.
+  const rounds = expectedMatchRounds(view.rules);
+  const rules = rounds === view.rules.rounds ? view.rules : { ...view.rules, rounds };
   const t = traitOf(rules, island);
   const price = averagePrice(view);
   const p = arriveChance(rules, 0);

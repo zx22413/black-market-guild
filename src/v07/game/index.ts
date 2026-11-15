@@ -29,6 +29,19 @@ export {
   v08On,
 } from './v08';
 export type { CrateContext, CrateTerms } from './v08';
+export {
+  darkNight,
+  diceToRoll,
+  dropMultiplier,
+  eventShift,
+  eventsOn,
+  inspectionAllowance,
+  moonlessShift,
+  noPriceDrop,
+  pirateModifier,
+  rushValue,
+  seaFogShift,
+} from './v08-events';
 export { buildingValue } from './scoring';
 export { priceAt } from './goods';
 export { capacityFor, cooldownFor, producedFor, roleFee, shipCostFor, shipFinalCapFor, traitOf } from './islands';

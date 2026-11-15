@@ -110,7 +110,7 @@ export function extraDieFrom(rules: Rules, level: number): number {
 
 /** Standard 「好兆頭」: whether a voyage with this outcome rerolls (level 1: it would sink; level 2: final ≤ the threshold). */
 export function rerolls(rules: Rules, level: number, sinks: boolean, final: number): boolean {
-  return level >= 2 ? sinks || final <= rules.v08.standard.rerollAtMostL2 : level === 1 ? sinks : false;
+  return level >= 2 ? sinks || final <= rules.v08.standard.rerollAtMostL2 : level === 1 ? sinks || final <= rules.v08.standard.rerollAtMostL1 : false;
 }
 
 /** A crate table entry: the listed key nearest to `final`. */

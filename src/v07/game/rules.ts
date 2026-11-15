@@ -354,7 +354,11 @@ export const RULES_V08_PROTO: Rules = {
     // 2026-11-15: a sunk ship's crates can be salvaged only once (no crates out of thin air for several freighters).
     freighter: { ...V08_OFF.freighter, salvageShared: 1 },
     inspection: { enabled: 1, allowance: 0 },
-    // 2026-11-15: skills level up by use (2 launches after opening) instead of the material upgrade.
-    levelUp: { byLaunches: 2 },
+    // 2026-11-15: skills have one level only (opening gives the whole effect): no material upgrade, no levelling by use.
+    // The level-2 numbers stay in V08_OFF for comparison runs (--set v08.maxLevel=2 --set v08.levelUp.byLaunches=1).
+    maxLevel: 1,
+    levelUp: { byLaunches: 0 },
+    // 2026-11-15: the event deck sets the match length (6–10 rounds) and splits it into two phases.
+    events: { ...V08_OFF.events, enabled: 1 },
   },
 };

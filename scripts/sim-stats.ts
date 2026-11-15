@@ -12,6 +12,8 @@ export interface Tally {
 export interface SimStats {
   matches: number;
   seats: number;
+  /** Rounds played, summed over the matches. */
+  rounds: number;
   playerRounds: number;
   byStrategy: Record<string, Tally>;
   byIsland: Record<string, Tally>;
@@ -58,6 +60,21 @@ export interface V08Stats {
   effects: Record<string, { count: number; crates: number; value: number }>;
   /** Per good: how often the price went up, stayed, went down. */
   priceMoves: Record<string, { up: number; flat: number; down: number }>;
+  /** v08.events: matches by length, phase II rounds, final effects, units lost to 暗潮將至, boss events fired. */
+  events: V08EventStats;
+}
+
+export interface V08EventStats {
+  lengths: Record<number, number>;
+  /** Phase II rounds per match (from the round after 暗潮將至 through the last round, final round included). */
+  phaseTwo: Record<number, number>;
+  /** Phase II rounds before the final round (the ones with a boss event card). */
+  bossRounds: number;
+  finalEffects: Record<string, number>;
+  darkTideLost: Record<string, number>;
+  darkTideRounds: Record<number, number>;
+  finalRounds: Record<number, number>;
+  boss: Record<string, number>;
 }
 
 const units = (goods: Goods) => GOODS.reduce((sum, g) => sum + goods[g], 0);
@@ -67,6 +84,7 @@ export function emptyStats(steps: number): SimStats {
   return {
     matches: 0,
     seats: 0,
+    rounds: 0,
     playerRounds: 0,
     byStrategy: {},
     byIsland: {},
@@ -96,7 +114,9 @@ export function emptyStats(steps: number): SimStats {
     shipTypes: {},
     armsConfiscatedUnits: 0,
     armsConfiscatedCash: 0,
-    v08: { crates: {}, typeByStrategy: {}, materials: {}, effects: {}, priceMoves: Object.fromEntries(GOODS.map((g) => [g, { up: 0, flat: 0, down: 0 }])) },
+    v08: { crates: {}, typeByStrategy: {}, materials: {}, effects: {}, priceMoves: Object.fromEntries(GOODS.map((g) => [g, { up: 0, flat: 0, down: 0 }])),
+      events: { lengths: {}, phaseTwo: {}, bossRounds: 0, finalEffects: {}, darkTideLost: Object.fromEntries(GOODS.map((g) => [g, 0])), darkTideRounds: {}, finalRounds: {}, boss: {} },
+    },
   };
 }
 
@@ -135,6 +155,20 @@ function addV08Event(stats: SimStats, event: MatchEvent, strategyOf: (playerId: 
       entry.value += event.value;
       break;
     }
+    case 'final-round':
+      v.events.finalEffects[event.effect ?? 'none'] = (v.events.finalEffects[event.effect ?? 'none'] ?? 0) + 1;
+      v.events.finalRounds[event.round] = (v.events.finalRounds[event.round] ?? 0) + 1;
+      break;
+    case 'dark-tide-rising':
+      v.events.darkTideRounds[event.round] = (v.events.darkTideRounds[event.round] ?? 0) + 1;
+      break;
+    case 'boss-event':
+      v.events.boss[event.event] = (v.events.boss[event.event] ?? 0) + 1;
+      v.events.bossRounds += 1;
+      break;
+    case 'dark-tide-loss':
+      for (const goods of Object.values(event.lost)) GOODS.forEach((g) => (v.events.darkTideLost[g] = (v.events.darkTideLost[g] ?? 0) + goods[g]));
+      break;
     case 'market-settled':
       for (const g of GOODS) {
         const move = v.priceMoves[g]!;
@@ -174,7 +208,16 @@ export function addMatch(stats: SimStats, log: MatchLog, strategyOf: (playerId: 
   const { rules } = finalState;
   stats.matches += 1;
   stats.seats += finalState.players.length;
-  stats.playerRounds += finalState.players.length * rules.rounds;
+  // V0.8 prototype (v08.events): matches vary in length; otherwise finalState.round is rules.rounds.
+  stats.rounds += finalState.round;
+  stats.playerRounds += finalState.players.length * finalState.round;
+  if (finalState.v08Events !== undefined) {
+    const e = stats.v08.events;
+    e.lengths[finalState.round] = (e.lengths[finalState.round] ?? 0) + 1;
+    const from = finalState.v08Events.phaseTwoFrom;
+    const phaseTwo = from === null ? 0 : Math.max(0, finalState.round - from + 1);
+    e.phaseTwo[phaseTwo] = (e.phaseTwo[phaseTwo] ?? 0) + 1;
+  }
   addStandings(stats, log, strategyOf);
 
   const owners = new Map<ShipId, PlayerId>();

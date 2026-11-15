@@ -17,6 +17,9 @@ describe('V0.8 prototype bots', () => {
       // The runner throws on any illegal action.
       const log = runMatchSync(setup, setup.bots);
       expect(log.finalState.phase).toBe('game-over');
+      // v08.events: the event deck ends the match between rounds 6 and 10.
+      expect(log.finalState.round).toBeGreaterThanOrEqual(RULES_V08_PROTO.v08.events.secondAdvanceFrom);
+      expect(log.finalState.round).toBeLessThanOrEqual(RULES_V08_PROTO.v08.events.maxRounds);
       log.finalState.players.forEach((p) => {
         expect(p.cash).toBeGreaterThanOrEqual(0);
         expect(Object.keys(p.skills ?? {}).length).toBeLessThanOrEqual(RULES_V08_PROTO.v08.maxSkills);

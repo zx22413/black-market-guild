@@ -183,6 +183,38 @@ export interface MatchResult {
   readonly winners: readonly PlayerId[];
 }
 
+/** V0.8 prototype (v08.events): an event-deck card; 'advance' moves the match on (暗潮將至, then the final round). */
+export type V08Card = VoyageEventId | 'advance';
+
+/** V0.8 prototype: the final round's effect (黑市大開 / 最後一搏); null when the match ends by the round cap or an empty deck. */
+export const FINAL_EFFECTS = ['open-market', 'last-gamble'] as const;
+export type FinalEffect = (typeof FINAL_EFFECTS)[number];
+
+/** V0.8 prototype (v08.events): the event deck and the public phase state. */
+export interface V08EventsState {
+  /** Hidden: the cards still to draw, index 0 next. */
+  readonly deck: readonly V08Card[];
+  readonly advancesDrawn: number;
+  /** The round phase II starts in (the round after 暗潮將至), null before. */
+  readonly phaseTwoFrom: number | null;
+  /** The round known to be the last one, null before. */
+  readonly finalRound: number | null;
+  readonly finalEffect: FinalEffect | null;
+}
+
+/** V0.8 prototype: the public event-deck status, in PlayerView and used by the engine and the bots alike. */
+export interface PublicEvents {
+  readonly phase: 1 | 2;
+  readonly advancesDrawn: number;
+  /** This round is 「暗潮將至」 (half of each warehouse good is lost at its end). */
+  readonly darkTide: boolean;
+  /** This round is the last one. */
+  readonly finalRound: boolean;
+  /** This round's final effect (only in the final round). */
+  readonly finalEffect: FinalEffect | null;
+  readonly deckRemaining: number;
+}
+
 export interface MatchState {
   readonly rules: Rules;
   readonly seed: number;
@@ -195,6 +227,8 @@ export interface MatchState {
   /** Remaining draw piles; index 0 is next. Hidden. */
   readonly demandDeck: readonly Goods[];
   readonly voyageDeck: readonly VoyageEventId[];
+  /** V0.8 prototype (v08.events): the event deck and phases; absent when the switch is off. */
+  readonly v08Events?: V08EventsState;
   /** Current price-track step per good (§7.1). */
   readonly prices: Goods;
   /** Island draft offers (§11.1); private to each player. */
@@ -342,6 +376,16 @@ export type MatchEvent =
       readonly crates: number;
       readonly value: number;
     }
+  /** V0.8 prototype (v08.events): the 1st advance card. Phase II starts next round. */
+  | { readonly type: 'dark-tide-rising'; readonly round: number }
+  /** V0.8 prototype: this round is the last one (the 2nd advance card, or the round cap / an empty deck with no effect). */
+  | { readonly type: 'final-round'; readonly round: number; readonly effect: FinalEffect | null; readonly demand: Goods }
+  /** V0.8 prototype: the first phase II round opens. */
+  | { readonly type: 'phase-two-started'; readonly round: number }
+  /** V0.8 prototype: this round's regular event is its phase II (boss) version. */
+  | { readonly type: 'boss-event'; readonly round: number; readonly event: VoyageEventId }
+  /** V0.8 prototype: goods lost from the warehouses at the end of a 「暗潮將至」 round. */
+  | { readonly type: 'dark-tide-loss'; readonly round: number; readonly lost: Readonly<Record<PlayerId, Goods>> }
   | { readonly type: 'round-ended'; readonly round: number }
   | { readonly type: 'match-ended'; readonly result: MatchResult };
 

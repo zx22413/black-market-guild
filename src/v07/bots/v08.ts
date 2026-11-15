@@ -24,8 +24,10 @@ import {
   type PublicPlayer,
   type ShipTypeId,
   type V08BuildingId,
+  diceToRoll,
+  inspectionAllowance,
 } from '../game';
-import { averagePrice, currentPrice, expectedOwnModifier, expectedPrice, me, othersExpectedArrivals, seizureRisk } from './estimates';
+import { averagePrice, currentPrice, expectedOwnModifier, expectedPrice, expectedRoundsLeft, me, othersExpectedArrivals, seizureRisk, survivingUnits } from './estimates';
 import type { Personality } from './personality';
 
 // V0.8 simulation prototype (rules.v08): the heuristic bot's invest scoring under crate-count voyages, ship skills and
@@ -61,6 +63,8 @@ interface Plan {
   readonly facility: V08BuildingId | null;
   readonly island: IslandId | null;
   readonly modifier: number;
+  /** A ship that resolves in a later round (the freighter). */
+  readonly delayed?: boolean;
 }
 
 /** Per-decision memo: the same final distributions and load values recur across thousands of actions. */
@@ -71,7 +75,7 @@ export class V08Cache {
   readonly prices = new Map<string, number>();
 }
 
-const planKey = (p: Plan) => `${p.type}|${p.raised ? 1 : 0}|${p.level}|${p.facility ?? '-'}|${p.island ?? '-'}|${p.modifier}`;
+const planKey = (p: Plan) => `${p.type}|${p.raised ? 1 : 0}|${p.level}|${p.facility ?? '-'}|${p.island ?? '-'}|${p.modifier}${p.delayed === true ? '|d' : ''}`;
 const goodsKey = (g: Goods) => GOODS.map((x) => g[x]).join(',');
 
 /** The final values a ship can reach and their chances, with the breaker's extra die and the standard ship's reroll. */
@@ -88,19 +92,22 @@ function finals(view: PlayerView, plan: Plan, cache: V08Cache): readonly (readon
   const finalOf = (raw: number) => Math.min(cap, Math.max(dieMin, raw + plan.modifier));
   const out = new Map<number, number>();
   const add = (final: number, p: number) => out.set(final, (out.get(final) ?? 0) + p);
+  // V0.8 prototype (最後一搏, v08.events): the raw die is the best of `dice` dice; a delayed ship meets next round's dice.
+  const dice = plan.delayed ? 1 : diceToRoll(rules, view.events);
+  const chance = (raw: number) => (dice === 1 ? 1 / faces : ((raw - dieMin + 1) ** dice - (raw - dieMin) ** dice) / faces ** dice);
   for (let raw = dieMin; raw <= dieMax; raw += 1) {
     if (plan.type === 'breaker' && raw >= extraDieFrom(rules, plan.level)) {
       // v08.breaker.extraDieSides: the extra die is 1dN.
       const sides = rules.v08.breaker.extraDieSides;
-      for (let extra = 1; extra <= sides; extra += 1) add(finalOf(raw + extra), 1 / faces / sides);
+      for (let extra = 1; extra <= sides; extra += 1) add(finalOf(raw + extra), chance(raw) / sides);
       continue;
     }
     const final = finalOf(raw);
     const terms = crateTerms(rules, plan.type, final, plan);
     if (plan.type === 'standard' && rerolls(rules, plan.level, terms.sinks, final)) {
-      for (let again = dieMin; again <= dieMax; again += 1) add(finalOf(again), 1 / faces / faces);
+      for (let again = dieMin; again <= dieMax; again += 1) add(finalOf(again), chance(raw) / faces);
     } else {
-      add(final, 1 / faces);
+      add(final, chance(raw));
     }
   }
   const result = [...out.entries()];
@@ -130,7 +137,8 @@ function inspectionShare(view: PlayerView, arms: number): number {
   const { inspection } = view.rules.v08;
   if (inspection.enabled !== 1 || arms === 0) return 0;
   const total = othersExpectedArrivals(view, 'arms') + arms;
-  const excess = total - view.demand.arms - inspection.allowance;
+  // V0.8 prototype (嚴查): a phase II black-market rush lowers the allowance.
+  const excess = total - view.demand.arms - inspectionAllowance(view.rules, view.events, view.voyageEvent);
   return excess <= 0 ? 0 : Math.min(1, excess / total);
 }
 
@@ -243,7 +251,8 @@ function voyageWorth(view: PlayerView, player: PublicPlayer, type: ShipTypeId, l
 
 /** Voyages left after this round's (a material action already counts on this round's ship through the outlook). */
 function futureVoyages(view: PlayerView): number {
-  return Math.max(0, view.rules.rounds - view.round) * SAIL_RATE;
+  // V0.8 prototype (v08.events): the rounds left are estimated from the public deck state.
+  return expectedRoundsLeft(view) * SAIL_RATE;
 }
 
 /** What a building adds per round beyond its effect on crate tables (armory, tradehouse, island variants). */
@@ -305,15 +314,16 @@ function materialWorth(view: PlayerView, material: MaterialAction, persona: Pers
     const gain = voyageWorth(view, player, material.ship, level + 1, facility, cache) - voyageWorth(view, player, material.ship, level, facility, cache);
     const taste = TYPE_USE[material.ship] * (persona.shipTaste?.[material.ship] ?? 1);
     const { byLaunches } = rules.v08.levelUp;
-    if (material.kind === 'open' && byLaunches > 0) {
+    if (material.kind === 'open') {
       // Levelling by use. A skill only pays on voyages where its ship is the one I sail, so value it by how much it lifts
       // my best voyage (a soft maximum over the ship types, net of fees), not by an assumed share of use. The first
       // `byLaunches` uses sail at level 1, the rest at level 2; the gambler rests every other round.
       const base = fleetBest(view, player, (t) => skillLevel(rules, player, t), facility, cache);
       const lift = (level: number) => fleetBest(view, player, (t) => (t === material.ship ? level : skillLevel(rules, player, t)), facility, cache) - base;
       const uses = (futureVoyages(view) + 1) * (material.ship === 'gambler' ? 0.5 : 1);
-      const worth =
-        Math.max(0, lift(1) * Math.min(uses, byLaunches) + lift(2) * Math.max(0, uses - byLaunches)) * persona.builder * (persona.shipTaste?.[material.ship] ?? 1);
+      // Without levelling by use (byLaunches 0) every use sails at level 1.
+      const atLevel1 = byLaunches > 0 ? Math.min(uses, byLaunches) : uses;
+      const worth = Math.max(0, lift(1) * atLevel1 + lift(2) * Math.max(0, uses - atLevel1)) * persona.builder * (persona.shipTaste?.[material.ship] ?? 1);
       cache.materials.set(key, worth);
       return worth;
     }
@@ -348,11 +358,12 @@ function protectPick(view: PlayerView, load: Goods, cache: V08Cache): GoodId {
 /** Units the warehouse can still ship in later rounds over what it will hold (kept now plus later production): the share worth keeping. */
 function keepShare(view: PlayerView, kept: number): number {
   const player = me(view);
-  const rounds = view.rules.rounds - view.round;
+  // V0.8 prototype (v08.events): an expected count of later rounds (0 in the final round, so everything is dumped).
+  const rounds = expectedRoundsLeft(view);
   if (rounds <= 0) return 0;
   const room = rounds * shipCrates(view, player, 'standard');
   let produced = 0;
-  for (let r = view.round + 1; r <= view.rules.rounds; r += 1) {
+  for (let r = view.round + 1; r <= Math.round(view.round + rounds); r += 1) {
     const p = producedFor(view.rules, player.island, r);
     produced += GOODS.reduce((sum, g) => sum + p[g], 0);
   }
@@ -387,6 +398,7 @@ export function scoreInvestV08(view: PlayerView, action: Invest, persona: Person
       facility,
       island: player.island,
       modifier: expectedOwnModifier(view, trait.ownShipModifier, rules.ships.types[type].delay > 0),
+      ...(rules.ships.types[type].delay > 0 ? { delayed: true } : {}),
     };
     const loaded = add(action.load, privateLoad);
     score -= shipCostFor(rules, player.island, type, loaded, level);
@@ -408,7 +420,8 @@ export function scoreInvestV08(view: PlayerView, action: Invest, persona: Person
   for (const g of GOODS) {
     const spoils = g === 'spice' && trait.keepsSpice !== 1;
     const keepEach = spoils ? 0 : currentPrice(view, g) * keepP * persona.patience * share;
-    score += (stock[g] - action.load[g] - privateLoad[g]) * keepEach;
+    // V0.8 prototype (暗潮將至): only what survives this round's warehouse loss is worth keeping.
+    score += survivingUnits(view, stock[g] - action.load[g] - privateLoad[g]) * keepEach;
   }
   if (action.material !== undefined) {
     score += materialWorth(view, action.material, persona, cache);

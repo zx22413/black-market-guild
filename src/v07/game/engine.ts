@@ -5,6 +5,7 @@ import { dealIslandOffers } from './islands';
 import { seedToRngState, shuffle } from './rng';
 import { RULES_V07, type Rules } from './rules';
 import { GOODS } from './types';
+import { buildEventDeck, eventsOn, initialEventsState, roundCap } from './v08-events';
 import { PHASE_ACTION_TYPE, type Action, type MatchState, type PrivateEvent, type Result, type RuleErrorCode, type Transition } from './types';
 
 export interface MatchConfig {
@@ -38,8 +39,16 @@ function validateConfig(config: MatchConfig, rules: Rules): string | null {
   if (GOODS.some((g) => rules.price.tracks[g].start < 0 || rules.price.tracks[g].start >= rules.price.steps)) {
     return `every price track's start must be within 0-${rules.price.steps - 1}`;
   }
-  if (buildDemandDeck(rules, players.length).length < rules.rounds || buildVoyageDeck(rules).length < rules.rounds) {
-    return `decks must hold at least ${rules.rounds} cards for ${players.length} players`;
+  if (eventsOn(rules)) {
+    const e = rules.v08.events;
+    const windows = [e.firstAdvanceFrom, e.firstAdvanceTo, e.secondAdvanceFrom, e.secondAdvanceTo, e.maxRounds];
+    if (!windows.every((n) => Number.isInteger(n) && n >= 1) || e.firstAdvanceFrom > e.firstAdvanceTo || e.firstAdvanceTo >= e.secondAdvanceFrom || e.secondAdvanceFrom > e.secondAdvanceTo) {
+      return 'v08.events advance windows must be positive integers with the 1st window before the 2nd';
+    }
+  }
+  const cap = roundCap(rules);
+  if (buildDemandDeck(rules, players.length).length < cap || (!eventsOn(rules) && buildVoyageDeck(rules).length < cap)) {
+    return `decks must hold at least ${cap} cards for ${players.length} players`;
   }
   return null;
 }
@@ -53,7 +62,9 @@ export function createMatch(config: MatchConfig): Result<Transition> {
   }
   const demand = shuffle(buildDemandDeck(rules, config.players.length), seedToRngState(config.seed));
   const voyage = shuffle(buildVoyageDeck(rules), demand.state);
-  const draft = dealIslandOffers(config.players.map((p) => p.id), rules.islands.offered, voyage.state);
+  // V0.8 prototype (v08.events): the event deck replaces the voyage deck; its draws come after the shuffle above.
+  const events = eventsOn(rules) ? buildEventDeck(rules, voyage.items, voyage.state) : null;
+  const draft = dealIslandOffers(config.players.map((p) => p.id), rules.islands.offered, events?.rng ?? voyage.state);
   const state: MatchState = {
     rules,
     seed: config.seed,
@@ -72,7 +83,8 @@ export function createMatch(config: MatchConfig): Result<Transition> {
     transit: [],
     rng: draft.state,
     demandDeck: demand.items,
-    voyageDeck: voyage.items,
+    voyageDeck: events === null ? voyage.items : [],
+    ...(events === null ? {} : { v08Events: initialEventsState(events.deck) }),
     prices: { wood: rules.price.tracks.wood.start, iron: rules.price.tracks.iron.start, spice: rules.price.tracks.spice.start, arms: rules.price.tracks.arms.start },
     islandOffers: draft.offers,
     roundState: emptyRound(),

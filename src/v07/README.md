@@ -36,8 +36,9 @@
 | `skills` | 投資時可做一個材料行動（開船技能 1 木 1 鐵、升級 2 木 1 鐵，最多開 2 種船）；信天翁號重擲、孤注號加注（`raise`）、巨鯨號拾荒、幽靈號私貨艙（`privateLoad`）、海嘯號加骰。 |
 | `buildings` | 每局最多一棟：修船廠（2 木）、軍械庫（2 軍火）、商行（2 香料，每次投資指名保價的貨 `protect`）。 |
 | `islandVariants` | 船塢島＋修船廠、要塞島＋軍械庫、香料群島＋商行、走私港＋軍械庫。 |
+| `events.enabled` | 事件牌庫決定局長（`game/v08-events.ts`）：開局把 12 張航海事件洗勻，另有 2 張推進牌，第 1 張「暗潮將至」在第 `firstAdvanceFrom`～`firstAdvanceTo` 回合（3～5）、第 2 張在 `secondAdvanceFrom`～`secondAdvanceTo` 回合（6～10）均勻隨機，其他回合翻一般事件（牌庫存在 `MatchState.v08Events`，不公開）。暗潮將至那回合沒有一般事件，回合結束（香料腐壞後）每人倉庫每種貨失去 `warehouseLossPercent`%（無條件捨去），下一回合起進入第二階段：暴風雨 −2、順風 +2、海霧變「海盜伏擊」（每個海盜 −2、沒有 +1）、黑市熱絡變「嚴查」（查緝額度 −1、走私價值照常 100）、風平浪靜變「貨滿為患」（跌價格數 ×2）、月黑風高變成護衛無效且自家走私商人不再掩護（幽靈號自帶掩護仍有效）。第 2 張推進牌那回合是最後一回合、沒有一般事件，用比賽亂數抽「黑市大開」（每種貨需求 +1、不跌價）或「最後一搏」（每艘船的原始骰取兩顆 d6 較高者）。`maxRounds`（10）是保險上限。最後一回合不能出巨鯨號；所有「最後一回合」判斷改用 `isFinalRound`／`arrivesInTime`。公開狀態在 `PlayerView.events`，事件 `dark-tide-rising`、`phase-two-started`、`boss-event`、`final-round`、`dark-tide-loss`。關掉時行為與之前完全相同。 |
 
-材料行動與加注、私貨、保價都在 `invest` 行動的可選欄位裡，合法性照樣由 `getLegalActions` 列舉。公開事件多了 `materials-used`、`trade-protected` 與只給報表用的 `v08-effect`（技能、建築、島嶼變體的觸發與估計金額）；`ship-resolved` 多了 `lost`、`privateCargo`。Bot 的估分在 `bots/v08.ts`（以每次決定的快取估算貨箱期望值、材料行動在剩餘航程的價值、加注、保價貨）。測試在 `tests/v07/game/v08-proto.test.ts` 與 `tests/v07/bots/v08.test.ts`。
+材料行動與加注、私貨、保價都在 `invest` 行動的可選欄位裡，合法性照樣由 `getLegalActions` 列舉。公開事件多了 `materials-used`、`trade-protected` 與只給報表用的 `v08-effect`（技能、建築、島嶼變體的觸發與估計金額）；`ship-resolved` 多了 `lost`、`privateCargo`。Bot 的估分在 `bots/v08.ts`（以每次決定的快取估算貨箱期望值、材料行動在剩餘航程的價值、加注、保價貨）。事件牌庫開啟時，Bot 用 `bots/estimates.ts` 的 `isFinal`、`expectedRoundsLeft`（第 2 張推進牌還沒出現時，視為在其窗口內本回合之後的各回合機率相同，取平均）、`survivingUnits`（暗潮將至回合留在倉庫的貨只算剩下的量），並用第二階段的有效修正估骰值、價格與查緝。測試在 `tests/v07/game/v08-proto.test.ts`（固定 6 回合，事件牌庫關閉）、`tests/v07/game/v08-events.test.ts` 與 `tests/v07/bots/v08.test.ts`。
 
 ## `bots/`
 

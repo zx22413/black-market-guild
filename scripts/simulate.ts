@@ -146,14 +146,14 @@ function winSection(options: Options, s: SimStats): string[] {
 
 function marketSection(options: Options, s: SimStats): string[] {
   const { rules } = options;
-  const goodRounds = s.matches * rules.rounds * GOODS.length;
+  const goodRounds = s.rounds * GOODS.length;
   return [
     '## 3. 出航與市場',
     '',
     `- 出航的玩家回合：${pct(s.ships, s.playerRounds)}；抵達率 ${pct(s.shipsArrived, s.ships)}；每艘平均 ${per(s.unitsShipped, s.ships)} 單位（軍火 ${per(
       s.armsShipped,
       s.ships,
-    )}）；平均每回合裝運 ${per(s.unitsShipped, s.matches * rules.rounds)} 單位。`,
+    )}）；平均每回合裝運 ${per(s.unitsShipped, s.rounds)} 單位。`,
     `- 到港量對需求（每種商品每回合）：少於需求 ${pct(s.demandVsArrived.under, goodRounds)}、剛好 ${pct(s.demandVsArrived.exact, goodRounds)}、多於需求 ${pct(
       s.demandVsArrived.over,
       goodRounds,
@@ -218,6 +218,52 @@ const EFFECT_LABELS: Record<string, string> = {
   inspected: '軍火超量查緝（G＝船東損失）',
   'level-up': '技能練到二級（出航 2 次後）',
 };
+const VOYAGE_EVENT_LABELS: Record<string, string> = {
+  tailwind: '順風',
+  storm: '暴風雨',
+  'sea-fog': '海霧',
+  'moonless-night': '月黑風高',
+  'black-market-rush': '黑市熱絡',
+  'calm-seas': '風平浪靜',
+};
+const BOSS_LABELS: Record<string, string> = {
+  tailwind: '強順風（+2）',
+  storm: '大暴風雨（−2）',
+  'sea-fog': '海盜伏擊（海盜 −2）',
+  'moonless-night': '月黑風高（護衛、自家走私掩護失效）',
+  'black-market-rush': '嚴查（查緝額度 −1）',
+  'calm-seas': '貨滿為患（跌價加倍）',
+};
+const FINAL_LABELS: Record<string, string> = { 'open-market': '黑市大開', 'last-gamble': '最後一搏', none: '（回合上限／牌庫用完）' };
+
+/** V0.8 prototype (v08.events): match lengths, phase II, final effects, 暗潮將至 losses and boss events. */
+function eventsSection(s: SimStats): string[] {
+  const e = s.v08.events;
+  const dist = (counts: Record<number, number>) =>
+    Object.entries(counts)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([k, n]) => `${k}：${pct(n, s.matches)}`)
+      .join('、');
+  const mean = (counts: Record<number, number>) => per(Object.entries(counts).reduce((sum, [k, n]) => sum + Number(k) * n, 0), Object.values(counts).reduce((a, b) => a + b, 0));
+  const lost = GOODS.reduce((sum, g) => sum + (e.darkTideLost[g] ?? 0), 0);
+  const boss = Object.values(e.boss).reduce((a, b) => a + b, 0);
+  return [
+    '事件牌庫與兩階段（v08.events）：',
+    '',
+    `- 對局長度（回合）：${dist(e.lengths)}；平均 ${mean(e.lengths)} 回合。`,
+    `- 暗潮將至出現的回合：${dist(e.darkTideRounds)}；最終回合：${dist(e.finalRounds)}。`,
+    `- 第二階段回合數（暗潮將至的下一回合到最後一回合，含最終回合）：${dist(e.phaseTwo)}；平均 ${mean(e.phaseTwo)}；其中翻到首領事件的回合平均每局 ${per(e.bossRounds, s.matches)}。`,
+    `- 最終效果：${Object.entries(e.finalEffects)
+      .map(([k, n]) => `${FINAL_LABELS[k] ?? k} ${n}（${pct(n, s.matches)}）`)
+      .join('、')}。`,
+    `- 暗潮將至倉庫損失：每局 ${per(lost, s.matches)} 單位（每座位 ${per(lost, s.seats)}）：${GOODS.map((g) => `${GOOD_LABELS[g]} ${per(e.darkTideLost[g] ?? 0, s.matches)}`).join('、')}。`,
+    '',
+    ...table(
+      ['首領事件', '原事件', '次數', '每局', '佔首領回合'],
+      Object.keys(VOYAGE_EVENT_LABELS).map((k) => [BOSS_LABELS[k]!, VOYAGE_EVENT_LABELS[k]!, e.boss[k] ?? 0, per(e.boss[k] ?? 0, s.matches), pct(e.boss[k] ?? 0, boss)]),
+    ),
+  ];
+}
 
 /** V0.8 prototype section: ship types, crates, material adoption, effects and price moves. */
 function v08Section(options: Options, s: SimStats): string[] {
@@ -283,6 +329,7 @@ function v08Section(options: Options, s: SimStats): string[] {
         return [GOOD_LABELS[g]!, pct(m.up, total), pct(m.flat, total), pct(m.down, total)];
       }),
     ),
+    ...(options.rules.v08.events.enabled === 1 ? ['', ...eventsSection(s)] : []),
   ];
 }
 
@@ -335,7 +382,11 @@ function v08Summary(s: SimStats): string {
   const sank = Object.values(s.shipTypes).reduce((n, e) => n + e.sank, 0);
   const shares = SHIP_TYPE_IDS.map((t) => pct(s.shipTypes[t]?.count ?? 0, ships)).join(' / ');
   const materials = Object.values(s.v08.materials).reduce((n, m) => n + Object.values(m).reduce((k, e) => k + e.count, 0), 0);
-  return ` ${pct(sank, ships)} | ${shares} | ${per(materials, s.seats)} | ${per(s.unsoldUnits, s.seats)} |`;
+  const events = s.v08.events;
+  const lengths = Object.entries(events.lengths).reduce((sum, [k, n]) => sum + Number(k) * n, 0);
+  // v08.events: mean match length, and the 黑市大開 / 最後一搏 split.
+  const phases = Object.keys(events.lengths).length === 0 ? '' : ` ${per(lengths, s.matches)} R | ${events.finalEffects['open-market'] ?? 0} / ${events.finalEffects['last-gamble'] ?? 0} |`;
+  return ` ${pct(sank, ships)} | ${shares} | ${per(materials, s.seats)} | ${per(s.unsoldUnits, s.seats)} |${phases}`;
 }
 
 const options = parseOptions();

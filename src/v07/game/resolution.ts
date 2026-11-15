@@ -1,13 +1,18 @@
 import { holds, playerOf } from './cash';
 import { shipFinalCapFor, traitOf } from './islands';
 import { mapGoods, priceAt } from './goods';
+import { FINAL_EFFECTS } from './types';
 import { nextInt, type RngState } from './rng';
-import { shipSinks } from './rules';
+import { shipDelay, shipSinks } from './rules';
 import { GOODS, type Deployment, type MatchEvent, type MatchState, type Ship, type Step, type VoyageModifier, type VoyageOutcome } from './types';
+import { darkNight, diceToRoll, eventShift, eventsOn, moonlessShift, pirateModifier, publicEvents, seaFogShift } from './v08-events';
 import { crateTerms, extraDieFrom, facilityOf, repairyardSaved, rerolls, skillLevel, takeHighest, v08On, type CrateContext, type CrateTerms } from './v08';
 
 /** §5 step 1: draws and reveals the voyage event as the round opens. */
 export function revealVoyageEvent(state: MatchState): Step {
+  if (eventsOn(state.rules) && state.v08Events !== undefined) {
+    return revealEventCard(state);
+  }
   const [card, ...rest] = state.voyageDeck;
   if (card === undefined) {
     throw new Error('voyage deck is empty');
@@ -16,6 +21,49 @@ export function revealVoyageEvent(state: MatchState): Step {
     state: { ...state, voyageDeck: rest, roundState: { ...state.roundState, voyageEvent: card } },
     events: [{ type: 'voyage-event-revealed', round: state.round, event: card }],
   };
+}
+
+/**
+ * V0.8 prototype (v08.events): draws the round's event-deck card. The 1st advance is 「暗潮將至」 (phase II from next
+ * round), the 2nd makes this the final round with a random effect; the round cap or an empty deck also ends the match.
+ */
+function revealEventCard(state: MatchState): Step {
+  const ev = state.v08Events!;
+  const [card, ...deck] = ev.deck;
+  if (card === undefined) {
+    throw new Error('event deck is empty');
+  }
+  const advance = card === 'advance';
+  const advancesDrawn = ev.advancesDrawn + (advance ? 1 : 0);
+  const darkTide = advance && advancesDrawn === 1;
+  const ends = (advance && advancesDrawn >= 2) || state.round >= state.rules.v08.events.maxRounds || deck.length === 0;
+  const pick = advance && advancesDrawn >= 2 ? nextInt(state.rng, 0, FINAL_EFFECTS.length - 1) : null;
+  const finalEffect = pick === null ? null : FINAL_EFFECTS[pick.value]!;
+  const voyageEvent = advance ? null : card;
+  const { demand } = state.roundState;
+  const boost = state.rules.v08.events.openMarketDemand;
+  const newDemand = finalEffect === 'open-market' ? mapGoods((g) => demand[g] + boost) : demand;
+  const next: MatchState = {
+    ...state,
+    rng: pick?.state ?? state.rng,
+    v08Events: {
+      deck,
+      advancesDrawn,
+      phaseTwoFrom: darkTide ? state.round + 1 : ev.phaseTwoFrom,
+      finalRound: ends ? state.round : ev.finalRound,
+      finalEffect: ends ? finalEffect : ev.finalEffect,
+    },
+    roundState: { ...state.roundState, voyageEvent, demand: newDemand },
+  };
+  const boss = voyageEvent !== null && publicEvents(next)?.phase === 2;
+  const events: MatchEvent[] = [
+    ...(ev.phaseTwoFrom === state.round ? [{ type: 'phase-two-started' as const, round: state.round }] : []),
+    ...(voyageEvent === null ? [] : [{ type: 'voyage-event-revealed' as const, round: state.round, event: voyageEvent }]),
+    ...(boss && voyageEvent !== null ? [{ type: 'boss-event' as const, round: state.round, event: voyageEvent }] : []),
+    ...(darkTide ? [{ type: 'dark-tide-rising' as const, round: state.round }] : []),
+    ...(ends ? [{ type: 'final-round' as const, round: state.round, effect: finalEffect, demand: newDemand }] : []),
+  ];
+  return { state: next, events };
 }
 
 /** This round's deployments and those pre-deployed on a freighter that has now arrived (game-design.md §8.1). */
@@ -27,16 +75,17 @@ function targeting(state: MatchState, ship: Ship, role: Deployment['role']): Dep
 
 /** §12: "targeted by a role" effects count once however many players target the ship. */
 function eventModifier(state: MatchState, ship: Ship): number {
-  const v = state.rules.voyageEvents;
-  switch (state.roundState.voyageEvent) {
+  // V0.8 prototype (v08.events): phase II boss versions; with the switch off these are the plain event values.
+  const pe = publicEvents(state);
+  const event = state.roundState.voyageEvent;
+  switch (event) {
     case 'tailwind':
-      return v.tailwind;
     case 'storm':
-      return v.storm;
+      return eventShift(state.rules, pe, event);
     case 'sea-fog':
-      return targeting(state, ship, 'pirate').length > 0 ? v.seaFog : 0;
+      return targeting(state, ship, 'pirate').length > 0 ? seaFogShift(state.rules, pe) : 0;
     case 'moonless-night':
-      return targeting(state, ship, 'guard').length > 0 ? v.moonlessNight : 0;
+      return targeting(state, ship, 'guard').length > 0 ? moonlessShift(state.rules, pe) : 0;
     case 'black-market-rush':
     case 'calm-seas':
     case null:
@@ -49,13 +98,18 @@ export function voyageModifier(state: MatchState, ship: Ship): VoyageModifier {
   const { rules } = state;
   const trait = (playerId: string) => traitOf(rules, playerOf(state, playerId).island);
   const base = ship.rawRoll;
-  const guard = targeting(state, ship, 'guard').reduce(
-    (sum, d) =>
-      sum + rules.roles.guard.modifier + trait(d.playerId).guardModifier,
-    0,
-  );
+  const pe = publicEvents(state);
+  const card = state.roundState.voyageEvent;
+  // V0.8 prototype (v08.events): a phase II moonless night voids the guards; 海盜伏擊 changes each pirate's modifier.
+  const guard = darkNight(pe, card)
+    ? 0
+    : targeting(state, ship, 'guard').reduce(
+        (sum, d) =>
+          sum + rules.roles.guard.modifier + trait(d.playerId).guardModifier,
+        0,
+      );
   // + 0 turns -0 into 0.
-  const pirate = targeting(state, ship, 'pirate').reduce((sum, d) => sum + rules.roles.pirate.modifier + trait(d.playerId).pirateModifier, 0) + 0;
+  const pirate = targeting(state, ship, 'pirate').reduce((sum, d) => sum + pirateModifier(rules, pe, card) + trait(d.playerId).pirateModifier, 0) + 0;
   const event = eventModifier(state, ship) + 0;
   const island = trait(ship.owner).ownShipModifier + 0;
   const final = Math.min(shipFinalCapFor(rules, playerOf(state, ship.owner).island, ship.type), Math.max(rules.sailing.dieMin, base + guard + pirate + event + island));
@@ -67,10 +121,11 @@ export function outcomeOf(state: MatchState, ship: Ship, value: number): VoyageO
 }
 
 /** §5 step 7: announces every ship's modifiers, then each outcome with its now-public cargo. */
-export function resolveVoyages(state: MatchState): Step {
-  if (v08On(state.rules)) {
-    return resolveVoyagesV08(state);
+export function resolveVoyages(input: MatchState): Step {
+  if (v08On(input.rules)) {
+    return resolveVoyagesV08(input);
   }
+  const state = lastGambleArrivals(input);
   const summaries = state.roundState.ships.map((ship) => voyageModifier(state, ship));
   const ships = state.roundState.ships.map((ship, i) => ({ ...ship, outcome: outcomeOf(state, ship, summaries[i]!.final) }));
   return {
@@ -162,7 +217,31 @@ function loseCrates(state: MatchState, ship: Ship, count: number): Pick<Ship, 'l
   return { lost, privateCargo: mapGoods((g) => priv[g] - (pool[g] - lost[g])) };
 }
 
-function resolveVoyagesV08(state: MatchState): Step {
+/**
+ * V0.8 prototype (最後一搏): a ship launched in an earlier round (a freighter) rolled its die then; in the final round its
+ * raw die becomes the best of that die and `lastGambleDice − 1` new ones, like the ships launched now.
+ */
+function lastGambleArrivals(state: MatchState): MatchState {
+  const dice = diceToRoll(state.rules, publicEvents(state));
+  if (dice <= 1) return state;
+  let rng = state.rng;
+  const ships = state.roundState.ships.map((ship) => {
+    if (ship.arriveRound - shipDelay(state.rules, ship.type) < state.round) {
+      let raw = ship.rawRoll;
+      for (let k = 1; k < dice; k += 1) {
+        const step = nextInt(rng, state.rules.sailing.dieMin, state.rules.sailing.dieMax);
+        rng = step.state;
+        raw = Math.max(raw, step.value);
+      }
+      return { ...ship, rawRoll: raw };
+    }
+    return ship;
+  });
+  return { ...state, rng, roundState: { ...state.roundState, ships } };
+}
+
+function resolveVoyagesV08(input: MatchState): Step {
+  const state = lastGambleArrivals(input);
   let current = state;
   const skillEvents: MatchEvent[] = [];
   const rolled = state.roundState.ships.map((ship) => {
