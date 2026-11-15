@@ -50,8 +50,30 @@ export interface V08Rules {
   readonly hidden: { readonly privateL1: number; readonly privateL2: number; readonly privateArrives: number; readonly privateLoses: number; readonly privateSafeFromInspectionL2: number; readonly feeFreeL1: number; readonly selfCoverL1: number };
   /** `extraDieSides`: the extra die is 1d`extraDieSides` (6 = a normal die). */
   readonly breaker: { readonly extraFromL1: number; readonly extraFromL2: number; readonly extraDieSides: number };
-  readonly repairyard: { readonly fromFinal: number; readonly toFinal: number; readonly save: number };
-  readonly armory: { readonly lootPercent: number };
+  /**
+   * `immuneStormTide`: 1 = the storm tide's extra crate loss (events.tideStormExtraLoss) never applies to the owner's
+   * ships (freighter included); the normal save is unchanged.
+   */
+  readonly repairyard: { readonly fromFinal: number; readonly toFinal: number; readonly save: number; readonly immuneStormTide: number };
+  /**
+   * `halveAllLoot`: 1 = the armory halves every pirate take from the owner's ships (sinking loot and arrival loot, the
+   * wanted bonus as before); 0 = only sinking loot, capped at `lootPercent`.
+   * `immunePirateTide`: 1 = the pirate tide's arrival loot (events.tidePirateArrivalLoot) never applies to the owner's
+   * ships (normal loot still does, still halved).
+   */
+  /** `pirateToll`: 1 = every pirate deployed on the owner's ship pays its deployment fee to the owner instead of the bank (any island). */
+  readonly armory: { readonly lootPercent: number; readonly halveAllLoot: number; readonly immunePirateTide: number; readonly pirateToll: number };
+  /**
+   * `immuneCrashTide`: 1 = while the crash tide multiplies a price drop, the owner's own arriving crates (every good) sell
+   * at the price the drop would reach without the tide's multiplier (other multipliers still apply; the named protected
+   * good still keeps the pre-change price). The market price itself is unchanged.
+   */
+  readonly tradehouse: { readonly immuneCrashTide: number };
+  /**
+   * Bot only (not a rule): 1 = bots value pirate deployments (and the pirate threat for the armory) with the crate tables
+   * and the active tide instead of the V0.7 percent curves.
+   */
+  readonly botPirateCrates: number;
   /**
    * 軍火超量查緝: 1 = arriving arms beyond demand + `allowance` are seized by the bank (not a role, so hidden ships too),
    * one crate at a time from the uncovered ship with the most arms left (ties: richer owner first, then ship order).
@@ -95,6 +117,43 @@ export interface V08EventRules {
   readonly bossInspectionAllowance: number;
   /** 「貨滿為患」(calm seas): price drops move this many times as many cells. */
   readonly bossDropMultiplier: number;
+  /**
+   * 1 = dark tide kinds: two distinct candidates are drawn and made public at match start, and one of them (at random)
+   * becomes the tide when 暗潮將至 is revealed; it acts in every round after that (phase II and the final round).
+   */
+  readonly tides: number;
+  /** 風暴潮: added to every ship's voyage modifier (stacks with events). */
+  readonly tideStorm: number;
+  /**
+   * 風暴潮 (realigned to the repairyard): every arriving ship whose final value is in tideStormLossFrom–tideStormLossTo
+   * loses this many extra crates (on top of its table, highest price first; a never-sinking ship's final 1 counts as 2).
+   */
+  readonly tideStormExtraLoss: number;
+  readonly tideStormLossFrom: number;
+  readonly tideStormLossTo: number;
+  /** 海盜潮: added to each pirate's modifier (stacks with 海盜伏擊). */
+  readonly tidePirate: number;
+  /**
+   * 海盜潮 (realigned to the armory): pirates on a ship that arrives with a final whose normal loot percent is 0 take
+   * this percent of the owner's remaining income instead (0 = nothing, as without the tide).
+   */
+  readonly tidePirateArrivalLoot: number;
+  /** 查緝潮: added to the arms inspection allowance (stacks with 嚴查). */
+  readonly tideInspection: number;
+  /** 崩盤潮: price drops move this many times as many cells (multiplies with 貨滿為患). */
+  readonly tideDropMultiplier: number;
+  /**
+   * 1 = 黑市大開 and 最後一搏 are single-sided cards, one copy each, shuffled into the cards for the rounds between the
+   * two advances (phase II only); they may not appear when phase II has too few rounds.
+   */
+  readonly lateCards: number;
+  /**
+   * 1 = in phase II only the card matching the revealed tide shows its boss side (storm ↔ 暴風雨, pirate ↔ 海霧,
+   * inspection ↔ 黑市熱絡, crash ↔ 風平浪靜); every other card keeps its phase I effect. 0 = all six flip.
+   */
+  readonly flipOnlyTideCard: number;
+  /** 1 = the final round is 「最後的大市集」: both 黑市大開 and 最後一搏 (instead of one at random). */
+  readonly finalBoth: number;
 }
 
 const g = (partial: Partial<Record<GoodId, number>>): Goods => ({ wood: 0, iron: 0, spice: 0, arms: 0, ...partial });
@@ -128,8 +187,10 @@ export const V08_OFF: V08Rules = {
   freighter: { salvageL1: 1, salvageL2: 2, salvageShared: 0 },
   hidden: { privateL1: 1, privateL2: 2, privateArrives: 0, privateLoses: 0, privateSafeFromInspectionL2: 0, feeFreeL1: 0, selfCoverL1: 0 },
   breaker: { extraFromL1: 6, extraFromL2: 5, extraDieSides: 6 },
-  repairyard: { fromFinal: 2, toFinal: 3, save: 1 },
-  armory: { lootPercent: 35 },
+  repairyard: { fromFinal: 2, toFinal: 3, save: 1, immuneStormTide: 0 },
+  armory: { lootPercent: 35, halveAllLoot: 0, immunePirateTide: 0, pirateToll: 0 },
+  tradehouse: { immuneCrashTide: 0 },
+  botPirateCrates: 0,
   inspection: { enabled: 0, allowance: 0 },
   levelUp: { byLaunches: 0 },
   events: {
@@ -147,5 +208,17 @@ export const V08_OFF: V08Rules = {
     bossPirate: -2,
     bossInspectionAllowance: -1,
     bossDropMultiplier: 2,
+    tides: 0,
+    tideStorm: -1,
+    tideStormExtraLoss: 0,
+    tideStormLossFrom: 2,
+    tideStormLossTo: 3,
+    tidePirate: -1,
+    tidePirateArrivalLoot: 0,
+    tideInspection: -1,
+    tideDropMultiplier: 2,
+    lateCards: 0,
+    flipOnlyTideCard: 0,
+    finalBoth: 0,
   },
 };

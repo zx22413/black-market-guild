@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { expectedRoundsLeft, isFinal, survivingUnits } from '../../../src/v07/bots/estimates';
 import {
   RULES_V07,
-  RULES_V08_PROTO,
   applyAction,
   createMatch,
   createRng,
@@ -15,11 +14,15 @@ import {
   type V08EventsState,
 } from '../../../src/v07/game';
 import { revealVoyageEvent } from '../../../src/v07/game/resolution';
-import { G, edit, find, plain, playRound, withDemand, withPrices } from './helpers';
+import { G, edit, find, plain, playRound, withDemand, withPrices, RULES_V08_PRE_SIMPLIFY } from './helpers';
 
 // V0.8 simulation prototype (v08.events): the event deck, its two phases and the boss events. NOT rules.
 
-const V08 = RULES_V08_PROTO;
+// Pinned to the event phases before the tide kinds, late cards and the final market (v08-tides.test.ts covers those).
+const V08: typeof RULES_V08_PRE_SIMPLIFY = {
+  ...RULES_V08_PRE_SIMPLIFY,
+  v08: { ...RULES_V08_PRE_SIMPLIFY.v08, events: { ...RULES_V08_PRE_SIMPLIFY.v08.events, tides: 0, lateCards: 0, finalBoth: 0 } },
+};
 const IDS = ['p1', 'p2', 'p3', 'p4'];
 
 const created = (seed: number, rules = V08): MatchState => {

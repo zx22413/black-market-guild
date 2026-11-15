@@ -1,4 +1,4 @@
-import { GOODS, capacityFor, dropMultiplier, eventShift, noPriceDrop, priceAt, shipIncomePercent, shipSinks, type BuildingId, type GoodId, type PlayerView, type PublicPlayer, type Rules, type ShipTypeId, type ViewShip } from '../game';
+import { GOODS, activeTide, capacityFor, dropMultiplier, eventShift, nextRoundTide, noPriceDrop, tideDropMultiplier, tideShift, priceAt, shipIncomePercent, shipSinks, type BuildingId, type GoodId, type PlayerView, type PublicPlayer, type Rules, type ShipTypeId, type ViewShip } from '../game';
 
 // Expected-value estimates from public information only (ported from src/proto/economy/bots).
 // They are deliberately rough: simulation results reflect this way of deciding, not real players.
@@ -24,16 +24,26 @@ export function arriveChance(rules: Rules, modifier: number): number {
   return hits / (dieMax - dieMin + 1);
 }
 
+/** V0.8 prototype loot terms for expectedLoot: 海盜潮's arrival percent and the target owner's armory halving. */
+export interface LootTerms {
+  readonly arrivalPercent: number;
+  readonly halved: boolean;
+}
+export const NO_LOOT_TERMS: LootTerms = { arrivalPercent: 0, halved: false };
+
 /**
  * Expected pirate take from a ship worth `cargoValue` under a known total modifier (§9.4): a share of the
  * cargo's value at a sinking, or of its scaled sale income when it arrives with a low final value.
  */
-export function expectedLoot(rules: Rules, modifier: number, cargoValue: number, bonus = 0): number {
+export function expectedLoot(rules: Rules, modifier: number, cargoValue: number, bonus = 0, v08: LootTerms = NO_LOOT_TERMS): number {
   const { dieMin, dieMax, successMin } = rules.sailing;
   let total = 0;
   for (let face = dieMin; face <= dieMax; face += 1) {
     const final = Math.min(dieMax, Math.max(dieMin, face + modifier));
-    const pct = (rules.roles.pirate.lootPercentByFinal[final] ?? 0) / 100;
+    const normal = rules.roles.pirate.lootPercentByFinal[final] ?? 0;
+    // V0.8 prototype: 海盜潮 loots arrivals where pirates normally take nothing; the owner's armory may halve every take.
+    const base = normal === 0 && final >= successMin ? v08.arrivalPercent : normal;
+    const pct = (v08.halved ? base / 2 : base) / 100;
     const income = final < successMin ? 1 : (rules.sailing.arrivalIncomePercent[final] ?? 100) / 100;
     const take = cargoValue * income * pct;
     total += take > 0 ? take + bonus : 0;
@@ -66,7 +76,9 @@ export function expectedOwnModifier(view: PlayerView, islandModifier: number, de
   // A ship that arrives next round meets next round's event, which nobody knows yet. V0.8 prototype (v08.events): the
   // phase II storm and tailwind are stronger.
   const event = delayed ? 0 : eventShift(view.rules, view.events, view.voyageEvent);
-  return islandModifier + event;
+  // v08.events.tides: 風暴潮 is known once picked; a ship resolving next round meets next round's tide.
+  const tide = tideShift(view.rules, delayed ? nextRoundTide(view.events) : activeTide(view.events));
+  return islandModifier + event + tide;
 }
 
 /** Price of a fractional step, interpolated along the track (§7.1). */
@@ -119,11 +131,13 @@ export function shiftValue(view: PlayerView, good: GoodId, delta: number, mine: 
 }
 
 /** Expected sale price (§7.3) if I ship `mine` units, guessing the others from their public stock. */
-export function expectedPrice(view: PlayerView, good: GoodId, mine: number): number {
+export function expectedPrice(view: PlayerView, good: GoodId, mine: number, withoutTide = false): number {
   const arrivals = (othersExpectedLoad(view, good) + mine) * arriveChance(view.rules, 0);
   const raw = Math.max(-1, Math.min(1, view.demand[good] - arrivals)) * view.rules.price.volatility[good];
   // V0.8 prototype (v08.events): 貨滿為患 doubles drops, 黑市大開 stops them (both 1 / false with the switch off).
-  const delta = raw >= 0 ? raw : noPriceDrop(view.events) ? 0 : raw * dropMultiplier(view.rules, view.events, view.voyageEvent);
+  // `withoutTide` (v08.tradehouse.immuneCrashTide): the drop without 崩盤潮's multiplier.
+  const multiplier = dropMultiplier(view.rules, view.events, view.voyageEvent) / (withoutTide ? tideDropMultiplier(view.rules, activeTide(view.events)) : 1);
+  const delta = raw >= 0 ? raw : noPriceDrop(view.events) ? 0 : raw * multiplier;
   return priceOfStep(view.rules, good, view.prices[good] + delta);
 }
 

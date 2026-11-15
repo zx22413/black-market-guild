@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   RULES_BUILDINGS,
   RULES_V07,
-  RULES_V08_PROTO,
   applyAction,
   createMatch,
   createRng,
@@ -14,11 +13,11 @@ import {
   type Action,
   type MatchState,
 } from '../../../src/v07/game';
-import { G, cash, edit, find, plain, playRound, withDemand } from './helpers';
+import { G, cash, edit, find, plain, playRound, withDemand, RULES_V08_PRE_SIMPLIFY } from './helpers';
 
 /** V0.8 simulation prototype (src/v07/game/v08-rules.ts): test values, not rules. */
 // These tests cover the other prototype switches on the fixed six rounds; the event deck has its own tests (v08-events.test.ts).
-const V08 = { ...RULES_V08_PROTO, v08: { ...RULES_V08_PROTO.v08, events: { ...RULES_V08_PROTO.v08.events, enabled: 0 } } };
+const V08 = { ...RULES_V08_PRE_SIMPLIFY, v08: { ...RULES_V08_PRE_SIMPLIFY.v08, events: { ...RULES_V08_PRE_SIMPLIFY.v08.events, enabled: 0 } } };
 
 const ready = (rules = V08): MatchState => withDemand(plain(4, rules).players.reduce((s, p) => edit(s, p.id, { stock: G(3, 3, 1, 1) }), plain(4, rules)), G(2, 2, 2, 1));
 /** The prototype without the hidden ship's self-cover (v08.hidden.selfCoverL1). */

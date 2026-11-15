@@ -1,8 +1,11 @@
 import {
   GOODS,
   buildingCost,
+  cratesOn,
   createRng,
+  activeTide,
   darkNight,
+  facilityOf,
   pirateModifier,
   materialsOn,
   roleFee,
@@ -13,6 +16,7 @@ import {
   type ViewShip,
 } from '../game';
 import { choose } from './choose';
+import type { LootTerms } from './estimates';
 import {
   SMUGGLER_GUARDED_CHANCE,
   DIPLOMAT_HIT,
@@ -38,7 +42,7 @@ import {
 import { islandWorth } from './islands';
 import { PERSONALITIES, type Personality, type PersonalityName } from './personality';
 import type { Bot } from './types';
-import { V08Cache, scoreInvestV08 } from './v08';
+import { V08Cache, pirateLootCrates, scoreInvestV08 } from './v08';
 
 type Invest = Extract<Action, { type: 'invest' }>;
 type Deploy = Extract<Action, { type: 'deploy-role' }>;
@@ -114,7 +118,19 @@ function scoreDiplomat(view: PlayerView, action: Deploy): number {
   return -fee + (1 - hit) * fee * (refundPercent / 100) + hit * (saved + take);
 }
 
-function scoreDeploy(view: PlayerView, action: Deploy, persona: Personality): number {
+/** V0.8 prototype: 海盜潮's arrival loot and the target owner's armory halving every take (v08.armory.halveAllLoot). */
+function lootTerms(view: PlayerView, ship: ViewShip): LootTerms {
+  const { rules } = view;
+  const owner = view.players.find((p) => p.id === ship.owner);
+  const armory = owner !== undefined && facilityOf(rules, owner) === 'armory';
+  const halved = rules.v08.armory.halveAllLoot === 1 && armory;
+  // v08.armory.immunePirateTide: the owner's armory shields its ships from 海盜潮's arrival loot.
+  const shielded = armory && rules.v08.armory.immunePirateTide === 1;
+  const arrivalPercent = activeTide(view.events) === 'pirate' && !shielded ? rules.v08.events.tidePirateArrivalLoot : 0;
+  return { arrivalPercent, halved };
+}
+
+function scoreDeploy(view: PlayerView, action: Deploy, persona: Personality, cache: V08Cache): number {
   if (action.role === 'diplomat') {
     return scoreDiplomat(view, action);
   }
@@ -140,7 +156,12 @@ function scoreDeploy(view: PlayerView, action: Deploy, persona: Personality): nu
       // V0.8 prototype (海盜伏擊): a phase II sea fog strengthens every pirate.
       const modifier = pirateModifier(rules, view.events, view.voyageEvent) + trait.pirateModifier;
       const attacked = arriveChance(rules, modifier);
-      const loot = expectedLoot(rules, modifier, guessedCargoValue(view, ship), carriesWanted(view, ship) ? rules.wanted.lootBonus : 0);
+      const bonus = carriesWanted(view, ship) ? rules.wanted.lootBonus : 0;
+      // v08.botPirateCrates: crate tables and the active tide instead of the V0.7 percent curves.
+      const loot =
+        rules.v08.botPirateCrates === 1 && cratesOn(rules)
+          ? pirateLootCrates(view, ship, modifier, bonus, cache)
+          : expectedLoot(rules, modifier, guessedCargoValue(view, ship), bonus, lootTerms(view, ship));
       const salvage = player.buildings.includes('salvage') && stake === 0 ? (base - attacked) * averagePrice(view) * base : 0;
       return loot * persona.aggression + salvage - (base - attacked) * stake - fee;
     }
@@ -166,7 +187,7 @@ export function scoreAction(view: PlayerView, action: Action, persona: Personali
       // V0.8 prototype (rules.v08): material actions and crate voyages have their own scoring.
       return materialsOn(view.rules) || view.rules.v08.crates === 1 ? scoreInvestV08(view, action, persona, cache) : scoreInvest(view, action, persona);
     case 'deploy-role':
-      return scoreDeploy(view, action, persona);
+      return scoreDeploy(view, action, persona, cache);
   }
 }
 

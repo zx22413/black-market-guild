@@ -6,7 +6,7 @@ import { seedToRngState, shuffle } from './rng';
 import { RULES_V07, type Rules } from './rules';
 import { GOODS } from './types';
 import { buildEventDeck, eventsOn, initialEventsState, roundCap } from './v08-events';
-import { PHASE_ACTION_TYPE, type Action, type MatchState, type PrivateEvent, type Result, type RuleErrorCode, type Transition } from './types';
+import { PHASE_ACTION_TYPE, type Action, type MatchEvent, type MatchState, type PrivateEvent, type Result, type RuleErrorCode, type Transition } from './types';
 
 export interface MatchConfig {
   readonly seed: number;
@@ -84,14 +84,16 @@ export function createMatch(config: MatchConfig): Result<Transition> {
     rng: draft.state,
     demandDeck: demand.items,
     voyageDeck: events === null ? voyage.items : [],
-    ...(events === null ? {} : { v08Events: initialEventsState(events.deck) }),
+    ...(events === null ? {} : { v08Events: initialEventsState(events.deck, events.tideCandidates) }),
     prices: { wood: rules.price.tracks.wood.start, iron: rules.price.tracks.iron.start, spice: rules.price.tracks.spice.start, arms: rules.price.tracks.arms.start },
     islandOffers: draft.offers,
     roundState: emptyRound(),
     result: null,
   };
   const privateEvents: PrivateEvent[] = state.players.map((p) => ({ playerId: p.id, type: 'island-offers', islands: draft.offers[p.id] ?? [] }));
-  return { ok: true, value: { state, events: [{ type: 'phase-started', round: 0, phase: 'island-choice' }], privateEvents } };
+  // V0.8 prototype (v08.events.tides): the two candidate tide kinds are public from the start.
+  const tides: MatchEvent[] = events !== null && events.tideCandidates.length > 0 ? [{ type: 'tide-candidates', candidates: events.tideCandidates }] : [];
+  return { ok: true, value: { state, events: [...tides, { type: 'phase-started', round: 0, phase: 'island-choice' }], privateEvents } };
 }
 
 /** Validates and applies one player's action. Never mutates `state`. */

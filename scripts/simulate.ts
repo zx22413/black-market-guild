@@ -23,6 +23,8 @@ interface Options {
   readonly overrides: readonly string[];
   readonly rules: Rules;
   readonly summary: boolean;
+  /** Print the betting groups (always on when a tide shield switch is on). */
+  readonly bets: boolean;
 }
 
 /** Returns a copy of the rules with `path=value` numeric overrides applied. */
@@ -65,11 +67,12 @@ function parseOptions(): Options {
     overrides,
     rules: applyOverrides(argv.includes('--v08') ? RULES_V08_PROTO : argv.includes('--buildings') ? RULES_BUILDINGS : RULES_V07, overrides),
     summary: argv.includes('--summary'),
+    bets: false,
   };
   if (![options.matches, options.players, options.seed].every(Number.isInteger)) {
     throw new Error('--matches, --players and --seed must be integers');
   }
-  return options;
+  return { ...options, bets: argv.includes('--bets') || shieldsOn(options.rules) };
 }
 
 function seatsFor(options: Options, index: number): SeatConfig[] {
@@ -217,6 +220,11 @@ const EFFECT_LABELS: Record<string, string> = {
   'customs-halved': '走私港軍械庫保住的海關半數',
   inspected: '軍火超量查緝（G＝船東損失）',
   'level-up': '技能練到二級（出航 2 次後）',
+  'storm-tide': '風暴潮多丟的箱（G＝船東少賺）',
+  'pirate-tide': '海盜潮搶抵港船（G＝海盜拿走）',
+  'storm-shield': '修船廠擋下風暴潮（貨箱＝少丟的箱，G＝多賺）',
+  'pirate-shield': '軍械庫擋下海盜潮（G＝海盜少拿）',
+  'crash-shield': '商行擋下崩盤潮（貨箱＝受保的箱，G＝多賺）',
 };
 const VOYAGE_EVENT_LABELS: Record<string, string> = {
   tailwind: '順風',
@@ -234,10 +242,121 @@ const BOSS_LABELS: Record<string, string> = {
   'black-market-rush': '嚴查（查緝額度 −1）',
   'calm-seas': '貨滿為患（跌價加倍）',
 };
-const FINAL_LABELS: Record<string, string> = { 'open-market': '黑市大開', 'last-gamble': '最後一搏', none: '（回合上限／牌庫用完）' };
+const FINAL_LABELS: Record<string, string> = { 'open-market': '黑市大開', 'last-gamble': '最後一搏', 'final-market': '最後的大市集（兩者皆有）', none: '（回合上限／牌庫用完）' };
+const TIDE_LABELS: Record<string, string> = { storm: '風暴潮（每船 −1）', pirate: '海盜潮（每海盜 −1）', inspection: '查緝潮（查緝額度 −1）', crash: '崩盤潮（跌價 ×2）' };
+const signed = (n: number) => (n < 0 ? `−${-n}` : `+${n}`);
+/** The tide labels for these rules (the fixed labels above when the storm and pirate tides keep their modifier-only settings). */
+function tideLabels(rules: Rules): Record<string, string> {
+  const e = rules.v08.events;
+  if (e.tideStormExtraLoss <= 0 && e.tidePirateArrivalLoot <= 0) return TIDE_LABELS;
+  const join = (parts: readonly string[]) => parts.join('，') || '無效果';
+  const storm = [...(e.tideStorm === 0 ? [] : [`每船 ${signed(e.tideStorm)}`]), ...(e.tideStormExtraLoss > 0 ? [`終值 ${e.tideStormLossFrom}–${e.tideStormLossTo} 多丟 ${e.tideStormExtraLoss} 箱`] : [])];
+  const pirate = [...(e.tidePirate === 0 ? [] : [`每海盜 ${signed(e.tidePirate)}`]), ...(e.tidePirateArrivalLoot > 0 ? [`抵港船被搶 ${e.tidePirateArrivalLoot}%`] : [])];
+  return { ...TIDE_LABELS, storm: `風暴潮（${join(storm)}）`, pirate: `海盜潮（${join(pirate)}）` };
+}
+/** The trigger columns: the tide-loss and shield effects only when those settings are on. */
+function triggerEffects(rules: Rules): readonly string[] {
+  const e = rules.v08.events;
+  const shields = [
+    ...(rules.v08.repairyard.immuneStormTide === 1 ? ['storm-shield'] : []),
+    ...(rules.v08.armory.immunePirateTide === 1 ? ['pirate-shield'] : []),
+    ...(rules.v08.tradehouse.immuneCrashTide === 1 ? ['crash-shield'] : []),
+  ];
+  return [...TRIGGER_EFFECTS, ...(e.tideStormExtraLoss > 0 ? ['storm-tide'] : []), ...(e.tidePirateArrivalLoot > 0 ? ['pirate-tide'] : []), ...shields];
+}
+
+/** Any building's tide shield (v08.repairyard.immuneStormTide, armory.immunePirateTide, tradehouse.immuneCrashTide). */
+function shieldsOn(rules: Rules): boolean {
+  return rules.v08.repairyard.immuneStormTide === 1 || rules.v08.armory.immunePirateTide === 1 || rules.v08.tradehouse.immuneCrashTide === 1;
+}
+
+const BET_GROUPS = [
+  ['right', '揭曉前就有，暗潮對上（押對）'],
+  ['wrong', '揭曉前就有，暗潮沒對上（押錯）'],
+  ['afterMatch', '揭曉後才拿，暗潮對上'],
+  ['afterOther', '揭曉後才拿，暗潮沒對上'],
+  ['never', '從沒拿'],
+] as const;
+
+/** v08.events.tides: the betting groups per answer (matches where its tide was a candidate) and the overall effect of betting right. */
+function betSection(s: SimStats): string[] {
+  const e = s.v08.events;
+  const answers = Object.keys(TIDE_ANSWER).map((k) => TIDE_ANSWER[k]!).filter((a) => e.bets[a] !== undefined);
+  if (answers.length === 0) return [];
+  const cell = (g: { seats: number; wins: number }) => `${g.seats}（${pct(g.wins, g.seats)}）`;
+  return [
+    '',
+    '押注（只算該解法對應的暗潮是兩個候選之一的對局；格內＝座位數（勝率））：',
+    '',
+    ...table(
+      ['解法', ...BET_GROUPS.map(([, label]) => label)],
+      answers.map((a) => [ANSWER_LABELS[a]!, ...BET_GROUPS.map(([key]) => cell(e.bets[a]![key]))]),
+    ),
+    '',
+    `- 押對任一種暗潮的座位：${cell(e.betRight)}；其他座位：${cell(e.betOthers)}。`,
+  ];
+}
+const TIDE_ORDER = ['storm', 'pirate', 'inspection', 'crash'] as const;
+/** The answer that matches each tide kind (查緝潮 also has the own-ship smuggler cover, its own row). */
+const TIDE_ANSWER: Record<string, string> = { storm: 'build:repairyard', pirate: 'build:armory', inspection: 'open:hidden', crash: 'build:tradehouse' };
+const ANSWER_LABELS: Record<string, string> = { 'build:repairyard': '修船廠', 'build:armory': '軍械庫', 'open:hidden': '幽靈號技能', 'build:tradehouse': '商行' };
+const TRIGGER_EFFECTS = ['repairyard', 'armory', 'tradehouse', 'inspected'] as const;
+
+/** V0.8 prototype (v08.events.tides / lateCards): tide counts, matching answers and phase I vs phase II triggers. */
+function tideSection(s: SimStats, rules: Rules, bets: boolean): string[] {
+  const TIDE_LABELS = tideLabels(rules);
+  const TRIGGERS = triggerEffects(rules);
+  const tides = s.v08.events.tides;
+  const late = s.v08.events.lateCards;
+  const lateLine = Object.keys(late).length === 0 ? [] : [`- 第二階段單面牌：${Object.entries(late).map(([k, n]) => `${FINAL_LABELS[k] ?? k} ${n}（每局 ${per(n, s.matches)}）`).join('、')}。`];
+  if (Object.keys(tides).length === 0) return lateLine.length === 0 ? [] : ['', ...lateLine];
+  const kinds = TIDE_ORDER.filter((k) => tides[k] !== undefined);
+  const otherRate = (kind: string, answer: string) => {
+    const others = kinds.filter((k) => k !== kind);
+    const seats = others.reduce((n, k) => n + tides[k]!.seats, 0);
+    return pct(others.reduce((n, k) => n + (tides[k]!.answers[answer]?.seats ?? 0), 0), seats);
+  };
+  const rows = kinds.flatMap((k) => {
+    const t = tides[k]!;
+    const answer = TIDE_ANSWER[k]!;
+    const a = t.answers[answer]!;
+    const main = [TIDE_LABELS[k]!, t.matches, ANSWER_LABELS[answer]!, pct(a.seats, t.seats), otherRate(k, answer), pct(a.wins, a.seats), pct(t.matches - a.wins, t.seats - a.seats), `${a.before}／${a.after}`];
+    if (k !== 'inspection') return [main];
+    const others = kinds.filter((x) => x !== k);
+    const otherCover = pct(others.reduce((n, x) => n + tides[x]!.coverSeats, 0), others.reduce((n, x) => n + tides[x]!.seats, 0));
+    return [main, ['', '', '第二階段自家走私掩護', pct(t.coverSeats, t.seats), otherCover, pct(t.coverWins, t.coverSeats), pct(t.matches - t.coverWins, t.seats - t.coverSeats), '—']];
+  });
+  const perRound = (n: number, rounds: number) => per(n, rounds);
+  return [
+    '',
+    '暗潮種類（v08.events.tides）：',
+    '',
+    `- 揭曉的暗潮：${kinds.map((k) => `${TIDE_LABELS[k]} ${tides[k]!.matches}（${pct(tides[k]!.matches, s.matches)}）`).join('、')}。`,
+    ...lateLine,
+    '',
+    ...table(['暗潮', '局數', '對應解法', '採用率（本潮）', '採用率（其他潮）', '採用者勝率', '未採用者勝率', '揭曉前／後採用'], rows),
+    '',
+    '效果觸發（每回合次數，第一階段＝到暗潮將至那回合為止，第二階段＝之後含最終回合）：',
+    '',
+    ...table(
+      ['暗潮', '階段一回合', '階段二回合', ...TRIGGERS.map((e) => `${EFFECT_LABELS[e]} 一／二`), '自家走私掩護 一／二'],
+      kinds.map((k) => {
+        const t = tides[k]!;
+        return [
+          TIDE_LABELS[k]!,
+          t.phaseOneRounds,
+          t.phaseTwoRounds,
+          ...TRIGGERS.map((e) => `${perRound(t.triggers[e]?.one ?? 0, t.phaseOneRounds)}／${perRound(t.triggers[e]?.two ?? 0, t.phaseTwoRounds)}`),
+          `${perRound(t.covers.one, t.phaseOneRounds)}／${perRound(t.covers.two, t.phaseTwoRounds)}`,
+        ];
+      }),
+    ),
+    ...(bets ? betSection(s) : []),
+  ];
+}
 
 /** V0.8 prototype (v08.events): match lengths, phase II, final effects, 暗潮將至 losses and boss events. */
-function eventsSection(s: SimStats): string[] {
+function eventsSection(s: SimStats, rules: Rules, bets: boolean): string[] {
   const e = s.v08.events;
   const dist = (counts: Record<number, number>) =>
     Object.entries(counts)
@@ -262,6 +381,8 @@ function eventsSection(s: SimStats): string[] {
       ['首領事件', '原事件', '次數', '每局', '佔首領回合'],
       Object.keys(VOYAGE_EVENT_LABELS).map((k) => [BOSS_LABELS[k]!, VOYAGE_EVENT_LABELS[k]!, e.boss[k] ?? 0, per(e.boss[k] ?? 0, s.matches), pct(e.boss[k] ?? 0, boss)]),
     ),
+    ...(rules.v08.events.flipOnlyTideCard === 1 ? ['', '- 第二階段只有與暗潮對應的那張事件牌翻成首領版（v08.events.flipOnlyTideCard）；月黑風高、順風不會翻。'] : []),
+    ...tideSection(s, rules, bets),
   ];
 }
 
@@ -329,7 +450,7 @@ function v08Section(options: Options, s: SimStats): string[] {
         return [GOOD_LABELS[g]!, pct(m.up, total), pct(m.flat, total), pct(m.down, total)];
       }),
     ),
-    ...(options.rules.v08.events.enabled === 1 ? ['', ...eventsSection(s)] : []),
+    ...(options.rules.v08.events.enabled === 1 ? ['', ...eventsSection(s, options.rules, options.bets)] : []),
   ];
 }
 
@@ -373,7 +494,7 @@ function summaryRow(options: Options, s: SimStats): string {
   return `| ${options.overrides.join(' ') || '現行規則'} | ${(100 * Math.min(...winRates)).toFixed(1)}–${(100 * Math.max(...winRates)).toFixed(1)}% | ${wealth.toFixed(0)} | ${pct(
     s.ships,
     s.playerRounds,
-  )} | ${buildingRates} | ${roleRates} | ${pirateNet(s).toFixed(0)} |${v08On(options.rules) ? v08Summary(s) : ''}`;
+  )} | ${buildingRates} | ${roleRates} | ${pirateNet(s).toFixed(0)} |${v08On(options.rules) ? v08Summary(s) + tideLossSummary(options.rules, s) + (options.bets ? betSummary(options.rules, s) : '') : ''}`;
 }
 
 /** V0.8 prototype extra columns: ship sink rate, ship-type shares, material actions per seat, leftover goods per seat. */
@@ -386,7 +507,36 @@ function v08Summary(s: SimStats): string {
   const lengths = Object.entries(events.lengths).reduce((sum, [k, n]) => sum + Number(k) * n, 0);
   // v08.events: mean match length, and the 黑市大開 / 最後一搏 split.
   const phases = Object.keys(events.lengths).length === 0 ? '' : ` ${per(lengths, s.matches)} R | ${events.finalEffects['open-market'] ?? 0} / ${events.finalEffects['last-gamble'] ?? 0} |`;
-  return ` ${pct(sank, ships)} | ${shares} | ${per(materials, s.seats)} | ${per(s.unsoldUnits, s.seats)} |${phases}`;
+  return ` ${pct(sank, ships)} | ${shares} | ${per(materials, s.seats)} | ${per(s.unsoldUnits, s.seats)} |${phases}${tideSummary(s)}`;
+}
+
+/** 風暴潮 / 海盜潮 realigned (only with those settings on): extra crates lost to the storm tide and arrival loots per match. */
+function tideLossSummary(rules: Rules, s: SimStats): string {
+  const e = rules.v08.events;
+  if (e.tideStormExtraLoss <= 0 && e.tidePirateArrivalLoot <= 0) return '';
+  const fx = s.v08.effects;
+  return ` ${per(fx['storm-tide']?.crates ?? 0, s.matches)} 箱 / ${per(fx['pirate-tide']?.count ?? 0, s.matches)} 次 |`;
+}
+
+/** Tide shields and bets (with --bets or a shield on): shield triggers per match (storm / pirate / crash), bet-right vs other win rates. */
+function betSummary(rules: Rules, s: SimStats): string {
+  if (rules.v08.events.tides !== 1) return '';
+  const fx = s.v08.effects;
+  const e = s.v08.events;
+  const shields = ['storm-shield', 'pirate-shield', 'crash-shield'].map((k) => per(fx[k]?.count ?? 0, s.matches)).join(' / ');
+  return ` ${shields} | 押對 ${pct(e.betRight.wins, e.betRight.seats)}（${per(e.betRight.seats, s.seats)}）／其他 ${pct(e.betOthers.wins, e.betOthers.seats)} |`;
+}
+
+/** v08.events.tides / finalBoth: tide counts (storm / pirate / inspection / crash), matching-answer adoption, final markets. */
+function tideSummary(s: SimStats): string {
+  const tides = s.v08.events.tides;
+  if (Object.keys(tides).length === 0) return '';
+  const counts = TIDE_ORDER.map((k) => tides[k]?.matches ?? 0).join(' / ');
+  const adoption = TIDE_ORDER.map((k) => {
+    const t = tides[k];
+    return t === undefined ? '—' : pct(t.answers[TIDE_ANSWER[k]!]!.seats, t.seats);
+  }).join(' / ');
+  return ` ${counts} | ${adoption} | ${s.v08.events.finalEffects['final-market'] ?? 0} |`;
 }
 
 const options = parseOptions();

@@ -340,12 +340,18 @@ export const RULES_V08_PROTO: Rules = {
     crates: 1,
     skills: 1,
     buildings: 1,
-    islandVariants: 1,
+    // 2026-11-15 simplification: no island variants (the variant code stays, off).
+    islandVariants: 0,
     tables: { ...V08_OFF.tables, breaker: { ...V08_OFF.tables.breaker, multiplier: { ...V08_OFF.tables.breaker.multiplier, 7: 150, 8: 200, 9: 250 } } },
     costs: {
       open: { wood: 0, iron: 2, spice: 0, arms: 0 },
       upgrade: { wood: 1, iron: 2, spice: 0, arms: 0 },
-      build: { ...V08_OFF.costs.build, repairyard: { wood: 2, iron: 1, spice: 0, arms: 0 } },
+      // 2026-11-16: all three buildings cost the same (2 wood + 1 iron), so the opening bet on a tide is a real choice.
+      build: {
+        repairyard: { wood: 2, iron: 1, spice: 0, arms: 0 },
+        armory: { wood: 2, iron: 1, spice: 0, arms: 0 },
+        tradehouse: { wood: 2, iron: 1, spice: 0, arms: 0 },
+      },
     },
     hidden: { ...V08_OFF.hidden, privateL1: 0, privateL2: 1, privateArrives: 1, privateLoses: 1, selfCoverL1: 1 },
     // 2026-11-15: the breaker's extra die is 1d3; the hidden ship's level 1 covers it like the owner's own smuggler (no
@@ -359,6 +365,31 @@ export const RULES_V08_PROTO: Rules = {
     maxLevel: 1,
     levelUp: { byLaunches: 0 },
     // 2026-11-15: the event deck sets the match length (6–10 rounds) and splits it into two phases.
-    events: { ...V08_OFF.events, enabled: 1 },
+    // 2026-11-15: four dark tide kinds (two public candidates, one picked at 暗潮將至), 黑市大開 and 最後一搏 as phase II
+    // cards, and a final 「最後的大市集」 with both effects.
+    // 2026-11-15 simplification: no late single-sided cards; in phase II only the tide's matching card flips; the storm
+    // tide costs one extra crate at finals 2–3 (what the repairyard saves) and the pirate tide loots arrivals at 30 %
+    // where pirates normally take nothing (the armory halves every pirate take).
+    events: {
+      ...V08_OFF.events,
+      enabled: 1,
+      tides: 1,
+      lateCards: 0,
+      flipOnlyTideCard: 1,
+      tideStorm: 0,
+      tideStormExtraLoss: 1,
+      tideStormLossFrom: 2,
+      tideStormLossTo: 3,
+      tidePirate: 0,
+      tidePirateArrivalLoot: 30,
+      finalBoth: 1,
+    },
+    // 2026-11-16: the armory also collects the fee of every pirate sent at its owner's ships.
+    armory: { ...V08_OFF.armory, halveAllLoot: 1, immunePirateTide: 1, pirateToll: 1 },
+    // 2026-11-15: each building shields its owner from the matching tide (repairyard ↔ storm, armory ↔ pirate,
+    // tradehouse ↔ crash), and bots value pirate deployments with the crate tables.
+    repairyard: { ...V08_OFF.repairyard, immuneStormTide: 1 },
+    tradehouse: { immuneCrashTide: 1 },
+    botPirateCrates: 1,
   },
 };

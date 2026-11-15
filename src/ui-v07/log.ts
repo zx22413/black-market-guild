@@ -76,6 +76,9 @@ export function eventLine(event: MatchEvent, ctx: LogContext): string | null {
     case 'phase-two-started':
     case 'boss-event':
     case 'dark-tide-loss':
+    case 'tide-candidates':
+    case 'tide-revealed':
+    case 'late-card':
       return null;
   }
 }

@@ -4,9 +4,9 @@ import { mapGoods, priceAt } from './goods';
 import { FINAL_EFFECTS } from './types';
 import { nextInt, type RngState } from './rng';
 import { shipDelay, shipSinks } from './rules';
-import { GOODS, type Deployment, type MatchEvent, type MatchState, type Ship, type Step, type VoyageModifier, type VoyageOutcome } from './types';
-import { darkNight, diceToRoll, eventShift, eventsOn, moonlessShift, pirateModifier, publicEvents, seaFogShift } from './v08-events';
-import { crateTerms, extraDieFrom, facilityOf, repairyardSaved, rerolls, skillLevel, takeHighest, v08On, type CrateContext, type CrateTerms } from './v08';
+import { GOODS, type Deployment, type FinalRoundEffect, type MatchEvent, type VoyageEventId, type MatchState, type Ship, type Step, type VoyageModifier, type VoyageOutcome } from './types';
+import { activeTide, bossSide, darkNight, diceToRoll, eventShift, eventsOn, isLateCard, moonlessShift, pirateModifier, publicEvents, seaFogShift, stormTideLossActs, tideShift } from './v08-events';
+import { crateTerms, extraDieFrom, facilityOf, repairyardSaved, rerolls, skillLevel, stormShielded, takeHighest, unshieldedTerms, v08On, type CrateContext, type CrateTerms } from './v08';
 
 /** §5 step 1: draws and reveals the voyage event as the round opens. */
 export function revealVoyageEvent(state: MatchState): Step {
@@ -25,42 +25,56 @@ export function revealVoyageEvent(state: MatchState): Step {
 
 /**
  * V0.8 prototype (v08.events): draws the round's event-deck card. The 1st advance is 「暗潮將至」 (phase II from next
- * round), the 2nd makes this the final round with a random effect; the round cap or an empty deck also ends the match.
+ * round; with v08.events.tides it also picks the tide from the two candidates), the 2nd makes this the final round with
+ * a random effect (v08.events.finalBoth: both, 「最後的大市集」); the round cap or an empty deck also ends the match.
+ * A late card (v08.events.lateCards) replaces the regular event with its effect for this round.
  */
 function revealEventCard(state: MatchState): Step {
   const ev = state.v08Events!;
+  const e = state.rules.v08.events;
   const [card, ...deck] = ev.deck;
   if (card === undefined) {
     throw new Error('event deck is empty');
   }
   const advance = card === 'advance';
+  const lateCard = isLateCard(card) ? card : null;
   const advancesDrawn = ev.advancesDrawn + (advance ? 1 : 0);
   const darkTide = advance && advancesDrawn === 1;
-  const ends = (advance && advancesDrawn >= 2) || state.round >= state.rules.v08.events.maxRounds || deck.length === 0;
-  const pick = advance && advancesDrawn >= 2 ? nextInt(state.rng, 0, FINAL_EFFECTS.length - 1) : null;
-  const finalEffect = pick === null ? null : FINAL_EFFECTS[pick.value]!;
-  const voyageEvent = advance ? null : card;
+  const ends = (advance && advancesDrawn >= 2) || state.round >= e.maxRounds || deck.length === 0;
+  const both = advance && advancesDrawn >= 2 && e.finalBoth === 1;
+  const pick = advance && advancesDrawn >= 2 && !both ? nextInt(state.rng, 0, FINAL_EFFECTS.length - 1) : null;
+  const finalEffect: FinalRoundEffect | null = both ? 'final-market' : pick === null ? null : FINAL_EFFECTS[pick.value]!;
+  const tidePick = darkTide && e.tides === 1 && ev.tideCandidates.length > 0 ? nextInt(pick?.state ?? state.rng, 0, ev.tideCandidates.length - 1) : null;
+  const tide = tidePick === null ? ev.tide : ev.tideCandidates[tidePick.value]!;
+  const voyageEvent = advance || lateCard !== null ? null : (card as VoyageEventId);
   const { demand } = state.roundState;
-  const boost = state.rules.v08.events.openMarketDemand;
-  const newDemand = finalEffect === 'open-market' ? mapGoods((g) => demand[g] + boost) : demand;
+  const boost = e.openMarketDemand;
+  const opens = finalEffect === 'open-market' || finalEffect === 'final-market' || lateCard === 'open-market';
+  const newDemand = opens ? mapGoods((g) => demand[g] + boost) : demand;
   const next: MatchState = {
     ...state,
-    rng: pick?.state ?? state.rng,
+    rng: tidePick?.state ?? pick?.state ?? state.rng,
     v08Events: {
       deck,
       advancesDrawn,
       phaseTwoFrom: darkTide ? state.round + 1 : ev.phaseTwoFrom,
       finalRound: ends ? state.round : ev.finalRound,
       finalEffect: ends ? finalEffect : ev.finalEffect,
+      tideCandidates: ev.tideCandidates,
+      tide,
+      lateCard,
     },
     roundState: { ...state.roundState, voyageEvent, demand: newDemand },
   };
-  const boss = voyageEvent !== null && publicEvents(next)?.phase === 2;
+  // v08.events.flipOnlyTideCard: only the tide's matching card shows its boss side.
+  const boss = voyageEvent !== null && bossSide(publicEvents(next), voyageEvent);
   const events: MatchEvent[] = [
     ...(ev.phaseTwoFrom === state.round ? [{ type: 'phase-two-started' as const, round: state.round }] : []),
     ...(voyageEvent === null ? [] : [{ type: 'voyage-event-revealed' as const, round: state.round, event: voyageEvent }]),
     ...(boss && voyageEvent !== null ? [{ type: 'boss-event' as const, round: state.round, event: voyageEvent }] : []),
+    ...(lateCard === null ? [] : [{ type: 'late-card' as const, round: state.round, card: lateCard, demand: newDemand }]),
     ...(darkTide ? [{ type: 'dark-tide-rising' as const, round: state.round }] : []),
+    ...(tidePick === null || tide === null ? [] : [{ type: 'tide-revealed' as const, round: state.round, tide }]),
     ...(ends ? [{ type: 'final-round' as const, round: state.round, effect: finalEffect, demand: newDemand }] : []),
   ];
   return { state: next, events };
@@ -78,18 +92,20 @@ function eventModifier(state: MatchState, ship: Ship): number {
   // V0.8 prototype (v08.events): phase II boss versions; with the switch off these are the plain event values.
   const pe = publicEvents(state);
   const event = state.roundState.voyageEvent;
+  // v08.events.tides: 風暴潮 lowers every ship in the rounds after 暗潮將至 (0 otherwise).
+  const tide = tideShift(state.rules, activeTide(pe));
   switch (event) {
     case 'tailwind':
     case 'storm':
-      return eventShift(state.rules, pe, event);
+      return eventShift(state.rules, pe, event) + tide;
     case 'sea-fog':
-      return targeting(state, ship, 'pirate').length > 0 ? seaFogShift(state.rules, pe) : 0;
+      return (targeting(state, ship, 'pirate').length > 0 ? seaFogShift(state.rules, pe) : 0) + tide;
     case 'moonless-night':
-      return targeting(state, ship, 'guard').length > 0 ? moonlessShift(state.rules, pe) : 0;
+      return (targeting(state, ship, 'guard').length > 0 ? moonlessShift(state.rules, pe) : 0) + tide;
     case 'black-market-rush':
     case 'calm-seas':
     case null:
-      return 0;
+      return tide;
   }
 }
 
@@ -140,7 +156,9 @@ export function resolveVoyages(input: MatchState): Step {
 /** V0.8 prototype: the owner's skill level, building and island that shape a ship's voyage terms. */
 export function crateContext(state: MatchState, ship: Ship): CrateContext {
   const owner = playerOf(state, ship.owner);
-  return { raised: ship.raised === true, level: skillLevel(state.rules, owner, ship.type), facility: facilityOf(state.rules, owner), island: owner.island };
+  const context: CrateContext = { raised: ship.raised === true, level: skillLevel(state.rules, owner, ship.type), facility: facilityOf(state.rules, owner), island: owner.island };
+  // v08.events.tideStormExtraLoss: the storm tide's extra crate loss (only added when it acts, so the context is unchanged otherwise).
+  return stormTideLossActs(state.rules, activeTide(publicEvents(state))) ? { ...context, stormTide: true } : context;
 }
 
 /** V0.8 prototype: a ship's voyage terms at its (final) final value. */
@@ -154,7 +172,7 @@ interface Rolled {
   readonly events: readonly MatchEvent[];
 }
 
-const effect = (state: MatchState, ship: Ship, kind: 'reroll' | 'reroll-saved' | 'extra-die' | 'repairyard', crates = 0, value = 0): MatchEvent => ({
+const effect = (state: MatchState, ship: Ship, kind: 'reroll' | 'reroll-saved' | 'extra-die' | 'repairyard' | 'storm-tide' | 'storm-shield', crates = 0, value = 0): MatchEvent => ({
   type: 'v08-effect',
   round: state.round,
   playerId: ship.owner,
@@ -240,6 +258,25 @@ function lastGambleArrivals(state: MatchState): MatchState {
   return { ...state, rng, roundState: { ...state.roundState, ships } };
 }
 
+/**
+ * 風暴潮 (v08.events.tideStormExtraLoss): the report event for the crates an arriving ship lost to the storm tide
+ * (crates actually taken, at most what is aboard; value = the income lost, negative), or null.
+ */
+function stormTideLost(state: MatchState, ship: Ship, final: number, terms: CrateTerms): MatchEvent | null {
+  const context = crateContext(state, ship);
+  if (terms.sinks || context.stormTide !== true) return null;
+  const calm = crateTerms(state.rules, ship.type, final, { ...context, stormTide: false });
+  // v08.repairyard.immuneStormTide: a shielded ship loses nothing to the tide; report what the shield kept instead.
+  const shielded = stormShielded(state.rules, context);
+  const hit = shielded ? unshieldedTerms(state.rules, ship.type, final, context) : terms;
+  const aboard = GOODS.reduce((sum, g) => sum + ship.cargo[g] + (state.rules.v08.hidden.privateLoses === 1 ? (ship.privateCargo?.[g] ?? 0) : 0), 0);
+  const crates = Math.min(hit.lose, aboard) - Math.min(calm.lose, aboard);
+  if (crates <= 0) return null;
+  return shielded
+    ? effect(state, ship, 'storm-shield', crates, paidAt(state, ship, calm) - paidAt(state, ship, hit))
+    : effect(state, ship, 'storm-tide', crates, paidAt(state, ship, terms) - paidAt(state, ship, calm));
+}
+
 function resolveVoyagesV08(input: MatchState): Step {
   const state = lastGambleArrivals(input);
   let current = state;
@@ -256,9 +293,13 @@ function resolveVoyagesV08(input: MatchState): Step {
     const terms = crateTerms(current.rules, ship.type, final, crateContext(current, ship));
     const saved = repairyardSaved(current.rules, ship.type, final, crateContext(current, ship));
     if (saved > 0) {
-      const without = crateTerms(current.rules, ship.type, final, { ...crateContext(current, ship), facility: null });
+      // The normal save only (a storm-shielded ship's tide loss is reported as 'storm-shield').
+      const context = crateContext(current, ship);
+      const without = crateTerms(current.rules, ship.type, final, { ...context, facility: null, ...(stormShielded(current.rules, context) ? { stormTide: false } : {}) });
       skillEvents.push(effect(current, ship, 'repairyard', saved, paidAt(current, ship, terms) - paidAt(current, ship, without)));
     }
+    const storm = stormTideLost(current, ship, final, terms);
+    if (storm !== null) skillEvents.push(storm);
     // Lost crates go highest price first, at the price before this round's market change.
     if (terms.sinks) return { ...ship, outcome: 'sank' };
     return { ...ship, outcome: 'arrived', ...loseCrates(current, ship, terms.lose) };

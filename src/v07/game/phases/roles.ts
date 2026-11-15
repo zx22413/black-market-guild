@@ -90,13 +90,15 @@ const applyDiplomats = (current: MatchState): Step => {
   return { state: { ...paid.state, roundState: { ...paid.state.roundState, deployments: deployments.filter((x) => !voided.has(x)) } }, events: paid.events };
 };
 
-/** V0.8 prototype, fortress + armory: a pirate on this owner's ship pays its fee to the owner instead of the bank. */
+/** V0.8 prototype: a pirate on this owner's ship pays its fee to the owner instead of the bank (fortress + armory, or any armory with v08.armory.pirateToll). */
 function pirateToll(state: MatchState, d: Deployment, fee: number): ((s: MatchState) => Step)[] {
   if (d.role !== 'pirate') return [];
   const ship = [...state.roundState.ships, ...state.transit].find((s) => s.id === d.targetShipId);
   if (ship === undefined || ship.owner === d.playerId) return [];
   const owner = playerOf(state, ship.owner);
-  if (!hasVariant(state.rules, owner.island, facilityOf(state.rules, owner), 'fortress', 'armory')) return [];
+  const facility = facilityOf(state.rules, owner);
+  const tolled = hasVariant(state.rules, owner.island, facility, 'fortress', 'armory') || (state.rules.v08.armory.pirateToll === 1 && facility === 'armory');
+  if (!tolled) return [];
   return [
     (s) => {
       const paid = changeCash(s, ship.owner, fee, 'pirate-toll', ship.id);

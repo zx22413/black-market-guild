@@ -126,6 +126,8 @@ export interface CrateContext {
   readonly level: number;
   readonly facility: V08BuildingId | null;
   readonly island: IslandId | null;
+  /** 風暴潮 (v08.events.tideStormExtraLoss): the storm tide acts on this voyage. */
+  readonly stormTide?: boolean;
 }
 
 /** What a voyage pays at a final value: whether it sinks, crates lost, and the percent of the arrived crates' value. */
@@ -140,8 +142,23 @@ function canSink(rules: Rules, type: ShipTypeId): boolean {
   return Object.values(rules.v08.tables[type].lose).some((n) => n < 0);
 }
 
+/**
+ * v08.repairyard.immuneStormTide: the owner's repairyard shields the voyage from the storm tide's extra crate loss.
+ */
+export const stormShielded = (rules: Rules, context: Pick<CrateContext, 'facility' | 'stormTide'>): boolean =>
+  context.stormTide === true && context.facility === 'repairyard' && rules.v08.repairyard.immuneStormTide === 1;
+
 /** The voyage terms at a final value; with every switch off, the V0.7.1 curves (nothing lost). */
 export function crateTerms(rules: Rules, type: ShipTypeId, final: number, context: CrateContext): CrateTerms {
+  return termsAt(rules, type, final, stormShielded(rules, context) ? { ...context, stormTide: false } : context);
+}
+
+/** For the report: the voyage terms as if the repairyard did not shield the storm tide (its normal save still applies). */
+export function unshieldedTerms(rules: Rules, type: ShipTypeId, final: number, context: CrateContext): CrateTerms {
+  return termsAt(rules, type, final, context);
+}
+
+function termsAt(rules: Rules, type: ShipTypeId, final: number, context: CrateContext): CrateTerms {
   if (context.raised) {
     const { minFinal, multiplier, multiplierL2 } = rules.v08.raise;
     return { sinks: final < minFinal, lose: 0, percent: context.level >= 2 ? multiplierL2 : multiplier };
@@ -160,14 +177,32 @@ export function crateTerms(rules: Rules, type: ShipTypeId, final: number, contex
     base >= 1 &&
     final <= toFinal &&
     ((canSink(rules, type) && final >= fromFinal) || hasVariant(rules, context.island, context.facility, 'lumber', 'repairyard'));
+  const storm = stormTideExtra(rules, type, final, context);
+  if (storm > 0) {
+    return { sinks: false, lose: Math.max(0, base + storm - (repaired ? save : 0)), percent: lookup(table.multiplier, final) };
+  }
   return { sinks: false, lose: repaired ? Math.max(0, base - save) : base, percent: lookup(table.multiplier, final) };
+}
+
+/**
+ * 風暴潮 (v08.events.tideStormExtraLoss): extra crates an arriving ship loses at this final while the storm tide acts,
+ * in the tideStormLossFrom–tideStormLossTo window. A ship that cannot sink (the freighter) counts a final of 1 as 2, as
+ * its table does.
+ */
+function stormTideExtra(rules: Rules, type: ShipTypeId, final: number, context: CrateContext): number {
+  const e = rules.v08.events;
+  if (context.stormTide !== true || e.tideStormExtraLoss <= 0) return 0;
+  const asFinal = canSink(rules, type) ? final : Math.max(final, rules.sailing.dieMin + 1);
+  return asFinal >= e.tideStormLossFrom && asFinal <= e.tideStormLossTo ? e.tideStormExtraLoss : 0;
 }
 
 /** Crates saved by the repairyard at this final (0 when it does not apply), for the report. */
 export function repairyardSaved(rules: Rules, type: ShipTypeId, final: number, context: CrateContext): number {
   if (!cratesOn(rules) || context.raised || context.facility !== 'repairyard') return 0;
-  const without = crateTerms(rules, type, final, { ...context, facility: null });
-  const withIt = crateTerms(rules, type, final, context);
+  // The normal save only: with the storm-tide shield both sides leave the tide out (the shield is reported apart).
+  const base = stormShielded(rules, context) ? { ...context, stormTide: false } : context;
+  const without = crateTerms(rules, type, final, { ...base, facility: null });
+  const withIt = crateTerms(rules, type, final, base);
   return without.sinks ? 0 : without.lose - withIt.lose;
 }
 

@@ -3,12 +3,14 @@ import { addGoods, mapGoods, nextPriceStep, only, priceAt, subtractGoods, units 
 import { traitOf } from './islands';
 import { crateContext, effectiveDeployments, termsOf, voyageModifier } from './resolution';
 import { GOODS, type GoodId, type Goods, type MatchEvent, type MatchState, type PlayerId, type RoleId, type Ship, type Step, type V08Effect } from './types';
-import { darkNight, eventPriceStep, inspectionAllowance, publicEvents, rushValue } from './v08-events';
+import { activeTide, arrivalLoot, crashShieldActs, darkNight, eventPriceStep, inspectionAllowance, publicEvents, rushValue } from './v08-events';
 import { crateTerms, facilityOf, hasVariant, protectedGoods, salvageCount, skillLevel, skillsOn, takeHighest } from './v08';
 
 interface Prices {
   readonly before: Goods;
   readonly after: Goods;
+  /** v08.tradehouse.immuneCrashTide: the new steps without 崩盤潮's multiplier (only while the shield acts). */
+  readonly untided?: Goods;
 }
 
 /**
@@ -34,7 +36,10 @@ export function settleMarket(state: MatchState): Step {
   const pe = publicEvents(state);
   const event = state.roundState.voyageEvent;
   const next = (g: GoodId) => (pe === undefined ? nextPriceStep(rules, g, state.prices[g], arrived[g], demand[g]) : eventPriceStep(rules, pe, event, g, state.prices[g], arrived[g], demand[g]));
-  const prices: Prices = { before: state.prices, after: mapGoods(next) };
+  const after = mapGoods(next);
+  // v08.tradehouse.immuneCrashTide: the steps the drops would reach without the crash tide (other multipliers kept).
+  const untided = pe !== undefined && crashShieldActs(rules, pe) ? mapGoods((g) => eventPriceStep(rules, pe, event, g, state.prices[g], arrived[g], demand[g], true)) : undefined;
+  const prices: Prices = { before: state.prices, after, ...(untided === undefined ? {} : { untided }) };
   const settled: MatchEvent = { type: 'market-settled', round: state.round, demand, arrived, priceBefore: prices.before, priceAfter: prices.after };
   const protect = state.roundState.protect;
   const named: MatchEvent[] = protect === undefined ? [] : [{ type: 'trade-protected', round: state.round, protect }];
@@ -171,13 +176,22 @@ function paySalvage(claim: SalvageClaim, prices: Prices): StepFn {
   };
 }
 
-/** V0.8 prototype, tradehouse: a protected good that drops sells the owner's own crates at the pre-change price. */
-function ownSalePrice(state: MatchState, playerId: PlayerId, good: GoodId, prices: Prices): number {
+/**
+ * V0.8 prototype, tradehouse: a protected good that drops sells the owner's own crates at the pre-change price; with
+ * v08.tradehouse.immuneCrashTide (and `shield`) every other good sells at the step the drop reaches without 崩盤潮.
+ */
+function ownSalePrice(state: MatchState, playerId: PlayerId, good: GoodId, prices: Prices, shield = true): number {
   const owner = playerOf(state, playerId);
-  const kept = protectedGoods(state.rules, owner.island, facilityOf(state.rules, owner), state.roundState.protect?.[playerId]);
-  return kept.includes(good) && prices.after[good] < prices.before[good]
-    ? salePrice(state, playerId, good, { before: prices.before, after: prices.before })
-    : salePrice(state, playerId, good, prices);
+  const facility = facilityOf(state.rules, owner);
+  const kept = protectedGoods(state.rules, owner.island, facility, state.roundState.protect?.[playerId]);
+  if (kept.includes(good) && prices.after[good] < prices.before[good]) {
+    return salePrice(state, playerId, good, { before: prices.before, after: prices.before });
+  }
+  const untided = prices.untided?.[good];
+  if (shield && facility === 'tradehouse' && untided !== undefined && untided > prices.after[good]) {
+    return salePrice(state, playerId, good, { before: prices.before, after: { ...prices.after, [good]: untided } });
+  }
+  return salePrice(state, playerId, good, prices);
 }
 
 /** V0.8 prototype, smuggler port + armory: customs takes only half of the named good's value from this owner's ships. */
@@ -256,13 +270,17 @@ function settleArrival(ship: Ship, prices: Prices): StepFn {
     const gross = Math.floor((full * percent) / 100) + privateIncome + kept;
     const customs = deployed(state, ship, 'customs');
     const pirates = deployed(state, ship, 'pirate').filter((id) => id !== ship.owner);
-    const lootShare = pirates.length === 0 ? 0 : Math.min(gross, Math.floor((gross * (state.rules.roles.pirate.lootPercentByFinal[final] ?? 0)) / 100));
+    // V0.8 prototype: 海盜潮 loots arrivals where pirates normally take nothing; the armory may halve the take (v08.armory.halveAllLoot).
+    const loot = arrivalLoot(state.rules, activeTide(publicEvents(state)), state.rules.roles.pirate.lootPercentByFinal[final] ?? 0, ownerArmory(state, ship));
+    const fullShare = pirates.length === 0 ? 0 : Math.min(gross, Math.floor((gross * loot.percent) / 100));
+    const lootShare = pirates.length === 0 ? 0 : loot.halved ? Math.min(gross, Math.floor((gross * loot.percent) / 200)) : fullShare;
+    const lootEffects = pirates.length === 0 || (loot.percent === 0 && !loot.shielded) ? [] : arrivalLootEffects(state, ship, loot, fullShare, lootShare, gross);
     const bonus = pirates.length > 0 && lootShare > 0 ? wantedBonus(state, ship) : 0;
     const lootEach = pirates.length === 0 ? 0 : Math.floor((lootShare + bonus) / pirates.length);
     const proceeds = gross - lootShare;
     const smugglers = takers(state, ship);
     return chain(state, [
-      (s) => ({ state: s, events: arrivalEffects(s, ship, prices, { sold, percent, privateIncome, kept }) }),
+      (s) => ({ state: s, events: [...arrivalEffects(s, ship, prices, { sold, percent, privateIncome, kept }), ...lootEffects] }),
       ...confiscateGoods(ship, found, prices, halved),
       ...(smugglers.length === 0
         ? payAll([{ playerId: ship.owner, amount: proceeds }], 'sale', ship.id)
@@ -272,6 +290,23 @@ function settleArrival(ship: Ship, prices: Prices): StepFn {
       ...payAll(pirates.map((playerId) => ({ playerId, amount: lootEach })), 'pirate-loot', ship.id),
     ]);
   };
+}
+
+/** V0.8 prototype: the owner of this ship holds the armory. */
+const ownerArmory = (state: MatchState, ship: Ship): boolean => facilityOf(state.rules, playerOf(state, ship.owner)) === 'armory';
+
+/**
+ * V0.8 prototype, report only: 海盜潮's arrival loot (value = the pirates' share before the wanted bonus) and the armory's
+ * halving of an arrival take (value = what the pirates did not get).
+ */
+function arrivalLootEffects(state: MatchState, ship: Ship, loot: { readonly fromTide: boolean; readonly halved: boolean; readonly shielded: boolean }, full: number, share: number, gross: number): MatchEvent[] {
+  // v08.armory.immunePirateTide: what the tide's arrival loot would have taken (halved by the armory), kept by the shield.
+  const kept = loot.shielded ? Math.min(gross, Math.floor((gross * state.rules.v08.events.tidePirateArrivalLoot) / (loot.halved ? 200 : 100))) : 0;
+  return [
+    ...(kept > 0 ? [v08Effect(state, ship.owner, ship.id, 'pirate-shield', 0, kept)] : []),
+    ...(loot.fromTide && share > 0 ? [v08Effect(state, ship.owner, ship.id, 'pirate-tide', 0, share)] : []),
+    ...(loot.halved && full > 0 ? [v08Effect(state, ship.owner, ship.id, 'armory', 0, full - share)] : []),
+  ];
 }
 
 /** V0.8 prototype: what is left to the owner when customs takes only half (rounded down) of a good's value. */
@@ -293,8 +328,14 @@ function arrivalEffects(
   }
   const plain = GOODS.reduce((sum, g) => sum + sale.sold[g] * salePrice(state, ship.owner, g, prices), 0);
   const own = GOODS.reduce((sum, g) => sum + sale.sold[g] * ownSalePrice(state, ship.owner, g, prices), 0);
-  if (own > plain) {
-    events.push(v08Effect(state, ship.owner, ship.id, 'tradehouse', 0, Math.floor((own * sale.percent) / 100) - Math.floor((plain * sale.percent) / 100)));
+  // v08.tradehouse.immuneCrashTide: the named good's keep and the crash-tide shield are reported apart.
+  const named = prices.untided === undefined ? own : GOODS.reduce((sum, g) => sum + sale.sold[g] * ownSalePrice(state, ship.owner, g, prices, false), 0);
+  if (named > plain) {
+    events.push(v08Effect(state, ship.owner, ship.id, 'tradehouse', 0, Math.floor((named * sale.percent) / 100) - Math.floor((plain * sale.percent) / 100)));
+  }
+  if (own > named) {
+    const crates = GOODS.reduce((sum, g) => sum + (ownSalePrice(state, ship.owner, g, prices) > ownSalePrice(state, ship.owner, g, prices, false) ? sale.sold[g] : 0), 0);
+    events.push(v08Effect(state, ship.owner, ship.id, 'crash-shield', crates, Math.floor((own * sale.percent) / 100) - Math.floor((named * sale.percent) / 100)));
   }
   if (ship.raised === true) {
     const unraised = crateTerms(state.rules, ship.type, voyageModifier(state, ship).final, { ...crateContext(state, ship), raised: false });
@@ -375,8 +416,10 @@ function settleSinking(ship: Ship, prices: Prices): StepFn {
     const sunkAs = state.rules.ships.enabled === 1 ? 1 : final;
     const normal = state.rules.roles.pirate.lootPercentByFinal[sunkAs] ?? 0;
     // V0.8 prototype, armory: the owner's sunk ship gives pirates a smaller share.
-    const armory = facilityOf(state.rules, playerOf(state, ship.owner)) === 'armory';
-    const share = Math.floor((cargoValue * (armory ? Math.min(normal, state.rules.v08.armory.lootPercent) : normal)) / 100);
+    const armory = ownerArmory(state, ship);
+    // v08.armory.halveAllLoot: the armory halves the share instead of capping it at lootPercent.
+    const halves = armory && state.rules.v08.armory.halveAllLoot === 1;
+    const share = halves ? Math.floor((cargoValue * normal) / 200) : Math.floor((cargoValue * (armory ? Math.min(normal, state.rules.v08.armory.lootPercent) : normal)) / 100);
     if (armory) lost.push(v08Effect(state, ship.owner, ship.id, 'armory', 0, Math.floor((cargoValue * normal) / 100) - share));
     const loot = Math.floor((share + wantedBonus(state, ship)) / pirates.length);
     const seized = Math.floor(goodsValue(state) / pirates.length) * smugglers.length;

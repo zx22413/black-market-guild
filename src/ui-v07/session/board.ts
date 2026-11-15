@@ -225,6 +225,9 @@ export function applyEvent(board: Board, event: MatchEvent, rules: Rules = RULES
     case 'phase-two-started':
     case 'boss-event':
     case 'dark-tide-loss':
+    case 'tide-candidates':
+    case 'tide-revealed':
+    case 'late-card':
       return board;
   }
 }

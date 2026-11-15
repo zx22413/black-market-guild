@@ -25,22 +25,35 @@ export {
   rerolls,
   salvageCount,
   skillLevel,
+  stormShielded,
   takeHighest,
   v08On,
 } from './v08';
 export type { CrateContext, CrateTerms } from './v08';
 export {
+  activeTide,
+  arrivalLoot,
+  crashShieldActs,
+  bossSide,
   darkNight,
   diceToRoll,
   dropMultiplier,
   eventShift,
   eventsOn,
+  flipCardFor,
   inspectionAllowance,
   moonlessShift,
+  nextRoundTide,
   noPriceDrop,
   pirateModifier,
   rushValue,
   seaFogShift,
+  stormTideLossActs,
+  TIDE_CARD,
+  tideDropMultiplier,
+  tideInspectionShift,
+  tidePirateShift,
+  tideShift,
 } from './v08-events';
 export { buildingValue } from './scoring';
 export { priceAt } from './goods';

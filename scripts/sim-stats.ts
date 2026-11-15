@@ -75,6 +75,50 @@ export interface V08EventStats {
   darkTideRounds: Record<number, number>;
   finalRounds: Record<number, number>;
   boss: Record<string, number>;
+  /** v08.events.lateCards: late cards drawn, by card. */
+  lateCards: Record<string, number>;
+  /** v08.events.tides: per picked tide kind. */
+  tides: Record<string, TideStats>;
+  /** v08.events.tides: per tide answer, the betting groups (matches where its tide kind was a candidate). */
+  bets: Record<string, BetStats>;
+  /** Seats that took the revealed tide's answer before the reveal, and every other seat (matches with a tide). */
+  betRight: { seats: number; wins: number };
+  betOthers: { seats: number; wins: number };
+}
+
+/** The tide kind each answer meets. */
+export const ANSWER_TIDE: Readonly<Record<string, string>> = { 'build:repairyard': 'storm', 'build:armory': 'pirate', 'open:hidden': 'inspection', 'build:tradehouse': 'crash' };
+
+/**
+ * One answer's seats in the matches where its tide kind was one of the two candidates: taken before the reveal and the
+ * tide matched (right) or not (wrong), taken from the reveal round on with the tide matching or not, never taken.
+ */
+export interface BetStats {
+  right: { seats: number; wins: number };
+  wrong: { seats: number; wins: number };
+  afterMatch: { seats: number; wins: number };
+  afterOther: { seats: number; wins: number };
+  never: { seats: number; wins: number };
+}
+
+/** The four tide answers: a building, or (查緝潮) the hidden-ship skill / the owner's smuggler covering its own ship. */
+export const TIDE_ANSWERS = ['build:repairyard', 'build:armory', 'open:hidden', 'build:tradehouse'] as const;
+
+/** One tide kind's matches: answers adopted per seat, their wins, timing, and effect triggers by phase. */
+export interface TideStats {
+  matches: number;
+  seats: number;
+  phaseOneRounds: number;
+  phaseTwoRounds: number;
+  /** Per answer: seats that took it, their wins, and how many took it before / from the reveal round. */
+  answers: Record<string, { seats: number; wins: number; before: number; after: number }>;
+  /** 查緝潮's other answer: seats whose smuggler covered their own ship in phase II, and their wins. */
+  coverSeats: number;
+  coverWins: number;
+  /** Own-ship smuggler covers in phase I / phase II rounds. */
+  covers: { one: number; two: number };
+  /** Per effect: triggers in phase I / phase II rounds. */
+  triggers: Record<string, { one: number; two: number }>;
 }
 
 const units = (goods: Goods) => GOODS.reduce((sum, g) => sum + goods[g], 0);
@@ -115,7 +159,7 @@ export function emptyStats(steps: number): SimStats {
     armsConfiscatedUnits: 0,
     armsConfiscatedCash: 0,
     v08: { crates: {}, typeByStrategy: {}, materials: {}, effects: {}, priceMoves: Object.fromEntries(GOODS.map((g) => [g, { up: 0, flat: 0, down: 0 }])),
-      events: { lengths: {}, phaseTwo: {}, bossRounds: 0, finalEffects: {}, darkTideLost: Object.fromEntries(GOODS.map((g) => [g, 0])), darkTideRounds: {}, finalRounds: {}, boss: {} },
+      events: { lengths: {}, phaseTwo: {}, bossRounds: 0, finalEffects: {}, darkTideLost: Object.fromEntries(GOODS.map((g) => [g, 0])), darkTideRounds: {}, finalRounds: {}, boss: {}, lateCards: {}, tides: {}, bets: {}, betRight: { seats: 0, wins: 0 }, betOthers: { seats: 0, wins: 0 } },
     },
   };
 }
@@ -165,6 +209,9 @@ function addV08Event(stats: SimStats, event: MatchEvent, strategyOf: (playerId: 
     case 'boss-event':
       v.events.boss[event.event] = (v.events.boss[event.event] ?? 0) + 1;
       v.events.bossRounds += 1;
+      break;
+    case 'late-card':
+      v.events.lateCards[event.card] = (v.events.lateCards[event.card] ?? 0) + 1;
       break;
     case 'dark-tide-loss':
       for (const goods of Object.values(event.lost)) GOODS.forEach((g) => (v.events.darkTideLost[g] = (v.events.darkTideLost[g] ?? 0) + goods[g]));
@@ -219,6 +266,7 @@ export function addMatch(stats: SimStats, log: MatchLog, strategyOf: (playerId: 
     e.phaseTwo[phaseTwo] = (e.phaseTwo[phaseTwo] ?? 0) + 1;
   }
   addStandings(stats, log, strategyOf);
+  addTide(stats, log);
 
   const owners = new Map<ShipId, PlayerId>();
   const cargo = new Map<ShipId, Goods>();
@@ -298,6 +346,105 @@ export function addMatch(stats: SimStats, log: MatchLog, strategyOf: (playerId: 
     }
   }
   addShips(stats, log, cargo, sank, smuggled);
+}
+
+const emptyTide = (): TideStats => ({
+  matches: 0,
+  seats: 0,
+  phaseOneRounds: 0,
+  phaseTwoRounds: 0,
+  answers: Object.fromEntries(TIDE_ANSWERS.map((a) => [a, { seats: 0, wins: 0, before: 0, after: 0 }])),
+  coverSeats: 0,
+  coverWins: 0,
+  covers: { one: 0, two: 0 },
+  triggers: {},
+});
+
+/**
+ * V0.8 prototype (v08.events.tides): per picked tide kind, which seats took each answer (and when, against the reveal
+ * round), how they did, and the effects' triggers in phase I and phase II rounds. Mutates `stats` (local accumulator).
+ */
+function addTide(stats: SimStats, log: MatchLog): void {
+  const ev = log.finalState.v08Events;
+  if (ev === undefined || ev.tide === null || ev.phaseTwoFrom === null) return;
+  const t = (stats.v08.events.tides[ev.tide] ??= emptyTide());
+  const reveal = ev.phaseTwoFrom - 1;
+  t.matches += 1;
+  t.seats += log.finalState.players.length;
+  t.phaseOneRounds += reveal;
+  t.phaseTwoRounds += Math.max(0, log.finalState.round - reveal);
+  const win = (id: PlayerId) => {
+    const standing = log.result.standings.find((st) => st.playerId === id);
+    return standing?.rank === 1 ? 1 / log.result.winners.length : 0;
+  };
+  const owners = new Map<ShipId, PlayerId>();
+  const took = new Map<string, number>();
+  const covered = new Set<PlayerId>();
+  for (const event of log.events) {
+    if (event.type === 'ships-launched') event.ships.forEach((ship) => owners.set(ship.id, ship.owner));
+    if (event.type === 'materials-used') {
+      for (const use of event.uses) {
+        const key = use.material.kind === 'build' ? `build:${use.material.building}` : `${use.material.kind}:${use.material.ship}`;
+        if (!took.has(`${use.playerId}|${key}`)) took.set(`${use.playerId}|${key}`, event.round);
+      }
+    }
+    if (event.type === 'roles-revealed' && event.role === 'smuggler') {
+      for (const d of event.deployments) {
+        if (d.targetShipId === null || owners.get(d.targetShipId) !== d.playerId) continue;
+        const two = event.round > reveal;
+        t.covers[two ? 'two' : 'one'] += 1;
+        if (two) covered.add(d.playerId);
+      }
+    }
+    if (event.type === 'v08-effect') {
+      const entry = (t.triggers[event.effect] ??= { one: 0, two: 0 });
+      entry[event.round > reveal ? 'two' : 'one'] += 1;
+    }
+  }
+  addBets(stats.v08.events, ev.tide, ev.tideCandidates, reveal, took, log.finalState.players, win);
+  for (const player of log.finalState.players) {
+    for (const answer of TIDE_ANSWERS) {
+      const round = took.get(`${player.id}|${answer}`);
+      if (round === undefined) continue;
+      const a = t.answers[answer]!;
+      a.seats += 1;
+      a.wins += win(player.id);
+      a[round < reveal ? 'before' : 'after'] += 1;
+    }
+    if (covered.has(player.id)) {
+      t.coverSeats += 1;
+      t.coverWins += win(player.id);
+    }
+  }
+}
+
+const groupTally = () => ({ seats: 0, wins: 0 });
+
+/** The betting groups of one match (see BetStats). Mutates `e` (local accumulator). */
+function addBets(
+  e: V08EventStats,
+  tide: string,
+  candidates: readonly string[],
+  reveal: number,
+  took: ReadonlyMap<string, number>,
+  players: readonly { readonly id: PlayerId }[],
+  win: (id: PlayerId) => number,
+): void {
+  for (const player of players) {
+    const right = TIDE_ANSWERS.some((answer) => ANSWER_TIDE[answer] === tide && (took.get(`${player.id}|${answer}`) ?? reveal) < reveal);
+    const overall = right ? e.betRight : e.betOthers;
+    overall.seats += 1;
+    overall.wins += win(player.id);
+    for (const answer of TIDE_ANSWERS) {
+      const kind = ANSWER_TIDE[answer]!;
+      if (!candidates.includes(kind)) continue;
+      const b = (e.bets[answer] ??= { right: groupTally(), wrong: groupTally(), afterMatch: groupTally(), afterOther: groupTally(), never: groupTally() });
+      const round = took.get(`${player.id}|${answer}`);
+      const group = round === undefined ? b.never : round < reveal ? (kind === tide ? b.right : b.wrong) : kind === tide ? b.afterMatch : b.afterOther;
+      group.seats += 1;
+      group.wins += win(player.id);
+    }
+  }
 }
 
 function addCash(stats: SimStats, reason: string, amount: number): void {

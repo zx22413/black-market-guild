@@ -2,6 +2,7 @@ import {
   applyAction,
   createMatch,
   RULES_BUILDINGS,
+  RULES_V08_PROTO,
   type Action,
   type BuildingId,
   type GoodId,
@@ -17,6 +18,61 @@ import {
 } from '../../../src/v07/game';
 
 export const IDS = ['p1', 'p2', 'p3', 'p4'] as const;
+
+/**
+ * V0.8 prototype: RULES_V08_PROTO before the 2026-11-15 simplification (island variants, late cards, all six cards flip
+ * in phase II, modifier-only storm and pirate tides, the armory caps only sinking loot). The tests written against those
+ * settings are pinned to it.
+ */
+/**
+ * RULES_V08_PROTO before the 2026-11-15 tide shields (each building ignores its matching tide) and the bots' crate-table
+ * pirate valuation: the settings the simplification tests (v08-simplify.test.ts) were written for.
+ */
+/** The prototype before the 2026-11-16 equal building costs and armory toll. */
+export const RULES_V08_PRE_EQUAL_COSTS: Rules = {
+  ...RULES_V08_PROTO,
+  v08: {
+    ...RULES_V08_PROTO.v08,
+    costs: {
+      ...RULES_V08_PROTO.v08.costs,
+      build: {
+        repairyard: G(2, 1),
+        armory: G(0, 0, 0, 2),
+        tradehouse: G(0, 0, 2),
+      },
+    },
+    armory: { ...RULES_V08_PROTO.v08.armory, pirateToll: 0 },
+  },
+};
+
+export const RULES_V08_PRE_SHIELDS: Rules = {
+  ...RULES_V08_PRE_EQUAL_COSTS,
+  v08: {
+    ...RULES_V08_PRE_EQUAL_COSTS.v08,
+    repairyard: { ...RULES_V08_PRE_EQUAL_COSTS.v08.repairyard, immuneStormTide: 0 },
+    armory: { ...RULES_V08_PRE_EQUAL_COSTS.v08.armory, immunePirateTide: 0 },
+    tradehouse: { immuneCrashTide: 0 },
+    botPirateCrates: 0,
+  },
+};
+
+export const RULES_V08_PRE_SIMPLIFY: Rules = {
+  ...RULES_V08_PRE_SHIELDS,
+  v08: {
+    ...RULES_V08_PRE_SHIELDS.v08,
+    islandVariants: 1,
+    armory: { ...RULES_V08_PRE_SHIELDS.v08.armory, halveAllLoot: 0 },
+    events: {
+      ...RULES_V08_PRE_SHIELDS.v08.events,
+      lateCards: 1,
+      flipOnlyTideCard: 0,
+      tideStorm: -1,
+      tideStormExtraLoss: 0,
+      tidePirate: -1,
+      tidePirateArrivalLoot: 0,
+    },
+  },
+};
 
 export function G(wood: number, iron = 0, spice = 0, arms = 0): Goods {
   return { wood, iron, spice, arms };

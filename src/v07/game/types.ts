@@ -183,12 +183,24 @@ export interface MatchResult {
   readonly winners: readonly PlayerId[];
 }
 
-/** V0.8 prototype (v08.events): an event-deck card; 'advance' moves the match on (暗潮將至, then the final round). */
-export type V08Card = VoyageEventId | 'advance';
-
 /** V0.8 prototype: the final round's effect (黑市大開 / 最後一搏); null when the match ends by the round cap or an empty deck. */
 export const FINAL_EFFECTS = ['open-market', 'last-gamble'] as const;
 export type FinalEffect = (typeof FINAL_EFFECTS)[number];
+/** V0.8 prototype (v08.events.finalBoth): 「最後的大市集」 applies both final effects. */
+export type FinalRoundEffect = FinalEffect | 'final-market';
+
+/**
+ * V0.8 prototype (v08.events.lateCards): single-sided phase II cards with the final effects' names (黑市大開, 最後一搏),
+ * drawn in place of a regular event.
+ */
+export type LateCard = FinalEffect;
+
+/** V0.8 prototype (v08.events): an event-deck card; 'advance' moves the match on (暗潮將至, then the final round). */
+export type V08Card = VoyageEventId | 'advance' | LateCard;
+
+/** V0.8 prototype (v08.events.tides): the four kinds of dark tide, each a persistent effect after 暗潮將至. */
+export const TIDE_KINDS = ['storm', 'pirate', 'inspection', 'crash'] as const;
+export type TideKind = (typeof TIDE_KINDS)[number];
 
 /** V0.8 prototype (v08.events): the event deck and the public phase state. */
 export interface V08EventsState {
@@ -199,7 +211,13 @@ export interface V08EventsState {
   readonly phaseTwoFrom: number | null;
   /** The round known to be the last one, null before. */
   readonly finalRound: number | null;
-  readonly finalEffect: FinalEffect | null;
+  readonly finalEffect: FinalRoundEffect | null;
+  /** v08.events.tides: the two public candidate tide kinds (empty with the switch off). */
+  readonly tideCandidates: readonly TideKind[];
+  /** v08.events.tides: the tide picked when 暗潮將至 is revealed (public), null before or with the switch off. */
+  readonly tide: TideKind | null;
+  /** v08.events.lateCards: the late card drawn this round, null otherwise. */
+  readonly lateCard: LateCard | null;
 }
 
 /** V0.8 prototype: the public event-deck status, in PlayerView and used by the engine and the bots alike. */
@@ -211,8 +229,19 @@ export interface PublicEvents {
   /** This round is the last one. */
   readonly finalRound: boolean;
   /** This round's final effect (only in the final round). */
-  readonly finalEffect: FinalEffect | null;
+  readonly finalEffect: FinalRoundEffect | null;
   readonly deckRemaining: number;
+  /** v08.events.tides: the two candidate kinds, public from the start (empty with the switch off). */
+  readonly tideCandidates: readonly TideKind[];
+  /** The picked tide once 暗潮將至 is revealed (its effect starts in phase II), else null. */
+  readonly tide: TideKind | null;
+  /** The late card drawn this round (v08.events.lateCards), else null. */
+  readonly lateCard: LateCard | null;
+  /**
+   * v08.events.flipOnlyTideCard: the one card whose phase II (boss) side shows, public once the tide is revealed (null
+   * before). Absent with the switch off: every card flips in phase II.
+   */
+  readonly flipCard?: VoyageEventId | null;
 }
 
 export interface MatchState {
@@ -273,6 +302,11 @@ export const V08_EFFECTS = [
   'customs-halved',
   'inspected',
   'level-up',
+  'storm-tide',
+  'pirate-tide',
+  'storm-shield',
+  'pirate-shield',
+  'crash-shield',
 ] as const;
 export type V08Effect = (typeof V08_EFFECTS)[number];
 
@@ -379,7 +413,13 @@ export type MatchEvent =
   /** V0.8 prototype (v08.events): the 1st advance card. Phase II starts next round. */
   | { readonly type: 'dark-tide-rising'; readonly round: number }
   /** V0.8 prototype: this round is the last one (the 2nd advance card, or the round cap / an empty deck with no effect). */
-  | { readonly type: 'final-round'; readonly round: number; readonly effect: FinalEffect | null; readonly demand: Goods }
+  | { readonly type: 'final-round'; readonly round: number; readonly effect: FinalRoundEffect | null; readonly demand: Goods }
+  /** V0.8 prototype (v08.events.tides): the two candidate tide kinds, announced as the match is created. */
+  | { readonly type: 'tide-candidates'; readonly candidates: readonly TideKind[] }
+  /** V0.8 prototype (v08.events.tides): the tide picked from the candidates when 暗潮將至 is revealed. */
+  | { readonly type: 'tide-revealed'; readonly round: number; readonly tide: TideKind }
+  /** V0.8 prototype (v08.events.lateCards): a late card drawn instead of a regular event (demand after its effect). */
+  | { readonly type: 'late-card'; readonly round: number; readonly card: LateCard; readonly demand: Goods }
   /** V0.8 prototype: the first phase II round opens. */
   | { readonly type: 'phase-two-started'; readonly round: number }
   /** V0.8 prototype: this round's regular event is its phase II (boss) version. */
