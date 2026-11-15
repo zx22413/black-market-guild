@@ -77,8 +77,16 @@ export interface V08Rules {
    * cap of 5) stop working: the island becomes a plain one (暗潮遮住了燈塔).
    * `freePortGamblerNoRest`: 1 = the free port's gambler needs no rest (no cooldown).
    * `lighthouseBeacon`: extra modifier each pirate adds against a lighthouse owner's ship (−1 = pirates are −2 there).
+   * `ownShipMinRaw`: an island's own-ship modifier (the lighthouse's +1) applies only when the raw die is at least this (0 = always).
+   * `freePortFeePercent`: the free port pays this percent of every ship type's own fee, rounded down (0 = the island's normal fees).
    */
-  readonly islands: { readonly lighthouseFades: number; readonly freePortGamblerNoRest: number; readonly lighthouseBeacon: number };
+  readonly islands: {
+    readonly lighthouseFades: number;
+    readonly freePortGamblerNoRest: number;
+    readonly lighthouseBeacon: number;
+    readonly ownShipMinRaw: number;
+    readonly freePortFeePercent: number;
+  };
   /**
    * Bot only (not a rule): 1 = bots value pirate deployments (and the pirate threat for the armory) with the crate tables
    * and the active tide instead of the V0.7 percent curves.
@@ -200,7 +208,7 @@ export const V08_OFF: V08Rules = {
   repairyard: { fromFinal: 2, toFinal: 3, save: 1, immuneStormTide: 0 },
   armory: { lootPercent: 35, halveAllLoot: 0, immunePirateTide: 0, pirateToll: 0, halveCustoms: 0 },
   tradehouse: { immuneCrashTide: 0 },
-  islands: { lighthouseFades: 0, freePortGamblerNoRest: 0, lighthouseBeacon: 0 },
+  islands: { lighthouseFades: 0, freePortGamblerNoRest: 0, lighthouseBeacon: 0, ownShipMinRaw: 0, freePortFeePercent: 0 },
   botPirateCrates: 0,
   inspection: { enabled: 0, allowance: 0 },
   levelUp: { byLaunches: 0 },

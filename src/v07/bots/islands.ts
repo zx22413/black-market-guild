@@ -106,6 +106,9 @@ export function islandWorth(view: PlayerView, island: IslandId, persona: Persona
     : arriveChance(rules, t.ownShipModifier) - p;
   // v08.islands.lighthouseFades: the own-ship modifier only works before the dark tide (about half of the match).
   const fade = rules.v08.islands.lighthouseFades === 1 && t.ownShipModifier !== 0 ? 0.5 : 1;
+  // v08.islands.ownShipMinRaw: the modifier only counts on raw dice from the minimum up (a share of the faces).
+  const minRaw = rules.v08.islands.ownShipMinRaw;
+  const rawShare = minRaw > 0 && t.ownShipModifier !== 0 ? (rules.sailing.dieMax - minRaw + 1) / (rules.sailing.dieMax - rules.sailing.dieMin + 1) : 1;
   const freeFees = typed ? t.freeShips.reduce((sum, type) => sum + rules.ships.types[type].fee * sails * FREE_SHIP_USE, 0) : 0;
   // v08.islands.freePortGamblerNoRest: the gambler can sail every round; rough worth of the rounds it would rest, as
   // its expected edge over a plain ship on a full load (curves at no modifier).
@@ -113,7 +116,7 @@ export function islandWorth(view: PlayerView, island: IslandId, persona: Persona
     typed && rules.v08.islands.freePortGamblerNoRest === 1 && island === 'free-port'
       ? Math.max(0, curveOutlook(rules, 'gambler', 0).income - curveOutlook(rules, 'standard', 0).income) * cargo * sails * FREE_SHIP_USE
       : 0;
-  const sailing = edge * fade * cargo * sails * (1 + persona.risk) - t.shipCostDelta * sails + freeFees + noRest + t.capacityDelta * sails * price * p * 0.6;
+  const sailing = edge * fade * rawShare * cargo * sails * (1 + persona.risk) - t.shipCostDelta * sails + freeFees + noRest + t.capacityDelta * sails * price * p * 0.6;
   const roles = ROLE_IDS.reduce(
     (sum, role) =>
       sum + roleUses(rules, island, role) * roleUseValue(view, island, role, cargo, persona) - roleUses(rules, null, role) * roleUseValue(view, null, role, cargo, persona),

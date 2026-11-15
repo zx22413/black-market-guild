@@ -47,6 +47,7 @@ export {
   nextRoundTide,
   noPriceDrop,
   islandFaded,
+  ownShipApplies,
   ownShipShift,
   pirateModifier,
   rushValue,

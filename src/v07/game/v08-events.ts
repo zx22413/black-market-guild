@@ -122,6 +122,11 @@ export function ownShipShift(rules: Rules, base: number, pe: PublicEvents | unde
   return islandFaded(rules, pe, nextRound) ? 0 : base;
 }
 
+/** v08.islands.ownShipMinRaw: whether the island's own-ship modifier applies to a voyage with this raw die. */
+export function ownShipApplies(rules: Rules, raw: number): boolean {
+  return raw >= rules.v08.islands.ownShipMinRaw;
+}
+
 /** v08.islands.lighthouseBeacon: the extra modifier each pirate adds against a ship whose owner is on the lighthouse. */
 export function beaconShift(rules: Rules, ownerIsland: string | null): number {
   return ownerIsland === 'lighthouse' ? rules.v08.islands.lighthouseBeacon : 0;

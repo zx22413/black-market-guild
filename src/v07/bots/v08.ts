@@ -37,6 +37,7 @@ import {
   inspectionAllowance,
   nextRoundTide,
   islandFaded,
+  ownShipApplies,
   ownShipShift,
   pirateModifier,
   stormTideLossActs,
@@ -118,7 +119,9 @@ function finals(view: PlayerView, plan: Plan, cache: V08Cache): readonly (readon
   // v08.islands.lighthouseFades: the island's cap is gone in phase II (next round for a delayed ship).
   const islandCap = islandFaded(rules, view.events, plan.delayed === true) ? 0 : traitOf(rules, plan.island).ownShipFinalCap;
   const cap = islandCap > 0 ? Math.min(typeCap, islandCap) : typeCap;
-  const finalOf = (raw: number) => Math.min(cap, Math.max(dieMin, raw + plan.modifier));
+  // v08.islands.ownShipMinRaw: the island's own-ship modifier (already inside plan.modifier) drops out below the minimum raw die.
+  const ownShift = ownShipShift(rules, traitOf(rules, plan.island).ownShipModifier, view.events, plan.delayed === true);
+  const finalOf = (raw: number) => Math.min(cap, Math.max(dieMin, raw + plan.modifier - (ownShipApplies(rules, raw) ? 0 : ownShift)));
   const out = new Map<number, number>();
   const add = (final: number, p: number) => out.set(final, (out.get(final) ?? 0) + p);
   // V0.8 prototype (最後一搏, v08.events): the raw die is the best of `dice` dice; a delayed ship meets next round's dice.

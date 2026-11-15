@@ -322,11 +322,11 @@ export function shipTypeAvailable(rules: Rules, type: ShipTypeId, lastLaunched: 
 export const RULES_V08_PROTO: Rules = {
   ...RULES_V07,
   version: 'V0.8-proto',
-  // 2026-11-16 island balance (test values): the free port's −1 capacity (halved arrivals under the crate table) becomes
-  // a 25 G harbour tax on every ship, like the shipyard island; the gambler still sails free.
+  // 2026-11-16 island balance (test values): the free port keeps its full capacity and pays half of every ship's fee
+  // (v08.islands.freePortFeePercent below); no other drawback.
   islands: {
     ...RULES_V07.islands,
-    traits: { ...RULES_V07.islands.traits, 'free-port': trait({ shipCostDelta: 25, freeShips: ['gambler'] }) },
+    traits: { ...RULES_V07.islands.traits, 'free-port': trait({}) },
   },
   // 2026-11-14 tuning baseline (docs/proposals/2026-11-playtest-feedback-and-direction.md §10.9), test values only:
   // the gambler's fee drops to 50 G; the freighter, the steadiest ship, costs 75 G (2026-11-15).
@@ -390,9 +390,9 @@ export const RULES_V08_PROTO: Rules = {
       tidePirateArrivalLoot: 30,
       finalBoth: 1,
     },
-    // 2026-11-16: the lighthouse lights you up for pirates too (each pirate −2 against its ships, user's choice over
-    // fading the island in phase II); the free port's gambler needs no rest.
-    islands: { lighthouseFades: 0, freePortGamblerNoRest: 1, lighthouseBeacon: -1 },
+    // 2026-11-16: the lighthouse's +1 needs a raw die of 3 or more (user's idea: a 1 or 2 can still sink you); the
+    // beacon, the phase II fade and the free port's restless gambler are kept as switches but off.
+    islands: { lighthouseFades: 0, freePortGamblerNoRest: 0, lighthouseBeacon: 0, ownShipMinRaw: 3, freePortFeePercent: 50 },
     // 2026-11-16: the armory guards against people (人禍): it also collects the fee of every pirate sent at its owner's
     // ships and halves what customs confiscates from them.
     armory: { ...V08_OFF.armory, halveAllLoot: 1, immunePirateTide: 1, pirateToll: 1, halveCustoms: 1 },

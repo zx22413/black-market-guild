@@ -29,7 +29,9 @@ export function shipCostFor(rules: Rules, island: IslandId | null, type: ShipTyp
   const t = traitOf(rules, island);
   // V0.8 prototype (v08.hidden.feeFreeL1): an opened hidden-ship skill waives the ship's own fee (island changes still apply).
   const waived = rules.v08.skills === 1 && type === 'hidden' && skill >= 1 && rules.v08.hidden.feeFreeL1 === 1;
-  const base = rules.ships.enabled === 1 ? (t.freeShips.includes(type) || waived ? 0 : rules.ships.types[type].fee) : rules.shipCost;
+  // V0.8 prototype (v08.islands.freePortFeePercent): the free port pays a share of every ship's own fee.
+  const percent = island === 'free-port' && rules.v08.islands.freePortFeePercent > 0 ? rules.v08.islands.freePortFeePercent : 100;
+  const base = rules.ships.enabled === 1 ? (t.freeShips.includes(type) || waived ? 0 : Math.floor((rules.ships.types[type].fee * percent) / 100)) : rules.shipCost;
   return Math.max(0, base + t.shipCostDelta + (load !== undefined && load.spice > 0 ? t.spiceShipFee : 0));
 }
 
