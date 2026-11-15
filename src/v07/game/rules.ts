@@ -384,8 +384,9 @@ export const RULES_V08_PROTO: Rules = {
       tidePirateArrivalLoot: 30,
       finalBoth: 1,
     },
-    // 2026-11-16: the armory also collects the fee of every pirate sent at its owner's ships.
-    armory: { ...V08_OFF.armory, halveAllLoot: 1, immunePirateTide: 1, pirateToll: 1 },
+    // 2026-11-16: the armory guards against people (人禍): it also collects the fee of every pirate sent at its owner's
+    // ships and halves what customs confiscates from them.
+    armory: { ...V08_OFF.armory, halveAllLoot: 1, immunePirateTide: 1, pirateToll: 1, halveCustoms: 1 },
     // 2026-11-15: each building shields its owner from the matching tide (repairyard ↔ storm, armory ↔ pirate,
     // tradehouse ↔ crash), and bots value pirate deployments with the crate tables.
     repairyard: { ...V08_OFF.repairyard, immuneStormTide: 1 },

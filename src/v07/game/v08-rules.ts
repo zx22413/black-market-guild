@@ -61,8 +61,11 @@ export interface V08Rules {
    * `immunePirateTide`: 1 = the pirate tide's arrival loot (events.tidePirateArrivalLoot) never applies to the owner's
    * ships (normal loot still does, still halved).
    */
-  /** `pirateToll`: 1 = every pirate deployed on the owner's ship pays its deployment fee to the owner instead of the bank (any island). */
-  readonly armory: { readonly lootPercent: number; readonly halveAllLoot: number; readonly immunePirateTide: number; readonly pirateToll: number };
+  /**
+   * `pirateToll`: 1 = every pirate deployed on the owner's ship pays its deployment fee to the owner instead of the bank (any island).
+   * `halveCustoms`: 1 = customs takes only half (floor) of the named good's value from the owner's ships (any island).
+   */
+  readonly armory: { readonly lootPercent: number; readonly halveAllLoot: number; readonly immunePirateTide: number; readonly pirateToll: number; readonly halveCustoms: number };
   /**
    * `immuneCrashTide`: 1 = while the crash tide multiplies a price drop, the owner's own arriving crates (every good) sell
    * at the price the drop would reach without the tide's multiplier (other multipliers still apply; the named protected
@@ -188,7 +191,7 @@ export const V08_OFF: V08Rules = {
   hidden: { privateL1: 1, privateL2: 2, privateArrives: 0, privateLoses: 0, privateSafeFromInspectionL2: 0, feeFreeL1: 0, selfCoverL1: 0 },
   breaker: { extraFromL1: 6, extraFromL2: 5, extraDieSides: 6 },
   repairyard: { fromFinal: 2, toFinal: 3, save: 1, immuneStormTide: 0 },
-  armory: { lootPercent: 35, halveAllLoot: 0, immunePirateTide: 0, pirateToll: 0 },
+  armory: { lootPercent: 35, halveAllLoot: 0, immunePirateTide: 0, pirateToll: 0, halveCustoms: 0 },
   tradehouse: { immuneCrashTide: 0 },
   botPirateCrates: 0,
   inspection: { enabled: 0, allowance: 0 },

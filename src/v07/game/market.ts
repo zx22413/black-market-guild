@@ -197,7 +197,8 @@ function ownSalePrice(state: MatchState, playerId: PlayerId, good: GoodId, price
 /** V0.8 prototype, smuggler port + armory: customs takes only half of the named good's value from this owner's ships. */
 function customsHalved(state: MatchState, ship: Ship): boolean {
   const owner = playerOf(state, ship.owner);
-  return hasVariant(state.rules, owner.island, facilityOf(state.rules, owner), 'smuggler-port', 'armory');
+  const facility = facilityOf(state.rules, owner);
+  return hasVariant(state.rules, owner.island, facility, 'smuggler-port', 'armory') || (state.rules.v08.armory.halveCustoms === 1 && facility === 'armory');
 }
 
 function deployed(state: MatchState, ship: Ship, role: RoleId): PlayerId[] {

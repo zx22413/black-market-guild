@@ -58,10 +58,12 @@ const SAIL_RATE = 0.85;
 /** Assumed chance another player's ship sinks in a round (for salvage), and that a pirate aims at my ship. */
 const OTHER_SINK = 0.15;
 const PIRATE_ON_ME = 0.2;
-const CUSTOMS_ON_ME = 0.2;
+// 2026-11-16 calibration from 1000-match runs: customs is deployed in about a third of player-rounds (≈ 0.4 per
+// opponent ship), and a tradehouse save covers about 2 crates (≈ 99 G at a 50 G step).
+const CUSTOMS_ON_ME = 0.4;
 /** Chance a good I name for the tradehouse drops in a round, and how many of my crates of it arrive. */
 const DROP_CHANCE = 0.35;
-const PROTECTED_CRATES = 1.2;
+const PROTECTED_CRATES = 2;
 /** Modifier swings a ship meets in a round (an event, a guard or a pirate) and their assumed chances, for the raise option. */
 const RAISE_SWINGS: readonly (readonly [number, number])[] = [
   [-1, 0.2],
@@ -448,7 +450,12 @@ function buildingExtras(view: PlayerView, player: PublicPlayer, building: V08Bui
             ? armoryDenied(view, player, cache)
             : (PIRATE_ON_ME * pirateTake(view, player, cache) * cargo) / 2;
       const toll = hasVariant(rules, player.island, 'armory', 'fortress', 'armory') || rules.v08.armory.pirateToll === 1 ? PIRATE_ON_ME * rules.roles.fees.pirate : 0;
-      const halved = hasVariant(rules, player.island, 'armory', 'smuggler-port', 'armory') ? CUSTOMS_ON_ME * currentPrice(view, 'arms') * 0.5 : 0;
+      // v08.armory.halveCustoms: half of a confiscated good (customs may name any good, so an average crate).
+      const halved = hasVariant(rules, player.island, 'armory', 'smuggler-port', 'armory')
+        ? CUSTOMS_ON_ME * currentPrice(view, 'arms') * 0.5
+        : rules.v08.armory.halveCustoms === 1
+          ? CUSTOMS_ON_ME * averagePrice(view) * 0.5
+          : 0;
       // Mostly denial: what pirates do not take is worth part of its value to me (winning is relative).
       return denied * 0.5 + toll + halved;
     }

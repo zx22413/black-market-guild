@@ -136,6 +136,15 @@ describe('V0.8 bots and the tide shields', () => {
     expect(cash(events, 'pirate-toll', 'p1')).toBe(RULES_V08_PROTO.roles.fees.pirate);
   });
 
+  it('lets the armory halve what customs confiscates from its owner', () => {
+    const base = withDemand(plain(4, RULES_V08_PROTO), G(2, 2, 2, 1));
+    const round = (state: MatchState) =>
+      playRound(edit(state, 'p1', { stock: G(3, 3, 1, 1) }), { loads: { p1: G(0, 0, 0, 1) }, rolls: { p1: 6 }, roles: { p2: ['customs', 'p1'] }, named: { p2: 'arms' } });
+    const plainTake = cash(round(base).events, 'goods-confiscated', 'p2');
+    expect(plainTake).toBeGreaterThan(0);
+    expect(cash(round(edit(base, 'p1', { facility: 'armory' })).events, 'goods-confiscated', 'p2')).toBe(Math.floor(plainTake / 2));
+  });
+
   it('value the shield before the reveal only when its tide is a candidate', () => {
     // Compare with the same rules minus the three shields only (costs and the armory toll unchanged).
     const noShields = {
