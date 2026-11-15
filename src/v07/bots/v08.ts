@@ -26,6 +26,7 @@ import {
   type V08BuildingId,
   activeTide,
   arrivalLoot,
+  beaconShift,
   capacityFor as capacityOf,
   crashShieldActs,
   diceToRoll,
@@ -35,6 +36,8 @@ import {
   flipCardFor,
   inspectionAllowance,
   nextRoundTide,
+  islandFaded,
+  ownShipShift,
   pirateModifier,
   stormTideLossActs,
   tideDropMultiplier,
@@ -112,7 +115,8 @@ function finals(view: PlayerView, plan: Plan, cache: V08Cache): readonly (readon
   const { dieMin, dieMax } = rules.sailing;
   const faces = dieMax - dieMin + 1;
   const typeCap = rules.ships.types[plan.type].uncapped === 1 ? Number.MAX_SAFE_INTEGER : dieMax;
-  const islandCap = traitOf(rules, plan.island).ownShipFinalCap;
+  // v08.islands.lighthouseFades: the island's cap is gone in phase II (next round for a delayed ship).
+  const islandCap = islandFaded(rules, view.events, plan.delayed === true) ? 0 : traitOf(rules, plan.island).ownShipFinalCap;
   const cap = islandCap > 0 ? Math.min(typeCap, islandCap) : typeCap;
   const finalOf = (raw: number) => Math.min(cap, Math.max(dieMin, raw + plan.modifier));
   const out = new Map<number, number>();
@@ -257,7 +261,7 @@ function voyageWorth(view: PlayerView, player: PublicPlayer, type: ShipTypeId, l
   const crates = shipCrates(view, player, type);
   const price = averagePrice(view);
   // v08.events.tides: 風暴潮 lowers every voyage in the rounds it acts (0 without an acting storm tide).
-  const modifier = traitOf(view.rules, player.island).ownShipModifier + tideShift(view.rules, activeTide(view.events));
+  const modifier = ownShipShift(view.rules, traitOf(view.rules, player.island).ownShipModifier, view.events) + tideShift(view.rules, activeTide(view.events));
   const plan: Plan = { type, raised: false, level, facility, island: player.island, modifier, ...stormOf(view, activeTide(view.events)) };
   // Raising is a choice made each voyage: worth its edge in the rounds the modifiers favour it (a tailwind, a guard…).
   const raised =
@@ -298,7 +302,7 @@ function pirateTake(view: PlayerView, player: PublicPlayer, cache: V08Cache): nu
     level: skillLevel(rules, player, 'standard'),
     facility: null,
     island: player.island,
-    modifier: pirateModifier(rules, view.events, null) + traitOf(rules, player.island).ownShipModifier,
+    modifier: pirateModifier(rules, view.events, null) + ownShipShift(rules, traitOf(rules, player.island).ownShipModifier, view.events),
     ...stormOf(view, tide),
   };
   const tideLoot = tide === 'pirate' ? rules.v08.events.tidePirateArrivalLoot : 0;
@@ -361,7 +365,7 @@ function armoryDenied(view: PlayerView, player: PublicPlayer, cache: V08Cache): 
     level: skillLevel(rules, player, type),
     facility: null,
     island: player.island,
-    modifier: pirateModifier(rules, view.events, event) + (event === 'sea-fog' ? seaFogShift(rules, view.events) : 0) + traitOf(rules, player.island).ownShipModifier + tideShift(rules, tide),
+    modifier: pirateModifier(rules, view.events, event) + (event === 'sea-fog' ? seaFogShift(rules, view.events) : 0) + ownShipShift(rules, traitOf(rules, player.island).ownShipModifier, view.events) + tideShift(rules, tide),
     ...stormOf(view, tide),
   });
   const cases: readonly (readonly [ShipTypeId, VoyageEventId | null, number])[] =
@@ -401,7 +405,7 @@ export function pirateLootCrates(view: PlayerView, ship: ViewShip, pirateShift: 
     facility,
     island: owner.island,
     modifier:
-      traitOf(rules, owner.island).ownShipModifier + (delayed ? 0 : eventShift(rules, view.events, event)) + tideShift(rules, tide) + pirateShift + (event === 'sea-fog' ? seaFogShift(rules, view.events) : 0),
+      ownShipShift(rules, traitOf(rules, owner.island).ownShipModifier, view.events, delayed) + (delayed ? 0 : eventShift(rules, view.events, event)) + tideShift(rules, tide) + pirateShift + beaconShift(rules, owner.island) + (event === 'sea-fog' ? seaFogShift(rules, view.events) : 0),
     ...(delayed ? { delayed: true } : {}),
     ...stormOf(view, tide),
   };
@@ -578,7 +582,8 @@ function materialWorth(view: PlayerView, material: MaterialAction, persona: Pers
       // `byLaunches` uses sail at level 1, the rest at level 2; the gambler rests every other round.
       // v08.events.tides: this round's use counts in this round's view, the later ones in their stretches' views.
       const stretches: readonly Stretch[] = tides ? [{ voyages: 1, view, cache }, ...laterStretches(view, cache)] : [{ voyages: futureVoyages(view) + 1, view, cache }];
-      const rest = material.ship === 'gambler' ? 0.5 : 1;
+      // The gambler rests every other round, except at the free port (v08.islands.freePortGamblerNoRest).
+      const rest = material.ship === 'gambler' && !(rules.v08.islands.freePortGamblerNoRest === 1 && player.island === 'free-port') ? 0.5 : 1;
       const uses = stretches.reduce((sum, st) => sum + st.voyages, 0) * rest;
       // Without levelling by use (byLaunches 0) every use sails at level 1.
       const atLevel1 = byLaunches > 0 ? Math.min(uses, byLaunches) : uses;
@@ -662,7 +667,7 @@ export function scoreInvestV08(view: PlayerView, action: Invest, persona: Person
       level,
       facility,
       island: player.island,
-      modifier: expectedOwnModifier(view, trait.ownShipModifier, rules.ships.types[type].delay > 0),
+      modifier: expectedOwnModifier(view, ownShipShift(rules, trait.ownShipModifier, view.events, rules.ships.types[type].delay > 0), rules.ships.types[type].delay > 0),
       ...(rules.ships.types[type].delay > 0 ? { delayed: true } : {}),
       // 風暴潮: a ship resolving next round meets next round's tide.
       ...stormOf(view, rules.ships.types[type].delay > 0 ? nextRoundTide(view.events) : activeTide(view.events)),
@@ -685,7 +690,7 @@ export function scoreInvestV08(view: PlayerView, action: Invest, persona: Person
   const share = keepShare(view, kept);
   const keepP = typicalShare(
     view,
-    { type: 'standard', raised: false, level: skills.standard ?? 0, facility, island: player.island, modifier: trait.ownShipModifier, ...stormOf(view, activeTide(view.events)) },
+    { type: 'standard', raised: false, level: skills.standard ?? 0, facility, island: player.island, modifier: ownShipShift(rules, trait.ownShipModifier, view.events), ...stormOf(view, activeTide(view.events)) },
     3,
     cache,
   );

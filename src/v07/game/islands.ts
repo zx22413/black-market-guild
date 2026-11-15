@@ -1,5 +1,5 @@
 import { shuffle, type RngState } from './rng';
-import { NEUTRAL_TRAIT, shipFinalCap, type IslandTrait, type Rules } from './rules';
+import { NEUTRAL_TRAIT, shipFinalCap, shipTypeAvailable, type IslandTrait, type Rules } from './rules';
 import { ISLAND_IDS, type BuildingId, type GoodId, type Goods, type IslandId, type PlayerId, type RoleId, type ShipTypeId } from './types';
 
 // Island traits (§11).
@@ -39,6 +39,12 @@ export function capacityFor(rules: Rules, buildings: readonly BuildingId[], isla
 }
 
 /** §9.1 step 6: the highest final value a ship of `type` owned by a player on `island` can reach (the island's limit and the type's own, whichever is lower). */
+/** Ship-type availability for this player's island (v08.islands.freePortGamblerNoRest: the free port's gambler never rests). */
+export function shipTypeAvailableFor(rules: Rules, island: IslandId | null, type: ShipTypeId, lastLaunched: number | undefined, round: number): boolean {
+  if (rules.v08.islands.freePortGamblerNoRest === 1 && island === 'free-port' && type === 'gambler') return true;
+  return shipTypeAvailable(rules, type, lastLaunched, round);
+}
+
 export function shipFinalCapFor(rules: Rules, island: IslandId | null, type: ShipTypeId): number {
   const limit = traitOf(rules, island).ownShipFinalCap;
   const cap = shipFinalCap(rules, type);

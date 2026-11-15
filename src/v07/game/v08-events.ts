@@ -114,6 +114,25 @@ const boss = bossSide;
 /** v08.events.tides: the tide acting this round (phase II rounds and the final round, once picked), else null. */
 export const activeTide = (pe: PublicEvents | undefined): TideKind | null => (pe?.phase === 2 ? pe.tide : null);
 
+/**
+ * v08.islands.lighthouseFades: an island's own-ship modifier (the lighthouse's +1) in this round, 0 once phase II has
+ * begun. `nextRound` asks about next round instead (a freighter resolving then).
+ */
+export function ownShipShift(rules: Rules, base: number, pe: PublicEvents | undefined, nextRound = false): number {
+  return islandFaded(rules, pe, nextRound) ? 0 : base;
+}
+
+/** v08.islands.lighthouseBeacon: the extra modifier each pirate adds against a ship whose owner is on the lighthouse. */
+export function beaconShift(rules: Rules, ownerIsland: string | null): number {
+  return ownerIsland === 'lighthouse' ? rules.v08.islands.lighthouseBeacon : 0;
+}
+
+/** v08.islands.lighthouseFades: whether island own-ship effects (modifier and final cap) are off this round (or next). */
+export function islandFaded(rules: Rules, pe: PublicEvents | undefined, nextRound = false): boolean {
+  if (rules.v08.islands.lighthouseFades !== 1 || pe === undefined) return false;
+  return pe.phase === 2 || (nextRound && pe.darkTide);
+}
+
 /** The tide that will act next round: the picked one from 暗潮將至 on (for ships that resolve next round). */
 export const nextRoundTide = (pe: PublicEvents | undefined): TideKind | null => (pe !== undefined && (pe.phase === 2 || pe.darkTide) ? pe.tide : null);
 

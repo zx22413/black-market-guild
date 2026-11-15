@@ -33,6 +33,7 @@ export type { CrateContext, CrateTerms } from './v08';
 export {
   activeTide,
   arrivalLoot,
+  beaconShift,
   crashShieldActs,
   bossSide,
   darkNight,
@@ -45,6 +46,8 @@ export {
   moonlessShift,
   nextRoundTide,
   noPriceDrop,
+  islandFaded,
+  ownShipShift,
   pirateModifier,
   rushValue,
   seaFogShift,
@@ -57,7 +60,7 @@ export {
 } from './v08-events';
 export { buildingValue } from './scoring';
 export { priceAt } from './goods';
-export { capacityFor, cooldownFor, producedFor, roleFee, shipCostFor, shipFinalCapFor, traitOf } from './islands';
+export { capacityFor, cooldownFor, producedFor, roleFee, shipCostFor, shipFinalCapFor, shipTypeAvailableFor, traitOf } from './islands';
 export { createRng, createRngFromState } from './rng';
 export type { Rng, RngState } from './rng';
 export * from './types';

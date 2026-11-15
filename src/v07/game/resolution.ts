@@ -5,7 +5,7 @@ import { FINAL_EFFECTS } from './types';
 import { nextInt, type RngState } from './rng';
 import { shipDelay, shipSinks } from './rules';
 import { GOODS, type Deployment, type FinalRoundEffect, type MatchEvent, type VoyageEventId, type MatchState, type Ship, type Step, type VoyageModifier, type VoyageOutcome } from './types';
-import { activeTide, bossSide, darkNight, diceToRoll, eventShift, eventsOn, isLateCard, moonlessShift, pirateModifier, publicEvents, seaFogShift, stormTideLossActs, tideShift } from './v08-events';
+import { activeTide, beaconShift, bossSide, darkNight, diceToRoll, eventShift, eventsOn, isLateCard, moonlessShift, islandFaded, ownShipShift, pirateModifier, publicEvents, seaFogShift, stormTideLossActs, tideShift } from './v08-events';
 import { crateTerms, extraDieFrom, facilityOf, repairyardSaved, rerolls, skillLevel, stormShielded, takeHighest, unshieldedTerms, v08On, type CrateContext, type CrateTerms } from './v08';
 
 /** §5 step 1: draws and reveals the voyage event as the round opens. */
@@ -125,10 +125,14 @@ export function voyageModifier(state: MatchState, ship: Ship): VoyageModifier {
         0,
       );
   // + 0 turns -0 into 0.
-  const pirate = targeting(state, ship, 'pirate').reduce((sum, d) => sum + pirateModifier(rules, pe, card) + trait(d.playerId).pirateModifier, 0) + 0;
+  // v08.islands.lighthouseBeacon: the lighthouse lights its owner's ships up for pirates too.
+  const beacon = beaconShift(rules, playerOf(state, ship.owner).island);
+  const pirate = targeting(state, ship, 'pirate').reduce((sum, d) => sum + pirateModifier(rules, pe, card) + trait(d.playerId).pirateModifier + beacon, 0) + 0;
   const event = eventModifier(state, ship) + 0;
-  const island = trait(ship.owner).ownShipModifier + 0;
-  const final = Math.min(shipFinalCapFor(rules, playerOf(state, ship.owner).island, ship.type), Math.max(rules.sailing.dieMin, base + guard + pirate + event + island));
+  const island = ownShipShift(rules, trait(ship.owner).ownShipModifier, pe) + 0;
+  // v08.islands.lighthouseFades: in phase II the island's own cap fades too (only the ship type's cap remains).
+  const capIsland = islandFaded(rules, pe) ? null : playerOf(state, ship.owner).island;
+  const final = Math.min(shipFinalCapFor(rules, capIsland, ship.type), Math.max(rules.sailing.dieMin, base + guard + pirate + event + island));
   return { shipId: ship.id, base, guard, pirate, event, island, final };
 }
 
