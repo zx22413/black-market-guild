@@ -6,11 +6,11 @@ import { SHOW_TEMPO, slowed } from '../scene/showTempo';
 // docs/ui/v07-layout-research.md §6): the start die, then each modifier, then the outcome, the
 // cargo and every payment one by one. Pure, so the order and the pacing are testable.
 
-export type CueKind = 'intro' | 'start' | 'step' | 'outcome' | 'cargo' | 'cash' | 'goods' | 'done';
+export type CueKind = 'intro' | 'start' | 'step' | 'outcome' | 'cargo' | 'drop' | 'cash' | 'goods' | 'done';
 
 export interface Cue {
   readonly kind: CueKind;
-  /** Index into `beat.steps`, `beat.cash` or `beat.goods` for the matching kinds; 0 otherwise. */
+  /** Index into `beat.steps`, `beat.dropped`, `beat.cash` or `beat.goods` for the matching kinds; 0 otherwise. */
   readonly index: number;
   /** Milliseconds from the start of the beat. */
   readonly at: number;
@@ -27,6 +27,8 @@ export const BEAT_PACE = slowed({
   island: 2000,
   outcome: 1300,
   cargo: 1000,
+  /** V0.8 prototype: one crate falling into the sea. */
+  drop: 1400,
   cash: 650,
   goods: 650,
 });
@@ -57,8 +59,15 @@ export function beatCues(beat: ShipBeat, speed = 1, money = true): Cue[] {
   beat.steps.forEach((step, i) =>
     step.kind === 'island' || step.boosted.length > 0 ? push('step', i, BEAT_PACE.island, BEAT_PACE.island) : push('step', i, BEAT_PACE.step),
   );
-  push('outcome', 0, BEAT_PACE.outcome);
-  push('cargo', 0, BEAT_PACE.cargo);
+  if (beat.dropped.length > 0) {
+    // V0.8 prototype: crates fall at sea, so the hold opens first, each lost crate drops, then the ship makes port.
+    push('cargo', 0, BEAT_PACE.cargo);
+    beat.dropped.forEach((_, i) => push('drop', i, BEAT_PACE.drop));
+    push('outcome', 0, BEAT_PACE.outcome);
+  } else {
+    push('outcome', 0, BEAT_PACE.outcome);
+    push('cargo', 0, BEAT_PACE.cargo);
+  }
   if (money) {
     beat.cash.forEach((_, i) => push('cash', i, BEAT_PACE.cash));
     beat.goods.forEach((_, i) => push('goods', i, BEAT_PACE.goods));
@@ -83,6 +92,8 @@ export interface BeatView {
   readonly die: number | null;
   readonly showOutcome: boolean;
   readonly showCargo: boolean;
+  /** V0.8 prototype: lost crates dropped so far (of `beat.dropped`). */
+  readonly dropsShown: number;
   readonly cashShown: number;
   readonly goodsShown: number;
   readonly done: boolean;
@@ -111,6 +122,7 @@ export function beatView(beat: ShipBeat, cues: readonly Cue[], started: number):
     die: !showStart ? null : current ? Math.min(dieTop(beat), Math.max(1, current.value)) : beat.start,
     showOutcome: count('outcome') > 0,
     showCargo: count('cargo') > 0,
+    dropsShown: count('drop'),
     cashShown: count('cash'),
     goodsShown: count('goods'),
     done: count('done') > 0,

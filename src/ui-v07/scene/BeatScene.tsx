@@ -1,4 +1,6 @@
 import { Line } from '@react-three/drei';
+import { CrateDrop, dropLanding } from './CrateDrop';
+import { GoodIcon } from '../table3d/GoodIcon';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { DoubleSide, Vector3, type Group, type Mesh, type MeshBasicMaterial, type Object3D } from 'three';
@@ -416,6 +418,8 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, set
   const p = focusPose.position;
   // The tag goes where the ship is: pushed on during the steps, then in port once it arrives.
   const shipAt = view.showOutcome && beat.outcome !== 'sank' ? shipPose(angles[focusLane]!, 'arrived').position : p;
+  // Where the crates go overboard: the ship at sea, pushed on by what the steps gained it.
+  const dropAt = new Vector3(p.x + Math.sin(focusPose.heading) * all.forward, 0, p.z + Math.cos(focusPose.heading) * all.forward);
   const spots = actorSpots(p, angles, actorsShown(beat, { ...view, stepsShown: beat.steps.length }));
   const spotOf = (actor: BeatActor): Vector3 => spots.get(actorKey(actor))!;
   const seatOf = (id: PlayerId) => seats.find((s) => s.id === id);
@@ -454,6 +458,16 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, set
               <span>
                 <span className={`hit-word ${hit.kind}`} style={ISLAND_HITS.has(hit.kind) ? { animationDelay: `${Math.round((HIT_DELAY[hit.kind] - 0.05) * 1000)}ms` } : undefined}>
                   {HIT_WORD[hit.kind]}
+                </span>
+              </span>
+            ), hidden: framing !== 'ship' }]
+        : []),
+      // V0.8 prototype: a "−1" over the water where the latest lost crate went under.
+      ...(view.dropsShown > 0 && !view.showOutcome
+        ? [{ id: `drop-${beat.shipId}-${view.dropsShown}`, position: [dropLanding(dropAt, focusPose.heading, view.dropsShown - 1).x, 2.4, dropLanding(dropAt, focusPose.heading, view.dropsShown - 1).z] as const, node: (
+              <span>
+                <span className="drop-word">
+                  −1 <GoodIcon good={beat.dropped[view.dropsShown - 1]!} size="sm" />
                 </span>
               </span>
             ), hidden: framing !== 'ship' }]
@@ -501,6 +515,10 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, set
             from={[...striking.filter((a) => a.role === 'pirate').map(spotOf), ...(raid ? Array.from({ length: RAIDERS }, (_, i) => new Vector3(...raiderSpot(raid, i))) : [])]}
           />
         )}
+        {/* V0.8 prototype: each lost crate goes overboard where the ship is, one per 'drop' cue. */}
+        {beat.dropped.slice(0, view.dropsShown).map((good, i) => (
+          <CrateDrop key={`${beat.shipId}-drop-${i}`} good={good} at={dropAt} heading={focusPose.heading} index={i} />
+        ))}
         {raid && <Raiders key={raid.key} cue={raid} />}
         {barrage && <Barrage key={barrage.key} cue={barrage} />}
         {spotlight && <Spotlight key={spotlight.key} cue={spotlight} />}

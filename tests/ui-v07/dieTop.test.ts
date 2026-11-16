@@ -12,6 +12,8 @@ const beat = (type: ShipBeat['type'], start: number, values: number[], final: nu
     goods: [],
     confiscated: [],
     cargo: {},
+    lost: null,
+    dropped: [],
   }) as unknown as ShipBeat;
 
 describe('dieTop', () => {

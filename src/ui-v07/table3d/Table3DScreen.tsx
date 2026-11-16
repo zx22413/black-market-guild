@@ -234,6 +234,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     angleOf: (id) => angles[laneOf(id)]!,
     skipFirstOpening: islandMarks,
     skip: skipIslandMoments,
+    rules,
   });
   // The decision is really usable now: loaded, replay over, and the island moments before it played
   // (the draft has none). An online room starts its clock from here, not from when it was sent.

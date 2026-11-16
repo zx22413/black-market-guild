@@ -1,4 +1,4 @@
-import { RULES_V07, traitOf, type CashReason, type GoodId, type Goods, type IslandId, type MatchEvent, type PlayerId, type RoleId, type ShipId, type ShipTypeId, type VoyageEventId, type VoyageOutcome } from '../../v07/game';
+import { GOODS, RULES_V07, traitOf, type CashReason, type GoodId, type Goods, type IslandId, type MatchEvent, type PlayerId, type RoleId, type ShipId, type ShipTypeId, type VoyageEventId, type VoyageOutcome } from '../../v07/game';
 
 // One "beat" of the round resolution: everything that happens to one ship, in the order of §9.1
 // (start die, guards, pirates, voyage event, island, clamp), then its outcome, cargo and money.
@@ -45,6 +45,13 @@ export interface ShipBeat {
   readonly final: number;
   readonly outcome: VoyageOutcome;
   readonly cargo: Goods;
+  /**
+   * V0.8 prototype (rules.v08.crates, not rules): the crates that fell into the sea on the voyage, part of `cargo`;
+   * null under rules without crate losses.
+   */
+  readonly lost: Goods | null;
+  /** The lost crates one by one, in the order the show drops them (dearest goods first, as the table takes them). */
+  readonly dropped: readonly GoodId[];
   readonly smugglers: readonly PlayerId[];
   readonly smuggling: 'taken' | 'caught' | 'seized' | 'lost' | null;
   /** Goods customs took off this ship (§9.4). */
@@ -93,6 +100,26 @@ function modifierSteps(
   return steps;
 }
 
+/**
+ * The lost crates one by one. The engine takes the dearest crates first at the prices of that moment; the event only
+ * says how many of each, so the show drops them from the last goods to the first (arms, spice, iron, wood), the usual
+ * price order. The crates lost are exact; only the order within the show is this approximation.
+ */
+function droppedCrates(lost: Goods | undefined): GoodId[] {
+  if (!lost) return [];
+  return [...GOODS].reverse().flatMap((g) => Array.from({ length: lost[g] }, () => g));
+}
+
+/** The ship's crates in goods order, each marked once the show has dropped it (`dropsShown` of `beat.dropped`). */
+export function crateStates(beat: ShipBeat, dropsShown: number): { readonly good: GoodId; readonly lost: boolean }[] {
+  const gone = beat.dropped.slice(0, dropsShown);
+  return GOODS.flatMap((g) => {
+    const lost = gone.filter((d) => d === g).length;
+    // The last crates of a goods are the ones that go.
+    return Array.from({ length: beat.cargo[g] }, (_, i) => ({ good: g, lost: i >= beat.cargo[g] - lost }));
+  });
+}
+
 /** The beat of `shipId`, or null when that ship has not been resolved in `events` yet. */
 export function buildShipBeat(events: readonly MatchEvent[], shipId: ShipId): ShipBeat | null {
   const resolved = events.find((e): e is Extract<MatchEvent, { type: 'ship-resolved' }> => e.type === 'ship-resolved' && e.shipId === shipId);
@@ -129,6 +156,8 @@ export function buildShipBeat(events: readonly MatchEvent[], shipId: ShipId): Sh
     final: mod.final,
     outcome: resolved.outcome,
     cargo: resolved.cargo,
+    lost: resolved.lost ?? null,
+    dropped: droppedCrates(resolved.lost),
     smugglers: smuggling?.smugglers ?? [],
     smuggling: smuggling?.result ?? null,
     confiscated: confiscated.map((c) => ({ good: c.good, units: c.units })),

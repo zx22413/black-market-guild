@@ -1,8 +1,8 @@
-import { GOODS, type PlayerId } from '../../v07/game';
+import type { PlayerId } from '../../v07/game';
 import { CASH_REASON_LABELS, SHIP_TYPE_LABELS } from '../labels';
 import { GoodIcon } from '../table3d/GoodIcon';
 import { dieTop, type BeatView } from './beatTimeline';
-import type { ShipBeat } from './shipBeat';
+import { crateStates, type ShipBeat } from './shipBeat';
 import { BeatDie, currentStep, signed, stepTitle } from './ShipBeatStage';
 import './beat.css';
 
@@ -22,7 +22,8 @@ export function BeatTag({ beat, view, names, viewer }: BeatTagProps) {
   const lastStep = view.stepsShown > 0 ? beat.steps[view.stepsShown - 1]! : null;
   const sank = beat.outcome === 'sank';
   const owner = `${beat.owner === viewer ? '你' : (names[beat.owner] ?? beat.owner)}的${SHIP_TYPE_LABELS[beat.type]}`;
-  const cargo = GOODS.flatMap((g) => Array.from({ length: beat.cargo[g] }, () => g));
+  // V0.8 prototype: a crate the show has dropped into the sea is crossed out where it sat.
+  const cargo = crateStates(beat, view.dropsShown);
   const who = (id: PlayerId) => (id === viewer ? '你' : (names[id] ?? id));
 
   return (
@@ -50,11 +51,12 @@ export function BeatTag({ beat, view, names, viewer }: BeatTagProps) {
       </p>
       {view.showCargo && (
         <div className="beat-tag-cargo">
-          {cargo.map((g, i) => (
-            <span key={i} className={`beat-crate good-${g}`} style={{ animationDelay: `${i * 90}ms` }}>
-              <GoodIcon good={g} />
+          {cargo.map((c, i) => (
+            <span key={i} className={`beat-crate good-${c.good} ${c.lost ? 'lost' : ''}`} style={{ animationDelay: `${i * 90}ms` }} {...(c.lost ? { title: '掉進海裡' } : {})}>
+              <GoodIcon good={c.good} />
             </span>
           ))}
+          {view.dropsShown > 0 && <small className="down beat-pop" key={view.dropsShown}>掉 {view.dropsShown} 箱</small>}
           {beat.confiscated.map((c) => (
             <small key={c.good} className="down">
               <GoodIcon good={c.good} size="sm" /> {c.units} 被沒收

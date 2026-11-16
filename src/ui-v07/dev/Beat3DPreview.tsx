@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { BuildingId, IslandId, MatchEvent, PlayerId, VoyageEventId } from '../../v07/game';
-import { RULES_V07 } from '../../v07/game';
+import { RULES_V07, RULES_V08_PROTO } from '../../v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../v07/match';
 import type { SafeArea } from '../../ui/scene/CameraRig';
 import { devWeatherOverride } from '../../ui/scene/weather';
@@ -80,9 +80,11 @@ function Stage({ beat, events, players, weather }: { readonly beat: ShipBeat; re
 export function Beat3DPreview() {
   const params = new URLSearchParams(location.search);
   const seed = Number(params.get('seed') ?? 7) || 7;
+  const v08 = params.has('v08');
   const forcedWeather = devWeatherOverride(location.search) as VoyageEventId | null;
   const { beats, events, players } = useMemo(() => {
-    const setup = setupFromSeats({ seed, seats: SEATS });
+    // &v08: the V0.8 prototype (an experiment, not rules), to see the crates go overboard.
+    const setup = setupFromSeats({ seed, seats: SEATS, ...(v08 ? { rules: RULES_V08_PROTO } : {}) });
     const log = runMatchSync(setup, setup.bots);
     const ids = log.events.flatMap((e) => (e.type === 'ship-resolved' ? [e.shipId] : []));
     return {
@@ -90,8 +92,10 @@ export function Beat3DPreview() {
       events: log.events,
       players: setup.players,
     };
-  }, [seed]);
+  }, [seed, v08]);
   const [index, setIndex] = useState(() => {
+    const most = Math.max(...beats.map((b) => b.dropped.length));
+    if (most > 0) return beats.findIndex((b) => b.dropped.length === most);
     const best = Math.max(...beats.map(interest));
     return Math.max(0, beats.findIndex((b) => interest(b) === best));
   });
@@ -111,6 +115,7 @@ export function Beat3DPreview() {
               return (
                 <option key={b.shipId} value={i}>
                   第 {b.round} 回合 · {names[b.owner]} · {b.outcome === 'sank' ? '沉沒' : '抵達'}
+                  {b.dropped.length > 0 ? ` · 掉 ${b.dropped.length} 箱` : ''}
                   {b.steps.some((s) => s.kind === 'pirate') ? ' · 海盜' : ''}
                   {w?.type === 'voyage-event-revealed' ? ` · ${VOYAGE_EVENT_LABELS[w.event]}` : ''}
                 </option>

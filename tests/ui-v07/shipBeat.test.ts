@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { RULES_V07, shipSinks, type MatchEvent } from '../../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../src/v07/match';
-import { BEAT_PACE, DIE_HOLD, beatCues, cuesStarted } from '../../src/ui-v07/beats/beatTimeline';
-import { buildReceipt, buildShipBeat, resolvedShips } from '../../src/ui-v07/beats/shipBeat';
+import { BEAT_PACE, DIE_HOLD, beatCues, beatView, cuesStarted } from '../../src/ui-v07/beats/beatTimeline';
+import { buildReceipt, buildShipBeat, crateStates, resolvedShips } from '../../src/ui-v07/beats/shipBeat';
 
 const seats: SeatConfig[] = ['A', 'B', 'C', 'D'].map((name, i) => ({
   kind: 'bot',
@@ -111,5 +111,49 @@ describe('beat timeline', () => {
       const next = fast[i + 1];
       if (next && (c.kind === 'start' || c.kind === 'step' || c.kind === 'outcome')) expect(next.at - c.at).toBeGreaterThanOrEqual(DIE_HOLD);
     });
+  });
+});
+
+describe('crate losses in a ship beat (V0.8 prototype, not rules)', () => {
+  const playV08 = async (seed: number) => {
+    const { RULES_V08_PROTO } = await import('../../src/v07/game');
+    const setup = setupFromSeats({ seed, seats, rules: RULES_V08_PROTO });
+    return runMatchSync(setup, setup.bots).events as MatchEvent[];
+  };
+
+  it('has no crate data under the official rules', () => {
+    const events = play(1).log.events as MatchEvent[];
+    const id = resolvedShips(events, 1)[0]!;
+    const beat = buildShipBeat(events, id)!;
+    expect(beat.lost).toBeNull();
+    expect(beat.dropped).toEqual([]);
+    expect(beatCues(beat).map((c) => c.kind)).not.toContain('drop');
+  });
+
+  it.each([1, 2, 3])('drops exactly the crates the engine lost, one cue each, before the ship arrives (seed %i)', async (seed) => {
+    const events = await playV08(seed);
+    let drops = 0;
+    for (const e of events) {
+      if (e.type !== 'ship-resolved') continue;
+      const beat = buildShipBeat(events, e.shipId)!;
+      expect(beat.lost).toEqual(e.lost ?? null);
+      const count = (g: string) => beat.dropped.filter((d) => d === g).length;
+      for (const g of ['wood', 'iron', 'spice', 'arms'] as const) expect(count(g)).toBe(beat.lost?.[g] ?? 0);
+      const kinds = beatCues(beat).map((c) => c.kind);
+      expect(kinds.filter((k) => k === 'drop')).toHaveLength(beat.dropped.length);
+      if (beat.dropped.length > 0) {
+        drops += 1;
+        expect(kinds.indexOf('cargo')).toBeLessThan(kinds.indexOf('drop'));
+        expect(kinds.lastIndexOf('drop')).toBeLessThan(kinds.indexOf('outcome'));
+        // Crates still aboard, drop by drop.
+        const cues = beatCues(beat);
+        const afterAll = beatView(beat, cues, cues.length);
+        expect(afterAll.dropsShown).toBe(beat.dropped.length);
+        expect(crateStates(beat, 0).every((c) => !c.lost)).toBe(true);
+        expect(crateStates(beat, beat.dropped.length).filter((c) => c.lost)).toHaveLength(beat.dropped.length);
+        expect(crateStates(beat, 1).filter((c) => c.lost).map((c) => c.good)).toEqual([beat.dropped[0]]);
+      }
+    }
+    expect(drops).toBeGreaterThan(0);
   });
 });

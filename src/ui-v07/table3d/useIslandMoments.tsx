@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { RULES_V07, type IslandId, type MatchEvent, type PlayerId } from '../../v07/game';
+import { RULES_V07, type IslandId, type MatchEvent, type PlayerId, type Rules } from '../../v07/game';
 import { seatPosition } from '../../ui/scene/layout';
 import { soundEngine } from '../audio/soundEngine';
 import type { TablePin } from '../scene/TableCanvas';
@@ -27,6 +27,8 @@ export interface MomentsInput {
   readonly skipFirstOpening?: boolean;
   /** Leave out every moment (a tutorial lesson that does not mention the islands plays without them). */
   readonly skip?: boolean;
+  /** The match's rules when they are not the official ones (the V0.8 prototype). */
+  readonly rules?: Rules;
 }
 
 export interface Moments {
@@ -44,7 +46,7 @@ const chipDelay = (i: number): number => 300 + i * 160;
 /** A cost's chip pops lower than a gain's. */
 const LOSS_PITCH = 0.82;
 
-export function useIslandMoments({ events, board, free, angleOf, skipFirstOpening = false, skip = false }: MomentsInput): Moments {
+export function useIslandMoments({ events, board, free, angleOf, skipFirstOpening = false, skip = false, rules = RULES_V07 }: MomentsInput): Moments {
   const round = board.round;
   const islands = useMemo((): Readonly<Record<PlayerId, IslandId>> | null => {
     const chosen = events.find((e) => e.type === 'islands-chosen');
@@ -54,14 +56,14 @@ export function useIslandMoments({ events, board, free, angleOf, skipFirstOpenin
     if (!islands || round < 1 || (skipFirstOpening && round === 1)) return [];
     const produced = events.find((e) => e.type === 'goods-produced' && e.round === round);
     const made = (id: PlayerId) => (produced?.type === 'goods-produced' ? (produced.produced[id]?.spice ?? 0) : 0);
-    return openingMoments(islands, round, RULES_V07, (id) => Math.max(0, (board.players[id]?.stock.spice ?? 0) - made(id)));
+    return openingMoments(islands, round, rules, (id) => Math.max(0, (board.players[id]?.stock.spice ?? 0) - made(id)));
     // The carried spice is read once per round, from the stock at the round's start.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [islands, round]);
+  }, [islands, round, rules]);
   const launched = events.find((e) => e.type === 'ships-launched' && e.round === round);
   const launch = useMemo(
-    () => (islands && launched?.type === 'ships-launched' ? launchMoments(islands, launched.ships.map((s) => s.owner), RULES_V07) : []),
-    [islands, launched],
+    () => (islands && launched?.type === 'ships-launched' ? launchMoments(islands, launched.ships.map((s) => s.owner), rules) : []),
+    [islands, launched, rules],
   );
 
   const [openedRound, setOpenedRound] = useState(0);

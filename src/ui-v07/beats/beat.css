@@ -3736,3 +3736,44 @@ button .info-tip-anchor {
 .tide-pill:focus .tide-tip {
   display: flex;
 }
+
+/* V0.8 prototype: a crate that fell into the sea, crossed out where it sat in the tag. */
+.beat-tag-cargo .beat-crate.lost {
+  position: relative;
+  filter: grayscale(1) brightness(0.7);
+  opacity: 0.55;
+  translate: 0 5px;
+  rotate: 12deg;
+  transition: filter 300ms, opacity 300ms, translate 300ms ease-in, rotate 300ms;
+}
+.beat-tag-cargo .beat-crate.lost::after {
+  content: '';
+  position: absolute;
+  inset: 45% -3px auto;
+  height: 3px;
+  border-radius: 2px;
+  background: #c0392b;
+  rotate: -35deg;
+}
+
+/* V0.8 prototype: "−1" where a lost crate went under (BeatScene). */
+.drop-word {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgb(120 28 22 / 0.92);
+  color: #fff3e6;
+  font-family: var(--font-strong);
+  font-size: var(--fs-title);
+  white-space: nowrap;
+  /* Waits for the crate to hit the water (CrateDrop's DROP_FALL, 0.8 s), then pops and drifts up. */
+  animation: drop-word 1900ms ease-out both;
+}
+@keyframes drop-word {
+  0%, 42% { opacity: 0; translate: 0 10px; scale: 0.6; }
+  52% { opacity: 1; translate: 0 -6px; scale: 1.15; }
+  85% { opacity: 1; translate: 0 -14px; scale: 1; }
+  100% { opacity: 0; translate: 0 -26px; scale: 1; }
+}
