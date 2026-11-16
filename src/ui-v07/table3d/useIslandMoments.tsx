@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { materialMoments, mergeMoments } from './facilityShow';
 import { RULES_V07, type IslandId, type MatchEvent, type PlayerId, type Rules } from '../../v07/game';
 import { seatPosition } from '../../ui/scene/layout';
 import { soundEngine } from '../audio/soundEngine';
@@ -62,8 +63,9 @@ export function useIslandMoments({ events, board, free, angleOf, skipFirstOpenin
   }, [islands, round, rules]);
   const launched = events.find((e) => e.type === 'ships-launched' && e.round === round);
   const launch = useMemo(
-    () => (islands && launched?.type === 'ships-launched' ? launchMoments(islands, launched.ships.map((s) => s.owner), rules) : []),
-    [islands, launched, rules],
+    // V0.8 prototype: a building raised or a skill opened this round is announced with the launch.
+    () => (islands && launched?.type === 'ships-launched' ? mergeMoments(launchMoments(islands, launched.ships.map((s) => s.owner), rules), materialMoments(events, round, islands)) : []),
+    [islands, launched, rules, events, round],
   );
 
   const [openedRound, setOpenedRound] = useState(0);

@@ -18,7 +18,11 @@ export function FacilitiesPreview() {
   const islands = (params.get('islands')?.split(',') ?? ISLAND_IDS.slice(set * 4, set * 4 + 4)) as IslandId[];
   const angles = useMemo(() => seatAngles(4), []);
   const seats: BeatSeat[] = angles.map((_, i) => ({ id: `p${i}` as PlayerId, name: '', color: PLAYER_COLORS[i]!, buildings: [], island: islands[i] ?? null, isViewer: i === 0 }));
-  const facilities = Object.fromEntries(seats.map((s, i) => [s.id, V08_BUILDING_IDS[i % V08_BUILDING_IDS.length] as V08BuildingId]));
+  // &raise starts with empty islands: 「落成」 then raises the buildings on screen; 「反應」 makes them hop as when they do their work.
+  const [raised, setRaised] = useState(!params.has('raise'));
+  const [pulse, setPulse] = useState(0);
+  const facilities = Object.fromEntries(seats.map((s, i) => [s.id, raised ? (V08_BUILDING_IDS[i % V08_BUILDING_IDS.length] as V08BuildingId) : null]));
+  const pulses = new Map(pulse > 0 ? seats.map((s) => [s.id, `pulse-${pulse}`] as const) : []);
   const points = focus === null ? angles.flatMap((a) => around(seatPosition(a), 11)) : around(seatPosition(angles[Number(focus)] ?? angles[0]!), 15, 60);
   return (
     <div style={{ position: 'fixed', inset: 0 }}>
@@ -31,9 +35,15 @@ export function FacilitiesPreview() {
         <button type="button" data-set onClick={() => setSet((n) => 1 - n)}>
           換另外四座島
         </button>
+        <button type="button" data-raise onClick={() => setRaised(true)}>
+          落成
+        </button>
+        <button type="button" data-pulse onClick={() => setPulse((n) => n + 1)}>
+          反應
+        </button>
         <span style={{ color: '#fff' }}>{islands.join('、')}</span>
       </div>
-      <TableCanvas key={set} seats={seats} weather={null} ships={[]} cameraPoints={points} safe={{ top: 0, bottom: 0, left: 0, right: 0 }} pins={[]} onReady={() => undefined} facilities={facilities} />
+      <TableCanvas key={set} seats={seats} weather={null} ships={[]} cameraPoints={points} safe={{ top: 0, bottom: 0, left: 0, right: 0 }} pins={[]} onReady={() => undefined} facilities={facilities} facilityPulses={pulses} />
     </div>
   );
 }

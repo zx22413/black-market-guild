@@ -108,6 +108,8 @@ export interface TableCanvasProps {
   readonly litSeats?: ReadonlySet<PlayerId>;
   /** V0.8 prototype (not rules): the building each seat has raised with materials, drawn on its island. */
   readonly facilities?: Readonly<Record<PlayerId, V08BuildingId | null>>;
+  /** V0.8 prototype: a new key makes that seat's building hop once (it just did its work). */
+  readonly facilityPulses?: ReadonlyMap<PlayerId, string>;
   /** What the market island shows (`marketShow`); without it the market stands open at its opening prices. */
   readonly market?: MarketShow;
 }
@@ -233,7 +235,9 @@ function sailGale(weather: VoyageEventId | null): number {
   return weather === 'storm' ? 1 : weather === 'tailwind' ? 0.6 : 0;
 }
 
-export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, pulses, market, litSeats, facilities }: TableCanvasProps) {
+export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, pulses, market, litSeats, facilities, facilityPulses }: TableCanvasProps) {
+  // Buildings already standing when the table appears are simply there; one raised later comes down on screen.
+  const [standing] = useState(() => new Set(Object.entries(facilities ?? {}).flatMap(([id, b]) => (b ? [id] : []))));
   const look = WEATHER[weather ?? 'clear'];
   const { angles, laneOf } = useTableLayout(seats);
   const islandKey = seats.map((s) => s.island ?? '').join('|');
@@ -311,7 +315,12 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
                   seed={playerIslandSeed(i)}
                   selectable={ringed?.has(seat.id) ?? false}
                 />
-                {facilities?.[seat.id] && <Facility angle={angles[i]!} building={facilities[seat.id]!} color={seat.color} />}
+                {/* Its own boundary: the model loading must not blank the whole table when the first building goes up. */}
+                {facilities?.[seat.id] && (
+                  <Suspense fallback={null}>
+                    <Facility angle={angles[i]!} building={facilities[seat.id]!} color={seat.color} fresh={!standing.has(seat.id)} pulseKey={facilityPulses?.get(seat.id) ?? null} />
+                  </Suspense>
+                )}
               </IslandPulse>
             ))}
             {ships.map((ship) => {

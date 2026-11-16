@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { facilityReactions } from './facilityShow';
 import type { Deployment, GoodId, Goods, MatchEvent, PlayerId, PrivateEvent, ShipId, VoyageEventId } from '../../v07/game';
 import type { FitPoint } from '../../ui/scene/CameraRig';
 import { TARGET_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
@@ -103,6 +104,8 @@ export interface Resolution {
   readonly marketDone: boolean;
   readonly wrapShip: ((id: ShipId, ship: ReactNode) => ReactNode) | undefined;
   readonly pins: readonly TablePin[];
+  /** V0.8 prototype: the seats whose building is at work right now (a new key makes it hop). */
+  readonly facilityPulses: ReadonlyMap<PlayerId, string>;
   readonly scene: ReactNode;
   readonly bar: ReactNode;
   readonly overlay: ReactNode;
@@ -174,6 +177,10 @@ export function stageShipState(stage: ResolutionStage, beatIndex: number, voyage
   }
   return resting;
 }
+
+const NO_PULSES: ReadonlyMap<PlayerId, string> = new Map();
+/** How high over an island a building's line hangs (the island moments' height). */
+const FACILITY_CHIP_HEIGHT = 7;
 
 export function useRoundResolution(input: ResolutionInput): Resolution {
   const { events, privateEvents, round, paused, seats, angles, laneOf, viewer, nameOf, weather, onFinish, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdVoyage = false, autoAdvanceSeconds, autoFlow = false } = input;
@@ -295,7 +302,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   });
 
   if (!active) {
-    return { stage: null, stageRound: null, cutoff: events.length, cashBonus: {}, shipState: () => 'docked', camera: null, ringed: undefined, marketDone: false, outcomeOf: null, wrapShip: undefined, pins: [], scene: null, bar: null, overlay: null, onTableClick: undefined, marketPrices: undefined, changedGoods: undefined };
+    return { stage: null, stageRound: null, cutoff: events.length, cashBonus: {}, shipState: () => 'docked', camera: null, ringed: undefined, facilityPulses: NO_PULSES, marketDone: false, outcomeOf: null, wrapShip: undefined, pins: [], scene: null, bar: null, overlay: null, onTableClick: undefined, marketPrices: undefined, changedGoods: undefined };
   }
 
   const colorOf = (id: string) => seats.find((s) => s.id === id)?.color ?? '#888';
@@ -337,6 +344,32 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     const count = badgeShips.filter((s) => s.owner === owner).length;
     return (badgeRow(shipId) - (count - 1) / 2) * BADGE_ROW_PX;
   };
+  // V0.8 prototype: a building at work says so over its island and hops: with its ship's outcome, or once the market has settled.
+  const reactions = round === null ? [] : facilityReactions(events, round);
+  const working =
+    stage === 'voyage' && beat && playback.view.showOutcome
+      ? reactions.filter((r) => r.shipId === beat.shipId)
+      : stage === 'market' && rowsShown >= rows.length
+        ? reactions.filter((r) => r.shipId === null)
+        : [];
+  const facilityPulses = new Map(working.map((r) => [r.playerId, `${round}-${r.shipId ?? 'market'}-${r.effect}`]));
+  const reactionPins: TablePin[] = [...new Set(working.map((r) => r.playerId))].map((id) => {
+    const [x, , z] = seatPosition(angles[laneOf(id)]!);
+    const mine = working.filter((r) => r.playerId === id);
+    return {
+      id: `facility-${round}-${id}-${mine.map((r) => `${r.shipId ?? 'market'}-${r.effect}`).join('-')}`,
+      position: [x, FACILITY_CHIP_HEIGHT, z],
+      node: (
+        <span className="isle-moment gain">
+          {mine.map((r, i) => (
+            <span key={r.effect} className="isle-chip gain" style={{ animationDelay: `${i * 160}ms` }}>
+              {r.text}
+            </span>
+          ))}
+        </span>
+      ),
+    };
+  });
   const badgeLift = (shipId: ShipId): number => (seatPosition(angles[laneOf(owners.get(shipId) ?? '')]!)[2] > 0 ? -BADGE_LEAD_PX : 0);
   const badgeRow = (shipId: ShipId): number => {
     const owner = owners.get(shipId);
@@ -456,7 +489,8 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     camera,
     ringed: layer?.ringed,
     wrapShip: layer?.wrapShip,
-    pins: [...badgePins, ...(layer?.pins ?? []), ...marketPins, ...flightPins],
+    pins: [...badgePins, ...(layer?.pins ?? []), ...marketPins, ...flightPins, ...reactionPins],
+    facilityPulses,
     scene: (
       <>
         {stage === 'wanted' && wantedIds.map((id) => <WantedFlag key={`${round}-${id}`} angle={angles[laneOf(id)]!} />)}

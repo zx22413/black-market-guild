@@ -413,6 +413,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
         seats={seats}
         weather={board.voyageEvent}
         facilities={facilities}
+        facilityPulses={resolution.facilityPulses}
         ships={ships}
         cameraPoints={camera}
         {...(step?.cameraRig ? { camera: step.cameraRig(safe) } : {})}

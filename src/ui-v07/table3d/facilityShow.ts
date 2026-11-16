@@ -1,0 +1,88 @@
+import type { IslandId, MatchEvent, PlayerId, ShipId, V08BuildingId, V08Effect } from '../../v07/game';
+import { SHIP_TYPE_LABELS } from '../labels';
+import { FACILITY_LABELS, SKILL_LABELS } from '../table/v08Text';
+import type { IslandMoment } from './islandMoments';
+
+// V0.8 prototype (an experiment, not rules): what the table says when a building goes up or a ship skill opens, and when
+// a building does its work during the round's resolution. Built from public events only; the numbers are the engine's.
+
+/** The round's material actions as island moments: 「修船廠 落成」, 「信天翁號・好兆頭 開啟」. */
+export function materialMoments(events: readonly MatchEvent[], round: number, islands: Readonly<Record<PlayerId, IslandId>>): IslandMoment[] {
+  return events.flatMap((e): IslandMoment[] => {
+    if (e.type !== 'materials-used' || e.round !== round) return [];
+    return e.uses.flatMap((use): IslandMoment[] => {
+      const island = islands[use.playerId];
+      if (!island) return [];
+      const m = use.material;
+      const chip =
+        m.kind === 'build'
+          ? { good: null, text: `${FACILITY_LABELS[m.building]} 落成`, tone: 'gain' as const, title: `蓋了${FACILITY_LABELS[m.building]}` }
+          : { good: null, text: `${SKILL_LABELS[m.ship]} 開啟`, tone: 'gain' as const, title: `開啟${SHIP_TYPE_LABELS[m.ship]}的技能「${SKILL_LABELS[m.ship]}」` };
+      return [{ playerId: use.playerId, island, chips: [chip], tone: 'gain' }];
+    });
+  });
+}
+
+/** Two lists of moments as one, a player's chips joined (the launch's island chips, then the material action's). */
+export function mergeMoments(a: readonly IslandMoment[], b: readonly IslandMoment[]): IslandMoment[] {
+  const out = a.map((m) => ({ ...m }));
+  for (const m of b) {
+    const i = out.findIndex((o) => o.playerId === m.playerId);
+    if (i < 0) out.push({ ...m });
+    else out[i] = { ...out[i]!, chips: [...out[i]!.chips, ...m.chips], tone: out[i]!.tone === 'gain' || m.tone === 'gain' ? 'gain' : 'loss' };
+  }
+  return out;
+}
+
+/** A building at work: whose, which, on which ship (null: at the market), and the line over its island. */
+export interface FacilityReaction {
+  readonly playerId: PlayerId;
+  readonly building: V08BuildingId;
+  readonly shipId: ShipId | null;
+  readonly effect: V08Effect;
+  readonly text: string;
+}
+
+const BUILDING_OF: Partial<Record<V08Effect, V08BuildingId>> = {
+  repairyard: 'repairyard',
+  'storm-shield': 'repairyard',
+  armory: 'armory',
+  'pirate-toll': 'armory',
+  'customs-halved': 'armory',
+  'pirate-shield': 'armory',
+  tradehouse: 'tradehouse',
+  'crash-shield': 'tradehouse',
+};
+
+function reactionText(effect: V08Effect, crates: number, value: number): string {
+  switch (effect) {
+    case 'repairyard':
+      return `少掉 ${crates} 箱`;
+    case 'storm-shield':
+      return '擋下風暴潮';
+    case 'armory':
+      return `海盜少拿 ${value} G`;
+    case 'pirate-toll':
+      return `收海盜部署費 ${value} G`;
+    case 'customs-halved':
+      return `保住 ${crates} 箱`;
+    case 'pirate-shield':
+      return '擋下海盜潮';
+    case 'tradehouse':
+      return `照原價賣 +${value} G`;
+    case 'crash-shield':
+      return '擋下崩盤潮';
+    default:
+      return '';
+  }
+}
+
+/** The buildings that did something in `round`, in event order. */
+export function facilityReactions(events: readonly MatchEvent[], round: number): FacilityReaction[] {
+  return events.flatMap((e): FacilityReaction[] => {
+    if (e.type !== 'v08-effect' || e.round !== round) return [];
+    const building = BUILDING_OF[e.effect];
+    if (!building) return [];
+    return [{ playerId: e.playerId, building, shipId: e.shipId, effect: e.effect, text: `${FACILITY_LABELS[building]}：${reactionText(e.effect, e.crates, e.value)}` }];
+  });
+}
