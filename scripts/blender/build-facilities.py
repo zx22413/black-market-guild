@@ -32,11 +32,11 @@ _spec.loader.exec_module(design)
 AO_STRENGTH = 0.45
 # Big faces tucked in at every corner would go dark all over (AO is per vertex): they take less of it.
 AO_WEIGHTS = {"x-arm-tower": 0.5, "trade-body": 0.5, "x-yard-slip": 0.5, "trade-roof": 0.6}
-FLAG = ("arm-pennant", "arm-banner")
+FLAG = ("arm-pennant", "arm-banner", "yard-pennant")
 
 
 def is_flag(name):
-    return name.startswith(FLAG) and "rod" not in name and "arm-banner-arm" not in name
+    return name.startswith(FLAG) and "rod" not in name and "arm-banner-arm" not in name and "pole" not in name
 
 
 def colour_for_bake():

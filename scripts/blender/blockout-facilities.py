@@ -105,7 +105,7 @@ def repairyard(cx):
     hx, sx = cx + 0.62, cx - 1.45
     # Stone slipway sloping down to the dock, with timber rails.
     slope = lambda z: 0.62 - (z + 2.1) * 0.125  # noqa: E731
-    extrude_x(f"x-{n}-slip", [(-2.1, 0.0), (2.2, 0.0), (2.2, slope(2.2)), (-2.1, slope(-2.1))], hx - 1.25, hx + 1.25, "sandstone")
+    extrude_x(f"x-{n}-slip", [(-2.1, 0.0), (2.2, 0.0), (2.2, slope(2.2)), (-2.1, slope(-2.1))], hx - 1.25, hx + 1.25, "stone")
     for k, dx in enumerate((-0.75, 0.75)):
         beam(f"{n}-rail{k}", (hx + dx, slope(-2.0) + 0.07, -2.0), (hx + dx, slope(2.15) + 0.07, 2.15), 0.2, "woodDark", sides=4)
     # The hull under repair: planked aft half, bare ribs forward, on its cradle.
@@ -126,7 +126,7 @@ def repairyard(cx):
     faces.append(list(range((len(stations) - 1) * row, len(stations) * row)))
     for k in range(len(stations) - 1):
         faces.append([k * row, (k + 1) * row, (k + 1) * row + seg, k * row + seg])
-    mesh_from(f"x-{n}-hull", verts, faces, "wood")
+    mesh_from(f"x-{n}-hull", verts, faces, "woodDark")
     # Deck planking set just inside the gunwales, a dark cap rail on each side, thwarts across.
     deck_v, deck_f = [], []
     for k, (z, half, depth) in enumerate(stations):
@@ -160,24 +160,27 @@ def repairyard(cx):
         beam(f"{n}-curb{s}", (hx + s * 1.25, slope(-2.1) + 0.06, -2.1), (hx + s * 1.25, slope(2.2) + 0.06, 2.2), 0.22, "marble", sides=4)
         for k in range(len(stations) - 1):
             (z0, h0, d0), (z1, h1, d1) = stations[k], stations[k + 1]
-            beam(f"{n}-wale{s}{k}", (hx + s * h0 * 0.93, top(z0, d0) - 0.45 * d0, z0), (hx + s * h1 * 0.93, top(z1, d1) - 0.45 * d1, z1), 0.12, "woodDark", sides=4)
+            beam(f"{n}-wale{s}{k}", (hx + s * h0 * 0.99, top(z0, d0) - 0.22 * d0, z0), (hx + s * h1 * 0.99, top(z1, d1) - 0.22 * d1, z1), 0.2, "plaster", sides=4)
     box(f"{n}-slip-foot", (hx, 0.06, 2.16), (2.72, 0.12, 0.2), "marble", bevel=0.03)
     # Sheerlegs: two raked spars lashed at the head, tackle and hook over the hull.
     head = (hx, 5.0, 0.55)
     for s in (-1, 1):
-        beam(f"{n}-leg{s}", (hx + s * 1.38, 0.0, 1.5), head, 0.2, "wood", sides=6, taper=0.7)
+        beam(f"{n}-leg{s}", (hx + s * 1.38, 0.0, 1.5), head, 0.28, "woodDark", sides=6, taper=0.7)
         box(f"{n}-foot{s}", (hx + s * 1.38, 0.12, 1.5), (0.5, 0.24, 0.5), "stone", bevel=0.04)
     # The back stay runs to an iron ring on a stone anchor block; wedges hold the shores' feet.
     box(f"{n}-anchor", (hx, 0.1, -2.15), (0.4, 0.2, 0.3), "stone", bevel=0.03)
     lathe(f"{n}-anchor-ring", (hx, -2.15), [(0.1, 0.2), (0.1, 0.26)], "iron", sides=8)
     beam(f"{n}-stay", head, (hx, 0.0, -2.15), 0.06, "rope", sides=4)
+    lathe(f"{n}-head-cap", (hx, 0.55), [(0.24, 4.98), (0.18, 5.1)], "brass", sides=8)
+    beam(f"{n}-pennant-pole", (hx, 5.05, 0.55), (hx, 5.6, 0.55), 0.07, "woodDark", sides=4)
+    extrude_z(f"{n}-pennant", [(hx, 5.56), (hx + 0.85, 5.36), (hx, 5.16)], 0.53, 0.57, "pennant")
     lathe(f"{n}-lash", (hx, 0.55), [(0.2, 4.72), (0.2, 4.98)], "rope", sides=8)
     beam(f"{n}-fall", (hx, 4.8, 0.6), (hx, 2.75, 0.6), 0.05, "rope", sides=4)
     box(f"{n}-block", (hx, 2.62, 0.6), (0.24, 0.32, 0.2), "brass", bevel=0.04)
     beam(f"{n}-hook", (hx, 2.46, 0.6), (hx, 2.18, 0.6), 0.09, "iron", sides=6, taper=0.4)
     # The shipwrights' shed beside the slip: timber posts, an arched roof with a dark rim, open at both ends.
     r = 0.78
-    extrude_z(f"x-{n}-roof", arc(sx, 1.55, r, 0, 180, 8) + arc(sx, 1.55, r - 0.16, 180, 0, 8), -2.1, 0.5, "roofRed")
+    extrude_z(f"x-{n}-roof", arc(sx, 1.55, r, 0, 180, 8) + arc(sx, 1.55, r - 0.16, 180, 0, 8), -2.1, 0.5, "roofGreen")
     for k, z in enumerate((-2.16, 0.46)):
         extrude_z(f"x-{n}-rim{k}", arc(sx, 1.55, r + 0.1, 0, 180, 8) + arc(sx, 1.55, r - 0.12, 180, 0, 8), z, z + 0.1, "woodDark")
     for s in (-1, 1):
