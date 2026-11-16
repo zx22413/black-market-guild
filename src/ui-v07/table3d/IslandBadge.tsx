@@ -4,7 +4,8 @@ import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
 import { MARKET_GROUND } from '../../ui/scene/marketDocks';
 import { MARKET_TOP } from '../../ui/scene/buildings/islands/market';
 import type { Vec3 } from '../../ui/scene/buildings/polyhedra';
-import { ISLAND_LABELS, ISLAND_TEXT, MARKET_ISLAND_LABEL, MARKET_ISLAND_TEXT } from '../labels';
+import { ISLAND_LABELS, islandText, MARKET_ISLAND_LABEL, MARKET_ISLAND_TEXT } from '../labels';
+import { useRules } from './rulesContext';
 import type { TablePin } from '../scene/TableCanvas';
 import { IslandGlance } from './IslandGlance';
 import { IslandIcon } from './IslandIcon';
@@ -77,7 +78,7 @@ function TableBadge({ name, tip }: { readonly name: ReactNode; readonly tip: Rea
 }
 
 export function IslandBadge({ island }: { readonly island: IslandId }) {
-  const text = ISLAND_TEXT[island];
+  const text = islandText(useRules(), island);
   const name = (
     <>
       <IslandIcon island={island} />

@@ -1,5 +1,5 @@
 import type { DecisionContext } from '../../v07/bots';
-import { SHIP_TYPE_IDS, shipCostFor, shipDelay, shipFinalCap, shipFinalCapFor, shipIncomePercent, shipTypeAvailable, traitOf, type ShipTypeId } from '../../v07/game';
+import { SHIP_TYPE_IDS, activeTide, crateTerms, cratesOn, facilityOf, shipCostFor, shipDelay, shipFinalCap, shipFinalCapFor, shipIncomePercent, shipTypeAvailable, skillLevel, traitOf, type ShipTypeId } from '../../v07/game';
 import { ISLAND_LABELS, VOYAGE_EVENT_LABELS, VOYAGE_EVENT_TEXT } from '../labels';
 
 // The ship choice of the ship-bay experiment (docs/proposals/2026-11-ship-bays.md, not a decided rule) as
@@ -13,6 +13,11 @@ export interface ShipCurveRow {
   readonly final: number;
   readonly percent: number;
   readonly sinks: boolean;
+  /**
+   * V0.8 prototype (rules.v08.crates, not rules): crates the voyage loses at this final value, with the player's own
+   * building and the acting tide counted; `percent` is then the multiplier on the crates that arrive. Null otherwise.
+   */
+  readonly lose: number | null;
   /** The last entry of a curve that goes on: every final value from here up pays this (the breaker's top). */
   readonly orMore: boolean;
 }
@@ -74,14 +79,25 @@ export function shipEffect(context: DecisionContext): ShipEffect {
 
 /** A ship type's curve by final value: 1 up to the die's top face, or up to the last entry of an uncapped type's curve. */
 export function curveRows(context: DecisionContext, type: ShipTypeId): ShipCurveRow[] {
-  const { rules } = context.view;
+  const { view } = context;
+  const { rules } = view;
   const { dieMin, dieMax } = rules.sailing;
+  const crates = cratesOn(rules);
   const uncapped = shipFinalCap(rules, type) > dieMax;
-  const top = uncapped ? Math.max(...Object.keys(rules.ships.types[type].curve).map(Number)) : dieMax;
+  const table = crates ? rules.v08.tables[type].multiplier : rules.ships.types[type].curve;
+  const top = uncapped ? Math.max(...Object.keys(table).map(Number)) : dieMax;
+  const me = view.players.find((p) => p.id === view.playerId)!;
+  // The plain voyage: the gambler's raise (加注) is a choice made at launch, so it is not in the card's table.
+  const crateContext = { raised: false, level: skillLevel(rules, me, type), facility: facilityOf(rules, me), island: me.island, stormTide: activeTide(view.events) === 'storm' };
   return Array.from({ length: top - dieMin + 1 }, (_, i): ShipCurveRow => {
     const final = dieMin + i;
-    const percent = shipIncomePercent(rules, type, final);
-    return { final, percent, sinks: percent === 0, orMore: uncapped && final === top };
+    const orMore = uncapped && final === top;
+    if (!crates) {
+      const percent = shipIncomePercent(rules, type, final);
+      return { final, percent, sinks: percent === 0, lose: null, orMore };
+    }
+    const terms = crateTerms(rules, type, final, crateContext);
+    return { final, percent: terms.sinks ? 0 : terms.percent, sinks: terms.sinks, lose: terms.sinks ? 0 : terms.lose, orMore };
   });
 }
 
@@ -107,7 +123,7 @@ export function shipCards(context: DecisionContext): ShipCard[] {
     });
     const rowOf = (final: number): number => Math.min(curve.length - 1, final - dieMin);
     const effectRolls = curve.map((_, row) => landed.filter((l) => rowOf(l.final) === row).map((l) => l.roll));
-    const sinksAt = (final: number): boolean => shipIncomePercent(rules, id, final) === 0;
+    const sinksAt = (final: number): boolean => curve[rowOf(final)]?.sinks === true;
     const rested = shipTypeAvailable(rules, id, me.lastShip[id], view.round);
     const arrives = view.round + shipDelay(rules, id) <= view.totalRounds;
     const reason = !rested

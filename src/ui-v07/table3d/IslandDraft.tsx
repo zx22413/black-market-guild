@@ -4,7 +4,8 @@ import type { Action, IslandId, PlayerId } from '../../v07/game';
 import { soundEngine } from '../audio/soundEngine';
 import type { SfxId } from '../audio/soundPlan';
 import { useSoundOnce } from '../audio/useUiSounds';
-import { ISLAND_LABELS, ISLAND_TEXT } from '../labels';
+import { ISLAND_LABELS, islandText } from '../labels';
+import { useRules } from './rulesContext';
 import { legalOf } from '../table/forms';
 import { IslandCard, useDealt } from './IslandCard';
 import { IslandIcon } from './IslandIcon';
@@ -147,7 +148,7 @@ function DraftSlot({ island, order, picked, flying, onPick }: DraftSlotProps) {
   const up = useDealt(DEAL_MS + order * DEAL_GAP_MS);
   useCardSounds(order, DEAL_GAP_MS, up);
   const on = picked === island;
-  const text = ISLAND_TEXT[island];
+  const text = islandText(useRules(), island);
   return (
     <button
       type="button"
@@ -175,7 +176,7 @@ interface RevealSlotProps {
 function RevealSlot({ island, order, owner, color, open, onToggle }: RevealSlotProps) {
   const up = useDealt(DEAL_MS + order * DEAL_GAP_MS * 2);
   useCardSounds(order, DEAL_GAP_MS * 2, up);
-  const text = ISLAND_TEXT[island];
+  const text = islandText(useRules(), island);
   return (
     <span className="isle-owner">
       <span className="isle-owner-tag" style={{ '--seat': color } as CSSProperties}>

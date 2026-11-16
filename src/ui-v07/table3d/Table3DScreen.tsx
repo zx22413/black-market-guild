@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { matchMode } from '../analytics/matchStats';
-import { GOODS, RULES_V07, type Action, type Goods, type PlayerId, type ShipId } from '../../v07/game';
+import { GOODS, RULES_V07, eventsOn, type Action, type Goods, type PlayerId, type ShipId } from '../../v07/game';
 import type { SafeArea } from '../../ui/scene/CameraRig';
 import { soundEngine } from '../audio/soundEngine';
 import { eventBedFor } from '../audio/soundPlan';
@@ -27,6 +27,9 @@ import { catchUpTarget, resumePoint } from './replay';
 import { SPECTATOR_CATCHUP_SECONDS, SPECTATOR_ISLANDS_SECONDS, SPECTATOR_REVEAL_SECONDS, useAutoAdvance } from './useAutoAdvance';
 import { resultRows } from './resultModel';
 import { RulesPanel } from './RulesPanel';
+import { RulesContext } from './rulesContext';
+import { TideChip } from './TideChip';
+import { roundLabel, tideStatus } from './tideModel';
 import { SealSubmit } from './SealSubmit';
 import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
 import { OWN_BADGE_LIFT, OWN_PLATE_REACH } from './stage';
@@ -104,6 +107,8 @@ export interface Table3DScreenProps {
 export function Table3DScreen({ session, onExit, rematch, autoplay = false, showResult = true, onShown, onReplaying, rounds = RULES_V07.rounds, skipIslandReveal = false, skipIslandMoments = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdShow = false, holdVoyage = false, onVoyage, onStarted, onCalm, autoAdvanceSeconds, spectator = false }: Table3DScreenProps) {
   const snap = useSession(session);
   const [ready, setReady] = useState(false);
+  // The match's own rules: the official ones unless the session plays an experiment (the V0.8 prototype).
+  const rules = snap.rules ?? RULES_V07;
 
   const people = useMemo(() => snap.players.filter((p) => p.kind === 'local-human'), [snap.players]);
   const hotSeat = people.length > 1;
@@ -159,7 +164,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   // Who still has to confirm the device before their decision shows (hot-seat).
   const handoffTo = hotSeat && request && !unlocked && !holding && !showIslands && !autoplay ? seatOnScreen : null;
 
-  const seatsBoard = useMemo(() => buildBoard(ids, snap.startingCash, snap.events), [ids, snap.events, snap.startingCash]);
+  const seatsBoard = useMemo(() => buildBoard(ids, snap.startingCash, snap.events, rules), [ids, snap.events, snap.startingCash, rules]);
   // Nobody at this device plays (spectator stand, bot match): the nearest seat is only the camera's side, not "你".
   const noViewer = people.length === 0;
   const seats = useMemo(
@@ -214,7 +219,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   useEffect(() => {
     if (resolution.stage === 'receipt' && resolvingRound !== null && resolution.stageRound === resolvingRound) soundEngine.playSfx('bill-register');
   }, [resolution.stage, resolution.stageRound, resolvingRound]);
-  const board = useMemo(() => buildBoard(ids, snap.startingCash, events), [ids, events, snap.startingCash]);
+  const board = useMemo(() => buildBoard(ids, snap.startingCash, events, rules), [ids, events, snap.startingCash, rules]);
   // A building rising on someone's island: hammering, then a chime as it finishes.
   useCountSound(
     events.reduce((n, e) => n + (e.type === 'buildings-built' ? e.builds.length : 0), 0),
@@ -382,7 +387,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const bed = eventOut && weatherEvent?.type === 'voyage-event-revealed' ? eventBedFor(weatherEvent.event) : null;
   useEffect(() => soundEngine.setEventBed(bed), [bed]);
   useEffect(() => () => soundEngine.setEventBed(null), []);
-  const rows = useMemo(() => (snap.result ? resultRows(snap.events, snap.result, snap.startingCash, RULES_V07) : []), [snap.result, snap.events, snap.startingCash]);
+  const rows = useMemo(() => (snap.result ? resultRows(snap.events, snap.result, snap.startingCash, rules) : []), [snap.result, snap.events, snap.startingCash, rules]);
   const winners = useMemo(() => new Set(snap.result?.winners ?? []), [snap.result]);
 
   // The voyage log, for whoever wants to read back what happened.
@@ -395,9 +400,11 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const logLines = events.flatMap((e) => eventLine(e, { nameOf, shipOf: shipOwnerName })?.split('\n') ?? []);
 
   const waitingNames = snap.waitingOn.filter((id) => id !== seatOnScreen).map(nameOf);
+  const tide = useMemo(() => tideStatus(events), [events]);
   const idle = !holding && !step && !finished && !drafting && !showIslands && !handoffTo && !moments.blocking;
 
   return (
+    <RulesContext.Provider value={rules}>
     <div className="beat-preview">
       <TableCanvas
         seats={seats}
@@ -455,12 +462,12 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
         </div>
       )}
       <div className="t3-menu">
-        <span data-focus="round" className="t3-round">{board.round === 0 ? '選島' : `第 ${board.round}／${rounds} 回合`}</span>
+        <span data-focus="round" className="t3-round">{roundLabel(board.round, rounds, tide, eventsOn(rules))}</span>
         {ready && board.round > 0 && (
           <RankRail
             seats={seats}
             board={board}
-            rules={RULES_V07}
+            rules={rules}
             cashOf={(id) => (board.players[id]?.cash ?? 0) + (resolution.cashBonus[id] ?? 0)}
             status={(id) => (deciding ? (waiting.has(id) ? '思考中' : '已決定') : '')}
             rankStep={events.filter((e) => e.type === 'round-ended').length}
@@ -505,6 +512,8 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
       {ready && resolution.overlay}
       {/* The voyage event is public from the round's start (§5): it stays in view while investing and deploying. */}
       {ready && !holding && !finished && board.round > 0 && board.voyageEvent && <VoyageEventChip event={board.voyageEvent} />}
+      {/* V0.8 prototype: the dark tide (its two candidates, then the one picked) stays in view the whole match. */}
+      {ready && !finished && board.round > 0 && tide.candidates.length > 0 && <TideChip status={tide} round={board.round} />}
       {ready && drafting && <IslandDraft key={drafting.id} context={drafting.context} onSubmit={(a) => session.submit(drafting.id, a)} />}
       {ready && showIslands && chosen?.type === 'islands-chosen' && <IslandReveal islands={chosen.islands} seats={seats} onClose={() => setIslandsSeen(true)} {...(spectator ? { watchingLeft: islandsLeft } : {})} />}
       {resultUp && (
@@ -549,5 +558,6 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
         </aside>
       )}
     </div>
+    </RulesContext.Provider>
   );
 }

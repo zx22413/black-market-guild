@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { RULES_BUILDINGS } from '../../v07/game';
+import { RULES_BUILDINGS, RULES_V08_PROTO } from '../../v07/game';
 import type { SeatConfig } from '../../v07/match';
 import { startGameSession } from '../session/gameSession';
 import { Table3DScreen } from '../table3d/Table3DScreen';
@@ -8,6 +8,7 @@ import { Table3DScreen } from '../table3d/Table3DScreen';
 // three bots on the same screen the app uses (src/ui-v07/table3d/Table3DScreen.tsx). &autoplay
 // answers your decisions with the first legal action and skips the shows (to reach the end fast). &buildings=1 plays the
 // old rules with the four buildings (RULES_BUILDINGS); without it you play the ship bays (you pick a ship type before loading it).
+// &v08 plays the V0.8 prototype (RULES_V08_PROTO; an experiment, not rules).
 
 const SEATS: SeatConfig[] = [
   { kind: 'local-human', name: '你' },
@@ -21,8 +22,9 @@ export function Round3DPreview() {
   const seed = Number(params.get('seed') ?? 3) || 3;
   const autoplay = params.has('autoplay');
   const buildings = params.has('buildings');
+  const rules = params.has('v08') ? RULES_V08_PROTO : buildings ? RULES_BUILDINGS : null;
   const [run, setRun] = useState(0);
-  const session = useMemo(() => startGameSession({ seed: seed + run, seats: SEATS, ...(buildings ? { rules: RULES_BUILDINGS } : {}) }), [seed, run, buildings]);
+  const session = useMemo(() => startGameSession({ seed: seed + run, seats: SEATS, ...(rules ? { rules } : {}) }), [seed, run, rules]);
   // The result card's buttons as the single-player app shows them (「邀請朋友一起玩」 only logs here).
   const rematch = { kind: 'now', onRematch: () => setRun((n) => n + 1), onInvite: () => console.info('invite a friend') } as const;
   return <Table3DScreen key={run} session={session} autoplay={autoplay} rematch={rematch} onExit={() => setRun((n) => n + 1)} />;

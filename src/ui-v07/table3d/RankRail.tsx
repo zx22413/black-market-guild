@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { GOODS, type BuildingId, type PlayerId, type Rules } from '../../v07/game';
-import { BUILDING_LABELS, BUILDING_TEXT, ISLAND_LABELS, ISLAND_TEXT, WEALTH_RULE_TEXT } from '../labels';
+import { BUILDING_LABELS, BUILDING_TEXT, ISLAND_LABELS, WEALTH_RULE_TEXT, islandText } from '../labels';
 import type { BeatSeat } from '../scene/beatStage';
 import type { Board } from '../session/board';
 import { GoodCount } from './GoodIcon';
@@ -157,7 +157,7 @@ export function RankRail({ seats, board, rules, cashOf, status, rankStep, forceO
                 <span className="rank-no">{ranks[seat.id] ?? s.rank}</span>
                 <span className="rank-who">
                   {player?.island && (
-                    <InfoTip title={ISLAND_LABELS[player.island]} text={`${ISLAND_TEXT[player.island].pro}。${ISLAND_TEXT[player.island].con}。`}>
+                    <InfoTip title={ISLAND_LABELS[player.island]} text={`${islandText(rules, player.island).pro}。${islandText(rules, player.island).con}。`}>
                       <IslandIcon island={player.island} />
                     </InfoTip>
                   )}

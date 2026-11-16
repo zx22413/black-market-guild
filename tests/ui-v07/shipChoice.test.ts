@@ -195,3 +195,40 @@ describe('investment choice with a ship type (only legal actions)', () => {
     expect(unitsOf(withShipType(options, choice, null).load)).toBe(0);
   });
 });
+
+describe('ship cards (V0.8 prototype crate tables)', () => {
+  const v08 = async (patch: Parameters<typeof edit>[2] = {}) => {
+    const { RULES_V08_PROTO } = await import('../../src/v07/game');
+    const base = edit(start(4, RULES_V08_PROTO, { p1: 'mine' }), 'p1', { cash: 1000, stock: G(3, 3, 3, 3), buildings: [], ...patch });
+    return contextOf({ ...base, roundState: { ...base.roundState, voyageEvent: null } });
+  };
+
+  it('has no crate counts under the V0.7.1 rules', () => {
+    expect(card(scenario(), 'standard').curve.every((r) => r.lose === null)).toBe(true);
+  });
+
+  it('gives the crates lost at each final value instead of a share', async () => {
+    const context = await v08();
+    const standard = card(context, 'standard');
+    expect(standard.curve.map((r) => (r.sinks ? 'sink' : r.lose))).toEqual(['sink', 2, 2, 1, 1, 0]);
+    expect(standard.curve.every((r) => r.sinks || r.percent === 100)).toBe(true);
+    expect(standard.sinkPercent).toBe(17);
+    expect(card(context, 'freighter').curve.map((r) => r.lose)).toEqual([3, 3, 3, 2, 2, 1]);
+    expect(card(context, 'freighter').sinkPercent).toBe(0);
+    const gambler = card(context, 'gambler');
+    expect(gambler.curve.map((r) => (r.sinks ? 'sink' : `${r.lose}x${r.percent}`))).toEqual(['sink', 'sink', 'sink', 'sink', '0x150', '0x250']);
+    expect(gambler.sinkPercent).toBe(67);
+  });
+
+  it("runs the breaker's table up to its last multiplier", async () => {
+    const breaker = card(await v08(), 'breaker');
+    expect(breaker.curve.map((r) => r.final)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(breaker.curve.slice(6).map((r) => r.percent)).toEqual([150, 200, 250]);
+    expect(breaker.curve.at(-1)!.orMore).toBe(true);
+  });
+
+  it('counts the repairyard of the player', async () => {
+    const standard = card(await v08({ facility: 'repairyard' }), 'standard');
+    expect(standard.curve.map((r) => (r.sinks ? 'sink' : r.lose))).toEqual(['sink', 1, 1, 1, 1, 0]);
+  });
+});

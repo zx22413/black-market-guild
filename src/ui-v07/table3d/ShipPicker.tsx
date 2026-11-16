@@ -31,6 +31,17 @@ const signed = (n: number): string => `${n > 0 ? '+' : '−'}${Math.abs(n)}`;
 const FINAL_VALUE_TEXT = '出航時擲一顆骰子，再加上航海事件、島嶼與護衛（+1）、海盜（−1）的修正，就是這艘船的最終值（最低 1）。最終值決定船沉不沉，以及拿到多少貨值。';
 const CARGO_SHARE_TEXT = '船抵達時，船東拿到船上貨物價值的幾成：100% 是原價，超過 100% 是加成；「沉」代表貨物全損。貨值以抵達那回合的價格計。';
 
+// V0.8 prototype (rules.v08.crates, not rules): the table gives crates lost instead of a share of the cargo's value.
+const CRATE_LOSS_TEXT = '船抵達時掉進海裡的貨箱數，從最貴的開始掉；剩下的箱子照抵達那回合的價格賣。「×」是到港貨箱的加成倍率；「沉」代表貨物全損。';
+const times = (percent: number): string => `×${percent / 100}`;
+/** What a row of the crate table pays: 「沉」, 「全到」, 「掉 2」, with the multiplier when it is not 1. */
+export function crateRowText(row: { readonly sinks: boolean; readonly lose: number | null; readonly percent: number }): string {
+  if (row.sinks) return '沉';
+  const bonus = row.percent === 100 ? '' : times(row.percent);
+  if (row.lose === 0) return bonus || '全到';
+  return `掉 ${row.lose}${bonus ? ` ${bonus}` : ''}`;
+}
+
 const partsText = (effect: ShipEffect): string => effect.parts.map((p) => `${p.label} ${signed(p.delta)}`).join('、');
 const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -160,6 +171,7 @@ export function ShipInfo({ cards, shown, effect, revealed, fresh, layout, arriva
   const card = shown !== null && shown !== 'none' ? cards.find((c) => c.id === shown) : undefined;
   const side = layout === 'side';
   const rolled = card !== undefined && effect.total !== 0 && revealed.has(card.id);
+  const crates = card !== undefined && card.curve.some((r) => r.lose !== null);
   const play = card !== undefined && fresh === card.id;
   const frame = `${side ? 'dep-strip ship-strip ship-info' : `dep-strip ship-strip ${open ? 'open' : ''}`} ${arrivalProps(arrival).className}`;
   const arriveStyle = arrivalProps(arrival).style;
@@ -231,7 +243,7 @@ export function ShipInfo({ cards, shown, effect, revealed, fresh, layout, arriva
           <ol
             className={`ship-dice ${card.curve.length > 6 ? 'long' : ''} ${rolled ? 'rolled' : ''} ${play ? 'fresh' : ''}`}
             style={{ '--faces': card.curve.length } as CSSProperties}
-            aria-label="骰值表：最終值，與這艘船的獲利率"
+            aria-label={crates ? '骰值表：最終值，與這艘船掉的貨箱數' : '骰值表：最終值，與這艘船的獲利率'}
           >
             <li className="label">
               {rolled && (
@@ -242,8 +254,8 @@ export function ShipInfo({ cards, shown, effect, revealed, fresh, layout, arriva
               <InfoTip title="最終值" text={FINAL_VALUE_TEXT}>
                 <small>最終值</small>
               </InfoTip>
-              <InfoTip title="獲利率" text={CARGO_SHARE_TEXT}>
-                <b>獲利率</b>
+              <InfoTip title={crates ? '掉貨' : '獲利率'} text={crates ? CRATE_LOSS_TEXT : CARGO_SHARE_TEXT}>
+                <b>{crates ? '掉貨' : '獲利率'}</b>
               </InfoTip>
             </li>
             {card.curve.map((row, i) => {
@@ -253,11 +265,11 @@ export function ShipInfo({ cards, shown, effect, revealed, fresh, layout, arriva
                   key={row.final}
                   className={`${row.sinks ? 'sink' : row.percent > 100 ? 'win' : ''} ${rolled && rolls.length === 0 ? 'dead' : ''}`}
                   style={{ '--i': i } as CSSProperties}
-                  title={row.sinks ? `最終值 ${row.final}：沉，貨全損` : `最終值 ${row.final}${row.orMore ? ' 以上' : ''}：獲利率 ${row.percent}%（拿到貨值的 ${row.percent}%）`}
+                  title={row.sinks ? `最終值 ${row.final}：沉，貨全損` : row.lose !== null ? `最終值 ${row.final}${row.orMore ? ' 以上' : ''}：${row.lose === 0 ? '貨全到' : `掉 ${row.lose} 箱`}${row.percent === 100 ? '' : `，到港的貨 ${times(row.percent)}`}` : `最終值 ${row.final}${row.orMore ? ' 以上' : ''}：獲利率 ${row.percent}%（拿到貨值的 ${row.percent}%）`}
                 >
                   {rolled && <em>{rolls.length > 0 ? rolls.join('、') : '—'}</em>}
                   <small>{row.orMore ? `${row.final}+` : row.final}</small>
-                  <b>{row.sinks ? '沉' : `${row.percent}%`}</b>
+                  <b>{row.lose !== null ? crateRowText(row) : row.sinks ? '沉' : `${row.percent}%`}</b>
                 </li>
               );
             })}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import type { IslandId } from '../../v07/game';
-import { ISLAND_LABELS, ISLAND_TEXT } from '../labels';
+import { ISLAND_LABELS, islandText } from '../labels';
+import { useRules } from './rulesContext';
 import { CinnabarChop } from '../skin/titleMark';
 import { IslandGlance } from './IslandGlance';
 import { cardLean, pointerTilt, roughEdge } from './cardCraft';
@@ -33,7 +34,7 @@ function prefersStill(): boolean {
 
 export function IslandCard({ island, faceUp, selected = false, showFull = false, size = 'large' }: IslandCardProps) {
   const self = useRef<HTMLSpanElement>(null);
-  const text = ISLAND_TEXT[island];
+  const text = islandText(useRules(), island);
   const tilt = (e: PointerEvent<HTMLSpanElement>) => {
     const el = self.current;
     if (!el || !faceUp || prefersStill()) return;

@@ -1,6 +1,7 @@
 import type { IslandId } from '../../v07/game';
 import { GoodIcon } from './GoodIcon';
-import { ISLAND_GLANCE, type GlanceIcon } from '../table/islandGlance';
+import { islandGlance, type GlanceIcon } from '../table/islandGlance';
+import { useRules } from './rulesContext';
 import { IconDisc, tokenIconUrl } from './icons';
 import { roleIconUrl } from './RoleBadges';
 
@@ -15,9 +16,10 @@ function Thing({ icon }: { readonly icon: GlanceIcon }) {
 }
 
 export function IslandGlance({ island }: { readonly island: IslandId }) {
+  const rules = useRules();
   return (
     <span className="glance">
-      {ISLAND_GLANCE[island].map((item, i) => (
+      {islandGlance(rules, island).map((item, i) => (
         <span key={i} className={`glance-row ${item.sign > 0 ? 'pro' : 'con'}`}>
           <i className="sign" aria-label={item.sign > 0 ? '好處' : '代價'}>
             {item.sign > 0 ? '＋' : '－'}

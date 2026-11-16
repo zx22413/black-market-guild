@@ -29,6 +29,8 @@ export interface SessionSnapshot {
   /** Seats still deciding the current phase (people only; bots answer at once). */
   readonly waitingOn: readonly PlayerId[];
   readonly startingCash: number;
+  /** The match's rules when they are not the official ones (an experiment such as the V0.8 prototype); absent otherwise. */
+  readonly rules?: Rules;
   readonly result: MatchResult | null;
   readonly error: string | null;
 }
@@ -86,6 +88,7 @@ export function startSession(
     requests: [],
     waitingOn: [],
     startingCash: (setup.rules ?? RULES_V07).startingCash,
+    ...(setup.rules ? { rules: setup.rules } : {}),
     result: null,
     error: null,
   };

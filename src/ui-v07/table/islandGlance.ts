@@ -1,4 +1,4 @@
-import type { GoodId, IslandId, RoleId } from '../../v07/game';
+import type { GoodId, IslandId, RoleId, Rules } from '../../v07/game';
 
 // What each island does, as a few icon-and-number items for a quick look. This is only a summary
 // for the screen: the sentences in ISLAND_TEXT (docs/game-design.md §11.2) stay the rule text and
@@ -56,3 +56,15 @@ export const ISLAND_GLANCE: Readonly<Record<IslandId, readonly GlanceItem[]>> = 
     { sign: -1, icon: ship, text: '最終值最大 5' },
   ],
 };
+
+/** The glance items under `rules`: the V0.8 prototype (rules.v08.islands, not rules) changes the free port and the lighthouse. */
+export function islandGlance(rules: Rules, island: IslandId): readonly GlanceItem[] {
+  const { freePortFeePercent, ownShipMinRaw } = rules.v08.islands;
+  if (island === 'free-port' && freePortFeePercent > 0) {
+    return [{ sign: 1, icon: ship, text: freePortFeePercent === 50 ? '所有船費減半' : `船費只付 ${freePortFeePercent}%` }];
+  }
+  if (island === 'lighthouse' && ownShipMinRaw > 0) {
+    return ISLAND_GLANCE.lighthouse.map((item, i) => (i === 0 ? { ...item, text: `出航 +1（骰 ${ownShipMinRaw} 以上）` } : item));
+  }
+  return ISLAND_GLANCE[island];
+}

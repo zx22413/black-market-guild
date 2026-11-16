@@ -3665,3 +3665,74 @@ button .info-tip-anchor {
   display: block;
   font-size: var(--fs-note);
 }
+
+/* V0.8 prototype: the dark tide under the voyage event's chip (TideChip). */
+.tide-chip {
+  position: absolute;
+  top: 52px;
+  left: 12px;
+  z-index: 19;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 2px solid #1d3a4a;
+  border-radius: 14px;
+  background: rgb(18 36 48 / 0.92);
+  color: #cfe6ea;
+  font-size: var(--fs-note);
+  animation: beat-pop 360ms cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+.tide-chip.acting {
+  border-color: #58c7c0;
+  box-shadow: 0 0 12px rgb(88 199 192 / 0.55);
+}
+.tide-chip small {
+  font-size: var(--fs-note);
+  opacity: 0.8;
+}
+.tide-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px 2px 6px;
+  border-radius: 999px;
+  background: rgb(88 199 192 / 0.16);
+  color: #e6f6f4;
+  font-size: var(--fs-body);
+  cursor: help;
+}
+.tide-pill svg {
+  width: 16px;
+  height: 16px;
+  fill: #58c7c0;
+}
+.tide-pill.tide-acting {
+  background: #58c7c0;
+  color: #0e2530;
+}
+.tide-pill.tide-acting svg {
+  fill: #0e2530;
+}
+.tide-tip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  width: max-content;
+  max-width: 260px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgb(43 33 22 / 0.92);
+  color: #f6ead0;
+  font-size: var(--fs-body);
+  font-weight: normal;
+}
+.tide-pill:hover .tide-tip,
+.tide-pill:focus .tide-tip {
+  display: flex;
+}

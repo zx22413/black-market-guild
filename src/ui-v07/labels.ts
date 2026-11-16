@@ -1,4 +1,4 @@
-import { RULES_V07, priceAt, type BuildingId, type CashReason, type GoodId, type IslandId, type RoleId, type ShipTypeId, type VoyageEventId } from '../v07/game';
+import { RULES_V07, priceAt, type BuildingId, type CashReason, type GoodId, type IslandId, type RoleId, type Rules, type ShipTypeId, type VoyageEventId } from '../v07/game';
 
 // Names and short texts below restate docs/game-design.md (V0.7.1): §6.1, §9.4, §10.2, §11.2, §12.
 // Do not add rules here; change the design document first.
@@ -69,6 +69,21 @@ export const ISLAND_TEXT: Readonly<Record<IslandId, { readonly pro: string; read
   fortress: { pro: '自己部署的護衛 +2（一般 +1）；護衛只冷卻 1 回合', con: '部署海盜 +25 G' },
   lighthouse: { pro: '自己的船出航 +1；海關免部署費', con: '自己的船最終值最大 5（拿不到 100%）' },
 };
+
+/**
+ * An island's lines under `rules`: §11.2, or for the two islands the V0.8 prototype changes (rules.v08.islands, an
+ * experiment, not rules) their prototype lines, worded from the rules' own numbers.
+ */
+export function islandText(rules: Rules, island: IslandId): { readonly pro: string; readonly con: string } {
+  const { freePortFeePercent, ownShipMinRaw } = rules.v08.islands;
+  if (island === 'free-port' && freePortFeePercent > 0) {
+    return { pro: freePortFeePercent === 50 ? '所有船的船費減半' : `所有船的船費只付 ${freePortFeePercent}%`, con: '沒有缺點' };
+  }
+  if (island === 'lighthouse' && ownShipMinRaw > 0) {
+    return { ...ISLAND_TEXT.lighthouse, pro: `自己的船出航 +1（原始骰要 ${ownShipMinRaw} 以上，骰到更小照樣會沉）；海關免部署費` };
+  }
+  return ISLAND_TEXT[island];
+}
 
 export const VOYAGE_EVENT_LABELS: Readonly<Record<VoyageEventId, string>> = {
   tailwind: '順風',
