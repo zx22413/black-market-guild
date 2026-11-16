@@ -1,0 +1,270 @@
+"""Design sheet of the V0.8 prototype's five ship skills: one part added to each ship, rendered with and without it,
+for the user to approve before modelling (docs/proposals/2026-11-v08-presentation-plan.md step 3). An experiment, not
+rules. An opened skill must change the ship itself at a glance: one distinct attached part per skill, not a badge.
+
+  Blender -b --factory-startup --python scripts/blender/blockout-skills.py -- <ship> <render dir>
+
+Four ships are their approved blockouts (scripts/blender/blockout-<ship>.py, built by the same calls as their own
+sheets); the freighter is its exported model (public/models/ships/freighter.glb, so without its code-drawn sails).
+Writes <ship>-<view>-off.png and <ship>-<view>-on.png: `own` is the table camera on your own ship (seen from astern,
+about 54 degrees down), `side` the ship-pick camera's side.
+"""
+
+import importlib.util
+import math
+import os
+import re
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+ARGS = sys.argv[sys.argv.index("--") + 1 :]
+SHIP, OUT = ARGS[0], ARGS[1]
+# The ship blockouts read their own options after `--`; they must not see ours.
+sys.argv = sys.argv[: sys.argv.index("--") + 1] + [OUT]
+from blockout_kit import *  # noqa: E402,F403
+import blockout_kit as kit  # noqa: E402
+
+kit.SWATCHES.update({"iron": ("#5a5f66", "#3f4349"), "foam": ("#f4fbff", "#cfe6f2"), "wave": ("#3fb6c2", "#1f7f96"), "shroud": ("#3b3350", "#262036")})
+band = None
+if SHIP == "freighter":
+    bpy.ops.import_scene.gltf(filepath=os.path.join(kit.REPO, "public/models/ships/freighter.glb"))
+    for ob in list(kit.SCENE.objects):
+        if ob.type != "MESH":
+            continue
+        ob.rotation_euler = (math.radians(90), 0, 0) if False else ob.rotation_euler
+        ob["model"] = True
+    design = None
+else:
+    path = os.path.join(HERE, f"blockout-{SHIP}.py")
+    spec = importlib.util.spec_from_file_location(f"blockout_{SHIP}", path)
+    design = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(design)
+    # The builders its own sheet runs, in order (the lines between `if __name__` and `finish_blockout(`).
+    body = open(path).read().split('if __name__ == "__main__":')[1].split("finish_blockout(")[0]
+    scope = dict(vars(design))
+    exec("\n".join(line[4:] for line in body.splitlines() if line.strip()), scope)  # noqa: S102
+    band = design.hull_band
+
+
+def lathe(name, base, profile, mat, sides=12, shade=1.0):
+    verts, faces = [], []
+    for r, y in profile:
+        for i in range(sides):
+            a = 2 * math.pi * i / sides
+            verts.append((base[0] + math.cos(a) * r, y, base[1] + math.sin(a) * r))
+    n = len(profile)
+    for k in range(n - 1):
+        for i in range(sides):
+            j = (i + 1) % sides
+            faces.append([k * sides + i, (k + 1) * sides + i, (k + 1) * sides + j, k * sides + j])
+    faces.append(list(range(sides)))
+    faces.append(list(reversed(range((n - 1) * sides, n * sides))))
+    return mesh_from(name, verts, faces, mat, shade)
+
+
+def slab_x(name, outline, x0, x1, mat, shade=1.0):
+    """A (z, y) outline pulled across the ship from x0 to x1."""
+    n = len(outline)
+    verts = [(x0, y, z) for z, y in outline] + [(x1, y, z) for z, y in outline]
+    faces = [list(range(n)), list(range(n, 2 * n))] + [[i, (i + 1) % n, n + (i + 1) % n, n + i] for i in range(n)]
+    return mesh_from(name, verts, faces, mat, shade)
+
+
+def ball(name, centre, radius, mat):
+    profile = [(max(0.02, radius * math.sin(math.pi * k / 6)), centre[1] - radius * math.cos(math.pi * k / 6)) for k in range(7)]
+    return lathe(name, (centre[0], centre[2]), profile, mat, sides=10)
+
+
+def standard_skill():
+    """好兆頭: a gilded albatross with its wings spread, on a turned post at the aftcastle's stern rail (the ship is
+    named for it; the owner looks at the stern)."""
+    y0 = DECK + 1.05  # the aftcastle's deck
+    z = -2.78
+    box("skill-plinth", (0, y0 + 0.07, z), (0.62, 0.14, 0.5), "woodDark", bevel=0.03)
+    for s in (-1, 1):
+        beam(f"skill-knee{s}", (s * 0.6, y0 + 0.02, z), (s * 0.14, y0 + 0.62, z), 0.1, "woodDark", sides=4)
+    lathe("skill-post", (0, z), [(0.16, y0 + 0.12), (0.11, y0 + 0.4), (0.15, y0 + 0.5), (0.1, y0 + 0.9), (0.2, y0 + 1.0)], "wood", sides=8)
+    lathe("skill-collar", (0, z), [(0.2, y0 + 0.44), (0.2, y0 + 0.54)], "gold", sides=8)
+    lathe("skill-perch", (0, z), [(0.26, y0 + 0.98), (0.26, y0 + 1.06)], "gold", sides=8)
+    yb = y0 + 1.3
+    beam("skill-body", (0, yb, z - 0.42), (0, yb + 0.1, z + 0.4), 0.42, "gold", sides=8, taper=0.6)
+    ball("skill-head", (0, yb + 0.22, z + 0.52), 0.2, "gold")
+    beam("skill-beak", (0, yb + 0.2, z + 0.66), (0, yb + 0.12, z + 0.98), 0.12, "brass", sides=4, taper=0.3)
+    beam("skill-tail", (0, yb - 0.02, z - 0.4), (0, yb - 0.08, z - 0.8), 0.3, "gold", sides=4, taper=0.3)
+    for s in (-1, 1):
+        # Each wing in two reaches: a broad arm from the shoulder and a long swept hand.
+        mesh_from(f"skill-wing-a{s}", [(s * 0.12, yb + 0.1, z + 0.28), (s * 0.12, yb + 0.04, z - 0.3), (s * 0.95, yb + 0.42, z - 0.36), (s * 0.9, yb + 0.5, z + 0.12),
+                                      (s * 0.12, yb + 0.02, z + 0.28), (s * 0.12, yb - 0.04, z - 0.3), (s * 0.95, yb + 0.34, z - 0.36), (s * 0.9, yb + 0.42, z + 0.12)],
+                  [[0, 1, 2, 3], [7, 6, 5, 4], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]], "gold", convex=True)
+        mesh_from(f"skill-wing-b{s}", [(s * 0.9, yb + 0.5, z + 0.12), (s * 0.95, yb + 0.42, z - 0.36), (s * 1.95, yb + 0.5, z - 0.72), (s * 1.75, yb + 0.6, z - 0.3),
+                                      (s * 0.9, yb + 0.43, z + 0.12), (s * 0.95, yb + 0.35, z - 0.36), (s * 1.95, yb + 0.45, z - 0.72), (s * 1.75, yb + 0.55, z - 0.3)],
+                  [[0, 1, 2, 3], [7, 6, 5, 4], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]], "roofGold", convex=True)
+
+
+def gambler_skill():
+    """加注: the stake itself on deck: an iron-bound chest standing open, heaped with coin, lashed down to ring bolts."""
+    z, y = -0.72, DECK + 0.42  # on a stake table, clear of the rail
+    box("skill-table", (0, DECK + 0.36, z), (1.15, 0.1, 0.86), "woodDark", bevel=0.02)
+    for sx in (-0.48, 0.48):
+        for sz in (-0.32, 0.32):
+            beam(f"skill-table-leg{sx}{sz}", (sx, DECK, z + sz), (sx, DECK + 0.34, z + sz), 0.12, "wood", sides=4)
+    box("skill-table-cloth", (0, DECK + 0.4, z), (1.0, 0.04, 0.72), "roofRed", bevel=0.0)
+    box("skill-chest-skid", (0, y + 0.05, z), (1.0, 0.1, 0.7), "woodDark", bevel=0.02)
+    box("skill-chest", (0, y + 0.36, z), (0.9, 0.52, 0.6), "wood", bevel=0.04)
+    for dx in (-0.3, 0.3):
+        box(f"skill-chest-band{dx}", (dx, y + 0.36, z), (0.1, 0.56, 0.64), "iron", bevel=0.01)
+    box("skill-chest-lock", (0, y + 0.4, z - 0.32), (0.16, 0.2, 0.06), "gold", bevel=0.02)
+    # The lid thrown back on its hinges (toward the bow), its underside to the sky.
+    slab_x("skill-chest-lid", [(z + 0.3, y + 0.62), (z + 0.36, y + 0.68), (z + 0.86, y + 1.0), (z + 0.92, y + 0.92), (z + 0.42, y + 0.6)], -0.45, 0.45, "woodDark")
+    for dx in (-0.3, 0.3):
+        slab_x(f"skill-lid-band{dx}", [(z + 0.28, y + 0.62), (z + 0.36, y + 0.71), (z + 0.88, y + 1.04), (z + 0.95, y + 0.93), (z + 0.42, y + 0.57)], dx - 0.05, dx + 0.05, "iron")
+    lathe("skill-coins", (0, z - 0.02), [(0.4, y + 0.6), (0.34, y + 0.76), (0.18, y + 0.9), (0.04, y + 0.96)], "gold", sides=10)
+    for k, (dx, dz, dy) in enumerate(((0.3, -0.1, 0.72), (-0.26, 0.1, 0.74), (0.05, -0.2, 0.86), (-0.1, 0.16, 0.9))):
+        lathe(f"skill-coin{k}", (dx, z + dz), [(0.11, y + dy), (0.11, y + dy + 0.04)], "roofGold", sides=8)
+    for s in (-1, 1):
+        lathe(f"skill-ring{s}", (s * 0.62, z), [(0.07, y + 0.0), (0.07, y + 0.08)], "iron", sides=6)
+        beam(f"skill-lash{s}", (s * 0.62, y + 0.06, z), (s * 0.46, y + 0.64, z), 0.05, "rope", sides=4)
+
+
+def freighter_skill():
+    """拾荒: the salvage boat slung outboard on two iron davits amidships, a net and a grapnel in it."""
+    side = -1  # the ship-pick camera's side
+    x_rail, y_rail = side * 1.36, DECK + 0.3
+    zs = (0.15, 1.45)
+    bx, by = side * 2.2, DECK + 0.55
+    for k, z in enumerate(zs):
+        box(f"skill-chock{k}", (x_rail, y_rail - 0.1, z), (0.3, 0.4, 0.3), "woodDark", bevel=0.03)
+        box(f"skill-chock-band{k}", (x_rail, y_rail + 0.02, z), (0.34, 0.08, 0.34), "iron", bevel=0.0)
+        pts = [(x_rail, y_rail + 0.05), (x_rail + side * 0.05, y_rail + 0.9), (x_rail + side * 0.3, y_rail + 1.35), (bx - side * 0.1, y_rail + 1.5), (bx + side * 0.05, y_rail + 1.38)]
+        for i in range(len(pts) - 1):
+            beam(f"skill-davit{k}-{i}", (pts[i][0], pts[i][1], z), (pts[i + 1][0], pts[i + 1][1], z), 0.13, "iron", sides=6)
+        box(f"skill-sheave{k}", (bx + side * 0.05, y_rail + 1.28, z), (0.16, 0.2, 0.12), "brass", bevel=0.03)
+        beam(f"skill-fall{k}", (bx + side * 0.05, y_rail + 1.2, z), (bx + side * 0.05, by + 0.28, z), 0.05, "rope", sides=4)
+        beam(f"skill-gripe{k}", (x_rail + side * 0.1, y_rail + 0.1, z), (bx - side * 0.36, by + 0.1, z), 0.05, "rope", sides=4)
+    # The boat: a small double-ended hull, pale gunwale, thwarts, a net heaped amidships and a grapnel on it.
+    stations = [(-0.25, 0.05, 0.1), (0.1, 0.3, 0.3), (0.55, 0.4, 0.36), (1.05, 0.4, 0.36), (1.5, 0.3, 0.3), (1.85, 0.05, 0.1)]
+    seg, verts, faces = 6, [], []
+    for z, half, depth in stations:
+        for i in range(seg + 1):
+            a = math.pi * i / seg
+            verts.append((bx - math.cos(a) * half, by + 0.3 - math.sin(a) * depth, z))
+    row = seg + 1
+    for k in range(len(stations) - 1):
+        for i in range(seg):
+            faces.append([k * row + i, k * row + i + 1, (k + 1) * row + i + 1, (k + 1) * row + i])
+        faces.append([k * row, (k + 1) * row, (k + 1) * row + seg, k * row + seg])
+    faces += [list(range(row)), list(range((len(stations) - 1) * row, len(stations) * row))]
+    mesh_from("skill-boat", verts, faces, "wood")
+    for s in (-1, 1):
+        for k in range(len(stations) - 1):
+            (z0, h0, _), (z1, h1, _) = stations[k], stations[k + 1]
+            beam(f"skill-boat-rail{s}{k}", (bx + s * h0, by + 0.32, z0), (bx + s * h1, by + 0.32, z1), 0.1, "plaster", sides=4)
+    for k, z in enumerate((0.3, 1.3)):
+        beam(f"skill-thwart{k}", (bx - 0.36, by + 0.3, z), (bx + 0.36, by + 0.3, z), 0.1, "woodDark", sides=4)
+    lathe("skill-net", (bx, 0.8), [(0.34, by + 0.26), (0.3, by + 0.44), (0.12, by + 0.56)], "rope", sides=8)
+    beam("skill-grapnel", (bx, by + 0.5, 0.8), (bx, by + 0.86, 0.8), 0.07, "iron", sides=6)
+    for k in range(4):
+        a = math.pi / 2 * k
+        beam(f"skill-fluke{k}", (bx, by + 0.56, 0.8), (bx + math.cos(a) * 0.24, by + 0.74, 0.8 + math.sin(a) * 0.24), 0.06, "iron", sides=4, taper=0.5)
+
+
+def hidden_skill():
+    """自帶掩護: a smuggler's shroud rigged over the waist: a dark awning on a ridge pole and crutches, laced to the
+    rails, a shuttered lantern at its head (the cargo travels out of sight)."""
+    d = design
+    z0, z1 = -1.1, 1.0
+    ridge, eave, half = d.DECK + 1.25, d.DECK + 0.62, 1.02
+    for k, z in enumerate((z0, z1)):
+        for s in (-1, 1):
+            beam(f"skill-crutch{k}{s}", (s * 0.8, d.DECK, z), (0, ridge + 0.12, z), 0.11, "woodDark", sides=4)
+            box(f"skill-crutch-foot{k}{s}", (s * 0.8, d.DECK + 0.05, z), (0.24, 0.1, 0.24), "woodDark", bevel=0.02)
+        lathe(f"skill-crutch-lash{k}", (0, z), [(0.12, ridge - 0.02), (0.12, ridge + 0.12)], "rope", sides=6)
+    beam("skill-ridge", (0, ridge, z0 - 0.25), (0, ridge, z1 + 0.25), 0.13, "woodDark", sides=6)
+    for s in (-1, 1):
+        mesh_from(f"skill-shroud{s}", [(0, ridge + 0.06, z0), (0, ridge + 0.06, z1), (s * half, eave, z1 + 0.12), (s * half, eave, z0 - 0.12),
+                                      (0, ridge, z0), (0, ridge, z1), (s * half, eave - 0.06, z1 + 0.12), (s * half, eave - 0.06, z0 - 0.12)],
+                  [[0, 1, 2, 3], [7, 6, 5, 4], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]], "heather", convex=True)
+        beam(f"skill-hem{s}", (s * (half + 0.02), eave - 0.02, z0 - 0.14), (s * (half + 0.02), eave - 0.02, z1 + 0.14), 0.14, "ghostGlow", sides=4)
+        for k in range(4):
+            z = z0 + (z1 - z0) * k / 3
+            beam(f"skill-lace{s}{k}", (s * half, eave - 0.04, z), (s * d.hull_rail_x(z), d.sheer(z) + 0.02, z), 0.045, "rope", sides=4)
+            box(f"skill-cleat{s}{k}", (s * d.hull_rail_x(z), d.sheer(z) + 0.04, z), (0.16, 0.08, 0.1), "iron", bevel=0.0)
+        # A patch, off-centre on each side.
+        mesh_from(f"skill-patch{s}", [(s * 0.3, ridge - 0.1, 0.1 + s * 0.3), (s * 0.3, ridge - 0.1, 0.55 + s * 0.3), (s * 0.7, ridge - 0.36, 0.55 + s * 0.3), (s * 0.7, ridge - 0.36, 0.1 + s * 0.3),
+                                     (s * 0.3, ridge - 0.16, 0.1 + s * 0.3), (s * 0.3, ridge - 0.16, 0.55 + s * 0.3), (s * 0.7, ridge - 0.42, 0.55 + s * 0.3), (s * 0.7, ridge - 0.42, 0.1 + s * 0.3)],
+                  [[0, 1, 2, 3], [7, 6, 5, 4], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]], "ghostCloth", convex=True)
+    # The lantern hangs from the ridge's forward end on an iron hook: shuttered, one slit of light.
+    zl = z1 + 0.25
+    beam("skill-hook", (0, ridge, zl), (0, ridge - 0.16, zl), 0.05, "iron", sides=4)
+    box("skill-lamp", (0, ridge - 0.34, zl), (0.22, 0.3, 0.22), "iron", bevel=0.03)
+    box("skill-lamp-slit", (0, ridge - 0.34, zl + 0.115), (0.06, 0.2, 0.02), "ghostGlow", bevel=0.0)
+    lathe("skill-lamp-cap", (0, zl), [(0.17, ridge - 0.2), (0.04, ridge - 0.1)], "iron", sides=6)
+
+
+def breaker_skill():
+    """巨浪: a breaking wave carved over the bow: a tall curl of sea-green timber with a white crest, rising from a
+    bronze collar on the bow post (the ship rides its own wave)."""
+    d = design
+    y0 = d.sheer(d.Z_FWD)
+    zf = d.Z_FWD
+    curl = [(zf + 0.0, y0 + 0.05), (zf + 0.42, y0 + 0.5), (zf + 0.78, y0 + 1.2), (zf + 0.82, y0 + 1.85), (zf + 0.55, y0 + 2.35), (zf + 0.1, y0 + 2.5),
+            (zf - 0.3, y0 + 2.3), (zf - 0.45, y0 + 1.95), (zf - 0.25, y0 + 1.8), (zf + 0.05, y0 + 1.95), (zf + 0.3, y0 + 1.8), (zf + 0.36, y0 + 1.35), (zf + 0.2, y0 + 0.8), (zf - 0.12, y0 + 0.3)]
+    slab_x("skill-wave", curl, -0.26, 0.26, "wave")
+    crest = [(zf + 0.8, y0 + 1.7), (zf + 0.86, y0 + 1.9), (zf + 0.58, y0 + 2.44), (zf + 0.1, y0 + 2.6), (zf - 0.34, y0 + 2.38), (zf - 0.52, y0 + 1.95), (zf - 0.4, y0 + 1.9), (zf - 0.26, y0 + 2.22), (zf + 0.1, y0 + 2.42), (zf + 0.5, y0 + 2.28), (zf + 0.72, y0 + 1.85)]
+    slab_x("skill-crest", crest, -0.24, 0.24, "foam")
+    for k, x in enumerate((-0.26, 0.0, 0.26)):
+        ball(f"skill-bead{k}", (x, y0 + 2.5 - abs(x) * 0.3, zf + 0.1), 0.2, "foam")
+        ball(f"skill-bead-tip{k}", (x * 0.8, y0 + 2.02, zf - 0.46), 0.15, "foam")
+    for s in (-1, 1):
+        small = [(zf - 0.75 + (z - zf) * 0.55, y0 + 0.05 + (y - y0) * 0.5) for z, y in curl]
+        slab_x(f"skill-wave-side{s}", small, s * 0.62 - 0.1, s * 0.62 + 0.1, "wave")
+        ball(f"skill-side-foam{s}", (s * 0.62, y0 + 1.3, zf - 0.72), 0.16, "foam")
+    for k, (dz, dy, r) in enumerate(((-0.56, 1.72, 0.13), (-0.42, 1.52, 0.1), (-0.6, 1.4, 0.08), (0.92, 2.2, 0.1), (0.7, 2.62, 0.09))):
+        ball(f"skill-spray{k}", (0.12 * (-1) ** k, y0 + dy, zf + dz), r, "foam")
+    # Ribs of a darker green down the wave's back, and the bronze collar it grows from.
+    for k, t in enumerate((0.3, 0.75, 1.25)):
+        slab_x(f"skill-rib{k}", [(zf + 0.25 + t * 0.4, y0 + 0.3 + t), (zf + 0.33 + t * 0.4, y0 + 0.27 + t), (zf + 0.45 + t * 0.32, y0 + 0.55 + t), (zf + 0.37 + t * 0.32, y0 + 0.58 + t)], -0.33, 0.33, "roofGreen")
+    slab_x("skill-collar", [(zf - 0.2, y0 - 0.05), (zf + 0.2, y0 - 0.05), (zf + 0.32, y0 + 0.3), (zf - 0.16, y0 + 0.36)], -0.36, 0.36, "brass")
+    for s in (-1, 1):
+        beam(f"skill-brace{s}", (s * 0.5, y0 - 0.1, zf - 0.7), (s * 0.28, y0 + 0.9, zf + 0.25), 0.1, "woodDark", sides=4)
+
+
+SKILLS = {"standard": standard_skill, "gambler": gambler_skill, "freighter": freighter_skill, "hidden": hidden_skill, "breaker": breaker_skill}
+first_skill = len(PARTS)
+if SHIP in SKILLS:
+    SKILLS[SHIP]()
+skill_obs = [ob for ob, _, _ in PARTS[first_skill:]]
+colour_parts(band=band)
+setup_render()
+kit.SCENE.render.line_thickness = 1.0
+if SHIP == "freighter":
+    # The imported model keeps its own vertex colours.
+    m = bpy.data.materials.new("glb")
+    m.use_nodes = True
+    ca = m.node_tree.nodes.new("ShaderNodeVertexColor")
+    m.node_tree.links.new(ca.outputs["Color"], m.node_tree.nodes["Principled BSDF"].inputs["Base Color"])
+    for ob in kit.SCENE.objects:
+        if ob.get("model"):
+            ob.data.materials.clear()
+            ob.data.materials.append(m)
+
+
+def orbit(name, azimuth, elevation, target, scale, res):
+    a, e = math.radians(azimuth), math.radians(elevation)
+    t = Vector(target)
+    d = Vector((math.sin(a) * math.cos(e), math.sin(e), math.cos(a) * math.cos(e))) * 60
+    return camera(name, V(*(t + d)), V(*t), scale, res)
+
+
+VIEWS = {"own": orbit("cam-own", 180, 54, (0, 2.2, 0.2), 10.5, (900, 900)), "side": orbit("cam-side", -68, 18, (0, 2.9, 0.2), 10.5, (900, 900))}
+os.makedirs(OUT, exist_ok=True)
+for state in ("off", "on"):
+    for ob in skill_obs:
+        ob.hide_render = state == "off"
+    for name, (cam, (w, h)) in VIEWS.items():
+        kit.SCENE.camera = cam
+        kit.SCENE.render.resolution_x, kit.SCENE.render.resolution_y = w, h
+        kit.SCENE.render.filepath = os.path.join(OUT, f"{SHIP}-{name}-{state}.png")
+        bpy.ops.render.render(write_still=True)
+print("RENDERED", SHIP, len(skill_obs), "skill parts")
