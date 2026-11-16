@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1800 3540" width="1800" height="3540" font-family="'PingFang TC','Noto Sans TC',sans-serif">
+  <rect width="1800" height="3540" fill="#efe6d2"/>
+  <text x="60" y="70" font-size="40" font-weight="700" fill="#3a2a1a">V0.8 原型的三棟建築｜Blender 粗模設計稿（2026-11-17，方向已確認，細修中）</text>
+  <text x="60" y="112" font-size="22" fill="#6a5238">實驗，不是規則。粗模只定輪廓、色帶與主特徵；確認後才細修、做成 GLB 放上島。</text>
+  <text x="60" y="170" font-size="22" font-weight="700" fill="#3a2a1a">① 你看自己的島（鏡頭在島後方，看到建築朝你的那一面）— 由左到右：商行、軍械庫、修船廠</text>
+  <image xlink:href="blockouts/facilities/own.png" href="blockouts/facilities/own.png" x="0" y="180" width="1800" height="760"/>
+  <text x="60" y="972" font-size="22" font-weight="700" fill="#3a2a1a">② 你看對面的島（看到碼頭側）— 由左到右：修船廠、軍械庫、商行</text>
+  <image xlink:href="blockouts/facilities/table.png" href="blockouts/facilities/table.png" x="0" y="980" width="1800" height="760"/>
+  <text x="60" y="1772" font-size="22" font-weight="700" fill="#3a2a1a">③ 朝你的那一面，低角度近看</text>
+  <image xlink:href="blockouts/facilities/back.png" href="blockouts/facilities/back.png" x="0" y="1780" width="1800" height="760"/>
+  <text x="60" y="2572" font-size="22" font-weight="700" fill="#3a2a1a">④ 你看左右兩邊的島（看到側面）— 由左到右：修船廠、軍械庫、商行</text>
+  <image xlink:href="blockouts/facilities/side.png" href="blockouts/facilities/side.png" x="0" y="2580" width="1800" height="760"/>
+  <g font-size="20" fill="#3a2a1a">
+    <text x="60" y="3380"><tspan font-weight="700">主特徵：</tspan>修船廠＝人字吊桿＋露天船台上修到一半的船；軍械庫＝矮胖圓砲塔＋塔頂大銅砲（砲口朝碼頭）；商行＝鐘形山牆＋吊貨桿吊著一箱貨</text>
+    <text x="60" y="3414"><tspan font-weight="700">朝你的那一面放：</tspan>商行的店面（遮陽棚、櫃台、天平、香料）、軍械庫的門樓與砲彈火藥、修船廠的整個船台；碼頭側是商行的貨倉門、軍械庫的側門</text>
+    <text x="60" y="3460"><tspan font-weight="700">待確認：</tspan>① 屋頂色：修船廠紅、軍械庫紅＋石灰藍塔身、商行藍，要不要讓三棟的主色更分開　② 軍械庫旗子用玩家顏色，另外兩棟要不要也掛</text>
+    <text x="60" y="3494"><tspan font-weight="700">沿用不變：</tspan>佔地約 4.6 × 4.6（舊建築的位置）、高度不超過 5.6（比島的地標矮）；色票只用遊戲現有的 SWATCHES（草地、鐵色是設計稿的替身）</text>
+  </g>
+</svg>
