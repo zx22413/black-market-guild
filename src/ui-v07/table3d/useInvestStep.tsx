@@ -6,6 +6,9 @@ import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
 import { shipPose } from '../../ui/scene/Ships';
 import { BUILDING_LABELS, BUILDING_TEXT, GOOD_LABELS, SHIP_TYPE_LABELS } from '../labels';
 import { around } from '../scene/focusMath';
+import { Facility } from '../scene/Facility';
+import { MaterialPanel } from './MaterialPanel';
+import { FACILITY_LABELS, SKILL_LABELS } from '../table/v08Text';
 import { BuildingPreview, DECK_Y, ShipCargo, Warehouse, deckSlot, stackTop, warehouseLocal } from '../scene/InvestIsland';
 import { ShipSideCamera, warehouseCentre } from '../scene/ShipSideCamera';
 import { SIDE_SCALE, scaledAbout } from '../scene/sideScale';
@@ -27,6 +30,9 @@ import {
   unloadOne,
   unloadedBy,
   withBuild,
+  withMaterial,
+  materialCards,
+  protectChoices,
   withShipType,
   type InvestChoice,
 } from '../table/investChoice';
@@ -184,6 +190,23 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     setUnloaded(null);
     setChoice((c) => loadOne(options, c, g));
   };
+  // V0.8 prototype (not rules): the one material action of the round, and the tradehouse's protected good.
+  const materials = materialCards(context);
+  const protects = protectChoices(context, choice);
+  const materialPanel =
+    materials.length > 0 ? (
+      <MaterialPanel
+        cards={materials}
+        chosen={choice.material ?? null}
+        onPick={(material) => {
+          soundEngine.playSfx('role-pick');
+          setChoice((c) => withMaterial(options, c, material));
+        }}
+        protects={protects}
+        protect={choice.protect ?? actionFor(options, choice)?.protect ?? null}
+        onProtect={(good) => setChoice((c) => ({ ...c, protect: good }))}
+      />
+    ) : null;
   const pickBuild = (build: BuildingId | null) => {
     const next = withBuild(options, choice, build);
     const off = unloadedBy(choice.load, next.load);
@@ -442,6 +465,11 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
           <HouseIcon /> {choice.build ? `${BUILDING_LABELS[choice.build]} −${summary.buildCash}` : '不蓋'}
         </span>
       )}
+      {choice.material && (
+        <span className="chip" title="材料動作">
+          <HouseIcon /> {choice.material.kind === 'build' ? FACILITY_LABELS[choice.material.building] : SKILL_LABELS[choice.material.ship]}
+        </span>
+      )}
       <span className="chip" title="出航">
         <IconDisc src={tokenIconUrl('ship')} /> {summary.sails ? `${choice.shipType ? `${SHIP_TYPE_LABELS[choice.shipType]} ` : ''}${summary.loaded}/${summary.capacity} −${summary.shipCost}` : '不出航'}
       </span>
@@ -517,6 +545,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
             {cargo}
           </>
         )}
+        {choice.material?.kind === 'build' && <Facility angle={home} building={choice.material.building} color={seats[laneOf(viewer)]!.color} />}
         {choice.build && !shipPhase && <BuildingPreview angle={home} building={choice.build} color={seats[laneOf(viewer)]!.color} />}
       </>
     ),
@@ -540,6 +569,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     overlay: (
       <>
         {phone && cards}
+        {!shipPhase && materialPanel}
         {wave.playing && shipPhase && <ShipArrival onDone={wave.done} />}
         {arrival.playing && shipPhase && <ArrivalTitle round={board.round} text="選擇出航的船" delay={STEP_ARRIVAL.titleDelay} dealDelay={STEP_ARRIVAL.dealDelay} />}
         {shipPhase && !phone && shipInfo}

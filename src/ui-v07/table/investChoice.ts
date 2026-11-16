@@ -1,5 +1,5 @@
 import type { DecisionContext } from '../../v07/bots';
-import { BUILDING_IDS, GOODS, buildingCost, capacityFor, shipCostFor, traitOf, type BuildingId, type GoodId, type Goods, type RoleId, type ShipTypeId } from '../../v07/game';
+import { BUILDING_IDS, GOODS, SHIP_TYPE_IDS, V08_BUILDING_IDS, buildingCost, capacityFor, facilityOf, materialCost, materialsOn, shipCostFor, skillLevel, traitOf, type BuildingId, type GoodId, type Goods, type MaterialAction, type RoleId, type ShipTypeId } from '../../v07/game';
 import { BUILDING_LABELS, GOOD_LABELS } from '../labels';
 import { legalOf, type ActionOf } from './forms';
 
@@ -14,6 +14,10 @@ export interface InvestChoice {
   readonly load: Goods;
   /** Ship-bay experiment (rules.ships): the ship type picked; null while none is picked (and always when the experiment is off). */
   readonly shipType?: ShipTypeId | null;
+  /** V0.8 prototype (rules.v08, not rules): the one material action of this submission (raise a building, open a ship skill); null or absent for none. */
+  readonly material?: MaterialAction | null;
+  /** V0.8 prototype: the good a tradehouse owner protects this round; null or absent until one is named (the first is taken then). */
+  readonly protect?: GoodId | null;
 }
 
 export const EMPTY_CHOICE: InvestChoice = { build: null, load: NO_LOAD };
@@ -79,8 +83,20 @@ export const canBuildAny = (options: readonly InvestAction[]): boolean => option
 /** A sailing action carries the ship type when the experiment is on; an empty ship (no sailing) has none. */
 const sameShip = (a: InvestAction, choice: InvestChoice): boolean => unitsOf(a.load) === 0 || a.shipType === (choice.shipType ?? undefined);
 
+const sameMaterial = (a: MaterialAction | undefined, b: MaterialAction | null | undefined): boolean => {
+  if (a === undefined || b === undefined || b === null) return a === undefined && (b === undefined || b === null);
+  return a.kind === b.kind && (a.kind === 'build' ? b.kind === 'build' && a.building === b.building : b.kind !== 'build' && a.ship === b.ship);
+};
+
+/**
+ * The V0.8 prototype's extras on an action: the chosen material action exactly; never a raise or private crates (the
+ * skills' own choices, not offered here yet); the protected good as named, or any (the first offered) while none is.
+ */
+const sameExtras = (a: InvestAction, choice: InvestChoice): boolean =>
+  sameMaterial(a.material, choice.material) && a.raise === undefined && a.privateLoad === undefined && (choice.protect == null || a.protect === undefined || a.protect === choice.protect);
+
 export function actionFor(options: readonly InvestAction[], choice: InvestChoice): InvestAction | undefined {
-  return options.find((a) => a.build === choice.build && sameGoods(a.load, choice.load) && sameShip(a, choice));
+  return options.find((a) => a.build === choice.build && sameGoods(a.load, choice.load) && sameShip(a, choice) && sameExtras(a, choice));
 }
 
 /**
@@ -101,9 +117,60 @@ function fitted(options: readonly InvestAction[], next: InvestChoice, load: Good
   const kept = { ...next, load };
   if (actionFor(options, kept)) return kept;
   const fits = options
-    .filter((a) => a.build === next.build && sameShip(a, next) && GOODS.every((g) => a.load[g] <= load[g]))
+    .filter((a) => a.build === next.build && sameShip(a, next) && sameExtras(a, next) && GOODS.every((g) => a.load[g] <= load[g]))
     .reduce<Goods>((best, a) => (unitsOf(a.load) > unitsOf(best) ? a.load : best), NO_LOAD);
   return { ...next, load: fits };
+}
+
+/** Take a material action (null: none). The cargo stays when the warehouse still covers it; otherwise the largest legal part of it stays. */
+export function withMaterial(options: readonly InvestAction[], choice: InvestChoice, material: MaterialAction | null): InvestChoice {
+  return fitted(options, { ...choice, material }, choice.load);
+}
+
+/** One material action as a card: what it is, what it costs, whether it can be taken now and why not. */
+export interface MaterialCard {
+  readonly material: MaterialAction;
+  readonly cost: Goods;
+  readonly legal: boolean;
+  readonly reason: string | null;
+}
+
+/**
+ * V0.8 prototype (not rules): the three buildings, then the five ship skills, each with its cost. What can be taken
+ * comes from the legal actions; the reasons restate the prototype's limits from its own numbers. Empty when the
+ * rules have no material actions.
+ */
+export function materialCards(context: DecisionContext): MaterialCard[] {
+  const { rules } = context.view;
+  if (!materialsOn(rules)) return [];
+  const player = me(context);
+  const offered = investOptions(context).flatMap((a) => (a.material ? [a.material] : []));
+  const opened = SHIP_TYPE_IDS.filter((t) => skillLevel(rules, player, t) > 0);
+  const all: MaterialAction[] = [...V08_BUILDING_IDS.map((building) => ({ kind: 'build' as const, building })), ...SHIP_TYPE_IDS.map((ship) => ({ kind: 'open' as const, ship }))];
+  return all.map((material): MaterialCard => {
+    const cost = materialCost(rules, material);
+    const legal = offered.some((m) => sameMaterial(m, material));
+    const reason = legal
+      ? null
+      : material.kind === 'build' && facilityOf(rules, player) !== null
+        ? `一局只能蓋 ${rules.v08.maxBuildings} 棟`
+        : material.kind === 'open' && opened.includes(material.ship)
+          ? '已開啟'
+          : material.kind === 'open' && opened.length >= rules.v08.maxSkills
+            ? `最多開 ${rules.v08.maxSkills} 艘`
+            : GOODS.some((g) => context.view.myStock[g] < cost[g])
+              ? '材料不足'
+              : '這回合不能做';
+    return { material, cost, legal, reason };
+  });
+}
+
+/** The goods a tradehouse owner may protect this round (with the tradehouse standing, or raised in this choice); empty otherwise. */
+export function protectChoices(context: DecisionContext, choice: InvestChoice): GoodId[] {
+  const { rules } = context.view;
+  if (!materialsOn(rules)) return [];
+  const has = facilityOf(rules, me(context)) === 'tradehouse' || (choice.material?.kind === 'build' && choice.material.building === 'tradehouse');
+  return has ? [...GOODS] : [];
 }
 
 /** The crates `after` no longer carries compared with `before` (what a change of building took off). */
@@ -126,7 +193,9 @@ export function unloadOne(choice: InvestChoice, good: GoodId): InvestChoice {
 
 /** What the warehouse looks like: goods the building uses, goods on the ship, goods left behind. */
 export function stockSplit(context: DecisionContext, choice: InvestChoice): { readonly forBuild: Goods; readonly onShip: Goods; readonly left: Goods } {
-  const forBuild = choice.build === null ? NO_LOAD : buildingCost(context.view.rules, choice.build);
+  const material = choice.material ? materialCost(context.view.rules, choice.material) : NO_LOAD;
+  const building = choice.build === null ? NO_LOAD : buildingCost(context.view.rules, choice.build);
+  const forBuild = Object.fromEntries(GOODS.map((g) => [g, building[g] + material[g]])) as Goods;
   const left = Object.fromEntries(GOODS.map((g) => [g, context.view.myStock[g] - forBuild[g] - choice.load[g]])) as Goods;
   return { forBuild, onShip: choice.load, left };
 }

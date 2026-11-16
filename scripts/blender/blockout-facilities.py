@@ -387,8 +387,9 @@ def flip_z(prefix, cx):
     """Turn a finished building round on its plot (front to back): the owner sees a building from behind (the dock
     faces the middle of the table), so what tells the building apart has to face that way."""
     for ob, _, _ in PARTS:
-        if not ob.name.replace("x-", "").startswith(prefix):
+        if not ob.name.replace("x-", "").startswith(prefix) or ob.get("turned"):
             continue
+        ob["turned"] = True  # a second copy of the building (the ground-colour sheet) must not turn the first one back
         bm = bmesh.new()
         bm.from_mesh(ob.data)
         for v in bm.verts:
@@ -396,6 +397,11 @@ def flip_z(prefix, cx):
         bmesh.ops.reverse_faces(bm, faces=bm.faces)
         bm.to_mesh(ob.data)
         bm.free()
+
+
+def mark_turned():
+    for ob, _, _ in PARTS:
+        ob["turned"] = True
 
 
 def armory_dock(cx):
@@ -464,10 +470,12 @@ def build_one(kind, cx=0.0):
         armory(cx)
         flip_z("arm", cx)
         armory_dock(cx)
+        mark_turned()
     else:
         tradehouse(cx)
         flip_z("trade", cx)
         trade_dock(cx)
+        mark_turned()
 
 
 def build_all():

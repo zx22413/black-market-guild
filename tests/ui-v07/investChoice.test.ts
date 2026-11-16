@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { DecisionContext } from '../../src/v07/bots';
 import { RULES_V07, getLegalActions, getPendingDecisions, getPlayerView, type MatchState } from '../../src/v07/game';
 import {
+  materialCards,
+  protectChoices,
+  withMaterial,
   EMPTY_CHOICE,
   actionFor,
   buildOptions,
@@ -202,3 +205,60 @@ describe('investment choice on the island (only legal actions)', () => {
   });
 });
 
+
+describe('material actions in the invest choice (V0.8 prototype, not rules)', () => {
+  const v08 = async (patch: Parameters<typeof edit>[2] = {}) => {
+    const { RULES_V08_PROTO } = await import('../../src/v07/game');
+    const state = edit(start(4, RULES_V08_PROTO, { p1: 'mine' }), 'p1', { cash: 1000, stock: G(3, 3, 1, 0), buildings: [], ...patch });
+    const decision = getPendingDecisions(state).find((d) => d.playerId === 'p1')!;
+    return { view: getPlayerView(state, 'p1'), decision, legalActions: getLegalActions(state, 'p1') } as DecisionContext;
+  };
+
+  it('offers nothing under the official rules', () => {
+    expect(materialCards(contextOf(edit(start(4, RULES_V07, { p1: 'mine' }), 'p1', { cash: 1000 })))).toEqual([]);
+  });
+
+  it('lists the three buildings and the five ship skills with their cost, and why one cannot be taken', async () => {
+    const cards = materialCards(await v08());
+    expect(cards.map((c) => (c.material.kind === 'build' ? c.material.building : c.material.ship))).toEqual(['repairyard', 'armory', 'tradehouse', 'standard', 'gambler', 'freighter', 'hidden', 'breaker']);
+    expect(cards.every((c) => c.legal && c.reason === null)).toBe(true);
+    expect(cards[0]!.cost).toEqual(G(2, 1, 0, 0));
+    expect(cards[3]!.cost).toEqual(G(0, 2, 0, 0));
+    const poor = materialCards(await v08({ stock: G(1, 1, 0, 0) }));
+    expect(poor.every((c) => !c.legal)).toBe(true);
+    expect(poor[0]!.reason).toBe('材料不足');
+    const built = materialCards(await v08({ facility: 'armory' }));
+    expect(built.filter((c) => c.material.kind === 'build').every((c) => !c.legal && c.reason === '一局只能蓋 1 棟')).toBe(true);
+    const skilled = materialCards(await v08({ skills: { standard: 1, gambler: 1 } }));
+    expect(skilled.find((c) => c.material.kind === 'open' && c.material.ship === 'standard')!.reason).toBe('已開啟');
+    expect(skilled.find((c) => c.material.kind === 'open' && c.material.ship === 'hidden')!.reason).toBe('最多開 2 艘');
+  });
+
+  it('submits the chosen material action and takes its cost out of what can be loaded', async () => {
+    const ctx = await v08();
+    const options = investOptions(ctx);
+    const build = { kind: 'build', building: 'repairyard' } as const;
+    const plain = actionFor(options, { ...EMPTY_CHOICE, shipType: 'standard', load: G(3, 0, 0, 0) });
+    expect(plain?.material).toBeUndefined();
+    const chosen = withMaterial(options, { ...EMPTY_CHOICE, shipType: 'standard', load: G(3, 0, 0, 0) }, build);
+    // 2 wood go into the building: only 1 of the 3 loaded wood stays on the ship.
+    expect(chosen.load).toEqual(G(1, 0, 0, 0));
+    expect(actionFor(options, chosen)?.material).toEqual(build);
+    expect(stockSplit(ctx, chosen)).toEqual({ forBuild: G(2, 1, 0, 0), onShip: G(1, 0, 0, 0), left: G(0, 2, 1, 0) });
+    expect(actionFor(options, withMaterial(options, chosen, null))?.material).toBeUndefined();
+    // Never the gambler's raise or private crates by accident.
+    expect(options.filter((a) => a.raise || a.privateLoad).length).toBeGreaterThanOrEqual(0);
+    expect(actionFor(options, chosen)?.raise).toBeUndefined();
+  });
+
+  it("names the tradehouse's protected good", async () => {
+    const ctx = await v08({ facility: 'tradehouse' });
+    const options = investOptions(ctx);
+    expect(protectChoices(ctx, EMPTY_CHOICE)).toEqual(['wood', 'iron', 'spice', 'arms']);
+    expect(actionFor(options, { ...EMPTY_CHOICE, protect: 'spice' })?.protect).toBe('spice');
+    // Until one is named the first is taken, so the choice is never without a legal action.
+    expect(actionFor(options, EMPTY_CHOICE)?.protect).toBe('wood');
+    expect(protectChoices(await v08(), EMPTY_CHOICE)).toEqual([]);
+    expect(protectChoices(await v08(), { ...EMPTY_CHOICE, material: { kind: 'build', building: 'tradehouse' } })).toEqual(['wood', 'iron', 'spice', 'arms']);
+  });
+});
