@@ -133,6 +133,13 @@ def repairyard(cx):
         box(f"{n}-cradle{k}", (hx, slope(z) + 0.3, z), (1.9, 0.26, 0.24), "woodDark", bevel=0.03)
         for s in (-1, 1):
             beam(f"{n}-shore{k}{s}", (hx + s * 1.05, slope(z) + 0.1, z), (hx + s * 0.72, slope(z) + 1.05, z), 0.12, "wood", sides=4)
+    # Trims: a pale stone curb down each edge of the slip, a dark wale along the hull, a ridge board on the shed.
+    for s in (-1, 1):
+        beam(f"{n}-curb{s}", (hx + s * 1.25, slope(-2.1) + 0.06, -2.1), (hx + s * 1.25, slope(2.2) + 0.06, 2.2), 0.22, "marble", sides=4)
+        for k in range(len(stations) - 1):
+            (z0, h0, d0), (z1, h1, d1) = stations[k], stations[k + 1]
+            beam(f"{n}-wale{s}{k}", (hx + s * h0 * 0.93, top(z0, d0) - 0.45 * d0, z0), (hx + s * h1 * 0.93, top(z1, d1) - 0.45 * d1, z1), 0.12, "woodDark", sides=4)
+    box(f"{n}-slip-foot", (hx, 0.06, 2.24), (2.72, 0.12, 0.2), "marble", bevel=0.03)
     # Sheerlegs: two raked spars lashed at the head, tackle and hook over the hull.
     head = (hx, 5.0, 0.55)
     for s in (-1, 1):
@@ -152,6 +159,9 @@ def repairyard(cx):
         for k, z in enumerate((-2.0, -0.8, 0.4)):
             beam(f"{n}-post{s}{k}", (sx + s * (r - 0.08), 0.0, z), (sx + s * (r - 0.08), 1.62, z), 0.16, "woodDark", sides=4)
         beam(f"{n}-plate{s}", (sx + s * (r - 0.08), 1.58, -2.1), (sx + s * (r - 0.08), 1.58, 0.5), 0.16, "wood", sides=4)
+    beam(f"{n}-ridge", (sx, 1.55 + r + 0.03, -2.18), (sx, 1.55 + r + 0.03, 0.58), 0.14, "woodDark", sides=4)
+    for s in (-1, 1):
+        beam(f"{n}-eave{s}", (sx + s * (r + 0.02), 1.56, -2.18), (sx + s * (r + 0.02), 1.56, 0.58), 0.12, "plaster", sides=4)
     box(f"{n}-bench", (sx, 0.42, -1.3), (0.9, 0.12, 1.2), "wood", bevel=0.03)
     for k, z in enumerate((-1.8, -0.8)):
         beam(f"{n}-leg-b{k}", (sx, 0.0, z), (sx, 0.4, z), 0.1, "woodDark", sides=4)
@@ -175,6 +185,9 @@ def armory(cx):
     lathe(f"x-{n}-tower", (cx, cz), [(1.86, 0.4), (1.52, 2.7), (1.7, 2.82), (1.7, 3.02), (1.6, 3.02)], "stone", sides=32)
     lathe(f"{n}-band", (cx, cz), [(1.74, 1.5), (1.74, 1.62)], "marble", sides=32)
     lathe(f"{n}-deck", (cx, cz), [(1.5, 3.0), (1.5, 3.08)], "slate", sides=32)
+    # Trims: a pale cornice under the parapet and a pale rim round the gun deck.
+    lathe(f"{n}-cornice", (cx, cz), [(1.74, 2.84), (1.74, 3.0)], "marble", sides=32)
+    lathe(f"{n}-plinth-cap", (cx, cz), [(1.95, 0.38), (1.95, 0.46)], "marble", sides=32)
     # Parapet with gun ports: eight merlons with light caps.
     for k in range(8):
         a = math.radians(22.5 + 45 * k)
@@ -206,12 +219,20 @@ def armory(cx):
         box(f"{n}-strap{k}", (cx, y, gz + 0.85), (0.8, 0.09, 0.04), "iron", bevel=0.0)
     for s in (-1, 1):
         box(f"{n}-lamp{s}", (cx + s * 0.66, 1.3, gz + 0.82), (0.16, 0.24, 0.14), "flame", bevel=0.03)
+    # Gatehouse trims: a dark footing, pale corner stones, pale verges along the pediment.
+    box(f"{n}-porch-foot", (cx, 0.13, gz + 0.32), (1.66, 0.26, 1.02), "basalt", bevel=0.04)
+    for s in (-1, 1):
+        for k in range(3):
+            box(f"{n}-porch-quoin{s}{k}", (cx + s * 0.75, 0.5 + k * 0.45, gz + 0.74), (0.2, 0.24, 0.16), "marble", bevel=0.03)
+        beam(f"{n}-verge{s}", (cx + s * 1.0, 1.68, gz + 0.88), (cx, 2.4, gz + 0.88), 0.13, "marble", sides=4)
+    beam(f"{n}-porch-ridge", (cx, 2.38, gz - 0.2), (cx, 2.38, gz + 0.9), 0.12, "marble", sides=4)
     # A lookout turret corbelled off the wall, with a pointed cap and the owner's pennant.
     tx, tz = cx - 1.5, cz - 0.55
     lathe(f"{n}-corbel", (tx, tz), [(0.2, 2.0), (0.52, 2.6)], "stone", sides=10)
     lathe(f"{n}-turret", (tx, tz), [(0.52, 2.6), (0.52, 3.9)], "stone", sides=10)
     lathe(f"{n}-turret-rim", (tx, tz), [(0.6, 3.86), (0.6, 3.98)], "marble", sides=10)
     lathe(f"{n}-turret-cap", (tx, tz), [(0.68, 3.96), (0.04, 5.0)], "roofRed", sides=10)
+    lathe(f"{n}-turret-foot", (tx, tz), [(0.57, 2.56), (0.57, 2.68)], "marble", sides=10)
     beam(f"{n}-pole", (tx, 4.9, tz), (tx, 5.55, tz), 0.06, "woodDark", sides=4)
     extrude_z(f"{n}-pennant", [(tx, 5.5), (tx + 0.75, 5.33), (tx, 5.16)], tz - 0.02, tz + 0.02, "pennant")
     box(f"{n}-slit", (tx - 0.5, 3.25, tz), (0.08, 0.5, 0.14), "dark", bevel=0.0)
@@ -252,6 +273,18 @@ def tradehouse(cx):
     for s in (-1, 1):
         lathe(f"x-{n}-chimney{s}", (cx + s * 0.75, -0.9), [(0.2, base + 0.5), (0.2, base + 1.55), (0.27, base + 1.6), (0.27, base + 1.72)], "stone", sides=6)
     ball(f"{n}-finial", (cx, base + 2.22, -0.4 + d - 0.11), 0.16, "gold")
+    # Trims: corner stones at the back corners too, a pale ridge, dark eaves boards, framed windows on both flanks.
+    for s in (-1, 1):
+        for k in range(4):
+            box(f"{n}-quoin-b{s}{k}", (cx + s * w, 0.6 + k * 0.62, -0.4 - d), (0.26, 0.3, 0.2), "marble", bevel=0.03)
+        beam(f"{n}-eaves{s}", (cx + s * (w + 0.14), base + 0.03, -0.4 - d + 0.2), (cx + s * (w + 0.14), base + 0.03, -0.4 + d - 0.2), 0.14, "woodDark", sides=4)
+        for k, z in enumerate((-1.0, 0.2)):
+            box(f"{n}-flank-frame{s}{k}", (cx + s * w, 2.3, z), (0.08, 0.66, 0.56), "marble", bevel=0.02)
+            box(f"{n}-flank-win{s}{k}", (cx + s * (w + 0.03), 2.3, z), (0.06, 0.5, 0.4), "dark", bevel=0.0)
+            box(f"{n}-flank-sill{s}{k}", (cx + s * (w + 0.06), 1.95, z), (0.16, 0.08, 0.66), "marble", bevel=0.02)
+        box(f"{n}-flank-shutter{s}", (cx + s * (w + 0.02), 1.1, -0.4), (0.08, 0.9, 0.7), "roofBlue", bevel=0.02)
+        box(f"{n}-flank-shutter-frame{s}", (cx + s * w, 1.1, -0.4), (0.08, 1.06, 0.86), "marble", bevel=0.02)
+    beam(f"{n}-ridge", (cx, base + 1.74, -0.4 - d + 0.2), (cx, base + 1.74, -0.4 + d - 0.2), 0.16, "marble", sides=4)
     # Hoist beam at the gable's head with a crate on the hook: what a merchant's house is for.
     fz = -0.4 + d
     beam(f"{n}-hoist", (cx, base + 1.5, fz - 0.3), (cx, base + 1.5, fz + 0.95), 0.16, "woodDark", sides=4)
@@ -274,6 +307,7 @@ def tradehouse(cx):
         mesh_from(f"x-{n}-awning{k}", [(x0, 1.95, fz + 0.02), (x1, 1.95, fz + 0.02), (x1, 1.5, fz + 1.05), (x0, 1.5, fz + 1.05), (x0, 1.89, fz + 0.02), (x1, 1.89, fz + 0.02), (x1, 1.44, fz + 1.05), (x0, 1.44, fz + 1.05)], [[0, 1, 2, 3], [7, 6, 5, 4], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]], "roofGold" if k % 2 == 0 else "canvas")
     for s in (-1, 1):
         beam(f"{n}-awning-pole{s}", (cx + s * (w + 0.02), 0.0, fz + 1.0), (cx + s * (w + 0.02), 1.48, fz + 1.0), 0.09, "woodDark", sides=4)
+    beam(f"{n}-valance", (cx - w - 0.12, 1.45, fz + 1.06), (cx + w + 0.12, 1.45, fz + 1.06), 0.1, "woodDark", sides=4)
     # Goods out front: crates, spice sacks, cloth, and the scales on the counter.
     box(f"{n}-counter", (cx + 0.95, 0.38, fz + 0.75), (0.95, 0.76, 0.5), "wood", bevel=0.04)
     box(f"{n}-counter-top", (cx + 0.95, 0.79, fz + 0.75), (1.07, 0.08, 0.62), "woodDark", bevel=0.02)
