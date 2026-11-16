@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { FACILITY_LOT, FACILITY_PLOT, FACILITY_SCALE } from '../../src/ui-v07/scene/facilityLot';
 import { ASSET_IDS } from '../../src/game';
 import { BUILDING_DESIGNS, ROOF_MATS } from '../../src/ui/scene/buildings/designs';
 import { LANDMARK_DESIGNS, landmarkParts, type LandmarkDesign } from '../../src/ui/scene/buildings/landmarks';
@@ -194,6 +195,14 @@ describe.each(Object.entries(ISLAND_SCENERY))('%s scenery', (_, scenery) => {
       for (const lot of keptClear) expect(overlaps(f, lot), `${f.name} on ${lot.name} (turn ${around})`).toBe(false);
       for (const p of scenery!.pieces.filter((q) => !q.backdrop)) for (const g of pieceFootprints(p)) expect(overlaps(f, g), `${f.name} on ${g.name}`).toBe(false);
     }
+  });
+
+  it("keeps the V0.8 prototype's building plot clear (one larger building between the two back lots)", () => {
+    const half = (FACILITY_PLOT / 2) * FACILITY_SCALE;
+    const plot: Footprint = { name: 'facility', x0: FACILITY_LOT[0] - half, x1: FACILITY_LOT[0] + half, z0: FACILITY_LOT[2] - half, z1: FACILITY_LOT[2] + half };
+    for (const a of pieces) expect(overlaps(a, plot), `${a.name} on the facility plot`).toBe(false);
+    for (const lot of keptClear) expect(overlaps(plot, lot), `facility plot on ${lot.name}`).toBe(false);
+    expect(Math.hypot(Math.abs(FACILITY_LOT[0]) + half, Math.abs(FACILITY_LOT[2]) + half)).toBeLessThan(PLAYER_ISLAND_RADIUS * PLATEAU_SAFE_RATIO);
   });
 
   it('keeps the asset lots and the other pieces clear', () => {

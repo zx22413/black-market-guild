@@ -2,6 +2,7 @@ import {
   GOODS,
   RULES_V07,
   buildingCost,
+  materialCost,
   type BuildingId,
   type GoodId,
   type Deployment,
@@ -14,6 +15,7 @@ import {
   type RoleId,
   type ShipId,
   type ShipTypeId,
+  type V08BuildingId,
   type VoyageEventId,
   type VoyageModifier,
   type VoyageOutcome,
@@ -46,6 +48,9 @@ export interface BoardPlayer {
    */
   readonly stock: Goods;
   readonly buildings: readonly BuildingId[];
+  /** V0.8 prototype (not rules): the one building raised with materials, and the ship types whose skill is open. */
+  readonly facility: V08BuildingId | null;
+  readonly skills: readonly ShipTypeId[];
   readonly island: IslandId | null;
   /** Round each role was last deployed (§9.3). */
   readonly lastUsed: Readonly<Partial<Record<RoleId, number>>>;
@@ -86,7 +91,7 @@ export function initialBoard(playerIds: readonly PlayerId[], startingCash: numbe
     wanted: [],
     voyageEvent: null,
     players: Object.fromEntries(
-      playerIds.map((id) => [id, { id, cash: startingCash, stock: rules.startingStock, buildings: [], island: null, lastUsed: {} }]),
+      playerIds.map((id) => [id, { id, cash: startingCash, stock: rules.startingStock, buildings: [], facility: null, skills: [], island: null, lastUsed: {} }]),
     ),
     ships: [],
     stayedInPort: [],
@@ -214,17 +219,44 @@ export function applyEvent(board: Board, event: MatchEvent, rules: Rules = RULES
       );
     case 'match-ended':
       return { ...board, result: event.result };
+    // V0.8 prototype: a material action is paid from the warehouse; it raises the one building or opens a ship skill.
+    case 'materials-used':
+      return {
+        ...board,
+        players: Object.fromEntries(
+          Object.entries(board.players).map(([id, p]) => {
+            const mine = event.uses.filter((u) => u.playerId === id).map((u) => u.material);
+            const built = mine.find((m) => m.kind === 'build');
+            const opened = mine.flatMap((m) => (m.kind === 'open' && !p.skills.includes(m.ship) ? [m.ship] : []));
+            // The materials are paid from the warehouse.
+            const stock = mine.reduce((left, m) => {
+              const cost = materialCost(rules, m);
+              return Object.fromEntries(GOODS.map((g) => [g, left[g] - cost[g]])) as Goods;
+            }, p.stock);
+            return [id, { ...p, stock, facility: built?.kind === 'build' ? built.building : p.facility, skills: [...p.skills, ...opened] }];
+          }),
+        ),
+      };
+    // V0.8 prototype: 「暗潮將至」 takes goods out of every warehouse at the end of its round.
+    case 'dark-tide-loss':
+      return {
+        ...board,
+        players: Object.fromEntries(
+          Object.entries(board.players).map(([id, p]) => {
+            const lost = event.lost[id];
+            return [id, lost ? { ...p, stock: Object.fromEntries(GOODS.map((g) => [g, p.stock[g] - lost[g]])) as Goods } : p];
+          }),
+        ),
+      };
     case 'phase-started':
     case 'round-ended':
     // V0.8 simulation prototype only (never in the live rules).
-    case 'materials-used':
     case 'trade-protected':
     case 'v08-effect':
     case 'dark-tide-rising':
     case 'final-round':
     case 'phase-two-started':
     case 'boss-event':
-    case 'dark-tide-loss':
     case 'tide-candidates':
     case 'tide-revealed':
     case 'late-card':

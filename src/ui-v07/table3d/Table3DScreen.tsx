@@ -402,6 +402,8 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
 
   const waitingNames = snap.waitingOn.filter((id) => id !== seatOnScreen).map(nameOf);
   const tide = useMemo(() => tideStatus(events), [events]);
+  // V0.8 prototype: the building each seat has raised, for the islands.
+  const facilities = useMemo(() => Object.fromEntries(ids.map((id) => [id, board.players[id]?.facility ?? null])), [ids, board]);
   const idle = !holding && !step && !finished && !drafting && !showIslands && !handoffTo && !moments.blocking;
 
   return (
@@ -410,6 +412,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
       <TableCanvas
         seats={seats}
         weather={board.voyageEvent}
+        facilities={facilities}
         ships={ships}
         cameraPoints={camera}
         {...(step?.cameraRig ? { camera: step.cameraRig(safe) } : {})}

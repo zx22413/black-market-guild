@@ -1,7 +1,8 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useCallback, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Vector3 } from 'three';
-import type { IslandId, PlayerId, ShipId, ShipTypeId, VoyageEventId } from '../../v07/game';
+import type { IslandId, PlayerId, ShipId, ShipTypeId, V08BuildingId, VoyageEventId } from '../../v07/game';
+import { Facility } from './Facility';
 import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
 import { Clouds } from '../../ui/scene/Clouds';
 import { EffectWarmup } from '../../ui/scene/EffectWarmup';
@@ -105,6 +106,8 @@ export interface TableCanvasProps {
   readonly pulses?: ReadonlyMap<PlayerId, { readonly key: string; readonly tone: 'gain' | 'loss' }>;
   /** Islands whose night lights (fires, lighthouse beams) are on whatever the weather, e.g. the menu's tutorial stop. */
   readonly litSeats?: ReadonlySet<PlayerId>;
+  /** V0.8 prototype (not rules): the building each seat has raised with materials, drawn on its island. */
+  readonly facilities?: Readonly<Record<PlayerId, V08BuildingId | null>>;
   /** What the market island shows (`marketShow`); without it the market stands open at its opening prices. */
   readonly market?: MarketShow;
 }
@@ -230,7 +233,7 @@ function sailGale(weather: VoyageEventId | null): number {
   return weather === 'storm' ? 1 : weather === 'tailwind' ? 0.6 : 0;
 }
 
-export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, pulses, market, litSeats }: TableCanvasProps) {
+export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, pulses, market, litSeats, facilities }: TableCanvasProps) {
   const look = WEATHER[weather ?? 'clear'];
   const { angles, laneOf } = useTableLayout(seats);
   const islandKey = seats.map((s) => s.island ?? '').join('|');
@@ -308,6 +311,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
                   seed={playerIslandSeed(i)}
                   selectable={ringed?.has(seat.id) ?? false}
                 />
+                {facilities?.[seat.id] && <Facility angle={angles[i]!} building={facilities[seat.id]!} color={seat.color} />}
               </IslandPulse>
             ))}
             {ships.map((ship) => {

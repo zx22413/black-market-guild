@@ -14,6 +14,8 @@ const IslandCardsPreview = import.meta.env.DEV ? lazy(() => import('./dev/Island
 // The market island up close: /v07.html?dev=market (&view=back|top|far, &weather=moonless-night).
 // The ship-select camera sketch: /v07.html?dev=ship-select (&view=side|three|high|wide, &flip=1).
 const ShipSelectPreview = import.meta.env.DEV ? lazy(() => import('./dev/ShipSelectPreview').then((m) => ({ default: m.ShipSelectPreview }))) : null;
+// The V0.8 prototype's buildings on the islands: /v07.html?dev=facilities (&seat=0..3, &set=1, &islands=a,b,c,d).
+const FacilitiesPreview = import.meta.env.DEV ? lazy(() => import('./dev/FacilitiesPreview').then((m) => ({ default: m.FacilitiesPreview }))) : null;
 // The five ship types and their loops: /v07.html?dev=ships (&state=sailing, &view=close|side&ship=gambler, &weather=moonless-night).
 const ShipsPreview = import.meta.env.DEV ? lazy(() => import('./dev/ShipsPreview').then((m) => ({ default: m.ShipsPreview }))) : null;
 const MarketPreview = import.meta.env.DEV ? lazy(() => import('./dev/MarketPreview').then((m) => ({ default: m.MarketPreview }))) : null;
@@ -63,6 +65,10 @@ createRoot(container).render(
     ) : devPage === 'ship-select' && ShipSelectPreview ? (
       <Suspense fallback={null}>
         <ShipSelectPreview />
+      </Suspense>
+    ) : devPage === 'facilities' && FacilitiesPreview ? (
+      <Suspense fallback={null}>
+        <FacilitiesPreview />
       </Suspense>
     ) : devPage === 'ships' && ShipsPreview ? (
       <Suspense fallback={null}>

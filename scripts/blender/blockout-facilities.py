@@ -161,12 +161,12 @@ def repairyard(cx):
         for k in range(len(stations) - 1):
             (z0, h0, d0), (z1, h1, d1) = stations[k], stations[k + 1]
             beam(f"{n}-wale{s}{k}", (hx + s * h0 * 0.93, top(z0, d0) - 0.45 * d0, z0), (hx + s * h1 * 0.93, top(z1, d1) - 0.45 * d1, z1), 0.12, "woodDark", sides=4)
-    box(f"{n}-slip-foot", (hx, 0.06, 2.24), (2.72, 0.12, 0.2), "marble", bevel=0.03)
+    box(f"{n}-slip-foot", (hx, 0.06, 2.16), (2.72, 0.12, 0.2), "marble", bevel=0.03)
     # Sheerlegs: two raked spars lashed at the head, tackle and hook over the hull.
     head = (hx, 5.0, 0.55)
     for s in (-1, 1):
-        beam(f"{n}-leg{s}", (hx + s * 1.55, 0.0, 1.5), head, 0.2, "wood", sides=6, taper=0.7)
-        box(f"{n}-foot{s}", (hx + s * 1.55, 0.12, 1.5), (0.5, 0.24, 0.5), "stone", bevel=0.04)
+        beam(f"{n}-leg{s}", (hx + s * 1.38, 0.0, 1.5), head, 0.2, "wood", sides=6, taper=0.7)
+        box(f"{n}-foot{s}", (hx + s * 1.38, 0.12, 1.5), (0.5, 0.24, 0.5), "stone", bevel=0.04)
     # The back stay runs to an iron ring on a stone anchor block; wedges hold the shores' feet.
     box(f"{n}-anchor", (hx, 0.1, -2.15), (0.4, 0.2, 0.3), "stone", bevel=0.03)
     lathe(f"{n}-anchor-ring", (hx, -2.15), [(0.1, 0.2), (0.1, 0.26)], "iron", sides=8)
@@ -395,9 +395,8 @@ def flip_z(prefix, cx):
         bm.free()
 
 
-def dock_side(cx):
-    """What the dock side shows once the tower and the house are turned round: the armory's sally port and the
-    tradehouse's cargo doors with a second hoist."""
+def armory_dock(cx):
+    """What the armory shows on the dock side once it is turned round: the sally port, two gun ports, the banner."""
     c = (cx, 0.35)
     wall = lambda y: 1.86 - (y - 0.4) * 0.148  # noqa: E731
     # Sally port: a stone surround standing proud of the wall from the plinth up, an arched head, the door set back in it.
@@ -424,7 +423,11 @@ def dock_side(cx):
         beam(f"arm-banner-arm{sx}", (cx + sx, 2.74, 0.35 + 1.5), (cx + sx, 2.74, 0.35 + 1.86), 0.06, "iron", sides=4)
     beam("arm-banner-rod", (cx - 0.42, 2.74, 0.35 + 1.84), (cx + 0.42, 2.74, 0.35 + 1.84), 0.07, "woodDark", sides=6)
     extrude_z("arm-banner", [(cx - 0.3, 2.72), (cx + 0.3, 2.72), (cx + 0.3, 1.95), (cx, 1.8), (cx - 0.3, 1.95)], 0.35 + 1.82, 0.35 + 1.86, "pennant")
-    tx, fz, base = cx + GAP, 1.85, 3.07
+
+
+def trade_dock(tx):
+    """What the tradehouse shows on the dock side once it is turned round: cargo doors and a second hoist."""
+    fz, base = 1.85, 3.07
     box("trade-cargo-frame", (tx, 1.15, fz + 0.02), (1.6, 1.7, 0.08), "marble", bevel=0.02)
     box("trade-cargo-step", (tx, 0.1, fz + 0.3), (1.8, 0.2, 0.5), "stone", bevel=0.04)
     for s in (-1, 1):
@@ -447,13 +450,26 @@ def dock_side(cx):
 GAP = 6.2
 
 
+KINDS = ("repairyard", "armory", "tradehouse")
+
+
+def build_one(kind, cx=0.0):
+    """One finished building on its plot at x = cx, turned so that what tells it apart faces the back of the island."""
+    if kind == "repairyard":
+        repairyard(cx)
+    elif kind == "armory":
+        armory(cx)
+        flip_z("arm", cx)
+        armory_dock(cx)
+    else:
+        tradehouse(cx)
+        flip_z("trade", cx)
+        trade_dock(cx)
+
+
 def build_all():
-    repairyard(-GAP)
-    armory(0.0)
-    tradehouse(GAP)
-    flip_z("arm", 0.0)
-    flip_z("trade", GAP)
-    dock_side(0.0)
+    for k, kind in enumerate(KINDS):
+        build_one(kind, (k - 1) * GAP)
 
 
 def render_sheet():

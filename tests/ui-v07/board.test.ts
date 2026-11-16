@@ -62,3 +62,38 @@ describe('ui-v07 board rebuilt from public events', () => {
     expect(nextRound.ships).toMatchObject([{ id: 's-whale', type: 'freighter', fromEarlier: true, outcome: null }]);
   });
 });
+
+describe('V0.8 prototype material actions on the board (not rules)', () => {
+  it('starts with no facility and no skills', () => {
+    const board = initialBoard(['p1', 'p2'], 1000);
+    expect(board.players.p1).toMatchObject({ facility: null, skills: [] });
+  });
+
+  it('records the building a player raised and the ship skills they opened', () => {
+    const events: MatchEvent[] = [
+      { type: 'materials-used', round: 1, uses: [{ playerId: 'p1', material: { kind: 'build', building: 'armory' } }, { playerId: 'p2', material: { kind: 'open', ship: 'gambler' } }] },
+      { type: 'materials-used', round: 2, uses: [{ playerId: 'p2', material: { kind: 'open', ship: 'hidden' } }, { playerId: 'p2', material: { kind: 'upgrade', ship: 'gambler' } }] },
+    ];
+    const board = buildBoard(['p1', 'p2'], 1000, events);
+    expect(board.players.p1).toMatchObject({ facility: 'armory', skills: [] });
+    expect(board.players.p2).toMatchObject({ facility: null, skills: ['gambler', 'hidden'] });
+  });
+});
+
+describe('ui-v07 board under the V0.8 prototype (not rules)', () => {
+  it.each([1, 2, 3])('matches the engine: cash, warehouse, facility, opened skills (seed %i)', async (seed) => {
+    const { RULES_V08_PROTO } = await import('../../src/v07/game');
+    const seats: SeatConfig[] = (['aggressive', 'balanced', 'builder', 'balanced'] as const).map((strategy, i) => ({ kind: 'bot', name: `B${i}`, strategy }));
+    const setup = setupFromSeats({ seed, seats, rules: RULES_V08_PROTO });
+    const log = runMatchSync(setup, setup.bots);
+    const ids = setup.players.map((p) => p.id);
+    const board = buildBoard(ids, RULES_V08_PROTO.startingCash, log.events as MatchEvent[], RULES_V08_PROTO);
+    for (const id of ids) {
+      const player = log.finalState.players.find((p) => p.id === id)!;
+      expect(board.players[id]!.cash).toBe(player.cash);
+      expect(board.players[id]!.stock).toEqual(player.stock);
+      expect(board.players[id]!.facility).toBe(player.facility ?? null);
+      expect([...board.players[id]!.skills].sort()).toEqual(Object.keys(player.skills ?? {}).sort());
+    }
+  });
+});
