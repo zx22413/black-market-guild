@@ -1,25 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1800 1960" width="1800" height="1960" font-family="'PingFang TC','Noto Sans TC',sans-serif">
-  <rect width="1800" height="1960" fill="#efe6d2"/>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1800 2030" width="1800" height="2030" font-family="'PingFang TC','Noto Sans TC',sans-serif">
+  <rect width="1800" height="2030" fill="#efe6d2"/>
   <text x="60" y="64" font-size="38" font-weight="700" fill="#3a2a1a">V0.8 原型的五個船技能｜Blender 粗模設計稿（2026-11-17，待確認）</text>
-  <text x="60" y="102" font-size="21" fill="#6a5238">實驗，不是規則。開了技能，船上就多一個零件（不是標記）；粗模只定零件是什麼、放哪裡、多大，確認後才細修、做進船的模型。</text>
+  <text x="60" y="102" font-size="21" fill="#6a5238">實驗，不是規則。開了技能，船上多一個零件，船本身也換成升級的外觀（不是標記）；粗模只定方向，確認後才細修、做進船的模型。</text>
   <g font-size="26" font-weight="700" fill="#3a2a1a" text-anchor="middle">
     <text x="180" y="160">信天翁號・好兆頭</text><text x="540" y="160">孤注號・加注</text><text x="900" y="160">巨鯨號・拾荒</text><text x="1260" y="160">幽靈號・自帶掩護</text><text x="1620" y="160">海嘯號・巨浪</text>
   </g>
   <g font-size="17" fill="#6a5238" text-anchor="middle">
-    <text x="180" y="188">船尾城樓上的鍍金信天翁</text><text x="540" y="188">甲板賭桌上打開的金幣箱</text><text x="900" y="188">吊在舷外鐵吊架上的打撈艇</text><text x="1260" y="188">罩住甲板的紫色遮布與暗燈</text><text x="1620" y="188">船首的捲浪雕飾</text>
+    <text x="180" y="188">零件：船尾城樓上的鍍金信天翁</text><text x="540" y="188">零件：賭桌上打開的金幣箱</text><text x="900" y="188">零件：舷外鐵吊架上的打撈艇</text><text x="1260" y="188">零件：罩住甲板的紫色遮布與暗燈</text><text x="1620" y="188">零件：船首的捲浪雕飾</text>
+    <text x="180" y="210">外觀：城垛與船舷鍍金、桅頂長金旗</text><text x="540" y="210">外觀：帆的白條紋換成金、金骰子</text><text x="900" y="210">外觀：船身多一道金腰帶與白飾條</text><text x="1260" y="210">外觀：破帆與船舷變紫、帆桁發光</text><text x="1620" y="210">外觀：槳與棚頂變青綠、船舷白浪紋</text>
   </g>
-  <text x="60" y="232" font-size="21" font-weight="700" fill="#3a2a1a">① 你看自己的船（桌面鏡頭，從船尾上方看）— 沒開技能</text>
-  <image xlink:href="blockouts/skills/own-off.png" href="blockouts/skills/own-off.png" x="0" y="240" width="1800" height="360"/>
-  <text x="60" y="632" font-size="21" font-weight="700" fill="#3a2a1a">② 同一個鏡頭 — 開了技能</text>
-  <image xlink:href="blockouts/skills/own-on.png" href="blockouts/skills/own-on.png" x="0" y="640" width="1800" height="360"/>
-  <text x="60" y="1032" font-size="21" font-weight="700" fill="#3a2a1a">③ 選船時的側面鏡頭 — 沒開技能</text>
-  <image xlink:href="blockouts/skills/side-off.png" href="blockouts/skills/side-off.png" x="0" y="1040" width="1800" height="360"/>
-  <text x="60" y="1432" font-size="21" font-weight="700" fill="#3a2a1a">④ 同一個鏡頭 — 開了技能</text>
-  <image xlink:href="blockouts/skills/side-on.png" href="blockouts/skills/side-on.png" x="0" y="1440" width="1800" height="360"/>
+  <text x="60" y="254" font-size="21" font-weight="700" fill="#3a2a1a">① 你看自己的船（桌面鏡頭，從船尾上方看）— 沒開技能</text>
+  <image xlink:href="blockouts/skills/own-off.png" href="blockouts/skills/own-off.png" x="0" y="262" width="1800" height="360"/>
+  <text x="60" y="654" font-size="21" font-weight="700" fill="#3a2a1a">② 同一個鏡頭 — 開了技能</text>
+  <image xlink:href="blockouts/skills/own-on.png" href="blockouts/skills/own-on.png" x="0" y="662" width="1800" height="360"/>
+  <text x="60" y="1054" font-size="21" font-weight="700" fill="#3a2a1a">③ 選船時的側面鏡頭 — 沒開技能</text>
+  <image xlink:href="blockouts/skills/side-off.png" href="blockouts/skills/side-off.png" x="0" y="1062" width="1800" height="360"/>
+  <text x="60" y="1454" font-size="21" font-weight="700" fill="#3a2a1a">④ 同一個鏡頭 — 開了技能</text>
+  <image xlink:href="blockouts/skills/side-on.png" href="blockouts/skills/side-on.png" x="0" y="1462" width="1800" height="360"/>
   <g font-size="19" fill="#3a2a1a">
-    <text x="60" y="1846"><tspan font-weight="700">為什麼是這些：</tspan>好兆頭＝船名的那隻鳥當護身符；加注＝賭注本身擺上甲板；拾荒＝撈貨用的小艇；自帶掩護＝把貨遮起來走私；巨浪＝船乘著自己的浪</text>
-    <text x="60" y="1880"><tspan font-weight="700">待確認：</tspan>① 五個零件的方向對不對　② 孤注號的金幣箱偏小，要不要換成更大、改變輪廓的東西　③ 技能觸發時零件怎麼動（之後另外提）</text>
-    <text x="60" y="1914"><tspan font-weight="700">沿用不變：</tspan>五艘船原本用來辨識的主特徵（方帆、斜三角帆、胖船身、破帆、兩排槳）不動；零件不擋住船上放貨箱的位置</text>
-    <text x="60" y="1944" fill="#6a5238">巨鯨號用的是遊戲裡的模型，沒有帆（帆是程式畫的）；其他四艘是當初核准的粗模。</text>
+    <text x="60" y="1868"><tspan font-weight="700">為什麼是這些：</tspan>好兆頭＝船名的那隻鳥當護身符；加注＝賭注本身擺上甲板；拾荒＝撈貨用的小艇；自帶掩護＝把貨遮起來走私；巨浪＝船乘著自己的浪</text>
+    <text x="60" y="1902"><tspan font-weight="700">待確認：</tspan>① 零件與升級外觀的方向對不對　② 孤注號的金幣箱偏小、巨鯨號的外觀變化偏淡，要不要加強　③ 技能觸發時怎麼動（之後另外提）</text>
+    <text x="60" y="1936"><tspan font-weight="700">沿用不變：</tspan>五艘船原本用來辨識的主特徵（方帆、斜三角帆、胖船身、破帆、兩排槳）不動；零件不擋住船上放貨箱的位置</text>
+    <text x="60" y="1966" fill="#6a5238">巨鯨號用的是遊戲裡的模型，沒有帆（帆是程式畫的）；其他四艘是當初核准的粗模。</text>
   </g>
 </svg>

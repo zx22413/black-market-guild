@@ -230,10 +230,56 @@ def breaker_skill():
         beam(f"skill-brace{s}", (s * 0.5, y0 - 0.1, zf - 0.7), (s * 0.28, y0 + 0.9, zf + 0.25), 0.1, "woodDark", sides=4)
 
 
+if os.environ.get("LIST_PARTS"):
+    import collections
+    seen = collections.Counter((re.sub(r"[-.]?[-\d.]+$", "", ob.name), mat) for ob, mat, _ in PARTS)
+    print("PARTS", SHIP, sorted(seen.items()))
+# The upgraded livery: with the skill open the ship itself looks richer, not only one part more. Each entry repaints
+# the parts whose name starts with the prefix (and whose swatch is the one named, when given) in a new swatch.
+LIVERY = {
+    # Gilded battlements and rails, a gold hem and emblem on the sail.
+    "standard": [("aftcastle-merlon", "marble", "gold"), ("forecastle-merlon", "marble", "gold"), ("cap-rail", None, "gold"), ("sail-hem", None, "gold"), ("emblem-ring", None, "gold"), ("emblem-bird", None, "gold"), ("bowsprit-cap", None, "gold")],
+    # The sail's white stripes turn gold: red and gold, the colours of a high stake.
+    "gambler": [("lateen", "canvas", "roofGold"), ("jib", "canvas", "roofGold"), ("boot-top", None, "gold"), ("die", "marble", "gold")],
+    # Purple rails and yard bands, and the rags take the shroud's purple at their feet.
+    "hidden": [("cap-rail", None, "heather"), ("main-yard-band", None, "ghostGlow"), ("fore-yard-band", None, "ghostGlow"), ("rag-main", None, "heather"), ("rag-fore", None, "heather"), ("bowsprit-cap", None, "ghostGlow")],
+    # Sea-green canopy and oar blades with white tips, a white-crested emblem.
+    "breaker": [("canopy", "leaf", "wave"), ("oar-", "wood", "wave"), ("emblem-disc", None, "wave"), ("sail-hem", None, "foam")],
+}
+
+
+def livery_trims():
+    """Trims added with the livery (built as skill parts, so they show only with the skill open)."""
+    if SHIP == "freighter":
+        # The model is one mesh: its livery is laid over it. A second gold belt along the bulge and gilded mastheads.
+        def half(z):
+            k = min(1.0, z / 3.35) if z >= 0 else min(1.0, -z / 3.25)
+            return 1.75 * max(0.0, 1 - k ** 2.4) ** (1 / 2.4)
+
+        zs = [-2.7 + 5.6 * i / 14 for i in range(15)]
+        for side in (-1, 1):
+            for i in range(len(zs) - 1):
+                beam(f"skill-belt{side}{i}", (side * (half(zs[i]) * 0.985 + 0.03), 0.98, zs[i]), (side * (half(zs[i + 1]) * 0.985 + 0.03), 0.98, zs[i + 1]), 0.13, "gold", sides=4)
+                beam(f"skill-belt-b{side}{i}", (side * (half(zs[i]) * 0.93 + 0.03), 1.24, zs[i]), (side * (half(zs[i + 1]) * 0.93 + 0.03), 1.24, zs[i + 1]), 0.09, "plaster", sides=4)
+    if SHIP == "standard":
+        # A long gold-edged streamer at the masthead in place of the short pennant.
+        y = design.MAST_TOP + 0.5
+        mesh_from("skill-streamer", [(0, y + 0.22, design.MAST_Z), (0, y - 0.22, design.MAST_Z), (0, y - 0.05, design.MAST_Z - 2.0), (0, y + 0.02, design.MAST_Z - 2.2), (0.03, y + 0.22, design.MAST_Z), (0.03, y - 0.22, design.MAST_Z), (0.03, y - 0.05, design.MAST_Z - 2.0), (0.03, y + 0.02, design.MAST_Z - 2.2)],
+                  [[0, 1, 2, 3], [7, 6, 5, 4], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]], "roofGold", convex=True)
+    if SHIP == "breaker":
+        # A white wave band along each side above the oars.
+        for side in (-1, 1):
+            for i in range(8):
+                z0 = -2.4 + i * 0.62
+                x0, x1 = design.hull_rail_x(z0), design.hull_rail_x(z0 + 0.62)
+                beam(f"skill-band{side}{i}", (side * (x0 + 0.03), design.sheer(z0) - 0.16 - 0.06 * (i % 2), z0), (side * (x1 + 0.03), design.sheer(z0 + 0.62) - 0.16 - 0.06 * ((i + 1) % 2), z0 + 0.62), 0.1, "foam", sides=4)
+
+
 SKILLS = {"standard": standard_skill, "gambler": gambler_skill, "freighter": freighter_skill, "hidden": hidden_skill, "breaker": breaker_skill}
 first_skill = len(PARTS)
 if SHIP in SKILLS:
     SKILLS[SHIP]()
+    livery_trims()
 skill_obs = [ob for ob, _, _ in PARTS[first_skill:]]
 colour_parts(band=band)
 setup_render()
@@ -250,6 +296,25 @@ if SHIP == "freighter":
             ob.data.materials.append(m)
 
 
+def paint(ob, swatch):
+    """Repaint a plain (not banded) part top to bottom with a swatch, as colour_parts does."""
+    me = ob.data
+    attr = me.color_attributes["Col"]
+    ys = [v.co.z for v in me.vertices]
+    lo, hi = min(ys), max(ys)
+    top, bot = hex_rgb(kit.SWATCHES[swatch][0]), hex_rgb(kit.SWATCHES[swatch][1])
+    for li, loop in enumerate(me.loops):
+        t = (me.vertices[loop.vertex_index].co.z - lo) / (hi - lo) if hi > lo else 1.0
+        attr.data[li].color = [b + (a - b) * t for a, b in zip(top, bot)] + [1.0]
+
+
+def apply_livery(on):
+    for ob, mat, _ in PARTS[:first_skill]:
+        for prefix, was, to in LIVERY.get(SHIP, []):
+            if ob.name.startswith(prefix) and (was is None or mat == was) and not ob.get("banded"):
+                paint(ob, to if on else mat)
+
+
 def orbit(name, azimuth, elevation, target, scale, res):
     a, e = math.radians(azimuth), math.radians(elevation)
     t = Vector(target)
@@ -262,6 +327,7 @@ os.makedirs(OUT, exist_ok=True)
 for state in ("off", "on"):
     for ob in skill_obs:
         ob.hide_render = state == "off"
+    apply_livery(state == "on")
     for name, (cam, (w, h)) in VIEWS.items():
         kit.SCENE.camera = cam
         kit.SCENE.render.resolution_x, kit.SCENE.render.resolution_y = w, h
