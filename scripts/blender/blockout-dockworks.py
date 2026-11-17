@@ -59,7 +59,29 @@ def context():
 
 # ---------------------------------------------------------------- the works
 
-STAGE_X = (1.62, 2.42)  # the staging's two rows of piles, starboard of the hull
+def half_width():
+    """The hull's half width at the rail amidships (the ships differ: the freighter is half again as wide as the gamble),
+    leaving out what sticks out further (oars, davits, yards)."""
+    xs = []
+    for ob in kit.SCENE.objects:
+        if not ob.get("model"):
+            continue
+        for v in ob.data.vertices:
+            w = ob.matrix_world @ v.co  # Blender space: x across, -y toward the bow, z up
+            if abs(w.y) < 2.2 and WATER + 0.2 < w.z < 1.9:
+                xs.append(abs(w.x))
+    xs.sort()
+    return xs[int(len(xs) * 0.97)] if xs else 1.2
+
+
+load_ship()
+HALF = half_width()
+print(f"HALF WIDTH {SHIP} {HALF:.2f}")
+# The staging's two rows of piles beside the hull, and the float's inner edge on the other side: both stand off the
+# hull by the same gap whatever the ship (the game places the two pieces by the ship type's half width).
+GAP = 0.42
+STAGE_X = (HALF + GAP, HALF + GAP + 0.8)
+FLOAT_X = -(HALF + 0.3)
 BAYS = (-3.0, -1.0, 1.0, 3.0)
 LOW, HIGH = 1.75, 3.15  # the two plank levels: at the rail, and at the castles' tops
 TOPS = {-3.0: 5.0, -1.0: 3.9, 1.0: 3.9, 3.0: 5.0}  # the end piles carry the bunting
@@ -108,9 +130,19 @@ def staging():
         beam(f"works-rung{i}", (p[0] - 0.14, p[1], p[2]), (p[0] + 0.14, p[1], p[2]), 0.045, "wood", sides=6)
     box("works-ladder-cleat", (foot[0], LOW + 0.045, foot[2] - 0.08), (0.42, 0.05, 0.08), "woodDark", bevel=0.01)
     # A gangplank from the lower level over to the ship's rail amidships, on a batten at each end.
-    box("works-gang", (inner - 0.36, LOW + 0.02, 0.5), (0.72, 0.05, 0.46), "deck", bevel=0.012, shade=0.9)
+    reach = GAP + 0.3
+    box("works-gang", (inner - reach / 2 + 0.06, LOW + 0.02, 0.5), (reach + 0.12, 0.05, 0.46), "deck", bevel=0.012, shade=0.9)
     for z in (0.34, 0.66):
-        box(f"works-gang-batten{z}", (inner - 0.36, LOW + 0.06, z), (0.6, 0.035, 0.05), "woodDark", bevel=0.008)
+        box(f"works-gang-batten{z}", (inner - reach / 2 + 0.06, LOW + 0.06, z), (reach, 0.035, 0.05), "woodDark", bevel=0.008)
+    # Toe boards along both levels, inside the outer piles (the canvas hangs outside them), and a kerb inboard: the
+    # walkways' dark edges against the pale planks.
+    for level in (LOW, HIGH):
+        box(f"works-toe-out{level}", (outer - 0.13, level + 0.05, 0), (0.05, 0.13, BAYS[-1] - BAYS[0] + 0.7), "woodDark", bevel=0.012)
+        box(f"works-toe-in{level}", (inner - 0.13, level + 0.02, 0), (0.05, 0.07, BAYS[-1] - BAYS[0] + 0.7), "woodDark", bevel=0.012)
+    # Every pile is tarred black from under the water to a hand above it.
+    for z in BAYS:
+        for x in (inner, outer):
+            prism(f"works-tar{x}{z}", (x, WATER - 0.04, z), 0.115, 0.34, "dark", sides=8)
 
 
 def canvas():
@@ -133,6 +165,13 @@ def canvas():
         verts += [(x - 0.03, y, z) for x, y, z in verts]
         faces += [[back + k for k in reversed(f)] for f in list(faces)]
         mesh_from(f"x-works-canvas{n}", verts, faces, "player" if n != 1 else "canvas")
+        # Each sheet is bent to a spar at its head and weighted by a batten at its foot (pale wood against the colour),
+        # with a hem of the other cloth down both sides.
+        beam(f"works-canvas-spar{n}", (outer + 0.02, HIGH + 0.27, a + 0.06), (outer + 0.02, HIGH + 0.27, b - 0.06), 0.07, "deck", sides=6)
+        beam(f"works-canvas-foot{n}", (outer + 0.13, LOW + 0.3, a + 0.14), (outer + 0.13, LOW + 0.3, b - 0.14), 0.06, "deck", sides=6)
+        for z in (a + 0.12, b - 0.12):
+            hem = [(outer + 0.012, HIGH + 0.25, z - 0.035), (outer + 0.012, HIGH + 0.25, z + 0.035), (outer + 0.012, LOW + 0.15, z + 0.035), (outer + 0.012, LOW + 0.15, z - 0.035)]
+            mesh_from(f"x-works-hem{n}{z}", hem + [(x - 0.05, y, zz) for x, y, zz in hem], [[0, 1, 2, 3], [7, 6, 5, 4]], "canvas" if n != 1 else "player")
         # Laced to the top ledger by rings, tied down at the corners.
         for z in (a + 0.12, b - 0.12):
             beam(f"works-tie{n}{z}", (outer, HIGH + 0.25, z), (outer - 0.1, HIGH + 0.55, z), 0.035, "rope", sides=5)
@@ -155,6 +194,7 @@ def awning():
         pts = top + low
         under = [(x, y - 0.03, z) for x, y, z in pts]
         mesh_from(f"x-works-awning{n}", pts + under, [[0, 1, 2, 3], [4, 5, 6, 7], [11, 10, 9, 8], [15, 14, 13, 12]], "canvas" if n == 1 else "player")
+        beam(f"works-awning-foot{n}", (outer + 0.2, lo, z0 - 0.04), (outer + 0.2, lo, z1 + 0.04), 0.06, "deck", sides=6)
         for z in (z0, z1):
             beam(f"works-awning-tie{n}{z}", (inner + 0.02, hi, z), (inner, hi + 0.08, z + (0.14 if z == z1 else -0.14)), 0.035, "rope", sides=5)
             beam(f"works-awning-tie-lo{n}{z}", (outer + 0.2, lo, z), (outer, lo - 0.08, z + (0.14 if z == z1 else -0.14)), 0.035, "rope", sides=5)
@@ -211,38 +251,42 @@ def sign():
 def work_float():
     """A work float on the port quarter: logs lashed under a plank deck, low enough for the ship-pick camera to look
     over it, with what the yard brought: a tar barrel, a stack of planks, a paint tub, a short ladder up the hull."""
-    x0, x1, z0, z1 = -2.75, -1.45, -2.6, -0.2
+    x1 = FLOAT_X
+    x0, z0, z1 = x1 - 1.3, -2.6, -0.2
     for i in range(5):
         x = x0 + 0.13 + i * (x1 - x0 - 0.26) / 4
         beam(f"works-log{i}", (x, WATER + 0.02, z0 - 0.15), (x, WATER + 0.02, z1 + 0.15), 0.26, "woodDark", sides=8)
     for z in (z0 + 0.25, z1 - 0.25):
         beam(f"works-float-tie{z}", (x0 - 0.05, WATER + 0.17, z), (x1 + 0.05, WATER + 0.17, z), 0.1, "wood", sides=6)
+    for x in (x0 + 0.05, x1 - 0.05):
+        box(f"works-float-rim{x}", (x, WATER + 0.25, (z0 + z1) / 2), (0.07, 0.09, z1 - z0 - 0.6), "woodDark", bevel=0.012)
     box("works-float-deck", ((x0 + x1) / 2, WATER + 0.21, (z0 + z1) / 2), (x1 - x0 - 0.1, 0.06, z1 - z0 - 0.7), "deck", bevel=0.015)
     # Moored to the hull by two lines on ring bolts.
     for z in (z0 + 0.3, z1 - 0.3):
-        beam(f"works-moor{z}", (x1, WATER + 0.26, z), (-1.0, 1.0, z), 0.035, "rope", sides=5)
+        beam(f"works-moor{z}", (x1, WATER + 0.26, z), (-HALF + 0.05, 1.0, z), 0.035, "rope", sides=5)
     # The tar barrel on a pad, hooped; the tub beside it; the plank stack on bearers.
-    box("works-barrel-pad", (-2.35, WATER + 0.26, -2.0), (0.5, 0.04, 0.5), "woodDark", bevel=0.01)
-    prism("works-barrel", (-2.35, WATER + 0.28, -2.0), 0.2, 0.46, "wood", sides=10)
+    box("works-barrel-pad", (x1 -0.90, WATER + 0.26, -2.0), (0.5, 0.04, 0.5), "woodDark", bevel=0.01)
+    prism("works-barrel", (x1 -0.90, WATER + 0.28, -2.0), 0.2, 0.46, "wood", sides=10)
     for y in (0.36, 0.64):
-        prism(f"works-hoop{y}", (-2.35, WATER + y, -2.0), 0.21, 0.04, "metal", sides=10)
-    prism("works-tub", (-1.85, WATER + 0.24, -2.1), 0.15, 0.18, "woodDark", sides=8, top=1.15)
-    prism("works-tub-paint", (-1.85, WATER + 0.4, -2.1), 0.15, 0.02, "player", sides=8)
-    for z in (-1.35, -0.75):
-        box(f"works-bearer{z}", (-2.1, WATER + 0.27, z), (0.9, 0.05, 0.08), "woodDark", bevel=0.01)
+        prism(f"works-hoop{y}", (x1 -0.90, WATER + y, -2.0), 0.21, 0.04, "metal", sides=10)
+    prism("works-tub", (x1 -0.40, WATER + 0.24, -2.1), 0.15, 0.18, "woodDark", sides=8, top=1.15)
+    prism("works-tub-paint", (x1 -0.40, WATER + 0.4, -2.1), 0.15, 0.02, "player", sides=8)
+    for z in (x1 +0.10, -0.75):
+        box(f"works-bearer{z}", (x1 -0.65, WATER + 0.27, z), (0.9, 0.05, 0.08), "woodDark", bevel=0.01)
     for i in range(3):
-        box(f"works-stack{i}", (-2.1, WATER + 0.325 + i * 0.06, -1.05), (0.8 - i * 0.12, 0.05, 1.1), "deck", bevel=0.012, shade=0.9 + i * 0.05)
+        box(f"works-stack{i}", (x1 -0.65, WATER + 0.325 + i * 0.06, -1.05), (0.8 - i * 0.12, 0.05, 1.1), "deck", bevel=0.012, shade=0.9 + i * 0.05)
     # The ladder up the ship's side, hooked over the rail.
     for dz in (-0.13, 0.13):
-        beam(f"works-side-ladder{dz}", (-1.5, WATER + 0.26, -0.55 + dz), (-1.02, 1.8, -0.55 + dz), 0.055, "woodDark", sides=6)
+        beam(f"works-side-ladder{dz}", (x1 -0.05, WATER + 0.26, -0.55 + dz), (-HALF + 0.02, 1.8, -0.55 + dz), 0.055, "woodDark", sides=6)
+    lean = (-HALF + 0.02) - (x1 - 0.05)
     for i in range(1, 5):
         t = i / 5
-        beam(f"works-side-rung{i}", (-1.5 + 0.48 * t, WATER + 0.26 + 1.54 * t - 0.26 * t + 0.0, -0.68), (-1.5 + 0.48 * t, WATER + 0.26 + 1.28 * t, -0.42), 0.04, "wood", sides=6)
+        px, py = x1 - 0.05 + lean * t, WATER + 0.26 + (1.8 - WATER - 0.26) * t
+        beam(f"works-side-rung{i}", (px, py, -0.68), (px, py, -0.42), 0.04, "wood", sides=6)
 
 
 # ---------------------------------------------------------------- render
 
-load_ship()
 context()
 first = len(PARTS)
 staging()
