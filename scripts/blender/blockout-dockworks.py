@@ -365,6 +365,33 @@ def smoke():
             beam(f"x-spark{i}{k}", (x, y - 0.3 * math.sin(a), z - 0.3 * math.cos(a)), (x, y + 0.3 * math.sin(a), z + 0.3 * math.cos(a)), 0.07, "gold", sides=4)
 
 
+def glow():
+    """The work is done: gold light as the curtain falls. A ring of light on the water round the hull, rays fanning up
+    from the ship, and stars over it (in the game the ring spreads and fades, the rays sweep once, the changed parts of
+    the ship flash gold)."""
+    n = 28
+    for i in range(n):
+        a0, a1 = 2 * math.pi * i / n, 2 * math.pi * (i + 1) / n
+        rx, rz = HALF + 1.5, 5.2
+        p = (math.sin(a0) * rx, WATER + 0.03, math.cos(a0) * rz)
+        q = (math.sin(a1) * rx, WATER + 0.03, math.cos(a1) * rz)
+        beam(f"x-glow-ring{i}", p, q, 0.22, "gold", sides=4)
+    # Rays from the middle of the ship, up and outward all round, longer straight up than low down.
+    for i in range(14):
+        a = 2 * math.pi * i / 14
+        for tilt, reach in ((0.55, 4.2), (1.1, 5.0)):
+            d = (math.sin(a) * math.cos(tilt), math.sin(tilt), math.cos(a) * math.cos(tilt))
+            start = [c * 2.6 for c in d]
+            end = [c * (2.6 + reach * (0.6 if (i + (tilt > 1)) % 2 else 1.0)) for c in d]
+            beam(f"x-glow-ray{i}{tilt}", (start[0], 2.4 + start[1], start[2]), (end[0], 2.4 + end[1], end[2]), 0.16, "gold", sides=4, taper=0.15)
+    for i, (x, y, z, r) in enumerate(((-1.6, 6.6, -2.0, 0.5), (1.4, 7.2, 0.6, 0.62), (-0.6, 6.0, 2.8, 0.42), (2.2, 5.4, -3.0, 0.38), (-2.4, 4.8, 1.2, 0.36))):
+        for k in range(4):
+            a = math.pi * k / 4
+            long = r if k % 2 == 0 else r * 0.5
+            beam(f"x-glow-star{i}{k}", (x, y - long * math.sin(a), z - long * math.cos(a)), (x, y + long * math.sin(a), z + long * math.cos(a)), 0.09, "gold", sides=4)
+            beam(f"x-glow-star-x{i}{k}", (x - long * math.cos(a), y - long * math.sin(a), z), (x + long * math.cos(a), y + long * math.sin(a), z), 0.09, "gold", sides=4)
+
+
 def fallen():
     """The curtain let go: the sheet lying in folds on the water under its line."""
     x = CURTAIN_X
@@ -397,8 +424,9 @@ drape = [ob for ob in drape if ob not in poles]
 rings = built(splashes)
 dust = built(smoke)
 heap = built(fallen)
+shine = built(glow)
 works = piles + frame + cloth + raft
-extras = poles + drape + rings + dust + heap
+extras = poles + drape + rings + dust + heap + shine
 colour_parts()
 check_normals(skip=("x-",))
 setup_render()
@@ -462,7 +490,7 @@ BEATS = [
     ("2-frame", piles + poles + frame + raft, "before"),
     ("3-covered", works + poles + drape, "before"),
     ("4-working", works + poles + drape + dust, "before"),
-    ("5-unveiled", works + poles + heap, "after"),
+    ("5-unveiled", works + poles + heap + shine, "after"),
     ("6-struck", rings, "after"),
 ]
 for name, parts, ship in BEATS:
