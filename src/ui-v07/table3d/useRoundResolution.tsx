@@ -33,6 +33,8 @@ import { RoleBadges } from './RoleBadges';
 import { roleKey, roleResults } from './roleResults';
 import { cashSoFar, marketRows, settlementFlights } from './settlementModel';
 import { VoyageEventCard, VoyageEventChip } from './VoyageEventCard';
+import type { RoundCard } from './roundCard';
+import { RoundCardShow } from './RoundCardShow';
 
 // Everything after the roles are deployed, on the same table (docs/ui/v07-event-presentation.md
 // §1.5–§1.9, §2): the roles revealed as arrows, then one beat per ship (yours in full, the others
@@ -81,6 +83,8 @@ export interface ResolutionInput {
   readonly viewer: PlayerId | null;
   readonly nameOf: (id: PlayerId) => string;
   readonly weather: VoyageEventId | null;
+  /** V0.8 prototype: the cards this round turned up (roundCard.ts), shown in place of the plain voyage event card. */
+  readonly cards?: readonly RoundCard[];
   readonly onFinish: () => void;
   /** Online rooms: seconds the two presses (「開始航程」, the bill) wait before going on by themselves. */
   readonly autoAdvanceSeconds?: number;
@@ -187,11 +191,12 @@ const NO_SKILL_PULSES: ReadonlyMap<ShipId, string> = new Map();
 const FACILITY_CHIP_HEIGHT = 7;
 
 export function useRoundResolution(input: ResolutionInput): Resolution {
-  const { events, privateEvents, round, paused, seats, angles, laneOf, viewer, nameOf, weather, onFinish, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdVoyage = false, autoAdvanceSeconds, autoFlow = false } = input;
+  const { events, privateEvents, round, paused, seats, angles, laneOf, viewer, nameOf, weather, cards, onFinish, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdVoyage = false, autoAdvanceSeconds, autoFlow = false } = input;
   // Who is wanted this round (§9.6, marked at the round's start): a red flag goes up on their
   // islands for a moment, then the voyage event's card (§5 step 5), then the roles are revealed.
   const wantedIds = useMemo(() => events.flatMap((e) => (e.type === 'wanted-marked' && e.round === round ? e.players : [])), [events, round]);
-  const afterWanted: ResolutionStage = weather ? 'event' : 'reveal';
+  const bossCard = cards?.find((c) => c.kind === 'voyage' && c.boss) ?? null;
+  const afterWanted: ResolutionStage = weather || (cards?.length ?? 0) > 0 ? 'event' : 'reveal';
   const firstStage: ResolutionStage = wantedIds.length > 0 ? 'wanted' : afterWanted;
   const [stage, setStage] = useState<ResolutionStage>(firstStage);
   // The caller passes a new function every render; timers call the latest one.
@@ -520,8 +525,12 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     overlay: (
       <>
         {stage === 'wanted' && <WantedBanner seats={wantedSeats} />}
-        {weather && stage !== 'wanted' && stage !== 'event' && stage !== 'receipt' && <VoyageEventChip event={weather} />}
-        {weather && stage === 'event' && <VoyageEventCard key={round} event={weather} held={holdEvent} hidden={hideEvent} onDone={() => setStage('reveal')} />}
+        {weather && stage !== 'wanted' && stage !== 'event' && stage !== 'receipt' && <VoyageEventChip event={weather} {...(bossCard ? { boss: { title: bossCard.title, text: bossCard.lines.join('') } } : {})} />}
+        {stage === 'event' && cards && cards.length > 0 ? (
+          <RoundCardShow key={round} cards={cards} onDone={() => setStage('reveal')} />
+        ) : (
+          weather && stage === 'event' && <VoyageEventCard key={round} event={weather} held={holdEvent} hidden={hideEvent} onDone={() => setStage('reveal')} />
+        )}
         {stage === 'receipt' && viewer !== null ? <ReceiptCard round={round!} viewer={viewer} lines={receipt.lines} shipName={(id) => shipLabel(events, round!, id, viewer, nameOf)} net={receipt.net} onClose={finish} autoCloseIn={waitingAt === 'receipt' ? secondsLeft : null} /> : null}
       </>
     ),

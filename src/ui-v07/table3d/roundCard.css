@@ -1,0 +1,106 @@
+/* V0.8 prototype: the cards a round turns up (RoundCardShow.tsx), on top of the voyage event card's look (beat.css). */
+.tide-icon { fill: currentColor; }
+.tide-icon-wave { opacity: 0.55; }
+
+.round-card { width: min(380px, 100%); }
+.round-card ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-body);
+  line-height: 1.5;
+}
+.round-card li.after-pick { opacity: 0; transition: opacity 500ms 200ms; }
+.round-card ul.picked li.after-pick { opacity: 1; }
+
+/* The dark cards: the tide and the ending keep the card's wood frame (skin/layers.css) around dark water, not parchment. */
+:root:root .event-card:is(.round-card-rising, .round-card-boss) {
+  outline-color: #58c7c0;
+  background: radial-gradient(ellipse at 50% 30%, #1b4a58, #0a1a24 78%);
+  color: #dff3f1;
+  box-shadow: 0 0 0 1px #0d2a33, inset 0 0 0 1px #58c7c0, 0 5px 0 var(--c-wood-dark, #3a2412), 0 18px 30px rgb(0 0 0 / 0.5), 0 0 34px rgb(88 199 192 / 0.6);
+}
+:root:root .event-card:is(.round-card-rising, .round-card-boss) .event-card-kind { color: #8fd6d0; }
+.round-veil-rising,
+.round-veil-boss { background: rgb(3 14 20 / 0.82); }
+:root:root .event-card.round-card-final {
+  outline-color: #e3b04b;
+  background: radial-gradient(ellipse at 50% 30%, #5a2a1a, #1c0d0a 78%);
+  color: #fbe9c8;
+  box-shadow: 0 0 0 1px #2a120c, inset 0 0 0 1px #e3b04b, 0 5px 0 var(--c-wood-dark, #3a2412), 0 18px 30px rgb(0 0 0 / 0.5), 0 0 34px rgb(227 176 75 / 0.6);
+}
+:root:root .event-card.round-card-final .event-card-kind { color: #e3b04b; }
+.round-card .round-card-final {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border: 3px double #e3b04b;
+  border-radius: 50%;
+  color: #e3b04b;
+  font-size: 44px;
+  font-weight: 700;
+}
+
+/* 暗潮將至: the two candidates side by side; the one that it is lights up, the other sinks. */
+.round-card-tides { display: flex; gap: 14px; }
+.round-card-tide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 112px;
+  padding: 12px 8px 8px;
+  border: 2px solid #2b5562;
+  border-radius: 12px;
+  background: rgb(88 199 192 / 0.1);
+  color: #9fd6d1;
+  transition: transform 500ms cubic-bezier(0.2, 1.5, 0.4, 1), opacity 500ms, background 500ms, color 500ms, box-shadow 500ms;
+}
+.round-card-tide svg { width: 52px; height: 52px; }
+.round-card-tide b { font-size: var(--fs-title); letter-spacing: 0.08em; }
+.round-card-tides.picked .round-card-tide.is {
+  transform: scale(1.14);
+  border-color: #b8fff8;
+  background: #58c7c0;
+  color: #0a2028;
+  box-shadow: 0 0 22px rgb(88 199 192 / 0.9);
+}
+.round-card-tides.picked .round-card-tide.not { opacity: 0.28; transform: scale(0.88) translateY(8px); }
+
+/* A boss side: the event's picture goes dark and wears its tide's mark. */
+.round-card-boss .event-card-emblem { position: relative; }
+.event-card.round-card-boss .event-card-emblem img { filter: saturate(0.5) brightness(0.62) hue-rotate(-12deg); }
+.round-card-boss .event-card-emblem .round-card-boss {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 2px solid #b8fff8;
+  border-radius: 50%;
+  background: #0e2a34;
+  box-shadow: 0 0 10px rgb(88 199 192 / 0.9);
+  color: #7ee6dd;
+}
+.round-card-boss .event-card-emblem .round-card-boss svg { width: 24px; height: 24px; }
+
+/* The corner chip of a boss side. */
+.event-chip.boss { border-color: #58c7c0; background: rgb(14 42 52 / 0.94); color: #dff3f1; box-shadow: 0 0 10px rgb(88 199 192 / 0.6); }
+.event-chip.boss img { filter: brightness(1.6) saturate(0.4) hue-rotate(120deg); }
+
+/* The dark-tide season: the table's edges sink into dark water for the rest of the match. */
+.tide-season {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 55%, transparent 42%, rgb(4 26 38 / 0.5) 78%, rgb(2 12 22 / 0.78) 100%);
+  animation: tide-season-in 2400ms ease-out both;
+}
+@keyframes tide-season-in { from { opacity: 0; } to { opacity: 1; } }

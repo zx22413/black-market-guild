@@ -1,5 +1,6 @@
 import type { TideKind } from '../../v07/game';
 import { useRules } from './rulesContext';
+import { TideIcon } from './tideIcons';
 import { TIDE_LABELS, TIDE_SHIELD, tideText, type TideStatus } from './tideModel';
 
 // V0.8 prototype (an experiment, not rules): the dark tide under the voyage event's chip, in view for the whole match.
@@ -11,9 +12,7 @@ function Tide({ kind, state }: { readonly kind: TideKind; readonly state: 'candi
   const line = tideText(rules, kind);
   return (
     <span className={`tide-pill tide-${kind} tide-${state}`} tabIndex={0} aria-label={`${TIDE_LABELS[kind]}：${line}。擋得住的：${TIDE_SHIELD[kind]}`}>
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M2 15c3-6 7-8 11-5 2 1.500 2 4 0 4.500 3.500 0.500 6-1 9-4.500-1 6-5 9-10 9-4 0-7-1.500-10-4z" />
-      </svg>
+      <TideIcon kind={kind} />
       <b>{TIDE_LABELS[kind]}</b>
       <span className="tide-tip">
         <span>{line}</span>

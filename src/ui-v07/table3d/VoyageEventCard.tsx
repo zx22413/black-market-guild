@@ -36,13 +36,15 @@ export function VoyageEventCard({ event, held = false, hidden = false, onDone }:
   );
 }
 
-/** The card's small after-image in the top-left corner; hover (or focus) for its line. */
-export function VoyageEventChip({ event }: { readonly event: VoyageEventId }) {
+/** The card's small after-image in the top-left corner; hover (or focus) for its line. `boss` (V0.8 prototype): its dark-tide side's name and line. */
+export function VoyageEventChip({ event, boss }: { readonly event: VoyageEventId; readonly boss?: { readonly title: string; readonly text: string } }) {
+  const title = boss?.title ?? VOYAGE_EVENT_LABELS[event];
+  const text = boss?.text ?? VOYAGE_EVENT_TEXT[event];
   return (
-    <div className="event-chip" tabIndex={0} aria-label={`航海事件：${VOYAGE_EVENT_LABELS[event]}。${VOYAGE_EVENT_TEXT[event]}`}>
+    <div className={`event-chip ${boss ? 'boss' : ''}`} tabIndex={0} aria-label={`航海事件：${title}。${text}`}>
       <img src={iconUrl(event)} alt="" />
-      <b>{VOYAGE_EVENT_LABELS[event]}</b>
-      <span className="event-chip-tip">{VOYAGE_EVENT_TEXT[event]}</span>
+      <b>{title}</b>
+      <span className="event-chip-tip">{text}</span>
     </div>
   );
 }

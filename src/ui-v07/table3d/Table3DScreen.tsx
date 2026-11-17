@@ -29,6 +29,8 @@ import { resultRows } from './resultModel';
 import { RulesPanel } from './RulesPanel';
 import { RulesContext } from './rulesContext';
 import { TideChip } from './TideChip';
+import { roundCards } from './roundCard';
+import { RoundCardShow } from './RoundCardShow';
 import { roundLabel, tideStatus } from './tideModel';
 import { SealSubmit } from './SealSubmit';
 import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
@@ -184,6 +186,12 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     () => (resolvingRound === null ? null : (snap.events.find((e) => e.type === 'voyage-event-revealed' && e.round === resolvingRound) ?? null)),
     [snap.events, resolvingRound],
   );
+  // V0.8 prototype: an event's boss side, shown where the voyage event's card is.
+  const roundCardList = useMemo(
+    // At the resolution only a boss side replaces the plain event card; 暗潮將至 and the last round were shown as the round began.
+    () => (resolvingRound === null || autoplay || !eventsOn(rules) ? [] : roundCards(snap.events, resolvingRound, rules).filter((c) => c.kind === 'voyage' && c.boss)),
+    [snap.events, resolvingRound, autoplay, rules],
+  );
   const resolution = useRoundResolution({
     events: snap.events,
     privateEvents: snap.privateEvents,
@@ -201,6 +209,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     viewer: hotSeat ? null : viewer,
     nameOf,
     weather: weatherEvent?.type === 'voyage-event-revealed' ? weatherEvent.event : null,
+    ...(roundCardList.length > 0 ? { cards: roundCardList } : {}),
     onFinish: () => setDismissed((d) => Math.max(d, resolvingRound ?? d)),
     ...(spectator ? { autoFlow: true, autoAdvanceSeconds: SPECTATOR_REVEAL_SECONDS } : autoAdvanceSeconds === undefined ? {} : { autoAdvanceSeconds }),
   });
@@ -226,11 +235,20 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     'build',
   );
 
+  // V0.8 prototype: 暗潮將至 and the last round's card come up as the round begins, before anyone decides (the card is
+  // public before the investment, and both change what to load): once per round, ahead of the islands' moments.
+  const startCards = useMemo(
+    () => (eventsOn(rules) && board.round >= 1 ? roundCards(snap.events, board.round, rules).filter((c) => c.kind !== 'voyage') : []),
+    [snap.events, board.round, rules],
+  );
+  const bossNow = useMemo(() => (eventsOn(rules) ? (roundCards(snap.events, board.round, rules).find((c) => c.kind === 'voyage' && c.boss) ?? null) : null), [snap.events, board.round, rules]);
+  const [cardRound, setCardRound] = useState(0);
+  const cardUp = ready && !holding && !showIslands && !autoplay && startCards.length > 0 && cardRound < board.round;
   // The islands that change production or costs get their moment first: at the round's start and at the launch.
   const moments = useIslandMoments({
     events: snap.events,
     board,
-    free: ready && !holding && !showIslands && !autoplay,
+    free: ready && !holding && !showIslands && !autoplay && !cardUp,
     angleOf: (id) => angles[laneOf(id)]!,
     skipFirstOpening: islandMarks,
     skip: skipIslandMoments,
@@ -238,7 +256,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   });
   // The decision is really usable now: loaded, replay over, and the island moments before it played
   // (the draft has none). An online room starts its clock from here, not from when it was sent.
-  const shownId = free && ready && request && (phase === 'island-choice' || !moments.blocking) ? request.id : null;
+  const shownId = free && ready && request && (phase === 'island-choice' || (!moments.blocking && !cardUp)) ? request.id : null;
   useEffect(() => {
     if (shownId !== null) session.decisionShown?.(shownId);
   }, [shownId, session]);
@@ -251,7 +269,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const lastLoaded = loaded[loaded.length - 1];
   const cargoNow = lastLoaded?.type === 'cargo-loaded' ? lastLoaded.cargo : NO_GOODS;
   const env: StageEnv | null =
-    free && !moments.blocking && request && viewer && (phase === 'invest' || phase === 'role-deployment')
+    free && !moments.blocking && !cardUp && request && viewer && (phase === 'invest' || phase === 'role-deployment')
       ? {
           request,
           board,
@@ -519,7 +537,9 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
       {ready && step?.overlay}
       {ready && resolution.overlay}
       {/* The voyage event is public from the round's start (§5): it stays in view while investing and deploying. */}
-      {ready && !holding && !finished && board.round > 0 && board.voyageEvent && <VoyageEventChip event={board.voyageEvent} />}
+      {ready && !holding && !finished && board.round > 0 && board.voyageEvent && <VoyageEventChip event={board.voyageEvent} {...(bossNow ? { boss: { title: bossNow.title, text: bossNow.lines.join('') } } : {})} />}
+      {cardUp && <RoundCardShow key={board.round} cards={startCards} onDone={() => setCardRound(board.round)} />}
+      {ready && !finished && tide.tide !== null && tide.risingRound !== null && board.round > tide.risingRound && <div className="tide-season" aria-hidden="true" />}
       {/* V0.8 prototype: the dark tide (its two candidates, then the one picked) stays in view the whole match. */}
       {ready && !finished && board.round > 0 && tide.candidates.length > 0 && <TideChip status={tide} round={board.round} />}
       {ready && drafting && <IslandDraft key={drafting.id} context={drafting.context} onSubmit={(a) => session.submit(drafting.id, a)} />}

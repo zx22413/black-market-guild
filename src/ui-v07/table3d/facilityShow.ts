@@ -1,4 +1,4 @@
-import type { IslandId, MatchEvent, PlayerId, ShipId, V08BuildingId, V08Effect } from '../../v07/game';
+import { GOODS, type IslandId, type MatchEvent, type PlayerId, type ShipId, type V08BuildingId, type V08Effect } from '../../v07/game';
 import { SHIP_TYPE_LABELS } from '../labels';
 import { FACILITY_LABELS, SKILL_LABELS } from '../table/v08Text';
 import type { IslandMoment } from './islandMoments';
@@ -26,6 +26,20 @@ export function materialMoments(events: readonly MatchEvent[], round: number, is
 /** Who raised a building in `round` (the launch moment then brings the camera to the islands that have something to show). */
 export function buildersOf(events: readonly MatchEvent[], round: number): PlayerId[] {
   return events.flatMap((e) => (e.type === 'materials-used' && e.round === round ? e.uses.filter((u) => u.material.kind === 'build').map((u) => u.playerId) : []));
+}
+
+/** 暗潮將至 took goods from the warehouses at the end of the round before `round`: each island's loss, shown as `round` opens. */
+export function tideLossMoments(events: readonly MatchEvent[], round: number, islands: Readonly<Record<PlayerId, IslandId>>): IslandMoment[] {
+  return events.flatMap((e): IslandMoment[] => {
+    if (e.type !== 'dark-tide-loss' || e.round !== round - 1) return [];
+    return Object.entries(e.lost).flatMap(([playerId, lost]): IslandMoment[] => {
+      const island = islands[playerId];
+      const goods = GOODS.filter((g) => lost[g] > 0);
+      if (!island || goods.length === 0) return [];
+      const title = '暗潮將至：倉庫的貨被捲走';
+      return [{ playerId, island, chips: [{ good: null, text: '暗潮捲走', tone: 'loss', title }, ...goods.map((good) => ({ good, text: `−${lost[good]}`, tone: 'loss' as const, title }))], tone: 'loss' }];
+    });
+  });
 }
 
 /** Two lists of moments as one, a player's chips joined (the launch's island chips, then the material action's). */

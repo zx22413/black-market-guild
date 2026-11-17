@@ -25,6 +25,8 @@ const SkinLabPreview = import.meta.env.DEV ? lazy(() => import('./dev/SkinLabPre
 const OgCardPreview = import.meta.env.DEV ? lazy(() => import('./dev/OgCardPreview').then((m) => ({ default: m.OgCardPreview }))) : null;
 // The promo trailer's pages, filmed frame by frame by scripts/trailer/capture.ts: /v07.html?dev=trailer&part=game.
 const TrailerPreview = import.meta.env.DEV ? lazy(() => import('./dev/trailer/TrailerPreview').then((m) => ({ default: m.TrailerPreview }))) : null;
+// The V0.8 prototype's round cards (暗潮將至, a boss side, the last round): /v07.html?dev=roundcards.
+const RoundCardsPreview = import.meta.env.DEV ? lazy(() => import('./dev/RoundCardsPreview').then((m) => ({ default: m.RoundCardsPreview }))) : null;
 const devPage = import.meta.env.DEV ? new URLSearchParams(window.location.search).get('dev') : null;
 
 // Trial skin (src/ui-v07/skin/layers.css): `?skin=classic` shows the previous look to compare.
@@ -65,6 +67,10 @@ createRoot(container).render(
     ) : devPage === 'ship-select' && ShipSelectPreview ? (
       <Suspense fallback={null}>
         <ShipSelectPreview />
+      </Suspense>
+    ) : devPage === 'roundcards' && RoundCardsPreview ? (
+      <Suspense fallback={null}>
+        <RoundCardsPreview />
       </Suspense>
     ) : devPage === 'facilities' && FacilitiesPreview ? (
       <Suspense fallback={null}>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { buildersOf, materialMoments, mergeMoments } from './facilityShow';
+import { buildersOf, materialMoments, mergeMoments, tideLossMoments } from './facilityShow';
 import { RULES_V07, type IslandId, type MatchEvent, type PlayerId, type Rules } from '../../v07/game';
 import type { FitPoint } from '../../ui/scene/CameraRig';
 import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
@@ -68,7 +68,8 @@ export function useIslandMoments({ events, board, free, angleOf, skipFirstOpenin
     if (!islands || round < 1 || (skipFirstOpening && round === 1)) return [];
     const produced = events.find((e) => e.type === 'goods-produced' && e.round === round);
     const made = (id: PlayerId) => (produced?.type === 'goods-produced' ? (produced.produced[id]?.spice ?? 0) : 0);
-    return openingMoments(islands, round, rules, (id) => Math.max(0, (board.players[id]?.stock.spice ?? 0) - made(id)));
+    // V0.8 prototype: what 暗潮將至 took from the warehouses as last round ended comes first.
+    return mergeMoments(tideLossMoments(events, round, islands), openingMoments(islands, round, rules, (id) => Math.max(0, (board.players[id]?.stock.spice ?? 0) - made(id))));
     // The carried spice is read once per round, from the stock at the round's start.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [islands, round, rules]);
