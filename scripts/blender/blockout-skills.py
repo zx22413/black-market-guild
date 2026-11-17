@@ -3,6 +3,11 @@ for the user to approve before modelling (docs/proposals/2026-11-v08-presentatio
 rules. An opened skill must change the ship itself at a glance: one distinct attached part per skill, not a badge.
 
   Blender -b --factory-startup --python scripts/blender/blockout-skills.py -- <ship> <render dir>
+  Blender -b --factory-startup --python scripts/blender/blockout-skills.py -- <ship> public/models/ships/<ship>-skill.glb
+
+With a .glb path it exports instead: only what the skill adds to the ship (structure, part and trims) as one mesh
+`skill`, palette x ambient occlusion baked with the ship standing there. The cloths (the mizzen, the spritsail, the
+streamer) are left out: the game draws its sails in code so they fill with the wind (src/ui-v07/scene/ships/skillRig.ts).
 
 Four ships are their approved blockouts (scripts/blender/blockout-<ship>.py, built by the same calls as their own
 sheets); the freighter is its exported model (public/models/ships/freighter.glb, so without its code-drawn sails).
@@ -25,7 +30,9 @@ sys.argv = sys.argv[: sys.argv.index("--") + 1] + [OUT]
 from blockout_kit import *  # noqa: E402,F403
 import blockout_kit as kit  # noqa: E402
 
-kit.SWATCHES.update({"iron": ("#5a5f66", "#3f4349"), "foam": ("#f4fbff", "#cfe6f2"), "wave": ("#3fb6c2", "#1f7f96"), "shroud": ("#3b3350", "#262036")})
+# Names used below for what the skills add, all from the game's own palette (materials.ts).
+for alias, real in (("iron", "metal"), ("foam", "marble"), ("wave", "canal")):
+    kit.SWATCHES[alias] = kit.SWATCHES[real]
 band = None
 if SHIP == "freighter":
     bpy.ops.import_scene.gltf(filepath=os.path.join(kit.REPO, "public/models/ships/freighter.glb"))
@@ -465,6 +472,54 @@ def apply_livery(on):
         for prefix, was, to in LIVERY.get(SHIP, []):
             if ob.name.startswith(prefix) and (was is None or mat == was) and not ob.get("banded"):
                 paint(ob, to if on else mat)
+
+
+def export_skill():
+    cloths = ("skill-mizzen-sail", "skill-spritsail", "skill-sprit-hem", "skill-streamer")
+    keep = [ob for ob in skill_obs if not ob.name.startswith(cloths)]
+    for ob in skill_obs:
+        if ob not in keep:
+            ob.hide_render = True
+    bpy.ops.object.select_all(action="DESELECT")
+    for ob in keep:
+        ob.select_set(True)
+    bpy.context.view_layer.objects.active = keep[0]
+    bpy.ops.object.join()
+    skill = bpy.context.view_layer.objects.active
+    skill.name = skill.data.name = "skill"
+    me = skill.data
+    kit.SCENE.render.engine = "CYCLES"
+    kit.SCENE.cycles.device = "CPU"
+    kit.SCENE.cycles.samples = 128
+    kit.SCENE.world.light_settings.distance = 0.7
+    base = [tuple(c.color) for c in me.color_attributes["Col"].data]
+    me.color_attributes.active_color = me.color_attributes.new("ao", "FLOAT_COLOR", "CORNER")
+    me.materials.clear()
+    me.materials.append(bpy.data.materials.new("bake"))
+    bpy.ops.object.select_all(action="DESELECT")
+    skill.select_set(True)
+    bpy.context.view_layer.objects.active = skill
+    bpy.ops.object.bake(type="AO", target="VERTEX_COLORS")
+    ao = [c.color[0] for c in me.color_attributes["ao"].data]
+    col = me.color_attributes["Col"]
+    for i, c in enumerate(base):
+        k = 1 - 0.4 * (1 - ao[i])
+        col.data[i].color = (c[0] * k, c[1] * k, c[2] * k, 1.0)
+    me.color_attributes.remove(me.color_attributes["ao"])
+    me.color_attributes.active_color = me.color_attributes["Col"]
+    me.color_attributes.render_color_index = 0
+    for poly in me.polygons:
+        poly.use_smooth = False
+    os.makedirs(os.path.dirname(OUT), exist_ok=True)
+    bpy.ops.export_scene.gltf(filepath=OUT, export_format="GLB", use_selection=True, export_vertex_color="ACTIVE",
+                              export_materials="PLACEHOLDER", export_normals=True, export_apply=True, export_yup=True)
+    tris = sum(len(p.vertices) - 2 for p in me.polygons)
+    print(f"EXPORTED {OUT} {SHIP} skill: ~{tris} triangles")
+
+
+if OUT.endswith(".glb"):
+    export_skill()
+    sys.exit(0)
 
 
 def orbit(name, azimuth, elevation, target, scale, res):

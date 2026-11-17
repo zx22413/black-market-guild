@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { Matrix4, type BufferGeometry, type Group, type MeshBasicMaterial } from 'three';
 import { geometryFromParts } from '../../../ui/scene/buildings/Building';
 import { useLiveFrame } from '../../../ui/scene/liveFrame';
@@ -10,6 +10,8 @@ import { BlenderHull, blenderHullUrl } from './BlenderHull';
 import { SHIP_DESIGNS, type ShipDesign } from './designs';
 import { DECK } from './hull';
 import { FLAME_WARM, LanternFlame } from './shipLights';
+import { skillModelUrl, skillOars, skillSails } from './skillRig';
+import { SkillParts } from './SkillParts';
 import { Albatross, cachedGeometry, GalleyOars, GhostLantern, TumblingDie, CargoBoom } from './shipMotions';
 
 /** One cloth ready to draw: its plates, where its frame sits on the ship, and how the shader bends it. */
@@ -38,14 +40,25 @@ interface Rig {
   readonly pennant: ClothPiece;
 }
 
-const rigs = new Map<ShipTypeId, Rig>();
-function rigOf(type: ShipTypeId): Rig {
-  const hit = rigs.get(type);
+const rigs = new Map<string, Rig>();
+/** `skill`: the V0.8 prototype's upgraded rig for the type (repainted sails and the ones the upgrade adds). */
+function rigOf(type: ShipTypeId, skill: boolean): Rig {
+  const key = `${type}${skill ? '+skill' : ''}`;
+  const hit = rigs.get(key);
   if (hit) return hit;
   const design = SHIP_DESIGNS[type];
-  const rig = { sails: design.sails.map((s, i) => clothPiece(s, i * 1.9)), pennant: clothPiece(pennantSpec(design.pennant), 0.7) };
-  rigs.set(type, rig);
+  const sails = skill ? skillSails(type, design.sails) : design.sails;
+  const rig = { sails: sails.map((s, i) => clothPiece(s, i * 1.9)), pennant: clothPiece(pennantSpec(design.pennant), 0.7) };
+  rigs.set(key, rig);
   return rig;
+}
+
+const upgradedOars = new Map<object, ReturnType<typeof skillOars>>();
+function oarsOf<T extends Parameters<typeof skillOars>[0]>(oars: T, skill: boolean): T | ReturnType<typeof skillOars> {
+  if (!skill) return oars;
+  const hit = upgradedOars.get(oars) ?? skillOars(oars);
+  upgradedOars.set(oars, hit);
+  return hit;
 }
 
 /** Each type's own way of riding the sea, on top of the swell every ship rides (`VoyageShip`). */
@@ -87,14 +100,16 @@ export interface ShipModelProps {
   readonly gale?: number;
   /** Fog or storm: too dark to see by, so the ghost ship lights up as at night (other ships stay as they are). */
   readonly murk?: boolean;
+  /** V0.8 prototype (not rules): the owner has opened this ship type's skill, so it wears its upgraded build and livery. */
+  readonly skill?: boolean;
 }
 
 /** One of the five ship types (designs.ts), its keel at the origin and its bow toward +z, in table units. */
-export function ShipModel({ type, color, night: moonless, underway, gale = 0, murk = false }: ShipModelProps) {
+export function ShipModel({ type, color, night: moonless, underway, gale = 0, murk = false, skill = false }: ShipModelProps) {
   const design = SHIP_DESIGNS[type];
   const night = moonless || (murk && design.motion.kind === 'ghost');
   const hull = cachedGeometry(design, design.parts);
-  const rig = rigOf(type);
+  const rig = rigOf(type, skill);
   const wind = useMemo<Wind>(() => ({ value: underway ? 1 : 0, gale }), []);
   const going = useRef(underway ? 1 : 0);
   const sails = useMemo(() => rig.sails.map((s) => sailMaterial(s.bend, wind, s.emblem)), [rig, wind]);
@@ -121,6 +136,12 @@ export function ShipModel({ type, color, night: moonless, underway, gale = 0, mu
           <meshStandardMaterial vertexColors roughness={0.8} />
         </mesh>
       )}
+      {/* Its own boundary: the upgrade's model loading must not blank the ship. */}
+      {skill && (
+        <Suspense fallback={null}>
+          <SkillParts url={skillModelUrl(type)} />
+        </Suspense>
+      )}
       {rig.sails.map((sail, i) => (
         <group key={i} matrix={sail.matrix} matrixAutoUpdate={false}>
           <mesh geometry={sail.geometry} material={night && glows[i] ? glows[i]! : sails[i]!} castShadow={!(night && sail.glow)} dispose={null} />
@@ -134,7 +155,7 @@ export function ShipModel({ type, color, night: moonless, underway, gale = 0, mu
       {motion.kind === 'die' && <TumblingDie die={motion.die} underway={going} />}
       {motion.kind === 'crane' && !glb && <CargoBoom heel={motion.heel} reach={motion.reach} rise={motion.rise} swing={motion.swing} deck={DECK} underway={going} />}
       {motion.kind === 'ghost' && <GhostLantern swing={motion.swing} flame={motion.flame} underway={going} night={night} pulse={pulse} />}
-      {motion.kind === 'galley' && <GalleyOars oars={motion.oars} underway={going} />}
+      {motion.kind === 'galley' && <GalleyOars oars={oarsOf(motion.oars, skill)} underway={going} />}
     </group>
   );
 }

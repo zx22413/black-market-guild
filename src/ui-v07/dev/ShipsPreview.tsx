@@ -58,6 +58,7 @@ export function ShipsPreview() {
         safe={{ top: 0, bottom: 0, left: 0, right: 0 }}
         pins={[]}
         onReady={() => undefined}
+        {...(q.has('skill') ? { skills: Object.fromEntries(seats.map((seat) => [seat.id, SHIP_TYPE_IDS])) } : {})}
       />
     </div>
   );
