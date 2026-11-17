@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { RULES_V08_PROTO, type MatchEvent } from '../../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../src/v07/match';
-import { facilityReactions, materialMoments, mergeMoments } from '../../src/ui-v07/table3d/facilityShow';
+import { buildersOf, facilityReactions, materialMoments, mergeMoments } from '../../src/ui-v07/table3d/facilityShow';
 
 const islands = { p1: 'mine', p2: 'lumber' } as const;
 
@@ -17,6 +17,11 @@ describe('material moments (V0.8 prototype, not rules)', () => {
       ['p1', '軍械庫 落成', 'gain'],
       ['p2', '巨浪 開啟', 'gain'],
     ]);
+  });
+
+  it('names who raised a building that round, not who opened a skill', () => {
+    expect(buildersOf(events, 2)).toEqual(['p1']);
+    expect(buildersOf(events, 1)).toEqual([]);
   });
 
   it("joins a player's chips with the launch's", () => {

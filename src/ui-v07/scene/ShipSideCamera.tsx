@@ -7,6 +7,7 @@ import { seatPosition } from '../../ui/scene/layout';
 import { shipPose } from '../../ui/scene/Ships';
 import type { ShipTypeId } from '../../v07/game';
 import { applyPose, DIVE_MS, Flight, keepFlightThroughRemount, recordPose, type CameraPose } from './cameraHandoff';
+import { FACILITY_LOT } from './facilityLot';
 
 // The ship-bay experiment's two shots of your own docked ship (docs/proposals/2026-11-ship-bays.md): a
 // close-up from the open sea while you pick the ship, and a wider one that takes in the warehouse
@@ -50,8 +51,48 @@ const SHIP_BOX = { halfLength: 3.4, halfWidth: 1, height: 5.6, depth: 0.5 } as c
  * and a taller frame for this one ship, 2026-11-07), so the pick shot frames it from further back.
  */
 const SHIP_TOPS: Partial<Readonly<Record<ShipTypeId, number>>> = { gambler: 7.4 };
+/**
+ * V0.8 prototype: the look at the building lot while a building is picked (the decision stays at the ship, the camera
+ * goes to the island and comes back by itself). Island space (+z toward the dock): the camera stands behind the island,
+ * on its owner's side, where the buildings' main features face.
+ */
+const LOT_SHOT = { from: [9, 14, -22] as const, aimHeight: 5.4 } as const;
+/** How fast the camera goes to the lot and back (per second, exponential). */
+const LOT_GLIDE = 5;
+/** How high the camera rises on the way (the straight line from the ship's side to the back of the island runs through the island). */
+const LOT_ARC = 9;
+
+/** Island space to world space, on the ground (the same turn as TableCanvas's islandPoint). */
+function onIsland(angle: number, x: number, z: number): readonly [number, number] {
+  const [sx, , sz] = seatPosition(angle);
+  const h = playerIslandHeading(angle);
+  return [sx + x * Math.cos(h) + z * Math.sin(h), sz - x * Math.sin(h) + z * Math.cos(h)];
+}
+
+/** The lot shot's camera position and aim in world space. */
+export function lotShot(angle: number): { readonly position: readonly [number, number, number]; readonly aim: readonly [number, number, number] } {
+  const [cx, cz] = onIsland(angle, LOT_SHOT.from[0], LOT_SHOT.from[2]);
+  const [ax, az] = onIsland(angle, FACILITY_LOT[0], FACILITY_LOT[2]);
+  return { position: [cx, LOT_SHOT.from[1], cz], aim: [ax, LOT_SHOT.aimHeight, az] };
+}
+
 /** The warehouse part kept in the loading shot: its two middle columns (half the row's width, a stack's height). */
 const WAREHOUSE_REACH = { halfWidth: 2.4, height: 4 } as const;
+
+/** The ship shot blended `t` of the way to the lot shot; at the lot the building sits in the middle of the room the HUD leaves. */
+function towardLot(ship: CameraPose, to: ReturnType<typeof lotShot>, t: number, safe: SafeArea | undefined, left: number): CameraPose {
+  const e = t * t * (3 - 2 * t);
+  const mix = (a: number, b: number) => a + (b - a) * e;
+  const centred = safe ? (safe.bottom - safe.top) / 2 : 0;
+  // `left`: the room the open panel takes on the left (px), which the HUD's safe area does not know about.
+  const beside = safe ? (safe.right - Math.max(safe.left, left)) / 2 : -left / 2;
+  return {
+    position: [mix(ship.position[0], to.position[0]), mix(ship.position[1], to.position[1]) + Math.sin(Math.PI * e) * LOT_ARC, mix(ship.position[2], to.position[2])],
+    aim: [mix(ship.aim[0], to.aim[0]), mix(ship.aim[1], to.aim[1]), mix(ship.aim[2], to.aim[2])],
+    fov: ship.fov,
+    offset: [mix(ship.offset[0], beside), mix(ship.offset[1], centred)],
+  };
+}
 
 /** The warehouse's middle in island space (InvestIsland's WAREHOUSE spot, the second column's centre). */
 const WAREHOUSE_MIDDLE = 5.8;
@@ -66,14 +107,16 @@ export function warehouseCentre(angle: number): { readonly x: number; readonly z
 /**
  * Looks at the ship docked at island `angle`, gliding to the rig of the current shot. `safe` is the room the
  * HUD leaves: the picture is shifted so the ship sits in the middle of it, not behind the cards. `ship` is the type
- * on show, for the few ships taller than the shared box (`SHIP_TOPS`).
+ * on show, for the few ships taller than the shared box (`SHIP_TOPS`). While `lot` is set the camera leaves the ship for
+ * the island's building lot, and glides back when it is cleared; `lotLeft` is the room (px) a panel takes on the left there.
  */
-export function ShipSideCamera({ angle, shot, safe, ship }: { readonly angle: number; readonly shot: ShipShot; readonly safe?: SafeArea; readonly ship?: ShipTypeId }) {
+export function ShipSideCamera({ angle, shot, safe, ship, lot = false, lotLeft = 0 }: { readonly angle: number; readonly shot: ShipShot; readonly safe?: SafeArea; readonly ship?: ShipTypeId; readonly lot?: boolean; readonly lotLeft?: number }) {
   const top = (ship && SHIP_TOPS[ship]) ?? SHIP_BOX.height;
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const { width, height } = useThree((s) => s.size);
   const at = useRef<Rig | null>(null);
   const backAt = useRef<number | null>(null);
+  const lotAt = useRef(0);
   // A stand-in camera to measure how big the ship comes out on screen before the real one is placed.
   const probe = useMemo(() => new PerspectiveCamera(FOV, 1, 0.1, 500), []);
   const point = useMemo(() => new Vector3(), []);
@@ -161,7 +204,11 @@ export function ShipSideCamera({ angle, shot, safe, ship }: { readonly angle: nu
     // Moving the middle of the picture to the middle of the free room: a view offset of (x, y) pushes the picture by (−x, −y).
     const x = safe ? (safe.right - safe.left) / 2 : 0;
     const y = !safe ? 0 : shot === 'ship' ? topPx - (safe.top + TOP_MARGIN) : (safe.bottom - safe.top) / 2;
-    const own: CameraPose = { position: [camera.position.x, camera.position.y, camera.position.z], aim: [ax, next.aim, az], fov: FOV, offset: [x, y] };
+    const atShip: CameraPose = { position: [camera.position.x, camera.position.y, camera.position.z], aim: [ax, next.aim, az], fov: FOV, offset: [x, y] };
+    lotAt.current += ((lot ? 1 : 0) - lotAt.current) * (1 - Math.exp(-Math.min(delta, 0.1) * LOT_GLIDE));
+    const own = lotAt.current < 0.001 ? atShip : towardLot(atShip, lotShot(angle), lotAt.current, safe, lotLeft);
+    if (own !== atShip) applyPose(camera, own, width, height);
+    const [ox, oy] = own.offset;
     const flying = flight.current?.step(own, delta) ?? null;
     if (!flying) flight.current = null;
     if (flying) {
@@ -171,8 +218,8 @@ export function ShipSideCamera({ angle, shot, safe, ship }: { readonly angle: nu
         camera.fov = FOV;
         camera.updateProjectionMatrix();
       }
-      if (camera.view?.offsetX !== x || camera.view?.offsetY !== y || camera.view?.fullWidth !== width || camera.view?.fullHeight !== height) {
-        camera.setViewOffset(width, height, x, y, width, height);
+      if (camera.view?.offsetX !== ox || camera.view?.offsetY !== oy || camera.view?.fullWidth !== width || camera.view?.fullHeight !== height) {
+        camera.setViewOffset(width, height, ox, oy, width, height);
       }
     }
     recordPose('ship', camera, flying ?? own);

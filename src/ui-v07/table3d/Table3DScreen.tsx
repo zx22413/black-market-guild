@@ -345,7 +345,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     (id) => berths.get(id as ShipId) ?? 0,
   ).map((pin) => (closeUp || resolution.pins.some((p) => p.id === `badges-${pin.id.slice(4)}`) ? { ...pin, hidden: true } : pin));
   const pins = [...plates.map(stepAside), ...seaTags, marketBadgePin(), ...badgesNow.map(stepAside), ...moments.pins, ...(step?.pins ?? []), ...resolution.pins, ...marks];
-  const camera = step?.camera ?? resolution.camera ?? overviewPoints(angles, seats.map((s) => s.island), noViewer);
+  const camera = step?.camera ?? moments.camera ?? resolution.camera ?? overviewPoints(angles, seats.map((s) => s.island), noViewer);
 
   const marketRef = useRef<HTMLDivElement>(null);
   const dockRef = useRef<HTMLDivElement>(null);

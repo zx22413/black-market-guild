@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { setInvestStage } from '../analytics/investStage';
 import { GOODS, producedFor, type BuildingId, type GoodId, type ShipTypeId } from '../../v07/game';
 import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
@@ -73,12 +73,17 @@ const mintChipDelay = (column: number): number => 150 + column * 120;
 const BUILD_BUTTON_Z = 9.5;
 /** The standings stand open at the right in a close shot (RankRail): the loading shot keeps the ship clear of them. */
 const RANK_RAIL_ROOM = 215;
+/** The room the material panel takes on the left of a wide screen (materialPanel.css: 12 + 300, and a gap). */
+const MATERIAL_PANEL_ROOM = 324;
 /** How long a ship's effect show lasts (ms): the flight, the rows one after another, the count, the note. */
 const SHIP_FX_MS = 2600;
 /** The ship pick's info card stands in the free column at the right (shipPicker.css `.ship-info`, wide screens): the ship keeps clear of it. */
 const SHIP_INFO_ROOM = 260;
 /** Each next pop a little higher, like bubbles rising. */
 const BUBBLE_RISE = 0.12;
+
+/** How long the camera stays on the building lot after a building is picked, the glide there included (ms). */
+const LOT_LOOK_MS = 2000;
 
 export function useInvestStep(env: StageEnv | null): StageParts | null {
   const active = env?.request.context.decision.phase === 'invest' ? env : null;
@@ -91,6 +96,14 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const [buildDecided, setBuildDecided] = useState(false);
   // Ship-bay experiment (rules.ships): the ship is picked first, close up, then the cargo is loaded from further back.
   const [phase, setPhase] = useState<'ship' | 'cargo'>('ship');
+  // V0.8 prototype: picking a building takes the camera to the island's lot for a moment (the pick itself stays at the
+  // ship, where the cargo and the material cost are); each new pick restarts the look, clearing the pick ends it.
+  const [lotLook, setLotLook] = useState<number | null>(null);
+  useEffect(() => {
+    if (lotLook === null) return;
+    const timer = setTimeout(() => setLotLook(null), LOT_LOOK_MS);
+    return () => clearTimeout(timer);
+  }, [lotLook]);
   const [shipDecided, setShipDecided] = useState(false);
   // The ship card the pointer is on: the info card describes it, else the one picked.
   const [peekShip, setPeekShip] = useState<ShipPick>(null);
@@ -207,6 +220,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
         onPick={(material) => {
           soundEngine.playSfx('role-pick');
           setChoice((c) => withMaterial(options, c, material));
+          setLotLook(material?.kind === 'build' ? Date.now() : null);
         }}
         protects={protects}
         protect={choice.protect ?? actionFor(options, choice)?.protect ?? null}
@@ -554,7 +568,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     ...(shownShip ? { ownShipType: shownShip } : {}),
     ...(shipPhase ? { bareShot: true } : {}),
     ...(sideView ? { sideShot: true } : {}),
-    ...(sideView ? { cameraRig: (safe: SafeArea) => <ShipSideCamera angle={home} shot="ship" {...(shownShip ? { ship: shownShip } : {})} safe={phone ? safe : { ...safe, right: Math.max(safe.right, shipPhase ? SHIP_INFO_ROOM : RANK_RAIL_ROOM) }} /> } : {}),
+    ...(sideView ? { cameraRig: (safe: SafeArea) => <ShipSideCamera angle={home} shot="ship" lot={lotLook !== null && !shipPhase} lotLeft={phone ? 0 : MATERIAL_PANEL_ROOM} {...(shownShip ? { ship: shownShip } : {})} safe={phone ? safe : { ...safe, right: Math.max(safe.right, shipPhase ? SHIP_INFO_ROOM : RANK_RAIL_ROOM) }} /> } : {}),
     ...(phone ? { rivalRow: true } : { closeShot: true }),
     scene: (
       <>
@@ -570,7 +584,11 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
             {cargo}
           </>
         )}
-        {choice.material?.kind === 'build' && <Facility angle={home} building={choice.material.building} color={seats[laneOf(viewer)]!.color} />}
+        {choice.material?.kind === 'build' && (
+          <Suspense fallback={null}>
+            <Facility key={choice.material.building} fresh angle={home} building={choice.material.building} color={seats[laneOf(viewer)]!.color} />
+          </Suspense>
+        )}
         {choice.build && !shipPhase && <BuildingPreview angle={home} building={choice.build} color={seats[laneOf(viewer)]!.color} />}
       </>
     ),

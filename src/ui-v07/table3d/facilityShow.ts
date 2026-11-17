@@ -23,6 +23,11 @@ export function materialMoments(events: readonly MatchEvent[], round: number, is
   });
 }
 
+/** Who raised a building in `round` (the launch moment then brings the camera to the islands that have something to show). */
+export function buildersOf(events: readonly MatchEvent[], round: number): PlayerId[] {
+  return events.flatMap((e) => (e.type === 'materials-used' && e.round === round ? e.uses.filter((u) => u.material.kind === 'build').map((u) => u.playerId) : []));
+}
+
 /** Two lists of moments as one, a player's chips joined (the launch's island chips, then the material action's). */
 export function mergeMoments(a: readonly IslandMoment[], b: readonly IslandMoment[]): IslandMoment[] {
   const out = a.map((m) => ({ ...m }));
