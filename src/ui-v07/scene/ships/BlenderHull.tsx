@@ -22,10 +22,24 @@ Object.values(BLENDER_HULLS).forEach((url) => useGLTF.preload(url));
 /** The ghost light at night: the glowing rags' colour (ShipModel's glow material). */
 const GLOW_NIGHT = '#7ff0d4';
 
-/** The Blender-built hull for this ship type, if it has one (and the page does not ask for the code-built ones). */
-export function blenderHullUrl(type: ShipTypeId): string | null {
+/**
+ * V0.8 prototype (not rules): the same hulls in their upgraded livery, worn once the owner has opened the type's
+ * skill (scripts/blender/ship_livery.py). The freighter has none: its livery is laid over it in its skill model.
+ */
+const UPGRADED_HULLS: Partial<Record<ShipTypeId, string>> = {
+  standard: `${import.meta.env.BASE_URL}models/ships/standard-up.glb`,
+  gambler: `${import.meta.env.BASE_URL}models/ships/gambler-up.glb`,
+  breaker: `${import.meta.env.BASE_URL}models/ships/breaker-up.glb`,
+  hidden: `${import.meta.env.BASE_URL}models/ships/hidden-up.glb`,
+};
+
+/**
+ * The Blender-built hull for this ship type, if it has one (and the page does not ask for the code-built ones);
+ * `skill` asks for the upgraded livery where the type has one.
+ */
+export function blenderHullUrl(type: ShipTypeId, skill = false): string | null {
   if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('codeships')) return null;
-  return BLENDER_HULLS[type] ?? null;
+  return (skill ? UPGRADED_HULLS[type] : undefined) ?? BLENDER_HULLS[type] ?? null;
 }
 
 /**

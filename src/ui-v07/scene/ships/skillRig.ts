@@ -1,7 +1,7 @@
 import type { Mat } from '../../../ui/scene/buildings/materials';
 import type { ShipTypeId } from '../../../v07/game';
 import type { SailSpec } from './cloth';
-import type { ShipOars } from './designs';
+import type { Hinged, ShipOars } from './designs';
 
 // V0.8 prototype (an experiment, not rules): what a ship with its skill open wears besides the Blender-built parts
 // (public/models/ships/<type>-skill.glb, scripts/blender/blockout-skills.py; design sheet docs/art/skills-concept.svg).
@@ -58,15 +58,24 @@ const REPAINT: Partial<Record<ShipTypeId, Partial<Record<Mat, Mat>>>> = {
   hidden: { ghostCloth: 'heather' },
 };
 
+/** The disc behind a sail's emblem with the skill open: the albatross's turns gold. */
+const EMBLEM_DISC: Partial<Record<ShipTypeId, Mat>> = { standard: 'roofGold' };
+
 /** A ship type's sails with its skill open: the old ones repainted, then the ones the upgrade adds. */
 export function skillSails(type: ShipTypeId, sails: readonly SailSpec[]): SailSpec[] {
   const paint = REPAINT[type] ?? {};
   const to = (mat: Mat): Mat => paint[mat] ?? mat;
-  const repainted = sails.map((s): SailSpec => ({ ...s, mat: to(s.mat), ...(s.bands ? { bands: { ...s.bands, pattern: s.bands.pattern.map((b) => ({ ...b, mat: to(b.mat) })) } } : {}) }));
+  const disc = EMBLEM_DISC[type];
+  const repainted = sails.map((s): SailSpec => ({ ...s, mat: to(s.mat), ...(s.emblem && disc ? { emblem: { ...s.emblem, mat: disc } } : {}), ...(s.bands ? { bands: { ...s.bands, pattern: s.bands.pattern.map((b) => ({ ...b, mat: to(b.mat) })) } } : {}) }));
   return [...repainted, ...(EXTRA_SAILS[type] ?? [])];
 }
 
 /** The galley's oars with its skill open: sea-green looms and blades instead of bare wood. */
 export function skillOars(oars: ShipOars): ShipOars {
   return { ...oars, oar: oars.oar.map((part) => (part.mat === 'wood' ? { ...part, mat: 'canal' as Mat } : part)) };
+}
+
+/** The gamble's die with its skill open: gold instead of bone. */
+export function skillDie(die: Hinged): Hinged {
+  return { ...die, parts: die.parts.map((part) => (part.mat === 'marble' ? { ...part, mat: 'gold' as Mat } : part)) };
 }

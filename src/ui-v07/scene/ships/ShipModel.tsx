@@ -10,7 +10,7 @@ import { BlenderHull, blenderHullUrl } from './BlenderHull';
 import { SHIP_DESIGNS, type ShipDesign } from './designs';
 import { DECK } from './hull';
 import { FLAME_WARM, LanternFlame } from './shipLights';
-import { skillModelUrl, skillOars, skillSails } from './skillRig';
+import { skillDie, skillModelUrl, skillOars, skillSails } from './skillRig';
 import { SkillParts } from './SkillParts';
 import { Albatross, cachedGeometry, GalleyOars, GhostLantern, TumblingDie, CargoBoom } from './shipMotions';
 
@@ -51,6 +51,14 @@ function rigOf(type: ShipTypeId, skill: boolean): Rig {
   const rig = { sails: sails.map((s, i) => clothPiece(s, i * 1.9)), pennant: clothPiece(pennantSpec(design.pennant), 0.7) };
   rigs.set(key, rig);
   return rig;
+}
+
+const upgradedDice = new Map<object, ReturnType<typeof skillDie>>();
+function dieOf(die: Parameters<typeof skillDie>[0], skill: boolean): Parameters<typeof skillDie>[0] {
+  if (!skill) return die;
+  const hit = upgradedDice.get(die) ?? skillDie(die);
+  upgradedDice.set(die, hit);
+  return hit;
 }
 
 const upgradedOars = new Map<object, ReturnType<typeof skillOars>>();
@@ -126,11 +134,14 @@ export function ShipModel({ type, color, night: moonless, underway, gale = 0, mu
     if (body.current) personality(design, body.current, clock.elapsedTime, going.current);
   });
   const motion = design.motion;
-  const glb = blenderHullUrl(type);
+  const glb = blenderHullUrl(type, skill);
   return (
     <group ref={body}>
       {glb ? (
-        <BlenderHull url={glb} night={night} {...(motion.kind === 'crane' ? { crane: { heel: motion.heel, reach: motion.reach, rise: motion.rise, swing: motion.swing, deck: DECK, underway: going } } : {})} />
+// The upgraded hull loads in its own boundary, showing the plain hull meanwhile: opening a skill must not blank the table.
+        <Suspense fallback={<BlenderHull url={blenderHullUrl(type) ?? glb} night={night} {...(motion.kind === 'crane' ? { crane: { heel: motion.heel, reach: motion.reach, rise: motion.rise, swing: motion.swing, deck: DECK, underway: going } } : {})} />}>
+          <BlenderHull url={glb} night={night} {...(motion.kind === 'crane' ? { crane: { heel: motion.heel, reach: motion.reach, rise: motion.rise, swing: motion.swing, deck: DECK, underway: going } } : {})} />
+        </Suspense>
       ) : (
         <mesh geometry={hull} castShadow receiveShadow dispose={null}>
           <meshStandardMaterial vertexColors roughness={0.8} />
@@ -152,7 +163,7 @@ export function ShipModel({ type, color, night: moonless, underway, gale = 0, mu
       </group>
       {design.lantern && <LanternFlame at={design.lantern} color={FLAME_WARM} lit={night} />}
       {motion.kind === 'albatross' && <Albatross center={motion.center} radius={motion.radius} underway={going} />}
-      {motion.kind === 'die' && <TumblingDie die={motion.die} underway={going} />}
+      {motion.kind === 'die' && <TumblingDie die={dieOf(motion.die, skill)} underway={going} />}
       {motion.kind === 'crane' && !glb && <CargoBoom heel={motion.heel} reach={motion.reach} rise={motion.rise} swing={motion.swing} deck={DECK} underway={going} />}
       {motion.kind === 'ghost' && <GhostLantern swing={motion.swing} flame={motion.flame} underway={going} night={night} pulse={pulse} />}
       {motion.kind === 'galley' && <GalleyOars oars={oarsOf(motion.oars, skill)} underway={going} />}

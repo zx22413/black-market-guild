@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { SHIP_TYPE_IDS } from '../../src/v07/game';
 import { sailCloth } from '../../src/ui-v07/scene/ships/cloth';
 import { SHIP_DESIGNS } from '../../src/ui-v07/scene/ships/designs';
-import { skillOars, skillSails } from '../../src/ui-v07/scene/ships/skillRig';
+import { skillDie, skillOars, skillSails } from '../../src/ui-v07/scene/ships/skillRig';
 
 describe('upgraded rigs (V0.8 prototype, not rules)', () => {
   it('keeps every sail a ship had and never changes its shape', () => {
@@ -44,5 +44,15 @@ describe('upgraded rigs (V0.8 prototype, not rules)', () => {
     expect(oars.locks).toBe(motion.oars.locks);
     expect(oars.oar.some((p) => p.mat === 'canal')).toBe(true);
     expect(oars.oar.some((p) => p.mat === 'wood')).toBe(false);
+  });
+
+  it("gilds the gamble's die and the albatross's emblem disc", () => {
+    const motion = SHIP_DESIGNS.gambler.motion;
+    if (motion.kind !== 'die') throw new Error('the gamble carries a die');
+    const die = skillDie(motion.die);
+    expect(die.pivot).toBe(motion.die.pivot);
+    expect(die.parts.some((p) => p.mat === 'gold')).toBe(true);
+    expect(die.parts.some((p) => p.mat === 'marble')).toBe(false);
+    expect(skillSails('standard', SHIP_DESIGNS.standard.sails)[0]!.emblem?.mat).toBe('roofGold');
   });
 });

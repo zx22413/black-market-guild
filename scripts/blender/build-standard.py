@@ -134,6 +134,11 @@ ship_design.build_rig_dressing()
 ship_design.build_lantern_plate()
 build_rig_from_dump()
 check_normals(SKIP_NORMALS)
+# V0.8 prototype: a third argument `skill` exports the hull in its upgraded livery (ship_livery.py).
+if len(ARGS) > 2 and ARGS[2] == "skill":
+    import ship_livery
+
+    ship_livery.apply("standard", PARTS)
 print("NORMALS OK")
 colour_for_bake()
 ship = join_parts("standard")

@@ -152,6 +152,11 @@ ship_design.build_main()
 ship_design.build_fore()
 build_rig_from_dump()
 check_normals(SKIP_NORMALS)
+# V0.8 prototype: a third argument `skill` exports the hull in its upgraded livery (ship_livery.py).
+if len(ARGS) > 2 and ARGS[2] == "skill":
+    import ship_livery
+
+    ship_livery.apply("hidden", PARTS)
 print("NORMALS OK")
 colour_for_bake()
 glow_parts = [ob for ob, _, _ in PARTS if ob.name.startswith("glow-")]

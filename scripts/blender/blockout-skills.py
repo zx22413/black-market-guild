@@ -392,18 +392,8 @@ def breaker_build():
 BUILDS = {"standard": standard_build, "gambler": gambler_build, "freighter": freighter_build, "hidden": hidden_build, "breaker": breaker_build}
 
 
-# The upgraded livery: with the skill open the ship itself looks richer, not only one part more. Each entry repaints
-# the parts whose name starts with the prefix (and whose swatch is the one named, when given) in a new swatch.
-LIVERY = {
-    # Gilded battlements and rails, a gold hem and emblem on the sail.
-    "standard": [("aftcastle-merlon", "marble", "gold"), ("forecastle-merlon", "marble", "gold"), ("cap-rail", None, "gold"), ("sail-hem", None, "gold"), ("emblem-ring", None, "gold"), ("emblem-bird", None, "gold"), ("bowsprit-cap", None, "gold")],
-    # The sail's white stripes turn gold: red and gold, the colours of a high stake.
-    "gambler": [("lateen", "canvas", "roofGold"), ("jib", "canvas", "roofGold"), ("boot-top", None, "gold"), ("die", "marble", "gold")],
-    # Purple rails and yard bands, and the rags take the shroud's purple at their feet.
-    "hidden": [("cap-rail", None, "heather"), ("main-yard-band", None, "ghostGlow"), ("fore-yard-band", None, "ghostGlow"), ("rag-main", None, "heather"), ("rag-fore", None, "heather"), ("bowsprit-cap", None, "ghostGlow")],
-    # Sea-green canopy and oar blades with white tips, a white-crested emblem.
-    "breaker": [("canopy", "leaf", "wave"), ("oar-", "wood", "wave"), ("emblem-disc", None, "wave"), ("sail-hem", None, "foam")],
-}
+# The upgraded livery: with the skill open the ship itself looks richer, not only one part more (ship_livery.py).
+from ship_livery import LIVERY  # noqa: E402
 
 
 def livery_trims():
@@ -419,11 +409,6 @@ def livery_trims():
             for i in range(len(zs) - 1):
                 beam(f"skill-belt{side}{i}", (side * (half(zs[i]) * 0.985 + 0.03), 0.98, zs[i]), (side * (half(zs[i + 1]) * 0.985 + 0.03), 0.98, zs[i + 1]), 0.13, "gold", sides=4)
                 beam(f"skill-belt-b{side}{i}", (side * (half(zs[i]) * 0.93 + 0.03), 1.24, zs[i]), (side * (half(zs[i + 1]) * 0.93 + 0.03), 1.24, zs[i + 1]), 0.09, "plaster", sides=4)
-    if SHIP == "standard":
-        # A long gold-edged streamer at the masthead in place of the short pennant.
-        y = design.MAST_TOP - 0.1  # at the masthead, inside the ship-pick box
-        mesh_from("skill-streamer", [(0, y + 0.16, design.MAST_Z), (0, y - 0.16, design.MAST_Z), (0, y - 0.05, design.MAST_Z - 2.0), (0, y + 0.02, design.MAST_Z - 2.2), (0.03, y + 0.16, design.MAST_Z), (0.03, y - 0.16, design.MAST_Z), (0.03, y - 0.05, design.MAST_Z - 2.0), (0.03, y + 0.02, design.MAST_Z - 2.2)],
-                  [[0, 1, 2, 3], [7, 6, 5, 4], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]], "roofGold", convex=True)
     if SHIP == "breaker":
         # A white wave band along each side above the oars.
         for side in (-1, 1):
