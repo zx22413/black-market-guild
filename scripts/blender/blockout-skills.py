@@ -118,6 +118,15 @@ def gambler_skill():
     lathe("skill-coins", (0, z - 0.02), [(0.4, y + 0.6), (0.34, y + 0.76), (0.18, y + 0.9), (0.04, y + 0.96)], "gold", sides=10)
     for k, (dx, dz, dy) in enumerate(((0.3, -0.1, 0.72), (-0.26, 0.1, 0.74), (0.05, -0.2, 0.86), (-0.1, 0.16, 0.9))):
         lathe(f"skill-coin{k}", (dx, z + dz), [(0.11, y + dy), (0.11, y + dy + 0.04)], "roofGold", sides=8)
+    # Coin shields hung along both rails, each on an iron boss: the wager shows from the side and from above.
+    d = design
+    for s in (-1, 1):
+        for k, zc in enumerate((-1.9, -1.2, -0.5, 0.2, 0.9, 1.6)):
+            x = d.outer_x(zc, d.sheer(zc) - 0.3)
+            y = d.sheer(zc) - 0.3
+            beam(f"skill-coin-shield{s}{k}", (s * (x + 0.02), y, zc), (s * (x + 0.1), y, zc), 0.5, "gold", sides=10)
+            beam(f"skill-coin-boss{s}{k}", (s * (x + 0.1), y, zc), (s * (x + 0.15), y, zc), 0.2, "roofRed", sides=8)
+            beam(f"skill-coin-strap{s}{k}", (s * (x + 0.03), y + 0.24, zc), (s * (x + 0.03), d.sheer(zc) + 0.03, zc), 0.06, "iron", sides=4)
     for s in (-1, 1):
         lathe(f"skill-ring{s}", (s * 0.62, z), [(0.07, y + 0.0), (0.07, y + 0.08)], "iron", sides=6)
         beam(f"skill-lash{s}", (s * 0.62, y + 0.06, z), (s * 0.46, y + 0.64, z), 0.05, "rope", sides=4)
@@ -243,7 +252,12 @@ def standard_build():
     y0, z = DECK + 1.05, -2.3
     plan = [(0.62, z + 0.55), (0.62, z - 0.55), (-0.62, z - 0.55), (-0.62, z + 0.55)]
     plan_solid("skill-tower", plan, y0, y0 + 0.82, "sandstone")
-    plan_ring("skill-tower-foot", offset(plan, 0.08), offset(plan, -0.02), y0, y0 + 0.14, "woodDark")
+    plan_ring("skill-tower-sill", offset(plan, 0.14), offset(plan, -0.02), y0 - 0.02, y0 + 0.08, "marble")
+    plan_ring("skill-tower-foot", offset(plan, 0.08), offset(plan, -0.02), y0 + 0.08, y0 + 0.2, "woodDark")
+    framed_opening("skill-tower-door", (0, y0 + 0.36, z + 0.55), (0.3, 0.5), False)
+    for k, (x, zc) in enumerate(plan):
+        beam(f"skill-tower-knee{k}", (x * 1.02, y0 + 0.5, zc * 1.0 + (zc - z) * 0.02), (x * 1.3, y0 + 0.8, z + (zc - z) * 1.3), 0.09, "woodDark", sides=4)
+    lathe("skill-roof-collar", (0, z), [(0.16, y0 + 1.44), (0.16, y0 + 1.54)], "gold", sides=8)
     plan_ring("skill-tower-eave", offset(plan, 0.16), offset(plan, -0.02), y0 + 0.78, y0 + 0.92, "woodDark")
     for k, (x, zc) in enumerate(plan):
         beam(f"skill-tower-post{k}", (x, y0, zc), (x, y0 + 0.82, zc), 0.14, "woodDark", sides=4)
@@ -270,7 +284,9 @@ def gambler_build():
     """A second mast: a small lateen mizzen stepped aft, its sail in the same red and gold (a two-masted xebec)."""
     foot, head = (0.0, DECK - 0.05, -1.25), (0.0, 3.55, -1.0)
     beam("skill-mizzen", foot, head, 0.16, "woodDark", sides=8, taper=0.7)
-    lathe("skill-mizzen-partner", (0, -1.25), [(0.2, DECK - 0.02), (0.2, DECK + 0.1)], "gold", sides=8)
+    box("skill-mizzen-bed", (0, DECK + 0.04, -1.25), (0.52, 0.1, 0.52), "woodDark", bevel=0.03)
+    lathe("skill-mizzen-partner", (0, -1.25), [(0.2, DECK + 0.08), (0.2, DECK + 0.2)], "gold", sides=8)
+    lathe("skill-mizzen-parrel", (0.06, -1.1), [(0.17, 2.72), (0.17, 2.86)], "rope", sides=8)
     lathe("skill-mizzen-cap", (0, -1.0), [(0.11, 3.5), (0.11, 3.62)], "gold", sides=8)
     ya, yb = (0.22, 1.95, 0.25), (0.22, 4.55, -2.75)
     beam("skill-mizzen-yard", ya, yb, 0.11, "woodDark", sides=6, taper=0.7)
@@ -283,7 +299,10 @@ def gambler_build():
                   [[0, 1, 2], [5, 4, 3], [0, 3, 4, 1], [1, 4, 5, 2], [2, 5, 3, 0]], "roofRed" if k % 2 else "roofGold", convex=True)
     beam("skill-mizzen-sheet", clew, (0.4, DECK + 0.3, -2.7), 0.04, "rope", sides=4)
     for s in (-1, 1):
-        beam(f"skill-mizzen-shroud{s}", (0, 3.3, -1.02), (s * 0.85, DECK + 0.25, -1.6), 0.04, "rope", sides=4)
+        xr = design.outer_x(-1.6, design.sheer(-1.6))
+        box(f"skill-mizzen-chainwale{s}", (s * (xr + 0.04), design.sheer(-1.6) - 0.06, -1.6), (0.18, 0.08, 0.4), "woodDark", bevel=0.02)
+        box(f"skill-mizzen-deadeye{s}", (s * (xr + 0.06), design.sheer(-1.6) + 0.08, -1.6), (0.1, 0.16, 0.12), "dark", bevel=0.02)
+        beam(f"skill-mizzen-shroud{s}", (0, 3.3, -1.02), (s * (xr + 0.06), design.sheer(-1.6) + 0.14, -1.6), 0.04, "rope", sides=4)
 
 
 def freighter_build():
@@ -458,8 +477,8 @@ def orbit(name, azimuth, elevation, target, scale, res):
 # A close look at what the skill builds, for checking joints and trims: (target, azimuth, elevation, scale).
 NEAR = {
     "standard": ((0, 3.4, -2.2), -135, 20, 4.6),
-    "gambler": ((0, 2.6, -1.4), -75, 16, 5.2),
-    "freighter": ((0, 3.0, -1.6), -120, 18, 5.4),
+    "gambler": ((0, 2.2, -0.9), -70, 22, 5.6),
+    "freighter": ((0, 3.2, -2.6), -160, 26, 4.4),
     "hidden": ((0.2, 3.9, -1.6), -120, 16, 4.6),
     "breaker": ((0, 1.9, 3.1), -55, 18, 4.6),
 }
