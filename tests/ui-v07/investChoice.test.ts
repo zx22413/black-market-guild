@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { DecisionContext } from '../../src/v07/bots';
 import { RULES_V07, getLegalActions, getPendingDecisions, getPlayerView, type MatchState } from '../../src/v07/game';
 import {
+  canRaise,
+  withRaise,
   materialCards,
   protectChoices,
   withMaterial,
@@ -260,5 +262,44 @@ describe('material actions in the invest choice (V0.8 prototype, not rules)', ()
     expect(actionFor(options, EMPTY_CHOICE)?.protect).toBe('wood');
     expect(protectChoices(await v08(), EMPTY_CHOICE)).toEqual([]);
     expect(protectChoices(await v08(), { ...EMPTY_CHOICE, material: { kind: 'build', building: 'tradehouse' } })).toEqual(['wood', 'iron', 'spice', 'arms']);
+  });
+});
+
+describe("the gamble's raise in the invest choice (V0.8 prototype, not rules)", () => {
+  const v08 = async (patch: Parameters<typeof edit>[2] = {}) => {
+    const { RULES_V08_PROTO } = await import('../../src/v07/game');
+    const state = edit(start(4, RULES_V08_PROTO, { p1: 'mine' }), 'p1', { cash: 1000, stock: G(3, 3, 1, 0), buildings: [], ...patch });
+    const decision = getPendingDecisions(state).find((d) => d.playerId === 'p1')!;
+    return { view: getPlayerView(state, 'p1'), decision, legalActions: getLegalActions(state, 'p1') } as DecisionContext;
+  };
+  const gamble = { ...EMPTY_CHOICE, shipType: 'gambler' as const, load: G(2, 0, 0, 0) };
+
+  it('cannot be declared without the skill, on another ship, or with nothing aboard', async () => {
+    expect(canRaise(investOptions(await v08()), gamble)).toBe(false);
+    const options = investOptions(await v08({ skills: { gambler: 1 } }));
+    expect(canRaise(options, gamble)).toBe(true);
+    expect(canRaise(options, { ...gamble, shipType: 'standard' })).toBe(false);
+    expect(canRaise(options, { ...gamble, load: G(0, 0, 0, 0) })).toBe(false);
+  });
+
+  it('submits the raise only when it is declared, and drops it when the ship changes', async () => {
+    const options = investOptions(await v08({ skills: { gambler: 1 } }));
+    expect(actionFor(options, gamble)?.raise).toBeUndefined();
+    const raised = withRaise(options, gamble, true);
+    expect(raised.raise).toBe(true);
+    expect(actionFor(options, raised)?.raise).toBe(true);
+    expect(actionFor(options, raised)?.load).toEqual(G(2, 0, 0, 0));
+    expect(withRaise(options, raised, false).raise).toBe(false);
+    const other = withShipType(options, raised, 'standard');
+    expect(other.raise).toBe(false);
+    expect(actionFor(options, other)?.raise).toBeUndefined();
+    // Declaring it where it is not legal leaves the choice as it was.
+    expect(withRaise(options, { ...gamble, shipType: 'standard' }, true).raise ?? false).toBe(false);
+  });
+
+  it('can be declared in the round the skill is opened', async () => {
+    const options = investOptions(await v08());
+    const opening = withMaterial(options, gamble, { kind: 'open', ship: 'gambler' });
+    expect(canRaise(options, opening)).toBe(options.some((a) => a.raise && a.material?.kind === 'open'));
   });
 });

@@ -18,6 +18,8 @@ export interface InvestChoice {
   readonly material?: MaterialAction | null;
   /** V0.8 prototype: the good a tradehouse owner protects this round; null or absent until one is named (the first is taken then). */
   readonly protect?: GoodId | null;
+  /** V0.8 prototype: the gamble declares 「加注」 (its skill open): only the top final arrives, at a multiple. */
+  readonly raise?: boolean;
 }
 
 export const EMPTY_CHOICE: InvestChoice = { build: null, load: NO_LOAD };
@@ -89,11 +91,11 @@ const sameMaterial = (a: MaterialAction | undefined, b: MaterialAction | null | 
 };
 
 /**
- * The V0.8 prototype's extras on an action: the chosen material action exactly; never a raise or private crates (the
- * skills' own choices, not offered here yet); the protected good as named, or any (the first offered) while none is.
+ * The V0.8 prototype's extras on an action: the chosen material action exactly; the gamble's raise exactly as declared;
+ * never private crates (not offered here); the protected good as named, or any (the first offered) while none is.
  */
 const sameExtras = (a: InvestAction, choice: InvestChoice): boolean =>
-  sameMaterial(a.material, choice.material) && a.raise === undefined && a.privateLoad === undefined && (choice.protect == null || a.protect === undefined || a.protect === choice.protect);
+  sameMaterial(a.material, choice.material) && (a.raise === true) === (choice.raise === true) && a.privateLoad === undefined && (choice.protect == null || a.protect === undefined || a.protect === choice.protect);
 
 export function actionFor(options: readonly InvestAction[], choice: InvestChoice): InvestAction | undefined {
   return options.find((a) => a.build === choice.build && sameGoods(a.load, choice.load) && sameShip(a, choice) && sameExtras(a, choice));
@@ -109,11 +111,15 @@ export function withBuild(options: readonly InvestAction[], choice: InvestChoice
 
 /** Pick a ship type (null: not sailing). The cargo stays when it still fits; otherwise the largest legal part of it stays. */
 export function withShipType(options: readonly InvestAction[], choice: InvestChoice, shipType: ShipTypeId | null): InvestChoice {
-  return fitted(options, { ...choice, shipType }, choice.load);
+  // A raise belongs to the ship it was declared on: another ship starts without it.
+  const raise = choice.raise === true && shipType === choice.shipType;
+  return fitted(options, { ...choice, shipType, ...(choice.raise === undefined ? {} : { raise }) }, choice.load);
 }
 
 /** `next` with `load` kept when it is a legal action, else the largest legal part of it. */
 function fitted(options: readonly InvestAction[], next: InvestChoice, load: Goods): InvestChoice {
+  // A raise that the new choice no longer allows (another ship, the skill's opening taken back) is dropped, not the cargo.
+  if (next.raise === true && !options.some((a) => a.build === next.build && sameShip(a, next) && sameExtras(a, next))) return fitted(options, { ...next, raise: false }, load);
   const kept = { ...next, load };
   if (actionFor(options, kept)) return kept;
   const fits = options
@@ -125,6 +131,17 @@ function fitted(options: readonly InvestAction[], next: InvestChoice, load: Good
 /** Take a material action (null: none). The cargo stays when the warehouse still covers it; otherwise the largest legal part of it stays. */
 export function withMaterial(options: readonly InvestAction[], choice: InvestChoice, material: MaterialAction | null): InvestChoice {
   return fitted(options, { ...choice, material }, choice.load);
+}
+
+/** Whether the choice as it stands may be sent with the raise declared (the gamble, its skill open, something aboard). */
+export function canRaise(options: readonly InvestAction[], choice: InvestChoice): boolean {
+  return actionFor(options, { ...choice, raise: true }) !== undefined;
+}
+
+/** Declare the raise or take it back; declaring it where it is not legal leaves the choice as it was. */
+export function withRaise(options: readonly InvestAction[], choice: InvestChoice, raise: boolean): InvestChoice {
+  if (raise && !canRaise(options, choice)) return choice;
+  return { ...choice, raise };
 }
 
 /** One material action as a card: what it is, what it costs, whether it can be taken now and why not. */

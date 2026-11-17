@@ -157,8 +157,40 @@
   .mat-panel {
     left: 8px;
     right: 8px;
-    top: 96px;
+    /* Under the phone's HUD (the market strip is two rows there). */
+    top: calc(var(--hud-top, 96px) + 8px);
     width: auto;
     max-height: 46%;
   }
+}
+
+/* The gamble's raise: one big switch at the head of the panel. */
+.mat-raise {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 2px solid #b3261e;
+  border-radius: 10px;
+  background: #fff3ea;
+  color: #5a1711;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mat-raise b {
+  font-family: var(--font-strong);
+  font-size: var(--fs-title);
+}
+.mat-raise span {
+  font-size: var(--fs-note);
+}
+.mat-raise.sel {
+  border-color: #f5c542;
+  background: #5a1711;
+  color: #ffe08a;
+  box-shadow: 0 0 14px rgb(245 197 66 / 0.6);
+}
+.mat-raise:disabled {
+  opacity: 0.6;
+  cursor: default;
 }

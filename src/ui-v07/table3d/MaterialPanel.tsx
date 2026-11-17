@@ -25,11 +25,14 @@ export interface MaterialPanelProps {
   readonly protects: readonly GoodId[];
   readonly protect: GoodId | null;
   readonly onProtect: (good: GoodId) => void;
+  /** The gamble's raise: whether it can be declared now, whether it is, and the setter; absent when the ship is not the gamble. */
+  readonly raise?: { readonly can: boolean; readonly on: boolean; readonly onToggle: () => void; /** Why it cannot be declared now; null when it can. */ readonly why: string | null };
 }
 
-export function MaterialPanel({ cards, chosen, onPick, protects, protect, onProtect }: MaterialPanelProps) {
+export function MaterialPanel({ cards, chosen, onPick, protects, protect, onProtect, raise }: MaterialPanelProps) {
   const rules = useRules();
-  const [open, setOpen] = useState(true);
+  // On a phone the panel would cover the ship: it starts folded to its header there.
+  const [open, setOpen] = useState(() => typeof window === 'undefined' || window.innerWidth > 640);
   const builds = cards.filter((c) => c.material.kind === 'build');
   const skills = cards.filter((c) => c.material.kind !== 'build');
   const card = (c: MaterialCard) => {
@@ -67,7 +70,7 @@ export function MaterialPanel({ cards, chosen, onPick, protects, protect, onProt
       </button>
     );
   };
-  if (cards.length === 0 && protects.length === 0) return null;
+  if (cards.length === 0 && protects.length === 0 && !raise) return null;
   return (
     <aside className={`mat-panel ${open ? '' : 'shut'}`} data-focus="materials">
       <header>
@@ -79,6 +82,20 @@ export function MaterialPanel({ cards, chosen, onPick, protects, protect, onProt
       </header>
       {open && (
         <>
+          {raise && (
+            <button
+              type="button"
+              className={`mat-raise ${raise.on ? 'sel' : ''}`}
+              data-focus="raise"
+              disabled={!raise.can && !raise.on}
+              aria-pressed={raise.on}
+              onClick={raise.onToggle}
+            >
+              <b>{raise.on ? '已加注' : '加注'}</b>
+              <span>{skillText(rules, 'gambler')}</span>
+              {!raise.can && !raise.on && raise.why && <small className="mat-why">{raise.why}</small>}
+            </button>
+          )}
           {protects.length > 0 && (
             <div className="mat-protect">
               <small>商行這回合保護的貨</small>

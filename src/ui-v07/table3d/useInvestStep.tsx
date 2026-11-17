@@ -31,6 +31,8 @@ import {
   unloadedBy,
   withBuild,
   withMaterial,
+  withRaise,
+  canRaise,
   materialCards,
   protectChoices,
   withShipType,
@@ -156,7 +158,9 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const arrival = useStepArrival(arrivalKey);
 
   // What the choice would submit, for whoever follows along (the tutorial lights 「提交」 when it fits).
-  const draft = active ? (actionFor(options, choice) ?? null) : null;
+  // A raise with nothing left aboard is no action: what is sent then is the same choice without it.
+  const sent = choice.raise === true && actionFor(options, choice) === undefined ? { ...choice, raise: false } : choice;
+  const draft = active ? (actionFor(options, sent) ?? null) : null;
   const onDraft = active?.onDraft;
   useEffect(() => onDraft?.(draft), [onDraft, draft]);
 
@@ -169,7 +173,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const split = stockSplit(context, choice);
   const summary = investSummary(context, choice);
   const notes = investNotes(context, choice);
-  const action = actionFor(options, choice);
+  const action = actionFor(options, sent);
   const todo = investTodo(options, choice, buildDecided);
 
   const send = () => {
@@ -192,9 +196,11 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   };
   // V0.8 prototype (not rules): the one material action of the round, and the tradehouse's protected good.
   const materials = materialCards(context);
+  // The gamble's raise is on offer at all this round (its skill open, or being opened now): some legal action carries it.
+  const raisable = options.some((a) => a.raise === true);
   const protects = protectChoices(context, choice);
   const materialPanel =
-    materials.length > 0 ? (
+    materials.length > 0 || raisable ? (
       <MaterialPanel
         cards={materials}
         chosen={choice.material ?? null}
@@ -205,6 +211,20 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
         protects={protects}
         protect={choice.protect ?? actionFor(options, choice)?.protect ?? null}
         onProtect={(good) => setChoice((c) => ({ ...c, protect: good }))}
+        {...(choice.shipType === 'gambler' && (raisable || choice.raise === true)
+          ? {
+              raise: {
+                can: canRaise(options, choice),
+                // Not yet possible: either the skill still has to be opened (below, this round), or nothing is aboard.
+                why: canRaise(options, choice) ? null : choice.material?.kind !== 'open' && canRaise(options, { ...choice, material: { kind: 'open', ship: 'gambler' } }) ? '要先開啟孤注號的技能（下方的船技能）' : '先裝貨才能加注',
+                on: sent.raise === true,
+                onToggle: () => {
+                  soundEngine.playSfx('role-pick');
+                  setChoice((c) => withRaise(options, c, c.raise !== true));
+                },
+              },
+            }
+          : {})}
       />
     ) : null;
   const pickBuild = (build: BuildingId | null) => {
@@ -468,6 +488,11 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       {choice.material && (
         <span className="chip" title="材料動作">
           <HouseIcon /> {choice.material.kind === 'build' ? FACILITY_LABELS[choice.material.building] : SKILL_LABELS[choice.material.ship]}
+        </span>
+      )}
+      {sent.raise === true && (
+        <span className="chip" title="已宣告加注">
+          <IconDisc src={tokenIconUrl('coin')} /> 已加注 ×{context.view.rules.v08.raise.multiplier / 100}
         </span>
       )}
       <span className="chip" title="出航">
