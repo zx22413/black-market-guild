@@ -1,5 +1,6 @@
 import { GOODS, RULES_V07, traitOf, type CashReason, type GoodId, type Goods, type IslandId, type MatchEvent, type PlayerId, type RoleId, type ShipId, type ShipTypeId, type VoyageEventId, type VoyageOutcome } from '../../v07/game';
 
+import { skillMoments, type SkillMoment } from './skillShow';
 // One "beat" of the round resolution: everything that happens to one ship, in the order of §9.1
 // (start die, guards, pirates, voyage event, island, clamp), then its outcome, cargo and money.
 // Built only from public events, so any seat (or a spectator) can play it.
@@ -52,6 +53,8 @@ export interface ShipBeat {
   readonly lost: Goods | null;
   /** The lost crates one by one, in the order the show drops them (dearest goods first, as the table takes them). */
   readonly dropped: readonly GoodId[];
+  /** V0.8 prototype: this ship's skill going off in the beat (a reroll, the extra die, a raise won or lost); empty otherwise. */
+  readonly skills: readonly SkillMoment[];
   readonly smugglers: readonly PlayerId[];
   readonly smuggling: 'taken' | 'caught' | 'seized' | 'lost' | null;
   /** Goods customs took off this ship (§9.4). */
@@ -158,6 +161,7 @@ export function buildShipBeat(events: readonly MatchEvent[], shipId: ShipId): Sh
     cargo: resolved.cargo,
     lost: resolved.lost ?? null,
     dropped: droppedCrates(resolved.lost),
+    skills: skillMoments(events, round).filter((m) => m.shipId === shipId),
     smugglers: smuggling?.smugglers ?? [],
     smuggling: smuggling?.result ?? null,
     confiscated: confiscated.map((c) => ({ good: c.good, units: c.units })),

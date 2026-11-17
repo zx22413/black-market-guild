@@ -416,6 +416,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
         facilities={facilities}
         facilityPulses={resolution.facilityPulses}
         skills={skills}
+        skillPulses={resolution.skillPulses}
         ships={ships}
         cameraPoints={camera}
         {...(step?.cameraRig ? { camera: step.cameraRig(safe) } : {})}

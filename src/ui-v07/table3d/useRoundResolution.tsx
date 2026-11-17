@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { facilityReactions } from './facilityShow';
+import { skillMoments } from '../beats/skillShow';
 import type { Deployment, GoodId, Goods, MatchEvent, PlayerId, PrivateEvent, ShipId, VoyageEventId } from '../../v07/game';
 import type { FitPoint } from '../../ui/scene/CameraRig';
 import { TARGET_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
@@ -106,6 +107,8 @@ export interface Resolution {
   readonly pins: readonly TablePin[];
   /** V0.8 prototype: the seats whose building is at work right now (a new key makes it hop). */
   readonly facilityPulses: ReadonlyMap<PlayerId, string>;
+  /** V0.8 prototype: the ship whose skill is going off right now (a new key makes what the skill built on it flash and hop). */
+  readonly skillPulses: ReadonlyMap<ShipId, string>;
   readonly scene: ReactNode;
   readonly bar: ReactNode;
   readonly overlay: ReactNode;
@@ -179,6 +182,7 @@ export function stageShipState(stage: ResolutionStage, beatIndex: number, voyage
 }
 
 const NO_PULSES: ReadonlyMap<PlayerId, string> = new Map();
+const NO_SKILL_PULSES: ReadonlyMap<ShipId, string> = new Map();
 /** How high over an island a building's line hangs (the island moments' height). */
 const FACILITY_CHIP_HEIGHT = 7;
 
@@ -302,7 +306,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   });
 
   if (!active) {
-    return { stage: null, stageRound: null, cutoff: events.length, cashBonus: {}, shipState: () => 'docked', camera: null, ringed: undefined, facilityPulses: NO_PULSES, marketDone: false, outcomeOf: null, wrapShip: undefined, pins: [], scene: null, bar: null, overlay: null, onTableClick: undefined, marketPrices: undefined, changedGoods: undefined };
+    return { stage: null, stageRound: null, cutoff: events.length, cashBonus: {}, shipState: () => 'docked', camera: null, ringed: undefined, facilityPulses: NO_PULSES, skillPulses: NO_SKILL_PULSES, marketDone: false, outcomeOf: null, wrapShip: undefined, pins: [], scene: null, bar: null, overlay: null, onTableClick: undefined, marketPrices: undefined, changedGoods: undefined };
   }
 
   const colorOf = (id: string) => seats.find((s) => s.id === id)?.color ?? '#888';
@@ -345,7 +349,19 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     return (badgeRow(shipId) - (count - 1) / 2) * BADGE_ROW_PX;
   };
   // V0.8 prototype: a building at work says so over its island and hops: with its ship's outcome, or once the market has settled.
-  const reactions = round === null ? [] : facilityReactions(events, round);
+  // V0.8 prototype: the ship's own skill going off: what it built on the ship flashes with each die skill, and again with a raise's outcome.
+  const skillPulses = new Map<ShipId, string>();
+  if (stage === 'voyage' && beat) {
+    const outcomeSkill = playback.view.showOutcome ? beat.skills.find((m) => m.at === 'outcome') : undefined;
+    if (outcomeSkill) skillPulses.set(beat.shipId, `${beat.shipId}-${outcomeSkill.effect}`);
+    else if (playback.view.skillsShown > 0) skillPulses.set(beat.shipId, `${beat.shipId}-die-${playback.view.skillsShown}`);
+  }
+  // 拾荒 pays at the market: said over the freighter owner's island once the market has settled, like a building's line.
+  const salvaged = round === null ? [] : skillMoments(events, round).filter((m) => m.at === 'market');
+  const reactions = [
+    ...(round === null ? [] : facilityReactions(events, round)),
+    ...salvaged.map((m) => ({ playerId: m.playerId, shipId: null, effect: m.effect, text: `${m.name}：${m.text}` })),
+  ];
   const working =
     stage === 'voyage' && beat && playback.view.showOutcome
       ? reactions.filter((r) => r.shipId === beat.shipId)
@@ -491,6 +507,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     wrapShip: layer?.wrapShip,
     pins: [...badgePins, ...(layer?.pins ?? []), ...marketPins, ...flightPins, ...reactionPins],
     facilityPulses,
+    skillPulses,
     scene: (
       <>
         {stage === 'wanted' && wantedIds.map((id) => <WantedFlag key={`${round}-${id}`} angle={angles[laneOf(id)]!} />)}

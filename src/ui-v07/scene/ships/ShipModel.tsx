@@ -110,10 +110,12 @@ export interface ShipModelProps {
   readonly murk?: boolean;
   /** V0.8 prototype (not rules): the owner has opened this ship type's skill, so it wears its upgraded build and livery. */
   readonly skill?: boolean;
+  /** A new key makes what the skill built on the ship flash and hop: the skill just went off. */
+  readonly skillPulseKey?: string | null;
 }
 
 /** One of the five ship types (designs.ts), its keel at the origin and its bow toward +z, in table units. */
-export function ShipModel({ type, color, night: moonless, underway, gale = 0, murk = false, skill = false }: ShipModelProps) {
+export function ShipModel({ type, color, night: moonless, underway, gale = 0, murk = false, skill = false, skillPulseKey = null }: ShipModelProps) {
   const design = SHIP_DESIGNS[type];
   const night = moonless || (murk && design.motion.kind === 'ghost');
   const hull = cachedGeometry(design, design.parts);
@@ -150,7 +152,7 @@ export function ShipModel({ type, color, night: moonless, underway, gale = 0, mu
       {/* Its own boundary: the upgrade's model loading must not blank the ship. */}
       {skill && (
         <Suspense fallback={null}>
-          <SkillParts url={skillModelUrl(type)} />
+          <SkillParts url={skillModelUrl(type)} pulseKey={skillPulseKey} />
         </Suspense>
       )}
       {rig.sails.map((sail, i) => (

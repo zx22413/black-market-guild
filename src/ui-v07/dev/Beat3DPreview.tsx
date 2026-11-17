@@ -94,6 +94,9 @@ export function Beat3DPreview() {
     };
   }, [seed, v08]);
   const [index, setIndex] = useState(() => {
+    // &skillbeat: start on the first ship whose skill goes off (V0.8 prototype).
+    const skilled = beats.findIndex((b) => b.skills.length > 0);
+    if (params.has('skillbeat') && skilled >= 0) return skilled;
     const most = Math.max(...beats.map((b) => b.dropped.length));
     if (most > 0) return beats.findIndex((b) => b.dropped.length === most);
     const best = Math.max(...beats.map(interest));
@@ -116,6 +119,7 @@ export function Beat3DPreview() {
                 <option key={b.shipId} value={i}>
                   第 {b.round} 回合 · {names[b.owner]} · {b.outcome === 'sank' ? '沉沒' : '抵達'}
                   {b.dropped.length > 0 ? ` · 掉 ${b.dropped.length} 箱` : ''}
+                  {b.skills.length > 0 ? ` · ${b.skills.map((m) => m.name).join('、')}` : ''}
                   {b.steps.some((s) => s.kind === 'pirate') ? ' · 海盜' : ''}
                   {w?.type === 'voyage-event-revealed' ? ` · ${VOYAGE_EVENT_LABELS[w.event]}` : ''}
                 </option>

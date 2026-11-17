@@ -418,6 +418,13 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, set
   const p = focusPose.position;
   // The tag goes where the ship is: pushed on during the steps, then in port once it arrives.
   const shipAt = view.showOutcome && beat.outcome !== 'sank' ? shipPose(angles[focusLane]!, 'arrived').position : p;
+  const dieSkills = beat.skills.filter((m) => m.at === 'die');
+  const skillNow =
+    view.showOutcome
+      ? (beat.skills.find((m) => m.at === 'outcome') ?? null)
+      : view.skillsShown > 0 && view.stepsShown === 0 && !view.showCargo
+        ? (dieSkills[view.skillsShown - 1] ?? null)
+        : null;
   // Where the crates go overboard: the ship at sea, pushed on by what the steps gained it.
   const dropAt = new Vector3(p.x + Math.sin(focusPose.heading) * all.forward, 0, p.z + Math.cos(focusPose.heading) * all.forward);
   const spots = actorSpots(p, angles, actorsShown(beat, { ...view, stepsShown: beat.steps.length }));
@@ -458,6 +465,19 @@ export function beatLayer({ beat, view, angles, laneOf, weather, tag, seats, set
               <span>
                 <span className={`hit-word ${hit.kind}`} style={ISLAND_HITS.has(hit.kind) ? { animationDelay: `${Math.round((HIT_DELAY[hit.kind] - 0.05) * 1000)}ms` } : undefined}>
                   {HIT_WORD[hit.kind]}
+                </span>
+              </span>
+            ), hidden: framing !== 'ship' }]
+        : []),
+      // V0.8 prototype: the skill's name in gold over the ship as it goes off: with the die (until the next thing
+      // happens to it), or with the outcome.
+      ...(skillNow
+        ? [{ id: `skill-${beat.shipId}-${skillNow.effect}`, // Below the ship on screen (toward the camera): the tag hangs above it.
+          position: [p.x, 1.2, p.z + 5] as const, node: (
+              <span>
+                <span className={`skill-word ${skillNow.tone}`}>
+                  {skillNow.name}
+                  <small>{skillNow.text}</small>
                 </span>
               </span>
             ), hidden: framing !== 'ship' }]

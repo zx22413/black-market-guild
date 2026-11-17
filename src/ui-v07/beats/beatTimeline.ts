@@ -6,7 +6,7 @@ import { SHOW_TEMPO, slowed } from '../scene/showTempo';
 // docs/ui/v07-layout-research.md §6): the start die, then each modifier, then the outcome, the
 // cargo and every payment one by one. Pure, so the order and the pacing are testable.
 
-export type CueKind = 'intro' | 'start' | 'step' | 'outcome' | 'cargo' | 'drop' | 'cash' | 'goods' | 'done';
+export type CueKind = 'intro' | 'start' | 'skill' | 'step' | 'outcome' | 'cargo' | 'drop' | 'cash' | 'goods' | 'done';
 
 export interface Cue {
   readonly kind: CueKind;
@@ -27,6 +27,8 @@ export const BEAT_PACE = slowed({
   island: 2000,
   outcome: 1300,
   cargo: 1000,
+  /** V0.8 prototype: a ship skill going off on the die (a reroll, the extra die). */
+  skill: 1500,
   /** V0.8 prototype: one crate falling into the sea. */
   drop: 1400,
   cash: 650,
@@ -39,7 +41,7 @@ export const BEAT_PACE = slowed({
  * people read, and it flashed by too quickly when the pace was only divided by the speed.
  */
 export const DIE_HOLD = 1000 * SHOW_TEMPO;
-const DIE_CUES: ReadonlySet<CueKind> = new Set(['start', 'step', 'outcome']);
+const DIE_CUES: ReadonlySet<CueKind> = new Set(['start', 'skill', 'step', 'outcome']);
 
 /**
  * `money: false` leaves out the payments: in a full round they wait for the settlement, because
@@ -55,6 +57,10 @@ export function beatCues(beat: ShipBeat, speed = 1, money = true): Cue[] {
   };
   push('intro', 0, BEAT_PACE.intro);
   push('start', 0, BEAT_PACE.start);
+  // V0.8 prototype: a skill that changes the die goes off right after the roll, before anything else touches it.
+  beat.skills.forEach((skill, i) => {
+    if (skill.at === 'die') push('skill', i, BEAT_PACE.skill, BEAT_PACE.skill);
+  });
   // An island at work (the lighthouse's step, the cove's raiders, the fortress's guns) plays in full.
   beat.steps.forEach((step, i) =>
     step.kind === 'island' || step.boosted.length > 0 ? push('step', i, BEAT_PACE.island, BEAT_PACE.island) : push('step', i, BEAT_PACE.step),
@@ -94,6 +100,8 @@ export interface BeatView {
   readonly showCargo: boolean;
   /** V0.8 prototype: lost crates dropped so far (of `beat.dropped`). */
   readonly dropsShown: number;
+  /** V0.8 prototype: die skills gone off so far (of the beat's skills that show with the die). */
+  readonly skillsShown: number;
   readonly cashShown: number;
   readonly goodsShown: number;
   readonly done: boolean;
@@ -115,14 +123,18 @@ export function beatView(beat: ShipBeat, cues: readonly Cue[], started: number):
   const stepsShown = count('step');
   const current = stepsShown > 0 ? beat.steps[stepsShown - 1] : undefined;
   const showStart = count('start') > 0;
+  const skillsShown = count('skill');
+  const pendingExtra = beat.skills.filter((m) => m.at === 'die').slice(skillsShown).reduce((n, m) => n + m.added, 0);
   return {
     started,
     showStart,
     stepsShown,
-    die: !showStart ? null : current ? Math.min(dieTop(beat), Math.max(1, current.value)) : beat.start,
+    // Until the extra die goes off the die shows the roll without it (the engine's start already has it added).
+    die: !showStart ? null : current ? Math.min(dieTop(beat), Math.max(1, current.value)) : beat.start - pendingExtra,
     showOutcome: count('outcome') > 0,
     showCargo: count('cargo') > 0,
     dropsShown: count('drop'),
+    skillsShown,
     cashShown: count('cash'),
     goodsShown: count('goods'),
     done: count('done') > 0,

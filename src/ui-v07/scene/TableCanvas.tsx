@@ -112,6 +112,8 @@ export interface TableCanvasProps {
   readonly facilityPulses?: ReadonlyMap<PlayerId, string>;
   /** V0.8 prototype: the ship types each seat has opened the skill of; such a ship wears its upgraded build. */
   readonly skills?: Readonly<Record<PlayerId, readonly ShipTypeId[]>>;
+  /** V0.8 prototype: a new key makes what the skill built on that ship flash and hop (the skill just went off). */
+  readonly skillPulses?: ReadonlyMap<ShipId, string>;
   /** What the market island shows (`marketShow`); without it the market stands open at its opening prices. */
   readonly market?: MarketShow;
 }
@@ -237,7 +239,7 @@ function sailGale(weather: VoyageEventId | null): number {
   return weather === 'storm' ? 1 : weather === 'tailwind' ? 0.6 : 0;
 }
 
-export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, pulses, market, litSeats, facilities, facilityPulses, skills }: TableCanvasProps) {
+export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, pulses, market, litSeats, facilities, facilityPulses, skills, skillPulses }: TableCanvasProps) {
   // Buildings already standing when the table appears are simply there; one raised later comes down on screen.
   const [standing] = useState(() => new Set(Object.entries(facilities ?? {}).flatMap(([id, b]) => (b ? [id] : []))));
   const look = WEATHER[weather ?? 'clear'];
@@ -335,7 +337,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
                   chosen={ship.chosen ?? false}
                   lantern={weather === 'moonless-night'}
                   onSelect={() => onSelectShip?.(ship.id)}
-                  model={<ShipModel type={ship.type ?? 'standard'} color={seats[lane]?.color ?? '#fcf4e2'} night={weather === 'moonless-night'} underway={ship.state === 'sailing' || ship.state === 'atSea'} gale={sailGale(weather)} murk={weather === 'storm' || weather === 'sea-fog'} skill={skills?.[ship.owner]?.includes(ship.type ?? 'standard') ?? false} />}
+                  model={<ShipModel type={ship.type ?? 'standard'} color={seats[lane]?.color ?? '#fcf4e2'} night={weather === 'moonless-night'} underway={ship.state === 'sailing' || ship.state === 'atSea'} gale={sailGale(weather)} murk={weather === 'storm' || weather === 'sea-fog'} skill={skills?.[ship.owner]?.includes(ship.type ?? 'standard') ?? false} skillPulseKey={skillPulses?.get(ship.id) ?? null} />}
                 />
               );
               return <group key={ship.id}>{wrapShip ? wrapShip(ship.id, body) : body}</group>;

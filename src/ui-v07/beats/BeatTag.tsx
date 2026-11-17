@@ -24,6 +24,9 @@ export function BeatTag({ beat, view, names, viewer }: BeatTagProps) {
   const owner = `${beat.owner === viewer ? '你' : (names[beat.owner] ?? beat.owner)}的${SHIP_TYPE_LABELS[beat.type]}`;
   // V0.8 prototype: a crate the show has dropped into the sea is crossed out where it sat.
   const cargo = crateStates(beat, view.dropsShown);
+  // V0.8 prototype: the ship's skill going off, said in the tag as it happens (with the die, or with the outcome).
+  const dieSkills = beat.skills.filter((m) => m.at === 'die').slice(0, view.skillsShown);
+  const said = [...dieSkills, ...(view.showOutcome ? beat.skills.filter((m) => m.at === 'outcome') : [])];
   const who = (id: PlayerId) => (id === viewer ? '你' : (names[id] ?? id));
 
   return (
@@ -42,6 +45,15 @@ export function BeatTag({ beat, view, names, viewer }: BeatTagProps) {
           {view.showOutcome && <span className={`beat-stamp small ${sank ? 'down' : 'up'}`}>{sank ? '沉沒' : '抵達'}</span>}
         </div>
       </div>
+      {said.length > 0 && (
+        <p className="beat-tag-skill">
+          {said.map((m) => (
+            <b key={m.effect} className={`beat-pop ${m.tone === 'gain' ? 'up' : 'down'}`}>
+              {m.name}：{m.text}
+            </b>
+          ))}
+        </p>
+      )}
       <p className="beat-tag-trail">
         {beat.start}
         {beat.steps.slice(0, view.stepsShown).map((s, i) => (
