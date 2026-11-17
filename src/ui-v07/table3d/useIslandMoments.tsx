@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { buildersOf, materialMoments, mergeMoments, tideLossMoments } from './facilityShow';
+import { buildersOf, skillOpenersOf, materialMoments, mergeMoments, tideLossMoments } from './facilityShow';
 import { RULES_V07, type IslandId, type MatchEvent, type PlayerId, type Rules } from '../../v07/game';
 import type { FitPoint } from '../../ui/scene/CameraRig';
 import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
@@ -43,6 +43,8 @@ export interface Moments {
   readonly blocking: boolean;
   readonly pins: readonly TablePin[];
   readonly pulses: ReadonlyMap<PlayerId, { readonly key: string; readonly tone: 'gain' | 'loss' }>;
+  /** The launch's moment is on (V0.8 prototype: the dock works unveil the ships whose skill was opened this round). */
+  readonly launching?: boolean;
   /**
    * V0.8 prototype: what the camera frames while a building goes up at the launch: the islands with a moment (so no
    * chip is left out of the picture), which is one island's close-up when only its owner has something to show.
@@ -86,7 +88,8 @@ export function useIslandMoments({ events, board, free, angleOf, skipFirstOpenin
     skip || !free || round < 1 ? null : openedRound < round ? 'opening' : launched && launchedRound < round ? 'launch' : null;
   const shown: readonly IslandMoment[] = phase === 'opening' ? opening : phase === 'launch' ? launch : [];
 
-  const raising = phase === 'launch' && buildersOf(events, round).length > 0;
+  // A building going up or a skill unveiled at the dock takes longer than the chips: the launch holds for it.
+  const raising = phase === 'launch' && (buildersOf(events, round).length > 0 || skillOpenersOf(events, round).length > 0);
   useEffect(() => {
     if (phase === null) return undefined;
     const done = () => (phase === 'opening' ? setOpenedRound(round) : setLaunchedRound(round));
@@ -115,6 +118,7 @@ export function useIslandMoments({ events, board, free, angleOf, skipFirstOpenin
   if (phase === null || shown.length === 0) return { blocking: phase !== null, pins: [], pulses: NONE };
   return {
     blocking: true,
+    ...(phase === 'launch' ? { launching: true } : {}),
     ...(raising ? { camera: shown.flatMap((m) => { const [x, , z] = seatPosition(angleOf(m.playerId)); return [...around([x, 0, z], PLAYER_ISLAND_RADIUS), { position: [x, CHIP_HEIGHT + CHIP_ROOM, z] as const }]; }) } : {}),
     pulses: new Map(shown.map((m) => [m.playerId, { key: `${phase}-${round}-${m.playerId}`, tone: m.tone }])),
     pins: shown.map((m): TablePin => {

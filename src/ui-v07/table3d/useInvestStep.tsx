@@ -1,3 +1,4 @@
+import type { WorksMode } from '../scene/ships/dockWorksShow';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { setInvestStage } from '../analytics/investStage';
 import { GOODS, producedFor, type BuildingId, type GoodId, type ShipTypeId } from '../../v07/game';
@@ -82,6 +83,8 @@ const SHIP_INFO_ROOM = 260;
 /** Each next pop a little higher, like bubbles rising. */
 const BUBBLE_RISE = 0.12;
 
+/** How long the dock works take to go under when the skill's pick is taken back (ms; dockWorksShow's strike). */
+const STRIKE_MS = 750;
 /** How long the camera stays on the building lot after a building is picked, the glide there included (ms). */
 const LOT_LOOK_MS = 2000;
 
@@ -99,6 +102,14 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   // V0.8 prototype: picking a building takes the camera to the island's lot for a moment (the pick itself stays at the
   // ship, where the cargo and the material cost are); each new pick restarts the look, clearing the pick ends it.
   const [lotLook, setLotLook] = useState<number | null>(null);
+  // V0.8 prototype: opening the skill of the ship at the dock raises the dock works round it (the whole show, then they
+  // stand open); taking the pick back, or changing ship, sends them under again.
+  const [works, setWorks] = useState<{ readonly mode: WorksMode; readonly key: string; readonly skill: boolean } | null>(null);
+  useEffect(() => {
+    if (works?.mode !== 'strike') return;
+    const timer = setTimeout(() => setWorks(null), STRIKE_MS);
+    return () => clearTimeout(timer);
+  }, [works]);
   useEffect(() => {
     if (lotLook === null) return;
     const timer = setTimeout(() => setLotLook(null), LOT_LOOK_MS);
@@ -133,6 +144,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     setPhase('ship');
     setShipDecided(false);
     setPeekShip(null);
+    setWorks(null);
     setRevealed(new Set());
     setFreshShip(null);
     setReminding(null);
@@ -221,6 +233,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
           soundEngine.playSfx('role-pick');
           setChoice((c) => withMaterial(options, c, material));
           setLotLook(material?.kind === 'build' ? Date.now() : null);
+          const opens = material?.kind === 'open' && material.ship === choice.shipType;
+          setWorks((w) => (opens ? { mode: 'build', key: `build-${Date.now()}`, skill: true } : w && w.mode !== 'strike' ? { mode: 'strike', key: `strike-${Date.now()}`, skill: false } : w));
         }}
         protects={protects}
         protect={choice.protect ?? actionFor(options, choice)?.protect ?? null}
@@ -262,6 +276,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     }
     if (!shipDecided || type !== (choice.shipType ?? null)) soundEngine.playSfx('role-pick');
     setChoice(withShipType(options, choice, type));
+    // Another ship at the dock: the works were for the one before.
+    if (type !== (choice.shipType ?? null)) setWorks(null);
     setShipDecided(true);
   };
 
@@ -565,6 +581,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     pins: shipPhase ? [] : typed ? pins.filter((p) => p.id === 'ship-note') : pins,
     camera,
     ...(typed ? { ownShip: true } : {}),
+    ...(works && !shipPhase ? { ownWorks: works } : {}),
     ...(shownShip ? { ownShipType: shownShip } : {}),
     ...(shipPhase ? { bareShot: true } : {}),
     ...(sideView ? { sideShot: true } : {}),

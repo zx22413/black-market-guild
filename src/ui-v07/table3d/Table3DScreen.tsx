@@ -30,6 +30,8 @@ import { RulesPanel } from './RulesPanel';
 import { RulesContext } from './rulesContext';
 import { TideChip } from './TideChip';
 import { roundCards } from './roundCard';
+import { launchWorks } from './facilityShow';
+import type { WorksMode } from '../scene/ships/dockWorksShow';
 import { RoundCardShow } from './RoundCardShow';
 import { roundLabel, tideStatus } from './tideModel';
 import { SealSubmit } from './SealSubmit';
@@ -311,6 +313,15 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const dockShip: TableShip[] = step?.ownShip && viewer && !launched.some((s) => s.owner === viewer && s.state !== 'atSea') ? [{ id: `dock-${viewer}` as ShipId, owner: viewer, state: 'docked', ...(step.ownShipType ? { type: step.ownShipType } : {}) }] : [];
   // The side shots of your own ship (picking and loading) leave out ships riding at sea, which would crowd in behind it.
   const ships: TableShip[] = [...(step?.sideShot ? launched.filter((s) => s.state !== 'atSea') : launched), ...dockShip];
+  // V0.8 prototype: the dock works. Round your own ship while you open its skill (the step says how), and at the launch
+  // round every docked ship whose skill was opened this round: the others' are unveiled, your own (which you watched
+  // being built) only goes back under.
+  const works = useMemo(() => {
+    const map = new Map<ShipId, { mode: WorksMode; key: string; skill: boolean }>();
+    if (step?.ownWorks && viewer) map.set(`dock-${viewer}` as ShipId, step.ownWorks);
+    if (moments.launching) for (const [id, w] of launchWorks(snap.events, board.round, board.ships, viewer)) map.set(id, w);
+    return map;
+  }, [step?.ownWorks, viewer, moments.launching, snap.events, board.round, board.ships]);
   const stateOf = (id: ShipId) => ships.find((x) => x.id === id)?.state;
   const market = {
     ...marketShow({
@@ -434,6 +445,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
         seats={seats}
         weather={board.voyageEvent}
         tide={tideSeason ? tide.tide : null}
+        {...(works.size > 0 ? { works } : {})}
         facilities={facilities}
         facilityPulses={resolution.facilityPulses}
         skills={skills}

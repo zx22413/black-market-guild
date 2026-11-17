@@ -27,6 +27,8 @@ const OgCardPreview = import.meta.env.DEV ? lazy(() => import('./dev/OgCardPrevi
 const TrailerPreview = import.meta.env.DEV ? lazy(() => import('./dev/trailer/TrailerPreview').then((m) => ({ default: m.TrailerPreview }))) : null;
 // The V0.8 prototype's round cards (暗潮將至, a boss side, the last round): /v07.html?dev=roundcards.
 const RoundCardsPreview = import.meta.env.DEV ? lazy(() => import('./dev/RoundCardsPreview').then((m) => ({ default: m.RoundCardsPreview }))) : null;
+// The V0.8 prototype's dock works going up round a docked ship: /v07.html?dev=dockworks.
+const DockWorksPreview = import.meta.env.DEV ? lazy(() => import('./dev/DockWorksPreview').then((m) => ({ default: m.DockWorksPreview }))) : null;
 const devPage = import.meta.env.DEV ? new URLSearchParams(window.location.search).get('dev') : null;
 
 // Trial skin (src/ui-v07/skin/layers.css): `?skin=classic` shows the previous look to compare.
@@ -67,6 +69,10 @@ createRoot(container).render(
     ) : devPage === 'ship-select' && ShipSelectPreview ? (
       <Suspense fallback={null}>
         <ShipSelectPreview />
+      </Suspense>
+    ) : devPage === 'dockworks' && DockWorksPreview ? (
+      <Suspense fallback={null}>
+        <DockWorksPreview />
       </Suspense>
     ) : devPage === 'roundcards' && RoundCardsPreview ? (
       <Suspense fallback={null}>

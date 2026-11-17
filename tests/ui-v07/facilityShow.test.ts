@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { RULES_V08_PROTO, type MatchEvent } from '../../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../src/v07/match';
-import { buildersOf, facilityReactions, materialMoments, mergeMoments, tideLossMoments } from '../../src/ui-v07/table3d/facilityShow';
+import { buildersOf, launchWorks, skillOpenersOf, facilityReactions, materialMoments, mergeMoments, tideLossMoments } from '../../src/ui-v07/table3d/facilityShow';
 
 const islands = { p1: 'mine', p2: 'lumber' } as const;
 
@@ -22,6 +22,21 @@ describe('material moments (V0.8 prototype, not rules)', () => {
   it('names who raised a building that round, not who opened a skill', () => {
     expect(buildersOf(events, 2)).toEqual(['p1']);
     expect(buildersOf(events, 1)).toEqual([]);
+    expect(skillOpenersOf(events, 2)).toEqual([{ playerId: 'p2', ship: 'breaker' }]);
+  });
+
+  it('raises the dock works at the launch only round a ship that sailed with the skill opened for it', () => {
+    const ships = [
+      { id: 's1', owner: 'p1', type: 'standard' as const },
+      { id: 's2', owner: 'p2', type: 'breaker' as const },
+      { id: 's0', owner: 'p2', type: 'breaker' as const, fromEarlier: true },
+    ];
+    // p2 opened the tsunami's skill and sailed it: unveiled for the others, only struck for p2 themself.
+    expect([...launchWorks(events, 2, ships, 'p1')]).toEqual([['s2', { mode: 'launch', key: 'launch-2-p2', skill: true }]]);
+    expect(launchWorks(events, 2, ships, 'p2').get('s2')?.mode).toBe('strike');
+    // Sailing another ship type, or another round: no works.
+    expect(launchWorks(events, 2, [{ id: 's3', owner: 'p2', type: 'gambler' as const }], 'p1').size).toBe(0);
+    expect(launchWorks(events, 3, ships, 'p1').size).toBe(0);
   });
 
   it("joins a player's chips with the launch's", () => {

@@ -3,6 +3,8 @@ import { Suspense, useCallback, useMemo, useRef, useState, type ReactNode, type 
 import { Vector3 } from 'three';
 import type { TideKind } from '../../v07/game';
 import { tideLook } from './tideLook';
+import { DockWorks } from './ships/DockWorks';
+import type { WorksMode } from './ships/dockWorksShow';
 import type { IslandId, PlayerId, ShipId, ShipTypeId, V08BuildingId, VoyageEventId } from '../../v07/game';
 import { Facility } from './Facility';
 import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
@@ -104,6 +106,12 @@ export interface TableCanvasProps {
   readonly onSelectShip?: (id: ShipId) => void;
   /** Darken the 3D table a little; DOM labels on top keep their own brightness. */
   readonly dim?: boolean;
+  /**
+   * V0.8 prototype: the dock works round a docked ship whose skill is being opened (ships/DockWorks.tsx). `key` names
+   * one run of the show; `skill`: the ship has the skill once the yard has changed it (false when the pick is taken back).
+   * Until then the ship is drawn without it, whatever `skills` says.
+   */
+  readonly works?: ReadonlyMap<ShipId, { readonly mode: WorksMode; readonly key: string; readonly skill: boolean; readonly rate?: number }>;
   /** V0.8 prototype: the dark tide in season; the sea and the sky turn toward its water (tideLook.ts). */
   readonly tide?: TideKind | null;
   /** Islands that just counted: each hops with a glowing shore ring (a new key replays it). */
@@ -243,9 +251,16 @@ function sailGale(weather: VoyageEventId | null): number {
   return weather === 'storm' ? 1 : weather === 'tailwind' ? 0.6 : 0;
 }
 
-export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, tide = null, pulses, market, litSeats, facilities, facilityPulses, skills, skillPulses }: TableCanvasProps) {
+export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, tide = null, works, pulses, market, litSeats, facilities, facilityPulses, skills, skillPulses }: TableCanvasProps) {
   // Buildings already standing when the table appears are simply there; one raised later comes down on screen.
   const [standing] = useState(() => new Set(Object.entries(facilities ?? {}).flatMap(([id, b]) => (b ? [id] : []))));
+  // The runs of the dock works whose yard has changed its ship already (the ship swaps inside the dust).
+  const [changed, setChanged] = useState<ReadonlySet<string>>(() => new Set());
+  const shipSkill = (ship: TableShip): boolean => {
+    const w = works?.get(ship.id);
+    if (!w) return skills?.[ship.owner]?.includes(ship.type ?? 'standard') ?? false;
+    return w.skill && (w.mode === 'strike' || changed.has(w.key));
+  };
   const look = useMemo(() => tideLook(WEATHER[weather ?? 'clear'], tide), [weather, tide]);
   const { angles, laneOf } = useTableLayout(seats);
   const islandKey = seats.map((s) => s.island ?? '').join('|');
@@ -341,7 +356,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
                   chosen={ship.chosen ?? false}
                   lantern={weather === 'moonless-night'}
                   onSelect={() => onSelectShip?.(ship.id)}
-                  model={<ShipModel type={ship.type ?? 'standard'} color={seats[lane]?.color ?? '#fcf4e2'} night={weather === 'moonless-night'} underway={ship.state === 'sailing' || ship.state === 'atSea'} gale={sailGale(weather)} murk={weather === 'storm' || weather === 'sea-fog'} skill={skills?.[ship.owner]?.includes(ship.type ?? 'standard') ?? false} skillPulseKey={skillPulses?.get(ship.id) ?? null} />}
+                  model={<ShipModel type={ship.type ?? 'standard'} color={seats[lane]?.color ?? '#fcf4e2'} night={weather === 'moonless-night'} underway={ship.state === 'sailing' || ship.state === 'atSea'} gale={sailGale(weather)} murk={weather === 'storm' || weather === 'sea-fog'} skill={shipSkill(ship)} skillPulseKey={skillPulses?.get(ship.id) ?? null} />}
                 />
               );
               return <group key={ship.id}>{wrapShip ? wrapShip(ship.id, body) : body}</group>;
@@ -349,6 +364,16 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
             {ships.map((ship) => (
               <SeaPassage key={`passage-${ship.id}`} angle={angles[laneOf(ship.owner)]!} color={seats[laneOf(ship.owner)]?.color ?? '#fcf4e2'} state={ship.state} berth={berths.get(ship.id) ?? 0} />
             ))}
+            {ships.map((ship) => {
+              const w = works?.get(ship.id);
+              if (!w) return null;
+              // Its own Suspense: loading the works must not blank the table.
+              return (
+                <Suspense key={`works-${ship.id}-${w.key}`} fallback={null}>
+                  <DockWorks angle={angles[laneOf(ship.owner)]!} berth={berths.get(ship.id) ?? 0} type={ship.type ?? 'standard'} color={seats[laneOf(ship.owner)]?.color ?? '#fcf4e2'} mode={w.mode} {...(w.rate === undefined ? {} : { rate: w.rate })} onSwap={() => setChanged((c) => (c.has(w.key) ? c : new Set([...c, w.key])))} />
+                </Suspense>
+              );
+            })}
             {children}
             <EffectWarmup seatAngles={angles} onDone={onReady} extra={<ShipWarmup />} />
           </Suspense>

@@ -4,6 +4,7 @@ player has: not a fourth building on the lot). An experiment, not rules. For the
 (docs/proposals/2026-11-v08-presentation-plan.md).
 
   Blender -b --factory-startup --python scripts/blender/blockout-dockworks.py -- <render dir> [ship]
+  Blender -b --factory-startup --python scripts/blender/blockout-dockworks.py -- public/models/dockworks.glb
 
 The ship is its exported model with its skill part (public/models/ships/<ship>-up.glb and <ship>-skill.glb), so without
 its code-drawn sails. Ship space: bow +z, y up, the island and its pier astern (-z), the water at y = DRAFT.
@@ -79,8 +80,11 @@ def half_width():
     return xs[int(len(xs) * 0.97)] if xs else 1.2
 
 
-load_ship()
-HALF = half_width()
+EXPORT = OUT.endswith(".glb")
+if not EXPORT:
+    load_ship()
+# Exported, the works are built for a nominal hull; the game moves the two sides out by each ship type's half width.
+HALF = 1.5 if EXPORT else half_width()
 print(f"HALF WIDTH {SHIP} {HALF:.2f}")
 # The staging's two rows of piles beside the hull, and the float's inner edge on the other side: both stand off the
 # hull by the same gap whatever the ship (the game places the two pieces by the ship type's half width).
@@ -402,7 +406,8 @@ def fallen():
 
 # ---------------------------------------------------------------- render
 
-context()
+if not EXPORT:
+    context()
 first = len(PARTS)
 
 
@@ -419,7 +424,7 @@ frame = [ob for ob in frame if ob not in piles]
 cloth = built(canvas) + built(awning) + built(bunting) + built(sign)
 raft = built(work_float)
 drape = built(curtain)
-poles = [ob for ob in drape if ob.name.startswith(("curtain-pole", "curtain-tar", "curtain-cap", "curtain-stake"))]
+poles = [ob for ob in drape if ob.name.startswith(("curtain-pole", "curtain-tar", "curtain-cap", "curtain-stake", "curtain-stay"))]
 drape = [ob for ob in drape if ob not in poles]
 rings = built(splashes)
 dust = built(smoke)
@@ -427,8 +432,94 @@ heap = built(fallen)
 shine = built(glow)
 works = piles + frame + cloth + raft
 extras = poles + drape + rings + dust + heap + shine
-colour_parts()
+
+
+def export_works():
+    """public/models/dockworks.glb: one mesh per piece the game moves on its own (`piles-0..3`, `frame`, `cloth`,
+    `raft`, `poles-0..1`, `curtain`), palette x baked ambient occlusion in the vertex colours, and beside each a `<piece>-flag` of
+    what the game paints in the owner's colour. The staging's pieces have their inner row of piles at x = 0, the
+    curtain's side has the curtain's line at x = 0: the game sets them off the hull by the ship type's half width."""
+    def along(ob):
+        """Where along the ship a part stands (ship space z)."""
+        return -sum(v.co.y for v in ob.data.vertices) / len(ob.data.vertices)
+
+    groups = {"frame": (frame, STAGE_X[0]), "cloth": (cloth, STAGE_X[0]), "raft": (raft, CURTAIN_X), "curtain": (drape, CURTAIN_X)}
+    # The piles come up one bay after another, the curtain's two poles one after the other: a mesh a bay, a mesh a pole.
+    for i, z in enumerate(BAYS):
+        groups[f"piles-{i}"] = ([ob for ob in piles if min(BAYS, key=lambda b: abs(b - along(ob))) == z], STAGE_X[0])
+    for i, sign in enumerate((-1, 1)):
+        groups[f"poles-{i}"] = ([ob for ob in poles if along(ob) * sign > 0], CURTAIN_X)
+    swatch = {ob.name: (mat, shade) for ob, mat, shade in PARTS}
+    # The show's own shapes (splashes, dust, the fallen sheet, the light) are drawn by the game, not exported.
+    for ob in rings + dust + heap + shine:
+        bpy.data.objects.remove(ob)
+    kit.SCENE.render.engine = "CYCLES"
+    kit.SCENE.cycles.device = "CPU"
+    kit.SCENE.cycles.samples = 96
+    kit.SCENE.world = bpy.data.worlds.new("world")
+    kit.SCENE.world.light_settings.distance = 0.7
+    out = []
+    for name, (obs, x0) in groups.items():
+        for ob in obs:
+            mat, shade = swatch[ob.name]
+            me = ob.data
+            attr = me.color_attributes.new("base", "FLOAT_COLOR", "CORNER")
+            zs = [v.co.z for v in me.vertices]
+            lo, hi = min(zs), max(zs)
+            top, bot = hex_rgb(kit.SWATCHES[mat][0]), hex_rgb(kit.SWATCHES[mat][1])
+            for li, loop in enumerate(me.loops):
+                t = (me.vertices[loop.vertex_index].co.z - lo) / (hi - lo) if hi > lo else 1.0
+                attr.data[li].color = [(b + (a - b) * t) * shade for a, b in zip(top, bot)] + [1.0]
+            for v in me.vertices:
+                v.co.x -= x0
+        flags = [ob for ob in obs if swatch[ob.name][0] == "player"]
+        for kind, members in (("", [ob for ob in obs if ob not in flags]), ("-flag", flags)):
+            if not members:
+                continue
+            bpy.ops.object.select_all(action="DESELECT")
+            for ob in members:
+                ob.select_set(True)
+            bpy.context.view_layer.objects.active = members[0]
+            bpy.ops.object.join()
+            joined = bpy.context.view_layer.objects.active
+            joined.name = joined.data.name = name + kind
+            me = joined.data
+            if kind == "":
+                me.color_attributes.active_color = me.color_attributes.new("ao", "FLOAT_COLOR", "CORNER")
+                me.materials.clear()
+                me.materials.append(bpy.data.materials.new("bake"))
+                bpy.ops.object.bake(type="AO", target="VERTEX_COLORS")
+                base, ao = me.color_attributes["base"], me.color_attributes["ao"]
+                col = me.color_attributes.new("Col", "FLOAT_COLOR", "CORNER")
+                for i in range(len(me.loops)):
+                    c = base.data[i].color
+                    k = 1 - 0.4 * (1 - ao.data[i].color[0])
+                    col.data[i].color = (c[0] * k, c[1] * k, c[2] * k, 1.0)
+                me.color_attributes.remove(me.color_attributes["ao"])
+                me.color_attributes.remove(me.color_attributes["base"])
+                me.color_attributes.active_color = me.color_attributes["Col"]
+                me.color_attributes.render_color_index = 0
+            else:
+                me.color_attributes.remove(me.color_attributes["base"])
+                me.materials.clear()
+            for poly in me.polygons:
+                poly.use_smooth = False
+            out.append(joined)
+    bpy.ops.object.select_all(action="DESELECT")
+    for ob in out:
+        ob.select_set(True)
+    os.makedirs(os.path.dirname(OUT), exist_ok=True)
+    bpy.ops.export_scene.gltf(filepath=OUT, export_format="GLB", use_selection=True, export_vertex_color="ACTIVE",
+                              export_materials="PLACEHOLDER", export_normals=True, export_apply=True, export_yup=True)
+    tris = sum(len(p.vertices) - 2 for ob in out for p in ob.data.polygons)
+    print(f"EXPORTED {OUT}: {[ob.name for ob in out]} ~{tris} triangles; staging gap {GAP}, curtain gap {-CURTAIN_X - HALF:.2f}")
+
+
 check_normals(skip=("x-",))
+if EXPORT:
+    export_works()
+    sys.exit(0)
+colour_parts()
 setup_render()
 kit.SCENE.render.line_thickness = 1.0
 glb = bpy.data.materials.new("glb")

@@ -1,3 +1,4 @@
+import type { WorksMode } from '../scene/ships/dockWorksShow';
 import type { ReactNode } from 'react';
 import type { Action, Goods, PlayerId, ShipId } from '../../v07/game';
 import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
@@ -50,6 +51,8 @@ export interface StageParts {
   readonly ownShip?: boolean;
   /** Which ship type stands at the viewer's dock (the one picked, or the card being looked at). */
   readonly ownShipType?: ShipTypeId;
+  /** V0.8 prototype: the dock works round the ship at the viewer's dock (its skill is being opened): TableCanvas's `works` entry. */
+  readonly ownWorks?: { readonly mode: WorksMode; readonly key: string; readonly skill: boolean };
   /** Adjusts each launched ship (selectable, chosen). */
   readonly ship?: (ship: TableShip) => TableShip;
   readonly onSelectShip?: (id: ShipId) => void;

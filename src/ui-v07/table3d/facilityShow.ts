@@ -1,4 +1,4 @@
-import { GOODS, type IslandId, type MatchEvent, type PlayerId, type ShipId, type TideKind, type V08BuildingId, type V08Effect } from '../../v07/game';
+import { GOODS, type IslandId, type MatchEvent, type PlayerId, type ShipId, type ShipTypeId, type TideKind, type V08BuildingId, type V08Effect } from '../../v07/game';
 import { SHIP_TYPE_LABELS } from '../labels';
 import { FACILITY_LABELS, SKILL_LABELS } from '../table/v08Text';
 import type { IslandMoment } from './islandMoments';
@@ -40,6 +40,32 @@ export function tideLossMoments(events: readonly MatchEvent[], round: number, is
       return [{ playerId, island, chips: [{ good: null, text: '暗潮捲走', tone: 'loss', title }, ...goods.map((good) => ({ good, text: `−${lost[good]}`, tone: 'loss' as const, title }))], tone: 'loss' }];
     });
   });
+}
+
+/** Who opened a ship skill in `round`, and for which ship type (the dock works unveil that ship at the launch). */
+export function skillOpenersOf(events: readonly MatchEvent[], round: number): { readonly playerId: PlayerId; readonly ship: ShipTypeId }[] {
+  return events.flatMap((e) =>
+    e.type === 'materials-used' && e.round === round ? e.uses.flatMap((u) => (u.material.kind === 'open' ? [{ playerId: u.playerId, ship: u.material.ship }] : [])) : [],
+  );
+}
+
+/**
+ * The dock works at the launch: round every ship launched in `round` whose own skill was opened in that round. The
+ * others' ships are unveiled (`launch`); the viewer's own, which they watched being built, only goes back under
+ * (`strike`). A skill opened for a ship type that did not sail has no ship at the dock to show it on.
+ */
+export function launchWorks(
+  events: readonly MatchEvent[],
+  round: number,
+  ships: readonly { readonly id: ShipId; readonly owner: PlayerId; readonly type?: ShipTypeId; readonly fromEarlier?: boolean }[],
+  viewer: PlayerId | null,
+): Map<ShipId, { mode: 'launch' | 'strike'; key: string; skill: boolean }> {
+  const works = new Map<ShipId, { mode: 'launch' | 'strike'; key: string; skill: boolean }>();
+  for (const { playerId, ship } of skillOpenersOf(events, round)) {
+    const docked = ships.find((s) => s.owner === playerId && s.type === ship && !s.fromEarlier);
+    if (docked) works.set(docked.id, { mode: playerId === viewer ? 'strike' : 'launch', key: `launch-${round}-${playerId}`, skill: true });
+  }
+  return works;
 }
 
 /** Two lists of moments as one, a player's chips joined (the launch's island chips, then the material action's). */
