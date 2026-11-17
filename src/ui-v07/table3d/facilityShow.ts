@@ -1,4 +1,4 @@
-import { GOODS, type IslandId, type MatchEvent, type PlayerId, type ShipId, type V08BuildingId, type V08Effect } from '../../v07/game';
+import { GOODS, type IslandId, type MatchEvent, type PlayerId, type ShipId, type TideKind, type V08BuildingId, type V08Effect } from '../../v07/game';
 import { SHIP_TYPE_LABELS } from '../labels';
 import { FACILITY_LABELS, SKILL_LABELS } from '../table/v08Text';
 import type { IslandMoment } from './islandMoments';
@@ -60,7 +60,12 @@ export interface FacilityReaction {
   readonly shipId: ShipId | null;
   readonly effect: V08Effect;
   readonly text: string;
+  /** The tide this building just turned away for its owner (the shield effects), else absent. */
+  readonly shields?: TideKind;
 }
+
+/** The effects that are a building turning its tide away. */
+export const SHIELD_OF: Partial<Record<V08Effect, TideKind>> = { 'storm-shield': 'storm', 'pirate-shield': 'pirate', 'crash-shield': 'crash' };
 
 const BUILDING_OF: Partial<Record<V08Effect, V08BuildingId>> = {
   repairyard: 'repairyard',
@@ -102,6 +107,7 @@ export function facilityReactions(events: readonly MatchEvent[], round: number):
     if (e.type !== 'v08-effect' || e.round !== round) return [];
     const building = BUILDING_OF[e.effect];
     if (!building) return [];
-    return [{ playerId: e.playerId, building, shipId: e.shipId, effect: e.effect, text: `${FACILITY_LABELS[building]}：${reactionText(e.effect, e.crates, e.value)}` }];
+    const shields = SHIELD_OF[e.effect];
+    return [{ playerId: e.playerId, building, shipId: e.shipId, effect: e.effect, text: `${FACILITY_LABELS[building]}：${reactionText(e.effect, e.crates, e.value)}`, ...(shields ? { shields } : {}) }];
   });
 }

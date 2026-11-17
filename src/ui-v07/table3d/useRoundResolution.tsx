@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { facilityReactions } from './facilityShow';
 import { skillMoments } from '../beats/skillShow';
-import type { Deployment, GoodId, Goods, MatchEvent, PlayerId, PrivateEvent, ShipId, VoyageEventId } from '../../v07/game';
+import type { Deployment, GoodId, Goods, MatchEvent, PlayerId, PrivateEvent, ShipId, TideKind, V08Effect, VoyageEventId } from '../../v07/game';
 import type { FitPoint } from '../../ui/scene/CameraRig';
 import { TARGET_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
 import { shipPose } from '../../ui/scene/Ships';
@@ -34,12 +34,23 @@ import { roleKey, roleResults } from './roleResults';
 import { cashSoFar, marketRows, settlementFlights } from './settlementModel';
 import { VoyageEventCard, VoyageEventChip } from './VoyageEventCard';
 import type { RoundCard } from './roundCard';
+import { TideIcon } from './tideIcons';
+import './roundCard.css';
 import { RoundCardShow } from './RoundCardShow';
 
 // Everything after the roles are deployed, on the same table (docs/ui/v07-event-presentation.md
 // §1.5–§1.9, §2): the roles revealed as arrows, then one beat per ship (yours in full, the others
 // at a quicker pace), the market row by row at the harbor, the settlement as flights of coins and
 // crates grouped by ship, and your bill. Then the next round.
+
+/** A line over an island during the resolution: a building at work or 拾荒's catch; `shields` when it turned a tide away. */
+interface Reaction {
+  readonly playerId: PlayerId;
+  readonly shipId: ShipId | null;
+  readonly effect: V08Effect;
+  readonly text: string;
+  readonly shields?: TideKind;
+}
 
 export type ResolutionStage = 'wanted' | 'event' | 'reveal' | 'voyage' | 'market' | 'settle' | 'receipt';
 
@@ -363,9 +374,9 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   }
   // 拾荒 pays at the market: said over the freighter owner's island once the market has settled, like a building's line.
   const salvaged = round === null ? [] : skillMoments(events, round).filter((m) => m.at === 'market');
-  const reactions = [
+  const reactions: Reaction[] = [
     ...(round === null ? [] : facilityReactions(events, round)),
-    ...salvaged.map((m) => ({ playerId: m.playerId, shipId: null, effect: m.effect, text: `${m.name}：${m.text}` })),
+    ...salvaged.map((m): Reaction => ({ playerId: m.playerId, shipId: null, effect: m.effect, text: `${m.name}：${m.text}` })),
   ];
   const working =
     stage === 'voyage' && beat && playback.view.showOutcome
@@ -380,10 +391,17 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     return {
       id: `facility-${round}-${id}-${mine.map((r) => `${r.shipId ?? 'market'}-${r.effect}`).join('-')}`,
       position: [x, FACILITY_CHIP_HEIGHT, z],
+      clamp: true,
       node: (
         <span className="isle-moment gain">
           {mine.map((r, i) => (
-            <span key={r.effect} className="isle-chip gain" style={{ animationDelay: `${i * 160}ms` }}>
+            // A tide turned away is the building's big moment: the tide's own glyph, struck out, on dark water.
+            <span key={r.effect} className={`isle-chip gain ${r.shields ? 'tide-shield' : ''}`} style={{ animationDelay: `${i * 160}ms` }}>
+              {r.shields && (
+                <span className="tide-shield-mark">
+                  <TideIcon kind={r.shields} wave={false} />
+                </span>
+              )}
               {r.text}
             </span>
           ))}

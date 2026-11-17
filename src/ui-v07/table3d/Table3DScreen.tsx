@@ -420,6 +420,8 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
 
   const waitingNames = snap.waitingOn.filter((id) => id !== seatOnScreen).map(nameOf);
   const tide = useMemo(() => tideStatus(events), [events]);
+  // V0.8 prototype: the dark-tide season has begun (the rounds after 暗潮將至).
+  const tideSeason = tide.tide !== null && tide.risingRound !== null && board.round > tide.risingRound;
   // V0.8 prototype: the building each seat has raised, for the islands.
   const skills = useMemo(() => Object.fromEntries(ids.map((id) => [id, board.players[id]?.skills ?? []])), [ids, board]);
   const facilities = useMemo(() => Object.fromEntries(ids.map((id) => [id, board.players[id]?.facility ?? null])), [ids, board]);
@@ -431,6 +433,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
       <TableCanvas
         seats={seats}
         weather={board.voyageEvent}
+        tide={tideSeason ? tide.tide : null}
         facilities={facilities}
         facilityPulses={resolution.facilityPulses}
         skills={skills}
@@ -539,7 +542,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
       {/* The voyage event is public from the round's start (§5): it stays in view while investing and deploying. */}
       {ready && !holding && !finished && board.round > 0 && board.voyageEvent && <VoyageEventChip event={board.voyageEvent} {...(bossNow ? { boss: { title: bossNow.title, text: bossNow.lines.join('') } } : {})} />}
       {cardUp && <RoundCardShow key={board.round} cards={startCards} onDone={() => setCardRound(board.round)} />}
-      {ready && !finished && tide.tide !== null && tide.risingRound !== null && board.round > tide.risingRound && <div className="tide-season" aria-hidden="true" />}
+      {ready && !finished && tideSeason && <div className="tide-season" aria-hidden="true" />}
       {/* V0.8 prototype: the dark tide (its two candidates, then the one picked) stays in view the whole match. */}
       {ready && !finished && board.round > 0 && tide.candidates.length > 0 && <TideChip status={tide} round={board.round} />}
       {ready && drafting && <IslandDraft key={drafting.id} context={drafting.context} onSubmit={(a) => session.submit(drafting.id, a)} />}

@@ -122,6 +122,8 @@ export function useIslandMoments({ events, board, free, angleOf, skipFirstOpenin
       return {
         id: `moment-${phase}-${round}-${m.playerId}`,
         position: [x, CHIP_HEIGHT, z],
+        // A long row (a warehouse's losses to the tide) stays inside the screen on the side islands.
+        clamp: true,
         node: (
           <span className={`isle-moment ${m.tone}`}>
             {m.chips.map((c, i) => (

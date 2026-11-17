@@ -104,3 +104,48 @@
   animation: tide-season-in 2400ms ease-out both;
 }
 @keyframes tide-season-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* A building turning its tide away (the resolution's line over the island): dark water, the tide's glyph struck out, a ring of light going out. */
+:root:root .isle-chip.gain.tide-shield {
+  position: relative;
+  border-color: #b8fff8;
+  background: linear-gradient(#17505c, #0c2a34);
+  background-size: auto;
+  color: #e8fffc;
+  text-shadow: none;
+  box-shadow: 0 2px 0 #06171d, 0 0 0 2px #b8fff8, 0 0 18px rgb(88 199 192 / 0.9);
+}
+.isle-chip.tide-shield::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 3px solid #b8fff8;
+  border-radius: 999px;
+  pointer-events: none;
+  animation: tide-shield-ring 1200ms ease-out 250ms both;
+}
+@keyframes tide-shield-ring {
+  from { opacity: 0.9; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.5, 2.2); }
+}
+.tide-shield-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #58c7c0;
+  color: #0a2028;
+}
+.tide-shield-mark svg { width: 18px; height: 18px; }
+.tide-shield-mark::after {
+  content: '';
+  position: absolute;
+  width: 30px;
+  height: 3px;
+  border-radius: 2px;
+  background: #ff6b5a;
+  transform: rotate(-45deg);
+  box-shadow: 0 0 0 1px #0a2028;
+}

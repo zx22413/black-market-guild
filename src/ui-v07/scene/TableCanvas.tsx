@@ -1,6 +1,8 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useCallback, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Vector3 } from 'three';
+import type { TideKind } from '../../v07/game';
+import { tideLook } from './tideLook';
 import type { IslandId, PlayerId, ShipId, ShipTypeId, V08BuildingId, VoyageEventId } from '../../v07/game';
 import { Facility } from './Facility';
 import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
@@ -102,6 +104,8 @@ export interface TableCanvasProps {
   readonly onSelectShip?: (id: ShipId) => void;
   /** Darken the 3D table a little; DOM labels on top keep their own brightness. */
   readonly dim?: boolean;
+  /** V0.8 prototype: the dark tide in season; the sea and the sky turn toward its water (tideLook.ts). */
+  readonly tide?: TideKind | null;
   /** Islands that just counted: each hops with a glowing shore ring (a new key replays it). */
   readonly pulses?: ReadonlyMap<PlayerId, { readonly key: string; readonly tone: 'gain' | 'loss' }>;
   /** Islands whose night lights (fires, lighthouse beams) are on whatever the weather, e.g. the menu's tutorial stop. */
@@ -239,10 +243,10 @@ function sailGale(weather: VoyageEventId | null): number {
   return weather === 'storm' ? 1 : weather === 'tailwind' ? 0.6 : 0;
 }
 
-export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, pulses, market, litSeats, facilities, facilityPulses, skills, skillPulses }: TableCanvasProps) {
+export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, tide = null, pulses, market, litSeats, facilities, facilityPulses, skills, skillPulses }: TableCanvasProps) {
   // Buildings already standing when the table appears are simply there; one raised later comes down on screen.
   const [standing] = useState(() => new Set(Object.entries(facilities ?? {}).flatMap(([id, b]) => (b ? [id] : []))));
-  const look = WEATHER[weather ?? 'clear'];
+  const look = useMemo(() => tideLook(WEATHER[weather ?? 'clear'], tide), [weather, tide]);
   const { angles, laneOf } = useTableLayout(seats);
   const islandKey = seats.map((s) => s.island ?? '').join('|');
   const shores = useMemo(

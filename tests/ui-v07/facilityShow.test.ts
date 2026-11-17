@@ -54,7 +54,7 @@ describe('buildings at work (V0.8 prototype, not rules)', () => {
     ];
     expect(facilityReactions(events, 3)).toEqual([
       { playerId: 'p1', building: 'repairyard', shipId: 's1', effect: 'repairyard', text: '修船廠：少掉 1 箱' },
-      { playerId: 'p2', building: 'tradehouse', shipId: null, effect: 'crash-shield', text: '商行：擋下崩盤潮' },
+      { playerId: 'p2', building: 'tradehouse', shipId: null, effect: 'crash-shield', text: '商行：擋下崩盤潮', shields: 'crash' },
     ]);
     expect(facilityReactions(events, 4)[0]!.text).toBe('軍械庫：海盜少拿 60 G');
   });

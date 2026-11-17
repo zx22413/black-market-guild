@@ -7,7 +7,9 @@ import { TideChip } from '../table3d/TideChip';
 import { roundCards } from '../table3d/roundCard';
 import { RoundCardShow } from '../table3d/RoundCardShow';
 import { RulesContext } from '../table3d/rulesContext';
-import { tideStatus } from '../table3d/tideModel';
+import { TIDE_LABELS, tideStatus } from '../table3d/tideModel';
+import { TideIcon } from '../table3d/tideIcons';
+import { FACILITY_LABELS } from '../table/v08Text';
 import { VoyageEventChip } from '../table3d/VoyageEventCard';
 
 // Dev-only: the V0.8 prototype's round cards (an experiment, not rules) over a plain sea, at /v07.html?dev=roundcards.
@@ -15,6 +17,7 @@ import { VoyageEventChip } from '../table3d/VoyageEventCard';
 // 最後的大市集 and a plain last round; the corner shows the tide chip and the boss chip as in the game.
 
 const DEMAND = { wood: 1, iron: 1, spice: 1, arms: 1 };
+const SHIELD_BUILDING = { storm: 'repairyard', pirate: 'armory', inspection: 'armory', crash: 'tradehouse' } as const;
 const FLIP = { storm: 'storm', pirate: 'sea-fog', inspection: 'black-market-rush', crash: 'calm-seas' } as const;
 
 export function RoundCardsPreview() {
@@ -43,6 +46,17 @@ export function RoundCardsPreview() {
               {label}
             </button>
           ))}
+        </div>
+        {/* A building turning the tide away, as the resolution says it over the island. */}
+        <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translateX(-50%)' }}>
+          <span className="isle-moment gain">
+            <span key={run} className="isle-chip gain tide-shield">
+              <span className="tide-shield-mark">
+                <TideIcon kind={tide} wave={false} />
+              </span>
+              {FACILITY_LABELS[SHIELD_BUILDING[tide]]}：擋下{TIDE_LABELS[tide]}
+            </span>
+          </span>
         </div>
         {boss?.kind === 'voyage' && <VoyageEventChip event={boss.event} boss={{ title: boss.title, text: boss.lines.join('') }} />}
         <TideChip status={tideStatus(events.filter((e) => !('round' in e) || e.round <= at))} round={at} />
