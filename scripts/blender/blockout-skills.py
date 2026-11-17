@@ -182,30 +182,45 @@ def freighter_skill():
 
 
 def hidden_skill():
-    """自帶掩護: a smuggler's shroud rigged over the waist: a dark awning on a ridge pole and crutches, laced to the
-    rails, a shuttered lantern at its head (the cargo travels out of sight)."""
+    """自帶掩護: a smuggler's awning rigged over the waist: a dark cloth on a ridge pole and four posts, high enough for
+    the cargo to stand under it (the crates of the loading step are 1.02 tall and stand along the centre line), laced
+    down to the rails, a shuttered lantern at its head. From above the cargo is out of sight; from the side, while
+    loading, it shows under the eaves."""
     d = design
-    z0, z1 = -1.1, 1.0
-    ridge, eave, half = d.DECK + 1.25, d.DECK + 0.62, 1.02
+    z0, z1 = -1.2, 1.2
+    ridge, eave, half = d.DECK + 1.85, d.DECK + 1.3, 1.0
     for k, z in enumerate((z0, z1)):
         for s in (-1, 1):
-            beam(f"skill-crutch{k}{s}", (s * 0.8, d.DECK, z), (0, ridge + 0.12, z), 0.11, "woodDark", sides=4)
-            box(f"skill-crutch-foot{k}{s}", (s * 0.8, d.DECK + 0.05, z), (0.24, 0.1, 0.24), "woodDark", bevel=0.02)
-        lathe(f"skill-crutch-lash{k}", (0, z), [(0.12, ridge - 0.02), (0.12, ridge + 0.12)], "rope", sides=6)
-    beam("skill-ridge", (0, ridge, z0 - 0.25), (0, ridge, z1 + 0.25), 0.13, "woodDark", sides=6)
+            box(f"skill-post-foot{k}{s}", (s * 0.9, d.DECK + 0.05, z), (0.26, 0.1, 0.26), "dark", bevel=0.02)
+            beam(f"skill-post{k}{s}", (s * 0.9, d.DECK, z), (s * 0.9, eave, z), 0.12, "dark", sides=4)
+            beam(f"skill-rafter{k}{s}", (s * 0.94, eave - 0.02, z), (0, ridge + 0.06, z), 0.1, "dark", sides=4)
+            # A knee from each post to the eave pole, so the frame does not rack.
+            beam(f"skill-knee{k}{s}", (s * 0.9, eave - 0.45, z), (s * 0.9, eave - 0.04, z + (0.4 if k == 0 else -0.4)), 0.08, "dark", sides=4)
+        lathe(f"skill-ridge-lash{k}", (0, z), [(0.12, ridge - 0.04), (0.12, ridge + 0.12)], "rope", sides=6)
+    beam("skill-ridge", (0, ridge, z0 - 0.25), (0, ridge, z1 + 0.25), 0.13, "dark", sides=6)
     for s in (-1, 1):
-        mesh_from(f"skill-shroud{s}", [(0, ridge + 0.06, z0), (0, ridge + 0.06, z1), (s * half, eave, z1 + 0.12), (s * half, eave, z0 - 0.12),
-                                      (0, ridge, z0), (0, ridge, z1), (s * half, eave - 0.06, z1 + 0.12), (s * half, eave - 0.06, z0 - 0.12)],
+        beam(f"skill-eave-pole{s}", (s * 0.9, eave, z0 - 0.1), (s * 0.9, eave, z1 + 0.1), 0.1, "dark", sides=4)
+        mesh_from(f"skill-shroud{s}", [(0, ridge + 0.06, z0), (0, ridge + 0.06, z1), (s * half, eave + 0.04, z1 + 0.12), (s * half, eave + 0.04, z0 - 0.12),
+                                      (0, ridge, z0), (0, ridge, z1), (s * half, eave - 0.02, z1 + 0.12), (s * half, eave - 0.02, z0 - 0.12)],
                   [[0, 1, 2, 3], [7, 6, 5, 4], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]], "heather", convex=True)
-        beam(f"skill-hem{s}", (s * (half + 0.02), eave - 0.02, z0 - 0.14), (s * (half + 0.02), eave - 0.02, z1 + 0.14), 0.14, "ghostGlow", sides=4)
-        for k in range(4):
-            z = z0 + (z1 - z0) * k / 3
-            beam(f"skill-lace{s}{k}", (s * half, eave - 0.04, z), (s * d.hull_rail_x(z), d.sheer(z) + 0.02, z), 0.045, "rope", sides=4)
-            box(f"skill-cleat{s}{k}", (s * d.hull_rail_x(z), d.sheer(z) + 0.04, z), (0.16, 0.08, 0.1), "iron", bevel=0.0)
+        # A short valance hangs from each eave, its hem lit.
+        mesh_from(f"skill-valance{s}", [(s * half, eave + 0.02, z0 - 0.12), (s * half, eave + 0.02, z1 + 0.12), (s * (half + 0.03), eave - 0.26, z1 + 0.12), (s * (half + 0.03), eave - 0.26, z0 - 0.12),
+                                       (s * (half - 0.05), eave + 0.02, z0 - 0.12), (s * (half - 0.05), eave + 0.02, z1 + 0.12), (s * (half - 0.02), eave - 0.26, z1 + 0.12), (s * (half - 0.02), eave - 0.26, z0 - 0.12)],
+                  [[0, 1, 2, 3], [7, 6, 5, 4], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]], "heather", convex=True)
+        beam(f"skill-hem{s}", (s * (half + 0.03), eave - 0.27, z0 - 0.14), (s * (half + 0.03), eave - 0.27, z1 + 0.14), 0.1, "ghostGlow", sides=4)
+        for k in range(3):
+            z = z0 + (z1 - z0) * k / 2
+            beam(f"skill-lace{s}{k}", (s * (half + 0.02), eave - 0.24, z), (s * d.hull_rail_x(z), d.sheer(z) + 0.02, z), 0.045, "rope", sides=4)
+            box(f"skill-cleat{s}{k}", (s * d.hull_rail_x(z), d.sheer(z) + 0.04, z), (0.16, 0.08, 0.1), "metal", bevel=0.0)
         # A patch, off-centre on each side.
-        mesh_from(f"skill-patch{s}", [(s * 0.3, ridge - 0.1, 0.1 + s * 0.3), (s * 0.3, ridge - 0.1, 0.55 + s * 0.3), (s * 0.7, ridge - 0.36, 0.55 + s * 0.3), (s * 0.7, ridge - 0.36, 0.1 + s * 0.3),
-                                     (s * 0.3, ridge - 0.16, 0.1 + s * 0.3), (s * 0.3, ridge - 0.16, 0.55 + s * 0.3), (s * 0.7, ridge - 0.42, 0.55 + s * 0.3), (s * 0.7, ridge - 0.42, 0.1 + s * 0.3)],
+        mesh_from(f"skill-patch{s}", [(s * 0.3, ridge - 0.08, 0.1 + s * 0.3), (s * 0.3, ridge - 0.08, 0.55 + s * 0.3), (s * 0.7, ridge - 0.3, 0.55 + s * 0.3), (s * 0.7, ridge - 0.3, 0.1 + s * 0.3),
+                                     (s * 0.3, ridge - 0.14, 0.1 + s * 0.3), (s * 0.3, ridge - 0.14, 0.55 + s * 0.3), (s * 0.7, ridge - 0.36, 0.55 + s * 0.3), (s * 0.7, ridge - 0.36, 0.1 + s * 0.3)],
                   [[0, 1, 2, 3], [7, 6, 5, 4], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]], "ghostCloth", convex=True)
+    # Where the leaning mainmast comes up through the cloth: a rope coat laced round it.
+    my = ridge - 0.05
+    mx = d.MAIN_HEAD[0] * (my - d.DECK) / (d.MAIN_HEAD[1] - d.DECK)
+    mz = d.MAIN_Z + (d.MAIN_HEAD[2] - d.MAIN_Z) * (my - d.DECK) / (d.MAIN_HEAD[1] - d.DECK)
+    lathe("skill-mast-coat", (mx, mz), [(0.2, my - 0.1), (0.16, my + 0.16)], "rope", sides=8)
     # The lantern hangs from the ridge's forward end on an iron hook: shuttered, one slit of light.
     zl = z1 + 0.25
     beam("skill-hook", (0, ridge, zl), (0, ridge - 0.16, zl), 0.05, "iron", sides=4)
@@ -435,7 +450,16 @@ def livery_trims():
                 beam(f"skill-band{side}{i}", (side * (x0 + 0.03), design.sheer(z0) - 0.16 - 0.06 * (i % 2), z0), (side * (x1 + 0.03), design.sheer(z0 + 0.62) - 0.16 - 0.06 * ((i + 1) % 2), z0 + 0.62), 0.1, "foam", sides=4)
 
 
+def demo_cargo():
+    """The loading step's crates on the centre line (src/ui-v07/scene/InvestIsland.tsx: 1.7 x SIDE_SCALE 0.6), to check
+    that a skill's parts leave them room. Sheet only: built before the skill parts, so never exported."""
+    for i in range(3):
+        box(f"demo-crate{i}", (0, DECK + 0.51, (i - 1) * 1.05), (1.02, 1.02, 1.02), "wood", bevel=0.04)
+
+
 SKILLS = {"standard": standard_skill, "gambler": gambler_skill, "freighter": freighter_skill, "hidden": hidden_skill, "breaker": breaker_skill}
+if os.environ.get("DEMO_CARGO") and SHIP != "freighter":
+    demo_cargo()
 first_skill = len(PARTS)
 if SHIP in SKILLS:
     SKILLS[SHIP]()
@@ -536,7 +560,7 @@ NEAR = {
     "standard": ((0, 3.4, -2.2), -135, 20, 4.6),
     "gambler": ((0, 2.2, -0.9), -70, 22, 5.6),
     "freighter": ((0, 3.2, -2.6), -160, 26, 4.4),
-    "hidden": ((0.2, 3.9, -1.6), -120, 16, 4.6),
+    "hidden": ((0, 2.3, 0.0), -80, 14, 4.8),
     "breaker": ((0, 2.6, -3.0), -150, 20, 5.0),
 }
 top = max((ob.matrix_world @ v.co).z for ob in skill_obs for v in ob.data.vertices) if skill_obs else 0
