@@ -79,11 +79,11 @@ def ball(name, centre, radius, mat):
 def standard_skill():
     """好兆頭: a gilded albatross with its wings spread, perched on the peak of the lookout tower (the ship is named for
     it; the owner looks at the stern)."""
-    y0 = DECK + 2.0  # the peak of the lookout tower's roof (standard_build)
+    y0 = DECK + 1.6  # so that y0 + 0.9 is the peak of the lookout tower's roof (standard_build)
     z = -2.3
-    lathe("skill-perch-stem", (0, z), [(0.1, y0 + 0.9), (0.07, y0 + 1.2)], "gold", sides=8)
-    lathe("skill-perch", (0, z), [(0.22, y0 + 1.18), (0.22, y0 + 1.25)], "gold", sides=8)
-    yb = y0 + 1.3
+    lathe("skill-perch-stem", (0, z), [(0.12, y0 + 0.86), (0.07, y0 + 1.06)], "gold", sides=8)
+    lathe("skill-perch", (0, z), [(0.2, y0 + 1.04), (0.2, y0 + 1.1)], "gold", sides=8)
+    yb = y0 + 1.26
     beam("skill-body", (0, yb, z - 0.42), (0, yb + 0.1, z + 0.4), 0.42, "gold", sides=8, taper=0.6)
     ball("skill-head", (0, yb + 0.22, z + 0.52), 0.2, "gold")
     beam("skill-beak", (0, yb + 0.2, z + 0.66), (0, yb + 0.12, z + 0.98), 0.12, "brass", sides=4, taper=0.3)
@@ -93,8 +93,8 @@ def standard_skill():
         mesh_from(f"skill-wing-a{s}", [(s * 0.12, yb + 0.1, z + 0.28), (s * 0.12, yb + 0.04, z - 0.3), (s * 0.95, yb + 0.42, z - 0.36), (s * 0.9, yb + 0.5, z + 0.12),
                                       (s * 0.12, yb + 0.02, z + 0.28), (s * 0.12, yb - 0.04, z - 0.3), (s * 0.95, yb + 0.34, z - 0.36), (s * 0.9, yb + 0.42, z + 0.12)],
                   [[0, 1, 2, 3], [7, 6, 5, 4], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]], "gold", convex=True)
-        mesh_from(f"skill-wing-b{s}", [(s * 0.9, yb + 0.5, z + 0.12), (s * 0.95, yb + 0.42, z - 0.36), (s * 1.95, yb + 0.5, z - 0.72), (s * 1.75, yb + 0.6, z - 0.3),
-                                      (s * 0.9, yb + 0.43, z + 0.12), (s * 0.95, yb + 0.35, z - 0.36), (s * 1.95, yb + 0.45, z - 0.72), (s * 1.75, yb + 0.55, z - 0.3)],
+        mesh_from(f"skill-wing-b{s}", [(s * 0.9, yb + 0.5, z + 0.12), (s * 0.95, yb + 0.42, z - 0.36), (s * 1.7, yb + 0.36, z - 0.72), (s * 1.55, yb + 0.44, z - 0.3),
+                                      (s * 0.9, yb + 0.43, z + 0.12), (s * 0.95, yb + 0.35, z - 0.36), (s * 1.7, yb + 0.31, z - 0.72), (s * 1.55, yb + 0.39, z - 0.3)],
                   [[0, 1, 2, 3], [7, 6, 5, 4], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]], "roofGold", convex=True)
 
 
@@ -242,22 +242,22 @@ def standard_build():
     perches on its peak) and a spritsail set under the bowsprit."""
     y0, z = DECK + 1.05, -2.3
     plan = [(0.62, z + 0.55), (0.62, z - 0.55), (-0.62, z - 0.55), (-0.62, z + 0.55)]
-    plan_solid("skill-tower", plan, y0, y0 + 1.15, "sandstone")
+    plan_solid("skill-tower", plan, y0, y0 + 0.82, "sandstone")
     plan_ring("skill-tower-foot", offset(plan, 0.08), offset(plan, -0.02), y0, y0 + 0.14, "woodDark")
-    plan_ring("skill-tower-eave", offset(plan, 0.16), offset(plan, -0.02), y0 + 1.1, y0 + 1.24, "woodDark")
+    plan_ring("skill-tower-eave", offset(plan, 0.16), offset(plan, -0.02), y0 + 0.78, y0 + 0.92, "woodDark")
     for k, (x, zc) in enumerate(plan):
-        beam(f"skill-tower-post{k}", (x, y0, zc), (x, y0 + 1.15, zc), 0.14, "woodDark", sides=4)
+        beam(f"skill-tower-post{k}", (x, y0, zc), (x, y0 + 0.82, zc), 0.14, "woodDark", sides=4)
     for sx in (-1, 1):
-        framed_opening(f"skill-tower-win{sx}", (sx * 0.62, y0 + 0.62, z), (0.3, 0.42), True)
-    framed_opening("skill-tower-win-aft", (0, y0 + 0.62, z - 0.55), (0.34, 0.42), False)
+        framed_opening(f"skill-tower-win{sx}", (sx * 0.62, y0 + 0.44, z), (0.3, 0.36), True)
+    framed_opening("skill-tower-win-aft", (0, y0 + 0.44, z - 0.55), (0.34, 0.36), False)
     # Pyramid roof in the castle's red, with gold hips.
-    apex = (0, y0 + 2.05, z)
+    apex = (0, y0 + 1.5, z)
     eaves = offset(plan, 0.18)
     for k in range(4):
         (xa, za), (xb, zb) = eaves[k], eaves[(k + 1) % 4]
-        mesh_from(f"skill-roof{k}", [(xa, y0 + 1.22, za), (xb, y0 + 1.22, zb), apex, (xa * 0.9, y0 + 1.16, za * 0.9 + z * 0.1), (xb * 0.9, y0 + 1.16, zb * 0.9 + z * 0.1)],
+        mesh_from(f"skill-roof{k}", [(xa, y0 + 0.9, za), (xb, y0 + 0.9, zb), apex, (xa * 0.9, y0 + 0.84, za * 0.9 + z * 0.1), (xb * 0.9, y0 + 0.84, zb * 0.9 + z * 0.1)],
                   [[0, 1, 2], [0, 3, 4, 1], [1, 4, 2], [3, 0, 2], [4, 3, 2]], "roofRed", convex=True)
-        beam(f"skill-hip{k}", (xa, y0 + 1.24, za), apex, 0.1, "gold", sides=4, taper=0.5)
+        beam(f"skill-hip{k}", (xa, y0 + 0.92, za), apex, 0.1, "gold", sides=4, taper=0.5)
     # Spritsail: a small square sail on its own yard under the bowsprit, gold-hemmed.
     by, bz = DECK + 0.95, 3.45
     beam("skill-sprit-yard", (-1.0, by, bz), (1.0, by, bz), 0.1, "woodDark", sides=6)
@@ -299,6 +299,19 @@ def freighter_build():
     beam("skill-derrick-jib", (0, DECK + 0.6, 2.75), jib, 0.18, "wood", sides=6, taper=0.7)
     beam("skill-derrick-topping", head, jib, 0.05, "rope", sides=4)
     beam("skill-derrick-stay", head, (0, DECK + 0.4, 0.9), 0.05, "rope", sides=4)
+    # A lookout cabin on the stern house's roof: blue like the house, gold-banded, a little hipped roof, a lit window aft.
+    cz_, y0 = -2.62, 3.4
+    box("skill-cabin-sill", (0, y0 + 0.04, cz_), (0.86, 0.08, 0.74), "woodDark", bevel=0.02)
+    box("skill-cabin", (0, y0 + 0.38, cz_), (0.74, 0.6, 0.62), "roofBlue", bevel=0.03)
+    box("skill-cabin-band", (0, y0 + 0.68, cz_), (0.8, 0.07, 0.68), "gold", bevel=0.01)
+    box("skill-cabin-roof", (0, y0 + 0.76, cz_), (0.96, 0.1, 0.84), "wood", bevel=0.03)
+    lathe("skill-cabin-cap", (0, cz_), [(0.36, y0 + 0.8), (0.08, y0 + 1.02)], "wood", sides=4)
+    lathe("skill-cabin-finial", (0, cz_), [(0.07, y0 + 1.0), (0.07, y0 + 1.14)], "gold", sides=6)
+    box("skill-cabin-win-frame", (0, y0 + 0.4, cz_ - 0.31), (0.4, 0.36, 0.05), "gold", bevel=0.01)
+    box("skill-cabin-win", (0, y0 + 0.4, cz_ - 0.335), (0.28, 0.24, 0.03), "flame", bevel=0.0)
+    for sx in (-1, 1):
+        box(f"skill-cabin-side-frame{sx}", (sx * 0.37, y0 + 0.4, cz_), (0.05, 0.32, 0.34), "gold", bevel=0.01)
+        box(f"skill-cabin-side-win{sx}", (sx * 0.395, y0 + 0.4, cz_), (0.03, 0.2, 0.22), "dark", bevel=0.0)
     box("skill-derrick-block", (0, 3.42, 4.15), (0.2, 0.26, 0.16), "brass", bevel=0.03)
     beam("skill-derrick-fall", (0, 3.3, 4.15), (0, 2.55, 4.15), 0.05, "rope", sides=4)
     lathe("skill-derrick-net", (0, 4.15), [(0.06, 2.6), (0.42, 2.25), (0.46, 1.95), (0.3, 1.7), (0.08, 1.62)], "rope", sides=8)
@@ -311,16 +324,20 @@ def hidden_build():
     d = design
     eave = d.TOWER_TOP + 1.0  # the gable roof's ridge
     cx, cz = 0.32, -2.02
-    lathe("skill-belfry-foot", (cx, cz), [(0.5, eave - 0.2), (0.44, eave + 0.05)], "ghostCloth", sides=6)
+    # A saddle astride the ridge: a dark block bedded into both slopes, pale flashing boards where it meets them.
+    box("skill-belfry-saddle", (cx, eave - 0.16, cz), (0.92, 0.5, 0.9), "basalt", bevel=0.04)
+    for sz in (-1, 1):
+        beam(f"skill-belfry-flash{sz}", (cx - 0.5, eave - 0.3, cz + sz * 0.47), (cx + 0.5, eave - 0.3, cz + sz * 0.47), 0.11, "ghostCloth", sides=4)
+    lathe("skill-belfry-foot", (cx, cz), [(0.5, eave + 0.02), (0.44, eave + 0.12)], "ghostCloth", sides=6)
     lathe("skill-belfry", (cx + 0.04, cz), [(0.4, eave + 0.0), (0.36, eave + 0.62)], "slate", sides=6)
     lathe("skill-belfry-rim", (cx + 0.06, cz), [(0.46, eave + 0.6), (0.46, eave + 0.7)], "ghostCloth", sides=6)
     for k in range(6):
         a = math.pi / 3 * k + math.pi / 6
         box(f"skill-belfry-glow{k}", (cx + 0.05 + math.cos(a) * 0.35, eave + 0.32, cz + math.sin(a) * 0.35), (0.16, 0.34, 0.06), "ghostGlow", bevel=0.0, yaw=-a + math.pi / 2)
     # The spire leans the tower's way, bent again near its tip.
-    beam("skill-spire-a", (cx + 0.07, eave + 0.68, cz), (cx + 0.28, eave + 1.3, cz - 0.05), 0.8, "basalt", sides=6, taper=0.4)
-    beam("skill-spire-b", (cx + 0.28, eave + 1.28, cz - 0.05), (cx + 0.52, eave + 1.72, cz - 0.02), 0.32, "basalt", sides=6, taper=0.15)
-    lathe("skill-spire-band", (cx + 0.28, cz - 0.05), [(0.2, eave + 1.24), (0.2, eave + 1.34)], "ghostGlow", sides=6)
+    beam("skill-spire-a", (cx + 0.07, eave + 0.68, cz), (cx + 0.24, eave + 1.1, cz - 0.05), 0.8, "basalt", sides=6, taper=0.4)
+    beam("skill-spire-b", (cx + 0.24, eave + 1.08, cz - 0.05), (cx + 0.44, eave + 1.4, cz - 0.02), 0.32, "basalt", sides=6, taper=0.15)
+    lathe("skill-spire-band", (cx + 0.24, cz - 0.05), [(0.2, eave + 1.04), (0.2, eave + 1.14)], "ghostGlow", sides=6)
 
 
 def breaker_build():
@@ -331,13 +348,19 @@ def breaker_build():
     beam("skill-upper-ram-collar", (0, 1.05, zb - 0.02), (0, 1.05, zb + 0.1), 0.48, "gold", sides=8)
     beam("skill-ram-strut", (0, 0.55, 3.55), (0, 1.0, 3.55), 0.14, "gold", sides=6)
     for s in (-1, 1):
-        zs = [1.75, 2.2, 2.6, 2.95]
+        zs = [1.7 + 1.3 * k / 8 for k in range(9)]
+        foot = lambda z: 0.72 + 0.16 * math.sin((z - 1.7) / 1.3 * math.pi * 3)  # noqa: E731  a wave-cut lower edge
         for k in range(len(zs) - 1):
             z0, z1 = zs[k], zs[k + 1]
-            x0, x1 = d.outer_x(z0, 1.0) + 0.05, d.outer_x(z1, 1.0) + 0.05
-            quad_slab(f"skill-cheek{s}{k}", [(s * x0, d.sheer(z0) - 0.02, z0), (s * x1, d.sheer(z1) - 0.02, z1), (s * x1, 0.62, z1), (s * x0, 0.62, z0)], 0.06, "brass", axis=(s, 0, 0))
-            beam(f"skill-cheek-rivet{s}{k}", (s * (x0 + 0.08), 1.0, (z0 + z1) / 2), (s * (x0 + 0.14), 1.0, (z0 + z1) / 2), 0.14, "gold", sides=6)
-        beam(f"skill-cheek-rail{s}", (s * (d.outer_x(1.75, 1.0) + 0.09), d.sheer(1.75) + 0.02, 1.75), (s * (d.outer_x(2.95, 1.0) + 0.09), d.sheer(2.95) + 0.02, 2.95), 0.1, "gold", sides=4)
+            x0, x1 = d.outer_x(z0, 1.0) + 0.04, d.outer_x(z1, 1.0) + 0.04
+            quad_slab(f"skill-cheek{s}{k}", [(s * x0, d.sheer(z0) - 0.03, z0), (s * x1, d.sheer(z1) - 0.03, z1), (s * (d.outer_x(z1, foot(z1)) + 0.04), foot(z1), z1), (s * (d.outer_x(z0, foot(z0)) + 0.04), foot(z0), z0)], 0.05, "brass", axis=(s, 0, 0))
+            beam(f"skill-cheek-foot{s}{k}", (s * (d.outer_x(z0, foot(z0)) + 0.08), foot(z0), z0), (s * (d.outer_x(z1, foot(z1)) + 0.08), foot(z1), z1), 0.07, "gold", sides=4)
+            if k % 2 == 0:
+                zm = (z0 + z1) / 2
+                beam(f"skill-cheek-rivet{s}{k}", (s * (d.outer_x(zm, 1.1) + 0.07), 1.1, zm), (s * (d.outer_x(zm, 1.1) + 0.12), 1.1, zm), 0.09, "gold", sides=6)
+        for z_end in (zs[0], zs[-1]):
+            beam(f"skill-cheek-end{s}{z_end:.2f}", (s * (d.outer_x(z_end, 1.0) + 0.08), d.sheer(z_end), z_end), (s * (d.outer_x(z_end, foot(z_end)) + 0.08), foot(z_end), z_end), 0.07, "gold", sides=4)
+        beam(f"skill-cheek-rail{s}", (s * (d.outer_x(zs[0], 1.0) + 0.08), d.sheer(zs[0]) + 0.02, zs[0]), (s * (d.outer_x(zs[-1], 1.0) + 0.08), d.sheer(zs[-1]) + 0.02, zs[-1]), 0.09, "gold", sides=4)
 
 
 BUILDS = {"standard": standard_build, "gambler": gambler_build, "freighter": freighter_build, "hidden": hidden_build, "breaker": breaker_build}
@@ -372,8 +395,8 @@ def livery_trims():
                 beam(f"skill-belt-b{side}{i}", (side * (half(zs[i]) * 0.93 + 0.03), 1.24, zs[i]), (side * (half(zs[i + 1]) * 0.93 + 0.03), 1.24, zs[i + 1]), 0.09, "plaster", sides=4)
     if SHIP == "standard":
         # A long gold-edged streamer at the masthead in place of the short pennant.
-        y = design.MAST_TOP + 0.5
-        mesh_from("skill-streamer", [(0, y + 0.22, design.MAST_Z), (0, y - 0.22, design.MAST_Z), (0, y - 0.05, design.MAST_Z - 2.0), (0, y + 0.02, design.MAST_Z - 2.2), (0.03, y + 0.22, design.MAST_Z), (0.03, y - 0.22, design.MAST_Z), (0.03, y - 0.05, design.MAST_Z - 2.0), (0.03, y + 0.02, design.MAST_Z - 2.2)],
+        y = design.MAST_TOP - 0.1  # at the masthead, inside the ship-pick box
+        mesh_from("skill-streamer", [(0, y + 0.16, design.MAST_Z), (0, y - 0.16, design.MAST_Z), (0, y - 0.05, design.MAST_Z - 2.0), (0, y + 0.02, design.MAST_Z - 2.2), (0.03, y + 0.16, design.MAST_Z), (0.03, y - 0.16, design.MAST_Z), (0.03, y - 0.05, design.MAST_Z - 2.0), (0.03, y + 0.02, design.MAST_Z - 2.2)],
                   [[0, 1, 2, 3], [7, 6, 5, 4], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]], "roofGold", convex=True)
     if SHIP == "breaker":
         # A white wave band along each side above the oars.
@@ -432,7 +455,17 @@ def orbit(name, azimuth, elevation, target, scale, res):
     return camera(name, V(*(t + d)), V(*t), scale, res)
 
 
-VIEWS = {"own": orbit("cam-own", 180, 54, (0, 2.2, 0.2), 10.5, (900, 900)), "side": orbit("cam-side", -68, 18, (0, 2.9, 0.2), 10.5, (900, 900))}
+# A close look at what the skill builds, for checking joints and trims: (target, azimuth, elevation, scale).
+NEAR = {
+    "standard": ((0, 3.4, -2.2), -135, 20, 4.6),
+    "gambler": ((0, 2.6, -1.4), -75, 16, 5.2),
+    "freighter": ((0, 3.0, -1.6), -120, 18, 5.4),
+    "hidden": ((0.2, 3.9, -1.6), -120, 16, 4.6),
+    "breaker": ((0, 1.9, 3.1), -55, 18, 4.6),
+}
+top = max((ob.matrix_world @ v.co).z for ob in skill_obs for v in ob.data.vertices) if skill_obs else 0
+print(f"HEIGHT {SHIP} skill parts reach {top:.2f} (ship-pick box {SHIP_BOX_TOP})")
+VIEWS = {"own": orbit("cam-own", 180, 54, (0, 2.2, 0.2), 10.5, (900, 900)), "side": orbit("cam-side", -68, 18, (0, 2.9, 0.2), 10.5, (900, 900)), "near": orbit("cam-near", NEAR[SHIP][1], NEAR[SHIP][2], NEAR[SHIP][0], NEAR[SHIP][3], (900, 900))}
 os.makedirs(OUT, exist_ok=True)
 for state in ("off", "on"):
     for ob in skill_obs:
