@@ -373,6 +373,23 @@ def breaker_build():
     beam("skill-upper-ram", (0, 1.05, zb - 0.1), (0, 0.98, 4.05), 0.4, "brass", sides=4, taper=0.5)
     beam("skill-upper-ram-collar", (0, 1.05, zb - 0.02), (0, 1.05, zb + 0.1), 0.48, "gold", sides=8)
     beam("skill-ram-strut", (0, 0.55, 3.55), (0, 1.0, 3.55), 0.14, "gold", sides=6)
+    # The stern carries the wave too (the ship-pick camera looks at the stern, where the bow's wave hides behind the
+    # sail): a smaller breaker on each side of the scorpion tail, curling forward over the canopy, bound to the tail by
+    # bronze collars.
+    za, ys, k = d.Z_AFT - 0.5, d.sheer(d.Z_AFT) + 0.3, 0.72
+    curl = [(0.0, 0.05), (0.42, 0.5), (0.78, 1.2), (0.82, 1.85), (0.55, 2.35), (0.1, 2.5), (-0.3, 2.3), (-0.45, 1.95), (-0.25, 1.8), (0.05, 1.95), (0.3, 1.8), (0.36, 1.35), (0.2, 0.8), (-0.12, 0.3)]
+    crest = [(0.8, 1.7), (0.86, 1.9), (0.58, 2.44), (0.1, 2.6), (-0.34, 2.38), (-0.52, 1.95), (-0.4, 1.9), (-0.26, 2.22), (0.1, 2.42), (0.5, 2.28), (0.72, 1.85)]
+    aft = lambda pts: [(za - dz * k, ys + dy * k) for dz, dy in pts]  # noqa: E731  mirrored: it rises aft and curls forward
+    for s in (-1, 1):
+        slab_x(f"skill-stern-wave{s}", aft(curl), s * 0.34 - 0.1, s * 0.34 + 0.1, "wave")
+        slab_x(f"skill-stern-crest{s}", aft(crest), s * 0.34 - 0.13, s * 0.34 + 0.13, "foam")
+        ball(f"skill-stern-bead{s}", (s * 0.34, ys + 2.5 * k, za - 0.1 * k), 0.15, "foam")
+        ball(f"skill-stern-bead-tip{s}", (s * 0.34, ys + 2.0 * k, za + 0.46 * k), 0.12, "foam")
+        for j, t in enumerate((0.3, 1.0)):
+            slab_x(f"skill-stern-rib{s}{j}", aft([(0.25 + t * 0.4, 0.3 + t), (0.33 + t * 0.4, 0.27 + t), (0.45 + t * 0.32, 0.55 + t), (0.37 + t * 0.32, 0.58 + t)]), s * 0.34 - 0.12, s * 0.34 + 0.12, "roofGreen")
+    # Collars: bronze bands round the tail and both waves where they leave the hull and again halfway up.
+    for j, (dz, dy) in enumerate(((0.05, 0.12), (0.5, 0.75))):
+        slab_x(f"skill-stern-collar{j}", aft([(dz - 0.16, dy - 0.08), (dz + 0.2, dy - 0.02), (dz + 0.24, dy + 0.14), (dz - 0.12, dy + 0.1)]), -0.5, 0.5, "brass")
     for s in (-1, 1):
         zs = [1.7 + 1.3 * k / 8 for k in range(9)]
         foot = lambda z: 0.72 + 0.16 * math.sin((z - 1.7) / 1.3 * math.pi * 3)  # noqa: E731  a wave-cut lower edge
@@ -520,7 +537,7 @@ NEAR = {
     "gambler": ((0, 2.2, -0.9), -70, 22, 5.6),
     "freighter": ((0, 3.2, -2.6), -160, 26, 4.4),
     "hidden": ((0.2, 3.9, -1.6), -120, 16, 4.6),
-    "breaker": ((0, 1.9, 3.1), -55, 18, 4.6),
+    "breaker": ((0, 2.6, -3.0), -150, 20, 5.0),
 }
 top = max((ob.matrix_world @ v.co).z for ob in skill_obs for v in ob.data.vertices) if skill_obs else 0
 print(f"HEIGHT {SHIP} skill parts reach {top:.2f} (ship-pick box {SHIP_BOX_TOP})")
