@@ -27,6 +27,7 @@ OUT = ARGS[0]
 SHIP = ARGS[1] if len(ARGS) > 1 else "standard"
 from blockout_kit import *  # noqa: E402,F403
 import blockout_kit as kit  # noqa: E402
+import bmesh  # noqa: E402
 
 kit.SWATCHES["player"] = ("#4a7fd4", "#345fa8")  # the seat's colour in the game; blue stands in on the sheet
 kit.SWATCHES["sea"] = ("#2fa3a8", "#27898e")
@@ -41,11 +42,15 @@ kit.finish = lambda bm, name, mat, shade=1.0: _finish(bm, name.replace(".", "_")
 
 def load_ship():
     hull = "freighter.glb" if SHIP == "freighter" else f"{SHIP}-up.glb"
-    for name in (hull, f"{SHIP}-skill.glb"):
+    # The ship as it is before the skill (its plain hull), and after (the changed hull and the skill's part).
+    for name, when in ((f"{SHIP}.glb", "before"), (hull, "after"), (f"{SHIP}-skill.glb", "after")):
+        if name == hull and SHIP == "freighter":
+            continue
+        seen = set(kit.SCENE.objects)
         bpy.ops.import_scene.gltf(filepath=os.path.join(kit.REPO, "public/models/ships", name))
-    for ob in kit.SCENE.objects:
-        if ob.type == "MESH":
-            ob["model"] = True
+        for ob in set(kit.SCENE.objects) - seen:
+            if ob.type == "MESH":
+                ob["model"] = when if SHIP != "freighter" or name != f"{SHIP}.glb" else "both"
 
 
 def context():
@@ -68,7 +73,7 @@ def half_width():
             continue
         for v in ob.data.vertices:
             w = ob.matrix_world @ v.co  # Blender space: x across, -y toward the bow, z up
-            if abs(w.y) < 2.2 and WATER + 0.2 < w.z < 1.9:
+            if ob.get("model") != "before" and abs(w.y) < 2.2 and WATER + 0.2 < w.z < 1.9:
                 xs.append(abs(w.x))
     xs.sort()
     return xs[int(len(xs) * 0.97)] if xs else 1.2
@@ -81,7 +86,8 @@ print(f"HALF WIDTH {SHIP} {HALF:.2f}")
 # hull by the same gap whatever the ship (the game places the two pieces by the ship type's half width).
 GAP = 0.42
 STAGE_X = (HALF + GAP, HALF + GAP + 0.8)
-FLOAT_X = -(HALF + 0.3)
+FLOAT_X = -(HALF + 0.62)
+CURTAIN_X = -(HALF + 0.3)  # the curtain hangs between the hull and the float
 BAYS = (-3.0, -1.0, 1.0, 3.0)
 LOW, HIGH = 1.75, 3.15  # the two plank levels: at the rail, and at the castles' tops
 TOPS = {-3.0: 5.0, -1.0: 3.9, 1.0: 3.9, 3.0: 5.0}  # the end piles carry the bunting
@@ -275,27 +281,124 @@ def work_float():
         box(f"works-bearer{z}", (x1 -0.65, WATER + 0.27, z), (0.9, 0.05, 0.08), "woodDark", bevel=0.01)
     for i in range(3):
         box(f"works-stack{i}", (x1 -0.65, WATER + 0.325 + i * 0.06, -1.05), (0.8 - i * 0.12, 0.05, 1.1), "deck", bevel=0.012, shade=0.9 + i * 0.05)
-    # The ladder up the ship's side, hooked over the rail.
-    for dz in (-0.13, 0.13):
-        beam(f"works-side-ladder{dz}", (x1 -0.05, WATER + 0.26, -0.55 + dz), (-HALF + 0.02, 1.8, -0.55 + dz), 0.055, "woodDark", sides=6)
-    lean = (-HALF + 0.02) - (x1 - 0.05)
-    for i in range(1, 5):
-        t = i / 5
-        px, py = x1 - 0.05 + lean * t, WATER + 0.26 + (1.8 - WATER - 0.26) * t
-        beam(f"works-side-rung{i}", (px, py, -0.68), (px, py, -0.42), 0.04, "wood", sides=6)
+
+
+def curtain():
+    """The curtain on the side the ship-pick camera looks from: two tall poles on the float's side, a line between them,
+    and one great sheet in the player's colour with the yard's mark, which hides the ship while the yard works and is
+    let fall to show it. The poles are stepped in tubs lashed to stakes; the sheet runs on rings."""
+    x, top = CURTAIN_X, 5.35
+    for z in (-3.35, 3.35):
+        beam(f"curtain-pole{z}", (x, WATER - 0.04, z), (x, top, z), 0.17, "woodDark", sides=8, taper=0.7)
+        prism(f"curtain-tar{z}", (x, WATER - 0.04, z), 0.1, 0.34, "dark", sides=8)
+        prism(f"curtain-cap{z}", (x, top, z), 0.09, 0.07, "brass", sides=8)
+        # A stay from each pole's head down to a stake further out, so a pole with a sheet on it does not stand alone.
+        beam(f"curtain-stay{z}", (x, top - 0.15, z), (x - 1.1, WATER + 0.3, z * 1.12), 0.035, "rope", sides=5)
+        beam(f"curtain-stake{z}", (x - 1.1, WATER - 0.04, z * 1.12), (x - 1.1, WATER + 0.45, z * 1.12), 0.12, "woodDark", sides=8)
+    n = 12
+    line = []
+    for i in range(n + 1):
+        t = i / n
+        line.append((x, top - 0.15 - 0.3 * math.sin(math.pi * t), -3.35 + 6.7 * t))
+    for i, (p, q) in enumerate(zip(line, line[1:])):
+        beam(f"curtain-line{i}", p, q, 0.04, "rope", sides=5)
+    foot = WATER + 0.55
+    verts, faces = [], []
+    for i, (lx, ly, lz) in enumerate(line):
+        fold = 0.07 * (1 if i % 2 == 0 else -1)
+        verts += [(lx + fold * 0.3, ly - 0.06, lz), (lx + fold, (ly + foot) / 2, lz), (lx + fold * 1.3, foot, lz)]
+    for i in range(n):
+        k = i * 3
+        faces += [[k, k + 3, k + 4, k + 1], [k + 1, k + 4, k + 5, k + 2]]
+    back = len(verts)
+    verts += [(vx + 0.03, vy, vz) for vx, vy, vz in verts]
+    faces += [[back + k for k in reversed(f)] for f in list(faces)]
+    mesh_from("x-curtain-sheet", verts, faces, "player")
+    # A cream band along the head and the foot, and the rings the sheet runs on.
+    for y0, y1, name in ((top - 0.52, top - 0.86, "head"), (foot + 0.34, foot, "foot")):
+        band = [(x - 0.09, y0 - (0.3 * math.sin(math.pi * i / n) if name == "head" else 0), -3.35 + 6.7 * i / n) for i in range(n + 1)]
+        bv = []
+        for bx, by, bz in band:
+            bv += [(bx, by, bz), (bx, by - abs(y0 - y1), bz)]
+        mesh_from(f"x-curtain-band-{name}", bv + [(vx - 0.02, vy, vz) for vx, vy, vz in bv], [[i * 2, i * 2 + 1, i * 2 + 3, i * 2 + 2] for i in range(n)], "canvas")
+    for i in range(1, n, 2):
+        prism(f"curtain-ring{i}", (line[i][0], line[i][1] - 0.07, line[i][2]), 0.07, 0.06, "brass", sides=8)
+    # The yard's mark on the sheet, large: the mallet and the adze of the sign, in cream.
+    cx, cy = x - 0.11, (top + foot) / 2 - 0.1
+    beam("curtain-mark-handle", (cx, cy - 0.85, -0.75), (cx, cy + 0.55, 0.65), 0.16, "canvas", sides=6)
+    box("curtain-mark-head", (cx, cy + 0.6, 0.7), (0.06, 0.42, 0.8), "canvas", bevel=0.02)
+    beam("curtain-mark-adze", (cx, cy - 0.85, 0.75), (cx, cy + 0.55, -0.65), 0.16, "canvas", sides=6)
+    box("curtain-mark-blade", (cx, cy + 0.62, -0.7), (0.06, 0.6, 0.36), "canvas", bevel=0.02)
+
+
+def splashes():
+    """Where the piles break the water as they come up: a white ring round each."""
+    rings = [(x, z) for z in BAYS for x in STAGE_X] + [(CURTAIN_X, -3.35), (CURTAIN_X, 3.35)]
+    for x, z in rings:
+        prism(f"x-splash{x}{z}", (x, WATER + 0.01, z), 0.34, 0.03, "marble", sides=10)
+
+
+def puff(name, at, r, shade=1.0):
+    """One ball of work dust: a low icosphere, flat shaded, cream."""
+    bm = bmesh.new()
+    bmesh.ops.create_icosphere(bm, subdivisions=1, radius=r)
+    for v in bm.verts:
+        v.co = V(at[0] + v.co.x, at[1] + v.co.z, at[2] - v.co.y)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return kit.finish(bm, name, "marble", shade)
+
+
+def smoke():
+    """The yard at work behind its curtain: balls of dust boiling up over the sheet and out at both ends, bigger low
+    down, smaller as they rise (in the game each grows, drifts up and fades)."""
+    spots = [
+        (0.2, 4.9, -2.4, 1.0), (-0.5, 5.5, -1.3, 0.8), (0.4, 5.2, -0.2, 1.1), (-0.3, 5.9, 0.9, 0.75), (0.3, 5.0, 2.1, 0.95),
+        (-0.2, 6.4, -0.4, 0.55), (0.5, 6.1, 1.6, 0.5), (-0.6, 4.4, 3.5, 0.8), (0.4, 4.2, -3.7, 0.85), (CURTAIN_X - 0.3, 1.2, 3.9, 0.6),
+        (CURTAIN_X - 0.3, 1.1, -3.9, 0.65), (STAGE_X[1] + 0.3, 4.6, 0.3, 0.7), (0.0, 6.9, 0.6, 0.35),
+    ]
+    for i, (x, y, z, r) in enumerate(spots):
+        puff(f"x-smoke{i}", (x, y, z), r, shade=0.86 + 0.14 * ((i * 37) % 10) / 10)
+    # Stars of the hammers' blows over the sheet, in gold.
+    for i, (x, y, z) in enumerate(((-0.9, 5.9, -2.2), (0.9, 6.3, 0.4), (-0.4, 5.6, 2.6))):
+        for k in range(4):
+            a = math.pi * k / 4
+            beam(f"x-spark{i}{k}", (x, y - 0.3 * math.sin(a), z - 0.3 * math.cos(a)), (x, y + 0.3 * math.sin(a), z + 0.3 * math.cos(a)), 0.07, "gold", sides=4)
+
+
+def fallen():
+    """The curtain let go: the sheet lying in folds on the water under its line."""
+    x = CURTAIN_X
+    for i in range(7):
+        z = -2.9 + i * 0.97
+        box(f"x-fallen{i}", (x - 0.25 - 0.1 * (i % 2), WATER + 0.05, z), (0.9 + 0.2 * (i % 3), 0.07, 0.8), "player", bevel=0.03, yaw=0.25 * (i % 3 - 1))
 
 
 # ---------------------------------------------------------------- render
 
 context()
 first = len(PARTS)
-staging()
-canvas()
-awning()
-bunting()
-sign()
-work_float()
-works = [ob for ob, _, _ in PARTS[first:]]
+
+
+def built(fn):
+    """The parts one builder adds."""
+    start = len(PARTS)
+    fn()
+    return [ob for ob, _, _ in PARTS[start:]]
+
+
+frame = built(staging)
+piles = [ob for ob in frame if ob.name.startswith(("works-pile", "works-tar", "works-cap"))]
+frame = [ob for ob in frame if ob not in piles]
+cloth = built(canvas) + built(awning) + built(bunting) + built(sign)
+raft = built(work_float)
+drape = built(curtain)
+poles = [ob for ob in drape if ob.name.startswith(("curtain-pole", "curtain-tar", "curtain-cap", "curtain-stake"))]
+drape = [ob for ob in drape if ob not in poles]
+rings = built(splashes)
+dust = built(smoke)
+heap = built(fallen)
+works = piles + frame + cloth + raft
+extras = poles + drape + rings + dust + heap
 colour_parts()
 check_normals(skip=("x-",))
 setup_render()
@@ -329,14 +432,40 @@ VIEWS = {
     "near": orbit("cam-near", 120, 22, (2.0, 2.6, -1.6), 5.2, (1000, 900)),
 }
 os.makedirs(OUT, exist_ok=True)
-for state in ("off", "on"):
-    for ob in works:
-        ob.hide_render = state == "off"
-    for name, (cam, (w, h)) in VIEWS.items():
-        if state == "off" and name in ("near", "top", "far"):
-            continue
+models = [ob for ob in kit.SCENE.objects if ob.get("model")]
+
+
+def show(parts, ship):
+    """Only `parts` of the works on screen, and the ship as it is `before` or `after` the skill."""
+    for ob in works + extras:
+        ob.hide_render = ob not in parts
+    for ob in models:
+        ob.hide_render = ob["model"] not in (ship, "both")
+
+
+def render(name, views):
+    for view in views:
+        cam, (w, h) = VIEWS[view]
         kit.SCENE.camera = cam
         kit.SCENE.render.resolution_x, kit.SCENE.render.resolution_y = w, h
-        kit.SCENE.render.filepath = os.path.join(OUT, f"dockworks-{name}-{state}.png")
+        kit.SCENE.render.filepath = os.path.join(OUT, f"dockworks-{view}-{name}.png")
         bpy.ops.render.render(write_still=True)
+
+
+# The sheet's two states (the works as they stand open while you load the ship), then the six beats of the show.
+show([], "after")
+render("off", ("own", "side"))
+show(works, "after")
+render("on", ("own", "side", "far", "top", "near"))
+BEATS = [
+    ("1-piles", piles + poles + rings, "before"),
+    ("2-frame", piles + poles + frame + raft, "before"),
+    ("3-covered", works + poles + drape, "before"),
+    ("4-working", works + poles + drape + dust, "before"),
+    ("5-unveiled", works + poles + heap, "after"),
+    ("6-struck", rings, "after"),
+]
+for name, parts, ship in BEATS:
+    show(parts, ship)
+    render(name, ("side", "own"))
 print("RENDERED dock works", len(works), "parts")
