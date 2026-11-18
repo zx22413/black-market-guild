@@ -9,8 +9,9 @@ import type { ShipTypeId } from '../../../v07/game';
  * `build`: the player just opened the skill: the whole show, after which the works stand open until the launch.
  * `launch`: a skill made public at the launch: the works are up in a moment, then the unveiling and the striking.
  * `strike`: the works standing open go back under (the launch, or the pick taken back).
+ * `open`: the works standing open with nothing to play (the ship is looked at again after its show).
  */
-export type WorksMode = 'build' | 'launch' | 'strike';
+export type WorksMode = 'build' | 'launch' | 'strike' | 'open';
 
 /** When each beat starts (seconds from the mode's start); null: that beat does not happen. */
 interface Script {
@@ -32,6 +33,7 @@ export const WORKS_SCRIPT: Readonly<Record<WorksMode, Script>> = {
   build: { piles: 0, stagger: 0.09, frame: 0.5, cloth: 0.95, curtain: 1.05, smoke: [1.45, 2.6], swap: 2.0, unveil: 2.5, strike: null, end: 3.5 },
   launch: { piles: 0, stagger: 0.03, frame: 0.12, cloth: 0.25, curtain: 0.25, smoke: [0.45, 1.6], swap: 1.1, unveil: 1.55, strike: 2.6, end: 3.3 },
   // Already standing open: everything is up and unveiled before the clock starts.
+  open: { piles: -10, stagger: 0, frame: -10, cloth: -10, curtain: -10, smoke: [-10, -9], swap: -10, unveil: -9, strike: null, end: 0 },
   strike: { piles: -10, stagger: 0, frame: -10, cloth: -10, curtain: -10, smoke: [-10, -9], swap: -10, unveil: -9, strike: 0, end: 0.7 },
 };
 

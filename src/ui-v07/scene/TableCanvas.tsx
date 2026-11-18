@@ -259,7 +259,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
   const shipSkill = (ship: TableShip): boolean => {
     const w = works?.get(ship.id);
     if (!w) return skills?.[ship.owner]?.includes(ship.type ?? 'standard') ?? false;
-    return w.skill && (w.mode === 'strike' || changed.has(w.key));
+    return w.skill && (w.mode === 'strike' || w.mode === 'open' || changed.has(w.key));
   };
   const look = useMemo(() => tideLook(WEATHER[weather ?? 'clear'], tide), [weather, tide]);
   const { angles, laneOf } = useTableLayout(seats);

@@ -144,6 +144,8 @@ export function withRaise(options: readonly InvestAction[], choice: InvestChoice
   return { ...choice, raise };
 }
 
+const OPEN_ALREADY = '已開啟';
+
 /** One material action as a card: what it is, what it costs, whether it can be taken now and why not. */
 export interface MaterialCard {
   readonly material: MaterialAction;
@@ -172,7 +174,7 @@ export function materialCards(context: DecisionContext): MaterialCard[] {
       : material.kind === 'build' && facilityOf(rules, player) !== null
         ? `一局只能蓋 ${rules.v08.maxBuildings} 棟`
         : material.kind === 'open' && opened.includes(material.ship)
-          ? '已開啟'
+          ? OPEN_ALREADY
           : material.kind === 'open' && opened.length >= rules.v08.maxSkills
             ? `最多開 ${rules.v08.maxSkills} 艘`
             : GOODS.some((g) => context.view.myStock[g] < cost[g])
@@ -180,6 +182,29 @@ export function materialCards(context: DecisionContext): MaterialCard[] {
               : '這回合不能做';
     return { material, cost, legal, reason };
   });
+}
+
+/** A ship's skill as the ship pick shows it: `open` since an earlier round, `opening` in this choice, or `closed`. */
+export interface ShipSkill {
+  readonly state: 'open' | 'opening' | 'closed';
+  readonly cost: Goods;
+  /** Whether it can be opened now (never for one open already). */
+  readonly legal: boolean;
+  /** Why it cannot be opened now; null when it can, or when it is open already. */
+  readonly reason: string | null;
+}
+
+/** The skill of each ship type, from the material cards and what the choice opens; empty when the rules have no skills. */
+export function shipSkills(cards: readonly MaterialCard[], choice: InvestChoice): Partial<Record<ShipTypeId, ShipSkill>> {
+  return Object.fromEntries(
+    cards.flatMap((c): [ShipTypeId, ShipSkill][] => {
+      if (c.material.kind !== 'open') return [];
+      const { ship } = c.material;
+      const open = c.reason === OPEN_ALREADY;
+      const opening = choice.material?.kind === 'open' && choice.material.ship === ship;
+      return [[ship, { state: open ? 'open' : opening ? 'opening' : 'closed', cost: c.cost, legal: c.legal, reason: open ? null : c.reason }]];
+    }),
+  );
 }
 
 /** The goods a tradehouse owner may protect this round (with the tradehouse standing, or raised in this choice); empty otherwise. */

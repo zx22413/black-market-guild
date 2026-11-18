@@ -427,3 +427,150 @@
     animation: none;
   }
 }
+
+/* V0.8 prototype: the ship's skill on its info card (ShipPicker SkillRow), and the mark on a card whose skill is open. */
+.ship-skill {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 7px 8px;
+  border: 2px solid #c9b88a;
+  border-radius: 10px;
+  background: #fffaf0;
+  color: #3a2616;
+  pointer-events: auto;
+}
+.ship-skill.open,
+.ship-skill.opening {
+  border-color: #c9862b;
+  background: #ffe9b8;
+}
+.ship-skill header {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.ship-skill header small,
+.ship-skill-state {
+  font-size: var(--fs-note);
+  color: #6b5537;
+}
+.ship-skill header b {
+  font-family: var(--font-strong);
+}
+.ship-skill-state {
+  margin-left: auto;
+}
+.ship-skill.open .ship-skill-state,
+.ship-skill.opening .ship-skill-state {
+  color: #8a5a10;
+  font-weight: 700;
+}
+.ship-skill p {
+  margin: 0;
+  padding: 0;
+  font-size: var(--fs-note);
+  line-height: 1.35;
+}
+.ship-skill-open {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 2px solid #8a5a2b;
+  border-radius: 999px;
+  background: #f5c542;
+  color: #3a2616;
+  font: inherit;
+  font-family: var(--font-strong);
+  cursor: pointer;
+}
+.ship-skill-open[aria-pressed='true'] {
+  background: #fff8e8;
+}
+.ship-skill-open:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.ship-skill-why {
+  color: #b2332a;
+  font-size: var(--fs-note);
+}
+.ship-skill-mark {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 8px;
+  border: 1px solid #8a5a2b;
+  border-radius: 999px;
+  background: #f5c542;
+  color: #3a2616;
+  font-size: var(--fs-note);
+  white-space: nowrap;
+  z-index: 1;
+}
+.ship-skill-mark.opening {
+  background: #fff8e8;
+}
+
+/* The ship note while loading: the docked ship's skill, and the gamble's raise (useInvestStep). */
+.inv-skill {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgb(245 236 212 / 0.97);
+  border: 1px solid #b9a77d;
+  color: #6b5537;
+  font-size: var(--fs-note);
+}
+.inv-skill.open,
+.inv-skill.opening {
+  border-color: #c9862b;
+  background: #ffe9b8;
+  color: #6a4208;
+}
+.inv-raise {
+  padding: 2px 12px;
+  border: 2px solid #b3261e;
+  border-radius: 999px;
+  background: #fff3ea;
+  color: #5a1711;
+  font: inherit;
+  font-family: var(--font-strong);
+  cursor: pointer;
+  pointer-events: auto;
+}
+.inv-raise.sel {
+  border-color: #f5c542;
+  background: #5a1711;
+  color: #ffe08a;
+}
+.inv-raise:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* The cross on the bar's material chip: takes this round's material action back. */
+.bar-chips .chip button.chip-x {
+  display: inline-grid;
+  flex: none;
+  min-width: 0;
+  min-height: 0;
+  box-shadow: none;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 4px;
+  padding: 0;
+  border: 1px solid #b9a77d;
+  border-radius: 50%;
+  background: #fff8e8;
+  color: #4a2c14;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.bar-chips .chip button.chip-x svg {
+  width: 10px;
+  height: 10px;
+}

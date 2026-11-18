@@ -2,7 +2,12 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from
 import { createPortal } from 'react-dom';
 import type { ShipTypeId } from '../../v07/game';
 import { SHIP_TYPE_LABELS, SHIP_TYPE_TEXT } from '../labels';
+import { GOODS } from '../../v07/game';
+import type { ShipSkill } from '../table/investChoice';
 import type { ShipCard, ShipEffect } from '../table/shipChoice';
+import { SKILL_LABELS, skillText } from '../table/v08Text';
+import { GoodCount } from './GoodIcon';
+import { useRules } from './rulesContext';
 import { ClockIcon, ForbidIcon, IconDisc, tokenIconUrl } from './icons';
 import { InfoTip } from './InfoTip';
 import { arrivalProps, type StepArrival } from './StepArrival';
@@ -80,9 +85,15 @@ interface ShipHandProps {
   readonly onPeek: (pick: ShipPick) => void;
   /** The step's arrival (StepArrival): hidden while the camera dives in, dealt one card after another once it lands. */
   readonly arrival?: StepArrival;
+  /** V0.8 prototype: each ship's skill (a mark on the cards whose skill is open or being opened); absent without skills. */
+  readonly skills?: ShipSkills;
 }
 
-export function ShipHand({ cards, picked, todo, effect, revealed, fresh, onPick, onPeek, arrival = NO_ARRIVAL }: ShipHandProps) {
+/** V0.8 prototype (rules.v08, not rules): the skill of each ship type, as the invest step works it out. */
+export type ShipSkills = Partial<Record<ShipTypeId, ShipSkill>>;
+const SKILL_STATE: Readonly<Record<ShipSkill['state'], string>> = { open: '已開啟', opening: '本回合開啟', closed: '未開啟' };
+
+export function ShipHand({ cards, picked, todo, effect, revealed, fresh, onPick, onPeek, arrival = NO_ARRIVAL, skills = {} }: ShipHandProps) {
   const arrive = arrivalProps(arrival);
   return (
     <div className={`dep-hand ship-hand ${todo ? 'todo' : ''} ${picked !== null ? 'picked' : ''} ${arrive.className}`} {...(arrive.style ? { style: arrive.style } : {})} onPointerLeave={(e) => e.pointerType === 'mouse' && onPeek(null)}>
@@ -110,6 +121,11 @@ export function ShipHand({ cards, picked, todo, effect, revealed, fresh, onPick,
             <span className="dep-ic ship-art">
               <img src={shipArtUrl(c.id)} alt="" />
             </span>
+            {skills[c.id] && skills[c.id]!.state !== 'closed' && (
+              <span className={`ship-skill-mark ${skills[c.id]!.state}`} title={`${SKILL_LABELS[c.id]}：${SKILL_STATE[skills[c.id]!.state]}`}>
+                {SKILL_LABELS[c.id]}
+              </span>
+            )}
             <b>{SHIP_TYPE_LABELS[c.id]}</b>
             <span className="dep-fee" title={`船費 ${c.fee} G`}>
               <IconDisc src={tokenIconUrl('coin')} />
@@ -162,9 +178,13 @@ interface ShipInfoProps {
   readonly layout: 'side' | 'strip';
   /** The step's arrival (StepArrival): the card comes in with the hand. */
   readonly arrival?: StepArrival;
+  /** V0.8 prototype: each ship's skill, and the switch that opens the shown ship's (or takes the opening back). */
+  readonly skills?: ShipSkills;
+  readonly onSkill?: (ship: ShipTypeId) => void;
 }
 
-export function ShipInfo({ cards, shown, effect, revealed, fresh, layout, arrival = NO_ARRIVAL }: ShipInfoProps) {
+export function ShipInfo({ cards, shown, effect, revealed, fresh, layout, arrival = NO_ARRIVAL, skills = {}, onSkill }: ShipInfoProps) {
+  const rules = useRules();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const token = useRef<HTMLSpanElement>(null);
@@ -278,8 +298,41 @@ export function ShipInfo({ cards, shown, effect, revealed, fresh, layout, arriva
           {effect.limit && <p className="ship-effect-note">{effect.limit}</p>}
           {effect.conditional && <p className="ship-effect-note">{effect.conditional}</p>}
           {card.reason && <p className="why">{card.reason}</p>}
+          {skills[card.id] && <SkillRow ship={card.id} skill={skills[card.id]!} text={skillText(rules, card.id)} {...(onSkill ? { onToggle: () => onSkill(card.id) } : {})} />}
         </>
       )}
     </div>
+  );
+}
+
+interface SkillRowProps {
+  readonly ship: ShipTypeId;
+  readonly skill: ShipSkill;
+  readonly text: string;
+  readonly onToggle?: () => void;
+}
+
+/** V0.8 prototype: the ship's skill on its info card: what it does, whether it is open, and the button that opens it for its crates. */
+function SkillRow({ ship, skill, text, onToggle }: SkillRowProps) {
+  const opening = skill.state === 'opening';
+  return (
+    <section className={`ship-skill ${skill.state}`} data-focus={`skill-${ship}`} onClick={(e) => e.stopPropagation()}>
+      <header>
+        <small>技能</small>
+        <b>{SKILL_LABELS[ship]}</b>
+        <span className="ship-skill-state">{SKILL_STATE[skill.state]}</span>
+      </header>
+      <p>{text}</p>
+      {skill.state !== 'open' && onToggle && (
+        <button type="button" className="ship-skill-open" disabled={!skill.legal && !opening} aria-pressed={opening} onClick={onToggle}>
+          {opening ? '取消開啟' : '開啟'}
+          {!opening &&
+            GOODS.filter((g) => skill.cost[g] > 0).map((g) => (
+              <GoodCount key={g} good={g} count={skill.cost[g]} size="sm" />
+            ))}
+        </button>
+      )}
+      {skill.state === 'closed' && !skill.legal && skill.reason && <small className="ship-skill-why">{skill.reason}</small>}
+    </section>
   );
 }

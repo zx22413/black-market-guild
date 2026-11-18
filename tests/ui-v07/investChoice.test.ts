@@ -5,6 +5,7 @@ import {
   canRaise,
   withRaise,
   materialCards,
+  shipSkills,
   protectChoices,
   withMaterial,
   EMPTY_CHOICE,
@@ -234,6 +235,20 @@ describe('material actions in the invest choice (V0.8 prototype, not rules)', ()
     const skilled = materialCards(await v08({ skills: { standard: 1, gambler: 1 } }));
     expect(skilled.find((c) => c.material.kind === 'open' && c.material.ship === 'standard')!.reason).toBe('已開啟');
     expect(skilled.find((c) => c.material.kind === 'open' && c.material.ship === 'hidden')!.reason).toBe('最多開 2 艘');
+  });
+
+  it("says each ship's skill: closed, being opened in this choice, or open already, and why it cannot be opened", async () => {
+    const fresh = shipSkills(materialCards(await v08()), EMPTY_CHOICE);
+    expect(fresh.gambler).toEqual({ state: 'closed', cost: G(0, 2, 0, 0), legal: true, reason: null });
+    const opening = shipSkills(materialCards(await v08()), { ...EMPTY_CHOICE, material: { kind: 'open', ship: 'gambler' } });
+    expect(opening.gambler?.state).toBe('opening');
+    expect(opening.hidden?.state).toBe('closed');
+    const skilled = shipSkills(materialCards(await v08({ skills: { standard: 1, gambler: 1 } })), EMPTY_CHOICE);
+    expect(skilled.standard).toMatchObject({ state: 'open', legal: false, reason: null });
+    expect(skilled.hidden).toMatchObject({ state: 'closed', legal: false, reason: '最多開 2 艘' });
+    expect(shipSkills(materialCards(await v08({ stock: G(1, 1, 0, 0) })), EMPTY_CHOICE).breaker?.reason).toBe('材料不足');
+    // The official rules have no skills.
+    expect(shipSkills([], EMPTY_CHOICE)).toEqual({});
   });
 
   it('submits the chosen material action and takes its cost out of what can be loaded', async () => {

@@ -1,7 +1,7 @@
 import type { WorksMode } from '../scene/ships/dockWorksShow';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { setInvestStage } from '../analytics/investStage';
-import { GOODS, producedFor, type BuildingId, type GoodId, type ShipTypeId } from '../../v07/game';
+import { GOODS, producedFor, type BuildingId, type GoodId, type MaterialAction, type ShipTypeId } from '../../v07/game';
 import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
 import type { FitPoint, SafeArea } from '../../ui/scene/CameraRig';
 import { shipPose } from '../../ui/scene/Ships';
@@ -9,7 +9,7 @@ import { BUILDING_LABELS, BUILDING_TEXT, GOOD_LABELS, SHIP_TYPE_LABELS } from '.
 import { around } from '../scene/focusMath';
 import { Facility } from '../scene/Facility';
 import { MaterialPanel } from './MaterialPanel';
-import { FACILITY_LABELS, SKILL_LABELS } from '../table/v08Text';
+import { FACILITY_LABELS, SKILL_LABELS, skillText } from '../table/v08Text';
 import { BuildingPreview, DECK_Y, ShipCargo, Warehouse, deckSlot, stackTop, warehouseLocal } from '../scene/InvestIsland';
 import { ShipSideCamera, warehouseCentre } from '../scene/ShipSideCamera';
 import { SIDE_SCALE, scaledAbout } from '../scene/sideScale';
@@ -35,6 +35,7 @@ import {
   withRaise,
   canRaise,
   materialCards,
+  shipSkills,
   protectChoices,
   withShipType,
   type InvestChoice,
@@ -102,14 +103,20 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   // V0.8 prototype: picking a building takes the camera to the island's lot for a moment (the pick itself stays at the
   // ship, where the cargo and the material cost are); each new pick restarts the look, clearing the pick ends it.
   const [lotLook, setLotLook] = useState<number | null>(null);
-  // V0.8 prototype: opening the skill of the ship at the dock raises the dock works round it (the whole show, then they
-  // stand open); taking the pick back, or changing ship, sends them under again.
-  const [works, setWorks] = useState<{ readonly mode: WorksMode; readonly key: string; readonly skill: boolean } | null>(null);
+  // V0.8 prototype: opening a ship's skill (on its card in the ship pick) raises the dock works round it (the whole
+  // show, then they stand open); taking the pick back sends them under again. They belong to that ship: with another
+  // ship at the dock they are not on the table, and they stand open when theirs comes back.
+  const [works, setWorks] = useState<{ readonly mode: WorksMode; readonly key: string; readonly skill: boolean; readonly ship: ShipTypeId } | null>(null);
   useEffect(() => {
     if (works?.mode !== 'strike') return;
     const timer = setTimeout(() => setWorks(null), STRIKE_MS);
     return () => clearTimeout(timer);
   }, [works]);
+  // The ship at the dock, as the last render knew it: looked away from, a show still playing is over (the works stand open).
+  const dockType = useRef<ShipTypeId | undefined>(undefined);
+  useEffect(() => {
+    if (works?.mode === 'build' && dockType.current !== works.ship) setWorks({ ...works, mode: 'open', key: `open-${works.key}` });
+  });
   useEffect(() => {
     if (lotLook === null) return;
     const timer = setTimeout(() => setLotLook(null), LOT_LOOK_MS);
@@ -224,37 +231,43 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   // The gamble's raise is on offer at all this round (its skill open, or being opened now): some legal action carries it.
   const raisable = options.some((a) => a.raise === true);
   const protects = protectChoices(context, choice);
+  const skills = shipSkills(materials, choice);
+  // Take a material action (null: none): a building takes the camera to its lot; a skill raises the works round its
+  // ship, which is the one at the dock when it is opened from that ship's card.
+  const pickMaterial = (material: MaterialAction | null) => {
+    soundEngine.playSfx('role-pick');
+    setChoice((c) => withMaterial(options, c, material));
+    setLotLook(material?.kind === 'build' ? Date.now() : null);
+    setWorks((w) => (material?.kind === 'open' ? { mode: 'build', key: `build-${Date.now()}`, skill: true, ship: material.ship } : w && w.mode !== 'strike' ? { mode: 'strike', key: `strike-${Date.now()}`, skill: false, ship: w.ship } : w));
+  };
+  const toggleSkill = (ship: ShipTypeId) => pickMaterial(skills[ship]?.state === 'opening' ? null : { kind: 'open', ship });
   const materialPanel =
-    materials.length > 0 || raisable ? (
+    materials.length > 0 ? (
       <MaterialPanel
         cards={materials}
         chosen={choice.material ?? null}
-        onPick={(material) => {
-          soundEngine.playSfx('role-pick');
-          setChoice((c) => withMaterial(options, c, material));
-          setLotLook(material?.kind === 'build' ? Date.now() : null);
-          const opens = material?.kind === 'open' && material.ship === choice.shipType;
-          setWorks((w) => (opens ? { mode: 'build', key: `build-${Date.now()}`, skill: true } : w && w.mode !== 'strike' ? { mode: 'strike', key: `strike-${Date.now()}`, skill: false } : w));
-        }}
+        onPick={pickMaterial}
+        built={me?.facility != null}
         protects={protects}
         protect={choice.protect ?? actionFor(options, choice)?.protect ?? null}
         onProtect={(good) => setChoice((c) => ({ ...c, protect: good }))}
-        {...(choice.shipType === 'gambler' && (raisable || choice.raise === true)
-          ? {
-              raise: {
-                can: canRaise(options, choice),
-                // Not yet possible: either the skill still has to be opened (below, this round), or nothing is aboard.
-                why: canRaise(options, choice) ? null : choice.material?.kind !== 'open' && canRaise(options, { ...choice, material: { kind: 'open', ship: 'gambler' } }) ? '要先開啟孤注號的技能（下方的船技能）' : '先裝貨才能加注',
-                on: sent.raise === true,
-                onToggle: () => {
-                  soundEngine.playSfx('role-pick');
-                  setChoice((c) => withRaise(options, c, c.raise !== true));
-                },
-              },
-            }
-          : {})}
       />
     ) : null;
+  // The gamble's raise, on the ship's note while loading: a declaration about this voyage.
+  const raise =
+    choice.shipType === 'gambler' && (raisable || choice.raise === true)
+      ? {
+          can: canRaise(options, choice),
+          // Not yet possible: either the skill still has to be opened (on the ship's card, this round), or nothing is aboard.
+          why: canRaise(options, choice) ? null : choice.material?.kind !== 'open' && canRaise(options, { ...choice, material: { kind: 'open', ship: 'gambler' } }) ? '要先開啟孤注號的技能（換船，在船卡上開啟）' : '先裝貨才能加注',
+          on: sent.raise === true,
+          onToggle: () => {
+            soundEngine.playSfx('role-pick');
+            setChoice((c) => withRaise(options, c, c.raise !== true));
+          },
+        }
+      : null;
+  const dockSkill = choice.shipType ? skills[choice.shipType] : undefined;
   const pickBuild = (build: BuildingId | null) => {
     const next = withBuild(options, choice, build);
     const off = unloadedBy(choice.load, next.load);
@@ -276,8 +289,6 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     }
     if (!shipDecided || type !== (choice.shipType ?? null)) soundEngine.playSfx('role-pick');
     setChoice(withShipType(options, choice, type));
-    // Another ship at the dock: the works were for the one before.
-    if (type !== (choice.shipType ?? null)) setWorks(null);
     setShipDecided(true);
   };
 
@@ -485,11 +496,22 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
             {typed && (choice.shipType ? `${SHIP_TYPE_LABELS[choice.shipType]}　` : '不出航')}
             {(!typed || choice.shipType) && <>裝貨 {summary.loaded}/{summary.capacity}</>}
           </span>
+          {dockSkill && choice.shipType && (
+            <span className={`inv-skill ${dockSkill.state}`} title={skillText(context.view.rules, choice.shipType)}>
+              {SKILL_LABELS[choice.shipType]} {dockSkill.state === 'open' ? '已開啟' : dockSkill.state === 'opening' ? '本回合開啟' : '未開啟'}
+            </span>
+          )}
           {typed && (
             <button type="button" className="inv-swap" data-focus="ship-swap" onClick={() => setPhase('ship')}>
               換船
             </button>
           )}
+          {raise && (
+            <button type="button" className={`inv-raise ${raise.on ? 'sel' : ''}`} data-focus="raise" disabled={!raise.can && !raise.on} aria-pressed={raise.on} title={skillText(context.view.rules, 'gambler')} onClick={raise.onToggle}>
+              {raise.on ? '已加注' : '加注'} ×{context.view.rules.v08.raise.multiplier / 100}
+            </button>
+          )}
+          {raise && !raise.can && !raise.on && raise.why && <span className="note-hint">{raise.why}</span>}
           {summary.loaded > 0 && !isHintSeen('unload-cargo') && (
             <span className="note-hint" title="點船上的貨卸下" aria-label="點船上的貨卸下">
               <IconDisc src={tokenIconUrl('ship')} />
@@ -508,7 +530,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   ];
 
   // What a submit seals: kept on the bar under the seal while the others decide.
-  const chips = (
+  const chipsOf = (editable: boolean) => (
     <span className="bar-chips">
       {!typed && (
         <span className="chip" title="建築">
@@ -516,8 +538,13 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
         </span>
       )}
       {choice.material && (
-        <span className="chip" title="材料動作">
-          <HouseIcon /> {choice.material.kind === 'build' ? FACILITY_LABELS[choice.material.building] : SKILL_LABELS[choice.material.ship]}
+        <span className="chip" title="這回合的材料動作">
+          <HouseIcon /> {choice.material.kind === 'build' ? `蓋 ${FACILITY_LABELS[choice.material.building]}` : `開啟 ${SHIP_TYPE_LABELS[choice.material.ship]}・${SKILL_LABELS[choice.material.ship]}`}
+          {editable && (
+            <button type="button" className="chip-x" aria-label="取消這回合的材料動作" onClick={() => pickMaterial(null)}>
+              <CloseIcon />
+            </button>
+          )}
         </span>
       )}
       {sent.raise === true && (
@@ -534,6 +561,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       </span>
     </span>
   );
+  const chips = chipsOf(true);
   const warehouse = (
     <Warehouse
       angle={home}
@@ -574,14 +602,17 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const shipPicked: ShipPick = shipDecided ? (choice.shipType ?? 'none') : null;
   // The ship on the dock (hovered or picked), so the side shot frames a taller one from further back.
   const shownShip = typed && (peekShip ?? shipPicked) && (peekShip ?? shipPicked) !== 'none' ? ((peekShip ?? shipPicked) as ShipTypeId) : undefined;
-  const shipInfo = <ShipInfo cards={shipOptions} shown={peekShip ?? shipPicked} effect={shipFx} revealed={revealed} fresh={freshShip} layout={phone ? 'strip' : 'side'} arrival={arrival} />;
-  const shipHand = <ShipHand cards={shipOptions} picked={shipPicked} todo={!shipDecided} effect={shipFx} revealed={revealed} fresh={freshShip} onPick={pickShip} onPeek={setPeekShip} arrival={arrival} />;
+  // The works stand round their own ship only; back at the dock after their show, they simply stand open.
+  dockType.current = shownShip;
+  const shownWorks = works && shownShip === works.ship ? works : null;
+  const shipInfo = <ShipInfo skills={skills} onSkill={toggleSkill} cards={shipOptions} shown={peekShip ?? shipPicked} effect={shipFx} revealed={revealed} fresh={freshShip} layout={phone ? 'strip' : 'side'} arrival={arrival} />;
+  const shipHand = <ShipHand skills={skills} cards={shipOptions} picked={shipPicked} todo={!shipDecided} effect={shipFx} revealed={revealed} fresh={freshShip} onPick={pickShip} onPeek={setPeekShip} arrival={arrival} />;
   return {
     // Ship bays: the ship's note is the only label; the stacks, clocks and warehouse note are on the cargo cards.
     pins: shipPhase ? [] : typed ? pins.filter((p) => p.id === 'ship-note') : pins,
     camera,
     ...(typed ? { ownShip: true } : {}),
-    ...(works && !shipPhase ? { ownWorks: works } : {}),
+    ...(shownWorks ? { ownWorks: shownWorks } : {}),
     ...(shownShip ? { ownShipType: shownShip } : {}),
     ...(shipPhase ? { bareShot: true } : {}),
     ...(sideView ? { sideShot: true } : {}),
@@ -625,7 +656,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
         <LockHint icon={<InfoIcon />} text={typed ? '提交後不能更改；所有人都提交後，出航的船同時公開，船上的貨不公開。' : '提交後不能更改；所有人都提交後，建築與出航同時公開，船上的貨不公開。'} />
       </>
     ),
-    sealedChips: chips,
+    sealedChips: chipsOf(false),
     overlay: (
       <>
         {phone && cards}
