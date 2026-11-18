@@ -36,7 +36,7 @@ export const WORKS_SCRIPT: Readonly<Record<WorksMode, Script>> = {
 };
 
 /** Seconds a piece takes to come up, to come down (the curtain), to go under, and how long the gold light lasts. */
-export const WORKS_PACE = { rise: 0.45, lay: 0.4, unroll: 0.4, fall: 0.32, sink: 0.55, gold: 1.0 } as const;
+export const WORKS_PACE = { rise: 0.45, lay: 0.4, unroll: 0.4, fall: 0.32, sink: 0.55, gold: 1.0, splash: 0.7, heapHold: 1.3 } as const;
 
 export const BAY_COUNT = 4;
 export const POLE_COUNT = 2;
@@ -56,6 +56,13 @@ export interface WorksPose {
   readonly smokeTime: number;
   /** The gold light since the curtain fell, 0..1; -1 before it and once it is over. */
   readonly gold: number;
+  /**
+   * The ring of spray where each bay of piles, then each pole, breaks the water: 0..1 through one ring, -1 when there
+   * is none. A pile throws one as it comes up and one as it goes under.
+   */
+  readonly splashes: readonly number[];
+  /** The curtain lying in folds on the water once it has been let go: 0 (none) to 1 (lying there), then it sinks. */
+  readonly heap: number;
   /** The ship shows its upgraded self. */
   readonly swapped: boolean;
   /** The show is over (`build`: the works stand open; `launch`, `strike`: nothing is left). */
@@ -78,7 +85,20 @@ export function worksPose(mode: WorksMode, t: number): WorksPose {
   const [from, to] = s.smoke;
   const smoke = t < from || t > to + 0.6 ? 0 : t < to ? clamp((t - from) / 0.25) : 1 - clamp((t - to) / 0.6);
   const gold = unveiled && t - s.unveil <= WORKS_PACE.gold && s.unveil >= 0 ? (t - s.unveil) / WORKS_PACE.gold : -1;
+  const ring = (from: number): number => (t >= from && t <= from + WORKS_PACE.splash ? (t - from) / WORKS_PACE.splash : -1);
+  /** The later of two rings that is running (a pile's rising one, or its sinking one). */
+  const either = (a: number, b: number): number => (b >= 0 ? b : a);
+  const down = s.strike === null ? -1 : ring(s.strike);
+  const poleDown = (i: number): number => (s.unveil < 0 ? -1 : ring(s.unveil + 0.15 + i * 0.08));
+  // Let go, the sheet lands as it falls, lies there a while, then soaks and sinks (sooner if the works are struck).
+  const landed = unveiled && s.unveil >= 0 ? pop(clamp((t - s.unveil - WORKS_PACE.fall * 0.5) / 0.3)) : 0;
+  const soaked = ease(clamp((t - s.unveil - WORKS_PACE.fall - WORKS_PACE.heapHold) / WORKS_PACE.sink));
   return {
+    splashes: [
+      ...Array.from({ length: BAY_COUNT }, (_, i) => either(ring(s.piles + i * s.stagger + 0.05), down)),
+      ...Array.from({ length: POLE_COUNT }, (_, i) => either(ring(s.piles + (BAY_COUNT + i) * s.stagger + 0.05), poleDown(i))),
+    ],
+    heap: landed * (1 - Math.max(soaked, sunk)),
     piles: Array.from({ length: BAY_COUNT }, (_, i) => up(s.piles + i * s.stagger, WORKS_PACE.rise)),
     // The curtain's poles stand on the camera's side: they go under with the curtain, leaving the ship in the clear.
     poles: Array.from({ length: POLE_COUNT }, (_, i) => up(s.piles + (BAY_COUNT + i) * s.stagger, WORKS_PACE.rise) * (1 - ease(clamp((t - s.unveil - 0.15 - i * 0.08) / WORKS_PACE.sink)))),

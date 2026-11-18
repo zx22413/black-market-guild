@@ -48,6 +48,28 @@ describe('worksPose', () => {
     expect(worksPose('strike', 1).piles[0]).toBe(0);
   });
 
+  it('throws a ring of spray where each pile breaks the water, coming up and going under', () => {
+    const rising = worksPose('build', 0.2);
+    expect(rising.splashes[0]!).toBeGreaterThan(0);
+    // The last bay and the poles have not come up yet.
+    expect(rising.splashes[5]).toBe(-1);
+    expect(worksPose('build', 2.2).splashes.every((r) => r === -1)).toBe(true);
+    // The curtain's poles go under right after the unveiling, the staging only when the works are struck.
+    const after = worksPose('build', WORKS_SCRIPT.build.unveil + 0.4);
+    expect(after.splashes[4]!).toBeGreaterThan(0);
+    expect(after.splashes[0]).toBe(-1);
+    expect(worksPose('strike', 0.2).splashes[0]!).toBeGreaterThan(0);
+  });
+
+  it('leaves the fallen curtain lying on the water for a while, then lets it sink', () => {
+    const { unveil } = WORKS_SCRIPT.build;
+    expect(worksPose('build', unveil - 0.1).heap).toBe(0);
+    expect(worksPose('build', unveil + 0.8).heap).toBe(1);
+    expect(worksPose('build', unveil + 3).heap).toBe(0);
+    // Nothing was let go in a strike of works that already stand open.
+    expect(worksPose('strike', 0.3).heap).toBe(0);
+  });
+
   it('stands the two sides off every hull by the same gap', () => {
     for (const type of SHIP_TYPE_IDS) {
       const { staging, curtain } = worksSides(type);

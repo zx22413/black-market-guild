@@ -31,6 +31,16 @@ const PUFF_SIZE = 1.9;
 const PUFF_RISE = 1.6;
 /** The gold light's rays: a fan round the ship, each a thin blade leaning outward. */
 const RAYS = 12;
+/** The bays of piles along the ship and the staging's two rows across it (the model's own, blockout-dockworks.py). */
+const BAY_Z = [-3, -1, 1, 3] as const;
+const ROW_X = [0, 0.8] as const;
+const POLE_Z = [-3.35, 3.35] as const;
+/** The fallen curtain: sheets lying in folds on the water under its line (x off the line, z along it, turn, width). */
+const FOLDS: readonly (readonly [number, number, number, number])[] = [
+  [-0.3, -2.9, -0.25, 0.9], [-0.42, -1.93, 0.0, 1.1], [-0.28, -0.96, 0.25, 1.3], [-0.4, 0.01, -0.25, 0.9], [-0.3, 0.98, 0.0, 1.1], [-0.44, 1.95, 0.25, 1.3], [-0.3, 2.92, -0.25, 0.9],
+];
+/** How far over the sea's rest level what lies on the water is drawn (the swell rises over anything lower; beatFx's WaterRing uses the same). */
+const AFLOAT = 0.4;
 const STARS: readonly (readonly [number, number, number, number])[] = [[-1.6, 6.2, -2.0, 0.5], [1.4, 6.8, 0.6, 0.62], [-0.6, 5.6, 2.8, 0.42], [2.2, 5.0, -3.0, 0.38], [-2.4, 4.4, 1.2, 0.36]];
 
 function useWorksMeshes(): ReadonlyMap<string, BufferGeometry> {
@@ -92,6 +102,8 @@ export function DockWorks({ angle, berth = 0, type, color, mode, rate = 1, onSwa
   const ring = useRef<Mesh>(null);
   const rays = useRef<Group>(null);
   const stars = useRef<Group>(null);
+  const splashes = useRef<(Group | null)[]>([]);
+  const heap = useRef<Group>(null);
 
   useFrame(({ clock }) => {
     if (told.current.mode !== mode) {
@@ -130,6 +142,23 @@ export function DockWorks({ angle, berth = 0, type, color, mode, rate = 1, onSwa
       m.position.set(spec[0], spec[1] + life * PUFF_RISE, spec[2]);
       (m.material as MeshStandardMaterial).opacity = Math.min(1, p.smoke * 1.4) * (1 - life ** 4);
     });
+    splashes.current.forEach((g, i) => {
+      if (!g) return;
+      const k = p.splashes[i] ?? -1;
+      g.visible = k >= 0;
+      if (k < 0) return;
+      const size = 0.35 + 1.15 * (1 - (1 - k) ** 2);
+      g.children.forEach((ring) => {
+        ring.scale.setScalar(size);
+        ((ring as Mesh).material as MeshBasicMaterial).opacity = 0.9 * (1 - k);
+      });
+    });
+    if (heap.current) {
+      heap.current.visible = p.heap > 0.01;
+      // The folds spread as they land, ride the water, and go under as they soak.
+      heap.current.scale.set(0.6 + 0.4 * Math.min(1, p.heap), 1, 1);
+      heap.current.position.y = DRAFT + AFLOAT - 0.1 - 0.6 * (1 - Math.min(1, p.heap)) + Math.sin(clock.elapsedTime * 2.2) * 0.02;
+    }
     const gold = p.gold;
     if (ring.current) {
       ring.current.visible = gold >= 0;
@@ -201,6 +230,40 @@ export function DockWorks({ angle, berth = 0, type, color, mode, rate = 1, onSwa
           <Piece geometry={meshes.get('curtain')} flag={meshes.get('curtain-flag')} color={color} />
         </group>
       </group>
+      {/* Spray where the piles break the water: a white ring round each pile of a bay, round each pole. */}
+      {BAY_Z.map((z, i) => (
+        <group key={`splash-${i}`} ref={(g) => void (splashes.current[i] = g)} visible={false}>
+          {ROW_X.map((x) => (
+            <mesh key={x} rotation={[-Math.PI / 2, 0, 0]} position={[sides.staging + x, DRAFT + AFLOAT, z]}>
+              <ringGeometry args={[0.72, 1, 20]} />
+              <meshBasicMaterial color="#f4fbfb" transparent toneMapped={false} depthWrite={false} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+      {POLE_Z.map((z, i) => (
+        <group key={`splash-pole-${i}`} ref={(g) => void (splashes.current[BAY_COUNT + i] = g)} visible={false}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[sides.curtain, DRAFT + AFLOAT, z]}>
+            <ringGeometry args={[0.72, 1, 20]} />
+            <meshBasicMaterial color="#f4fbfb" transparent toneMapped={false} depthWrite={false} />
+          </mesh>
+        </group>
+      ))}
+      {/* The curtain let go: its sheet lying in folds on the water under the line, in the owner's colour, with the cream band. */}
+      <group ref={heap} position={[sides.curtain, DRAFT + AFLOAT - 0.1, 0]} visible={false}>
+        {FOLDS.map(([x, z, turn, width], i) => (
+          <group key={i} position={[x - (i % 2) * 0.12, (i % 3) * 0.025, z]} rotation={[0, turn, (i % 2 === 0 ? 1 : -1) * 0.06]}>
+            <mesh castShadow>
+              <boxGeometry args={[width, 0.07, 0.86]} />
+              <meshStandardMaterial color={color} flatShading roughness={0.9} />
+            </mesh>
+            <mesh position={[width / 2 - 0.09, 0.012, 0]}>
+              <boxGeometry args={[0.16, 0.07, 0.88]} />
+              <meshStandardMaterial color="#efe3c8" flatShading roughness={0.9} />
+            </mesh>
+          </group>
+        ))}
+      </group>
       {/* The dust: low balls that grow, rise and fade, one after another. */}
       {PUFFS.map((_, i) => (
         <mesh key={i} ref={(m) => void (puffs.current[i] = m)} visible={false}>
@@ -209,7 +272,7 @@ export function DockWorks({ angle, berth = 0, type, color, mode, rate = 1, onSwa
         </mesh>
       ))}
       {/* The gold light: a ring spreading on the water, rays fanning up from the ship, stars over it. */}
-      <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} position={[0, DRAFT + 0.06, 0]} visible={false}>
+      <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} position={[0, DRAFT + AFLOAT, 0]} visible={false}>
         <ringGeometry args={[0.8, 1, 48]} />
         <meshBasicMaterial color="#ffd36b" transparent toneMapped={false} depthWrite={false} side={DoubleSide} />
       </mesh>
