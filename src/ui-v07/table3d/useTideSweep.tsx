@@ -8,7 +8,7 @@ import { TIDE_WATER, mixHex } from '../scene/tideLook';
 import { buildBoard } from '../session/board';
 import { GoodIcon } from './GoodIcon';
 import { WaveIcon } from './icons';
-import { SWEEP, sweepMs, tideSweeps } from './tideSweepShow';
+import { SWEEP, sweepMs, tideSweeps, type TideSweepLoss } from './tideSweepShow';
 
 // V0.8 prototype (rules.v08.events, an experiment, not rules): once the 「暗潮將至」 round is over, the table shows the
 // tide taking the warehouses' goods (scene/TideSweep.tsx) before anything of the next round comes up: the round's
@@ -19,6 +19,7 @@ const LABEL_HEIGHT = 7;
 /** The water that comes up when no tide kind is in the match. */
 const PLAIN_WATER = '#123c48';
 const NO_GOODS: Goods = { wood: 0, iron: 0, spice: 0, arms: 0 };
+const NONE: readonly TideSweepLoss[] = [];
 
 export interface TideSweepInput {
   /** Every public event so far (the loss is read from the round before `round`). */
@@ -40,19 +41,28 @@ export interface TideSweepShow {
   readonly blocking: boolean;
   readonly pins: readonly TablePin[];
   readonly scene: ReactNode;
+  /**
+   * What the seats' plates show while the show is on (null otherwise): the warehouses as the tide found them, then, once
+   * the labels count down, what it left. The new round's production is not in it yet, so a plate never contradicts its
+   * island's label; the plates take the round's own stock again when the show is over.
+   */
+  readonly stock: Readonly<Record<PlayerId, Goods>> | null;
 }
 
-const IDLE: TideSweepShow = { blocking: false, pins: [], scene: null };
+const IDLE: TideSweepShow = { blocking: false, pins: [], scene: null, stock: null };
 
 export function useTideSweep({ events, round, free, angleOf, ids, startingCash, rules, tide }: TideSweepInput): TideSweepShow {
-  const sweeps = useMemo(() => {
+  const found = useMemo(() => {
     const at = events.findIndex((e) => e.type === 'dark-tide-loss' && e.round === round - 1);
-    if (at < 0) return [];
+    if (at < 0) return null;
     // The warehouses just before the tide came: the board as of the events ahead of the loss.
     const before = buildBoard(ids, startingCash, events.slice(0, at), rules);
-    return tideSweeps(events, round, (id) => before.players[id]?.stock ?? NO_GOODS);
+    return { losses: tideSweeps(events, round, (id) => before.players[id]?.stock ?? NO_GOODS), before: Object.fromEntries(ids.map((id) => [id, before.players[id]?.stock ?? NO_GOODS])) };
   }, [events, round, ids, startingCash, rules]);
   const [shownRound, setShownRound] = useState(0);
+  // The labels have counted down (the plates follow them).
+  const [countedRound, setCountedRound] = useState(0);
+  const sweeps = found?.losses ?? NONE;
   const on = free && sweeps.length > 0 && shownRound < round;
   const ms = sweepMs(sweeps);
   useEffect(() => {
@@ -61,14 +71,22 @@ export function useTideSweep({ events, round, free, angleOf, ids, startingCash, 
     soundEngine.playSfx('salute-splash', 0.55);
     const timers = [
       setTimeout(() => soundEngine.playSfx('salute-splash', 0.8), (SWEEP.surge * 0.6 + SWEEP.drift) * 1000),
+      setTimeout(() => setCountedRound(round), SWEEP.surge * 1000),
       setTimeout(() => setShownRound(round), ms),
     ];
     return () => timers.forEach(clearTimeout);
   }, [on, round, ms]);
 
-  if (!on) return IDLE;
+  if (!on || !found) return IDLE;
+  const counted = countedRound >= round;
   return {
     blocking: true,
+    stock: Object.fromEntries(
+      Object.entries(found.before).map(([id, stock]) => {
+        const lost = counted ? sweeps.find((s) => s.playerId === id)?.lost : undefined;
+        return [id, lost ? (Object.fromEntries(GOODS.map((g) => [g, stock[g] - lost[g]])) as Goods) : stock];
+      }),
+    ),
     scene: <TideSweep key={`tide-sweep-${round}`} islands={sweeps.map((s) => ({ angle: angleOf(s.playerId), crates: s.crates }))} water={tide ? mixHex(TIDE_WATER[tide], '#58c7c0', 0.25) : PLAIN_WATER} />,
     pins: sweeps.map((s): TablePin => {
       const [x, , z] = seatPosition(angleOf(s.playerId));

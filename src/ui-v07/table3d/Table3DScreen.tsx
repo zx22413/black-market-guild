@@ -357,10 +357,13 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
 
   const waiting = new Set(snap.waitingOn);
   const deciding = !holding && snap.status === 'running' && board.round > 0;
+  // V0.8 prototype: while the tide carries the warehouses off, the plates hold the stock it is counting down (not yet the new round's production).
+  const sweepStock = sweep.stock;
+  const plateBoard = sweepStock === null ? board : { ...board, players: Object.fromEntries(Object.entries(board.players).map(([id, p]) => [id, { ...p, stock: sweepStock[id] ?? p.stock }])) };
   const plates = seatPlates(
     seats,
     angles,
-    board,
+    plateBoard,
     (id) => (deciding ? (waiting.has(id) ? '思考中' : '已決定') : ''),
     false,
     (id) => (board.players[id]?.cash ?? 0) + (resolution.cashBonus[id] ?? 0),
