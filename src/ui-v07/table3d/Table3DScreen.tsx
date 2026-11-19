@@ -23,6 +23,7 @@ import { MarketStrip } from './MarketStrip';
 import { RankRail } from './RankRail';
 import { ResultCard, type Rematch } from './ResultCard';
 import { VoyageEventChip } from './VoyageEventCard';
+import { FinalRoundChip } from './FinalRoundChip';
 import { catchUpTarget, resumePoint } from './replay';
 import { SPECTATOR_CATCHUP_SECONDS, SPECTATOR_ISLANDS_SECONDS, SPECTATOR_REVEAL_SECONDS, useAutoAdvance } from './useAutoAdvance';
 import { resultRows } from './resultModel';
@@ -245,6 +246,11 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     [snap.events, board.round, rules],
   );
   const bossNow = useMemo(() => (eventsOn(rules) ? (roundCards(snap.events, board.round, rules).find((c) => c.kind === 'voyage' && c.boss) ?? null) : null), [snap.events, board.round, rules]);
+  // V0.8 prototype: the last round's effect, kept in view as a chip once it is turned up (like the voyage event).
+  const finalNow = useMemo(() => {
+    const card = eventsOn(rules) && board.round >= 1 ? roundCards(snap.events, board.round, rules).find((c) => c.kind === 'final') : undefined;
+    return card?.kind === 'final' ? card : null;
+  }, [snap.events, board.round, rules]);
   const [cardRound, setCardRound] = useState(0);
   const cardUp = ready && !holding && !showIslands && !autoplay && startCards.length > 0 && cardRound < board.round;
   // The islands that change production or costs get their moment first: at the round's start and at the launch.
@@ -560,7 +566,10 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
       {ready && step?.overlay}
       {ready && resolution.overlay}
       {/* The voyage event is public from the round's start (§5): it stays in view while investing and deploying. */}
-      {ready && !holding && !finished && board.round > 0 && board.voyageEvent && <VoyageEventChip event={board.voyageEvent} {...(bossNow ? { boss: { title: bossNow.title, text: bossNow.lines.join('') } } : {})} />}
+      <div className="hud-events">
+        {ready && !holding && !finished && board.round > 0 && board.voyageEvent && <VoyageEventChip event={board.voyageEvent} {...(bossNow ? { boss: { title: bossNow.title, text: bossNow.lines.join('') } } : {})} />}
+        {ready && !holding && !finished && finalNow && <FinalRoundChip title={finalNow.title} lines={finalNow.lines} />}
+      </div>
       {cardUp && <RoundCardShow key={board.round} cards={startCards} onDone={() => setCardRound(board.round)} />}
       {ready && !finished && tideSeason && <div className="tide-season" aria-hidden="true" />}
       {/* V0.8 prototype: the dark tide (its two candidates, then the one picked) stays in view the whole match. */}

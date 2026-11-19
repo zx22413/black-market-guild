@@ -149,3 +149,24 @@
   transform: rotate(-45deg);
   box-shadow: 0 0 0 1px #0a2028;
 }
+
+/* The event chips in one row (voyage event, last round): each keeps its own hover tip. */
+.hud-events {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 20;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  pointer-events: none;
+}
+.hud-events > .event-chip {
+  position: relative;
+  top: auto;
+  left: auto;
+  pointer-events: auto;
+}
+.event-chip.final { border-color: #b5361f; background: rgb(70 22 14 / 0.94); color: #ffe6c8; box-shadow: 0 0 10px rgb(224 90 50 / 0.55); }
+.event-chip.final .final-flag { color: #ffb36b; font-size: 18px; line-height: 1; }
+.event-chip .final-line { display: block; }
