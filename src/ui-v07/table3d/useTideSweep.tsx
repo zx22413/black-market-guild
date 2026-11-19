@@ -4,7 +4,7 @@ import { seatPosition } from '../../ui/scene/layout';
 import { soundEngine } from '../audio/soundEngine';
 import type { TablePin } from '../scene/TableCanvas';
 import { TideSweep } from '../scene/TideSweep';
-import { TIDE_WATER, mixHex } from '../scene/tideLook';
+import { PLAIN_TIDE_WATER, TIDE_WATER, mixHex } from '../scene/tideLook';
 import { buildBoard } from '../session/board';
 import { GoodIcon } from './GoodIcon';
 import { WaveIcon } from './icons';
@@ -16,8 +16,6 @@ import { SWEEP, sweepMs, tideSweeps, type TideSweepLoss } from './tideSweepShow'
 
 /** How high over an island its label hangs (same as the islands' moments). */
 const LABEL_HEIGHT = 7;
-/** The water that comes up when no tide kind is in the match. */
-export const PLAIN_TIDE_WATER = '#123c48';
 const NO_GOODS: Goods = { wood: 0, iron: 0, spice: 0, arms: 0 };
 const NONE: readonly TideSweepLoss[] = [];
 

@@ -5,7 +5,7 @@ import { ISLAND_IDS, V08_BUILDING_IDS, type IslandId, type PlayerId, type V08Bui
 import type { BeatSeat } from '../scene/beatStage';
 import { around } from '../scene/focusMath';
 import { TableCanvas } from '../scene/TableCanvas';
-import { TideOmen, TideSweep } from '../scene/TideSweep';
+import { TideSweep } from '../scene/TideSweep';
 import { TIDE_WATER } from '../scene/tideLook';
 import type { TideKind } from '../../v07/game';
 
@@ -58,7 +58,6 @@ export function FacilitiesPreview() {
         <span style={{ color: '#fff' }}>{islands.join('、')}</span>
       </div>
       <TableCanvas key={set} seats={seats} weather={null} ships={[]} cameraPoints={points} safe={{ top: 0, bottom: 0, left: 0, right: 0 }} pins={[]} onReady={() => undefined} facilities={facilities} facilityPulses={pulses} tide={sweep > 0 || omen ? tide : null} tideRising={omen && sweep === 0}>
-        {omen && sweep === 0 && <TideOmen angles={angles} water={TIDE_WATER[tide]} />}
         {sweep > 0 && (
           <TideSweep
             key={sweep}

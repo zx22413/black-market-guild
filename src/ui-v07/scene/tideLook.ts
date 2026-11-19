@@ -8,6 +8,9 @@ import type { TideKind } from '../../v07/game';
 /** Each tide's water: storm deep blue, pirate wine dark, inspection indigo, crash dark green. */
 export const TIDE_WATER: Readonly<Record<TideKind, string>> = { storm: '#0f3552', pirate: '#3d1c2c', inspection: '#262b55', crash: '#174536' };
 
+/** The water that comes up in a match without tide kinds. */
+export const PLAIN_TIDE_WATER = '#123c48';
+
 /** How far the sea and the sky go toward the tide's water (0 = the weather's own colour, 1 = the tide's). */
 const SEA_MIX = 0.62;
 const SKY_MIX = 0.38;

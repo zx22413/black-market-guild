@@ -47,9 +47,7 @@ import { useHudSafe } from './useHudSafe';
 import './hudPhone.css';
 import { useInvestStep } from './useInvestStep';
 import { useIslandMoments } from './useIslandMoments';
-import { PLAIN_TIDE_WATER, useTideSweep } from './useTideSweep';
-import { TideOmen } from '../scene/TideSweep';
-import { TIDE_WATER } from '../scene/tideLook';
+import { useTideSweep } from './useTideSweep';
 import { useRoundResolution } from './useRoundResolution';
 
 // The V0.7 match on the 3D table (docs/ui/v07-event-presentation.md): one table that stays
@@ -504,7 +502,6 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
       >
         {step?.scene}
         {sweep.scene}
-        {tideRising && <TideOmen angles={angles} water={tide.tide ? TIDE_WATER[tide.tide] : PLAIN_TIDE_WATER} />}
         {board.ships
           // Cargo rides on the deck until the ship has arrived or sunk; then the beat shows it.
           .filter((s) => stateOf(s.id) === 'docked' || stateOf(s.id) === 'sailing' || stateOf(s.id) === 'atSea')

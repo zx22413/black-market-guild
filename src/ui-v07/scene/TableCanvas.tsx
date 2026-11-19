@@ -2,7 +2,8 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useCallback, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Vector3 } from 'three';
 import type { TideKind } from '../../v07/game';
-import { TIDE_OMEN, tideLook } from './tideLook';
+import { PLAIN_TIDE_WATER, TIDE_OMEN, TIDE_WATER, tideLook } from './tideLook';
+import { TideOmen } from './TideOmen';
 import { DockWorks } from './ships/DockWorks';
 import type { WorksMode } from './ships/dockWorksShow';
 import type { IslandId, PlayerId, ShipId, ShipTypeId, V08BuildingId, VoyageEventId } from '../../v07/game';
@@ -116,7 +117,10 @@ export interface TableCanvasProps {
   readonly works?: ReadonlyMap<ShipId, { readonly mode: WorksMode; readonly key: string; readonly skill: boolean; readonly rate?: number }>;
   /** V0.8 prototype: the dark tide in season; the sea and the sky turn toward its water (tideLook.ts). */
   readonly tide?: TideKind | null;
-  /** V0.8 prototype: `tide` is only announced (the 暗潮將至 round): the sea begins to turn, less than in season. */
+  /**
+   * V0.8 prototype: the 暗潮將至 round: the sea begins to turn toward `tide` (less than in season; not at all without a
+   * tide kind) and dark water stands high round the guild islands, along their own waterlines (TideOmen.tsx).
+   */
   readonly tideRising?: boolean;
   /** Islands that just counted: each hops with a glowing shore ring (a new key replays it). */
   readonly pulses?: ReadonlyMap<PlayerId, { readonly key: string; readonly tone: 'gain' | 'loss' }>;
@@ -325,6 +329,8 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
             <Sea color={look.sea} shores={shores} foam={foam} vignette={look.vignette ?? 0} lines={look.seaLines ?? 0} glow={look.seaGlow ?? 0} />
             <ShoreSpray shores={shores} />
             <CrestSpray shores={shores} />
+            {/* The guild islands' waterlines: everything after the market's. */}
+            {tideRising && <TideOmen shores={shores.slice(1)} water={tide ? TIDE_WATER[tide] : PLAIN_TIDE_WATER} />}
             {(look.clouds ?? 0) > 0 && <Clouds amount={look.clouds ?? 0} />}
             {weather === 'storm' && <Storm seatAngles={angles} onStrike={strikeThunder} />}
             {weather === 'tailwind' && <Wind />}
