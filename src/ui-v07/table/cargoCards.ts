@@ -2,6 +2,7 @@ import type { DecisionContext } from '../../v07/bots';
 import { GOODS, traitOf, type GoodId, type Goods } from '../../v07/game';
 import { canLoad, stockSplit, type InvestChoice, type investOptions } from './investChoice';
 import { nextProductionRound } from './restock';
+import { sweptAtRoundEnd } from './tideSweep';
 
 // The loading step of the ship bays as plain data: one card per good in the warehouse, so every crate that can
 // be loaded is a button in the bottom hand (CargoHand) and the 3D warehouse is not needed to load. A card carries
@@ -23,6 +24,8 @@ export interface CargoCard {
   readonly spoils: boolean;
   /** Units this round's production just added, while that is being shown. */
   readonly made: number;
+  /** V0.8 prototype: units of what is left that 「暗潮將至」 takes at the end of this round (0 in any other round). */
+  readonly swept: number;
 }
 
 export function cargoCards(
@@ -36,6 +39,7 @@ export function cargoCards(
   const me = view.players.find((p) => p.id === view.playerId)!;
   const { left } = stockSplit(context, choice);
   const keepsSpice = traitOf(view.rules, me.island).keepsSpice === 1;
+  const swept = sweptAtRoundEnd(view, left);
   return GOODS.map((good): CargoCard => {
     const loadable = canLoad(options, choice, good);
     const next = nextProductionRound(view.rules, me.island, good, round);
@@ -50,6 +54,7 @@ export function cargoCards(
       restock: next === null ? 0 : next - round === 1 ? null : next - round,
       spoils: good === 'spice' && !keepsSpice && left[good] > 0,
       made: made === null ? 0 : made[good],
+      swept: swept[good],
     };
   });
 }

@@ -10,6 +10,7 @@ import { around } from '../scene/focusMath';
 import { Facility } from '../scene/Facility';
 import { MaterialPanel } from './MaterialPanel';
 import { StockPanel } from './StockPanel';
+import { sweptAtRoundEnd } from '../table/tideSweep';
 import { FACILITY_LABELS, SKILL_LABELS, skillText } from '../table/v08Text';
 import { BuildingPreview, DECK_Y, ShipCargo, Warehouse, deckSlot, stackTop, warehouseLocal } from '../scene/InvestIsland';
 import { ShipSideCamera, warehouseCentre } from '../scene/ShipSideCamera';
@@ -665,7 +666,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       <>
         {phone && cards}
         {!shipPhase && materialPanel}
-        {shipPhase && materials.length > 0 && <StockPanel stock={context.view.myStock} spend={spend} />}
+        {shipPhase && materials.length > 0 && <StockPanel stock={context.view.myStock} spend={spend} swept={sweptAtRoundEnd(context.view, split.left)} />}
         {wave.playing && shipPhase && <ShipArrival onDone={wave.done} />}
         {arrival.playing && shipPhase && <ArrivalTitle round={board.round} text="選擇出航的船" delay={STEP_ARRIVAL.titleDelay} dealDelay={STEP_ARRIVAL.dealDelay} />}
         {shipPhase && !phone && shipInfo}

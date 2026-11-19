@@ -26,7 +26,7 @@ export function TideChip({ status, round }: { readonly status: TideStatus; reado
   const acting = status.tide !== null && status.risingRound !== null && round > status.risingRound;
   return (
     <div className={`tide-chip ${status.tide ? (acting ? 'acting' : 'coming') : ''}`} data-focus="tide">
-      <small>{status.tide === null ? '暗潮候選' : acting ? '暗潮' : '下回合起暗潮'}</small>
+      <small>{status.tide === null ? '暗潮候選' : acting ? '暗潮' : '預告：下回合起'}</small>
       {status.tide === null ? status.candidates.map((kind) => <Tide key={kind} kind={kind} state="candidate" />) : <Tide kind={status.tide} state={acting ? 'acting' : 'coming'} />}
     </div>
   );

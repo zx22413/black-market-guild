@@ -41,6 +41,8 @@ function Rising({ card }: { readonly card: Extract<RoundCard, { kind: 'rising' }
       <ul className={picked ? 'picked' : ''}>
         {card.lines.map((line, i) => (
           <li key={line} className={i === 0 ? '' : 'after-pick'}>
+            {/* The first line happens as this round ends; the rest only start next round, so they are marked a forecast. */}
+            {i <= 1 && <em className={`round-card-when ${i === 0 ? 'now' : 'forecast'}`}>{i === 0 ? '本回合結束' : '預告'}</em>}
             {line}
           </li>
         ))}

@@ -84,6 +84,16 @@ export function CrateIcon() {
   );
 }
 
+/** A rolling wave: what the dark tide will take. */
+export function WaveIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M2 9c2.5-3 5-3 7.5 0s5 3 7.5 0S20.5 6 22 8" />
+      <path d="M2 16c2.5-3 5-3 7.5 0s5 3 7.5 0S20.5 13 22 15" />
+    </svg>
+  );
+}
+
 /** A warning triangle: something to watch for. */
 export function AlertIcon() {
   return (

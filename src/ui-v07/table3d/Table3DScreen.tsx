@@ -47,6 +47,7 @@ import { useHudSafe } from './useHudSafe';
 import './hudPhone.css';
 import { useInvestStep } from './useInvestStep';
 import { useIslandMoments } from './useIslandMoments';
+import { useTideSweep } from './useTideSweep';
 import { useRoundResolution } from './useRoundResolution';
 
 // The V0.7 match on the 3D table (docs/ui/v07-event-presentation.md): one table that stays
@@ -251,13 +252,24 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     const card = eventsOn(rules) && board.round >= 1 ? roundCards(snap.events, board.round, rules).find((c) => c.kind === 'final') : undefined;
     return card?.kind === 'final' ? card : null;
   }, [snap.events, board.round, rules]);
+  // V0.8 prototype: what 暗潮將至 took from the warehouses as the round before ended plays first, ahead of this round's card.
+  const sweep = useTideSweep({
+    events: snap.events,
+    round: board.round,
+    free: ready && !holding && !showIslands && !autoplay,
+    angleOf: (id) => angles[laneOf(id)]!,
+    ids,
+    startingCash: snap.startingCash,
+    rules,
+    tide: tideStatus(snap.events).tide,
+  });
   const [cardRound, setCardRound] = useState(0);
-  const cardUp = ready && !holding && !showIslands && !autoplay && startCards.length > 0 && cardRound < board.round;
+  const cardUp = ready && !holding && !showIslands && !autoplay && !sweep.blocking && startCards.length > 0 && cardRound < board.round;
   // The islands that change production or costs get their moment first: at the round's start and at the launch.
   const moments = useIslandMoments({
     events: snap.events,
     board,
-    free: ready && !holding && !showIslands && !autoplay && !cardUp,
+    free: ready && !holding && !showIslands && !autoplay && !cardUp && !sweep.blocking,
     angleOf: (id) => angles[laneOf(id)]!,
     skipFirstOpening: islandMarks,
     skip: skipIslandMoments,
@@ -265,7 +277,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   });
   // The decision is really usable now: loaded, replay over, and the island moments before it played
   // (the draft has none). An online room starts its clock from here, not from when it was sent.
-  const shownId = free && ready && request && (phase === 'island-choice' || (!moments.blocking && !cardUp)) ? request.id : null;
+  const shownId = free && ready && request && (phase === 'island-choice' || (!moments.blocking && !cardUp && !sweep.blocking)) ? request.id : null;
   useEffect(() => {
     if (shownId !== null) session.decisionShown?.(shownId);
   }, [shownId, session]);
@@ -278,7 +290,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const lastLoaded = loaded[loaded.length - 1];
   const cargoNow = lastLoaded?.type === 'cargo-loaded' ? lastLoaded.cargo : NO_GOODS;
   const env: StageEnv | null =
-    free && !moments.blocking && !cardUp && request && viewer && (phase === 'invest' || phase === 'role-deployment')
+    free && !moments.blocking && !cardUp && !sweep.blocking && request && viewer && (phase === 'invest' || phase === 'role-deployment')
       ? {
           request,
           board,
@@ -387,7 +399,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     laneOf,
     (id) => berths.get(id as ShipId) ?? 0,
   ).map((pin) => (closeUp || resolution.pins.some((p) => p.id === `badges-${pin.id.slice(4)}`) ? { ...pin, hidden: true } : pin));
-  const pins = [...plates.map(stepAside), ...seaTags, marketBadgePin(), ...badgesNow.map(stepAside), ...moments.pins, ...(step?.pins ?? []), ...resolution.pins, ...marks];
+  const pins = [...plates.map(stepAside), ...seaTags, marketBadgePin(), ...badgesNow.map(stepAside), ...moments.pins, ...sweep.pins, ...(step?.pins ?? []), ...resolution.pins, ...marks];
   const camera = step?.camera ?? moments.camera ?? resolution.camera ?? overviewPoints(angles, seats.map((s) => s.island), true);
 
   const marketRef = useRef<HTMLDivElement>(null);
@@ -413,7 +425,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const safe = useHudSafe(topHud, bottomHud, SAFE);
 
   // The decision is really up (its islands' moments played) for the tutorial host to talk about it.
-  const calm = ready && !holding && !showIslands && !autoplay && !moments.blocking;
+  const calm = ready && !holding && !showIslands && !autoplay && !moments.blocking && !sweep.blocking;
   useEffect(() => onCalm?.(calm), [onCalm, calm]);
 
   const finished = !holding && snap.result !== null;
@@ -450,7 +462,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   // V0.8 prototype: the building each seat has raised, for the islands.
   const skills = useMemo(() => Object.fromEntries(ids.map((id) => [id, board.players[id]?.skills ?? []])), [ids, board]);
   const facilities = useMemo(() => Object.fromEntries(ids.map((id) => [id, board.players[id]?.facility ?? null])), [ids, board]);
-  const idle = !holding && !step && !finished && !drafting && !showIslands && !handoffTo && !moments.blocking;
+  const idle = !holding && !step && !finished && !drafting && !showIslands && !handoffTo && !moments.blocking && !sweep.blocking;
 
   return (
     <RulesContext.Provider value={rules}>
@@ -482,6 +494,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
         {...(resolution.onTableClick ? { onClick: resolution.onTableClick } : {})}
       >
         {step?.scene}
+        {sweep.scene}
         {board.ships
           // Cargo rides on the deck until the ship has arrived or sunk; then the beat shows it.
           .filter((s) => stateOf(s.id) === 'docked' || stateOf(s.id) === 'sailing' || stateOf(s.id) === 'atSea')

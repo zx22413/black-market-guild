@@ -15,6 +15,20 @@
 }
 .round-card li.after-pick { opacity: 0; transition: opacity 500ms 200ms; }
 .round-card ul.picked li.after-pick { opacity: 1; }
+/* 暗潮將至: when each line happens (this round's end, or a forecast of the rounds after). */
+.round-card-when {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-style: normal;
+  font-weight: 700;
+  font-size: var(--fs-note);
+  line-height: 1.5;
+  vertical-align: 1px;
+}
+.round-card-when.now { background: #e3b04b; color: #2a1a08; }
+.round-card-when.forecast { border: 1px dashed #8fd6d0; color: #8fd6d0; }
 
 /* The dark cards: the tide and the ending keep the card's wood frame (skin/layers.css) around dark water, not parchment. */
 :root:root .event-card:is(.round-card-rising, .round-card-boss) {
@@ -170,3 +184,16 @@
 .event-chip.final { border-color: #b5361f; background: rgb(70 22 14 / 0.94); color: #ffe6c8; box-shadow: 0 0 10px rgb(224 90 50 / 0.55); }
 .event-chip.final .final-flag { color: #ffb36b; font-size: 18px; line-height: 1; }
 .event-chip .final-line { display: block; }
+
+/* What 暗潮將至 took, counted down over each island while its crates are carried off (useTideSweep.tsx): dark water, not the grey of a plain cost. */
+:root:root:root .isle-chip.tide-sweep-chip {
+  border-color: #58c7c0;
+  background: linear-gradient(#17505c, #0c2a34);
+  background-size: auto;
+  color: #e8fffc;
+  text-shadow: none;
+  box-shadow: 0 2px 0 #06171d, 0 0 14px rgb(88 199 192 / 0.7);
+}
+.tide-sweep-chip svg { width: 20px; height: 20px; margin-left: 6px; }
+.tide-sweep-chip i { font-style: normal; opacity: 0.7; }
+.tide-sweep-chip b { color: #ffb4a8; }

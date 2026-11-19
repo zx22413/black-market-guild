@@ -5,6 +5,8 @@ import { ISLAND_IDS, V08_BUILDING_IDS, type IslandId, type PlayerId, type V08Bui
 import type { BeatSeat } from '../scene/beatStage';
 import { around } from '../scene/focusMath';
 import { TableCanvas } from '../scene/TableCanvas';
+import { TideSweep } from '../scene/TideSweep';
+import { TIDE_WATER } from '../scene/tideLook';
 
 // Dev-only: the V0.8 prototype's three buildings (an experiment, not rules) standing on the islands, at
 // /v07.html?dev=facilities. &islands=lighthouse,fortress,mine,lumber picks the four islands (seat 0 is the one nearest
@@ -21,6 +23,8 @@ export function FacilitiesPreview() {
   // &raise starts with empty islands: 「落成」 then raises the buildings on screen; 「反應」 makes them hop as when they do their work.
   const [raised, setRaised] = useState(!params.has('raise'));
   const [pulse, setPulse] = useState(0);
+  // 「捲走」 plays 暗潮將至 taking the warehouses' goods (scene/TideSweep.tsx): a different loss on each island.
+  const [sweep, setSweep] = useState(0);
   const facilities = Object.fromEntries(seats.map((s, i) => [s.id, raised ? (V08_BUILDING_IDS[i % V08_BUILDING_IDS.length] as V08BuildingId) : null]));
   const pulses = new Map(pulse > 0 ? seats.map((s) => [s.id, `pulse-${pulse}`] as const) : []);
   const points = focus === null ? angles.flatMap((a) => around(seatPosition(a), 11)) : around(seatPosition(angles[Number(focus)] ?? angles[0]!), 15, 60);
@@ -41,9 +45,25 @@ export function FacilitiesPreview() {
         <button type="button" data-pulse onClick={() => setPulse((n) => n + 1)}>
           反應
         </button>
+        <button type="button" data-sweep onClick={() => setSweep((n) => n + 1)}>
+          捲走
+        </button>
         <span style={{ color: '#fff' }}>{islands.join('、')}</span>
       </div>
-      <TableCanvas key={set} seats={seats} weather={null} ships={[]} cameraPoints={points} safe={{ top: 0, bottom: 0, left: 0, right: 0 }} pins={[]} onReady={() => undefined} facilities={facilities} facilityPulses={pulses} />
+      <TableCanvas key={set} seats={seats} weather={null} ships={[]} cameraPoints={points} safe={{ top: 0, bottom: 0, left: 0, right: 0 }} pins={[]} onReady={() => undefined} facilities={facilities} facilityPulses={pulses} tide={sweep > 0 ? 'crash' : null}>
+        {sweep > 0 && (
+          <TideSweep
+            key={sweep}
+            water={TIDE_WATER.crash}
+            islands={[
+              { angle: angles[0]!, crates: ['wood', 'iron', 'arms', 'wood', 'iron'] },
+              { angle: angles[1]!, crates: ['wood'] },
+              { angle: angles[2]!, crates: ['wood', 'iron', 'spice', 'arms', 'wood', 'iron', 'spice', 'arms'] },
+              { angle: angles[3]!, crates: ['arms', 'arms'] },
+            ]}
+          />
+        )}
+      </TableCanvas>
     </div>
   );
 }

@@ -206,6 +206,45 @@
   font-style: normal;
   font-weight: 700;
 }
+/* V0.8 prototype: what 暗潮將至 takes at the round's end, on dark water (the stock panel and the cargo cards). */
+:root:root .tide-swept {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 4px;
+  padding: 0 6px 0 4px;
+  border-radius: 999px;
+  background: repeating-linear-gradient(-45deg, #12414d 0 5px, #0c2f3a 5px 10px);
+  color: #b8fff8;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1.5;
+  animation: tide-swept 1.8s ease-in-out infinite;
+}
+.tide-swept svg {
+  width: 13px;
+  height: 13px;
+}
+@keyframes tide-swept {
+  50% { box-shadow: 0 0 8px rgb(88 199 192 / 0.9); }
+}
+.stock-panel .tide-swept {
+  justify-content: center;
+  min-width: 46px;
+  box-sizing: border-box;
+}
+.stock-panel .tide-swept.off {
+  visibility: hidden;
+}
+.stock-tide {
+  margin: 6px 0 0;
+  padding-top: 5px;
+  border-top: 1px dashed #8a5a2b;
+  max-width: 170px;
+  color: #12414d;
+  font-size: var(--fs-note);
+  line-height: 1.4;
+}
 @media (max-width: 640px) {
   .stock-panel {
     top: 118px;

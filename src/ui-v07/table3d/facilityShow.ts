@@ -28,20 +28,6 @@ export function buildersOf(events: readonly MatchEvent[], round: number): Player
   return events.flatMap((e) => (e.type === 'materials-used' && e.round === round ? e.uses.filter((u) => u.material.kind === 'build').map((u) => u.playerId) : []));
 }
 
-/** 暗潮將至 took goods from the warehouses at the end of the round before `round`: each island's loss, shown as `round` opens. */
-export function tideLossMoments(events: readonly MatchEvent[], round: number, islands: Readonly<Record<PlayerId, IslandId>>): IslandMoment[] {
-  return events.flatMap((e): IslandMoment[] => {
-    if (e.type !== 'dark-tide-loss' || e.round !== round - 1) return [];
-    return Object.entries(e.lost).flatMap(([playerId, lost]): IslandMoment[] => {
-      const island = islands[playerId];
-      const goods = GOODS.filter((g) => lost[g] > 0);
-      if (!island || goods.length === 0) return [];
-      const title = '暗潮將至：倉庫的貨被捲走';
-      return [{ playerId, island, chips: [{ good: null, text: '暗潮捲走', tone: 'loss', title }, ...goods.map((good) => ({ good, text: `−${lost[good]}`, tone: 'loss' as const, title }))], tone: 'loss' }];
-    });
-  });
-}
-
 /** Who opened a ship skill in `round`, and for which ship type (the dock works unveil that ship at the launch). */
 export function skillOpenersOf(events: readonly MatchEvent[], round: number): { readonly playerId: PlayerId; readonly ship: ShipTypeId }[] {
   return events.flatMap((e) =>

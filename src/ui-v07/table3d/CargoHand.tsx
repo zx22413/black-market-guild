@@ -2,7 +2,7 @@ import type { GoodId } from '../../v07/game';
 import { GOOD_LABELS } from '../labels';
 import type { CargoCard } from '../table/cargoCards';
 import { goodIconUrl } from './GoodIcon';
-import { AlertIcon, ClockIcon, CrateIcon } from './icons';
+import { AlertIcon, ClockIcon, CrateIcon, WaveIcon } from './icons';
 import './cargoHand.css';
 
 // The loading step of the ship bays: one card per good along the bottom, in the role hand's layout (.dep-hand,
@@ -75,6 +75,11 @@ export function CargoHand({ cards, todo, onLoad, onUnload }: CargoHandProps) {
             <CrateIcon />
             {c.left}
             {c.made > 0 && <em className="cargo-new">+{c.made}</em>}
+            {c.swept > 0 && (
+              <em className="tide-swept" title={`暗潮將至：留在倉庫，回合結束會被捲走 ${c.swept} 箱`} aria-label={`回合結束會被暗潮捲走 ${c.swept} 箱`}>
+                <WaveIcon />−{c.swept}
+              </em>
+            )}
           </span>
         </button>
       ))}

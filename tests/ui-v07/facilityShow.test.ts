@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { RULES_V08_PROTO, type MatchEvent } from '../../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../src/v07/match';
-import { buildersOf, launchWorks, skillOpenersOf, facilityReactions, materialMoments, mergeMoments, tideLossMoments } from '../../src/ui-v07/table3d/facilityShow';
+import { buildersOf, launchWorks, skillOpenersOf, facilityReactions, materialMoments, mergeMoments } from '../../src/ui-v07/table3d/facilityShow';
 
 const islands = { p1: 'mine', p2: 'lumber' } as const;
 
@@ -46,16 +46,6 @@ describe('material moments (V0.8 prototype, not rules)', () => {
       ['p1', ['船費 −25', '軍械庫 落成'], 'gain'],
       ['p2', ['巨浪 開啟'], 'gain'],
     ]);
-  });
-});
-
-describe('what 暗潮將至 took (V0.8 prototype, not rules)', () => {
-  it('shows each warehouse loss as the next round opens, and nothing for an island that lost nothing', () => {
-    const none = { wood: 0, iron: 0, spice: 0, arms: 0 };
-    const events: MatchEvent[] = [{ type: 'dark-tide-loss', round: 4, lost: { p1: { ...none, wood: 2, arms: 1 }, p2: none } }];
-    expect(tideLossMoments(events, 4, islands)).toEqual([]);
-    const moments = tideLossMoments(events, 5, islands);
-    expect(moments.map((m) => [m.playerId, m.tone, m.chips.map((c) => `${c.good ?? ''}${c.text}`)])).toEqual([['p1', 'loss', ['暗潮捲走', 'wood−2', 'arms−1']]]);
   });
 });
 
