@@ -1,3 +1,4 @@
+import { SHIP_TYPE_LABELS } from '../labels';
 import type { WorksMode } from '../scene/ships/dockWorksShow';
 import type { ReactNode } from 'react';
 import type { Action, Goods, PlayerId, ShipId } from '../../v07/game';
@@ -73,10 +74,12 @@ export interface StageParts {
   readonly rivalRow?: boolean;
 }
 
-/** "你的船" / "黑潮會的船". */
-export function shipName(board: Board, id: ShipId, viewer: PlayerId, nameOf: (id: PlayerId) => string): string {
-  const owner = board.ships.find((s) => s.id === id)?.owner;
-  return owner === viewer ? '你的船' : `${owner ? nameOf(owner) : '?'}的船`;
+/** "你的船" / "黑潮會的船"; with `typed` (the ship bays) the ship's own name: "黑潮會的巨鯨號". */
+export function shipName(board: Board, id: ShipId, viewer: PlayerId, nameOf: (id: PlayerId) => string, typed = false): string {
+  const ship = board.ships.find((s) => s.id === id);
+  const owner = ship?.owner;
+  const boat = typed && ship ? SHIP_TYPE_LABELS[ship.type] : '船';
+  return owner === viewer ? `你的${boat}` : `${owner ? nameOf(owner) : '?'}的${boat}`;
 }
 
 /** In a close shot the player's own plate sits on the island this far (a share of its radius) toward the camera, under the build button. */

@@ -39,6 +39,7 @@ import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
 import { OWN_BADGE_LIFT, OWN_PLATE_REACH } from './stage';
 import { rivalPlates, seatPlates } from './seatPlates';
 import { seaTagPins } from './seaTags';
+import { SKILL_LABELS, skillText } from '../table/v08Text';
 import type { StageEnv } from './stage';
 import { useDeployStep } from './useDeployStep';
 import { useHudSafe } from './useHudSafe';
@@ -361,20 +362,27 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const stepAside = (pin: TablePin): TablePin => {
     if (!closeUp) return pin;
     if (step?.bareShot && (pin.id === `seat-${viewerId}` || pin.id === `island-${viewerId}`)) return { ...pin, hidden: true };
-    if (pin.id === `seat-${viewerId}`) return { ...pin, position: [ownX, 1, ownZ + PLAYER_ISLAND_RADIUS * OWN_PLATE_REACH] };
+    if (pin.id === `seat-${viewerId}`) return { ...pin, dropWide: false, position: [ownX, 1, ownZ + PLAYER_ISLAND_RADIUS * OWN_PLATE_REACH] };
     // The player's own island badge steps back past the stacks' labels and clocks.
     if (pin.id === `island-${viewerId}`) return { ...pin, position: [pin.position[0], pin.position[1], pin.position[2] - OWN_BADGE_LIFT] };
     return { ...pin, hidden: true };
   };
   const seaTags = seaTagPins(
-    board.ships.map((s) => ({ id: s.id, owner: s.owner, type: s.type, fromEarlier: s.fromEarlier, atSea: stateOf(s.id) === 'atSea' })),
+    board.ships.map((s) => ({
+      id: s.id,
+      owner: s.owner,
+      type: s.type,
+      fromEarlier: s.fromEarlier,
+      atSea: stateOf(s.id) === 'atSea',
+      ...(board.players[s.owner]?.skills.includes(s.type) ? { skill: { label: SKILL_LABELS[s.type], text: skillText(rules, s.type) } } : {}),
+    })),
     seats,
     angles,
     laneOf,
     (id) => berths.get(id as ShipId) ?? 0,
   ).map((pin) => (closeUp || resolution.pins.some((p) => p.id === `badges-${pin.id.slice(4)}`) ? { ...pin, hidden: true } : pin));
   const pins = [...plates.map(stepAside), ...seaTags, marketBadgePin(), ...badgesNow.map(stepAside), ...moments.pins, ...(step?.pins ?? []), ...resolution.pins, ...marks];
-  const camera = step?.camera ?? moments.camera ?? resolution.camera ?? overviewPoints(angles, seats.map((s) => s.island), noViewer);
+  const camera = step?.camera ?? moments.camera ?? resolution.camera ?? overviewPoints(angles, seats.map((s) => s.island), true);
 
   const marketRef = useRef<HTMLDivElement>(null);
   const dockRef = useRef<HTMLDivElement>(null);

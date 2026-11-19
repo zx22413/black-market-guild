@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { ScrollText } from './ScrollText';
 import { type GoodId, type Goods, type RoleId, type ShipId } from '../../v07/game';
 import { soundEngine } from '../audio/soundEngine';
-import { ROLE_LABELS } from '../labels';
+import { ROLE_LABELS, SHIP_TYPE_LABELS } from '../labels';
+import { SKILL_LABELS, skillText } from '../table/v08Text';
 import { besideShip, type TablePin, type TableShip } from '../scene/TableCanvas';
 import {
   blockedReason,
@@ -119,13 +120,15 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   // the role's badge on the one picked (click it to take the role back), and a "no entry" sign on the ones the role cannot go to, saying why on
   // hover or tap. The ship's name shows on hover and is read out for screen readers. Each counts as
   // part of its owner's island for a highlight (the tutorial's focus).
+  const typed = context.view.rules.ships.enabled === 1;
   const pins: TablePin[] = board.ships.map((ship) => {
     const blocked = blockedReason(context, options, choice, ship.id);
     const pickable = targets.has(ship.id);
     const chosen = choice.target === ship.id;
-    const label = shipName(board, ship.id, viewer, nameOf);
+    const label = shipName(board, ship.id, viewer, nameOf, typed);
+    const skill = typed && board.players[ship.owner]?.skills.includes(ship.type) ? { label: SKILL_LABELS[ship.type], text: skillText(context.view.rules, ship.type) } : null;
     const rim = seats[laneOf(ship.owner)]?.color ?? '#e0a63c';
-    return {
+    const pin: TablePin = {
       id: `ship-${ship.id}`,
       position: besideShip(angles[laneOf(ship.owner)]!, 'docked', 7, TAG_HEIGHT),
       node:
@@ -175,12 +178,21 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
               <ForbidIcon />
             </span>
           </InfoTip>
-        ) : (
-          <span className="dep-ship-name" data-focus={`island-${ship.owner}`}>
-            {label}
-          </span>
-        ),
+        ) : null,
     };
+    // The ship's name and open skill stand on the ship whatever the role does (a name alone when nothing else is on it).
+    const tag = (
+      <span className="dep-ship-name" data-focus={`island-${ship.owner}`}>
+        {label}
+        {skill && (
+          <InfoTip title={`技能：${skill.label}`} text={skill.text}>
+            <small className="dep-ship-skill">技能・{skill.label}</small>
+          </InfoTip>
+        )}
+      </span>
+    );
+    if (pin.node === null) return { ...pin, node: tag };
+    return typed ? { ...pin, node: <span className="dep-ship-stack">{pin.node}{tag}</span> } : pin;
   });
 
   // The reason behind a hand with nothing to pick: the first greyed card that is not about cooldown or cash.

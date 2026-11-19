@@ -75,6 +75,8 @@ export interface TablePin {
   readonly clamp?: boolean;
   /** On a phone-wide screen hang the label below its point instead of above it, off the model it stands before (a plate on the island's front rim). */
   readonly drop?: boolean;
+  /** Hang a `drop` label below its point on a wide screen too (a plate on the island's front rim, which the label would cover). */
+  readonly dropWide?: boolean;
   /** Ease toward the position instead of jumping, for a label that follows something that glides (a pushed ship). */
   readonly glide?: boolean;
   /** Screen pixels the label is moved down from its point (negative: up), to stack labels that share a point. */
@@ -212,7 +214,7 @@ function PinTracker({ pins, elements }: { readonly pins: readonly TablePin[]; re
         eased.current.set(pin.id, [x, y]);
       }
       const box = pin.clamp ? (el.firstElementChild as HTMLElement | null) : null;
-      const below = pin.drop === true && width <= PHONE_WIDTH;
+      const below = pin.drop === true && (pin.dropWide === true || width <= PHONE_WIDTH);
       el.classList.toggle('below', below);
       if (box && below) {
         // Hung below its point, the label's bottom edge is a height further down: clamp that edge, then lift back to the top.

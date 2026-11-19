@@ -3824,3 +3824,28 @@ button .info-tip-anchor {
   background: rgb(245 197 66 / 0.18);
   font-size: var(--fs-body);
 }
+
+/* V0.8 prototype: the skill line on a sea tag (hover says what it does); the tag itself lets the pointer through. */
+.beat3d-pin > .sea-tag .info-tip-anchor {
+  pointer-events: auto;
+  cursor: help;
+}
+.sea-tag .sea-skill {
+  color: #8a4b12;
+  border-bottom: 1px dotted currentColor;
+}
+
+/* The ship's name and skill under its role button (ship bays): the button keeps the point, the name hangs below it. */
+.dep-ship-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.dep-ship-name small.dep-ship-skill {
+  display: block;
+  color: #8a4b12;
+  border-bottom: 1px dotted currentColor;
+  cursor: help;
+  pointer-events: auto;
+}

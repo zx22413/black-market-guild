@@ -4,6 +4,7 @@ import { shipPose } from '../../ui/scene/Ships';
 import { seatPosition, type Vec3 } from '../../ui/scene/layout';
 import type { TablePin } from '../scene/TableCanvas';
 import { SHIP_TYPE_LABELS } from '../labels';
+import { InfoTip } from './InfoTip';
 
 /** Roughly half a hull's width on the table, in scene units. */
 const SHIP_HALF_BEAM = 2.5;
@@ -35,6 +36,8 @@ export interface SeaTagShip {
   readonly fromEarlier: boolean;
   /** Riding at sea between rounds right now. */
   readonly atSea: boolean;
+  /** V0.8 prototype: the owner has this ship type's skill open (its name and what it does), else absent. */
+  readonly skill?: { readonly label: string; readonly text: string };
 }
 
 /**
@@ -60,6 +63,11 @@ export function seaTagPins(
           <span className={`beat3d-plate inv-plate sea-tag ${spot.side}`} style={{ borderColor: seat?.color ?? '#888' }}>
             {seat?.isViewer ? '你' : (seat?.name ?? '')}的{SHIP_TYPE_LABELS[ship.type]}
             <small>{ship.fromEarlier ? '本回合抵達' : '航行中，下回合抵達'}</small>
+            {ship.skill && (
+              <InfoTip title={`技能：${ship.skill.label}`} text={ship.skill.text}>
+                <small className="sea-skill">技能・{ship.skill.label}</small>
+              </InfoTip>
+            )}
           </span>
         ),
       };
