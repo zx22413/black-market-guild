@@ -2,7 +2,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useCallback, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Vector3 } from 'three';
 import type { TideKind } from '../../v07/game';
-import { tideLook } from './tideLook';
+import { TIDE_OMEN, tideLook } from './tideLook';
 import { DockWorks } from './ships/DockWorks';
 import type { WorksMode } from './ships/dockWorksShow';
 import type { IslandId, PlayerId, ShipId, ShipTypeId, V08BuildingId, VoyageEventId } from '../../v07/game';
@@ -116,6 +116,8 @@ export interface TableCanvasProps {
   readonly works?: ReadonlyMap<ShipId, { readonly mode: WorksMode; readonly key: string; readonly skill: boolean; readonly rate?: number }>;
   /** V0.8 prototype: the dark tide in season; the sea and the sky turn toward its water (tideLook.ts). */
   readonly tide?: TideKind | null;
+  /** V0.8 prototype: `tide` is only announced (the 暗潮將至 round): the sea begins to turn, less than in season. */
+  readonly tideRising?: boolean;
   /** Islands that just counted: each hops with a glowing shore ring (a new key replays it). */
   readonly pulses?: ReadonlyMap<PlayerId, { readonly key: string; readonly tone: 'gain' | 'loss' }>;
   /** Islands whose night lights (fires, lighthouse beams) are on whatever the weather, e.g. the menu's tutorial stop. */
@@ -253,7 +255,7 @@ function sailGale(weather: VoyageEventId | null): number {
   return weather === 'storm' ? 1 : weather === 'tailwind' ? 0.6 : 0;
 }
 
-export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, tide = null, works, pulses, market, litSeats, facilities, facilityPulses, skills, skillPulses }: TableCanvasProps) {
+export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, tide = null, tideRising = false, works, pulses, market, litSeats, facilities, facilityPulses, skills, skillPulses }: TableCanvasProps) {
   // Buildings already standing when the table appears are simply there; one raised later comes down on screen.
   const [standing] = useState(() => new Set(Object.entries(facilities ?? {}).flatMap(([id, b]) => (b ? [id] : []))));
   // The runs of the dock works whose yard has changed its ship already (the ship swaps inside the dust).
@@ -263,7 +265,7 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
     if (!w) return skills?.[ship.owner]?.includes(ship.type ?? 'standard') ?? false;
     return w.skill && (w.mode === 'strike' || w.mode === 'open' || changed.has(w.key));
   };
-  const look = useMemo(() => tideLook(WEATHER[weather ?? 'clear'], tide), [weather, tide]);
+  const look = useMemo(() => tideLook(WEATHER[weather ?? 'clear'], tide, tideRising ? TIDE_OMEN : 1), [weather, tide, tideRising]);
   const { angles, laneOf } = useTableLayout(seats);
   const islandKey = seats.map((s) => s.island ?? '').join('|');
   const shores = useMemo(

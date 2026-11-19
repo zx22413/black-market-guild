@@ -47,7 +47,9 @@ import { useHudSafe } from './useHudSafe';
 import './hudPhone.css';
 import { useInvestStep } from './useInvestStep';
 import { useIslandMoments } from './useIslandMoments';
-import { useTideSweep } from './useTideSweep';
+import { PLAIN_TIDE_WATER, useTideSweep } from './useTideSweep';
+import { TideOmen } from '../scene/TideSweep';
+import { TIDE_WATER } from '../scene/tideLook';
 import { useRoundResolution } from './useRoundResolution';
 
 // The V0.7 match on the 3D table (docs/ui/v07-event-presentation.md): one table that stays
@@ -462,6 +464,9 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const tide = useMemo(() => tideStatus(events), [events]);
   // V0.8 prototype: the dark-tide season has begun (the rounds after 暗潮將至).
   const tideSeason = tide.tide !== null && tide.risingRound !== null && board.round > tide.risingRound;
+  // V0.8 prototype: the 暗潮將至 round itself: the sea begins to turn and stands high round the islands until the round's end.
+  // It waits for the round's card: the water's colour would give the tide away before the card turns it up.
+  const tideRising = tide.risingRound !== null && board.round === tide.risingRound && !finished && (startCards.length === 0 || cardRound >= board.round);
   // V0.8 prototype: the building each seat has raised, for the islands.
   const skills = useMemo(() => Object.fromEntries(ids.map((id) => [id, board.players[id]?.skills ?? []])), [ids, board]);
   const facilities = useMemo(() => Object.fromEntries(ids.map((id) => [id, board.players[id]?.facility ?? null])), [ids, board]);
@@ -473,7 +478,8 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
       <TableCanvas
         seats={seats}
         weather={board.voyageEvent}
-        tide={tideSeason ? tide.tide : null}
+        tide={tideSeason || tideRising ? tide.tide : null}
+        tideRising={tideRising}
         {...(works.size > 0 ? { works } : {})}
         facilities={facilities}
         facilityPulses={resolution.facilityPulses}
@@ -498,6 +504,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
       >
         {step?.scene}
         {sweep.scene}
+        {tideRising && <TideOmen angles={angles} water={tide.tide ? TIDE_WATER[tide.tide] : PLAIN_TIDE_WATER} />}
         {board.ships
           // Cargo rides on the deck until the ship has arrived or sunk; then the beat shows it.
           .filter((s) => stateOf(s.id) === 'docked' || stateOf(s.id) === 'sailing' || stateOf(s.id) === 'atSea')

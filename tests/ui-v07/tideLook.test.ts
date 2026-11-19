@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { WEATHER } from '../../src/ui/scene/weather';
-import { mixHex, TIDE_WATER, tideLook } from '../../src/ui-v07/scene/tideLook';
+import { mixHex, TIDE_OMEN, TIDE_WATER, tideLook } from '../../src/ui-v07/scene/tideLook';
 
 const luma = (hex: string): number => {
   const n = parseInt(hex.slice(1), 16);
@@ -27,6 +27,17 @@ describe('tideLook (V0.8 prototype, not rules)', () => {
         expect(dark.swell).toBe(look.swell);
       }
     }
+  });
+
+  it('only begins to turn the sea in the round the tide is announced: darker than the weather, lighter than the season', () => {
+    for (const tide of Object.keys(TIDE_WATER) as (keyof typeof TIDE_WATER)[]) {
+      const [omen, season] = [tideLook(WEATHER.clear, tide, TIDE_OMEN), tideLook(WEATHER.clear, tide)];
+      expect(luma(omen.sea)).toBeLessThan(luma(WEATHER.clear.sea));
+      expect(luma(omen.sea)).toBeGreaterThan(luma(season.sea));
+      expect(omen.vignette).toBeLessThan(season.vignette!);
+      expect(omen.sun).toBeGreaterThan(season.sun);
+    }
+    expect(tideLook(WEATHER.clear, 'storm', 0)).toBe(WEATHER.clear);
   });
 
   it('gives each tide its own water', () => {

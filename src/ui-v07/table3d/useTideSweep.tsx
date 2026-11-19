@@ -17,7 +17,7 @@ import { SWEEP, sweepMs, tideSweeps, type TideSweepLoss } from './tideSweepShow'
 /** How high over an island its label hangs (same as the islands' moments). */
 const LABEL_HEIGHT = 7;
 /** The water that comes up when no tide kind is in the match. */
-const PLAIN_WATER = '#123c48';
+export const PLAIN_TIDE_WATER = '#123c48';
 const NO_GOODS: Goods = { wood: 0, iron: 0, spice: 0, arms: 0 };
 const NONE: readonly TideSweepLoss[] = [];
 
@@ -87,7 +87,7 @@ export function useTideSweep({ events, round, free, angleOf, ids, startingCash, 
         return [id, lost ? (Object.fromEntries(GOODS.map((g) => [g, stock[g] - lost[g]])) as Goods) : stock];
       }),
     ),
-    scene: <TideSweep key={`tide-sweep-${round}`} islands={sweeps.map((s) => ({ angle: angleOf(s.playerId), crates: s.crates }))} water={tide ? mixHex(TIDE_WATER[tide], '#58c7c0', 0.25) : PLAIN_WATER} />,
+    scene: <TideSweep key={`tide-sweep-${round}`} islands={sweeps.map((s) => ({ angle: angleOf(s.playerId), crates: s.crates }))} water={tide ? mixHex(TIDE_WATER[tide], '#58c7c0', 0.25) : PLAIN_TIDE_WATER} />,
     pins: sweeps.map((s): TablePin => {
       const [x, , z] = seatPosition(angleOf(s.playerId));
       return {
