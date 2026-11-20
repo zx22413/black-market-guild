@@ -197,3 +197,8 @@
 .tide-sweep-chip svg { width: 20px; height: 20px; margin-left: 6px; }
 .tide-sweep-chip i { font-style: normal; opacity: 0.7; }
 .tide-sweep-chip b { color: #ffb4a8; }
+
+/* A role's rule text keeps the line breaks its text carries (the pirate's is long). */
+.role-detail {
+  white-space: pre-line;
+}

@@ -3849,3 +3849,11 @@ button .info-tip-anchor {
   cursor: help;
   pointer-events: auto;
 }
+
+/* The description strip is never wider than the hand under it: its text wraps there instead of stretching the dock. */
+@media (min-width: 641px) {
+  .dep-dock > .dep-strip {
+    width: 0;
+    min-width: 100%;
+  }
+}

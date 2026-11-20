@@ -239,7 +239,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
             </header>
             <ScrollText key={shown}>
               {shownCard.reason && <p className="why">{shownCard.reason}</p>}
-              <p>{roleDetail(shown, context.view.rules)}</p>
+              <p className="role-detail">{roleDetail(shown, context.view.rules)}</p>
             </ScrollText>
           </>
         )}

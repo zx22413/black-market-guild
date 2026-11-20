@@ -46,7 +46,7 @@ export function RulesEntries({ tab }: { readonly tab: RulesTab }) {
                 <IconDisc src={roleIconUrl(role)} badge />
                 {ROLE_LABELS[role]}
               </b>
-              <p>{roleDetail(role, RULES_V07)}</p>
+              <p className="role-detail">{roleDetail(role, RULES_V07)}</p>
             </li>
           ))}
         </>
