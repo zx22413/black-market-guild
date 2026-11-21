@@ -59,7 +59,7 @@ import { SealSubmit } from './SealSubmit';
 import { CargoHand } from './CargoHand';
 import { ShipArrival, useShipArrival } from './ShipArrival';
 import { ArrivalTitle, STEP_ARRIVAL, useStepArrival } from './StepArrival';
-import { ShipHand, ShipInfo, type ShipPick } from './ShipPicker';
+import { RaiseDice, ShipHand, ShipInfo, type ShipPick } from './ShipPicker';
 import { soundEngine } from '../audio/soundEngine';
 import { OWN_PLATE_REACH, type StageEnv, type StageParts } from './stage';
 import { cardArtUrl } from './cardArt';
@@ -302,7 +302,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   // The ship-bay experiment draws the warehouse and the deck cargo smaller (sideScale.ts) and places their labels to match.
   const typed = context.view.rules.ships.enabled === 1;
   const shipPhase = typed && phase === 'ship';
-  const shipOptions = typed ? shipCards(context) : [];
+  // The raise and a building raised this round change what the voyage pays: the tables read them as picked.
+  const shipOptions = typed ? shipCards(context, { raised: sent.raise === true, ...(choice.material?.kind === 'build' ? { building: choice.material.building } : {}) }) : [];
   const shipFx = shipEffect(context);
   // The side shot of the ship, for the pick and the loading alike: in the ship bays the goods are loaded from the
   // cards of the cargo hand (CargoHand), so the island's warehouse is not on the table and the camera stays on the ship.
@@ -517,6 +518,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
             </button>
           )}
           {raise && !raise.can && !raise.on && raise.why && <span className="note-hint">{raise.why}</span>}
+          {raise?.on && <RaiseDice curve={shipOptions.find((c) => c.id === 'gambler')?.curve ?? []} />}
           {summary.loaded > 0 && !isHintSeen('unload-cargo') && (
             <span className="note-hint" title="點船上的貨卸下" aria-label="點船上的貨卸下">
               <IconDisc src={tokenIconUrl('ship')} />

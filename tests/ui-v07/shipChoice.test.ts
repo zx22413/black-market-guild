@@ -231,4 +231,16 @@ describe('ship cards (V0.8 prototype crate tables)', () => {
     const standard = card(await v08({ facility: 'repairyard' }), 'standard');
     expect(standard.curve.map((r) => (r.sinks ? 'sink' : r.lose))).toEqual(['sink', 1, 1, 1, 1, 0]);
   });
+  it('sinks every final value below the raise minimum once the raise is declared, and only on the gambler', async () => {
+    const context = await v08();
+    const raised = shipCards(context, { raised: true });
+    const gambler = raised.find((c) => c.id === 'gambler')!;
+    expect(gambler.curve.map((r) => (r.sinks ? 'sink' : r.percent))).toEqual(['sink', 'sink', 'sink', 'sink', 'sink', 400]);
+    expect(raised.find((c) => c.id === 'standard')!.curve).toEqual(card(context, 'standard').curve);
+  });
+
+  it('counts a repairyard raised this round as picked', async () => {
+    const standard = shipCards(await v08(), { building: 'repairyard' }).find((c) => c.id === 'standard')!;
+    expect(standard.curve.map((r) => (r.sinks ? 'sink' : r.lose))).toEqual(['sink', 1, 1, 1, 1, 0]);
+  });
 });

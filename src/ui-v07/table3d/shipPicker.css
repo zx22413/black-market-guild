@@ -574,3 +574,35 @@
   width: 10px;
   height: 10px;
 }
+
+/* The raised gambler's own table beside the ship while loading (RaiseDice): the values that sink are red. */
+.raise-dice {
+  display: flex;
+  gap: 4px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.raise-dice li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 30px;
+  padding: 1px 4px 2px;
+  border: 1px solid #6f9a55;
+  border-radius: 6px;
+  background: rgb(80 130 60 / 0.16);
+  color: #2f5a22;
+  line-height: 1.25;
+}
+.raise-dice li.sink {
+  border-color: #b4574d;
+  background: rgb(155 59 50 / 0.14);
+  color: #8a241c;
+}
+.raise-dice li small {
+  font-size: var(--fs-note);
+}
+.raise-dice li b {
+  font-size: var(--fs-body);
+}

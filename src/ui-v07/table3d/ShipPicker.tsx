@@ -305,6 +305,21 @@ export function ShipInfo({ cards, shown, effect, revealed, fresh, layout, arriva
   );
 }
 
+/** The raised gambler's table while loading (V0.8 prototype): each final value, red where the raised ship sinks. */
+export function RaiseDice({ curve }: { readonly curve: readonly { readonly final: number; readonly sinks: boolean; readonly lose: number | null; readonly percent: number; readonly orMore: boolean }[] }) {
+  if (curve.length === 0) return null;
+  return (
+    <ol className="raise-dice" aria-label="加注後的骰值表：最終值，與到港或沉船">
+      {curve.map((row) => (
+        <li key={row.final} className={row.sinks ? 'sink' : 'win'} title={row.sinks ? `最終值 ${row.final}：加注後沉船，貨全損` : `最終值 ${row.final}${row.orMore ? ' 以上' : ''}：${crateRowText(row)}`}>
+          <small>{row.orMore ? `${row.final}+` : row.final}</small>
+          <b>{row.sinks ? '沉' : times(row.percent)}</b>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 interface SkillRowProps {
   readonly ship: ShipTypeId;
   readonly skill: ShipSkill;

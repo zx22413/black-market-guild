@@ -1,5 +1,5 @@
 import type { DecisionContext } from '../../v07/bots';
-import { SHIP_TYPE_IDS, activeTide, crateTerms, cratesOn, facilityOf, shipCostFor, shipDelay, shipFinalCap, shipFinalCapFor, shipIncomePercent, shipTypeAvailable, skillLevel, traitOf, type ShipTypeId } from '../../v07/game';
+import { SHIP_TYPE_IDS, type V08BuildingId, activeTide, crateTerms, cratesOn, facilityOf, shipCostFor, shipDelay, shipFinalCap, shipFinalCapFor, shipIncomePercent, shipTypeAvailable, skillLevel, traitOf, type ShipTypeId } from '../../v07/game';
 import { ISLAND_LABELS, VOYAGE_EVENT_LABELS, VOYAGE_EVENT_TEXT } from '../labels';
 
 // The ship choice of the ship-bay experiment (docs/proposals/2026-11-ship-bays.md, not a decided rule) as
@@ -77,8 +77,17 @@ export function shipEffect(context: DecisionContext): ShipEffect {
   return { parts, total: parts.reduce((n, p) => n + p.delta, 0), conditional, limit };
 }
 
+/**
+ * What the player has picked this round that changes how the voyage pays (V0.8 prototype): the gambler's raise declared, and
+ * a repairyard raised this round (it stands before the voyage is resolved). Both belong to the table, not to the ship's own data.
+ */
+export interface PendingTerms {
+  readonly raised?: boolean;
+  readonly building?: V08BuildingId | null;
+}
+
 /** A ship type's curve by final value: 1 up to the die's top face, or up to the last entry of an uncapped type's curve. */
-export function curveRows(context: DecisionContext, type: ShipTypeId): ShipCurveRow[] {
+export function curveRows(context: DecisionContext, type: ShipTypeId, pending: PendingTerms = {}): ShipCurveRow[] {
   const { view } = context;
   const { rules } = view;
   const { dieMin, dieMax } = rules.sailing;
@@ -87,8 +96,8 @@ export function curveRows(context: DecisionContext, type: ShipTypeId): ShipCurve
   const table = crates ? rules.v08.tables[type].multiplier : rules.ships.types[type].curve;
   const top = uncapped ? Math.max(...Object.keys(table).map(Number)) : dieMax;
   const me = view.players.find((p) => p.id === view.playerId)!;
-  // The plain voyage: the gambler's raise (加注) is a choice made at launch, so it is not in the card's table.
-  const crateContext = { raised: false, level: skillLevel(rules, me, type), facility: facilityOf(rules, me), island: me.island, stormTide: activeTide(view.events) === 'storm' };
+  // The gambler's raise (加注) and a building raised this round are choices of this round: they count only once picked.
+  const crateContext = { raised: pending.raised === true && type === 'gambler', level: skillLevel(rules, me, type), facility: pending.building ?? facilityOf(rules, me), island: me.island, stormTide: activeTide(view.events) === 'storm' };
   return Array.from({ length: top - dieMin + 1 }, (_, i): ShipCurveRow => {
     const final = dieMin + i;
     const orMore = uncapped && final === top;
@@ -102,7 +111,7 @@ export function curveRows(context: DecisionContext, type: ShipTypeId): ShipCurve
 }
 
 /** Every ship type, pickable or not, with the reason; empty when the experiment is off. */
-export function shipCards(context: DecisionContext): ShipCard[] {
+export function shipCards(context: DecisionContext, pending: PendingTerms = {}): ShipCard[] {
   const { view } = context;
   const { rules } = view;
   if (rules.ships.enabled !== 1) return [];
@@ -111,7 +120,7 @@ export function shipCards(context: DecisionContext): ShipCard[] {
   return SHIP_TYPE_IDS.map((id): ShipCard => {
     const type = rules.ships.types[id];
     const fee = shipCostFor(rules, me.island, id);
-    const curve = curveRows(context, id);
+    const curve = curveRows(context, id, pending);
     const faces = curve.filter((r) => r.final <= rules.sailing.dieMax);
     const total = effect.total;
     const cap = shipFinalCapFor(rules, me.island, id);
