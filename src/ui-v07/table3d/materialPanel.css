@@ -255,3 +255,114 @@
     display: none;
   }
 }
+
+/* While the ship is picked: the warehouse and, under it, the buildings to read (useInvestStep), stacked at the left. */
+.side-stack {
+  position: absolute;
+  left: 12px;
+  top: 140px;
+  z-index: 18;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  /* Ends above the ship hand and the bar. */
+  height: calc(100% - 140px - 272px);
+  pointer-events: none;
+}
+.side-stack > * {
+  position: static;
+  flex: none;
+  pointer-events: auto;
+}
+.side-stack > .mat-panel {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: none;
+  box-sizing: border-box;
+}
+/* The list of buildings, opened: it stands out beside the warehouse, where it has the height for all three. */
+@media (min-width: 641px) {
+  .side-stack > .mat-panel.listing {
+    position: absolute;
+    top: 0;
+    left: calc(100% + 8px);
+    max-height: 100%;
+  }
+}
+/* The caption's row, with the switch to the building's close-up at its end. */
+.mat-cap-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.mat-cap-row.pick {
+  justify-content: flex-end;
+}
+.mat-look {
+  padding: 2px 10px;
+  border: 1px solid #8a5a2b;
+  border-radius: 6px;
+  background: #fff8e8;
+  color: #3a2616;
+  font: inherit;
+  font-size: var(--fs-note);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mat-look.on {
+  background: #f5c542;
+  font-weight: 700;
+}
+button.mat-card.own {
+  cursor: pointer;
+}
+/* Nothing built yet and a building can be raised: the folded button breathes (a glow that follows the panel's frame). */
+.mat-panel.nudge {
+  animation: beat-pop 260ms cubic-bezier(0.2, 1.5, 0.4, 1), mat-nudge 1.8s ease-in-out 260ms infinite;
+}
+@keyframes mat-nudge {
+  50% {
+    filter: drop-shadow(0 0 3px rgb(255 200 80 / 0.95)) drop-shadow(0 0 12px rgb(255 190 60 / 0.85));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mat-panel.nudge {
+    animation: none;
+    filter: drop-shadow(0 0 3px rgb(255 200 80 / 0.95));
+  }
+}
+/* A building to read, not to pick (the ship pick), and the one that stands. */
+.mat-card:is(.info, .own) {
+  cursor: default;
+}
+.mat-own {
+  display: grid;
+  gap: 6px;
+}
+/* The building that stands: a caption and one compact card (a smaller picture, the tide it stops beside its name). */
+.mat-card.own {
+  grid-template-columns: 48px 1fr;
+}
+.mat-card.own .mat-art {
+  width: 48px;
+  height: 48px;
+}
+.mat-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mat-name .mat-shield {
+  margin-left: auto;
+}
+@media (max-width: 640px) {
+  .side-stack {
+    left: 8px;
+    right: 8px;
+    top: 118px;
+    height: auto;
+    max-height: 56%;
+  }
+}

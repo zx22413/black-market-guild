@@ -88,8 +88,6 @@ const BUBBLE_RISE = 0.12;
 
 /** How long the dock works take to go under when the skill's pick is taken back (ms; dockWorksShow's strike). */
 const STRIKE_MS = 750;
-/** How long the camera stays on the building lot after a building is picked, the glide there included (ms). */
-const LOT_LOOK_MS = 2000;
 
 export function useInvestStep(env: StageEnv | null): StageParts | null {
   const active = env?.request.context.decision.phase === 'invest' ? env : null;
@@ -102,9 +100,11 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const [buildDecided, setBuildDecided] = useState(false);
   // Ship-bay experiment (rules.ships): the ship is picked first, close up, then the cargo is loaded from further back.
   const [phase, setPhase] = useState<'ship' | 'cargo'>('ship');
-  // V0.8 prototype: picking a building takes the camera to the island's lot for a moment (the pick itself stays at the
-  // ship, where the cargo and the material cost are); each new pick restarts the look, clearing the pick ends it.
-  const [lotLook, setLotLook] = useState<number | null>(null);
+  // V0.8 prototype: the close-up of the island's building lot. Picking a building goes there (the pick itself stays at
+  // the ship, where the cargo and the material cost are) and the camera stays until the player leaves it: the panel's
+  // 「回到船」, or taking the pick back. A building that stands can be looked at the same way, in the ship pick too.
+  const [lotLook, setLotLook] = useState(false);
+  useEffect(() => setLotLook(false), [phase]);
   // V0.8 prototype: opening a ship's skill (on its card in the ship pick) raises the dock works round it (the whole
   // show, then they stand open); taking the pick back sends them under again. They belong to that ship: with another
   // ship at the dock they are not on the table, and they stand open when theirs comes back.
@@ -119,11 +119,6 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   useEffect(() => {
     if (works?.mode === 'build' && dockType.current !== works.ship) setWorks({ ...works, mode: 'open', key: `open-${works.key}` });
   });
-  useEffect(() => {
-    if (lotLook === null) return;
-    const timer = setTimeout(() => setLotLook(null), LOT_LOOK_MS);
-    return () => clearTimeout(timer);
-  }, [lotLook]);
   const [shipDecided, setShipDecided] = useState(false);
   // The ship card the pointer is on: the info card describes it, else the one picked.
   const [peekShip, setPeekShip] = useState<ShipPick>(null);
@@ -239,20 +234,23 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const pickMaterial = (material: MaterialAction | null) => {
     soundEngine.playSfx('role-pick');
     setChoice((c) => withMaterial(options, c, material));
-    setLotLook(material?.kind === 'build' ? Date.now() : null);
+    setLotLook(material?.kind === 'build');
     setWorks((w) => (material?.kind === 'open' ? { mode: 'build', key: `build-${Date.now()}`, skill: true, ship: material.ship } : w && w.mode !== 'strike' ? { mode: 'strike', key: `strike-${Date.now()}`, skill: false, ship: w.ship } : w));
   };
   const toggleSkill = (ship: ShipTypeId) => pickMaterial(skills[ship]?.state === 'opening' ? null : { kind: 'open', ship });
-  const materialPanel =
+  const materialPanelFor = (readOnly: boolean) =>
     materials.length > 0 ? (
       <MaterialPanel
         cards={materials}
         chosen={choice.material ?? null}
         onPick={pickMaterial}
-        built={me?.facility != null}
+        owned={me?.facility ?? null}
         protects={protects}
         protect={choice.protect ?? actionFor(options, choice)?.protect ?? null}
         onProtect={(good) => setChoice((c) => ({ ...c, protect: good }))}
+        readOnly={readOnly}
+        looking={lotLook}
+        onLook={setLotLook}
       />
     ) : null;
   // The gamble's raise, on the ship's note while loading: a declaration about this voyage.
@@ -623,7 +621,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     ...(shownShip ? { ownShipType: shownShip } : {}),
     ...(shipPhase ? { bareShot: true } : {}),
     ...(sideView ? { sideShot: true } : {}),
-    ...(sideView ? { cameraRig: (safe: SafeArea) => <ShipSideCamera angle={home} shot="ship" lot={lotLook !== null && !shipPhase} lotLeft={phone ? 0 : MATERIAL_PANEL_ROOM} {...(shownShip ? { ship: shownShip } : {})} safe={phone ? safe : { ...safe, right: Math.max(safe.right, shipPhase ? SHIP_INFO_ROOM : RANK_RAIL_ROOM) }} /> } : {}),
+    ...(sideView ? { cameraRig: (safe: SafeArea) => <ShipSideCamera angle={home} shot="ship" lot={lotLook} lotLeft={phone ? 0 : MATERIAL_PANEL_ROOM} {...(shownShip ? { ship: shownShip } : {})} safe={phone ? safe : { ...safe, right: Math.max(safe.right, shipPhase ? SHIP_INFO_ROOM : RANK_RAIL_ROOM) }} /> } : {}),
     ...(phone ? { rivalRow: true } : { closeShot: true }),
     scene: (
       <>
@@ -648,7 +646,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       </>
     ),
     // On a wide screen the info card stands beside the ship (the overlay) and the hand is alone at the bottom; on a phone the strip stays above the hand.
-    ...(shipPhase ? { dock: phone ? <>{shipInfo}{shipHand}</> : shipHand } : typed ? { dock: cargoHand } : {}),
+    // At the building's close-up nothing is loaded or picked: the hand is put away until the camera is back at the ship.
+    ...(lotLook ? {} : shipPhase ? { dock: phone ? <>{shipInfo}{shipHand}</> : shipHand } : typed ? { dock: cargoHand } : {}),
     bar: shipPhase ? (
       <>
         {chips}
@@ -667,8 +666,14 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     overlay: (
       <>
         {phone && cards}
-        {!shipPhase && materialPanel}
-        {shipPhase && materials.length > 0 && <StockPanel stock={context.view.myStock} spend={spend} swept={sweptAtRoundEnd(context.view, split.left)} />}
+        {!shipPhase && materialPanelFor(false)}
+        {/* While the ship is picked: the warehouse, and under it the building that stands or the ones that can be raised (to read). */}
+        {shipPhase && materials.length > 0 && (
+          <div className="side-stack">
+            <StockPanel stock={context.view.myStock} spend={spend} swept={sweptAtRoundEnd(context.view, split.left)} />
+            {materialPanelFor(true)}
+          </div>
+        )}
         {wave.playing && shipPhase && <ShipArrival onDone={wave.done} />}
         {arrival.playing && shipPhase && <ArrivalTitle round={board.round} text="選擇出航的船" delay={STEP_ARRIVAL.titleDelay} dealDelay={STEP_ARRIVAL.dealDelay} />}
         {shipPhase && !phone && shipInfo}

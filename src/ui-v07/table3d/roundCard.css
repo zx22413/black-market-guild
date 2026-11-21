@@ -181,6 +181,21 @@
   left: auto;
   pointer-events: auto;
 }
+/*
+ * A chip's explanation opens beside the row, not under it (under it lies the dark tide's chip): on a wide screen the
+ * chips are not positioned, so the tip hangs off the row's right end. A phone keeps it under the chip (the menu is
+ * at the right there).
+ */
+@media (min-width: 641px) {
+  .hud-events > .event-chip {
+    position: static;
+  }
+  .hud-events .event-chip-tip {
+    top: 0;
+    left: calc(100% + 10px);
+    max-width: min(260px, calc(100vw - 100% - 36px));
+  }
+}
 .event-chip.final { border-color: #b5361f; background: rgb(70 22 14 / 0.94); color: #ffe6c8; box-shadow: 0 0 10px rgb(224 90 50 / 0.55); }
 .event-chip.final .final-flag { color: #ffb36b; font-size: 18px; line-height: 1; }
 .event-chip .final-line { display: block; }
