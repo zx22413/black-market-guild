@@ -11,6 +11,9 @@ import { G, RULES_V08_PRE_SHIELDS, cash, edit, find, plain, playRound, withDeman
 // pirate deployments with the crate tables (v08.botPirateCrates). NOT rules.
 
 const V08 = RULES_V08_PROTO;
+/** The armory's pirate toll and customs halving, off in the prototype since 2026-11-21. */
+const WITH_TOLL: Rules = { ...V08, v08: { ...V08.v08, armory: { ...V08.v08.armory, pirateToll: 1 } } };
+const WITH_CUSTOMS: Rules = { ...V08, v08: { ...V08.v08, armory: { ...V08.v08.armory, halveCustoms: 1 } } };
 
 const at = (patch: Partial<V08EventsState>, stock = G(3, 3, 1, 1), rules: Rules = V08): MatchState => {
   const base = plain(4, rules);
@@ -129,15 +132,18 @@ describe('V0.8 bots and the tide shields', () => {
     }
   });
 
-  it('prices all three buildings alike and lets the armory collect every pirate fee aimed at its owner', () => {
+  it('prices all three buildings alike and keeps the armory to the halving (toll and customs switches off)', () => {
     expect(RULES_V08_PROTO.v08.costs.build).toEqual({ repairyard: G(2, 1), armory: G(2, 1), tradehouse: G(2, 1) });
-    const ready = withDemand(edit(plain(4, RULES_V08_PROTO), 'p1', { facility: 'armory', stock: G(3, 3, 1, 1) }), G(2, 2, 2, 1));
-    const { events } = playRound(ready, { loads: { p1: G(1) }, rolls: { p1: 6 }, roles: { p2: ['pirate', 'p1'] } });
-    expect(cash(events, 'pirate-toll', 'p1')).toBe(RULES_V08_PROTO.roles.fees.pirate);
+    expect(RULES_V08_PROTO.v08.armory).toMatchObject({ halveAllLoot: 1, refundSunkLoot: 1, pirateToll: 0, halveCustoms: 0 });
+    const ready = (rules: Rules) => withDemand(edit(plain(4, rules), 'p1', { facility: 'armory', stock: G(3, 3, 1, 1) }), G(2, 2, 2, 1));
+    const plan = { loads: { p1: G(1) }, rolls: { p1: 6 }, roles: { p2: ['pirate', 'p1'] as const } };
+    expect(cash(playRound(ready(RULES_V08_PROTO), plan).events, 'pirate-toll', 'p1')).toBe(0);
+    // The switch still works: every pirate fee aimed at the owner goes to the owner.
+    expect(cash(playRound(ready(WITH_TOLL), plan).events, 'pirate-toll', 'p1')).toBe(RULES_V08_PROTO.roles.fees.pirate);
   });
 
-  it('lets the armory halve what customs confiscates from its owner', () => {
-    const base = withDemand(plain(4, RULES_V08_PROTO), G(2, 2, 2, 1));
+  it('lets the armory halve what customs confiscates from its owner (v08.armory.halveCustoms, off in the prototype)', () => {
+    const base = withDemand(plain(4, WITH_CUSTOMS), G(2, 2, 2, 1));
     const round = (state: MatchState) =>
       playRound(edit(state, 'p1', { stock: G(3, 3, 1, 1) }), { loads: { p1: G(0, 0, 0, 1) }, rolls: { p1: 6 }, roles: { p2: ['customs', 'p1'] }, named: { p2: 'arms' } });
     const plainTake = cash(round(base).events, 'goods-confiscated', 'p2');

@@ -12,7 +12,7 @@ export function facilityText(rules: Rules, building: V08BuildingId): string {
     case 'repairyard':
       return `最終值 ${v.repairyard.fromFinal}～${v.repairyard.toFinal} 少掉 ${v.repairyard.save} 箱`;
     case 'armory':
-      return [v.armory.halveAllLoot === 1 ? '海盜搶的減半' : '', v.armory.pirateToll === 1 ? '派到你船上的海盜，部署費付給你' : '', v.armory.halveCustoms === 1 ? '海關沒收的減半' : ''].filter(Boolean).join('；');
+      return [v.armory.halveAllLoot === 1 ? (v.armory.refundSunkLoot === 1 ? '海盜搶的減半；船被打沉時，擋下的一半付給你' : '海盜搶的減半') : '',v.armory.pirateToll === 1 ? '派到你船上的海盜，部署費付給你' : '', v.armory.halveCustoms === 1 ? '海關沒收的減半' : ''].filter(Boolean).join('；');
     case 'tradehouse':
       return '每回合指定一種貨，跌價時照原價賣';
   }

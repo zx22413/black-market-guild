@@ -395,8 +395,9 @@ export const RULES_V08_PROTO: Rules = {
     islands: { lighthouseFades: 0, freePortGamblerNoRest: 0, lighthouseBeacon: 0, ownShipMinRaw: 3, freePortFeePercent: 50 },
     // 2026-11-16: the armory guards against people (人禍): it also collects the fee of every pirate sent at its owner's
     // ships and halves what customs confiscates from them. 2026-11-21: on a sunk ship the half it keeps from the pirates
-    // is paid to the owner (refundSunkLoot), so the armory moves its owner's cash, not only the pirates'.
-    armory: { ...V08_OFF.armory, halveAllLoot: 1, immunePirateTide: 1, pirateToll: 1, halveCustoms: 1, refundSunkLoot: 1 },
+    // is paid to the owner (refundSunkLoot), so the armory moves its owner's cash, not only the pirates'. Same day, to
+    // keep it to one sentence (user): the pirate toll and the customs halving are off; the armory is only the halving.
+    armory: { ...V08_OFF.armory, halveAllLoot: 1, immunePirateTide: 1, pirateToll: 0, halveCustoms: 0, refundSunkLoot: 1 },
     // 2026-11-15: each building shields its owner from the matching tide (repairyard ↔ storm, armory ↔ pirate,
     // tradehouse ↔ crash), and bots value pirate deployments with the crate tables.
     repairyard: { ...V08_OFF.repairyard, immuneStormTide: 1 },
