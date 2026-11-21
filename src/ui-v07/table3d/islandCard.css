@@ -544,3 +544,45 @@
 .event-chip img {
   filter: none;
 }
+
+/* A closer look at another player's island (IslandPeek.tsx): a card at the left, under the HUD. */
+.island-peek {
+  position: absolute;
+  z-index: 8;
+  left: 12px;
+  top: calc(var(--hud-top, 56px) + 96px);
+  display: grid;
+  gap: 8px;
+  width: min(260px, calc(100vw - 24px));
+  padding: 10px 12px;
+  border: 2px solid;
+  border-radius: 12px;
+  background: rgb(245 236 212 / 0.97);
+  color: #2b2116;
+  font-size: var(--fs-note);
+  line-height: 1.5;
+  box-shadow: 0 8px 20px rgb(0 0 0 / 0.3);
+  pointer-events: auto;
+}
+.island-peek header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.island-peek header b {
+  flex: 1;
+  font-size: var(--fs-body);
+}
+.island-peek header button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+}
+.island-peek p {
+  margin: 0;
+}
+.island-peek .peek-line {
+  display: block;
+}

@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { GOODS, type BuildingId, type PlayerId, type Rules } from '../../v07/game';
+import { GOODS, type BuildingId, type PlayerId, type Rules, type V08BuildingId } from '../../v07/game';
+import { FACILITY_LABELS, facilityShield, facilityText } from '../table/v08Text';
 import { BUILDING_LABELS, BUILDING_TEXT, ISLAND_LABELS, WEALTH_RULE_TEXT, islandText } from '../labels';
 import type { BeatSeat } from '../scene/beatStage';
 import type { Board } from '../session/board';
@@ -68,6 +69,20 @@ function BuildingMark({ building, rules }: { readonly building: BuildingId; read
       <span className="rank-building">
         <button type="button" aria-label={BUILDING_LABELS[building]}>
           <img src={cardIconUrl({ kind: 'building', id: building })} alt="" />
+        </button>
+      </span>
+    </InfoTip>
+  );
+}
+
+/** V0.8 prototype: the building raised with materials, in the same dark disc as the old buildings. */
+function FacilityMark({ building, rules }: { readonly building: V08BuildingId; readonly rules: Rules }) {
+  const shield = facilityShield(rules, building);
+  return (
+    <InfoTip title={FACILITY_LABELS[building]} text={`${facilityText(rules, building)}${shield ? `；${shield}` : ''}`}>
+      <span className="rank-building">
+        <button type="button" aria-label={FACILITY_LABELS[building]}>
+          <img src={`${import.meta.env.BASE_URL}art/icons/facility-${building}.svg`} alt="" />
         </button>
       </span>
     </InfoTip>
@@ -171,7 +186,9 @@ export function RankRail({ seats, board, rules, cashOf, status, rankStep, forceO
               </div>
               <div className="rank-have">
                 <span className="rank-buildings">
-                  {(player?.buildings ?? []).length === 0 ? <small title="無建築">—</small> : (player?.buildings ?? []).map((b) => <BuildingMark key={b} building={b} rules={rules} />)}
+                  {(player?.buildings ?? []).length === 0 && !player?.facility && <small title="無建築">—</small>}
+                  {player?.facility && <FacilityMark building={player.facility} rules={rules} />}
+                  {(player?.buildings ?? []).map((b) => <BuildingMark key={b} building={b} rules={rules} />)}
                 </span>
                 <span className="rank-stock" title="倉庫">
                   {GOODS.filter((g) => (player?.stock[g] ?? 0) > 0).map((g) => (

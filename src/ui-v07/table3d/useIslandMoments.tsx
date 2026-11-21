@@ -36,6 +36,8 @@ export interface MomentsInput {
   readonly skip?: boolean;
   /** The match's rules when they are not the official ones (the V0.8 prototype). */
   readonly rules?: Rules;
+  /** The player at the screen: only their own building going up is closed in on (a rival's is seen from the overview). */
+  readonly viewer?: PlayerId | null;
 }
 
 export interface Moments {
@@ -60,7 +62,7 @@ const chipDelay = (i: number): number => 300 + i * 160;
 /** A cost's chip pops lower than a gain's. */
 const LOSS_PITCH = 0.82;
 
-export function useIslandMoments({ events, board, free, angleOf, skipFirstOpening = false, skip = false, rules = RULES_V07 }: MomentsInput): Moments {
+export function useIslandMoments({ events, board, free, angleOf, skipFirstOpening = false, skip = false, rules = RULES_V07, viewer = null }: MomentsInput): Moments {
   const round = board.round;
   const islands = useMemo((): Readonly<Record<PlayerId, IslandId>> | null => {
     const chosen = events.find((e) => e.type === 'islands-chosen');
@@ -118,7 +120,7 @@ export function useIslandMoments({ events, board, free, angleOf, skipFirstOpenin
   return {
     blocking: true,
     ...(phase === 'launch' ? { launching: true } : {}),
-    ...(raising ? { camera: shown.flatMap((m) => { const [x, , z] = seatPosition(angleOf(m.playerId)); return [...around([x, 0, z], PLAYER_ISLAND_RADIUS), { position: [x, CHIP_HEIGHT + CHIP_ROOM, z] as const }]; }) } : {}),
+    ...(raising && shown.some((m) => m.playerId === viewer) ? { camera: shown.filter((m) => m.playerId === viewer).flatMap((m) => { const [x, , z] = seatPosition(angleOf(m.playerId)); return [...around([x, 0, z], PLAYER_ISLAND_RADIUS), { position: [x, CHIP_HEIGHT + CHIP_ROOM, z] as const }]; }) } : {}),
     pulses: new Map(shown.map((m) => [m.playerId, { key: `${phase}-${round}-${m.playerId}`, tone: m.tone }])),
     pins: shown.map((m): TablePin => {
       const [x, , z] = seatPosition(angleOf(m.playerId));

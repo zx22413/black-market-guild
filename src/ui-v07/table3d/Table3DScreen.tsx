@@ -10,7 +10,7 @@ import { eventLine } from '../log';
 import { beatSeats } from '../scene/beatStage';
 import { berthsOf } from '../scene/berth';
 import { ShipCargo } from '../scene/InvestIsland';
-import { TableCanvas, overviewPoints, useTableLayout, type TablePin, type TableShip } from '../scene/TableCanvas';
+import { TableCanvas, islandPoint, overviewPoints, platePosition, useTableLayout, type ModelTarget, type TablePin, type TableShip } from '../scene/TableCanvas';
 import { marketShow } from '../scene/marketShow';
 import { buildBoard } from '../session/board';
 import type { GameSession, HumanRequest } from '../session/gameSession';
@@ -37,10 +37,16 @@ import { RoundCardShow } from './RoundCardShow';
 import { roundLabel, tideStatus } from './tideModel';
 import { SealSubmit } from './SealSubmit';
 import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
+import type { FitPoint } from '../../ui/scene/CameraRig';
+import { around } from '../scene/focusMath';
 import { OWN_BADGE_LIFT, OWN_PLATE_REACH } from './stage';
 import { rivalPlates, seatPlates } from './seatPlates';
 import { seaTagPins } from './seaTags';
-import { SKILL_LABELS, skillText } from '../table/v08Text';
+import { FACILITY_LABELS, SKILL_LABELS, facilityShield, facilityText, skillText } from '../table/v08Text';
+import { SHIP_TYPE_LABELS, SHIP_TYPE_TEXT } from '../labels';
+import { IslandPeek } from './IslandPeek';
+import { backdropTop } from '../scene/islandScenery';
+import { playerIslandHeading } from '../../ui/scene/islandShape';
 import type { StageEnv } from './stage';
 import { useDeployStep } from './useDeployStep';
 import { useHudSafe } from './useHudSafe';
@@ -274,6 +280,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     skipFirstOpening: islandMarks,
     skip: skipIslandMoments,
     rules,
+    viewer,
   });
   // The decision is really usable now: loaded, replay over, and the island moments before it played
   // (the draft has none). An online room starts its clock from here, not from when it was sent.
@@ -403,7 +410,48 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     (id) => berths.get(id as ShipId) ?? 0,
   ).map((pin) => (closeUp || resolution.pins.some((p) => p.id === `badges-${pin.id.slice(4)}`) ? { ...pin, hidden: true } : pin));
   const pins = [...plates.map(stepAside), ...seaTags, marketBadgePin(), ...badgesNow.map(stepAside), ...moments.pins, ...sweep.pins, ...(step?.pins ?? []), ...resolution.pins, ...marks];
-  const camera = step?.camera ?? moments.camera ?? resolution.camera ?? overviewPoints(angles, seats.map((s) => s.island), true);
+  // Another player's island can be looked at closely (click it) whenever nothing else is steering the camera.
+  const canLook = !step?.camera && !moments.blocking && !resolution.camera && !holding && !cardUp && !sweep.blocking && snap.result === null;
+  const [lookedAt, setLookedAt] = useState<PlayerId | null>(null);
+  const looked = canLook && lookedAt && seats.some((s) => s.id === lookedAt) ? lookedAt : null;
+  useEffect(() => {
+    if (!looked) return undefined;
+    const leave = (e: KeyboardEvent) => e.key === 'Escape' && setLookedAt(null);
+    window.addEventListener('keydown', leave);
+    return () => window.removeEventListener('keydown', leave);
+  }, [looked]);
+  const lookPoints = (id: PlayerId): FitPoint[] => {
+    const angle = angles[laneOf(id)]!;
+    const [x, , z] = seatPosition(angle);
+    const [px, , pz] = platePosition(angle);
+    // The island's own backdrop (a mountain, a lighthouse) can stand higher than its rim: keep its top in the picture.
+    const top = backdropTop(seats.find((s) => s.id === id)?.island ?? null, playerIslandHeading(angle));
+    return [...around([x, 0, z], PLAYER_ISLAND_RADIUS + 2.5), ...(top ? [{ position: islandPoint(angle, top) }] : []), { position: [x, 9, z] }, { position: [px, 0, pz + 3] }];
+  };
+  const camera = step?.camera ?? moments.camera ?? resolution.camera ?? (looked ? lookPoints(looked) : overviewPoints(angles, seats.map((s) => s.island), true));
+  const modelTip = (target: ModelTarget): { title: ReactNode; text: ReactNode } | null => {
+    if (target.kind === 'facility') {
+      const building = board.players[target.seat]?.facility;
+      if (!building) return null;
+      const shield = facilityShield(rules, building);
+      return { title: `${target.seat === viewer ? '你' : nameOf(target.seat)}的${FACILITY_LABELS[building]}`, text: `${facilityText(rules, building)}${shield ? `；${shield}` : ''}` };
+    }
+    const ship = ships.find((s) => s.id === target.id);
+    if (!ship) return null;
+    const who = ship.owner === viewer ? '你' : nameOf(ship.owner);
+    if (!ship.type) return { title: `${who}的船`, text: '' };
+    const open = board.players[ship.owner]?.skills.includes(ship.type) ?? false;
+    const extra = SHIP_TYPE_TEXT[ship.type];
+    return {
+      title: `${who}的${SHIP_TYPE_LABELS[ship.type]}`,
+      text: (
+        <>
+          {extra && <>{extra}<br /></>}
+          {open ? `技能・${SKILL_LABELS[ship.type]}：${skillText(rules, ship.type)}` : `技能「${SKILL_LABELS[ship.type]}」尚未開啟`}
+        </>
+      ),
+    };
+  };
 
   const marketRef = useRef<HTMLDivElement>(null);
   const dockRef = useRef<HTMLDivElement>(null);
@@ -499,6 +547,8 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
         {...(resolution.wrapShip ? { wrapShip: resolution.wrapShip } : {})}
         {...(step?.onSelectShip ? { onSelectShip: step.onSelectShip } : {})}
         {...(resolution.onTableClick ? { onClick: resolution.onTableClick } : {})}
+        modelTip={modelTip}
+        {...(canLook ? { onSelectIsland: (id: PlayerId) => setLookedAt((was) => (was === id ? null : id)) } : {})}
       >
         {step?.scene}
         {sweep.scene}
@@ -536,6 +586,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
           )}
         </div>
       )}
+      {looked && <IslandPeek seat={seats.find((s) => s.id === looked)!} board={board} rules={rules} cash={(board.players[looked]?.cash ?? 0) + (resolution.cashBonus[looked] ?? 0)} onClose={() => setLookedAt(null)} />}
       <div className="t3-menu">
         <span data-focus="round" className="t3-round">{roundLabel(board.round, rounds, tide, eventsOn(rules))}</span>
         {ready && board.round > 0 && (

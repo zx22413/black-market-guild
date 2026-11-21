@@ -1,4 +1,5 @@
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
+import { createPortal } from 'react-dom';
 import { Suspense, useCallback, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Vector3 } from 'three';
 import type { TideKind } from '../../v07/game';
@@ -66,6 +67,9 @@ export interface TableShip {
   readonly chosen?: boolean;
 }
 
+/** A model on the table that explains itself on hover or click: a ship, or the building on a seat's island. */
+export type ModelTarget = { readonly kind: 'ship'; readonly id: ShipId } | { readonly kind: 'facility'; readonly seat: PlayerId };
+
 /** A DOM label kept over a point of the table. */
 export interface TablePin {
   readonly id: string;
@@ -107,6 +111,10 @@ export interface TableCanvasProps {
   readonly onReady: () => void;
   readonly onClick?: () => void;
   readonly onSelectShip?: (id: ShipId) => void;
+  /** What a ship or building explains when the pointer rests on it (click keeps it open); null: nothing to say. */
+  readonly modelTip?: (target: ModelTarget) => { readonly title: ReactNode; readonly text: ReactNode } | null;
+  /** A click on another player's island (its owner), for a close-up of it. */
+  readonly onSelectIsland?: (id: PlayerId) => void;
   /** Darken the 3D table a little; DOM labels on top keep their own brightness. */
   readonly dim?: boolean;
   /**
@@ -259,7 +267,7 @@ function sailGale(weather: VoyageEventId | null): number {
   return weather === 'storm' ? 1 : weather === 'tailwind' ? 0.6 : 0;
 }
 
-export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, dim = false, tide = null, tideRising = false, works, pulses, market, litSeats, facilities, facilityPulses, skills, skillPulses }: TableCanvasProps) {
+export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe, ringed, wrapShip, pins, children, onReady, onClick, onSelectShip, modelTip, onSelectIsland, dim = false, tide = null, tideRising = false, works, pulses, market, litSeats, facilities, facilityPulses, skills, skillPulses }: TableCanvasProps) {
   // Buildings already standing when the table appears are simply there; one raised later comes down on screen.
   const [standing] = useState(() => new Set(Object.entries(facilities ?? {}).flatMap(([id, b]) => (b ? [id] : []))));
   // The runs of the dock works whose yard has changed its ship already (the ship swaps inside the dust).
@@ -302,8 +310,55 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
   const dpr = useTableDpr();
   const berths = berthsOf(ships);
 
+  // A ship or building explains itself where the pointer rests on it; a click keeps the explanation until the next click anywhere.
+  const [tip, setTip] = useState<{ readonly key: string; readonly x: number; readonly y: number; readonly pinned: boolean; readonly title: ReactNode; readonly text: ReactNode } | null>(null);
+  const modelClicked = useRef<'tip' | 'island' | false>(false);
+  const tipEvents = (target: ModelTarget) => {
+    const key = target.kind === 'ship' ? `ship-${target.id}` : `facility-${target.seat}`;
+    const at = (e: ThreeEvent<PointerEvent | MouseEvent>) => ({ x: e.nativeEvent.clientX, y: e.nativeEvent.clientY });
+    return {
+      onPointerOver: (e: ThreeEvent<PointerEvent>) => {
+        const said = modelTip?.(target);
+        if (!said) return;
+        e.stopPropagation();
+        document.body.style.cursor = 'help';
+        setTip((t) => (t?.pinned ? t : { key, ...at(e), pinned: false, ...said }));
+      },
+      onPointerMove: (e: ThreeEvent<PointerEvent>) => setTip((t) => (t && !t.pinned && t.key === key ? { ...t, ...at(e) } : t)),
+      onPointerOut: () => {
+        document.body.style.cursor = '';
+        setTip((t) => (t && !t.pinned && t.key === key ? null : t));
+      },
+      onClick: (e: ThreeEvent<MouseEvent>) => {
+        const said = modelTip?.(target);
+        if (!said) return;
+        e.stopPropagation();
+        modelClicked.current = 'tip';
+        setTip((t) => (t?.pinned && t.key === key ? null : { key, ...at(e), pinned: true, ...said }));
+      },
+    };
+  };
+  const clickedIsland = (id: PlayerId) => (e: ThreeEvent<MouseEvent>) => {
+    if (!onSelectIsland) return;
+    e.stopPropagation();
+    modelClicked.current = 'island';
+    onSelectIsland(id);
+  };
+  const islandCursor = (on: boolean) => () => {
+    if (onSelectIsland) document.body.style.cursor = on ? 'zoom-in' : '';
+  };
+
   return (
-    <div className={`beat3d ${dim ? 'dim' : ''}`} onClick={onClick}>
+    <div
+      className={`beat3d ${dim ? 'dim' : ''}`}
+      onClick={() => {
+        // A click on a model has just opened (or closed) its tip; any other click closes it.
+        const modelHit = modelClicked.current;
+        modelClicked.current = false;
+        if (!modelHit) setTip(null);
+        if (modelHit !== 'island') onClick?.();
+      }}
+    >
       <Canvas shadows dpr={dpr} frameloop={framesCapped ? 'never' : 'always'} camera={{ position: [0, 82, 60], fov: 38, near: 2 }} onCreated={() => setReady(true)}>
         {camera ?? <FocusCamera points={cameraPoints} safe={safe} />}
         <color attach="background" args={[look.sky]} />
@@ -341,6 +396,9 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
             <TargetIsland seatAngles={angles} night={weather === 'moonless-night'} {...(market ? { show: market } : {})} />
             {seats.map((seat, i) => (
               <IslandPulse key={seat.id} angle={angles[i]!} pulseKey={pulses?.get(seat.id)?.key ?? null} tone={pulses?.get(seat.id)?.tone ?? 'gain'}>
+                <group
+                  {...(onSelectIsland && !seat.isViewer ? { onClick: clickedIsland(seat.id), onPointerOver: islandCursor(true), onPointerOut: islandCursor(false) } : {})}
+                >
                 <PlayerIsland
                   {...islandLook(seat.island, playerIslandHeading(angles[i]!), weather === 'moonless-night' || (litSeats?.has(seat.id) ?? false))}
                   seat={{ assets: seat.buildings, color: seat.color }}
@@ -348,10 +406,13 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
                   seed={playerIslandSeed(i)}
                   selectable={ringed?.has(seat.id) ?? false}
                 />
+                </group>
                 {/* Its own boundary: the model loading must not blank the whole table when the first building goes up. */}
                 {facilities?.[seat.id] && (
                   <Suspense fallback={null}>
+                    <group {...tipEvents({ kind: 'facility', seat: seat.id })}>
                     <Facility angle={angles[i]!} building={facilities[seat.id]!} color={seat.color} fresh={!standing.has(seat.id)} pulseKey={facilityPulses?.get(seat.id) ?? null} />
+                    </group>
                   </Suspense>
                 )}
               </IslandPulse>
@@ -369,7 +430,11 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
                   model={<ShipModel type={ship.type ?? 'standard'} color={seats[lane]?.color ?? '#fcf4e2'} night={weather === 'moonless-night'} underway={ship.state === 'sailing' || ship.state === 'atSea'} gale={sailGale(weather)} murk={weather === 'storm' || weather === 'sea-fog'} skill={shipSkill(ship)} skillPulseKey={skillPulses?.get(ship.id) ?? null} />}
                 />
               );
-              return <group key={ship.id}>{wrapShip ? wrapShip(ship.id, body) : body}</group>;
+              return (
+                <group key={ship.id} {...tipEvents({ kind: 'ship', id: ship.id })}>
+                  {wrapShip ? wrapShip(ship.id, body) : body}
+                </group>
+              );
             })}
             {ships.map((ship) => (
               <SeaPassage key={`passage-${ship.id}`} angle={angles[laneOf(ship.owner)]!} color={seats[laneOf(ship.owner)]?.color ?? '#fcf4e2'} state={ship.state} berth={berths.get(ship.id) ?? 0} />
@@ -393,6 +458,14 @@ export function TableCanvas({ seats, weather, ships, camera, cameraPoints, safe,
         <AdaptiveDpr />
         {framesCapped && <FrameLimiter />}
       </Canvas>
+      {tip &&
+        createPortal(
+          <span className="info-tip model-tip" role="tooltip" style={{ left: Math.min(tip.x + 14, window.innerWidth - 296), top: Math.max(8, tip.y - 12), transform: tip.y > window.innerHeight * 0.6 ? 'translateY(-100%)' : 'none' }}>
+            <b>{tip.title}</b>
+            <span>{tip.text}</span>
+          </span>,
+          document.body,
+        )}
       {ready && (
         <div className="beat3d-labels">
           {pins.map((p) => (
