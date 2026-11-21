@@ -1,0 +1,445 @@
+/*
+ * The V0.8 prototype's UI in the table's own look (docs/ui/v07-style-layers.md). Loaded after
+ * layers.css; like it, this only swaps the look, and `?skin=classic` turns it off. Nothing new is
+ * invented here: the same wood, parchment and brass, and the recipes layers.css already uses.
+ *   Layer 1, always in view: the dark tide's chip is a bevelled plate (of dark water, the tide's own
+ *     colour, not wood), its tides are small tokens.
+ *   Layer 2, panels beside the table (the warehouse, the buildings): the card frame, like the ship's
+ *     info card on the other side; the buildings in it are name-plate cards with a picture window.
+ *   Keys: 「開啟」 on a ship's skill is a chamfered brass key; taking it back is a parchment one.
+ *   A skill going off is announced on a title plaque (brass rim, dark wood, pointed ends).
+ * The island close-up (table3d/islandPeek.css) carries its own colours, as the island cards do.
+ */
+
+/* ================= layer 1: the dark tide's chip ================= */
+
+:root:not(.skin-classic) .tide-chip {
+  border: 1px solid #06171d;
+  border-radius: 8px;
+  background:
+    var(--c-grain),
+    linear-gradient(180deg, #235868, #123945 55%, #0c2a34);
+  background-size: 160px 160px, auto;
+  color: #cfe6ea;
+  box-shadow:
+    inset 0 1px 0 rgb(184 255 248 / 0.3),
+    inset 0 -2px 0 rgb(0 0 0 / 0.35),
+    inset 0 0 0 1px rgb(88 199 192 / 0.3),
+    0 4px 0 #06171d,
+    0 10px 18px rgb(10 30 30 / 0.25);
+}
+:root:not(.skin-classic) .tide-chip.acting {
+  box-shadow:
+    inset 0 1px 0 rgb(184 255 248 / 0.45),
+    inset 0 -2px 0 rgb(0 0 0 / 0.35),
+    inset 0 0 0 1px #58c7c0,
+    0 4px 0 #06171d,
+    0 0 14px rgb(88 199 192 / 0.6);
+}
+:root:not(.skin-classic) .tide-chip small {
+  letter-spacing: 0.12em;
+}
+:root:not(.skin-classic) .tide-pill {
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgb(88 199 192 / 0.26), rgb(88 199 192 / 0.12));
+  box-shadow:
+    inset 0 1px 0 rgb(184 255 248 / 0.25),
+    0 2px 0 #06171d;
+}
+:root:not(.skin-classic) .tide-pill.tide-acting {
+  background: linear-gradient(180deg, #8fe6de, #58c7c0 55%, #3a9f99);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    0 2px 0 #06171d;
+}
+/* A tide's explanation: the same parchment slip as the other explanations (.info-tip below), beside the chip. */
+:root:not(.skin-classic) .tide-tip {
+  gap: 4px;
+  padding: 8px 12px 9px;
+  border-radius: 3px;
+  background: var(--c-grain), linear-gradient(180deg, #fcf5e2, #ecdfbd);
+  background-size: 160px 160px, auto;
+  color: var(--c-ink);
+  font-size: var(--fs-note);
+  line-height: 1.5;
+  box-shadow:
+    inset 0 1px 0 #fffaf0,
+    inset 0 0 0 1px rgb(120 85 30 / 0.28),
+    0 2px 0 var(--c-wood-dark),
+    0 10px 20px rgb(0 0 0 / 0.3);
+}
+:root:not(.skin-classic) .tide-tip span + span {
+  padding-top: 4px;
+  border-top: 1px solid var(--c-rule);
+  color: var(--c-soft);
+}
+/* What a building turns away, in the building list: the same dark-water tag as on the close-up. */
+:root:not(.skin-classic) .mat-shield {
+  padding: 1px 7px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #1f5564, #0f303b);
+  color: #d6f3f0;
+  box-shadow:
+    inset 0 1px 0 rgb(184 255 248 / 0.35),
+    inset 0 0 0 1px rgb(88 199 192 / 0.45),
+    0 1px 0 #06171d;
+}
+
+/* ================= layer 2: the panels beside the table ================= */
+
+:root:not(.skin-classic) :is(.mat-panel, .stock-panel) {
+  border: 5px solid var(--c-wood);
+  border-radius: 7px;
+  background:
+    radial-gradient(ellipse at 50% 40%, transparent 55%, rgb(120 85 30 / 0.2) 100%),
+    var(--c-grain),
+    var(--c-parch);
+  background-size: auto, 160px 160px, auto;
+  color: var(--c-ink);
+  box-shadow:
+    0 0 0 1px var(--c-gold-dark),
+    inset 0 0 0 1px var(--c-gold),
+    0 5px 0 var(--c-wood-dark),
+    0 18px 30px rgb(0 0 0 / 0.3);
+}
+:root:not(.skin-classic) :is(.mat-panel, .stock-panel) small {
+  color: var(--c-soft);
+}
+
+/* The warehouse: a caption with a gold dash, the counts on ruled lines like a ledger page. */
+:root:not(.skin-classic) .stock-panel {
+  padding: 8px 12px 10px;
+}
+:root:not(.skin-classic) .stock-panel > small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.18em;
+}
+:root:not(.skin-classic) .stock-panel > small::before {
+  content: '';
+  width: 10px;
+  height: 2px;
+  background: var(--c-gold-dark);
+}
+:root:not(.skin-classic) .stock-panel ul {
+  gap: 0;
+  margin-top: 2px;
+}
+:root:not(.skin-classic) .stock-panel li {
+  padding: 4px 0;
+}
+:root:not(.skin-classic) .stock-panel li + li {
+  border-top: 1px solid var(--c-rule);
+}
+:root:not(.skin-classic) .stock-panel li span {
+  font-family: var(--font-strong);
+  font-variant-numeric: tabular-nums;
+}
+:root:not(.skin-classic) .stock-panel li em:not(.tide-swept) {
+  color: #9a2a22;
+}
+:root:not(.skin-classic) .stock-tide {
+  border-top-color: var(--c-rule);
+}
+
+/* The buildings: the head is the panel's title; folded, the whole panel is one line. */
+:root:not(.skin-classic) .mat-panel {
+  gap: 8px;
+  padding: 9px 10px 10px;
+}
+:root:not(.skin-classic) .mat-head b {
+  letter-spacing: 0.06em;
+}
+:root:not(.skin-classic) .mat-head.sel b {
+  color: #8a5a12;
+}
+/* A table token, like the round menu's buttons: a parchment disc standing on its dark edge. */
+:root:not(.skin-classic) .mat-fold {
+  border: 0;
+  background: var(--c-grain), var(--c-parch-on);
+  background-size: 160px 160px, auto;
+  color: var(--c-ink);
+  box-shadow: 0 3px 0 var(--c-wood-dark);
+  transition: transform 120ms, box-shadow 120ms;
+}
+:root:not(.skin-classic) .mat-head:active .mat-fold {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--c-wood-dark);
+}
+:root:not(.skin-classic) .mat-head:focus-visible {
+  outline: 2px solid var(--c-gold);
+  outline-offset: 3px;
+}
+/* A building on offer: a name-plate card (not a rounded box), its picture in a gold-rimmed window. */
+:root:not(.skin-classic) .mat-card {
+  padding: 7px 8px 8px 7px;
+  border: 0;
+  border-radius: 3px;
+  background: var(--c-grain), linear-gradient(180deg, #fcf5e2, #ecdfbd);
+  background-size: 160px 160px, auto;
+  box-shadow:
+    inset 0 1px 0 #fffaf0,
+    inset 0 0 0 1px rgb(120 85 30 / 0.28),
+    0 2px 0 var(--c-wood-dark),
+    0 6px 10px rgb(10 30 30 / 0.18);
+  transition: transform 120ms, box-shadow 120ms, filter 120ms;
+}
+:root:not(.skin-classic) .mat-card:hover:not(:disabled) {
+  filter: brightness(1.03);
+  transform: translateY(-1px);
+}
+:root:not(.skin-classic) .mat-card:active:not(:disabled) {
+  transform: translateY(1px);
+}
+:root:not(.skin-classic) .mat-card.sel {
+  background: var(--c-grain), linear-gradient(180deg, #fff6d6, #f6e3a8);
+  background-size: 160px 160px, auto;
+  box-shadow:
+    inset 0 1px 0 #fffaf0,
+    inset 0 0 0 2px var(--c-gold),
+    0 2px 0 var(--c-wood-dark),
+    0 0 14px rgb(255 194 61 / 0.75);
+}
+:root:not(.skin-classic) .mat-card.no {
+  filter: grayscale(0.6);
+}
+:root:not(.skin-classic) .mat-card:focus-visible {
+  outline: 2px solid var(--c-gold);
+  outline-offset: 2px;
+}
+:root:not(.skin-classic) .mat-art {
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--c-art-sky) 0%, #9fd4e0 62%, #3fb3b3 62%, var(--c-art-sea) 100%);
+  box-shadow: 0 0 0 1.5px var(--c-gold), 0 0 0 2.5px var(--c-gold-dark), 0 3px 0 1px rgb(42 25 13 / 0.35);
+}
+:root:not(.skin-classic) .mat-why {
+  color: #9a2a22 !important;
+}
+/* The tradehouse's protected good: a groove pressed into the paper, the named good is a brass key. */
+:root:not(.skin-classic) .mat-protect {
+  padding: 6px 8px 8px;
+  border-radius: 4px;
+  background: var(--c-parch-sunk);
+  box-shadow: inset 0 2px 4px rgb(60 40 15 / 0.3), inset 0 0 0 1px var(--c-rule), 0 1px 0 rgb(255 250 235 / 0.8);
+}
+:root:not(.skin-classic) .mat-protect button {
+  border: 0;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #fff7e2, #ecdcb5 55%, #dcc596);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.75), 0 0 0 1px #6f5a36, 0 3px 0 #4f3a20;
+  transition: transform 90ms, box-shadow 90ms;
+}
+:root:not(.skin-classic) .mat-protect button:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.75), 0 0 0 1px #6f5a36, 0 1px 0 #4f3a20;
+}
+:root:not(.skin-classic) .mat-protect button.sel {
+  background: linear-gradient(180deg, #ffe08a, #edb93f 40%, #c98a1c);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.6), 0 0 0 1px #6b4c10, 0 3px 0 #6b4c10;
+}
+
+/* ================= the ship's skill on its info card ================= */
+
+/* A slot pressed into the card's paper; once the skill is open (or opening) it is lit, with a gold rule. */
+:root:not(.skin-classic) .ship-skill {
+  gap: 5px;
+  padding: 7px 9px 9px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--c-parch-sunk);
+  color: var(--c-ink);
+  box-shadow: inset 0 2px 4px rgb(60 40 15 / 0.3), inset 0 0 0 1px var(--c-rule), 0 1px 0 rgb(255 250 235 / 0.8);
+}
+:root:not(.skin-classic) .ship-skill:is(.open, .opening) {
+  background: var(--c-parch-on);
+  box-shadow: inset 0 0 0 1px var(--c-gold-dark), inset 0 0 0 2px var(--c-gold), 0 1px 0 rgb(255 250 235 / 0.8);
+}
+:root:not(.skin-classic) .ship-skill header small {
+  color: var(--c-soft);
+  letter-spacing: 0.18em;
+}
+:root:not(.skin-classic) .ship-skill-state {
+  color: var(--c-soft);
+}
+:root:not(.skin-classic) .ship-skill:is(.open, .opening) .ship-skill-state {
+  color: #8a5a12;
+}
+:root:not(.skin-classic) .ship-skill-why {
+  color: #9a2a22;
+}
+/*
+ * 「開啟」: the chamfered key of layers.css (::before the edge and its lip, ::after the face with a sheen;
+ * pressing drops the face onto the lip). Brass to open; taking it back (pressed) is parchment.
+ */
+:root:not(.skin-classic) .ship-skill-open {
+  --key-cut: 7px;
+  --key-edge: linear-gradient(180deg, #b38a22, #6b4c10);
+  --key-face: linear-gradient(180deg, #ffe08a, #edb93f 40%, #c98a1c);
+  position: relative;
+  isolation: isolate;
+  min-height: 36px;
+  margin-top: 2px;
+  padding: 5px 14px 8px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--c-ink);
+  font-weight: 700;
+  text-shadow: 0 1px 0 rgb(255 240 190 / 0.7);
+}
+:root:not(.skin-classic) .ship-skill-open::before,
+:root:not(.skin-classic) .ship-skill-open::after {
+  --cut: var(--key-cut);
+  content: '';
+  position: absolute;
+  z-index: -1;
+  clip-path: polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut));
+  pointer-events: none;
+}
+:root:not(.skin-classic) .ship-skill-open::before {
+  inset: 0;
+  background: var(--key-edge);
+}
+:root:not(.skin-classic) .ship-skill-open::after {
+  --cut: calc(var(--key-cut) - 1px);
+  inset: 1px 1px 4px;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.28), rgb(255 255 255 / 0) 50%), var(--key-face);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.75), inset 0 -6px 10px -6px rgb(110 75 20 / 0.4);
+  transition: inset 90ms, filter 120ms;
+}
+:root:not(.skin-classic) .ship-skill-open[aria-pressed='true'] {
+  --key-edge: linear-gradient(180deg, #8f7546, #4f3a20);
+  --key-face: var(--c-grain), linear-gradient(180deg, #fff7e2, #ecdcb5 55%, #dcc596);
+  background: none;
+  font-weight: 400;
+  text-shadow: none;
+}
+:root:not(.skin-classic) .ship-skill-open:not(:disabled):hover::after {
+  filter: brightness(1.07) saturate(1.1);
+}
+:root:not(.skin-classic) .ship-skill-open:not(:disabled):active {
+  padding-top: 8px;
+  padding-bottom: 5px;
+}
+:root:not(.skin-classic) .ship-skill-open:not(:disabled):active::after {
+  inset: 3px 1px 1px;
+  box-shadow: inset 0 2px 4px rgb(80 50 10 / 0.45);
+}
+:root:not(.skin-classic) .ship-skill-open:disabled {
+  filter: grayscale(0.75);
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+:root:not(.skin-classic) .ship-skill-open:focus-visible {
+  outline: 2px solid var(--c-gold);
+  outline-offset: 2px;
+}
+/* The mark on a ship card whose skill is open: a small brass plate riveted on the card's top edge. */
+:root:not(.skin-classic) .ship-skill-mark {
+  top: -9px;
+  padding: 0 8px;
+  border: 1px solid #5b3f12;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #fbe4a0, #dcae52 45%, #b38a22);
+  color: var(--c-ink);
+  font-family: var(--font-strong);
+  font-weight: 700;
+  line-height: 1.5;
+  text-shadow: 0 1px 0 rgb(255 240 190 / 0.7);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.55), 0 2px 0 var(--c-wood-dark);
+}
+:root:not(.skin-classic) .ship-skill-mark.opening {
+  background: linear-gradient(180deg, #fff7e2, #ecdcb5);
+  border-style: dashed;
+  font-weight: 400;
+  text-shadow: none;
+}
+
+/* ================= a skill going off: the title plaque ================= */
+
+:root:not(.skin-classic) .skill-word {
+  position: relative;
+  isolation: isolate;
+  padding: 7px 34px 9px;
+  border: 0;
+  border-radius: 0;
+  clip-path: polygon(18px 0, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, 18px 100%, 0 50%);
+  background: linear-gradient(180deg, #fbe4a0, #b38a22 55%, #6b4c10);
+  color: #ffe08a;
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 0 #1d1108, 0 0 12px rgb(255 208 90 / 0.8);
+  box-shadow: none;
+}
+:root:not(.skin-classic) .skill-word::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 3px;
+  clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 16px 100%, 0 50%);
+  background: var(--c-grain), linear-gradient(180deg, #4a2f1b, #2a190d);
+  background-size: 160px 160px, auto;
+}
+:root:not(.skin-classic) .skill-word small {
+  letter-spacing: 0.04em;
+  color: var(--c-cream);
+}
+:root:not(.skin-classic) .skill-word.loss {
+  background: linear-gradient(180deg, #e0766a, #a3262f 55%, #5e141a);
+  color: #ffb4a8;
+  text-shadow: 0 1px 0 #1d1108;
+}
+/* The same skill as a line in the ship's tag: a gold bookmark on the paper. */
+:root:not(.skin-classic) .beat-tag-skill {
+  border-left: 4px solid var(--c-gold-dark);
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgb(217 178 90 / 0.3), rgb(217 178 90 / 0.08));
+}
+
+/* ================= explanations (hover a ship, a building, an icon) ================= */
+
+/* A parchment slip, like the name plates: square corners, a lit top edge, an ink rule inside, its thickness. */
+:root:not(.skin-classic) .info-tip {
+  gap: 5px;
+  padding: 8px 12px 9px;
+  border-radius: 3px;
+  background: var(--c-grain), linear-gradient(180deg, #fcf5e2, #ecdfbd);
+  background-size: 160px 160px, auto;
+  color: var(--c-ink);
+  box-shadow:
+    inset 0 1px 0 #fffaf0,
+    inset 0 0 0 1px rgb(120 85 30 / 0.28),
+    0 2px 0 var(--c-wood-dark),
+    0 10px 20px rgb(0 0 0 / 0.3);
+}
+:root:not(.skin-classic) .info-tip b {
+  font-family: var(--font-strong);
+}
+/* A ship's or a building's own explanation has a title of its own, ruled off from the text. */
+:root:not(.skin-classic) .model-tip b {
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--c-rule);
+}
+:root:not(.skin-classic) .model-tip span:empty {
+  display: none;
+}
+
+/* ================= the round cards' tide candidates ================= */
+
+:root:not(.skin-classic) .round-card-tide {
+  border: 0;
+  border-radius: 4px;
+  background: linear-gradient(180deg, rgb(88 199 192 / 0.2), rgb(88 199 192 / 0.06));
+  box-shadow:
+    inset 0 1px 0 rgb(184 255 248 / 0.3),
+    inset 0 0 0 1px rgb(88 199 192 / 0.45),
+    0 3px 0 #06171d;
+}
+:root:not(.skin-classic) .round-card-tides.picked .round-card-tide.is {
+  background: linear-gradient(180deg, #8fe6de, #58c7c0 55%, #3a9f99);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    inset 0 0 0 1px #b8fff8,
+    0 3px 0 #06171d,
+    0 0 22px rgb(88 199 192 / 0.9);
+}

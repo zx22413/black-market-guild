@@ -3718,13 +3718,15 @@ button .info-tip-anchor {
 }
 .tide-tip {
   position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
+  /* Beside the tide, not under it: under it the tip lay over the other candidate. */
+  top: -4px;
+  left: calc(100% + 12px);
+  z-index: 1;
   display: none;
   flex-direction: column;
   gap: 2px;
   width: max-content;
-  max-width: 260px;
+  max-width: min(260px, calc(100vw - 100% - 48px));
   padding: 6px 10px;
   border-radius: 8px;
   background: rgb(43 33 22 / 0.92);

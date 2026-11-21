@@ -2,6 +2,7 @@ import { useState } from 'react';
 import '../beats/beat.css';
 import '../table3d/islandCard.css';
 import '../skin/layers.css';
+import '../skin/v08.css';
 import { RULES_V08_PROTO, type MatchEvent, type TideKind } from '../../v07/game';
 import { TideChip } from '../table3d/TideChip';
 import { roundCards } from '../table3d/roundCard';

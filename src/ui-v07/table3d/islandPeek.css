@@ -1,0 +1,276 @@
+/*
+ * A closer look at another player's island (IslandPeek.tsx): a card at the left, under the HUD.
+ * Layer 2 of docs/ui/v07-style-layers.md, the card frame: a wood border, parchment inside, a gold
+ * rule. The guild's name is a name plate with its bookmark ribbon; each thing the close-up shows is
+ * a titled section, one rule clause per line. The card carries its own colours (it is a structure,
+ * not only a look), so it reads the same with `?skin=classic`.
+ */
+.island-peek {
+  --pk-wood: #4a2f1b;
+  --pk-wood-dark: #2a190d;
+  --pk-gold: #d9b25a;
+  --pk-gold-dark: #8a6420;
+  --pk-ink: #2a1d10;
+  --pk-soft: #6b5537;
+  --pk-rule: rgb(42 29 16 / 0.28);
+  --pk-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.36 0 0 0 0 0.25 0 0 0 0 0.1 0 0 0 0.16 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  position: absolute;
+  z-index: 8;
+  left: 12px;
+  top: calc(var(--hud-top, 56px) + 96px);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: min(248px, calc(100vw - 24px));
+  /* Ends above the bottom bar; a long card scrolls inside its frame. */
+  max-height: calc(100% - var(--hud-top, 56px) - 96px - 96px);
+  border: 5px solid var(--pk-wood);
+  border-radius: 7px;
+  background:
+    radial-gradient(ellipse at 50% 40%, transparent 55%, rgb(120 85 30 / 0.2) 100%),
+    var(--pk-grain),
+    #f4ead2;
+  background-size: auto, 160px 160px, auto;
+  color: var(--pk-ink);
+  font-size: var(--fs-note);
+  line-height: 1.5;
+  box-shadow:
+    0 0 0 1px var(--pk-gold-dark),
+    inset 0 0 0 1px var(--pk-gold),
+    0 5px 0 var(--pk-wood-dark),
+    0 18px 30px rgb(0 0 0 / 0.3);
+  pointer-events: auto;
+  animation: beat-pop 260ms cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+.island-peek :is(p, ul, h3, h4) {
+  margin: 0;
+  padding: 0;
+}
+
+/* The head: the guild's name plate (its ribbon in the seat's colour), its cash, the way back. */
+.peek-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 10px;
+  border-bottom: 1px solid var(--pk-rule);
+  background: linear-gradient(180deg, rgb(120 85 30 / 0.16), rgb(120 85 30 / 0.04));
+}
+.peek-owner {
+  position: relative;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: visible;
+  padding: 3px 10px 3px 20px;
+  border-radius: 3px;
+  background: var(--pk-grain), linear-gradient(180deg, #fcf5e2, #ecdfbd);
+  background-size: 160px 160px, auto;
+  font-family: var(--font-strong);
+  font-size: var(--fs-body);
+  line-height: 1.4;
+  white-space: nowrap;
+  box-shadow:
+    inset 0 1px 0 #fffaf0,
+    inset 0 0 0 1px rgb(120 85 30 / 0.28),
+    0 2px 0 var(--pk-wood-dark);
+}
+.peek-owner::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  bottom: -5px;
+  left: 6px;
+  border-left: 7px solid var(--seat, #888);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 4px), 0 100%);
+}
+.peek-cash {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-family: var(--font-strong);
+  font-size: var(--fs-body);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.peek-cash img {
+  width: 18px;
+  height: 18px;
+}
+/* A table token, like the round menu's buttons: a parchment disc standing on its dark edge. */
+.peek-close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--pk-grain), #f4ead2;
+  background-size: 160px 160px, auto;
+  color: var(--pk-ink);
+  box-shadow: 0 3px 0 var(--pk-wood-dark);
+  cursor: pointer;
+  transition: transform 120ms, box-shadow 120ms;
+}
+.peek-close:hover {
+  background-color: #fff4d4;
+}
+.peek-close:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--pk-wood-dark);
+}
+.peek-close:focus-visible {
+  outline: 2px solid var(--pk-gold);
+  outline-offset: 2px;
+}
+
+/* The sections: one per thing, a hairline between them. */
+.peek-body {
+  display: grid;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px 12px 10px;
+}
+.peek-sec {
+  display: grid;
+  gap: 4px;
+  padding: 9px 0;
+}
+.peek-sec + .peek-sec {
+  border-top: 1px solid var(--pk-rule);
+}
+.peek-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-strong);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+}
+.peek-title .isle-icon {
+  --size: 28px;
+}
+/* A section's small caption, with a short gold dash before it. */
+.peek-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--pk-soft);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  line-height: 1.4;
+}
+.peek-label::before {
+  content: '';
+  width: 10px;
+  height: 2px;
+  background: var(--pk-gold-dark);
+}
+.peek-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+}
+.peek-item b {
+  font-family: var(--font-strong);
+  font-size: var(--fs-body);
+}
+.peek-item small {
+  color: var(--pk-soft);
+  font-size: var(--fs-note);
+}
+.peek-ic {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+.peek-skill {
+  display: grid;
+  gap: 2px;
+}
+.peek-skill + .peek-skill {
+  margin-top: 4px;
+}
+.peek-lines {
+  display: grid;
+  gap: 3px;
+  list-style: none;
+}
+.peek-lines li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px;
+  align-items: start;
+}
+/* A plain line hangs on a small ink dot; a good or a cost on its + or − disc (the island cards' signs). */
+.peek-lines:not(.pro, .con) li::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  margin: 7px 2px 0 3px;
+  border-radius: 50%;
+  background: var(--pk-soft);
+}
+.peek-lines .sign {
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  margin-top: 1.5px;
+  border-radius: 50%;
+  color: #fff;
+  font-family: var(--font-strong);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1;
+}
+.peek-lines.pro .sign {
+  background: #2f6b3a;
+}
+.peek-lines.con .sign {
+  background: #9a2a22;
+}
+.peek-none {
+  color: var(--pk-soft);
+}
+.peek-goods {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 2px;
+  font-size: var(--fs-body);
+}
+
+/* The tide a building turns away: a small tag of dark water (the tide's own colour, materialPanel.css). */
+.tide-ward {
+  margin-left: auto;
+  padding: 1px 7px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #1f5564, #0f303b);
+  color: #d6f3f0;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: nowrap;
+  box-shadow:
+    inset 0 1px 0 rgb(184 255 248 / 0.35),
+    inset 0 0 0 1px rgb(88 199 192 / 0.45),
+    0 1px 0 #06171d;
+}
+
+@media (max-width: 640px) {
+  .island-peek {
+    left: 8px;
+    top: calc(var(--hud-top, 96px) + 8px);
+    width: min(288px, calc(100vw - 16px));
+    /* Ends above the hand and the bar. */
+    max-height: calc(100% - var(--hud-top, 96px) - 8px - 270px);
+  }
+}
