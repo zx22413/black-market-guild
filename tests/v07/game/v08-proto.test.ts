@@ -348,6 +348,20 @@ describe('V0.8 prototype: buildings and island variants', () => {
     expect(cash(playRound(edit(ready(), 'p1', { facility: 'armory' }), plan).events, 'pirate-loot', 'p2')).toBe(105);
   });
 
+  it('armory (refundSunkLoot): the half kept from the pirates on a sunk ship is paid to the owner', () => {
+    const halving = { ...V08, v08: { ...V08.v08, armory: { ...V08.v08.armory, halveAllLoot: 1, refundSunkLoot: 0 } } };
+    const refunding = { ...halving, v08: { ...halving.v08, armory: { ...halving.v08.armory, refundSunkLoot: 1 } } };
+    const plan = { loads: { p1: G(2) }, shipTypes: { p1: 'gambler' as const }, rolls: { p1: 3 }, roles: { p2: ['pirate', 'p1'] as const } };
+    const armed = (rules: typeof V08) => edit(ready(rules), 'p1', { facility: 'armory' });
+    // Cargo 300: pirates normally take 210; halved 105, and the other 105 goes to the owner.
+    const { events } = playRound(armed(refunding), plan);
+    expect(cash(events, 'pirate-loot', 'p2')).toBe(105);
+    expect(cash(events, 'armory-refund', 'p1')).toBe(105);
+    // Off: the owner gets nothing back; no pirate, no refund.
+    expect(cash(playRound(armed(halving), plan).events, 'armory-refund', 'p1')).toBe(0);
+    expect(cash(playRound(armed(refunding), { ...plan, roles: {} }).events, 'armory-refund', 'p1')).toBe(0);
+  });
+
   it('tradehouse: the named good keeps its pre-change price when it drops (spice isles: spice always)', () => {
     const owner = edit(ready(), 'p1', { facility: 'tradehouse' });
     expect(new Set(invests(owner).map((a) => a.protect))).toEqual(new Set(['wood', 'iron', 'spice', 'arms']));

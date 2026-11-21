@@ -284,7 +284,9 @@ export type CashReason =
   /** V0.8 prototype: crates a freighter salvaged, paid by the bank. */
   | 'salvage-sale'
   /** V0.8 prototype (fortress + armory): a pirate's deployment fee paid to the targeted owner. */
-  | 'pirate-toll';
+  | 'pirate-toll'
+  /** V0.8 prototype (v08.armory.refundSunkLoot): what the armory kept from the pirates on its owner's sunk ship. */
+  | 'armory-refund';
 
 /** V0.8 prototype: what a skill, building or island variant did, for the simulation report. `value` is G gained (or denied). */
 export const V08_EFFECTS = [

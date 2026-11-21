@@ -463,8 +463,11 @@ function buildingExtras(view: PlayerView, player: PublicPlayer, building: V08Bui
         : rules.v08.armory.halveCustoms === 1
           ? CUSTOMS_ON_ME * averagePrice(view) * 0.5
           : 0;
+      // v08.armory.refundSunkLoot: the half kept from the pirates on a sunk ship is paid to me in full.
+      const sunkShare = (rules.roles.pirate.lootPercentByFinal[1] ?? 0) / 200;
+      const refund = rules.v08.armory.halveAllLoot === 1 && rules.v08.armory.refundSunkLoot === 1 ? sinkChance(view, standard, cache) * PIRATE_ON_ME * sunkShare * cargo : 0;
       // Mostly denial: what pirates do not take is worth part of its value to me (winning is relative).
-      return denied * 0.5 + toll + halved;
+      return denied * 0.5 + refund * 0.5 + toll + halved;
     }
     case 'tradehouse': {
       const step = (g: GoodId) => rules.price.tracks[g].step * rules.price.volatility[g];

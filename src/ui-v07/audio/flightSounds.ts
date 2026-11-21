@@ -26,6 +26,7 @@ const FLIGHT_SOUND: Readonly<Record<Flight['kind'], SfxId | null>> = {
   // V0.8 simulation prototype only (never in the live rules).
   'salvage-sale': 'settle-salvage',
   'pirate-toll': null,
+  'armory-refund': 'settle-coins',
 };
 
 export function flightSound(flight: Flight): SfxId | null {
