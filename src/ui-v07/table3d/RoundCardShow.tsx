@@ -11,13 +11,15 @@ import { TideIcon } from './tideIcons';
 // table (the voyage event's card, VoyageEventCard, with the prototype's other cards): a voyage event (its boss side
 // in the dark-tide season), 暗潮將至 with the tide picked from the two candidates, and the last round's card. A click
 // moves on; left alone each card holds long enough to read its lines once. 暗潮將至 is the exception: it says a lot
-// (what the round's end takes, then the forecast), so it stays until it is clicked. The first dark-tide side of a
+// (what the round's end takes, then the forecast), so it stays until it is clicked, and so does the last round's card. The first dark-tide side of a
 // match is not dealt face up: the event's plain card comes first and is turned over to its dark side (BossFlip).
 
-/** How long each kind of card holds the screen (ms): 暗潮將至 first turns the two candidates over. */
+/** How long each kind of card holds the screen (ms); 暗潮將至 and the last round's card stay until clicked, so theirs are not used by the show. */
 export const ROUND_CARD_MS: Readonly<Record<RoundCard['kind'] | 'boss', number>> = { voyage: 3000, boss: 4200, rising: 6500, final: 5200 };
 /** When 暗潮將至 shows which candidate it is (ms into the card); from then on a click closes it. */
 const TIDE_PICK_MS = 1500;
+/** How long the last round's card is up before a click closes it (ms): long enough that a stray click does not skip it. */
+const FINAL_READY_MS = 800;
 /** How long a card that was held takes to shrink away once clicked (ms; beat.css's event-leave). */
 const LEAVE_MS = 600;
 /** The first dark-tide side: how long the plain side shows before it is turned over, and the turn itself (ms; roundCard.css). */
@@ -138,10 +140,10 @@ const KIND_TEXT = (card: RoundCard): string => (card.kind === 'voyage' ? (card.b
 
 export function RoundCardShow({ cards, onDone }: { readonly cards: readonly RoundCard[]; readonly onDone: () => void }) {
   const [at, setAt] = useState(0);
-  // A held card (暗潮將至): 'hold' until it may be closed, 'ready' once a click closes it, 'leave' while it shrinks away.
+  // A held card (暗潮將至, the last round): 'hold' until it may be closed, 'ready' once a click closes it, 'leave' while it shrinks away.
   const [held, setHeld] = useState<'hold' | 'ready' | 'leave'>('hold');
   const card = cards[at];
-  const holds = card?.kind === 'rising';
+  const holds = card?.kind === 'rising' || card?.kind === 'final';
   const next = () => {
     setHeld('hold');
     if (at + 1 < cards.length) setAt(at + 1);
@@ -149,7 +151,7 @@ export function RoundCardShow({ cards, onDone }: { readonly cards: readonly Roun
   };
   useEffect(() => {
     if (!holds || held === 'ready') return undefined;
-    const timer = setTimeout(held === 'hold' ? () => setHeld('ready') : next, held === 'hold' ? TIDE_PICK_MS : LEAVE_MS);
+    const timer = setTimeout(held === 'hold' ? () => setHeld('ready') : next, held === 'hold' ? (card?.kind === 'final' ? FINAL_READY_MS : TIDE_PICK_MS) : LEAVE_MS);
     return () => clearTimeout(timer);
   }, [holds, held, at]);
   if (!card) return null;
@@ -158,12 +160,12 @@ export function RoundCardShow({ cards, onDone }: { readonly cards: readonly Roun
     return (
       <div
         key={at}
-        className={`event-card-veil round-veil-rising round-veil-held ${held === 'leave' ? 'event-leave' : 'event-hold'} ${held === 'ready' ? 'ready' : ''}`}
+        className={`event-card-veil round-veil-${card.kind} round-veil-held ${held === 'leave' ? 'event-leave' : 'event-hold'} ${held === 'ready' ? 'ready' : ''}`}
         role="dialog"
         aria-label={`${KIND_TEXT(card)}：${card.title}`}
         onClick={() => held === 'ready' && setHeld('leave')}
       >
-        <div className="event-card round-card round-card-rising" data-focus="event">
+        <div className={`event-card round-card round-card-${card.kind}`} data-focus="event">
           <small className="event-card-kind">{KIND_TEXT(card)}</small>
           <Face card={card} />
         </div>
@@ -173,9 +175,10 @@ export function RoundCardShow({ cards, onDone }: { readonly cards: readonly Roun
       </div>
     );
   }
-  const ms = ROUND_CARD_MS[card.kind === 'voyage' && card.boss ? 'boss' : card.kind];
+  // Only voyage events are left: they close by themselves.
+  const ms = ROUND_CARD_MS[card.boss ? 'boss' : 'voyage'];
   const style = { animationDuration: `${ms}ms` };
-  const tone = card.kind === 'voyage' ? (card.boss ? 'boss' : 'plain') : card.kind;
+  const tone = card.boss ? 'boss' : 'plain';
   return (
     <div key={at} className={`event-card-veil event-auto round-veil-${tone}`} style={style} role="dialog" aria-label={`${KIND_TEXT(card)}：${card.title}`} onClick={next}>
       <div className={`event-card round-card round-card-${tone}`} data-focus="event" style={style} onAnimationEnd={(e) => { if (e.animationName === 'event-card' || e.animationName === 'event-veil') next(); }}>
