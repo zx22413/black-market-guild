@@ -20,7 +20,7 @@ const voyage = { loads: { p1: G(2, 0, 0, 1) }, rolls: { p1: 2 } } as const;
 
 describe('V0.8 armed merchant: preset', () => {
   it('replaces the halving in the prototype and stays off in the live rules', () => {
-    expect(RULES_V08_PROTO.v08.armory).toMatchObject({ armedBonus: 1, counter: 1, counterFine: 50, halveAllLoot: 0, refundSunkLoot: 0, immunePirateTide: 1 });
+    expect(RULES_V08_PROTO.v08.armory).toMatchObject({ armedBonus: 1, armedMaxFinal: 3, counter: 1, counterFine: 50, halveAllLoot: 0, refundSunkLoot: 0, immunePirateTide: 1 });
     expect(RULES_V07.v08.armory).toMatchObject({ armedBonus: 0, counter: 0 });
   });
 });
@@ -30,6 +30,16 @@ describe('V0.8 armed merchant: +1 with arms aboard', () => {
     expect(modifiers(playRound(armory(), voyage).events).guard).toBe(1);
     expect(modifiers(playRound(armory(), { ...voyage, loads: { p1: G(3) } }).events).guard).toBe(0);
     expect(modifiers(playRound(ready(), voyage).events).guard).toBe(0);
+  });
+
+  it('only saves a ship whose final would be 1–3 (armedMaxFinal)', () => {
+    expect(modifiers(playRound(armory(), { ...voyage, rolls: { p1: 1 } }).events)).toMatchObject({ guard: 1, final: 2 });
+    expect(modifiers(playRound(armory(), { ...voyage, rolls: { p1: 3 } }).events)).toMatchObject({ guard: 1, final: 4 });
+    expect(modifiers(playRound(armory(), { ...voyage, rolls: { p1: 4 } }).events)).toMatchObject({ guard: 0, final: 4 });
+    // A guard lifting a 3 to 4 leaves nothing to save; with armedMaxFinal 0 the +1 is always there.
+    expect(modifiers(playRound(armory(), { ...voyage, rolls: { p1: 3 }, roles: { p1: ['guard', 'p1'] } }).events).guard).toBe(1);
+    const always = { ...V08, v08: { ...V08.v08, armory: { ...V08.v08.armory, armedMaxFinal: 0 } } };
+    expect(modifiers(playRound(armory(always), { ...voyage, rolls: { p1: 4 } }).events)).toMatchObject({ guard: 1, final: 5 });
   });
 });
 

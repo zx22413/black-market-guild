@@ -120,15 +120,14 @@ export function voyageModifier(state: MatchState, ship: Ship): VoyageModifier {
   const pe = publicEvents(state);
   const card = state.roundState.voyageEvent;
   // V0.8 prototype (v08.events): a phase II moonless night voids the guards; 海盜伏擊 changes each pirate's modifier.
-  // V0.8 prototype (v08.armory.armedBonus): the armed merchant's +1 counts with the guards (a moonless night keeps it).
-  const guard =
-    (darkNight(pe, card)
+  const guarded =
+    darkNight(pe, card)
       ? 0
       : targeting(state, ship, 'guard').reduce(
           (sum, d) =>
             sum + rules.roles.guard.modifier + trait(d.playerId).guardModifier,
           0,
-        )) + armedShift(rules, ship);
+        );
   // + 0 turns -0 into 0.
   // v08.islands.lighthouseBeacon: the lighthouse lights its owner's ships up for pirates too.
   const beacon = beaconShift(rules, playerOf(state, ship.owner).island);
@@ -138,7 +137,11 @@ export function voyageModifier(state: MatchState, ship: Ship): VoyageModifier {
   const island = (ownShipApplies(rules, base) ? ownShipShift(rules, trait(ship.owner).ownShipModifier, pe) : 0) + 0;
   // v08.islands.lighthouseFades: in phase II the island's own cap fades too (only the ship type's cap remains).
   const capIsland = islandFaded(rules, pe) ? null : playerOf(state, ship.owner).island;
-  const final = Math.min(shipFinalCapFor(rules, capIsland, ship.type), Math.max(rules.sailing.dieMin, base + guard + pirate + event + island));
+  const clamp = (value: number) => Math.min(shipFinalCapFor(rules, capIsland, ship.type), Math.max(rules.sailing.dieMin, value));
+  // V0.8 prototype (v08.armory.armedBonus / armedMaxFinal): the armed merchant's +1 counts with the guards (a moonless
+  // night keeps it), and with armedMaxFinal only when the final without it would be that low.
+  const guard = guarded + armedShift(rules, ship, clamp(base + guarded + pirate + event + island));
+  const final = clamp(base + guard + pirate + event + island);
   return { shipId: ship.id, base, guard, pirate, event, island, final };
 }
 

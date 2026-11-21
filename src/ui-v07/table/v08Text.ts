@@ -12,10 +12,20 @@ export function facilityText(rules: Rules, building: V08BuildingId): string {
     case 'repairyard':
       return `最終值 ${v.repairyard.fromFinal}～${v.repairyard.toFinal} 少掉 ${v.repairyard.save} 箱`;
     case 'armory':
-      return [v.armory.halveAllLoot === 1 ? (v.armory.refundSunkLoot === 1 ? '海盜搶的減半；船被打沉時，擋下的一半付給你' : '海盜搶的減半') : '',v.armory.pirateToll === 1 ? '派到你船上的海盜，部署費付給你' : '', v.armory.halveCustoms === 1 ? '海關沒收的減半' : ''].filter(Boolean).join('；');
+      return [
+        armedText(rules),
+        v.armory.counter === 1 ? `被海盜鎖定時用掉 1 件軍火反擊：海盜全部被擊退，每個海盜的主人付你 ${v.armory.counterFine} G` : '',
+        v.armory.halveAllLoot === 1 ? (v.armory.refundSunkLoot === 1 ? '海盜搶的減半；船被打沉時，擋下的一半付給你' : '海盜搶的減半') : '',v.armory.pirateToll === 1 ? '派到你船上的海盜，部署費付給你' : '', v.armory.halveCustoms === 1 ? '海關沒收的減半' : ''].filter(Boolean).join('；');
     case 'tradehouse':
       return '每回合指定一種貨，跌價時照原價賣';
   }
+}
+
+/** v08.armory.armedBonus / armedMaxFinal: the armed merchant's +1, or '' when it is off. */
+function armedText(rules: Rules): string {
+  const { armedBonus, armedMaxFinal } = rules.v08.armory;
+  if (armedBonus === 0) return '';
+  return armedMaxFinal > 0 ? `船上有軍火、最終值會落在 1～${armedMaxFinal} 時 +${armedBonus}` : `船上有軍火時 +${armedBonus}`;
 }
 
 /** The tide the building shields its owner from, or null when the rules give it none. */

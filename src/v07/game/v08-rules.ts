@@ -67,6 +67,7 @@ export interface V08Rules {
    * `refundSunkLoot`: 1 = when the owner's ship sinks with pirates on it, the bank pays the owner what the armory kept
    * from the pirates (the sinking share minus the halved share), so the armory shows on its owner's own cash.
    * `armedBonus`: the armed merchant, + this on the owner's ship that leaves with arms aboard (0 = off).
+   * `armedMaxFinal`: > 0 = the bonus only when the final without it is at most this (0 = always).
    * `counter`: 1 = an armed ship that other players' pirates target spends 1 crate of arms to repel them all (they count
    * as absent: no modifier, no loot), and each repelled pirate's owner pays the ship's owner `counterFine` G (capped at
    * their cash). See v08-armory.ts.
@@ -79,6 +80,7 @@ export interface V08Rules {
     readonly halveCustoms: number;
     readonly refundSunkLoot: number;
     readonly armedBonus: number;
+    readonly armedMaxFinal: number;
     readonly counter: number;
     readonly counterFine: number;
   };
@@ -222,7 +224,7 @@ export const V08_OFF: V08Rules = {
   hidden: { privateL1: 1, privateL2: 2, privateArrives: 0, privateLoses: 0, privateSafeFromInspectionL2: 0, feeFreeL1: 0, selfCoverL1: 0 },
   breaker: { extraFromL1: 6, extraFromL2: 5, extraDieSides: 6 },
   repairyard: { fromFinal: 2, toFinal: 3, save: 1, immuneStormTide: 0 },
-  armory: { lootPercent: 35, halveAllLoot: 0, immunePirateTide: 0, pirateToll: 0, halveCustoms: 0, refundSunkLoot: 0, armedBonus: 0, counter: 0, counterFine: 50 },
+  armory: { lootPercent: 35, halveAllLoot: 0, immunePirateTide: 0, pirateToll: 0, halveCustoms: 0, refundSunkLoot: 0, armedBonus: 0, armedMaxFinal: 0, counter: 0, counterFine: 50 },
   tradehouse: { immuneCrashTide: 0 },
   islands: { lighthouseFades: 0, freePortGamblerNoRest: 0, lighthouseBeacon: 0, ownShipMinRaw: 0, freePortFeePercent: 0 },
   botPirateCrates: 0,

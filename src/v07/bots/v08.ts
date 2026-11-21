@@ -453,8 +453,17 @@ function armedMerchantValue(view: PlayerView, player: PublicPlayer, cache: V08Ca
   const cargo = crates * averagePrice(view);
   const plan: Plan = { type: 'standard', raised: false, level: skillLevel(rules, player, 'standard'), facility: null, island: player.island, modifier: 0 };
   const share = (modifier: number) => typicalShare(view, { ...plan, modifier }, crates, cache);
-  const bonus = rules.v08.armory.armedBonus;
-  const armed = (share(bonus) - share(0)) * cargo;
+  const { armedBonus: bonus, armedMaxFinal: maxFinal } = rules.v08.armory;
+  // v08.armory.armedMaxFinal: the +1 only where the final would be that low (its gain counted at those finals only).
+  const keep = (final: number) => {
+    const terms = crateTerms(rules, plan.type, final, plan);
+    return terms.sinks ? 0 : (Math.max(0, crates - terms.lose) * terms.percent) / 100 / crates;
+  };
+  const top = rules.sailing.dieMax;
+  const armed =
+    maxFinal > 0
+      ? finals(view, plan, cache).reduce((sum, [final, p]) => sum + (final <= maxFinal ? p * (keep(Math.min(top, final + bonus)) - keep(final)) : 0), 0) * cargo
+      : (share(bonus) - share(0)) * cargo;
   const counter =
     rules.v08.armory.counter === 1 ? PIRATE_ON_ME * (rules.v08.armory.counterFine + (share(bonus) - share(bonus - 1)) * cargo - currentPrice(view, 'arms')) : 0;
   return ARMS_ABOARD * (armed + Math.max(0, counter));

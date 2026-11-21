@@ -11,8 +11,15 @@ import { facilityOf } from './v08';
 /** The armed merchant is on: the +1 or the counterattack. */
 const armedOn = (rules: Rules): boolean => rules.v08.armory.armedBonus !== 0 || rules.v08.armory.counter === 1;
 
-/** The armory's +armedBonus on an armed ship (0 otherwise). */
-export const armedShift = (rules: Rules, ship: Ship): number => (ship.armed === true ? rules.v08.armory.armedBonus : 0);
+/**
+ * The armory's +armedBonus on an armed ship whose final without it is `without` (0 otherwise); with armedMaxFinal > 0
+ * only when `without` is at most armedMaxFinal (the bonus saves a ship about to sink or lose most of its cargo).
+ */
+export function armedShift(rules: Rules, ship: Ship, without: number): number {
+  if (ship.armed !== true) return 0;
+  const { armedBonus, armedMaxFinal } = rules.v08.armory;
+  return armedMaxFinal > 0 && without > armedMaxFinal ? 0 : armedBonus;
+}
 
 /** Other players' pirates aiming at this ship this round (the diplomat's voided ones are already gone). */
 function opposingPirates(state: MatchState, ship: Ship): PlayerId[] {
