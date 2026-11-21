@@ -153,14 +153,31 @@ type Fx = 'tide' | 'flip' | 'bazaar' | 'market' | 'gamble';
 const FINAL_FX: Readonly<Record<FinalRoundEffect, Fx>> = { 'final-market': 'bazaar', 'open-market': 'market', 'last-gamble': 'gamble' };
 const fxOf = (card: RoundCard): Fx | null => (card.kind === 'rising' ? 'tide' : card.kind === 'final' ? (card.effect === null ? null : FINAL_FX[card.effect]) : card.flipFrom ? 'flip' : null);
 
-/** The pieces of a card's show, behind the card; each carries its angle, its place across the width (−1…1), its delay and its reach. */
+/** A fixed scatter in 0…1 for piece `i` (`salt` picks which trait): the same every time, but with no pattern the eye can follow. */
+const scatter = (i: number, salt: number): number => {
+  const v = Math.sin((i + 1) * 12.9898 + salt * 78.233) * 43758.5453;
+  return v - Math.floor(v);
+};
+
+/**
+ * The pieces of a card's show, behind the card; each carries its angle, its place across the width (−1…1), its delay
+ * and its reach. The `--b*` traits are a bubble's own (暗潮將至): its column, size, how long it takes to rise, when it
+ * starts and how far it wanders, all scattered so no two rise alike.
+ */
 function CardFx() {
   return (
     <span className="round-fx" aria-hidden="true">
       {Array.from({ length: PIECES }, (_, i) => {
         const angle = (360 / PIECES) * i + (i % 2) * 9;
         const across = Math.round(Math.sin((angle * Math.PI) / 180) * 100) / 100;
-        return <i key={i} style={{ '--a': `${angle}deg`, '--x': across, '--d': `${(i % 5) * 70}ms`, '--r': `${220 + (i % 3) * 70}px` } as CSSProperties} />;
+        const bubble = {
+          '--bx': `${Math.round((scatter(i, 1) * 2 - 1) * 400)}px`,
+          '--bs': `${Math.round(5 + scatter(i, 2) ** 2 * 22)}px`,
+          '--bt': `${Math.round(2600 + scatter(i, 3) * 3400)}ms`,
+          '--bd': `${Math.round(scatter(i, 4) * 4200)}ms`,
+          '--bw': `${Math.round((scatter(i, 5) * 2 - 1) * 46)}px`,
+        };
+        return <i key={i} style={{ '--a': `${angle}deg`, '--x': across, '--d': `${(i % 5) * 70}ms`, '--r': `${220 + (i % 3) * 70}px`, ...bubble } as CSSProperties} />;
       })}
     </span>
   );

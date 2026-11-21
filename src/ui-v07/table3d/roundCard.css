@@ -404,20 +404,30 @@
   opacity: 0;
   animation: round-fx-ring 1100ms cubic-bezier(0.1, 0.7, 0.3, 1) 1500ms both;
 }
-/* Bubbles: rings of light rising from under the card to over it, each in its own column. */
+/*
+ * Bubbles: rings of light rising from under the card to over it. Each has its own column, size, speed, start and
+ * wander (the --b* traits CardFx scatters), so they do not rise in step; the small ones are fainter.
+ */
 [data-fx='tide'] .round-fx i {
-  border: 2px solid #b8fff8;
+  top: calc(var(--bs) / -2);
+  left: calc(var(--bs) / -2);
+  width: var(--bs);
+  height: var(--bs);
+  border: 1.5px solid #b8fff8;
   border-radius: 50%;
-  box-shadow: 0 0 8px #58c7c0;
-  animation: round-fx-bubble 3200ms linear calc(var(--d) * 9) infinite;
+  background: radial-gradient(circle at 32% 28%, rgb(232 255 252 / 0.55) 0 14%, transparent 30%);
+  box-shadow: 0 0 8px rgb(88 199 192 / 0.8);
+  animation: round-fx-bubble var(--bt) cubic-bezier(0.4, 0.1, 0.7, 0.6) var(--bd) infinite;
 }
-[data-fx='tide'] .round-fx i:nth-child(3n) { width: 16px; height: 16px; }
+[data-fx='tide'] .round-fx i:nth-child(4n + 1) { border-width: 1px; box-shadow: none; }
 @keyframes round-fx-bubble {
-  0% { opacity: 0; transform: translate(calc(var(--x) * 340px), 330px); }
-  12% { opacity: 0.9; }
-  50% { transform: translate(calc(var(--x) * 340px + 14px), 0); }
-  88% { opacity: 0.9; }
-  100% { opacity: 0; transform: translate(calc(var(--x) * 340px - 8px), -340px); }
+  0% { opacity: 0; transform: translate(var(--bx), 350px) scale(0.6); }
+  10% { opacity: 0.85; }
+  28% { transform: translate(calc(var(--bx) + var(--bw)), 170px) scale(0.85); }
+  52% { transform: translate(calc(var(--bx) - var(--bw) * 0.6), -10px) scale(1); }
+  76% { transform: translate(calc(var(--bx) + var(--bw) * 0.8), -190px) scale(1.08); }
+  90% { opacity: 0.8; }
+  100% { opacity: 0; transform: translate(calc(var(--bx) - var(--bw) * 0.3), -350px) scale(1.15); }
 }
 .round-veil-held.event-hold .round-card-rising { animation: event-card-in 600ms linear both, round-shudder 500ms linear 1500ms; }
 
