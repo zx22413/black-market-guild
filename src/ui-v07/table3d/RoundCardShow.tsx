@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { TIDE_CARD, type TideKind } from '../../v07/game';
 import { soundEngine } from '../audio/soundEngine';
-import { bossArtUrl, cardArtUrl } from './cardArt';
+import { bossArtUrl, cardArtUrl, finalArtUrl } from './cardArt';
 import type { RoundCard } from './roundCard';
 import './roundCard.css';
 import { TIDE_LABELS } from './tideModel';
@@ -65,8 +65,11 @@ function Face({ card }: { readonly card: RoundCard }) {
   if (card.kind === 'final') {
     return (
       <>
-        <div className="round-card-final" aria-hidden="true">
-          終
+        <div className="event-card-emblem">
+          <img src={finalArtUrl(card.effect)} alt="" />
+          <span className="round-card-final" aria-hidden="true">
+            終
+          </span>
         </div>
         <strong>{card.title}</strong>
         <ul>

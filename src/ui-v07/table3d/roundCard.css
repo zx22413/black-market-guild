@@ -64,16 +64,25 @@
   box-shadow: 0 0 0 1px #2a120c, inset 0 0 0 1px #e3b04b, 0 5px 0 var(--c-wood-dark, #3a2412), 0 18px 30px rgb(0 0 0 / 0.5), 0 0 34px rgb(227 176 75 / 0.6);
 }
 :root:root .event-card.round-card-final .event-card-kind { color: #e3b04b; }
+/* The ending's picture, in a window rimmed in the ending's gold; 「終」 is a seal on its corner. */
+:root:root .event-card.round-card-final .event-card-emblem { position: relative; border-color: #1c0d0a; box-shadow: 0 0 0 2px #e3b04b, 0 0 0 3px #7a4a14, inset 0 0 14px rgb(0 0 0 / 0.4); }
 .round-card .round-card-final {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
   display: grid;
   place-items: center;
-  width: 84px;
-  height: 84px;
-  border: 3px double #e3b04b;
+  width: 40px;
+  height: 40px;
+  border: 2px solid #e3b04b;
   border-radius: 50%;
+  background: #2a120c;
+  box-shadow: 0 0 10px rgb(227 176 75 / 0.8);
   color: #e3b04b;
-  font-size: 44px;
+  font-family: var(--font-strong);
+  font-size: 22px;
   font-weight: 700;
+  line-height: 1;
 }
 
 /* 暗潮將至: the two candidates side by side; the one that it is lights up, the other sinks. */

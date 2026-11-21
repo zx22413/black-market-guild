@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BUILDING_IDS, GOODS, ISLAND_IDS, ROLE_IDS, VOYAGE_EVENT_IDS } from '../../src/v07/game';
-import { cardArtUrl, cardIconUrl, type CardArt } from '../../src/ui-v07/table3d/cardArt';
+import { TIDE_CARD } from '../../src/v07/game';
+import { bossArtUrl, cardArtUrl, cardIconUrl, finalArtUrl, type CardArt } from '../../src/ui-v07/table3d/cardArt';
 import { tokenIconUrl, type TokenIcon } from '../../src/ui-v07/table3d/icons';
 
 // Every SVG under public/art, as the URL the page would load it from (the test runs with base '/').
@@ -17,6 +18,18 @@ describe('card art', () => {
   it.each(cards.map((c) => [`${c.kind} ${c.id}`, c] as const))('%s has an illustration and an icon', (_, card) => {
     expect(exists(cardArtUrl(card))).toBe(true);
     expect(exists(cardIconUrl(card))).toBe(true);
+  });
+
+  it("every tide's own card has a picture of its dark side, and the other events fall back to their own", () => {
+    for (const event of Object.values(TIDE_CARD)) {
+      expect(bossArtUrl(event)).toBe(`/art/cards/voyage-${event}-boss.svg`);
+      expect(exists(bossArtUrl(event))).toBe(true);
+    }
+    expect(bossArtUrl('tailwind')).toBe(cardArtUrl({ kind: 'voyage', id: 'tailwind' }));
+  });
+
+  it('every ending of the last round has an illustration', () => {
+    for (const effect of ['final-market', 'open-market', 'last-gamble', null] as const) expect(exists(finalArtUrl(effect))).toBe(true);
   });
 
   it('every island has an illustration and an icon', () => {

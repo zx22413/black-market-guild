@@ -1,4 +1,4 @@
-import type { BuildingId, RoleId, VoyageEventId } from '../../v07/game';
+import type { BuildingId, FinalRoundEffect, RoleId, VoyageEventId } from '../../v07/game';
 
 // The card art of buildings, roles and voyage events (public/art/cards, docs/ui/v07-style-layers.md):
 // an illustration for the card's picture window, and an icon drawn from it for every small badge,
@@ -22,3 +22,6 @@ const BOSS_ART: ReadonlySet<VoyageEventId> = new Set<VoyageEventId>(['storm', 's
 
 /** The illustration of a voyage event's dark-tide side (400 × 300); the event's own picture where none is drawn. */
 export const bossArtUrl = (id: VoyageEventId): string => (BOSS_ART.has(id) ? `${base()}/voyage-${id}-boss.svg` : cardArtUrl({ kind: 'voyage', id }));
+
+/** V0.8 prototype: the illustration of the last round's card (400 × 300), by its effect; null is the plain last round (the round cap). */
+export const finalArtUrl = (effect: FinalRoundEffect | null): string => `${base()}/final-${effect ?? 'last-round'}.svg`;
