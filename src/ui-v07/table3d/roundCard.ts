@@ -6,8 +6,11 @@ import { TIDE_LABELS, TIDE_SHIELD, tideText } from './tideModel';
 // start of the resolution. Built from public events only; every number in a line is read from `rules`.
 
 export type RoundCard =
-  /** A voyage event; `boss` when it shows its dark-tide side. */
-  | { readonly kind: 'voyage'; readonly event: VoyageEventId; readonly boss: boolean; readonly title: string; readonly lines: readonly string[] }
+  /**
+   * A voyage event; `boss` when it shows its dark-tide side. `flipFrom` on the first boss side of a match: the event's
+   * plain side, which the card shows first and is then turned over from.
+   */
+  | { readonly kind: 'voyage'; readonly event: VoyageEventId; readonly boss: boolean; readonly title: string; readonly lines: readonly string[]; readonly flipFrom?: { readonly title: string; readonly lines: readonly string[] } }
   /** 暗潮將至: the tide picked from the two candidates (null in a match without tide kinds). */
   | { readonly kind: 'rising'; readonly candidates: readonly TideKind[]; readonly tide: TideKind | null; readonly title: string; readonly lines: readonly string[] }
   /** The last round, with its effect (null: the round cap or an empty deck ended the match). */
@@ -66,12 +69,13 @@ export function roundCards(events: readonly MatchEvent[], round: number, rules: 
   const cards: RoundCard[] = [];
   const candidates = events.flatMap((ev) => (ev.type === 'tide-candidates' ? ev.candidates : []));
   const boss = events.some((ev) => ev.type === 'boss-event' && ev.round === round);
+  const firstBoss = boss && !events.some((ev) => ev.type === 'boss-event' && ev.round < round);
   for (const ev of events) {
     if (!('round' in ev) || ev.round !== round) continue;
     if (ev.type === 'voyage-event-revealed') {
       cards.push(
         boss
-          ? { kind: 'voyage', event: ev.event, boss: true, title: bossTitle(ev.event), lines: [bossText(rules, ev.event)] }
+          ? { kind: 'voyage', event: ev.event, boss: true, title: bossTitle(ev.event), lines: [bossText(rules, ev.event)], ...(firstBoss ? { flipFrom: { title: VOYAGE_EVENT_LABELS[ev.event], lines: [VOYAGE_EVENT_TEXT[ev.event]] } } : {}) }
           : { kind: 'voyage', event: ev.event, boss: false, title: VOYAGE_EVENT_LABELS[ev.event], lines: [VOYAGE_EVENT_TEXT[ev.event]] },
       );
     } else if (ev.type === 'dark-tide-rising') {

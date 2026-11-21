@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- Black-Market Rush, dark-tide side 「嚴查」 (V0.8 prototype; no outlines): an AI-written flat vector placeholder,
+       see public/art/SOURCES.md. The inspection tide: the quay at night, the stall shut, a customs lantern's beam on
+       sealed crates, a chain across the quay. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b1422"/><stop offset="1" stop-color="#1c3a46"/></linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#12414d"/><stop offset="1" stop-color="#06171d"/></linearGradient>
+    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe6a8" stop-opacity="0.85"/><stop offset="1" stop-color="#ffe6a8" stop-opacity="0.08"/></linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sky)"/>
+  <g fill="#cfeeea"><circle cx="40" cy="36" r="1.6"/><circle cx="96" cy="22" r="1.2"/><circle cx="170" cy="40" r="1.4"/><circle cx="252" cy="20" r="1.2"/><circle cx="330" cy="44" r="1.6"/><circle cx="372" cy="18" r="1.2"/></g>
+  <rect y="170" width="400" height="40" fill="url(#sea)"/>
+  <g fill="none" stroke="#58c7c0" stroke-width="2" stroke-linecap="round" opacity="0.5"><path d="M20 184 q8 -5 16 0 q8 5 16 0 M300 190 q8 -5 16 0 q8 5 16 0"/></g>
+  <!-- the stall, shut: awning rolled dark, a board nailed across -->
+  <path d="M286 204 V150 M384 204 V150" stroke="#0a1118" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <path d="M276 152 L288 130 L382 130 L394 152 Z" fill="#2c2440"/><path d="M276 152 L394 152 L392 160 L278 160 Z" fill="#1a1528"/>
+  <rect x="290" y="160" width="90" height="44" fill="#15202a"/><path d="M290 168 L380 196 M290 196 L380 168" stroke="#4a3526" stroke-width="7"/>
+  <!-- the quay: planks in two values, its lit edge -->
+  <rect y="204" width="400" height="96" fill="#3a2a22"/><rect y="204" width="400" height="8" fill="#5a4032"/>
+  <g stroke="#2a1d17" stroke-width="2"><path d="M0 236 H400 M0 268 H400 M70 212 V236 M190 236 V268 M310 212 V236 M120 268 V300 M260 268 V300"/></g>
+  <!-- the lantern's beam falling from the officer's hand onto the crates -->
+  <path d="M112 132 L250 300 H40 Z" fill="url(#beam)"/>
+  <!-- the customs officer, a backlit silhouette: flat-topped wide cap, long coat, lantern held out, a manifest in the other hand -->
+  <g fill="#070c12">
+    <path d="M52 110 h46 l6 8 h-58 z"/><rect x="58" y="98" width="34" height="13"/>
+    <circle cx="75" cy="130" r="13"/>
+    <path d="M52 146 Q75 138 98 146 L108 262 H42 Z"/>
+    <path d="M94 150 L122 128 L128 136 L100 164 Z"/>
+    <path d="M56 152 L36 196 L46 200 L64 162 Z"/>
+  </g>
+  <rect x="26" y="192" width="20" height="26" fill="#e8dcc0"/><circle cx="36" cy="212" r="4" fill="#a3262f"/>
+  <rect x="71" y="100" width="8" height="8" fill="#e0b84a"/>
+  <!-- the lantern -->
+  <circle cx="126" cy="134" r="26" fill="#ffd27a" opacity="0.28"/>
+  <path d="M118 124 h16 v20 h-16 z" fill="#ffe6a8"/><path d="M116 122 h20 v4 h-20 z M116 142 h20 v4 h-20 z" fill="#5b3f12"/><path d="M126 122 v-8" stroke="#5b3f12" stroke-width="3" stroke-linecap="round"/>
+  <!-- crates in the beam, each sealed in red wax; one opened, its arms showing -->
+  <g>
+    <rect x="150" y="214" width="62" height="50" fill="#8a5a3a"/><rect x="150" y="214" width="62" height="9" fill="#a8744a"/><path d="M150 264 h62 v6 h-62 z" fill="#4a2a1c"/>
+    <path d="M181 223 v41 M150 240 h62" stroke="#6b3f2a" stroke-width="4"/>
+    <circle cx="181" cy="240" r="10" fill="#a3262f"/><circle cx="178" cy="237" r="4" fill="#d0545c"/>
+    <rect x="224" y="230" width="54" height="42" fill="#7a4e32"/><rect x="224" y="230" width="54" height="8" fill="#96663f"/><path d="M224 272 h54 v6 h-54 z" fill="#4a2a1c"/>
+    <circle cx="251" cy="252" r="9" fill="#a3262f"/><circle cx="248" cy="249" r="3.5" fill="#d0545c"/>
+    <rect x="170" y="178" width="50" height="36" fill="#7a4e32"/><path d="M164 176 L226 168 L228 176 L166 184 Z" fill="#96663f"/>
+    <g fill="#1a1f26"><circle cx="186" cy="176" r="7"/><circle cx="204" cy="174" r="7"/></g><path d="M186 169 q2 -8 8 -8" stroke="#1a1f26" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>
+  <!-- the chain across the quay, between two posts -->
+  <rect x="300" y="220" width="10" height="50" fill="#0a1118"/><rect x="384" y="220" width="10" height="50" fill="#0a1118"/>
+  <path d="M305 232 Q347 262 389 232" fill="none" stroke="#58c7c0" stroke-width="4" stroke-dasharray="9 5" stroke-linecap="round"/>
+</svg>

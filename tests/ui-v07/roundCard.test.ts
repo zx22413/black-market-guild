@@ -32,7 +32,22 @@ describe('round cards (V0.8 prototype, not rules)', () => {
 
   it('shows the boss side of the event that flipped', () => {
     const events: MatchEvent[] = [candidates, { type: 'voyage-event-revealed', round: 6, event: 'sea-fog' }, { type: 'boss-event', round: 6, event: 'sea-fog' }];
-    expect(roundCards(events, 6, rules)).toEqual([{ kind: 'voyage', event: 'sea-fog', boss: true, title: '海盜伏擊', lines: [`每名海盜 −${-rules.v08.events.bossPirate}。`] }]);
+    // The first boss side of a match is turned over from the event's plain side, which it carries for the show.
+    expect(roundCards(events, 6, rules)).toEqual([
+      { kind: 'voyage', event: 'sea-fog', boss: true, title: '海盜伏擊', lines: [`每名海盜 −${-rules.v08.events.bossPirate}。`], flipFrom: { title: '海霧', lines: ['被海盜鎖定的船 +1。'] } },
+    ]);
+  });
+
+  it('turns only the first boss side of a match over', () => {
+    const events: MatchEvent[] = [
+      candidates,
+      { type: 'voyage-event-revealed', round: 6, event: 'sea-fog' },
+      { type: 'boss-event', round: 6, event: 'sea-fog' },
+      { type: 'voyage-event-revealed', round: 7, event: 'sea-fog' },
+      { type: 'boss-event', round: 7, event: 'sea-fog' },
+    ];
+    expect(roundCards(events, 6, rules)[0]).toHaveProperty('flipFrom');
+    expect(roundCards(events, 7, rules)[0]).not.toHaveProperty('flipFrom');
   });
 
   it('ends the match with 最後的大市集, or plainly at the round cap after the event of that round', () => {

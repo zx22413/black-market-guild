@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- Sea Fog, dark-tide side 「海盜伏擊」 (V0.8 prototype; no outlines): an AI-written flat vector placeholder, see
+       public/art/SOURCES.md. The pirate tide: black-sailed ships closing out of dark fog on a lone merchantman. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d1a24"/><stop offset="0.7" stop-color="#1d3f4a"/><stop offset="1" stop-color="#2a5a62"/></linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#174450"/><stop offset="1" stop-color="#071c24"/></linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sky)"/>
+  <!-- a thin moon behind the fog -->
+  <circle cx="204" cy="56" r="34" fill="#58c7c0" opacity="0.12"/><circle cx="204" cy="56" r="18" fill="#cfeeea"/><circle cx="212" cy="50" r="16" fill="#12303a"/>
+  <rect y="186" width="400" height="114" fill="url(#sea)"/>
+  <!-- far pirate ship on the left, a black mass with a rag of sail and two lit ports -->
+  <g transform="translate(-8 196)">
+    <rect x="50" y="-104" width="5" height="104" fill="#05090d"/><rect x="100" y="-90" width="5" height="90" fill="#05090d"/>
+    <path d="M20 -96 Q56 -70 20 -42 H82 Q112 -70 82 -96 Z" fill="#0b1318"/><path d="M52 -96 Q84 -70 52 -42 H82 Q112 -70 82 -96 Z" fill="#05090d"/>
+    <path d="M78 -82 Q108 -62 78 -40 H126 Q150 -62 126 -82 Z" fill="#0b1318"/>
+    <path d="M52 -104 v-16 h24 l-6 8 l6 8 h-24 z" fill="#a3262f"/>
+    <path d="M0 -16 L150 -16 L140 6 Q76 14 12 6 Z" fill="#05090d"/><path d="M0 -16 L150 -16 L148 -24 L4 -24 Z" fill="#101c22"/>
+    <g fill="#ffb35c"><rect x="40" y="-10" width="8" height="6"/><rect x="92" y="-10" width="8" height="6"/></g>
+  </g>
+  <!-- pirate ship on the right, nearer and larger, bow toward the prey -->
+  <g transform="translate(408 214) scale(-1.15 1.15)">
+    <rect x="50" y="-104" width="5" height="104" fill="#05090d"/><rect x="100" y="-90" width="5" height="90" fill="#05090d"/>
+    <path d="M20 -96 Q56 -70 20 -42 H82 Q112 -70 82 -96 Z" fill="#0b1318"/><path d="M52 -96 Q84 -70 52 -42 H82 Q112 -70 82 -96 Z" fill="#05090d"/>
+    <path d="M78 -82 Q108 -62 78 -40 H126 Q150 -62 126 -82 Z" fill="#0b1318"/>
+    <path d="M52 -104 v-16 h24 l-6 8 l6 8 h-24 z" fill="#a3262f"/>
+    <path d="M0 -16 L150 -16 L140 6 Q76 14 12 6 Z" fill="#05090d"/><path d="M0 -16 L150 -16 L148 -24 L4 -24 Z" fill="#101c22"/>
+    <g fill="#ffb35c"><rect x="34" y="-10" width="8" height="6"/><rect x="66" y="-10" width="8" height="6"/><rect x="98" y="-10" width="8" height="6"/></g>
+    <!-- the skull on the main sail: two eyes and a jaw, in the tide's pale teal -->
+    <g fill="#7ee6dd"><circle cx="46" cy="-74" r="4"/><circle cx="60" cy="-74" r="4"/><rect x="46" y="-64" width="14" height="5"/></g>
+  </g>
+  <!-- the merchantman caught between them, small and lit -->
+  <g transform="translate(150 222) scale(0.62)">
+    <rect x="50" y="-92" width="5" height="92" fill="#3a2418"/><rect x="110" y="-92" width="5" height="92" fill="#3a2418"/>
+    <path d="M24 -84 Q56 -60 24 -34 H80 Q86 -60 80 -84 Z" fill="#d8dcd4"/><path d="M84 -84 Q116 -60 84 -34 H140 Q146 -60 140 -84 Z" fill="#d8dcd4"/>
+    <path d="M112 -92 v-14 h20 l-5 6 l5 6 h-20" fill="#e0b84a"/>
+    <path d="M0 -14 L160 -14 L150 6 Q80 14 14 6 Z" fill="#6b3f2a"/><path d="M0 -14 L160 -14 L158 -22 L4 -22 Z" fill="#8a5a3a"/>
+  </g>
+  <circle cx="200" cy="206" r="22" fill="#ffd27a" opacity="0.22"/><rect x="196" y="200" width="8" height="10" fill="#ffd27a"/>
+  <!-- dark fog banks across everything, the nearest the thickest -->
+  <g fill="#3b6f77" opacity="0.6">
+    <path d="M-10 150 Q60 128 140 146 T300 140 T420 146 V178 H-10 Z"/>
+  </g>
+  <g fill="#2a5a62" opacity="0.75"><path d="M-10 226 Q80 206 170 222 T340 218 T420 224 V256 H-10 Z"/></g>
+  <g fill="#12303a" opacity="0.9"><path d="M-10 268 Q90 250 200 266 T420 262 V300 H-10 Z"/></g>
+  <g fill="none" stroke="#58c7c0" stroke-width="2.5" stroke-linecap="round" opacity="0.6"><path d="M150 244 h40 M214 250 h56 M120 262 h30"/></g>
+</svg>

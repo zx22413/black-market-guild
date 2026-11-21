@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { TIDE_CARD, type TideKind } from '../../v07/game';
 import { soundEngine } from '../audio/soundEngine';
-import { cardArtUrl } from './cardArt';
+import { bossArtUrl, cardArtUrl } from './cardArt';
 import type { RoundCard } from './roundCard';
 import './roundCard.css';
 import { TIDE_LABELS } from './tideModel';
@@ -10,12 +10,19 @@ import { TideIcon } from './tideIcons';
 // V0.8 prototype (an experiment, not rules): the card a round turned up, one after another in the middle of a darkened
 // table (the voyage event's card, VoyageEventCard, with the prototype's other cards): a voyage event (its boss side
 // in the dark-tide season), 暗潮將至 with the tide picked from the two candidates, and the last round's card. A click
-// moves on; left alone each card holds long enough to read its lines once.
+// moves on; left alone each card holds long enough to read its lines once. 暗潮將至 is the exception: it says a lot
+// (what the round's end takes, then the forecast), so it stays until it is clicked. The first dark-tide side of a
+// match is not dealt face up: the event's plain card comes first and is turned over to its dark side (BossFlip).
 
 /** How long each kind of card holds the screen (ms): 暗潮將至 first turns the two candidates over. */
 export const ROUND_CARD_MS: Readonly<Record<RoundCard['kind'] | 'boss', number>> = { voyage: 3000, boss: 4200, rising: 6500, final: 5200 };
-/** When 暗潮將至 shows which candidate it is (ms into the card). */
+/** When 暗潮將至 shows which candidate it is (ms into the card); from then on a click closes it. */
 const TIDE_PICK_MS = 1500;
+/** How long a card that was held takes to shrink away once clicked (ms; beat.css's event-leave). */
+const LEAVE_MS = 600;
+/** The first dark-tide side: how long the plain side shows before it is turned over, and the turn itself (ms; roundCard.css). */
+const FLIP_AT_MS = 1500;
+const FLIP_MS = 800;
 
 function Rising({ card }: { readonly card: Extract<RoundCard, { kind: 'rising' }> }) {
   const [picked, setPicked] = useState(false);
@@ -72,7 +79,7 @@ function Face({ card }: { readonly card: RoundCard }) {
   return (
     <>
       <div className="event-card-emblem">
-        <img src={cardArtUrl({ kind: 'voyage', id: card.event })} alt="" />
+        <img src={card.boss ? bossArtUrl(card.event) : cardArtUrl({ kind: 'voyage', id: card.event })} alt="" />
         {tide && (
           <span className="round-card-boss">
             <TideIcon kind={tide} wave={false} />
@@ -87,13 +94,85 @@ function Face({ card }: { readonly card: RoundCard }) {
   );
 }
 
+/**
+ * The first dark-tide side of a match: the event's plain card flips in, holds, then turns over to the dark side (the
+ * two faces back to back), which holds as long as any dark side does. A click moves on at any time.
+ */
+function BossFlip({ card, onDone }: { readonly card: Extract<RoundCard, { kind: 'voyage' }>; readonly onDone: () => void }) {
+  const [phase, setPhase] = useState<'front' | 'back' | 'leave'>('front');
+  useEffect(() => {
+    const [ms, then] = phase === 'front' ? [FLIP_AT_MS, () => setPhase('back')] : phase === 'back' ? [FLIP_MS + ROUND_CARD_MS.boss, () => setPhase('leave')] : [LEAVE_MS, onDone];
+    const timer = setTimeout(then, ms);
+    return () => clearTimeout(timer);
+    // `onDone` is the caller's current closure each render; the phase alone drives the show.
+  }, [phase]);
+  useEffect(() => {
+    if (phase === 'back') soundEngine.playSfx('island-pop', 0.7);
+  }, [phase]);
+  const plain = card.flipFrom!;
+  return (
+    <div className={`event-card-veil round-veil-flip ${phase === 'leave' ? 'event-leave' : 'event-hold'} ${phase === 'front' ? '' : 'turned'}`} role="dialog" aria-label={`${KIND_TEXT(card)}：${card.title}`} onClick={onDone}>
+      <div className="round-flip" data-focus="event">
+        <div className="round-flip-inner">
+          <div className="event-card round-card round-card-plain round-flip-face" aria-hidden={phase !== 'front'}>
+            <small className="event-card-kind">航海事件</small>
+            <div className="event-card-emblem">
+              <img src={cardArtUrl({ kind: 'voyage', id: card.event })} alt="" />
+            </div>
+            <strong>{plain.title}</strong>
+            {plain.lines.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+          <div className="event-card round-card round-card-boss round-flip-face round-flip-back" aria-hidden={phase === 'front'}>
+            <small className="event-card-kind">{KIND_TEXT(card)}</small>
+            <Face card={card} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const KIND_TEXT = (card: RoundCard): string => (card.kind === 'voyage' ? (card.boss ? '航海事件・暗潮面' : '航海事件') : card.kind === 'rising' ? '暗潮' : '終局');
 
 export function RoundCardShow({ cards, onDone }: { readonly cards: readonly RoundCard[]; readonly onDone: () => void }) {
   const [at, setAt] = useState(0);
+  // A held card (暗潮將至): 'hold' until it may be closed, 'ready' once a click closes it, 'leave' while it shrinks away.
+  const [held, setHeld] = useState<'hold' | 'ready' | 'leave'>('hold');
   const card = cards[at];
-  const next = () => (at + 1 < cards.length ? setAt(at + 1) : onDone());
+  const holds = card?.kind === 'rising';
+  const next = () => {
+    setHeld('hold');
+    if (at + 1 < cards.length) setAt(at + 1);
+    else onDone();
+  };
+  useEffect(() => {
+    if (!holds || held === 'ready') return undefined;
+    const timer = setTimeout(held === 'hold' ? () => setHeld('ready') : next, held === 'hold' ? TIDE_PICK_MS : LEAVE_MS);
+    return () => clearTimeout(timer);
+  }, [holds, held, at]);
   if (!card) return null;
+  if (card.kind === 'voyage' && card.boss && card.flipFrom) return <BossFlip key={at} card={card} onDone={next} />;
+  if (holds) {
+    return (
+      <div
+        key={at}
+        className={`event-card-veil round-veil-rising round-veil-held ${held === 'leave' ? 'event-leave' : 'event-hold'} ${held === 'ready' ? 'ready' : ''}`}
+        role="dialog"
+        aria-label={`${KIND_TEXT(card)}：${card.title}`}
+        onClick={() => held === 'ready' && setHeld('leave')}
+      >
+        <div className="event-card round-card round-card-rising" data-focus="event">
+          <small className="event-card-kind">{KIND_TEXT(card)}</small>
+          <Face card={card} />
+        </div>
+        <p className="tap-hint round-card-tap" data-focus="tap" aria-hidden={held !== 'ready'}>
+          點任意處關閉
+        </p>
+      </div>
+    );
+  }
   const ms = ROUND_CARD_MS[card.kind === 'voyage' && card.boss ? 'boss' : card.kind];
   const style = { animationDuration: `${ms}ms` };
   const tone = card.kind === 'voyage' ? (card.boss ? 'boss' : 'plain') : card.kind;

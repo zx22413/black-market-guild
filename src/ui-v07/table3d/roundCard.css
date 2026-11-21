@@ -31,15 +31,32 @@
 .round-card-when.forecast { border: 1px dashed #8fd6d0; color: #8fd6d0; }
 
 /* The dark cards: the tide and the ending keep the card's wood frame (skin/layers.css) around dark water, not parchment. */
-:root:root .event-card:is(.round-card-rising, .round-card-boss) {
+:root:root .event-card.round-card-rising {
   outline-color: #58c7c0;
   background: radial-gradient(ellipse at 50% 30%, #1b4a58, #0a1a24 78%);
   color: #dff3f1;
   box-shadow: 0 0 0 1px #0d2a33, inset 0 0 0 1px #58c7c0, 0 5px 0 var(--c-wood-dark, #3a2412), 0 18px 30px rgb(0 0 0 / 0.5), 0 0 34px rgb(88 199 192 / 0.6);
 }
-:root:root .event-card:is(.round-card-rising, .round-card-boss) .event-card-kind { color: #8fd6d0; }
-.round-veil-rising,
-.round-veil-boss { background: rgb(3 14 20 / 0.82); }
+:root:root .event-card.round-card-rising .event-card-kind { color: #8fd6d0; }
+/*
+ * A voyage event's dark-tide side has a ground of its own, the deep under the tide: ink violet, where 暗潮將至 is
+ * teal water, the plain events parchment and the ending ember red. The tide's teal stays as the rule and the glow,
+ * so the card still reads as the tide's.
+ */
+:root:root .event-card.round-card-boss {
+  border-color: #1c1433;
+  outline-color: #9d8cf0;
+  background:
+    repeating-linear-gradient(118deg, rgb(157 140 240 / 0.06) 0 2px, transparent 2px 14px),
+    radial-gradient(ellipse at 50% 28%, #3a2a72, #1a1238 60%, #0a0718 100%);
+  color: #ece8ff;
+  box-shadow: 0 0 0 1px #0a0718, inset 0 0 0 1px #58c7c0, 0 5px 0 #0a0718, 0 18px 30px rgb(0 0 0 / 0.55), 0 0 34px rgb(125 105 230 / 0.65);
+}
+:root:root .event-card.round-card-boss .event-card-kind { color: #b9adff; letter-spacing: 0.22em; }
+:root:root .event-card.round-card-boss .event-card-emblem { border-color: #0a0718; box-shadow: 0 0 0 2px #7ee6dd, 0 0 0 3px #1c5f66, inset 0 0 14px rgb(0 0 0 / 0.45); }
+.round-veil-flip.turned { background: rgb(8 5 22 / 0.86); }
+.round-veil-rising { background: rgb(3 14 20 / 0.82); }
+.round-veil-boss { background: rgb(8 5 22 / 0.86); }
 :root:root .event-card.round-card-final {
   outline-color: #e3b04b;
   background: radial-gradient(ellipse at 50% 30%, #5a2a1a, #1c0d0a 78%);
@@ -87,7 +104,6 @@
 
 /* A boss side: the event's picture goes dark and wears its tide's mark. */
 .round-card-boss .event-card-emblem { position: relative; }
-.event-card.round-card-boss .event-card-emblem img { filter: saturate(0.5) brightness(0.62) hue-rotate(-12deg); }
 .round-card-boss .event-card-emblem .round-card-boss {
   position: absolute;
   right: 6px;
@@ -216,4 +232,69 @@
 /* A role's rule text keeps the line breaks its text carries (the pirate's is long). */
 .role-detail {
   white-space: pre-line;
+}
+
+/* 暗潮將至 stays until it is clicked (RoundCardShow): the hint under it comes once a click closes it. */
+.round-veil-held {
+  align-content: center;
+  gap: 16px;
+}
+.round-veil-held.ready {
+  cursor: pointer;
+}
+.round-card-tap {
+  margin: 0;
+  visibility: hidden;
+}
+.round-veil-held.ready .round-card-tap {
+  visibility: visible;
+}
+.round-veil-held.event-leave .round-card-tap {
+  visibility: hidden;
+}
+
+/*
+ * The first dark-tide side of a match (RoundCardShow's BossFlip): the plain card and the dark side back to back; the
+ * pair flips in as one card does, then turns over on its upright axis. The faces themselves do not animate.
+ */
+.round-veil-flip { transition: background 600ms; }
+.round-flip {
+  width: min(380px, 100%);
+  perspective: 1100px;
+  animation: event-card-in 600ms linear both;
+}
+.round-veil-flip.event-leave .round-flip { animation: event-card-out 600ms linear both; }
+.round-flip-inner {
+  display: grid;
+  transform-style: preserve-3d;
+  transition: transform 800ms cubic-bezier(0.5, -0.2, 0.3, 1.25);
+}
+.round-veil-flip.turned .round-flip-inner { transform: rotateY(180deg); }
+:root:root .round-flip .round-flip-face {
+  grid-area: 1 / 1;
+  box-sizing: border-box;
+  width: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  animation: none;
+}
+:root:root .round-flip .round-flip-back { transform: rotateY(180deg); }
+/* The turn throws a ring of the deep's light out from behind the card. */
+.round-veil-flip.turned .round-flip::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border: 3px solid #9d8cf0;
+  border-radius: 12px;
+  pointer-events: none;
+  animation: round-flip-ring 900ms ease-out 500ms both;
+}
+.round-flip { position: relative; }
+@keyframes round-flip-ring {
+  from { opacity: 0.9; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.35); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .round-flip-inner { transition: none; }
+  .round-veil-flip.turned .round-flip::after { animation: none; opacity: 0; }
 }
