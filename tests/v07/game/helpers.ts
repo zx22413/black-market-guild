@@ -28,20 +28,32 @@ export const IDS = ['p1', 'p2', 'p3', 'p4'] as const;
  * RULES_V08_PROTO before the 2026-11-15 tide shields (each building ignores its matching tide) and the bots' crate-table
  * pirate valuation: the settings the simplification tests (v08-simplify.test.ts) were written for.
  */
-/** The prototype before the 2026-11-16 equal building costs and armory toll. */
-export const RULES_V08_PRE_EQUAL_COSTS: Rules = {
+/**
+ * The prototype before the 2026-11-22 armed merchant: the armory halves every pirate take and pays back the half it kept
+ * on a sunk ship. The older fixtures below build on it.
+ */
+export const RULES_V08_PRE_ARMED: Rules = {
   ...RULES_V08_PROTO,
   v08: {
     ...RULES_V08_PROTO.v08,
+    armory: { ...RULES_V08_PROTO.v08.armory, halveAllLoot: 1, refundSunkLoot: 1, armedBonus: 0, counter: 0 },
+  },
+};
+
+/** The prototype before the 2026-11-16 equal building costs and armory toll. */
+export const RULES_V08_PRE_EQUAL_COSTS: Rules = {
+  ...RULES_V08_PRE_ARMED,
+  v08: {
+    ...RULES_V08_PRE_ARMED.v08,
     costs: {
-      ...RULES_V08_PROTO.v08.costs,
+      ...RULES_V08_PRE_ARMED.v08.costs,
       build: {
         repairyard: G(2, 1),
         armory: G(0, 0, 0, 2),
         tradehouse: G(0, 0, 2),
       },
     },
-    armory: { ...RULES_V08_PROTO.v08.armory, pirateToll: 0 },
+    armory: { ...RULES_V08_PRE_ARMED.v08.armory, pirateToll: 0 },
   },
 };
 

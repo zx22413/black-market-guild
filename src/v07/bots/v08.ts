@@ -421,7 +421,7 @@ export function pirateLootCrates(view: PlayerView, ship: ViewShip, pirateShift: 
   const cargoValue = value(cargo);
   const armory = facility === 'armory';
   const halves = armory && rules.v08.armory.halveAllLoot === 1;
-  return finals(view, plan, cache).reduce((sum, [final, p]) => {
+  const expected = finals(view, plan, cache).reduce((sum, [final, p]) => {
     const terms = crateTerms(rules, plan.type, final, plan);
     const normal = rules.roles.pirate.lootPercentByFinal[rules.ships.enabled === 1 && terms.sinks ? 1 : final] ?? 0;
     let take: number;
@@ -435,6 +435,35 @@ export function pirateLootCrates(view: PlayerView, ship: ViewShip, pirateShift: 
     }
     return sum + p * (take > 0 ? take + bonus : 0);
   }, 0);
+  // v08.armory.counter: an armory owner with arms in the warehouse may repel me (no loot) and fine me.
+  const repelled = counterChance(view, owner);
+  return expected * (1 - repelled) - repelled * rules.v08.armory.counterFine;
+}
+
+/** Share of my voyages that carry arms, for the armed merchant (bots load about 0.75 crate of arms a ship). */
+const ARMS_ABOARD = 0.6;
+
+/**
+ * v08.armory.armedBonus / counter: G the armed merchant adds per round on a standard ship: the +1 whenever it leaves
+ * with arms, and when a pirate comes (PIRATE_ON_ME) the fine and the −1 it no longer takes, less the crate of arms spent.
+ */
+function armedMerchantValue(view: PlayerView, player: PublicPlayer, cache: V08Cache): number {
+  const { rules } = view;
+  const crates = shipCrates(view, player, 'standard');
+  const cargo = crates * averagePrice(view);
+  const plan: Plan = { type: 'standard', raised: false, level: skillLevel(rules, player, 'standard'), facility: null, island: player.island, modifier: 0 };
+  const share = (modifier: number) => typicalShare(view, { ...plan, modifier }, crates, cache);
+  const bonus = rules.v08.armory.armedBonus;
+  const armed = (share(bonus) - share(0)) * cargo;
+  const counter =
+    rules.v08.armory.counter === 1 ? PIRATE_ON_ME * (rules.v08.armory.counterFine + (share(bonus) - share(bonus - 1)) * cargo - currentPrice(view, 'arms')) : 0;
+  return ARMS_ABOARD * (armed + Math.max(0, counter));
+}
+
+/** v08.armory.counter: the chance an armory owner's ship carries arms, from their public warehouse. */
+export function counterChance(view: PlayerView, owner: PublicPlayer): number {
+  const armedOwner = view.rules.v08.armory.counter === 1 && facilityOf(view.rules, owner) === 'armory';
+  return armedOwner && owner.stock.arms > 0 ? ARMS_ABOARD : 0;
 }
 
 /** What a building adds per round beyond its effect on crate tables (armory, tradehouse, island variants). */
@@ -446,6 +475,8 @@ function buildingExtras(view: PlayerView, player: PublicPlayer, building: V08Bui
     case 'repairyard':
       return 0;
     case 'armory': {
+      // v08.armory.armedBonus / counter: the armed merchant replaces the halving (see armedMerchantValue).
+      if (rules.v08.armory.armedBonus !== 0 || rules.v08.armory.counter === 1) return armedMerchantValue(view, player, cache);
       // v08.events.tides: 海盜潮 makes a pirate-targeted ship sink more often (0 without it).
       const pirateTide = tidePirateShift(rules, activeTide(view.events));
       const standard: Plan = { type: 'standard', raised: false, level: skillLevel(rules, player, 'standard'), facility: null, island: player.island, modifier: pirateTide };

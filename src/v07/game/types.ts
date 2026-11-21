@@ -109,6 +109,10 @@ export interface Ship {
   readonly privateCargo?: Goods;
   /** V0.8 prototype (rules.v08.crates): crates lost on the voyage, set when the ship is resolved. */
   readonly lost?: Goods;
+  /** V0.8 prototype (v08.armory.armedBonus / counter): an armory owner's ship that left with arms aboard. */
+  readonly armed?: true;
+  /** V0.8 prototype (v08.armory.counter): the armed ship spent a crate of arms; the pirates on it count as absent. */
+  readonly repelled?: true;
 }
 
 /** A locked role deployment (§9). */
@@ -286,7 +290,9 @@ export type CashReason =
   /** V0.8 prototype (fortress + armory): a pirate's deployment fee paid to the targeted owner. */
   | 'pirate-toll'
   /** V0.8 prototype (v08.armory.refundSunkLoot): what the armory kept from the pirates on its owner's sunk ship. */
-  | 'armory-refund';
+  | 'armory-refund'
+  /** V0.8 prototype (v08.armory.counter): a repelled pirate's owner pays the armed ship's owner. */
+  | 'armory-fine';
 
 /** V0.8 prototype: what a skill, building or island variant did, for the simulation report. `value` is G gained (or denied). */
 export const V08_EFFECTS = [
@@ -299,6 +305,8 @@ export const V08_EFFECTS = [
   'private-sold',
   'repairyard',
   'armory',
+  'armory-armed',
+  'armory-counter',
   'tradehouse',
   'pirate-toll',
   'customs-halved',

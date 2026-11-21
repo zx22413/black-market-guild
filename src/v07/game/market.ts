@@ -202,6 +202,8 @@ function customsHalved(state: MatchState, ship: Ship): boolean {
 }
 
 function deployed(state: MatchState, ship: Ship, role: RoleId): PlayerId[] {
+  // V0.8 prototype (v08.armory.counter): the pirates an armed ship repelled count as absent.
+  if (role === 'pirate' && ship.repelled === true) return [];
   return effectiveDeployments(state).filter((d) => d.role === role && d.targetShipId === ship.id).map((d) => d.playerId);
 }
 

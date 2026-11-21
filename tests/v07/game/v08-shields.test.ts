@@ -2,15 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { BOT_STRATEGIES, type BotStrategy } from '../../../src/v07/bots';
 import { PERSONALITIES } from '../../../src/v07/bots/personality';
 import { V08Cache, pirateLootCrates, scoreInvestV08 } from '../../../src/v07/bots/v08';
-import { RULES_V08_PROTO, crateTerms, getPlayerView, priceAt, type Action, type MatchEvent, type MatchState, type Rules, type V08EventsState, type ViewShip } from '../../../src/v07/game';
+import { crateTerms, getPlayerView, priceAt, type Action, type MatchEvent, type MatchState, type Rules, type V08EventsState, type ViewShip } from '../../../src/v07/game';
 import { runMatchSync, setupFromSeats } from '../../../src/v07/match';
-import { G, RULES_V08_PRE_SHIELDS, cash, edit, find, plain, playRound, withDemand, withPrices } from './helpers';
+import { G, RULES_V08_PRE_ARMED, RULES_V08_PRE_SHIELDS, cash, edit, find, plain, playRound, withDemand, withPrices } from './helpers';
 
 // V0.8 simulation prototype, 2026-11-15 tide shields: each building shields its owner from the matching tide
 // (v08.repairyard.immuneStormTide, v08.armory.immunePirateTide, v08.tradehouse.immuneCrashTide), and the bots value
-// pirate deployments with the crate tables (v08.botPirateCrates). NOT rules.
+// pirate deployments with the crate tables (v08.botPirateCrates). NOT rules. Written for the halving armory, so they run
+// on the prototype before the armed merchant (v08-armory.test.ts covers that).
 
-const V08 = RULES_V08_PROTO;
+const V08 = RULES_V08_PRE_ARMED;
 /** The armory's pirate toll and customs halving, off in the prototype since 2026-11-21. */
 const WITH_TOLL: Rules = { ...V08, v08: { ...V08.v08, armory: { ...V08.v08.armory, pirateToll: 1 } } };
 const WITH_CUSTOMS: Rules = { ...V08, v08: { ...V08.v08, armory: { ...V08.v08.armory, halveCustoms: 1 } } };
@@ -133,13 +134,13 @@ describe('V0.8 bots and the tide shields', () => {
   });
 
   it('prices all three buildings alike and keeps the armory to the halving (toll and customs switches off)', () => {
-    expect(RULES_V08_PROTO.v08.costs.build).toEqual({ repairyard: G(2, 1), armory: G(2, 1), tradehouse: G(2, 1) });
-    expect(RULES_V08_PROTO.v08.armory).toMatchObject({ halveAllLoot: 1, refundSunkLoot: 1, pirateToll: 0, halveCustoms: 0 });
+    expect(RULES_V08_PRE_ARMED.v08.costs.build).toEqual({ repairyard: G(2, 1), armory: G(2, 1), tradehouse: G(2, 1) });
+    expect(RULES_V08_PRE_ARMED.v08.armory).toMatchObject({ halveAllLoot: 1, refundSunkLoot: 1, pirateToll: 0, halveCustoms: 0 });
     const ready = (rules: Rules) => withDemand(edit(plain(4, rules), 'p1', { facility: 'armory', stock: G(3, 3, 1, 1) }), G(2, 2, 2, 1));
     const plan = { loads: { p1: G(1) }, rolls: { p1: 6 }, roles: { p2: ['pirate', 'p1'] as const } };
-    expect(cash(playRound(ready(RULES_V08_PROTO), plan).events, 'pirate-toll', 'p1')).toBe(0);
+    expect(cash(playRound(ready(RULES_V08_PRE_ARMED), plan).events, 'pirate-toll', 'p1')).toBe(0);
     // The switch still works: every pirate fee aimed at the owner goes to the owner.
-    expect(cash(playRound(ready(WITH_TOLL), plan).events, 'pirate-toll', 'p1')).toBe(RULES_V08_PROTO.roles.fees.pirate);
+    expect(cash(playRound(ready(WITH_TOLL), plan).events, 'pirate-toll', 'p1')).toBe(RULES_V08_PRE_ARMED.roles.fees.pirate);
   });
 
   it('lets the armory halve what customs confiscates from its owner (v08.armory.halveCustoms, off in the prototype)', () => {
@@ -154,11 +155,11 @@ describe('V0.8 bots and the tide shields', () => {
   it('value the shield before the reveal only when its tide is a candidate', () => {
     // Compare with the same rules minus the three shields only (costs and the armory toll unchanged).
     const noShields = {
-      ...RULES_V08_PROTO,
+      ...RULES_V08_PRE_ARMED,
       v08: {
-        ...RULES_V08_PROTO.v08,
-        repairyard: { ...RULES_V08_PROTO.v08.repairyard, immuneStormTide: 0 },
-        armory: { ...RULES_V08_PROTO.v08.armory, immunePirateTide: 0 },
+        ...RULES_V08_PRE_ARMED.v08,
+        repairyard: { ...RULES_V08_PRE_ARMED.v08.repairyard, immuneStormTide: 0 },
+        armory: { ...RULES_V08_PRE_ARMED.v08.armory, immunePirateTide: 0 },
         tradehouse: { immuneCrashTide: 0 },
       },
     };

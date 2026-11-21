@@ -6,6 +6,7 @@ import { nextInt, type RngState } from './rng';
 import { shipDelay, shipSinks } from './rules';
 import { GOODS, type Deployment, type FinalRoundEffect, type MatchEvent, type VoyageEventId, type MatchState, type Ship, type Step, type VoyageModifier, type VoyageOutcome } from './types';
 import { activeTide, beaconShift, bossSide, darkNight, diceToRoll, eventShift, eventsOn, isLateCard, moonlessShift, islandFaded, ownShipApplies, ownShipShift, pirateModifier, publicEvents, seaFogShift, stormTideLossActs, tideShift } from './v08-events';
+import { armShips, armedShift } from './v08-armory';
 import { crateTerms, extraDieFrom, facilityOf, repairyardSaved, rerolls, skillLevel, stormShielded, takeHighest, unshieldedTerms, v08On, type CrateContext, type CrateTerms } from './v08';
 
 /** §5 step 1: draws and reveals the voyage event as the round opens. */
@@ -84,6 +85,8 @@ function revealEventCard(state: MatchState): Step {
 export const effectiveDeployments = (state: MatchState): readonly Deployment[] => [...state.roundState.carried, ...state.roundState.deployments];
 
 function targeting(state: MatchState, ship: Ship, role: Deployment['role']): Deployment[] {
+  // V0.8 prototype (v08.armory.counter): the pirates an armed ship repelled count as absent.
+  if (role === 'pirate' && ship.repelled === true) return [];
   return effectiveDeployments(state).filter((d) => d.role === role && d.targetShipId === ship.id);
 }
 
@@ -117,13 +120,15 @@ export function voyageModifier(state: MatchState, ship: Ship): VoyageModifier {
   const pe = publicEvents(state);
   const card = state.roundState.voyageEvent;
   // V0.8 prototype (v08.events): a phase II moonless night voids the guards; 海盜伏擊 changes each pirate's modifier.
-  const guard = darkNight(pe, card)
-    ? 0
-    : targeting(state, ship, 'guard').reduce(
-        (sum, d) =>
-          sum + rules.roles.guard.modifier + trait(d.playerId).guardModifier,
-        0,
-      );
+  // V0.8 prototype (v08.armory.armedBonus): the armed merchant's +1 counts with the guards (a moonless night keeps it).
+  const guard =
+    (darkNight(pe, card)
+      ? 0
+      : targeting(state, ship, 'guard').reduce(
+          (sum, d) =>
+            sum + rules.roles.guard.modifier + trait(d.playerId).guardModifier,
+          0,
+        )) + armedShift(rules, ship);
   // + 0 turns -0 into 0.
   // v08.islands.lighthouseBeacon: the lighthouse lights its owner's ships up for pirates too.
   const beacon = beaconShift(rules, playerOf(state, ship.owner).island);
@@ -283,9 +288,11 @@ function stormTideLost(state: MatchState, ship: Ship, final: number, terms: Crat
 }
 
 function resolveVoyagesV08(input: MatchState): Step {
-  const state = lastGambleArrivals(input);
+  // V0.8 prototype (v08.armory): armed ships repel their pirates before any final value is read.
+  const armed = armShips(lastGambleArrivals(input));
+  const state = armed.state;
   let current = state;
-  const skillEvents: MatchEvent[] = [];
+  const skillEvents: MatchEvent[] = [...armed.events];
   const rolled = state.roundState.ships.map((ship) => {
     const r = rollSkills(current, ship);
     current = r.state;

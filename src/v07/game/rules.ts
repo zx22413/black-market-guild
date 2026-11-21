@@ -397,7 +397,9 @@ export const RULES_V08_PROTO: Rules = {
     // ships and halves what customs confiscates from them. 2026-11-21: on a sunk ship the half it keeps from the pirates
     // is paid to the owner (refundSunkLoot), so the armory moves its owner's cash, not only the pirates'. Same day, to
     // keep it to one sentence (user): the pirate toll and the customs halving are off; the armory is only the halving.
-    armory: { ...V08_OFF.armory, halveAllLoot: 1, immunePirateTide: 1, pirateToll: 0, halveCustoms: 0, refundSunkLoot: 1 },
+    // 2026-11-22 (user): the armory is the armed merchant instead: a ship leaving with arms is +1, and spends a crate of
+    // arms to repel the pirates on it (each pirate's owner pays 50 G); the halving and the refund are off.
+    armory: { ...V08_OFF.armory, immunePirateTide: 1, armedBonus: 1, counter: 1, counterFine: 50 },
     // 2026-11-15: each building shields its owner from the matching tide (repairyard ↔ storm, armory ↔ pirate,
     // tradehouse ↔ crash), and bots value pirate deployments with the crate tables.
     repairyard: { ...V08_OFF.repairyard, immuneStormTide: 1 },
