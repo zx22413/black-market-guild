@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { TIDE_CARD, type TideKind } from '../../v07/game';
+import { useEffect, useState, type CSSProperties } from 'react';
+import { TIDE_CARD, type FinalRoundEffect, type TideKind } from '../../v07/game';
 import { soundEngine } from '../audio/soundEngine';
 import { bossArtUrl, cardArtUrl, finalArtUrl } from './cardArt';
 import type { RoundCard } from './roundCard';
@@ -116,10 +116,11 @@ function BossFlip({ card, onDone }: { readonly card: Extract<RoundCard, { kind: 
   }, [phase]);
   const plain = card.flipFrom!;
   return (
-    <div className={`event-card-veil round-veil-flip ${phase === 'leave' ? 'event-leave' : 'event-hold'} ${phase === 'front' ? '' : 'turned'}`} role="dialog" aria-label={`${KIND_TEXT(card)}：${card.title}`} onClick={onDone}>
+    <div className={`event-card-veil round-veil-flip ${phase === 'leave' ? 'event-leave' : 'event-hold'} ${phase === 'front' ? '' : 'turned'}`} data-fx="flip" role="dialog" aria-label={`${KIND_TEXT(card)}：${card.title}`} onClick={onDone}>
+      <CardFx />
       <div className="round-flip" data-focus="event">
         <div className="round-flip-inner">
-          <div className="event-card round-card round-card-plain round-flip-face" aria-hidden={phase !== 'front'}>
+          <div className="event-card round-card round-card-plain round-card-fx round-flip-face" aria-hidden={phase !== 'front'}>
             <small className="event-card-kind">航海事件</small>
             <div className="event-card-emblem">
               <img src={cardArtUrl({ kind: 'voyage', id: card.event })} alt="" />
@@ -129,13 +130,39 @@ function BossFlip({ card, onDone }: { readonly card: Extract<RoundCard, { kind: 
               <p key={line}>{line}</p>
             ))}
           </div>
-          <div className="event-card round-card round-card-boss round-flip-face round-flip-back" aria-hidden={phase === 'front'}>
+          <div className="event-card round-card round-card-boss round-card-fx round-flip-face round-flip-back" aria-hidden={phase === 'front'}>
             <small className="event-card-kind">{KIND_TEXT(card)}</small>
             <Face card={card} />
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+/** How many small pieces (bubbles, shards, sparks, coins, dice) a card's show has. */
+const PIECES = 15;
+
+/**
+ * Which show a card comes up with (roundCard.css), one of its own for each big moment so they are told apart at a
+ * glance: 暗潮將至 is water (ripples, bubbles rising), the first dark side is lightning (a flash, spikes, shards),
+ * 最後的大市集 fireworks, 黑市大開 doors of light opening and gold raining, 最後一搏 a wheel spun and dice thrown.
+ * An ordinary voyage event, a later dark side and the plain last round (the round cap) have none.
+ */
+type Fx = 'tide' | 'flip' | 'bazaar' | 'market' | 'gamble';
+const FINAL_FX: Readonly<Record<FinalRoundEffect, Fx>> = { 'final-market': 'bazaar', 'open-market': 'market', 'last-gamble': 'gamble' };
+const fxOf = (card: RoundCard): Fx | null => (card.kind === 'rising' ? 'tide' : card.kind === 'final' ? (card.effect === null ? null : FINAL_FX[card.effect]) : card.flipFrom ? 'flip' : null);
+
+/** The pieces of a card's show, behind the card; each carries its angle, its place across the width (−1…1), its delay and its reach. */
+function CardFx() {
+  return (
+    <span className="round-fx" aria-hidden="true">
+      {Array.from({ length: PIECES }, (_, i) => {
+        const angle = (360 / PIECES) * i + (i % 2) * 9;
+        const across = Math.round(Math.sin((angle * Math.PI) / 180) * 100) / 100;
+        return <i key={i} style={{ '--a': `${angle}deg`, '--x': across, '--d': `${(i % 5) * 70}ms`, '--r': `${220 + (i % 3) * 70}px` } as CSSProperties} />;
+      })}
+    </span>
   );
 }
 
@@ -160,15 +187,19 @@ export function RoundCardShow({ cards, onDone }: { readonly cards: readonly Roun
   if (!card) return null;
   if (card.kind === 'voyage' && card.boss && card.flipFrom) return <BossFlip key={at} card={card} onDone={next} />;
   if (holds) {
+    const fx = fxOf(card);
+    const showy = fx !== null;
     return (
       <div
         key={at}
         className={`event-card-veil round-veil-${card.kind} round-veil-held ${held === 'leave' ? 'event-leave' : 'event-hold'} ${held === 'ready' ? 'ready' : ''}`}
+        {...(fx ? { 'data-fx': fx } : {})}
         role="dialog"
         aria-label={`${KIND_TEXT(card)}：${card.title}`}
         onClick={() => held === 'ready' && setHeld('leave')}
       >
-        <div className={`event-card round-card round-card-${card.kind}`} data-focus="event">
+        {showy && <CardFx />}
+        <div className={`event-card round-card round-card-${card.kind} ${showy ? 'round-card-fx' : ''}`} data-focus="event">
           <small className="event-card-kind">{KIND_TEXT(card)}</small>
           <Face card={card} />
         </div>

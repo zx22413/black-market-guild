@@ -31,6 +31,8 @@ export function RoundCardsPreview() {
     { type: 'voyage-event-revealed', round: 5, event: FLIP[tide] },
     { type: 'boss-event', round: 5, event: FLIP[tide] },
     { type: 'final-round', round: 7, effect: 'final-market', demand: DEMAND },
+    { type: 'final-round', round: 8, effect: 'open-market', demand: DEMAND },
+    { type: 'final-round', round: 9, effect: 'last-gamble', demand: DEMAND },
     { type: 'voyage-event-revealed', round: 10, event: 'tailwind' },
     { type: 'final-round', round: 10, effect: null, demand: DEMAND },
   ];
@@ -42,7 +44,7 @@ export function RoundCardsPreview() {
     <RulesContext.Provider value={RULES_V08_PROTO}>
       <div className="t3-screen" style={{ position: 'fixed', inset: 0, background: '#2f8f9d' }}>
         <div style={{ position: 'absolute', zIndex: 60, bottom: 12, left: 12, display: 'flex', gap: 6 }}>
-          {([['暗潮將至', 4], ['暗潮面', 5], ['最後的大市集', 7], ['回合上限', 10]] as const).map(([label, r]) => (
+          {([['暗潮將至', 4], ['暗潮面', 5], ['最後的大市集', 7], ['黑市大開', 8], ['最後一搏', 9], ['回合上限', 10]] as const).map(([label, r]) => (
             <button key={r} type="button" onClick={() => { setRound(r); setRun((n) => n + 1); }}>
               {label}
             </button>

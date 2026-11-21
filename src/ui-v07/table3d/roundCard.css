@@ -307,3 +307,314 @@
   .round-flip-inner { transition: none; }
   .round-veil-flip.turned .round-flip::after { animation: none; opacity: 0; }
 }
+
+/*
+ * The shows of the big moments (RoundCardShow's CardFx; the veil's data-fx says which). Each has a motif of its own,
+ * so the moments are told apart at a glance and none is the other in a new colour:
+ *   tide    暗潮將至: water. Ripples spread from behind the card, bubbles rise past it; when the tide is picked
+ *           (1.5 s in, TIDE_PICK_MS) a wave ring goes out and the card shudders.
+ *   flip    the first dark side: lightning. Nothing until the card is turned; then a flash over the whole table,
+ *           flickering spikes, shards thrown out, a shudder.
+ *   bazaar  最後的大市集: fireworks, burst after burst round the card in the four guilds' colours.
+ *   market  黑市大開: doors of light swing open behind the card and gold rains down.
+ *   gamble  最後一搏: a wheel of light is spun and slows to a stop while dice tumble out.
+ * An ordinary voyage event, a later dark side and the plain last round have no show. All of it is off under
+ * prefers-reduced-motion.
+ */
+.round-fx {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.round-fx::before,
+.round-fx::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+.round-fx i {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  width: 10px;
+  height: 10px;
+  opacity: 0;
+}
+.event-leave .round-fx { opacity: 0; transition: opacity 300ms; }
+/* Shared: a ring thrown out, a shudder, the glint crossing a card's face. */
+@keyframes round-fx-ring {
+  0% { opacity: 0; transform: scale(0.5); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: scale(3.4); }
+}
+@keyframes round-shudder {
+  0%, 100% { translate: 0 0; }
+  15% { translate: -7px 3px; }
+  30% { translate: 6px -4px; }
+  45% { translate: -5px -2px; }
+  60% { translate: 4px 3px; }
+  80% { translate: -2px 1px; }
+}
+.round-card-fx { position: relative; overflow: hidden; }
+.round-card-fx::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+  width: 46%;
+  background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.5) 45%, rgb(255 255 255 / 0.12) 60%, transparent);
+  transform: translateX(-140%) skewX(-12deg);
+  pointer-events: none;
+  animation: round-glint 800ms ease-in-out 650ms both;
+}
+@keyframes round-glint {
+  from { transform: translateX(-140%) skewX(-12deg); }
+  to { transform: translateX(340%) skewX(-12deg); }
+}
+
+/* ---------- tide: water ---------- */
+[data-fx='tide'] .round-fx::before {
+  top: -480px;
+  left: -480px;
+  width: 960px;
+  height: 960px;
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle, transparent 0 40px, rgb(126 230 221 / 0.8) 40px 45px, transparent 45px 52px);
+  -webkit-mask: radial-gradient(circle, transparent 14%, #000 26%, transparent 66%);
+  mask: radial-gradient(circle, transparent 14%, #000 26%, transparent 66%);
+  animation: round-fx-ripple 2600ms linear infinite;
+}
+@keyframes round-fx-ripple {
+  0% { opacity: 0; transform: scale(0.72); }
+  25% { opacity: 0.8; }
+  100% { opacity: 0; transform: scale(1.3); }
+}
+[data-fx='tide'] .round-fx::after {
+  top: -150px;
+  left: -150px;
+  width: 300px;
+  height: 300px;
+  border: 10px solid #b8fff8;
+  border-radius: 50%;
+  box-shadow: 0 0 34px #58c7c0, inset 0 0 34px #58c7c0;
+  opacity: 0;
+  animation: round-fx-ring 1100ms cubic-bezier(0.1, 0.7, 0.3, 1) 1500ms both;
+}
+/* Bubbles: rings of light rising from under the card to over it, each in its own column. */
+[data-fx='tide'] .round-fx i {
+  border: 2px solid #b8fff8;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #58c7c0;
+  animation: round-fx-bubble 3200ms linear calc(var(--d) * 9) infinite;
+}
+[data-fx='tide'] .round-fx i:nth-child(3n) { width: 16px; height: 16px; }
+@keyframes round-fx-bubble {
+  0% { opacity: 0; transform: translate(calc(var(--x) * 340px), 330px); }
+  12% { opacity: 0.9; }
+  50% { transform: translate(calc(var(--x) * 340px + 14px), 0); }
+  88% { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(calc(var(--x) * 340px - 8px), -340px); }
+}
+.round-veil-held.event-hold .round-card-rising { animation: event-card-in 600ms linear both, round-shudder 500ms linear 1500ms; }
+
+/* ---------- flip: lightning ---------- */
+[data-fx='flip'] .round-fx::before {
+  top: -520px;
+  left: -520px;
+  width: 1040px;
+  height: 1040px;
+  background: repeating-conic-gradient(from 7deg, #d9d2ff 0deg 1.2deg, transparent 1.2deg 17deg, #7ee6dd 17deg 17.8deg, transparent 17.8deg 31deg);
+  -webkit-mask: radial-gradient(circle, #000 0, #000 20%, transparent 58%);
+  mask: radial-gradient(circle, #000 0, #000 20%, transparent 58%);
+  opacity: 0;
+}
+[data-fx='flip'].turned .round-fx::before { animation: round-fx-flicker 1300ms steps(1, end) 380ms both; }
+@keyframes round-fx-flicker {
+  0% { opacity: 0.95; rotate: 0deg; }
+  8% { opacity: 0.1; }
+  16% { opacity: 0.85; rotate: 11deg; }
+  26% { opacity: 0.05; }
+  36% { opacity: 0.7; rotate: -6deg; }
+  50% { opacity: 0.1; }
+  62% { opacity: 0.45; rotate: 4deg; }
+  100% { opacity: 0.14; rotate: 0deg; }
+}
+[data-fx='flip'] .round-fx::after {
+  top: -150px;
+  left: -150px;
+  width: 300px;
+  height: 300px;
+  border: 6px solid #d9d2ff;
+  border-radius: 50%;
+  box-shadow: 0 0 30px #9d8cf0, inset 0 0 30px #9d8cf0;
+  opacity: 0;
+}
+[data-fx='flip'].turned .round-fx::after { animation: round-fx-ring 900ms cubic-bezier(0.1, 0.7, 0.3, 1) 380ms both; }
+/* Shards: slivers thrown straight out along their angle, fast. */
+[data-fx='flip'] .round-fx i {
+  top: -14px;
+  left: -2px;
+  width: 4px;
+  height: 28px;
+  background: linear-gradient(#ffffff, #9d8cf0);
+  box-shadow: 0 0 10px #9d8cf0;
+}
+[data-fx='flip'].turned .round-fx i { animation: round-fx-shard 620ms cubic-bezier(0.1, 0.8, 0.3, 1) calc(400ms + var(--d) / 3) both; }
+@keyframes round-fx-shard {
+  0% { opacity: 1; transform: rotate(var(--a)) translateY(-150px) scaleY(1.6); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--r) * -1.5)) scaleY(0.4); }
+}
+[data-fx='flip'].turned .round-flip-inner { animation: round-shudder 500ms linear 700ms; }
+.round-veil-flip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #d9d2ff;
+  opacity: 0;
+  pointer-events: none;
+}
+.round-veil-flip.turned::before { animation: round-flash 520ms steps(1, end) 380ms; }
+@keyframes round-flash {
+  0% { opacity: 0.6; }
+  18% { opacity: 0; }
+  30% { opacity: 0.4; }
+  46% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* ---------- bazaar (最後的大市集): fireworks ---------- */
+[data-fx='bazaar'] .round-fx::before {
+  top: -420px;
+  left: -420px;
+  width: 840px;
+  height: 840px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 214 110 / 0.75), rgb(227 120 60 / 0.35) 45%, transparent 68%);
+  animation: round-fx-glow 2200ms ease-in-out infinite;
+}
+@keyframes round-fx-glow {
+  0%, 100% { opacity: 0.55; transform: scale(0.94); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+/* Three shells going off in turn at three places round the card; a piece belongs to one by its count. */
+[data-fx='bazaar'] .round-fx i {
+  --cx: -300px;
+  --cy: -170px;
+  --c: #ff6b5a;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 25%, var(--c) 60%);
+  box-shadow: 0 0 14px 4px var(--c);
+  animation: round-fx-shell 2400ms cubic-bezier(0.1, 0.7, 0.3, 1) 300ms infinite;
+}
+[data-fx='bazaar'] .round-fx i:nth-child(3n + 2) { --cx: 310px; --cy: -120px; --c: #6fb0ff; animation-delay: 1100ms; }
+[data-fx='bazaar'] .round-fx i:nth-child(3n) { --cx: 20px; --cy: -290px; --c: #ffe08a; animation-delay: 1900ms; }
+[data-fx='bazaar'] .round-fx i:nth-child(6n + 1) { --c: #7ad67a; }
+@keyframes round-fx-shell {
+  0% { opacity: 0; transform: translate(var(--cx), var(--cy)) rotate(var(--a)) translateY(0) scale(1.4); }
+  8% { opacity: 1; }
+  45% { opacity: 1; transform: translate(var(--cx), var(--cy)) rotate(var(--a)) translateY(-120px) scale(1); }
+  70%, 100% { opacity: 0; transform: translate(var(--cx), calc(var(--cy) + 40px)) rotate(var(--a)) translateY(-136px) scale(0.3); }
+}
+.round-veil-held.event-hold[data-fx='bazaar'] .round-card-final { animation: event-card-in 600ms linear both, round-shudder 500ms linear 560ms; }
+
+/* ---------- market (黑市大開): doors of light, gold raining ---------- */
+[data-fx='market'] .round-fx::before {
+  top: -400px;
+  left: -560px;
+  width: 1120px;
+  height: 800px;
+  background: linear-gradient(90deg, transparent 2%, rgb(255 214 120 / 0.75) 22%, rgb(255 244 205 / 0.18) 40%, rgb(255 244 205 / 0.18) 60%, rgb(255 214 120 / 0.75) 78%, transparent 98%);
+  -webkit-mask: linear-gradient(transparent, #000 22%, #000 78%, transparent);
+  mask: linear-gradient(transparent, #000 22%, #000 78%, transparent);
+  animation: round-fx-doors 1500ms cubic-bezier(0.2, 0.8, 0.2, 1) 350ms both;
+}
+@keyframes round-fx-doors {
+  0% { opacity: 1; clip-path: inset(0 50% 0 50%); }
+  70% { opacity: 1; clip-path: inset(0 0 0 0); }
+  100% { opacity: 0.6; clip-path: inset(0 0 0 0); }
+}
+/* Coins falling past the card, each in its own column, for as long as the card is up. */
+[data-fx='market'] .round-fx i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff8d2, #f2c94c 45%, #b38a22);
+  box-shadow: 0 0 8px 1px rgb(255 208 90 / 0.8);
+  animation: round-fx-gold 2400ms linear calc(900ms + var(--d) * 7) infinite;
+}
+@keyframes round-fx-gold {
+  0% { opacity: 0; transform: translate(calc(var(--x) * 330px), -340px) scaleX(1); }
+  10% { opacity: 1; }
+  30% { transform: translate(calc(var(--x) * 330px), -140px) scaleX(0.25); }
+  60% { transform: translate(calc(var(--x) * 330px), 70px) scaleX(1); }
+  88% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(var(--x) * 330px), 340px) scaleX(0.3); }
+}
+
+/* ---------- gamble (最後一搏): the wheel spun, dice thrown ---------- */
+[data-fx='gamble'] .round-fx::before {
+  top: -460px;
+  left: -460px;
+  width: 920px;
+  height: 920px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, rgb(227 176 75 / 0.8) 0deg 15deg, rgb(163 38 47 / 0.75) 15deg 30deg);
+  -webkit-mask: radial-gradient(circle, transparent 24%, #000 25%, #000 36%, transparent 37%, transparent 41%, #000 42%, #000 44%, transparent 45%);
+  mask: radial-gradient(circle, transparent 24%, #000 25%, #000 36%, transparent 37%, transparent 41%, #000 42%, #000 44%, transparent 45%);
+  animation: round-fx-wheel 3600ms cubic-bezier(0.08, 0.6, 0.12, 1) 300ms both;
+}
+@keyframes round-fx-wheel {
+  0% { opacity: 0; rotate: 0deg; }
+  8% { opacity: 0.9; }
+  100% { opacity: 0.6; rotate: 1307deg; }
+}
+/* The pointer the wheel stops under. */
+[data-fx='gamble'] .round-fx::after {
+  top: -232px;
+  left: -16px;
+  border: 16px solid transparent;
+  border-top: 30px solid #fff0b8;
+  filter: drop-shadow(0 0 8px #e3b04b);
+  animation: round-fx-pointer 3600ms linear 300ms both;
+}
+@keyframes round-fx-pointer {
+  0% { opacity: 0; }
+  8% { opacity: 1; rotate: 0deg; }
+  20%, 40%, 60% { rotate: -9deg; }
+  30%, 50%, 70% { rotate: 5deg; }
+  86% { rotate: -4deg; }
+  100% { opacity: 1; rotate: 0deg; }
+}
+/* Dice: white cubes with a red pip, thrown out tumbling, again and again. */
+[data-fx='gamble'] .round-fx i {
+  top: -9px;
+  left: -9px;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: radial-gradient(circle, #a3262f 0 3px, #f6ead0 3.6px);
+  box-shadow: 2px 2px 0 #b89a6a, 0 0 10px rgb(255 208 90 / 0.6);
+  animation: round-fx-dice 2200ms cubic-bezier(0.15, 0.7, 0.3, 1) calc(500ms + var(--d) * 5) infinite;
+}
+[data-fx='gamble'] .round-fx i:nth-child(2n) { background: radial-gradient(circle, #1c0d0a 0 3px, #f6ead0 3.6px); }
+@keyframes round-fx-dice {
+  0% { opacity: 0; transform: rotate(var(--a)) translateY(-120px) rotate(0deg) scale(0.6); }
+  10% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--r) * -1.25)) rotate(540deg) scale(1.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .round-fx,
+  .round-card-fx::after,
+  .round-veil-flip::before { display: none; }
+  .round-veil-held.event-hold .round-card-rising,
+  .round-veil-held.event-hold[data-fx='bazaar'] .round-card-final { animation: event-card-in 600ms linear both; }
+  [data-fx='flip'].turned .round-flip-inner { animation: none; }
+}
