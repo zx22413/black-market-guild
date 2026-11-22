@@ -157,3 +157,26 @@ describe('crate losses in a ship beat (V0.8 prototype, not rules)', () => {
     expect(drops).toBeGreaterThan(0);
   });
 });
+
+describe("the armory's covering fire in a ship beat (V0.8 prototype, not rules)", () => {
+  const cargo = { wood: 0, iron: 0, spice: 0, arms: 1 };
+  const events = (armed: boolean, guard: number): MatchEvent[] => [
+    { type: 'ships-launched', round: 1, ships: [{ id: 's1', owner: 'p1', type: 'standard' }], stayedInPort: [] } as unknown as MatchEvent,
+    ...(armed ? [{ type: 'v08-effect', round: 1, playerId: 'p1', shipId: 's1', effect: 'armory-armed', crates: 0, value: 0 } as MatchEvent] : []),
+    { type: 'voyage-modifiers', round: 1, modifiers: [{ shipId: 's1', base: 3, guard, pirate: -1, event: 0, island: 0, final: 2 + guard }] },
+    { type: 'ship-resolved', round: 1, shipId: 's1', outcome: 'arrived', cargo } as MatchEvent,
+  ];
+
+  it('marks the guard step of a ship that left armed, and gives the volley the time to play', () => {
+    const beat = buildShipBeat(events(true, 1), 's1')!;
+    expect(beat.steps.map((s) => [s.kind, s.armory ?? false])).toEqual([['guard', true], ['pirate', false]]);
+    const cues = beatCues(beat);
+    const at = cues.findIndex((c) => c.kind === 'step' && c.index === 0);
+    expect(cues[at + 1]!.at - cues[at]!.at).toBe(BEAT_PACE.island);
+  });
+
+  it('leaves a ship alone that was not armed, or whose die the guard step did not raise', () => {
+    expect(buildShipBeat(events(false, 1), 's1')!.steps.some((s) => s.armory)).toBe(false);
+    expect(buildShipBeat(events(true, 0), 's1')!.steps.some((s) => s.armory)).toBe(false);
+  });
+});

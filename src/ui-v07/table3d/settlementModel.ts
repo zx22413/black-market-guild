@@ -1,4 +1,5 @@
 import type { BuildingId, CashReason, GoodId, Goods, MatchEvent, PlayerId, ShipId } from '../../v07/game';
+import { SETTLED_EFFECTS, WORK_BEFORE, facilityReactions, workGoods, type FacilityReaction } from './facilityShow';
 import { GOODS } from '../../v07/game';
 import { CASH_REASON_LABELS, GOOD_LABELS } from '../labels';
 
@@ -11,12 +12,19 @@ export type Place =
   | { readonly kind: 'ship'; readonly shipId: ShipId }
   | { readonly kind: 'harbor' }
   | { readonly kind: 'island'; readonly playerId: PlayerId }
-  | { readonly kind: 'building'; readonly playerId: PlayerId; readonly building: BuildingId };
+  | { readonly kind: 'building'; readonly playerId: PlayerId; readonly building: BuildingId }
+  /** V0.8 prototype: the one building a player raised with materials (scene/Facility.tsx). */
+  | { readonly kind: 'facility'; readonly playerId: PlayerId };
+
+/** V0.8 prototype: a building's own show in among the flights (scene/FacilityWorks.tsx), and the crates it puts on screen. */
+export interface FacilityWork extends Pick<FacilityReaction, 'building' | 'effect' | 'shields'> {
+  readonly goods: readonly GoodId[];
+}
 
 export interface Flight {
   readonly key: string;
   /** What moves it: the cash reason, or insured, salvaged or spoiled goods (its sound). */
-  readonly kind: CashReason | 'salvage' | 'spoil';
+  readonly kind: CashReason | 'salvage' | 'spoil' | 'facility';
   readonly from: Place;
   readonly to: Place;
   /** Who gains (or, for a fine, loses) the money or goods. */
@@ -30,6 +38,8 @@ export interface Flight {
   readonly shipId: ShipId | null;
   /** A building that does the work glows meanwhile (insurance, salvage, exchange). */
   readonly building: BuildingId | null;
+  /** V0.8 prototype: this entry is a building at work, not a coin or a crate in the air (no money moves with it). */
+  readonly work?: FacilityWork;
 }
 
 const ship = (shipId: ShipId): Place => ({ kind: 'ship', shipId });
@@ -50,6 +60,10 @@ function cashFlight(e: Extract<MatchEvent, { type: 'cash-changed' }>, i: number)
     'pirate-loot': { from: fromShip, to: island(e.playerId) },
     insurance: { from: HARBOR, to: building(e.playerId, 'insurance'), building: 'insurance' },
     'exchange-commission': { from: HARBOR, to: building(e.playerId, 'exchange'), building: 'exchange' },
+    // V0.8 prototype (v08.armory.refundSunkLoot): what the armory kept from the pirates on its owner's sunk ship comes home to the tower.
+    'armory-refund': { from: fromShip, to: { kind: 'facility', playerId: e.playerId } },
+    // V0.8 prototype (v08.tradehouse.buyoutPercent / buyoutFloor): the tradehouse pays its owner for the crate it took from the warehouse.
+    'tradehouse-buyout': { from: { kind: 'facility', playerId: e.playerId }, to: island(e.playerId) },
   };
   const route = routes[e.reason];
   if (!route) return null;
@@ -81,7 +95,34 @@ export function settlementFlights(events: readonly MatchEvent[], round: number):
   const order = events.flatMap((e) => (e.type === 'ship-resolved' && e.round === round ? [e.shipId] : []));
   const rank = (f: Flight) => (f.shipId === null ? order.length + (f.key.startsWith('spoil-') ? 1 : 0) : order.indexOf(f.shipId));
   // Stable sort: within a ship (and among the rest) the rules' order is kept.
-  return flights.map((f, i) => ({ f, i })).sort((a, b) => rank(a.f) - rank(b.f) || a.i - b.i).map(({ f }) => f);
+  const sorted = flights.map((f, i) => ({ f, i })).sort((a, b) => rank(a.f) - rank(b.f) || a.i - b.i).map(({ f }) => f);
+  return facilityWorks(events, round).reduce(withWork, sorted);
+}
+
+/** V0.8 prototype: the buildings' shows of `round` that play in the settlement, in event order. */
+export function facilityWorks(events: readonly MatchEvent[], round: number): Flight[] {
+  return facilityReactions(events, round)
+    .filter((r) => SETTLED_EFFECTS.has(r.effect))
+    .map((r, i): Flight => {
+      const at: Place = r.shipId === null ? HARBOR : ship(r.shipId);
+      const home: Place = { kind: 'facility', playerId: r.playerId };
+      // The armory's guns go out to the ship; the toll and the tradehouse's pay come home.
+      const out = r.building === 'armory' && r.effect !== 'pirate-toll';
+      const work: FacilityWork = { building: r.building, effect: r.effect, goods: workGoods(events, round, r), ...(r.shields ? { shields: r.shields } : {}) };
+      return { key: `work-${round}-${i}`, kind: 'facility', from: out ? home : at, to: out ? at : home, playerId: r.playerId, amount: null, good: null, units: 0, label: r.text, shipId: r.shipId, building: null, work };
+    });
+}
+
+/** `flights` with a building's show put in front of the flight it changed, or in front of its ship's first flight, or last. */
+function withWork(flights: readonly Flight[], work: Flight): Flight[] {
+  const before = WORK_BEFORE[work.work!.effect];
+  const sameShip = (f: Flight) => f.shipId === work.shipId && f.work === undefined;
+  // A show that is about no ship (the tradehouse's buyout) goes with its owner's own payment, not the first player's.
+  const changed = flights.findIndex((f) => sameShip(f) && f.kind === before && (work.shipId !== null || f.playerId === work.playerId));
+  // After the shows already placed there, so one ship's shows keep the events' order.
+  const first = changed >= 0 ? changed : flights.findIndex(sameShip);
+  const at = first >= 0 ? first : flights.length;
+  return [...flights.slice(0, at), work, ...flights.slice(at)];
 }
 
 /** Cash each player has gained or lost from the first `shown` flights, for the name plates. */

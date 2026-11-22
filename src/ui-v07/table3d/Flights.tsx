@@ -9,6 +9,8 @@ import { flightSound } from '../audio/flightSounds';
 import { soundEngine } from '../audio/soundEngine';
 import type { SfxId } from '../audio/soundPlan';
 import { CrateModel } from '../scene/CrateModel';
+import { FACILITY_LOT } from '../scene/facilityLot';
+import { CannonVolley, TollCoins, TradeSeal } from '../scene/FacilityWorks';
 import { islandPoint } from '../scene/TableCanvas';
 import type { Flight, Place } from './settlementModel';
 
@@ -40,6 +42,8 @@ export function placePoint(place: Place, ctx: PlaceContext): Vec3 {
       const lot = ASSET_LOTS[place.building];
       return islandPoint(ctx.angles[ctx.laneOf(place.playerId)]!, [lot[0], 3, lot[2]]);
     }
+    case 'facility':
+      return islandPoint(ctx.angles[ctx.laneOf(place.playerId)]!, [FACILITY_LOT[0], 6, FACILITY_LOT[2]]);
     case 'ship': {
       const s = ctx.ships.get(place.shipId);
       if (!s) return [0, 3, 0];
@@ -112,6 +116,16 @@ function BuildingGlow({ flight, ctx }: { readonly flight: Flight; readonly ctx: 
   );
 }
 
+/** V0.8 prototype: a building's own show in place of a coin in the air. */
+function FacilityWorkShow({ flight, ctx }: { readonly flight: Flight; readonly ctx: PlaceContext }) {
+  const work = flight.work!;
+  const angle = ctx.angles[ctx.laneOf(flight.playerId)]!;
+  if (work.building === 'tradehouse') return <TradeSeal angle={angle} goods={work.goods} shield={work.shields !== undefined} />;
+  const at = placePoint(flight.shipId === null ? { kind: 'harbor' } : { kind: 'ship', shipId: flight.shipId }, ctx);
+  const ship: Vec3 = [at[0], 0, at[2]];
+  return work.effect === 'pirate-toll' ? <TollCoins angle={angle} ship={ship} /> : <CannonVolley angle={angle} ship={ship} shield={work.shields !== undefined} />;
+}
+
 export function Flights({ flights, ctx }: { readonly flights: readonly Flight[]; readonly ctx: PlaceContext }) {
   // Each flight sounds as it lands: coins into a purse, a crate set down, a whistle. Keyed by the
   // flights' keys, not the array (a new one every render), so a landing is scheduled once.
@@ -126,8 +140,14 @@ export function Flights({ flights, ctx }: { readonly flights: readonly Flight[];
     <>
       {flights.map((f) => (
         <group key={f.key}>
-          <FlyingThing flight={f} ctx={ctx} />
-          <BuildingGlow flight={f} ctx={ctx} />
+          {f.work ? (
+            <FacilityWorkShow flight={f} ctx={ctx} />
+          ) : (
+            <>
+              <FlyingThing flight={f} ctx={ctx} />
+              <BuildingGlow flight={f} ctx={ctx} />
+            </>
+          )}
         </group>
       ))}
     </>

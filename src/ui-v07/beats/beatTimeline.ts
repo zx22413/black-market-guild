@@ -61,9 +61,9 @@ export function beatCues(beat: ShipBeat, speed = 1, money = true): Cue[] {
   beat.skills.forEach((skill, i) => {
     if (skill.at === 'die') push('skill', i, BEAT_PACE.skill, BEAT_PACE.skill);
   });
-  // An island at work (the lighthouse's step, the cove's raiders, the fortress's guns) plays in full.
+  // An island at work (the lighthouse's step, the cove's raiders, the fortress's guns, the armory's volley) plays in full.
   beat.steps.forEach((step, i) =>
-    step.kind === 'island' || step.boosted.length > 0 ? push('step', i, BEAT_PACE.island, BEAT_PACE.island) : push('step', i, BEAT_PACE.step),
+    step.kind === 'island' || step.boosted.length > 0 || step.armory ? push('step', i, BEAT_PACE.island, BEAT_PACE.island) : push('step', i, BEAT_PACE.step),
   );
   if (beat.dropped.length > 0) {
     // V0.8 prototype: crates fall at sea, so the hold opens first, each lost crate drops, then the ship makes port.

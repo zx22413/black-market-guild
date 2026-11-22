@@ -1601,6 +1601,11 @@ button.inv-stack:hover {
 .flight-chip b {
   color: #1d7a35;
 }
+/* V0.8 prototype: a building at work (no money in the air, the line names what it did). */
+.flight-chip.work {
+  border-color: #ffd25a !important;
+  box-shadow: 0 0 0 2px rgba(255, 210, 90, 0.35);
+}
 .flight-chip.down b {
   color: #b2332a;
 }

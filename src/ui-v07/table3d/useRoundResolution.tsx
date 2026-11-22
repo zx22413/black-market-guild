@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { facilityReactions } from './facilityShow';
+import { ESCORT_EFFECTS, SETTLED_EFFECTS, facilityReactions, workGoods, type FacilityReaction } from './facilityShow';
 import { skillMoments } from '../beats/skillShow';
 import type { Deployment, GoodId, Goods, MatchEvent, PlayerId, PrivateEvent, ShipId, TideKind, V08Effect, VoyageEventId } from '../../v07/game';
 import type { FitPoint } from '../../ui/scene/CameraRig';
-import { TARGET_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
+import { PLAYER_ISLAND_RADIUS, TARGET_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
 import { shipPose } from '../../ui/scene/Ships';
 import type { ShipState } from '../../ui/scene/tableModel';
 import { BeatTag } from '../beats/BeatTag';
@@ -17,6 +17,8 @@ import { useBeatPlayback } from '../beats/useBeatPlayback';
 import { ROLE_LABELS } from '../labels';
 import { beatLayer } from '../scene/BeatScene';
 import type { BeatSeat } from '../scene/beatStage';
+import { CannonVolley, RepairRun } from '../scene/FacilityWorks';
+import { WORK_SECONDS } from '../scene/facilityWorkMath';
 import { around } from '../scene/focusMath';
 import type { TablePin } from '../scene/TableCanvas';
 import { Flights, placePoint, type PlaceContext } from './Flights';
@@ -31,7 +33,7 @@ import { RoleArrows } from './RoleArrows';
 import { Spotlight } from '../scene/Spotlight';
 import { RoleBadges } from './RoleBadges';
 import { roleKey, roleResults } from './roleResults';
-import { cashSoFar, marketRows, settlementFlights } from './settlementModel';
+import { cashSoFar, marketRows, settlementFlights, type Flight } from './settlementModel';
 import { VoyageEventCard, VoyageEventChip } from './VoyageEventCard';
 import type { RoundCard } from './roundCard';
 import { TideIcon } from './tideIcons';
@@ -56,12 +58,60 @@ export type ResolutionStage = 'wanted' | 'event' | 'reveal' | 'voyage' | 'market
 
 /** Pace of each part, in ms (initial values to tune in play). */
 const PACE = { wanted: 3000, revealGroup: 1600, nextShip: 1000, marketRow: 1000, afterMarket: 5000, flight: 1100, afterSettle: 900 } as const;
+/** V0.8 prototype: a building's own show holds the settlement this long (ms), a little past the show itself. */
+const WORK_PACE = WORK_SECONDS * 1000 + 200;
 /**
  * The market card stands on the sea off the market island's front right, a bearing no seat's lane
  * takes with three or four players, so it covers neither the island's price board nor a berth.
  */
 const MARKET_CARD_BEARING = (40 * Math.PI) / 180;
 const MARKET_CARD_AT = [Math.cos(MARKET_CARD_BEARING) * (TARGET_ISLAND_RADIUS + 9), 1, Math.sin(MARKET_CARD_BEARING) * (TARGET_ISLAND_RADIUS + 9)] as const;
+/**
+ * V0.8 prototype: a building's show is small from over the whole table, so the camera comes in on its owner's island
+ * for it, with the ship the armory's guns fire on (the tradehouse's show stays on the island).
+ */
+function workCamera(flight: Flight, ctx: PlaceContext): FitPoint[] {
+  const [x, , z] = placePoint({ kind: 'island', playerId: flight.playerId }, ctx);
+  const ship = flight.work?.building === 'armory' && flight.shipId !== null ? [{ position: placePoint({ kind: 'ship', shipId: flight.shipId }, ctx) }] : [];
+  return [...around([x, 0, z], PLAYER_ISLAND_RADIUS + 2.5), { position: [x, 12, z] }, ...ship];
+}
+
+/** V0.8 prototype: a building's show at a ship's outcome (the repair yard, the armory's counter-fire): its owner's island and that ship. */
+function voyageWorkCamera(r: Pick<FacilityReaction, 'playerId' | 'shipId'>, ctx: PlaceContext): FitPoint[] {
+  const [x, , z] = placePoint({ kind: 'island', playerId: r.playerId }, ctx);
+  if (r.shipId === null) return [...around([x, 0, z], PLAYER_ISLAND_RADIUS + 2.5), { position: [x, 12, z] }];
+  const at = placePoint({ kind: 'ship', shipId: r.shipId }, ctx);
+  // The ship's result card stands aside meanwhile (`asideOf`): it stays in the picture too.
+  const [cx, , cz] = asideOf(at, r, ctx);
+  return [...around([x, 0, z], PLAYER_ISLAND_RADIUS + 2.5), { position: [x, 12, z] }, ...around(at, 6), { position: [cx, 0, cz], clearance: RESULT_CARD_ROOM }];
+}
+
+/** Screen room kept over the spot the ship's result card moves to during a building's show, in px. */
+const RESULT_CARD_ROOM = 270;
+
+/** How far to the side of the island-to-ship line the ship's result card stands, as a share of that line's length. */
+const CARD_ASIDE = 0.55;
+
+/**
+ * `at` (the ship's result card) moved off the line from the building's island to the ship, square to it: to the far
+ * side of the table when there is one, else to the right.
+ */
+function asideOf(at: readonly [number, number, number], r: Pick<FacilityReaction, 'playerId' | 'shipId'>, ctx: PlaceContext): readonly [number, number, number] {
+  if (r.shipId === null) return at;
+  const [ix, , iz] = placePoint({ kind: 'island', playerId: r.playerId }, ctx);
+  const [sx, , sz] = placePoint({ kind: 'ship', shipId: r.shipId }, ctx);
+  const [dx, dz] = [ix - sx, iz - sz];
+  // The two normals of the line; the one that leads up the screen (−z), and on a tie the one that leads right (+x).
+  const [nx, nz] = dx < -1e-6 || (Math.abs(dx) <= 1e-6 && dz < 0) ? [-dz, dx] : [dz, -dx];
+  return [at[0] + nx * CARD_ASIDE, at[1], at[2] + nz * CARD_ASIDE];
+}
+
+/** Where a building's show is said: at the near rim of its owner's island. */
+function workChipAt(flight: Flight, ctx: PlaceContext): readonly [number, number, number] {
+  const [x, , z] = placePoint({ kind: 'island', playerId: flight.playerId }, ctx);
+  return [x, 0, z + PLAYER_ISLAND_RADIUS * 0.8];
+}
+
 /** The card is about this wide on the table (it hangs centered on its point), so the camera keeps both its sides in view. */
 const MARKET_CARD_HALF = 10;
 /** Ships that do not involve you play this much faster (presentation default, see the doc §4). */
@@ -280,7 +330,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   const rows = useMemo(() => (round === null ? [] : marketRows(events, round, cardDemand)), [events, round, cardDemand]);
   const [rowsShown, setRowsShown] = useTicker(rows.length, PACE.marketRow, stage === 'market', `${round}-market`);
   const flights = useMemo(() => (round === null ? [] : settlementFlights(events, round)), [events, round]);
-  const [flightsShown, setFlightsShown] = useTicker(flights.length, PACE.flight, stage === 'settle', `${round}-settle`);
+  const [flightsShown, setFlightsShown] = useTicker(flights.length, (shown) => (flights[shown - 1]?.work ? WORK_PACE : PACE.flight), stage === 'settle', `${round}-settle`);
   useEffect(() => {
     if (stage === 'market' && rowsShown >= rows.length) {
       if (holdMarket) return undefined;
@@ -338,11 +388,12 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     ? [
         {
           id: `flight-${flying.key}`,
-          position: placePoint(flying.to, placeCtx),
+          // A building's show is said under its island, clear of the roof and the ship the show plays over.
+          position: flying.work ? workChipAt(flying, placeCtx) : placePoint(flying.to, placeCtx),
           // A far-side island sits near the phone's edge and the chip is wider than its room: keep it on screen.
           clamp: true,
           node: (
-            <span key={flying.key} className={`flight-chip ${flying.amount !== null && flying.amount < 0 ? 'down' : ''}`} style={{ borderColor: colorOf(flying.playerId) }}>
+            <span key={flying.key} className={`flight-chip ${flying.amount !== null && flying.amount < 0 ? 'down' : ''} ${flying.work ? 'work' : ''}`} style={{ borderColor: colorOf(flying.playerId) }}>
               {flying.amount !== null && <b>{flying.amount >= 0 ? '+' : '−'}{Math.abs(flying.amount)} G</b>} {flying.playerId === viewer ? '你' : nameOf(flying.playerId)} · {withGoodIcons(flying.label)}{flying.shipId && <small> · {shipLabel(events, round!, flying.shipId, viewer, nameOf)}</small>}
             </span>
           ),
@@ -374,17 +425,30 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   }
   // 拾荒 pays at the market: said over the freighter owner's island once the market has settled, like a building's line.
   const salvaged = round === null ? [] : skillMoments(events, round).filter((m) => m.at === 'market');
-  const reactions: Reaction[] = [
-    ...(round === null ? [] : facilityReactions(events, round)),
-    ...salvaged.map((m): Reaction => ({ playerId: m.playerId, shipId: null, effect: m.effect, text: `${m.name}：${m.text}` })),
-  ];
+  // The armory's and the tradehouse's effects are about money: they play as shows of their own in the settlement (`flights`).
+  const voyageWorks = round === null ? [] : facilityReactions(events, round).filter((r) => !SETTLED_EFFECTS.has(r.effect));
+  const atOutcome = voyageWorks.filter((r) => !ESCORT_EFFECTS.has(r.effect));
+  // The armory covering the ship it armed: the volley goes off at the guard step its +1 is in, and is said there.
+  const coverStep = stage === 'voyage' && beat ? beat.steps.findIndex((s) => s.armory) : -1;
+  const covering = coverStep >= 0 && beat && playback.view.stepsShown > coverStep ? voyageWorks.filter((r) => r.shipId === beat.shipId && ESCORT_EFFECTS.has(r.effect)) : [];
+  const escorts = playback.view.stepsShown === coverStep + 1 && !playback.view.showOutcome ? covering : [];
+  const reactions: Reaction[] = [...atOutcome, ...salvaged.map((m): Reaction => ({ playerId: m.playerId, shipId: null, effect: m.effect, text: `${m.name}：${m.text}` }))];
   const working =
     stage === 'voyage' && beat && playback.view.showOutcome
       ? reactions.filter((r) => r.shipId === beat.shipId)
-      : stage === 'market' && rowsShown >= rows.length
-        ? reactions.filter((r) => r.shipId === null)
-        : [];
-  const facilityPulses = new Map(working.map((r) => [r.playerId, `${round}-${r.shipId ?? 'market'}-${r.effect}`]));
+      : escorts.length > 0
+        ? escorts
+        : stage === 'market' && rowsShown >= rows.length
+          ? reactions.filter((r) => r.shipId === null)
+          : [];
+  // The repair yard at work on the ship whose outcome is showing: planks from the yard, the kept crates up on deck.
+  const repairs = stage === 'voyage' && beat && playback.view.showOutcome ? atOutcome.filter((r) => r.shipId === beat.shipId && r.building === 'repairyard') : [];
+  // The armory firing back on the pirates at that ship: the volley, and their fine coming home to the tower.
+  const counters = stage === 'voyage' && beat && playback.view.showOutcome ? atOutcome.filter((r) => r.shipId === beat.shipId && r.effect === 'armory-counter') : [];
+  const facilityPulses = new Map([
+    ...working.map((r) => [r.playerId, `${round}-${r.shipId ?? 'market'}-${r.effect}`] as const),
+    ...(flying?.work ? [[flying.playerId, flying.key] as const] : []),
+  ]);
   const reactionPins: TablePin[] = [...new Set(working.map((r) => r.playerId))].map((id) => {
     const [x, , z] = seatPosition(angles[laneOf(id)]!);
     const mine = working.filter((r) => r.playerId === id);
@@ -448,10 +512,17 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
 
   const camera: readonly FitPoint[] | null =
     stage === 'voyage'
-      ? (layer?.camera ?? null)
+      ? // The repair yard's planks and the armory's counter-fire cross from the island to the ship: both in the picture.
+        ((repairs[0] ?? counters[0] ?? escorts[0]) ? voyageWorkCamera((repairs[0] ?? counters[0] ?? escorts[0])!, badgeCtx) : (layer?.camera ?? null))
       : stage === 'market'
         ? [...around([0, 0, 0], 20), ...[-MARKET_CARD_HALF, MARKET_CARD_HALF].map((dx) => ({ position: [MARKET_CARD_AT[0] + dx, MARKET_CARD_AT[1], MARKET_CARD_AT[2]] as const, clearance: 220 }))]
-        : null;
+        : stage === 'settle' && flying?.work
+          ? workCamera(flying, placeCtx)
+          : null;
+
+  // The ship's result card hangs over the ship, in the way of what a building sends across to it: it stands aside meanwhile.
+  const crossing = stage === 'voyage' ? (repairs[0] ?? counters[0] ?? escorts[0]) : undefined;
+  const beatPins: readonly TablePin[] = crossing ? (layer?.pins ?? []).map((pin) => (pin.id === `tag-${crossing.shipId}` ? { ...pin, position: asideOf(pin.position, crossing, badgeCtx), clamp: true } : pin)) : (layer?.pins ?? []);
 
   const current = groups[Math.max(0, groupsShown - 1)];
   const allRevealed = groupsShown >= groups.length;
@@ -528,7 +599,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     camera,
     ringed: layer?.ringed,
     wrapShip: layer?.wrapShip,
-    pins: [...badgePins, ...(layer?.pins ?? []), ...marketPins, ...flightPins, ...reactionPins],
+    pins: [...badgePins, ...beatPins, ...marketPins, ...flightPins, ...reactionPins],
     facilityPulses,
     skillPulses,
     scene: (
@@ -537,6 +608,18 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
         {showArrows && <RoleArrows arrows={shownArrows} colorOf={colorOf} dimmed={(a) => olderArrows.has(a.key)} />}
         {layer?.scene}
         {flying && <Flights key={flying.key} flights={[flying]} ctx={placeCtx} />}
+        {repairs.map((r) => {
+          const [x, , z] = placePoint({ kind: 'ship', shipId: r.shipId! }, badgeCtx);
+          return <RepairRun key={`${round}-${r.shipId}-${r.effect}`} angle={angles[laneOf(r.playerId)]!} ship={[x, 0, z]} goods={workGoods(events, round!, r)} shield={r.shields !== undefined} />;
+        })}
+        {counters.map((r) => {
+          const [x, , z] = placePoint({ kind: 'ship', shipId: r.shipId! }, badgeCtx);
+          return <CannonVolley key={`${round}-${r.shipId}-${r.effect}`} angle={angles[laneOf(r.playerId)]!} ship={[x, 0, z]} />;
+        })}
+        {covering.map((r) => {
+          const [x, , z] = placePoint({ kind: 'ship', shipId: r.shipId! }, badgeCtx);
+          return <CannonVolley key={`${round}-${r.shipId}-${r.effect}`} angle={angles[laneOf(r.playerId)]!} ship={[x, 0, z]} coins={false} />;
+        })}
       </>
     ),
     bar,

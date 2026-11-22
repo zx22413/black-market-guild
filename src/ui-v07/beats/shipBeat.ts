@@ -19,6 +19,8 @@ export interface BeatStep {
   readonly boosted: readonly PlayerId[];
   /** The voyage event (kind 'event') or the owner's island (kind 'island'). */
   readonly source: VoyageEventId | IslandId | null;
+  /** V0.8 prototype: the owner's armory covers the ship at this guard step (it left with arms aboard); absent otherwise. */
+  readonly armory?: true;
 }
 
 export interface BeatCash {
@@ -142,20 +144,24 @@ export function buildShipBeat(events: readonly MatchEvent[], shipId: ShipId): Sh
   const smuggling = inRound.find((e): e is Extract<MatchEvent, { type: 'smuggling-settled' }> => e.type === 'smuggling-settled' && e.shipId === shipId);
   const confiscated = inRound.filter((e): e is Extract<MatchEvent, { type: 'goods-confiscated' }> => e.type === 'goods-confiscated' && e.shipId === shipId);
 
+  // V0.8 prototype: the ship left with arms aboard and its owner has the armory; the +1 is in the guard step.
+  const armed = inRound.some((e) => e.type === 'v08-effect' && e.effect === 'armory-armed' && e.shipId === shipId);
+  const covered = (steps: readonly BeatStep[]): BeatStep[] => steps.map((s) => (armed && s.kind === 'guard' && s.delta > 0 ? { ...s, armory: true as const } : s));
+
   return {
     round,
     shipId,
     owner,
     type: ship?.type ?? 'standard',
     start: mod.base,
-    steps: modifierSteps(
+    steps: covered(modifierSteps(
       mod,
       deployedOn(deployed, 'guard', shipId),
       deployedOn(deployed, 'pirate', shipId),
       voyageEvent?.type === 'voyage-event-revealed' ? voyageEvent.event : null,
       islands?.type === 'islands-chosen' ? (islands.islands[owner] ?? null) : null,
       (id) => (islands?.type === 'islands-chosen' ? (islands.islands[id] ?? null) : null),
-    ),
+    )),
     final: mod.final,
     outcome: resolved.outcome,
     cargo: resolved.cargo,

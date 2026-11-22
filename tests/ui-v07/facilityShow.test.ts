@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { RULES_V08_PROTO, type MatchEvent } from '../../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../src/v07/match';
-import { buildersOf, launchWorks, skillOpenersOf, facilityReactions, materialMoments, mergeMoments } from '../../src/ui-v07/table3d/facilityShow';
+import { ESCORT_EFFECTS, SETTLED_EFFECTS, buildersOf, launchWorks, skillOpenersOf, facilityReactions, materialMoments, mergeMoments, workGoods } from '../../src/ui-v07/table3d/facilityShow';
 
 const islands = { p1: 'mine', p2: 'lumber' } as const;
 
@@ -58,8 +58,8 @@ describe('buildings at work (V0.8 prototype, not rules)', () => {
       { type: 'v08-effect', round: 4, playerId: 'p2', shipId: 's2', effect: 'armory', crates: 0, value: 60 },
     ];
     expect(facilityReactions(events, 3)).toEqual([
-      { playerId: 'p1', building: 'repairyard', shipId: 's1', effect: 'repairyard', text: '修船廠：少掉 1 箱' },
-      { playerId: 'p2', building: 'tradehouse', shipId: null, effect: 'crash-shield', text: '商行：擋下崩盤潮', shields: 'crash' },
+      { playerId: 'p1', building: 'repairyard', shipId: 's1', effect: 'repairyard', text: '修船廠：少掉 1 箱', crates: 1 },
+      { playerId: 'p2', building: 'tradehouse', shipId: null, effect: 'crash-shield', text: '商行：擋下崩盤潮', crates: 2, shields: 'crash' },
     ]);
     expect(facilityReactions(events, 4)[0]!.text).toBe('軍械庫：海盜少拿 60 G');
   });
@@ -80,5 +80,55 @@ describe('buildings at work (V0.8 prototype, not rules)', () => {
       }
     }
     expect(seen).toBeGreaterThan(0);
+  });
+});
+
+describe("the crates a building's show puts on screen (V0.8 prototype, not rules)", () => {
+  const events: MatchEvent[] = [
+    { type: 'trade-protected', round: 2, protect: { p1: 'spice' } },
+    { type: 'ship-resolved', round: 2, shipId: 's1', outcome: 'arrived', cargo: { wood: 1, iron: 0, spice: 2, arms: 4 } } as MatchEvent,
+  ];
+  const of = (effect: 'tradehouse' | 'crash-shield' | 'repairyard' | 'armory', crates: number) => workGoods(events, 2, { playerId: 'p1', shipId: 's1', effect, crates });
+
+  it('shows the named good for the tradehouse, one crate per unit on board', () => {
+    expect(of('tradehouse', 0)).toEqual(['spice', 'spice']);
+  });
+
+  it("shows the ship's other goods for the crash-tide shield, three at most", () => {
+    expect(of('crash-shield', 5)).toEqual(['wood', 'arms', 'arms']);
+    expect(of('crash-shield', 1)).toEqual(['wood']);
+  });
+
+  it('shows as many crates as the repair yard kept, and none for the armory', () => {
+    expect(of('repairyard', 2)).toEqual(['wood', 'spice']);
+    expect(of('armory', 0)).toEqual([]);
+  });
+
+  it('shows the crate the tradehouse bought out of its own owner\'s warehouse', () => {
+    const bought: MatchEvent[] = [
+      { type: 'leftover-bought', round: 2, playerId: 'p2', good: 'iron', value: 75 },
+      { type: 'leftover-bought', round: 2, playerId: 'p1', good: 'arms', value: 95 },
+      { type: 'leftover-bought', round: 3, playerId: 'p1', good: 'wood', value: 75 },
+    ];
+    expect(workGoods(bought, 2, { playerId: 'p1', shipId: null, effect: 'tradehouse-buyout', crates: 1 })).toEqual(['arms']);
+  });
+
+  it('words the covering fire, the counter-fire and the buyout', () => {
+    const effects: MatchEvent[] = [
+      { type: 'v08-effect', round: 2, playerId: 'p1', shipId: 's1', effect: 'armory-armed', crates: 0, value: 0 },
+      { type: 'v08-effect', round: 2, playerId: 'p1', shipId: 's1', effect: 'armory-counter', crates: 1, value: 100 },
+      { type: 'v08-effect', round: 2, playerId: 'p2', shipId: null, effect: 'tradehouse-buyout', crates: 1, value: 95 },
+    ];
+    expect(facilityReactions(effects, 2).map((r) => r.text)).toEqual(['軍械庫：砲台護航', '軍械庫：擊退海盜 +100 G', '商行：收購剩貨 +95 G']);
+    // The covering fire plays at the ship's guard step, not at its outcome and not in the settlement.
+    expect(ESCORT_EFFECTS.has('armory-armed') && !SETTLED_EFFECTS.has('armory-armed')).toBe(true);
+    // The counter-fire plays with the voyage (the pirates are driven off before the die is read); the buyout in the settlement.
+    expect(SETTLED_EFFECTS.has('armory-counter')).toBe(false);
+    expect(SETTLED_EFFECTS.has('tradehouse-buyout')).toBe(true);
+  });
+
+  it('plays the armory and the tradehouse in the settlement, the repair yard with the voyage', () => {
+    expect(SETTLED_EFFECTS.has('armory') && SETTLED_EFFECTS.has('pirate-toll') && SETTLED_EFFECTS.has('crash-shield')).toBe(true);
+    expect(SETTLED_EFFECTS.has('repairyard') || SETTLED_EFFECTS.has('storm-shield')).toBe(false);
   });
 });

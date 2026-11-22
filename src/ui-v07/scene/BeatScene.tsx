@@ -243,7 +243,7 @@ function RamFx({ ship, from, delay = HIT_DELAY.ram }: { readonly ship: Vector3; 
 }
 
 /** The guards' shield: a blue dome flares around the ship, rings run out on the water, glitter rises. */
-function ShieldFx({ at, delay = HIT_DELAY.shield, color = '#7ec8ff', size = 1 }: { readonly at: Vector3; readonly delay?: number; readonly color?: string; readonly size?: number }) {
+export function ShieldFx({ at, delay = HIT_DELAY.shield, color = '#7ec8ff', size = 1 }: { readonly at: Vector3; readonly delay?: number; readonly color?: string; readonly size?: number }) {
   const dome = useRef<Mesh>(null);
   const start = useRef<number | null>(null);
   useFrame(({ clock }) => {
