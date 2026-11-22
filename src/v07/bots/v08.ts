@@ -578,8 +578,10 @@ function buildPerVoyage(view: PlayerView, building: V08BuildingId, cache: V08Cac
   const player = me(view);
   const facility = facilityOf(rules, player);
   const types = SHIP_TYPE_IDS.filter((t) => t !== 'freighter' || building === 'repairyard');
+  // TYPE_USE are relative weights (they sum to more than 1): share them out so this is one voyage's gain.
+  const weight = SHIP_TYPE_IDS.reduce((sum, t) => sum + TYPE_USE[t], 0);
   const tableGain = types.reduce(
-    (sum, t) => sum + TYPE_USE[t] * (voyageWorth(view, player, t, skillLevel(rules, player, t), building, cache) - voyageWorth(view, player, t, skillLevel(rules, player, t), facility, cache)),
+    (sum, t) => sum + (TYPE_USE[t] / weight) * (voyageWorth(view, player, t, skillLevel(rules, player, t), building, cache) - voyageWorth(view, player, t, skillLevel(rules, player, t), facility, cache)),
     0,
   );
   return tableGain + buildingExtras(view, player, building, cache);
