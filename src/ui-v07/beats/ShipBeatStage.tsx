@@ -3,6 +3,7 @@ import { GoodIcon } from '../table3d/GoodIcon';
 import { ArrowIcon } from '../table3d/icons';
 import { GOODS, type PlayerId, type ShipTypeId } from '../../v07/game';
 import { CASH_REASON_LABELS, ISLAND_LABELS, ROLE_LABELS, SHIP_TYPE_LABELS, VOYAGE_EVENT_LABELS } from '../labels';
+import { FACILITY_LABELS } from '../table/v08Text';
 import { shipMeter } from './shipMeter';
 import { dieTop, type BeatView } from './beatTimeline';
 import type { BeatStep, ShipBeat } from './shipBeat';
@@ -21,6 +22,9 @@ export function stepTitle(step: BeatStep, names: Names, top = 6): { readonly nam
   const who = step.actors.map((id) => names[id] ?? id).join('、');
   switch (step.kind) {
     case 'guard':
+      // V0.8 prototype: the owner's armory is in this step (the armed ship's bonus counts with the guards'); the events
+      // give one number for both, so with guards aboard too the step names both.
+      if (step.armory) return step.actors.length === 0 ? { name: FACILITY_LABELS.armory, who: '船上有軍火' } : { name: `${ROLE_LABELS.guard}＋${FACILITY_LABELS.armory}`, who };
       return { name: ROLE_LABELS.guard, who };
     case 'pirate':
       return { name: ROLE_LABELS.pirate, who };

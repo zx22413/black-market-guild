@@ -406,7 +406,9 @@ export const RULES_V08_PROTO: Rules = {
     armory: { ...V08_OFF.armory, armedBonus: 1, armedMaxFinal: 0, lootPercent: 100 },
     // 2026-11-15: each building shields its owner from the matching tide (repairyard ↔ storm, armory ↔ pirate,
     // tradehouse ↔ crash), and bots value pirate deployments with the crate tables.
-    repairyard: { ...V08_OFF.repairyard, immuneStormTide: 1 },
+    // 2026-11-23 (playtest notes §10.17): the save applies to the freighter too (1–3), so it saves on every ship that
+    // loses crates; leaving it out was a leftover of the lumber island variant.
+    repairyard: { ...V08_OFF.repairyard, immuneStormTide: 1, freighter: 1 },
     // 2026-11-22 (user): no naming; 收購剩貨 buys a leftover crate each round with no percent to work out. The track's
     // lowest cell (about 90 G a crate) made it a must-build (§10.14); a fixed 60 G for the cheapest crate is the default.
     tradehouse: { ...V08_OFF.tradehouse, immuneCrashTide: 1, named: 0, buyoutFixed: 60 },

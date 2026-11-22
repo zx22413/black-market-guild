@@ -38,6 +38,7 @@ export const RULES_V08_PRE_ARMED: Rules = {
   v08: {
     ...RULES_V08_PROTO.v08,
     armory: { ...RULES_V08_PROTO.v08.armory, halveAllLoot: 1, refundSunkLoot: 1, armedBonus: 0, armedMaxFinal: 0, counter: 0, counterBlunts: 0, lootPercent: 35, immunePirateTide: 1 },
+    repairyard: { ...RULES_V08_PROTO.v08.repairyard, freighter: 0 },
     tradehouse: { ...RULES_V08_PROTO.v08.tradehouse, named: 1, buyoutFloor: 0, buyoutFixed: 0 },
     events: { ...RULES_V08_PROTO.v08.events, tidePirateArrivalCrates: 0 },
   },

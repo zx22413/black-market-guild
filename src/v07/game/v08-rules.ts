@@ -53,8 +53,10 @@ export interface V08Rules {
   /**
    * `immuneStormTide`: 1 = the storm tide's extra crate loss (events.tideStormExtraLoss) never applies to the owner's
    * ships (freighter included); the normal save is unchanged.
+   * `freighter`: 1 = the save also applies to the freighter (it never sinks, so from the lowest final up to `toFinal`);
+   * 0 = only on the lumber island variant.
    */
-  readonly repairyard: { readonly fromFinal: number; readonly toFinal: number; readonly save: number; readonly immuneStormTide: number };
+  readonly repairyard: { readonly fromFinal: number; readonly toFinal: number; readonly save: number; readonly immuneStormTide: number; readonly freighter: number };
   /**
    * `halveAllLoot`: 1 = the armory halves every pirate take from the owner's ships (sinking loot and arrival loot, the
    * wanted bonus as before); 0 = only sinking loot, capped at `lootPercent`.
@@ -250,7 +252,7 @@ export const V08_OFF: V08Rules = {
   freighter: { salvageL1: 1, salvageL2: 2, salvageShared: 0 },
   hidden: { privateL1: 1, privateL2: 2, privateArrives: 0, privateLoses: 0, privateSafeFromInspectionL2: 0, feeFreeL1: 0, selfCoverL1: 0 },
   breaker: { extraFromL1: 6, extraFromL2: 5, extraDieSides: 6 },
-  repairyard: { fromFinal: 2, toFinal: 3, save: 1, immuneStormTide: 0 },
+  repairyard: { fromFinal: 2, toFinal: 3, save: 1, immuneStormTide: 0, freighter: 0 },
   armory: { lootPercent: 35, halveAllLoot: 0, immunePirateTide: 0, pirateToll: 0, halveCustoms: 0, refundSunkLoot: 0, armedBonus: 0, armedMaxFinal: 0, counter: 0, counterFine: 50, counterBlunts: 0, counterArms: 1, counterCharges: 0 },
   tradehouse: { immuneCrashTide: 0, named: 1, premiumCrates: 0, buyoutPercent: 0, buyoutFloor: 0, buyoutFixed: 0 },
   islands: { lighthouseFades: 0, freePortGamblerNoRest: 0, lighthouseBeacon: 0, ownShipMinRaw: 0, freePortFeePercent: 0 },

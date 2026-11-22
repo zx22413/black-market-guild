@@ -176,7 +176,10 @@ function termsAt(rules: Rules, type: ShipTypeId, final: number, context: CrateCo
     context.facility === 'repairyard' &&
     base >= 1 &&
     final <= toFinal &&
-    ((canSink(rules, type) && final >= fromFinal) || hasVariant(rules, context.island, context.facility, 'lumber', 'repairyard'));
+    // v08.repairyard.freighter: the freighter, which never sinks, is saved from its lowest final up.
+    ((canSink(rules, type) && final >= fromFinal) ||
+      (!canSink(rules, type) && rules.v08.repairyard.freighter === 1) ||
+      hasVariant(rules, context.island, context.facility, 'lumber', 'repairyard'));
   const storm = stormTideExtra(rules, type, final, context);
   if (storm > 0) {
     return { sinks: false, lose: Math.max(0, base + storm - (repaired ? save : 0)), percent: lookup(table.multiplier, final) };

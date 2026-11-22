@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { RULES_V07, shipSinks, type MatchEvent } from '../../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../src/v07/match';
 import { BEAT_PACE, DIE_HOLD, beatCues, beatView, cuesStarted } from '../../src/ui-v07/beats/beatTimeline';
+import { stepTitle } from '../../src/ui-v07/beats/ShipBeatStage';
 import { buildReceipt, buildShipBeat, crateStates, resolvedShips } from '../../src/ui-v07/beats/shipBeat';
 
 const seats: SeatConfig[] = ['A', 'B', 'C', 'D'].map((name, i) => ({
@@ -173,6 +174,13 @@ describe("the armory's covering fire in a ship beat (V0.8 prototype, not rules)"
     const cues = beatCues(beat);
     const at = cues.findIndex((c) => c.kind === 'step' && c.index === 0);
     expect(cues[at + 1]!.at - cues[at]!.at).toBe(BEAT_PACE.island);
+  });
+
+  it('names the step after the armory, and after both when guards are aboard too', () => {
+    const step = buildShipBeat(events(true, 1), 's1')!.steps[0]!;
+    expect(stepTitle(step, {}).name).toBe('軍械庫');
+    expect(stepTitle({ ...step, actors: ['p2'] }, { p2: '金錨公會' })).toEqual({ name: '護衛＋軍械庫', who: '金錨公會' });
+    expect(stepTitle(buildShipBeat(events(false, 1), 's1')!.steps[0]!, {}).name).toBe('護衛');
   });
 
   it('leaves a ship alone that was not armed, or whose die the guard step did not raise', () => {

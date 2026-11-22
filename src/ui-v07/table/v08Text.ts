@@ -10,7 +10,8 @@ export function facilityText(rules: Rules, building: V08BuildingId): string {
   const v = rules.v08;
   switch (building) {
     case 'repairyard':
-      return `最終值 ${v.repairyard.fromFinal}～${v.repairyard.toFinal} 少掉 ${v.repairyard.save} 箱`;
+      // v08.repairyard.freighter: the freighter never sinks, so its window starts at the lowest final.
+      return `最終值 ${v.repairyard.fromFinal}～${v.repairyard.toFinal} 少掉 ${v.repairyard.save} 箱${v.repairyard.freighter === 1 ? `（巨鯨號 ${rules.sailing.dieMin}～${v.repairyard.toFinal}）` : ''}`;
     case 'armory':
       return [
         armedText(rules),
