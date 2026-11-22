@@ -402,7 +402,8 @@ export const RULES_V08_PROTO: Rules = {
     // 2026-11-22 (user): the armory is the armed merchant instead: a ship leaving with arms is +1, and spends a crate of
     // arms to repel the pirates on it (each pirate's owner pays 50 G); the halving and the refund are off. Same day,
     // too strong in a controlled run (§10.13): the +1 only saves a ship whose final would be 1–3 (1–2 was too weak).
-    armory: { ...V08_OFF.armory, immunePirateTide: 1, armedBonus: 1, armedMaxFinal: 3, counter: 1, counterFine: 50 },
+    // 2026-11-22 (playtest notes §10.16): only the armed merchant's +1, at any final; no counterattack, no tide shield.
+    armory: { ...V08_OFF.armory, armedBonus: 1, armedMaxFinal: 0, lootPercent: 100 },
     // 2026-11-15: each building shields its owner from the matching tide (repairyard ↔ storm, armory ↔ pirate,
     // tradehouse ↔ crash), and bots value pirate deployments with the crate tables.
     repairyard: { ...V08_OFF.repairyard, immuneStormTide: 1 },

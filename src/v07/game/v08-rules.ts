@@ -71,6 +71,10 @@ export interface V08Rules {
    * `counter`: 1 = an armed ship that other players' pirates target spends 1 crate of arms to repel them all (they count
    * as absent: no modifier, no loot), and each repelled pirate's owner pays the ship's owner `counterFine` G (capped at
    * their cash). See v08-armory.ts.
+   * `counterBlunts`: 1 = the counterattack only cancels the pirates' modifier on that ship (`blunted`): they stay aboard
+   * and still loot it if it sinks or (海盜潮) arrives; the crate of arms and the fine are as with `counter` alone.
+   * `counterArms`: crates of arms the counterattack spends (the ship needs that many aboard); 0 = every crate aboard.
+   * `counterCharges`: counterattacks each armory owner may make per match (`PlayerState.counterUsed`); 0 = no limit.
    */
   readonly armory: {
     readonly lootPercent: number;
@@ -83,6 +87,9 @@ export interface V08Rules {
     readonly armedMaxFinal: number;
     readonly counter: number;
     readonly counterFine: number;
+    readonly counterBlunts: number;
+    readonly counterArms: number;
+    readonly counterCharges: number;
   };
   /**
    * `immuneCrashTide`: 1 = while the crash tide multiplies a price drop, the owner's own arriving crates (every good) sell
@@ -244,7 +251,7 @@ export const V08_OFF: V08Rules = {
   hidden: { privateL1: 1, privateL2: 2, privateArrives: 0, privateLoses: 0, privateSafeFromInspectionL2: 0, feeFreeL1: 0, selfCoverL1: 0 },
   breaker: { extraFromL1: 6, extraFromL2: 5, extraDieSides: 6 },
   repairyard: { fromFinal: 2, toFinal: 3, save: 1, immuneStormTide: 0 },
-  armory: { lootPercent: 35, halveAllLoot: 0, immunePirateTide: 0, pirateToll: 0, halveCustoms: 0, refundSunkLoot: 0, armedBonus: 0, armedMaxFinal: 0, counter: 0, counterFine: 50 },
+  armory: { lootPercent: 35, halveAllLoot: 0, immunePirateTide: 0, pirateToll: 0, halveCustoms: 0, refundSunkLoot: 0, armedBonus: 0, armedMaxFinal: 0, counter: 0, counterFine: 50, counterBlunts: 0, counterArms: 1, counterCharges: 0 },
   tradehouse: { immuneCrashTide: 0, named: 1, premiumCrates: 0, buyoutPercent: 0, buyoutFloor: 0, buyoutFixed: 0 },
   islands: { lighthouseFades: 0, freePortGamblerNoRest: 0, lighthouseBeacon: 0, ownShipMinRaw: 0, freePortFeePercent: 0 },
   botPirateCrates: 0,

@@ -39,6 +39,8 @@ export interface PublicPlayer {
   /** V0.8 prototype (v08.levelUp): launches since opening, public like the launches themselves. */
   readonly practice?: Readonly<Partial<Record<ShipTypeId, number>>>;
   readonly facility?: V08BuildingId;
+  /** V0.8 prototype (v08.armory.counterCharges): counterattacks made so far, public like the counterattacks. */
+  readonly counterUsed?: number;
 }
 
 /** A ship as this player sees it: cargo only for their own ship until it is resolved (§4). */
@@ -119,6 +121,7 @@ export function getPlayerView(state: MatchState, playerId: PlayerId): PlayerView
       ...(p.skills === undefined ? {} : { skills: p.skills }),
       ...(p.practice === undefined ? {} : { practice: p.practice }),
       ...(p.facility === undefined ? {} : { facility: p.facility }),
+      ...(p.counterUsed === undefined ? {} : { counterUsed: p.counterUsed }),
     })),
     myStock: me.stock,
     myIslandOffers: state.islandOffers[playerId] ?? [],

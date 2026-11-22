@@ -131,7 +131,8 @@ export function voyageModifier(state: MatchState, ship: Ship): VoyageModifier {
   // + 0 turns -0 into 0.
   // v08.islands.lighthouseBeacon: the lighthouse lights its owner's ships up for pirates too.
   const beacon = beaconShift(rules, playerOf(state, ship.owner).island);
-  const pirate = targeting(state, ship, 'pirate').reduce((sum, d) => sum + pirateModifier(rules, pe, card) + trait(d.playerId).pirateModifier + beacon, 0) + 0;
+  // v08.armory.counterBlunts: the armed ship fought back, so its pirates' modifier is gone (they still loot).
+  const pirate = ship.blunted === true ? 0 : targeting(state, ship, 'pirate').reduce((sum, d) => sum + pirateModifier(rules, pe, card) + trait(d.playerId).pirateModifier + beacon, 0) + 0;
   const event = eventModifier(state, ship) + 0;
   // v08.islands.ownShipMinRaw: the lighthouse's +1 only on a raw die of 3 or more.
   const island = (ownShipApplies(rules, base) ? ownShipShift(rules, trait(ship.owner).ownShipModifier, pe) : 0) + 0;

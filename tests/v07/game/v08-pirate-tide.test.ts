@@ -6,8 +6,10 @@ import { G, cash, edit, find, plain, playRound, withDemand } from './helpers';
 // pirates on an arriving ship take its priciest crate instead of 30 % of the income. NOT rules.
 
 const V08 = RULES_V08_PROTO;
-const inPirateTide = (stock = G(3, 3, 1, 1)): MatchState => {
-  const base = withDemand(plain(4, V08), G(2, 2, 2, 1));
+/** The armory with its 海盜潮 shield (the prototype dropped it 2026-11-22, §10.16). */
+const SHIELDED: typeof V08 = { ...V08, v08: { ...V08.v08, armory: { ...V08.v08.armory, immunePirateTide: 1 } } };
+const inPirateTide = (stock = G(3, 3, 1, 1), rules = V08): MatchState => {
+  const base = withDemand(plain(4, rules), G(2, 2, 2, 1));
   const stocked = base.players.reduce((s, p) => edit(s, p.id, { stock }), base);
   const patch: Partial<V08EventsState> = { phaseTwoFrom: 1, tide: 'pirate' };
   return { ...stocked, v08Events: { ...stocked.v08Events!, ...patch } };
@@ -37,7 +39,7 @@ describe('V0.8 pirate tide takes a crate', () => {
   it('takes nothing without a pirate, and nothing from an armory owner (the tide shield)', () => {
     expect(effects(sail(inPirateTide(), G(2, 0, 0, 1), false).events, 'pirate-tide')).toHaveLength(0);
     // No arms aboard, so the armory does not fire back: the tide shield keeps the iron crate.
-    const armory = edit(inPirateTide(), 'p1', { facility: 'armory' });
+    const armory = edit(inPirateTide(undefined, SHIELDED), 'p1', { facility: 'armory' });
     const { state, events } = sail(armory, G(2, 1));
     expect(cash(events, 'pirate-loot', 'p2')).toBe(0);
     expect(effects(events, 'pirate-shield')).toMatchObject([{ playerId: 'p1', value: priceAt(V08, 'iron', state.prices.iron) }]);

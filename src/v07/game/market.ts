@@ -460,7 +460,7 @@ function settleSinking(ship: Ship, prices: Prices): StepFn {
     const halves = armory && state.rules.v08.armory.halveAllLoot === 1;
     const share = halves ? Math.floor((cargoValue * normal) / 200) : Math.floor((cargoValue * (armory ? Math.min(normal, state.rules.v08.armory.lootPercent) : normal)) / 100);
     const kept = Math.floor((cargoValue * normal) / 100) - share;
-    if (armory) lost.push(v08Effect(state, ship.owner, ship.id, 'armory', 0, kept));
+    if (armory && kept > 0) lost.push(v08Effect(state, ship.owner, ship.id, 'armory', 0, kept));
     // v08.armory.refundSunkLoot: what the halving kept from the pirates goes to the owner.
     const refund = halves && state.rules.v08.armory.refundSunkLoot === 1 ? kept : 0;
     const loot = Math.floor((share + wantedBonus(state, ship)) / pirates.length);

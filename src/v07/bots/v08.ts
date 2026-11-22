@@ -401,6 +401,18 @@ export function pirateLootCrates(view: PlayerView, ship: ViewShip, pirateShift: 
   const { rules } = view;
   const owner = view.players.find((p) => p.id === ship.owner);
   if (owner === undefined || owner.id === view.playerId) return 0;
+  const expected = expectedLoot(view, ship, owner, pirateShift, bonus, cache);
+  // v08.armory.counter: an armory owner with arms in the warehouse may fight back and fine me; with counterBlunts my
+  // pirate stays aboard without its modifier (I still loot a ship that sinks anyway), otherwise I get nothing.
+  const fought = counterChance(view, owner);
+  if (fought === 0) return expected;
+  const blunted = rules.v08.armory.counterBlunts === 1 ? expectedLoot(view, ship, owner, 0, bonus, cache) : 0;
+  return expected * (1 - fought) + fought * blunted - fought * rules.v08.armory.counterFine;
+}
+
+/** pirateLootCrates without the counterattack: my expected take with my pirate's modifier `pirateShift`. */
+function expectedLoot(view: PlayerView, ship: ViewShip, owner: PublicPlayer, pirateShift: number, bonus: number, cache: V08Cache): number {
+  const { rules } = view;
   const delayed = rules.ships.types[ship.type].delay > 0;
   const event = delayed ? null : view.voyageEvent;
   const tide = delayed ? nextRoundTide(view.events) : activeTide(view.events);
@@ -441,9 +453,7 @@ export function pirateLootCrates(view: PlayerView, ship: ViewShip, pirateShift: 
     }
     return sum + p * (take > 0 ? take + bonus : 0);
   }, 0);
-  // v08.armory.counter: an armory owner with arms in the warehouse may repel me (no loot) and fine me.
-  const repelled = counterChance(view, owner);
-  return expected * (1 - repelled) - repelled * rules.v08.armory.counterFine;
+  return expected;
 }
 
 /** Share of my voyages that carry arms, for the armed merchant (bots load about 0.75 crate of arms a ship). */
@@ -471,14 +481,22 @@ function armedMerchantValue(view: PlayerView, player: PublicPlayer, cache: V08Ca
       ? finals(view, plan, cache).reduce((sum, [final, p]) => sum + (final <= maxFinal ? p * (keep(Math.min(top, final + bonus)) - keep(final)) : 0), 0) * cargo
       : (share(bonus) - share(0)) * cargo;
   const counter =
-    rules.v08.armory.counter === 1 ? PIRATE_ON_ME * (rules.v08.armory.counterFine + (share(bonus) - share(bonus - 1)) * cargo - currentPrice(view, 'arms')) : 0;
-  return ARMS_ABOARD * (armed + Math.max(0, counter));
+    rules.v08.armory.counter === 1 ? PIRATE_ON_ME * (rules.v08.armory.counterFine + (share(bonus) - share(bonus - 1)) * cargo - Math.max(1, rules.v08.armory.counterArms) * currentPrice(view, 'arms')) : 0;
+  // v08.armory.counterCharges: only that many counterattacks over the rounds left (about the 2nd advance's middle).
+  const { counterCharges } = rules.v08.armory;
+  const secondAdvance = (rules.v08.events.secondAdvanceFrom + rules.v08.events.secondAdvanceTo) / 2;
+  const roundsLeft = Math.max(1, secondAdvance - view.round + 1);
+  const charges = counterCharges === 0 ? 1 : Math.min(1, Math.max(0, counterCharges - (player.counterUsed ?? 0)) / (roundsLeft * PIRATE_ON_ME));
+  return ARMS_ABOARD * (armed + Math.max(0, counter) * charges);
 }
 
 /** v08.armory.counter: the chance an armory owner's ship carries arms, from their public warehouse. */
 export function counterChance(view: PlayerView, owner: PublicPlayer): number {
   const armedOwner = view.rules.v08.armory.counter === 1 && facilityOf(view.rules, owner) === 'armory';
-  return armedOwner && owner.stock.arms > 0 ? ARMS_ABOARD : 0;
+  // v08.armory.counterCharges: an owner whose counterattacks are used up cannot fire back any more.
+  const { counterCharges, counterArms } = view.rules.v08.armory;
+  const charged = counterCharges === 0 || (owner.counterUsed ?? 0) < counterCharges;
+  return armedOwner && charged && owner.stock.arms >= Math.max(1, counterArms) ? ARMS_ABOARD : 0;
 }
 
 /** What a building adds per round beyond its effect on crate tables (armory, tradehouse, island variants). */

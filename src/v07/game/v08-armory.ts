@@ -5,7 +5,8 @@ import { facilityOf } from './v08';
 
 // V0.8 simulation prototype, the armed merchant (docs/proposals/2026-11-playtest-feedback-and-direction.md §10.13):
 // an armory owner's ship that leaves with arms aboard is armed (+armedBonus); when other players' pirates target it,
-// one crate of arms is spent to repel them all (they count as absent) and each repelling fines its pirate's owner.
+// one crate of arms is spent to repel them all (they count as absent; with counterBlunts they only lose their modifier)
+// and each repelling fines its pirate's owner.
 // NOT rules. With v08.armory.armedBonus and v08.armory.counter at 0 nothing changes.
 
 /** The armed merchant is on: the +1 or the counterattack. */
@@ -38,16 +39,22 @@ export function armShips(state: MatchState): Step {
   if (!armedOn(rules)) return { state, events: [] };
   const fines: ((s: MatchState) => Step)[] = [];
   const reports: MatchEvent[] = [];
+  const fighters: PlayerId[] = [];
   const ships = state.roundState.ships.map((ship): Ship => {
     if (ship.cargo.arms <= 0 || facilityOf(rules, playerOf(state, ship.owner)) !== 'armory') return ship;
     const armed: Ship = { ...ship, armed: true };
     // Report only: the ship leaves armed (its +1 shows in the voyage modifiers).
     if (rules.v08.armory.armedBonus !== 0) reports.push({ type: 'v08-effect', round: state.round, playerId: ship.owner, shipId: ship.id, effect: 'armory-armed', crates: 0, value: 0 });
-    const pirates = rules.v08.armory.counter === 1 ? opposingPirates(state, ship) : [];
+    // v08.armory.counterArms: the crates the counterattack spends (0 = all aboard); too few aboard, no counterattack.
+    const spent = rules.v08.armory.counterArms === 0 ? ship.cargo.arms : rules.v08.armory.counterArms;
+    // v08.armory.counterCharges: an owner who used up the match's counterattacks only keeps the +1.
+    const charged = rules.v08.armory.counterCharges === 0 || (playerOf(state, ship.owner).counterUsed ?? 0) < rules.v08.armory.counterCharges;
+    const pirates = rules.v08.armory.counter === 1 && charged && ship.cargo.arms >= spent ? opposingPirates(state, ship) : [];
     if (pirates.length === 0) return armed;
+    fighters.push(ship.owner);
     const fine = rules.v08.armory.counterFine;
     const paid = pirates.reduce((sum, p) => sum + Math.min(fine, playerOf(state, p).cash), 0);
-    reports.push({ type: 'v08-effect', round: state.round, playerId: ship.owner, shipId: ship.id, effect: 'armory-counter', crates: 1, value: paid });
+    reports.push({ type: 'v08-effect', round: state.round, playerId: ship.owner, shipId: ship.id, effect: 'armory-counter', crates: spent, value: paid });
     for (const p of pirates) {
       fines.push((s) => {
         const amount = Math.min(fine, playerOf(s, p).cash);
@@ -55,9 +62,14 @@ export function armShips(state: MatchState): Step {
         return chain(s, [(t) => changeCash(t, p, -amount, 'armory-fine', ship.id), (t) => changeCash(t, ship.owner, amount, 'armory-fine', ship.id)]);
       });
     }
-    return { ...armed, repelled: true, cargo: { ...ship.cargo, arms: ship.cargo.arms - 1 } };
+    const fought: Ship = rules.v08.armory.counterBlunts === 1 ? { ...armed, blunted: true } : { ...armed, repelled: true };
+    return { ...fought, cargo: { ...ship.cargo, arms: ship.cargo.arms - spent } };
   });
-  const next: MatchState = { ...state, roundState: { ...state.roundState, ships } };
+  const players = state.players.map((p) => {
+    const fought = fighters.filter((id) => id === p.id).length;
+    return fought === 0 ? p : { ...p, counterUsed: (p.counterUsed ?? 0) + fought };
+  });
+  const next: MatchState = { ...state, players, roundState: { ...state.roundState, ships } };
   const paid = chain(next, fines);
   return { state: paid.state, events: [...reports, ...paid.events] };
 }

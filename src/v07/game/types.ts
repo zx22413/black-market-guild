@@ -113,6 +113,8 @@ export interface Ship {
   readonly armed?: true;
   /** V0.8 prototype (v08.armory.counter): the armed ship spent a crate of arms; the pirates on it count as absent. */
   readonly repelled?: true;
+  /** V0.8 prototype (v08.armory.counterBlunts): the pirates on this armed ship lost their modifier (they still loot). */
+  readonly blunted?: true;
 }
 
 /** A locked role deployment (§9). */
@@ -143,6 +145,8 @@ export interface PlayerState {
   readonly practice?: Readonly<Partial<Record<ShipTypeId, number>>>;
   /** V0.8 prototype: the player's one building. */
   readonly facility?: V08BuildingId;
+  /** V0.8 prototype (v08.armory.counterCharges): counterattacks the armory has made this match. */
+  readonly counterUsed?: number;
 }
 
 export interface Build {

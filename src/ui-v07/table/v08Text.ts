@@ -14,7 +14,11 @@ export function facilityText(rules: Rules, building: V08BuildingId): string {
     case 'armory':
       return [
         armedText(rules),
-        v.armory.counter === 1 ? `被海盜鎖定時用掉 1 件軍火反擊：海盜全部被擊退，每個海盜的主人付你 ${v.armory.counterFine} G` : '',
+        v.armory.counter === 1
+          ? v.armory.counterBlunts === 1
+            ? `被海盜鎖定時用掉 1 件軍火反擊：海盜的 −1 不算，每個海盜的主人付你 ${v.armory.counterFine} G`
+            : `被海盜鎖定時用掉 1 件軍火反擊：海盜全部被擊退，每個海盜的主人付你 ${v.armory.counterFine} G`
+          : '',
         v.armory.halveAllLoot === 1 ? (v.armory.refundSunkLoot === 1 ? '海盜搶的減半；船被打沉時，擋下的一半付給你' : '海盜搶的減半') : '',v.armory.pirateToll === 1 ? '派到你船上的海盜，部署費付給你' : '', v.armory.halveCustoms === 1 ? '海關沒收的減半' : ''].filter(Boolean).join('；');
     case 'tradehouse':
       return tradehouseText(rules);
