@@ -54,7 +54,8 @@ describe('role results (stamps)', () => {
     }
   });
 
-  it('shows a 查獲 stamp somewhere in a batch of matches', () => {
+  // Thirty matches: about 2 s alone, over the default 5 s when the whole suite runs at once.
+  it('shows a 查獲 stamp somewhere in a batch of matches', { timeout: 30_000 }, () => {
     const caught = Array.from({ length: 30 }, (_, i) => i + 1).flatMap(play).filter((e) => e.type === 'smuggling-settled' && e.result === 'caught');
     expect(caught.length).toBeGreaterThan(0);
   });

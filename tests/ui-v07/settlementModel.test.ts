@@ -65,10 +65,11 @@ describe('market rows', () => {
 });
 
 describe("the buildings' shows in the settlement (V0.8 prototype, not rules)", () => {
-  it.each([4])('puts every armory and tradehouse effect in once, with its ship, moving no money (seed %i)', (seed) => {
-    const events = play(seed, RULES_V08_PROTO);
+  // Which seeds have a building at work in the settlement moves with every change to the prototype's rules and bots:
+  // a batch of matches, at least one show among them. The batch is slow when the whole suite runs at once.
+  it('puts every armory and tradehouse effect in once, with its ship, moving no money', { timeout: 30_000 }, () => {
     let seen = 0;
-    for (let round = 1; round <= 12; round++) {
+    for (const [events, round] of Array.from({ length: 12 }, (_, i) => play(i + 1, RULES_V08_PROTO)).flatMap((ev) => Array.from({ length: 12 }, (_, r) => [ev, r + 1] as const))) {
       const flights = settlementFlights(events, round);
       const works = flights.filter((f) => f.work);
       expect(works.map((f) => f.key).sort()).toEqual(facilityWorks(events, round).map((f) => f.key).sort());
