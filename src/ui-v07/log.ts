@@ -63,6 +63,8 @@ export function eventLine(event: MatchEvent, ctx: LogContext): string | null {
       return `香料壞掉：${Object.entries(event.spoiled)
         .map(([id, n]) => `${nameOf(id)} ${n}`)
         .join('、')}`;
+    case 'leftover-bought':
+      return `${nameOf(event.playerId)} 的商行收購剩貨：${GOOD_LABELS[event.good]} 1 箱，${event.value} G`;
     case 'match-ended':
       return '對局結束';
     case 'phase-started':

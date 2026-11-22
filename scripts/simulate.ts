@@ -218,6 +218,8 @@ const EFFECT_LABELS: Record<string, string> = {
   'armory-armed': '武裝商船出航（載軍火 +1）',
   'armory-counter': '軍械庫反擊（貨箱＝用掉的軍火，G＝收到的賠償）',
   tradehouse: '商行保價多賺',
+  'tradehouse-premium': '老字號多賺（高一格）',
+  'tradehouse-buyout': '商行收購剩貨（G＝收購金額）',
   'pirate-toll': '要塞島軍械庫收海盜部署費',
   'customs-halved': '走私港軍械庫保住的海關半數',
   inspected: '軍火超量查緝（G＝船東損失）',
@@ -302,7 +304,7 @@ const TIDE_ORDER = ['storm', 'pirate', 'inspection', 'crash'] as const;
 /** The answer that matches each tide kind (查緝潮 also has the own-ship smuggler cover, its own row). */
 const TIDE_ANSWER: Record<string, string> = { storm: 'build:repairyard', pirate: 'build:armory', inspection: 'open:hidden', crash: 'build:tradehouse' };
 const ANSWER_LABELS: Record<string, string> = { 'build:repairyard': '修船廠', 'build:armory': '軍械庫', 'open:hidden': '幽靈號技能', 'build:tradehouse': '商行' };
-const TRIGGER_EFFECTS = ['repairyard', 'armory', 'armory-armed', 'armory-counter', 'tradehouse', 'inspected'] as const;
+const TRIGGER_EFFECTS = ['repairyard', 'armory', 'armory-armed', 'armory-counter', 'tradehouse', 'tradehouse-premium', 'tradehouse-buyout', 'inspected'] as const;
 
 /** V0.8 prototype (v08.events.tides / lateCards): tide counts, matching answers and phase I vs phase II triggers. */
 function tideSection(s: SimStats, rules: Rules, bets: boolean): string[] {

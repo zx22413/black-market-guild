@@ -388,6 +388,8 @@ export const RULES_V08_PROTO: Rules = {
       tideStormLossTo: 3,
       tidePirate: 0,
       tidePirateArrivalLoot: 30,
+      // 2026-11-22 (user: percents are hard to work out): the pirate tide takes the priciest crate instead of 30 %.
+      tidePirateArrivalCrates: 1,
       finalBoth: 1,
     },
     // 2026-11-16: the lighthouse's +1 needs a raw die of 3 or more (user's idea: a 1 or 2 can still sink you); the
@@ -404,7 +406,9 @@ export const RULES_V08_PROTO: Rules = {
     // 2026-11-15: each building shields its owner from the matching tide (repairyard ↔ storm, armory ↔ pirate,
     // tradehouse ↔ crash), and bots value pirate deployments with the crate tables.
     repairyard: { ...V08_OFF.repairyard, immuneStormTide: 1 },
-    tradehouse: { immuneCrashTide: 1 },
+    // 2026-11-22 (user): no naming; 收購剩貨 buys a leftover crate each round with no percent to work out. The track's
+    // lowest cell (about 90 G a crate) made it a must-build (§10.14); a fixed 60 G for the cheapest crate is the default.
+    tradehouse: { ...V08_OFF.tradehouse, immuneCrashTide: 1, named: 0, buyoutFixed: 60 },
     botPirateCrates: 1,
   },
 };

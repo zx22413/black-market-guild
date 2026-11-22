@@ -248,6 +248,9 @@ export function applyEvent(board: Board, event: MatchEvent, rules: Rules = RULES
           }),
         ),
       };
+    // V0.8 prototype: the tradehouse takes one leftover crate at the end of the round.
+    case 'leftover-bought':
+      return mapPlayer(board, event.playerId, (p) => ({ ...p, stock: { ...p.stock, [event.good]: Math.max(0, p.stock[event.good] - 1) } }));
     case 'phase-started':
     case 'round-ended':
     // V0.8 simulation prototype only (never in the live rules).

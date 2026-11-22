@@ -29,14 +29,17 @@ export const IDS = ['p1', 'p2', 'p3', 'p4'] as const;
  * pirate valuation: the settings the simplification tests (v08-simplify.test.ts) were written for.
  */
 /**
- * The prototype before the 2026-11-22 armed merchant: the armory halves every pirate take and pays back the half it kept
- * on a sunk ship. The older fixtures below build on it.
+ * The prototype before the 2026-11-22 changes: the armory halves every pirate take and pays back the half it kept on a
+ * sunk ship (no armed merchant), the tradehouse keeps a named good's price (no buyout), and the pirate tide takes 30 %
+ * of an arrival (not a crate). The older fixtures below build on it.
  */
 export const RULES_V08_PRE_ARMED: Rules = {
   ...RULES_V08_PROTO,
   v08: {
     ...RULES_V08_PROTO.v08,
-    armory: { ...RULES_V08_PROTO.v08.armory, halveAllLoot: 1, refundSunkLoot: 1, armedBonus: 0, counter: 0 },
+    armory: { ...RULES_V08_PROTO.v08.armory, halveAllLoot: 1, refundSunkLoot: 1, armedBonus: 0, armedMaxFinal: 0, counter: 0 },
+    tradehouse: { ...RULES_V08_PROTO.v08.tradehouse, named: 1, buyoutFloor: 0, buyoutFixed: 0 },
+    events: { ...RULES_V08_PROTO.v08.events, tidePirateArrivalCrates: 0 },
   },
 };
 
@@ -63,7 +66,7 @@ export const RULES_V08_PRE_SHIELDS: Rules = {
     ...RULES_V08_PRE_EQUAL_COSTS.v08,
     repairyard: { ...RULES_V08_PRE_EQUAL_COSTS.v08.repairyard, immuneStormTide: 0 },
     armory: { ...RULES_V08_PRE_EQUAL_COSTS.v08.armory, immunePirateTide: 0 },
-    tradehouse: { immuneCrashTide: 0 },
+    tradehouse: { ...RULES_V08_PRE_EQUAL_COSTS.v08.tradehouse, immuneCrashTide: 0 },
     botPirateCrates: 0,
   },
 };

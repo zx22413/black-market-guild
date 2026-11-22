@@ -28,6 +28,7 @@ const FLIGHT_SOUND: Readonly<Record<Flight['kind'], SfxId | null>> = {
   'pirate-toll': null,
   'armory-refund': 'settle-coins',
   'armory-fine': 'settle-coins',
+  'tradehouse-buyout': 'settle-coins',
 };
 
 export function flightSound(flight: Flight): SfxId | null {

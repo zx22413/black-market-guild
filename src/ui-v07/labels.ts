@@ -136,6 +136,7 @@ export const CASH_REASON_LABELS: Readonly<Record<CashReason, string>> = {
   'pirate-toll': '海盜部署費（軍械庫）',
   'armory-refund': '軍械庫從海盜手上搶回',
   'armory-fine': '海盜被軍械庫擊退（賠錢）',
+  'tradehouse-buyout': '商行收購剩貨',
 };
 
 /** A good's price-track cell to G per unit: the display of §7.1 (each good has its own track). */

@@ -16,7 +16,7 @@ import {
   type ViewShip,
 } from '../game';
 import { choose } from './choose';
-import type { LootTerms } from './estimates';
+import { tideArrivalPercent, type LootTerms } from './estimates';
 import {
   SMUGGLER_GUARDED_CHANCE,
   DIPLOMAT_HIT,
@@ -126,7 +126,7 @@ function lootTerms(view: PlayerView, ship: ViewShip): LootTerms {
   const halved = rules.v08.armory.halveAllLoot === 1 && armory;
   // v08.armory.immunePirateTide: the owner's armory shields its ships from 海盜潮's arrival loot.
   const shielded = armory && rules.v08.armory.immunePirateTide === 1;
-  const arrivalPercent = activeTide(view.events) === 'pirate' && !shielded ? rules.v08.events.tidePirateArrivalLoot : 0;
+  const arrivalPercent = activeTide(view.events) === 'pirate' && !shielded ? tideArrivalPercent(rules) : 0;
   return { arrivalPercent, halved };
 }
 

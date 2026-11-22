@@ -121,7 +121,7 @@ function investOptionsV08(state: MatchState, playerId: PlayerId): Action[] {
   return materials.flatMap((material) => {
     const after = material === undefined ? player : applyMaterial(rules, player, material);
     const facility = facilityOf(rules, after);
-    const protects: (GoodId | undefined)[] = facility === 'tradehouse' ? [...GOODS] : [undefined];
+    const protects: (GoodId | undefined)[] = facility === 'tradehouse' && rules.v08.tradehouse.named === 1 ? [...GOODS] : [undefined];
     const extras = { ...(material === undefined ? {} : { material }) };
     return enumerateGoods(after.stock, widest).flatMap((load): Action[] => {
       const base = { type: 'invest' as const, playerId, build: null, load, ...extras };

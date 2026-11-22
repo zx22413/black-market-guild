@@ -210,7 +210,8 @@ export function shipSkills(cards: readonly MaterialCard[], choice: InvestChoice)
 /** The goods a tradehouse owner may protect this round (with the tradehouse standing, or raised in this choice); empty otherwise. */
 export function protectChoices(context: DecisionContext, choice: InvestChoice): GoodId[] {
   const { rules } = context.view;
-  if (!materialsOn(rules)) return [];
+  // v08.tradehouse.named: without the naming there is no good to pick.
+  if (!materialsOn(rules) || rules.v08.tradehouse.named !== 1) return [];
   const has = facilityOf(rules, me(context)) === 'tradehouse' || (choice.material?.kind === 'build' && choice.material.building === 'tradehouse');
   return has ? [...GOODS] : [];
 }

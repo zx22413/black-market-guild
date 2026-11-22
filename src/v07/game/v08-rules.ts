@@ -89,7 +89,22 @@ export interface V08Rules {
    * at the price the drop would reach without the tide's multiplier (other multipliers still apply; the named protected
    * good still keeps the pre-change price). The market price itself is unchanged.
    */
-  readonly tradehouse: { readonly immuneCrashTide: number };
+  /**
+   * `named`: 1 = the owner names one good each round to keep its price (0 = no naming; §10.14).
+   * `premiumCrates`: 老字號, the owner's highest-priced arriving crates (this many per ship) sell a cell higher.
+   * `buyoutPercent`: 收購剩貨, at the end of each round (before spice spoils) the tradehouse buys the owner's
+   * highest-priced warehouse crate at this percent of its price (0 = off).
+   */
+  readonly tradehouse: {
+    readonly immuneCrashTide: number;
+    readonly named: number;
+    readonly premiumCrates: number;
+    readonly buyoutPercent: number;
+    /** 1 = 收購剩貨 pays the lowest cell of the good's price track instead of buyoutPercent (no percent to work out). */
+    readonly buyoutFloor: number;
+    /** > 0 = 收購剩貨 takes the cheapest crate at this fixed price (G) instead (wins over buyoutFloor and buyoutPercent). */
+    readonly buyoutFixed: number;
+  };
   /**
    * `lighthouseFades`: 1 = in phase II an island's own-ship modifier and final-value cap (the lighthouse's +1 and its
    * cap of 5) stop working: the island becomes a plain one (暗潮遮住了燈塔).
@@ -174,6 +189,11 @@ export interface V08EventRules {
    * this percent of the owner's remaining income instead (0 = nothing, as without the tide).
    */
   readonly tidePirateArrivalLoot: number;
+  /**
+   * 海盜潮 without percents (2026-11-22): > 0 = those pirates take this many of the arriving ship's priciest crates
+   * instead (the owner does not sell them; their sale price is split among the pirates). Replaces the percent when on.
+   */
+  readonly tidePirateArrivalCrates: number;
   /** 查緝潮: added to the arms inspection allowance (stacks with 嚴查). */
   readonly tideInspection: number;
   /** 崩盤潮: price drops move this many times as many cells (multiplies with 貨滿為患). */
@@ -225,7 +245,7 @@ export const V08_OFF: V08Rules = {
   breaker: { extraFromL1: 6, extraFromL2: 5, extraDieSides: 6 },
   repairyard: { fromFinal: 2, toFinal: 3, save: 1, immuneStormTide: 0 },
   armory: { lootPercent: 35, halveAllLoot: 0, immunePirateTide: 0, pirateToll: 0, halveCustoms: 0, refundSunkLoot: 0, armedBonus: 0, armedMaxFinal: 0, counter: 0, counterFine: 50 },
-  tradehouse: { immuneCrashTide: 0 },
+  tradehouse: { immuneCrashTide: 0, named: 1, premiumCrates: 0, buyoutPercent: 0, buyoutFloor: 0, buyoutFixed: 0 },
   islands: { lighthouseFades: 0, freePortGamblerNoRest: 0, lighthouseBeacon: 0, ownShipMinRaw: 0, freePortFeePercent: 0 },
   botPirateCrates: 0,
   inspection: { enabled: 0, allowance: 0 },
@@ -252,6 +272,7 @@ export const V08_OFF: V08Rules = {
     tideStormLossTo: 3,
     tidePirate: -1,
     tidePirateArrivalLoot: 0,
+    tidePirateArrivalCrates: 0,
     tideInspection: -1,
     tideDropMultiplier: 2,
     lateCards: 0,

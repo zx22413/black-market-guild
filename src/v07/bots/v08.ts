@@ -7,6 +7,7 @@ import {
   facilityOf,
   hasVariant,
   materialCost,
+  priceAt,
   privateCapacity,
   producedFor,
   rerolls,
@@ -47,7 +48,7 @@ import {
   type TideKind,
   type VoyageEventId,
 } from '../game';
-import { OTHERS_LOAD_SHARE, averagePrice, currentPrice, expectedOwnModifier, expectedPrice, expectedRoundsLeft, me, othersExpectedArrivals, seizureRisk, survivingUnits } from './estimates';
+import { OTHERS_LOAD_SHARE, tideArrivalPercent, averagePrice, currentPrice, expectedOwnModifier, expectedPrice, expectedRoundsLeft, me, othersExpectedArrivals, seizureRisk, survivingUnits } from './estimates';
 import type { Personality } from './personality';
 
 // V0.8 simulation prototype (rules.v08): the heuristic bot's invest scoring under crate-count voyages, ship skills and
@@ -68,6 +69,9 @@ const CUSTOMS_ON_ME = 0.4;
 /** Chance a good I name for the tradehouse drops in a round, and how many of my crates of it arrive. */
 const DROP_CHANCE = 0.35;
 const PROTECTED_CRATES = 2;
+/** 老字號 and 收購剩貨 (§10.14): about three voyages in four arrive; most rounds leave something in the warehouse. */
+const ARRIVE_RATE = 0.75;
+const LEFTOVER_RATE = 0.8;
 /** Modifier swings a ship meets in a round (an event, a guard or a pirate) and their assumed chances, for the raise option. */
 const RAISE_SWINGS: readonly (readonly [number, number])[] = [
   [-1, 0.2],
@@ -308,7 +312,7 @@ function pirateTake(view: PlayerView, player: PublicPlayer, cache: V08Cache): nu
     modifier: pirateModifier(rules, view.events, null) + ownShipShift(rules, traitOf(rules, player.island).ownShipModifier, view.events),
     ...stormOf(view, tide),
   };
-  const tideLoot = tide === 'pirate' ? rules.v08.events.tidePirateArrivalLoot : 0;
+  const tideLoot = tide === 'pirate' ? tideArrivalPercent(rules) : 0;
   const crates = shipCrates(view, player, 'standard');
   return finals(view, plan, cache).reduce((sum, [final, p]) => {
     const terms = crateTerms(rules, plan.type, final, plan);
@@ -358,7 +362,7 @@ const PIRATE_EVENTS: readonly (readonly [VoyageEventId | null, number])[] = [
 function armoryDenied(view: PlayerView, player: PublicPlayer, cache: V08Cache): number {
   const { rules } = view;
   const tide = activeTide(view.events);
-  const tideLoot = tide === 'pirate' ? rules.v08.events.tidePirateArrivalLoot : 0;
+  const tideLoot = tide === 'pirate' ? tideArrivalPercent(rules) : 0;
   const tideKept = rules.v08.armory.immunePirateTide === 1 ? 1 : 0.5;
   const price = averagePrice(view);
   const crates = (type: ShipTypeId) => shipCrates(view, player, type);
@@ -431,7 +435,9 @@ export function pirateLootCrates(view: PlayerView, ship: ViewShip, pirateShift: 
       const lost = takeHighest(rules, cargo, terms.lose, view.prices);
       const gross = ((cargoValue - value(lost)) * terms.percent) / 100;
       const loot = arrivalLoot(rules, tide, normal, armory);
-      take = Math.min(gross, (gross * loot.percent) / (loot.halved ? 200 : 100));
+      // v08.events.tidePirateArrivalCrates: the tide's crates counted as their share of the cargo.
+      const percent = loot.crates > 0 ? tideArrivalPercent(rules) : loot.percent;
+      take = Math.min(gross, (gross * percent) / (loot.halved ? 200 : 100));
     }
     return sum + p * (take > 0 ? take + bonus : 0);
   }, 0);
@@ -511,14 +517,26 @@ function buildingExtras(view: PlayerView, player: PublicPlayer, building: V08Bui
     }
     case 'tradehouse': {
       const step = (g: GoodId) => rules.price.tracks[g].step * rules.price.volatility[g];
-      const named = Math.max(...GOODS.map(step)) * DROP_CHANCE * PROTECTED_CRATES;
+      // v08.tradehouse.named: no naming, no kept price for a named good.
+      const named = rules.v08.tradehouse.named === 1 ? Math.max(...GOODS.map(step)) * DROP_CHANCE * PROTECTED_CRATES : 0;
+      // v08.tradehouse.premiumCrates (老字號): on an arrival my priciest crates sell a cell higher.
+      const premium = rules.v08.tradehouse.premiumCrates * ARRIVE_RATE * Math.max(...GOODS.map(step));
+      // v08.tradehouse.buyoutPercent (收購剩貨): most rounds leave a crate in the warehouse for the tradehouse to buy.
+      const buyout =
+        rules.v08.tradehouse.buyoutFixed > 0
+          ? LEFTOVER_RATE * rules.v08.tradehouse.buyoutFixed
+          : rules.v08.tradehouse.buyoutFloor === 1
+          ? LEFTOVER_RATE * Math.max(...GOODS.map((g) => priceAt(rules, g, 0)))
+          : rules.v08.tradehouse.buyoutPercent > 0
+            ? LEFTOVER_RATE * Math.max(...GOODS.map((g) => currentPrice(view, g))) * (rules.v08.tradehouse.buyoutPercent / 100)
+            : 0;
       const spice = hasVariant(rules, player.island, 'tradehouse', 'spice-isles', 'tradehouse') ? step('spice') * DROP_CHANCE * 2 : 0;
       // v08.events.tides: 崩盤潮 drops move more cells, so a kept price saves that many times as much (1 without it).
       const multiplier = tideDropMultiplier(rules, activeTide(view.events));
       // v08.tradehouse.immuneCrashTide: under 崩盤潮 my other arriving crates keep the drop's extra cells too.
       const average = GOODS.reduce((sum, g) => sum + step(g), 0) / GOODS.length;
       const shield = crashShieldActs(rules, view.events) ? Math.max(0, shipCrates(view, player, 'standard') - PROTECTED_CRATES) * average * DROP_CHANCE * (multiplier - 1) : 0;
-      return (named + spice) * multiplier + shield;
+      return (named + spice) * multiplier + shield + premium + buyout;
     }
   }
 }

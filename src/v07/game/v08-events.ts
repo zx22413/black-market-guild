@@ -156,12 +156,15 @@ export function arrivalLoot(
   tide: TideKind | null,
   normal: number,
   ownerArmory: boolean,
-): { readonly percent: number; readonly fromTide: boolean; readonly halved: boolean; readonly shielded: boolean } {
-  const tideActs = normal === 0 && tide === 'pirate' && rules.v08.events.tidePirateArrivalLoot > 0;
+): { readonly percent: number; readonly crates: number; readonly fromTide: boolean; readonly halved: boolean; readonly shielded: boolean } {
+  const { tidePirateArrivalLoot, tidePirateArrivalCrates } = rules.v08.events;
+  const tideActs = normal === 0 && tide === 'pirate' && (tidePirateArrivalLoot > 0 || tidePirateArrivalCrates > 0);
   // v08.armory.immunePirateTide: the owner's armory shields its ships from the tide's arrival loot.
   const shielded = tideActs && ownerArmory && rules.v08.armory.immunePirateTide === 1;
   const fromTide = tideActs && !shielded;
-  return { percent: fromTide ? rules.v08.events.tidePirateArrivalLoot : normal, fromTide, halved: ownerArmory && rules.v08.armory.halveAllLoot === 1, shielded };
+  // v08.events.tidePirateArrivalCrates: the tide takes crates instead of a percent.
+  const crates = fromTide ? tidePirateArrivalCrates : 0;
+  return { percent: fromTide ? (crates > 0 ? 0 : tidePirateArrivalLoot) : normal, crates, fromTide, halved: ownerArmory && rules.v08.armory.halveAllLoot === 1, shielded };
 }
 
 /** 海盜潮: added to each pirate's modifier. */

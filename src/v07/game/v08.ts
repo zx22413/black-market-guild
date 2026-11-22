@@ -226,6 +226,8 @@ export function takeHighest(rules: Rules, cargo: Goods, count: number, prices: G
 /** Tradehouse: the goods whose own arriving crates keep the pre-change price if it drops (spice isles: spice too). */
 export function protectedGoods(rules: Rules, island: IslandId | null, facility: V08BuildingId | null, named: GoodId | undefined): GoodId[] {
   if (facility !== 'tradehouse') return [];
+  // v08.tradehouse.named: without naming only the spice isles' variant keeps a price.
+  const kept = rules.v08.tradehouse.named === 1 && named !== undefined ? [named] : [];
   const spice = hasVariant(rules, island, facility, 'spice-isles', 'tradehouse') ? (['spice'] as GoodId[]) : [];
-  return [...new Set([...(named === undefined ? [] : [named]), ...spice])];
+  return [...new Set([...kept, ...spice])];
 }

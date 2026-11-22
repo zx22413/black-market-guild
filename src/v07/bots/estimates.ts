@@ -31,6 +31,18 @@ export interface LootTerms {
 }
 export const NO_LOOT_TERMS: LootTerms = { arrivalPercent: 0, halved: false };
 
+/** A crate a pirate takes is the priciest of about three aboard: worth this share of the cargo, for the estimates. */
+const PRICIEST_CRATE_PERCENT = 40;
+
+/**
+ * 海盜潮's arrival take as a percent of the cargo for the bots' estimates: v08.events.tidePirateArrivalCrates crates
+ * (the priciest) or tidePirateArrivalLoot percent.
+ */
+export function tideArrivalPercent(rules: Rules): number {
+  const { tidePirateArrivalCrates, tidePirateArrivalLoot } = rules.v08.events;
+  return tidePirateArrivalCrates > 0 ? Math.min(100, tidePirateArrivalCrates * PRICIEST_CRATE_PERCENT) : tidePirateArrivalLoot;
+}
+
 /**
  * Expected pirate take from a ship worth `cargoValue` under a known total modifier (§9.4): a share of the
  * cargo's value at a sinking, or of its scaled sale income when it arrives with a low final value.

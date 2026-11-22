@@ -160,7 +160,7 @@ describe('V0.8 bots and the tide shields', () => {
         ...RULES_V08_PRE_ARMED.v08,
         repairyard: { ...RULES_V08_PRE_ARMED.v08.repairyard, immuneStormTide: 0 },
         armory: { ...RULES_V08_PRE_ARMED.v08.armory, immunePirateTide: 0 },
-        tradehouse: { immuneCrashTide: 0 },
+        tradehouse: { ...RULES_V08_PRE_ARMED.v08.tradehouse, immuneCrashTide: 0 },
       },
     };
     const gain = (kinds: V08EventsState['tideCandidates'], building: 'repairyard' | 'armory' | 'tradehouse') =>

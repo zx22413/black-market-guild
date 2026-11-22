@@ -217,6 +217,8 @@ describe('material actions in the invest choice (V0.8 prototype, not rules)', ()
     return { view: getPlayerView(state, 'p1'), decision, legalActions: getLegalActions(state, 'p1') } as DecisionContext;
   };
 
+  const v08Proto = v08;
+
   it('offers nothing under the official rules', () => {
     expect(materialCards(contextOf(edit(start(4, RULES_V07, { p1: 'mine' }), 'p1', { cash: 1000 })))).toEqual([]);
   });
@@ -268,7 +270,15 @@ describe('material actions in the invest choice (V0.8 prototype, not rules)', ()
     expect(actionFor(options, chosen)?.raise).toBeUndefined();
   });
 
-  it("names the tradehouse's protected good", async () => {
+  it("names the tradehouse's protected good (v08.tradehouse.named, off in the prototype since 2026-11-22)", async () => {
+    const { RULES_V08_PROTO } = await import('../../src/v07/game');
+    const named = { ...RULES_V08_PROTO, v08: { ...RULES_V08_PROTO.v08, tradehouse: { ...RULES_V08_PROTO.v08.tradehouse, named: 1 } } };
+    const v08 = async (patch: Parameters<typeof edit>[2] = {}) => {
+      const state = edit(start(4, named, { p1: 'mine' }), 'p1', { cash: 1000, stock: G(3, 3, 1, 0), buildings: [], ...patch });
+      const decision = getPendingDecisions(state).find((d) => d.playerId === 'p1')!;
+      return { view: getPlayerView(state, 'p1'), decision, legalActions: getLegalActions(state, 'p1') } as DecisionContext;
+    };
+    expect(protectChoices(await v08Proto({ facility: 'tradehouse' }), EMPTY_CHOICE)).toEqual([]);
     const ctx = await v08({ facility: 'tradehouse' });
     const options = investOptions(ctx);
     expect(protectChoices(ctx, EMPTY_CHOICE)).toEqual(['wood', 'iron', 'spice', 'arms']);

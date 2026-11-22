@@ -1,4 +1,4 @@
-import type { Rules, ShipTypeId, V08BuildingId } from '../../v07/game';
+import { priceAt, type GoodId, type Rules, type ShipTypeId, type V08BuildingId } from '../../v07/game';
 
 // V0.8 prototype (rules.v08, an experiment, not rules): names and one-line effects of the three buildings and the five
 // ship skills, worded from the rules' own numbers (docs/proposals/2026-11-v08-one-page.md is the summary they restate).
@@ -17,8 +17,27 @@ export function facilityText(rules: Rules, building: V08BuildingId): string {
         v.armory.counter === 1 ? `被海盜鎖定時用掉 1 件軍火反擊：海盜全部被擊退，每個海盜的主人付你 ${v.armory.counterFine} G` : '',
         v.armory.halveAllLoot === 1 ? (v.armory.refundSunkLoot === 1 ? '海盜搶的減半；船被打沉時，擋下的一半付給你' : '海盜搶的減半') : '',v.armory.pirateToll === 1 ? '派到你船上的海盜，部署費付給你' : '', v.armory.halveCustoms === 1 ? '海關沒收的減半' : ''].filter(Boolean).join('；');
     case 'tradehouse':
-      return '每回合指定一種貨，跌價時照原價賣';
+      return tradehouseText(rules);
   }
+}
+
+/** v08.tradehouse: the naming, 老字號 and 收購剩貨 sentences that are on (§10.14). */
+function tradehouseText(rules: Rules): string {
+  const t = rules.v08.tradehouse;
+  const lowest = (good: GoodId) => priceAt(rules, good, 0);
+  return [
+    t.named === 1 ? '每回合指定一種貨，跌價時照原價賣' : '',
+    t.premiumCrates > 0 ? `到港時最貴的 ${t.premiumCrates} 箱高一格賣` : '',
+    t.buyoutFixed > 0
+      ? `每回合結束時，收走倉庫裡最便宜的 1 箱，付你 ${t.buyoutFixed} G`
+      : t.buyoutFloor === 1
+      ? `每回合結束時，用最低格的價格收走倉庫裡最貴的 1 箱（軍火 ${lowest('arms')} G，其他 ${lowest('wood')} G）`
+      : t.buyoutPercent > 0
+        ? `每回合結束時，用 ${t.buyoutPercent}% 的價格收走倉庫裡最貴的 1 箱`
+        : '',
+  ]
+    .filter(Boolean)
+    .join('；');
 }
 
 /** v08.armory.armedBonus / armedMaxFinal: the armed merchant's +1, or '' when it is off. */

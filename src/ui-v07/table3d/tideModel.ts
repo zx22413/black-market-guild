@@ -38,7 +38,9 @@ export function tideText(rules: Rules, tide: TideKind): string {
     case 'storm':
       return `最終值 ${e.tideStormLossFrom}～${e.tideStormLossTo} 的船多掉 ${e.tideStormExtraLoss} 箱`;
     case 'pirate':
-      return `被海盜鎖定的船就算到港，也被搶 ${e.tidePirateArrivalLoot}%`;
+      return e.tidePirateArrivalCrates > 0
+        ? `被海盜鎖定的船就算到港，也被搶走最貴的 ${e.tidePirateArrivalCrates} 箱`
+        : `被海盜鎖定的船就算到港，也被搶 ${e.tidePirateArrivalLoot}%`;
     case 'inspection':
       return `需求以內的軍火也查扣 ${-e.tideInspection} 箱`;
     case 'crash':

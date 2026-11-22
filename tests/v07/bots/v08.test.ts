@@ -28,7 +28,9 @@ describe('V0.8 prototype bots', () => {
   });
 
   it('take material actions, name a protected good and return one of the given actions', () => {
-    let state = withDemand(edit(plain(4, RULES_V08_PROTO), 'p1', { stock: G(4, 4, 3, 3), facility: 'tradehouse' }), G(1, 1, 1, 1));
+    // v08.tradehouse.named: the naming is off in the prototype since 2026-11-22, on here.
+    const named = { ...RULES_V08_PROTO, v08: { ...RULES_V08_PROTO.v08, tradehouse: { ...RULES_V08_PROTO.v08.tradehouse, named: 1 } } };
+    let state = withDemand(edit(plain(4, named), 'p1', { stock: G(4, 4, 3, 3), facility: 'tradehouse' }), G(1, 1, 1, 1));
     for (const strategy of ['balanced', 'cautious', 'aggressive', 'builder', 'random'] as const) {
       const bot = createBot(strategy, 5);
       const [decision] = getPendingDecisions(state);

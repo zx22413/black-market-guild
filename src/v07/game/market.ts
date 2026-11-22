@@ -4,6 +4,7 @@ import { traitOf } from './islands';
 import { crateContext, effectiveDeployments, termsOf, voyageModifier } from './resolution';
 import { GOODS, type GoodId, type Goods, type MatchEvent, type MatchState, type PlayerId, type RoleId, type Ship, type Step, type V08Effect } from './types';
 import { activeTide, arrivalLoot, crashShieldActs, darkNight, eventPriceStep, inspectionAllowance, publicEvents, rushValue } from './v08-events';
+import { buyLeftover, premiumCrates } from './v08-tradehouse';
 import { crateTerms, facilityOf, hasVariant, protectedGoods, salvageCount, skillLevel, skillsOn, takeHighest } from './v08';
 
 interface Prices {
@@ -52,6 +53,7 @@ export function settleMarket(state: MatchState): Step {
     payCommission,
     payInsurance,
     salvage(sunkShips, prices.after),
+    buyLeftover,
     spoilSpice,
     darkTideLoss,
   ]);
@@ -262,9 +264,18 @@ function seizures(state: MatchState, ship: Ship): Seizure[] {
 function settleArrival(ship: Ship, prices: Prices): StepFn {
   return (state) => {
     const found = seizures(state, ship);
-    const sold = found.reduce<Goods>((left, s) => ({ ...left, [s.good]: 0 }), arrivedCrates(ship));
-    const full = GOODS.reduce((sum, g) => sum + sold[g] * ownSalePrice(state, ship.owner, g, prices), 0);
+    const unseized = found.reduce<Goods>((left, s) => ({ ...left, [s.good]: 0 }), arrivedCrates(ship));
     const final = voyageModifier(state, ship).final;
+    const pirates = deployed(state, ship, 'pirate').filter((id) => id !== ship.owner);
+    // V0.8 prototype: 海盜潮 loots arrivals where pirates normally take nothing; the armory may halve the take (v08.armory.halveAllLoot).
+    const loot = arrivalLoot(state.rules, activeTide(publicEvents(state)), state.rules.roles.pirate.lootPercentByFinal[final] ?? 0, ownerArmory(state, ship));
+    // v08.events.tidePirateArrivalCrates: the tide's pirates take the priciest crates instead of a percent.
+    const stolen = pirates.length > 0 && loot.crates > 0 ? takeHighest(state.rules, unseized, loot.crates, prices.after) : mapGoods(() => 0);
+    const stolenValue = GOODS.reduce((sum, g) => sum + stolen[g] * priceAt(state.rules, g, prices.after[g]), 0);
+    const sold = subtractGoods(unseized, stolen);
+    // v08.tradehouse.premiumCrates (老字號): the highest-priced crates sell a cell higher.
+    const premium = premiumValue(state, ship, sold, prices);
+    const full = GOODS.reduce((sum, g) => sum + sold[g] * ownSalePrice(state, ship.owner, g, prices), 0) + premium;
     const { percent } = termsOf(state, ship);
     // V0.8 prototype: private crates sell in full; the smuggler port's armory keeps half of what customs would take.
     const privateIncome = ship.privateCargo === undefined ? 0 : GOODS.reduce((sum, g) => sum + ship.privateCargo![g] * salePrice(state, ship.owner, g, prices), 0);
@@ -272,18 +283,24 @@ function settleArrival(ship: Ship, prices: Prices): StepFn {
     const kept = halved ? found.reduce((sum, s) => sum + keptHalf(seizedValue(state, ship, s.good, prices)), 0) : 0;
     const gross = Math.floor((full * percent) / 100) + privateIncome + kept;
     const customs = deployed(state, ship, 'customs');
-    const pirates = deployed(state, ship, 'pirate').filter((id) => id !== ship.owner);
-    // V0.8 prototype: 海盜潮 loots arrivals where pirates normally take nothing; the armory may halve the take (v08.armory.halveAllLoot).
-    const loot = arrivalLoot(state.rules, activeTide(publicEvents(state)), state.rules.roles.pirate.lootPercentByFinal[final] ?? 0, ownerArmory(state, ship));
     const fullShare = pirates.length === 0 ? 0 : Math.min(gross, Math.floor((gross * loot.percent) / 100));
     const lootShare = pirates.length === 0 ? 0 : loot.halved ? Math.min(gross, Math.floor((gross * loot.percent) / 200)) : fullShare;
-    const lootEffects = pirates.length === 0 || (loot.percent === 0 && !loot.shielded) ? [] : arrivalLootEffects(state, ship, loot, fullShare, lootShare, gross);
-    const bonus = pirates.length > 0 && lootShare > 0 ? wantedBonus(state, ship) : 0;
-    const lootEach = pirates.length === 0 ? 0 : Math.floor((lootShare + bonus) / pirates.length);
+    const shieldedCrate = loot.shielded && state.rules.v08.events.tidePirateArrivalCrates > 0 ? crateValue(state, takeHighest(state.rules, unseized, state.rules.v08.events.tidePirateArrivalCrates, prices.after), prices) : null;
+    const lootEffects =
+      pirates.length === 0 || (loot.percent === 0 && stolenValue === 0 && !loot.shielded) ? [] : arrivalLootEffects(state, ship, loot, fullShare + stolenValue, lootShare + stolenValue, gross, shieldedCrate);
+    const bonus = pirates.length > 0 && lootShare + stolenValue > 0 ? wantedBonus(state, ship) : 0;
+    const lootEach = pirates.length === 0 ? 0 : Math.floor((lootShare + stolenValue + bonus) / pirates.length);
     const proceeds = gross - lootShare;
     const smugglers = takers(state, ship);
     return chain(state, [
-      (s) => ({ state: s, events: [...arrivalEffects(s, ship, prices, { sold, percent, privateIncome, kept }), ...lootEffects] }),
+      (s) => ({
+        state: s,
+        events: [
+          ...arrivalEffects(s, ship, prices, { sold, percent, privateIncome, kept }),
+          ...(premium > 0 ? [v08Effect(s, ship.owner, ship.id, 'tradehouse-premium', state.rules.v08.tradehouse.premiumCrates, Math.floor((premium * percent) / 100))] : []),
+          ...lootEffects,
+        ],
+      }),
       ...confiscateGoods(ship, found, prices, halved),
       ...(smugglers.length === 0
         ? payAll([{ playerId: ship.owner, amount: proceeds }], 'sale', ship.id)
@@ -295,6 +312,16 @@ function settleArrival(ship: Ship, prices: Prices): StepFn {
   };
 }
 
+/** V0.8 prototype: the market value of `goods` at the new prices. */
+const crateValue = (state: MatchState, goods: Goods, prices: Prices): number => GOODS.reduce((sum, g) => sum + goods[g] * priceAt(state.rules, g, prices.after[g]), 0);
+
+/** V0.8 prototype (老字號): what the owner's highest-priced crates gain by selling a cell higher, before scaling. */
+function premiumValue(state: MatchState, ship: Ship, sold: Goods, prices: Prices): number {
+  const own = (g: GoodId) => ownSalePrice(state, ship.owner, g, prices);
+  const higher = (g: GoodId) => salePrice(state, ship.owner, g, { before: prices.before, after: { ...prices.after, [g]: prices.after[g] + 1 } });
+  return premiumCrates(state.rules, playerOf(state, ship.owner), sold, own).reduce((sum, g) => sum + Math.max(0, higher(g) - salePrice(state, ship.owner, g, prices)), 0);
+}
+
 /** V0.8 prototype: the owner of this ship holds the armory. */
 const ownerArmory = (state: MatchState, ship: Ship): boolean => facilityOf(state.rules, playerOf(state, ship.owner)) === 'armory';
 
@@ -302,9 +329,18 @@ const ownerArmory = (state: MatchState, ship: Ship): boolean => facilityOf(state
  * V0.8 prototype, report only: 海盜潮's arrival loot (value = the pirates' share before the wanted bonus) and the armory's
  * halving of an arrival take (value = what the pirates did not get).
  */
-function arrivalLootEffects(state: MatchState, ship: Ship, loot: { readonly fromTide: boolean; readonly halved: boolean; readonly shielded: boolean }, full: number, share: number, gross: number): MatchEvent[] {
-  // v08.armory.immunePirateTide: what the tide's arrival loot would have taken (halved by the armory), kept by the shield.
-  const kept = loot.shielded ? Math.min(gross, Math.floor((gross * state.rules.v08.events.tidePirateArrivalLoot) / (loot.halved ? 200 : 100))) : 0;
+function arrivalLootEffects(
+  state: MatchState,
+  ship: Ship,
+  loot: { readonly fromTide: boolean; readonly halved: boolean; readonly shielded: boolean },
+  full: number,
+  share: number,
+  gross: number,
+  shieldedCrate: number | null,
+): MatchEvent[] {
+  // v08.armory.immunePirateTide: what the tide's arrival loot would have taken (halved by the armory), kept by the shield;
+  // with tidePirateArrivalCrates, the value of the crates it would have taken.
+  const kept = !loot.shielded ? 0 : shieldedCrate !== null ? shieldedCrate : Math.min(gross, Math.floor((gross * state.rules.v08.events.tidePirateArrivalLoot) / (loot.halved ? 200 : 100)));
   return [
     ...(kept > 0 ? [v08Effect(state, ship.owner, ship.id, 'pirate-shield', 0, kept)] : []),
     ...(loot.fromTide && share > 0 ? [v08Effect(state, ship.owner, ship.id, 'pirate-tide', 0, share)] : []),

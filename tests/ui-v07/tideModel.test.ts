@@ -24,7 +24,9 @@ describe('tide status (V0.8 prototype)', () => {
 
   it("writes each tide's line with the rules' numbers", () => {
     expect(tideText(RULES_V08_PROTO, 'storm')).toBe('最終值 2～3 的船多掉 1 箱');
-    expect(tideText(RULES_V08_PROTO, 'pirate')).toBe('被海盜鎖定的船就算到港，也被搶 30%');
+    expect(tideText(RULES_V08_PROTO, 'pirate')).toBe('被海盜鎖定的船就算到港，也被搶走最貴的 1 箱');
+    const percent = { ...RULES_V08_PROTO, v08: { ...RULES_V08_PROTO.v08, events: { ...RULES_V08_PROTO.v08.events, tidePirateArrivalCrates: 0 } } };
+    expect(tideText(percent, 'pirate')).toBe('被海盜鎖定的船就算到港，也被搶 30%');
     expect(tideText(RULES_V08_PROTO, 'inspection')).toBe('需求以內的軍火也查扣 1 箱');
     expect(tideText(RULES_V08_PROTO, 'crash')).toBe('跌價一次跌 2 格');
   });

@@ -292,7 +292,9 @@ export type CashReason =
   /** V0.8 prototype (v08.armory.refundSunkLoot): what the armory kept from the pirates on its owner's sunk ship. */
   | 'armory-refund'
   /** V0.8 prototype (v08.armory.counter): a repelled pirate's owner pays the armed ship's owner. */
-  | 'armory-fine';
+  | 'armory-fine'
+  /** V0.8 prototype (v08.tradehouse.buyoutPercent): the tradehouse buys a leftover warehouse crate. */
+  | 'tradehouse-buyout';
 
 /** V0.8 prototype: what a skill, building or island variant did, for the simulation report. `value` is G gained (or denied). */
 export const V08_EFFECTS = [
@@ -308,6 +310,8 @@ export const V08_EFFECTS = [
   'armory-armed',
   'armory-counter',
   'tradehouse',
+  'tradehouse-premium',
+  'tradehouse-buyout',
   'pirate-toll',
   'customs-halved',
   'inspected',
@@ -436,6 +440,8 @@ export type MatchEvent =
   | { readonly type: 'boss-event'; readonly round: number; readonly event: VoyageEventId }
   /** V0.8 prototype: goods lost from the warehouses at the end of a 「暗潮將至」 round. */
   | { readonly type: 'dark-tide-loss'; readonly round: number; readonly lost: Readonly<Record<PlayerId, Goods>> }
+  /** V0.8 prototype (v08.tradehouse buyout): the tradehouse took one crate of `good` from the owner's warehouse for `value` G. */
+  | { readonly type: 'leftover-bought'; readonly round: number; readonly playerId: PlayerId; readonly good: GoodId; readonly value: number }
   | { readonly type: 'round-ended'; readonly round: number }
   | { readonly type: 'match-ended'; readonly result: MatchResult };
 
