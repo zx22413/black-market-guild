@@ -2,13 +2,14 @@ import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import { AdditiveBlending, DoubleSide, type BufferGeometry, type Group, type Mesh, type MeshBasicMaterial, type MeshStandardMaterial } from 'three';
+import { glowTexture } from '../../../ui/scene/Night';
 import { DRAFT, shipPose } from '../../../ui/scene/Ships';
 import type { ShipTypeId } from '../../../v07/game';
-import { BAY_COUNT, POLE_COUNT, worksPose, worksSides, type WorksMode } from './dockWorksShow';
+import { BAY_COUNT, GLINTS, HULL_HALF_WIDTH, POLE_COUNT, glintPose, worksPose, worksSides, type WorksMode } from './dockWorksShow';
 
 // V0.8 prototype (an experiment, not rules): the dock works (the prototype's 造船廠, which every player has): the
 // staging that goes up round a docked ship when its skill is opened, hides it behind a curtain while the yard works in
-// its dust, and unveils the changed ship in gold light (docs/art/dockworks-storyboard.png). The model is built in
+// its dust, and unveils the changed ship in a warm light rising off its hull (docs/art/dockworks-storyboard.png). The model is built in
 // Blender (scripts/blender/blockout-dockworks.py): a mesh per piece that moves on its own, palette x baked ambient
 // occlusion in its vertex colours, and `<piece>-flag` meshes painted in the owner's colour. It stands in the water, so
 // it does not ride the swell with the ship. The timing is dockWorksShow.ts.
@@ -29,8 +30,9 @@ const PUFF_LIFE = 1.0;
 /** The balls are big enough together to hide the ship from above while it changes. */
 const PUFF_SIZE = 1.9;
 const PUFF_RISE = 1.6;
-/** The gold light's rays: a fan round the ship, each a thin blade leaning outward. */
-const RAYS = 12;
+/** The gold light's colours: the glints rising off the hull, and the warm pool and ring on the water round it. */
+const GLINT_COLOR = '#ffd98a';
+const POOL_COLOR = '#ffc865';
 /** The bays of piles along the ship and the staging's two rows across it (the model's own, blockout-dockworks.py). */
 const BAY_Z = [-3, -1, 1, 3] as const;
 const ROW_X = [0, 0.8] as const;
@@ -41,7 +43,6 @@ const FOLDS: readonly (readonly [number, number, number, number])[] = [
 ];
 /** How far over the sea's rest level what lies on the water is drawn (the swell rises over anything lower; beatFx's WaterRing uses the same). */
 const AFLOAT = 0.4;
-const STARS: readonly (readonly [number, number, number, number])[] = [[-1.6, 6.2, -2.0, 0.5], [1.4, 6.8, 0.6, 0.62], [-0.6, 5.6, 2.8, 0.42], [2.2, 5.0, -3.0, 0.38], [-2.4, 4.4, 1.2, 0.36]];
 
 function useWorksMeshes(): ReadonlyMap<string, BufferGeometry> {
   const { scene } = useGLTF(URL);
@@ -100,8 +101,8 @@ export function DockWorks({ angle, berth = 0, type, color, mode, rate = 1, onSwa
   const curtain = useRef<Group>(null);
   const puffs = useRef<(Mesh | null)[]>([]);
   const ring = useRef<Mesh>(null);
-  const rays = useRef<Group>(null);
-  const stars = useRef<Group>(null);
+  const pool = useRef<Mesh>(null);
+  const glints = useRef<Group>(null);
   const splashes = useRef<(Group | null)[]>([]);
   const heap = useRef<Group>(null);
 
@@ -164,28 +165,27 @@ export function DockWorks({ angle, berth = 0, type, color, mode, rate = 1, onSwa
       ring.current.visible = gold >= 0;
       if (gold >= 0) {
         const k = 1 - (1 - gold) ** 2;
-        ring.current.scale.set((1 + 1.1 * k) * 3.4, (1 + 0.8 * k) * 5.4, 1);
-        (ring.current.material as MeshBasicMaterial).opacity = 0.9 * (1 - gold);
+        ring.current.scale.set((1 + 0.9 * k) * 3.2, (1 + 0.6 * k) * 5.2, 1);
+        (ring.current.material as MeshBasicMaterial).opacity = 0.5 * (1 - gold) ** 1.5;
       }
     }
-    if (rays.current) {
-      rays.current.visible = gold >= 0;
+    if (pool.current) {
+      // A warm pool of light on the water round the hull: up quickly, then it ebbs away.
+      pool.current.visible = gold >= 0;
       if (gold >= 0) {
-        rays.current.rotation.y = gold * 0.9;
-        const reach = Math.sin(Math.min(1, gold * 1.6) * Math.PI * 0.5);
-        rays.current.children.forEach((ray) => {
-          ray.scale.y = 0.15 + reach;
-          ((ray as Mesh).material as MeshBasicMaterial).opacity = 0.95 * (1 - gold) ** 1.2;
-        });
+        pool.current.scale.setScalar(1 + 0.25 * gold);
+        (pool.current.material as MeshBasicMaterial).opacity = 0.55 * Math.min(1, gold * 6) * (1 - gold) ** 1.3;
       }
     }
-    if (stars.current) {
-      stars.current.visible = gold >= 0;
+    if (glints.current) {
+      glints.current.visible = gold >= 0;
       if (gold >= 0) {
-        stars.current.children.forEach((star, i) => {
-          const local = Math.min(1, Math.max(0, gold * 1.5 - i * 0.08));
-          star.scale.setScalar((STARS[i]?.[3] ?? 0.4) * Math.sin(local * Math.PI));
-          star.rotation.z = local * 1.4;
+        glints.current.children.forEach((sprite, i) => {
+          const g = glintPose(type, i, gold);
+          sprite.visible = g.alpha > 0.01;
+          sprite.position.set(g.x, DRAFT + AFLOAT + g.y, g.z);
+          sprite.scale.setScalar(g.size);
+          ((sprite as Mesh).material as MeshBasicMaterial).opacity = g.alpha;
         });
       }
     }
@@ -271,29 +271,22 @@ export function DockWorks({ angle, berth = 0, type, color, mode, rate = 1, onSwa
           <meshStandardMaterial color="#f3ead8" flatShading roughness={1} transparent depthWrite={false} />
         </mesh>
       ))}
-      {/* The gold light: a ring spreading on the water, rays fanning up from the ship, stars over it. */}
+      {/* The gold light: a ring spreading on the water round the unveiled ship. */}
       <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} position={[0, DRAFT + AFLOAT, 0]} visible={false}>
-        <ringGeometry args={[0.8, 1, 48]} />
-        <meshBasicMaterial color="#ffd36b" transparent toneMapped={false} depthWrite={false} side={DoubleSide} />
+        <ringGeometry args={[0.9, 1, 48]} />
+        <meshBasicMaterial color="#ffe6a8" transparent toneMapped={false} depthWrite={false} side={DoubleSide} />
       </mesh>
-      <group ref={rays} position={[0, 2.2, 0]} visible={false}>
-        {Array.from({ length: RAYS }, (_, i) => {
-          const a = (2 * Math.PI * i) / RAYS;
-          const tilt = i % 2 === 0 ? 0.5 : 0.95;
-          return (
-            <mesh key={i} rotation={[0, a, tilt - Math.PI / 2, 'YXZ']} position={[Math.cos(a) * 1.2, 0.4, -Math.sin(a) * 1.2]}>
-              <coneGeometry args={[0.34, i % 2 === 0 ? 6.5 : 5, 4, 1, true]} />
-              <meshBasicMaterial color="#ffe08a" transparent toneMapped={false} depthWrite={false} blending={AdditiveBlending} side={DoubleSide} />
-            </mesh>
-          );
-        })}
-      </group>
-      <group ref={stars} visible={false}>
-        {STARS.map(([x, y, z], i) => (
-          <mesh key={i} position={[x, y, z]}>
-            <octahedronGeometry args={[1, 0]} />
-            <meshBasicMaterial color="#fff0b0" toneMapped={false} />
-          </mesh>
+      {/* The warm pool under the hull: a soft glow lying on the water, so the light rises round the ship, never behind it. */}
+      <mesh ref={pool} rotation={[-Math.PI / 2, 0, 0]} position={[0, DRAFT + AFLOAT + 0.02, 0]} visible={false}>
+        <planeGeometry args={[HULL_HALF_WIDTH[type] * 2 + 4.2, 11]} />
+        <meshBasicMaterial map={glowTexture()} color={POOL_COLOR} transparent toneMapped={false} depthWrite={false} blending={AdditiveBlending} />
+      </mesh>
+      {/* Glints rising off the hull's sides like sparks off new paint: soft round lights, each twinkling once. */}
+      <group ref={glints} visible={false}>
+        {Array.from({ length: GLINTS }, (_, i) => (
+          <sprite key={i} visible={false}>
+            <spriteMaterial map={glowTexture()} color={GLINT_COLOR} transparent toneMapped={false} depthWrite={false} blending={AdditiveBlending} />
+          </sprite>
         ))}
       </group>
     </group>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SHIP_TYPE_IDS } from '../../src/v07/game';
-import { BAY_COUNT, HULL_HALF_WIDTH, WORKS_SCRIPT, worksPose, worksSides } from '../../src/ui-v07/scene/ships/dockWorksShow';
+import { BAY_COUNT, HULL_HALF_WIDTH, WORKS_SCRIPT, worksPose, worksSides, GLINTS, glintPose } from '../../src/ui-v07/scene/ships/dockWorksShow';
 
 // V0.8 prototype (not rules): the dock works' show.
 describe('worksPose', () => {
@@ -76,5 +76,19 @@ describe('worksPose', () => {
       expect(staging - HULL_HALF_WIDTH[type]).toBeCloseTo(0.42);
       expect(-curtain - HULL_HALF_WIDTH[type]).toBeCloseTo(0.3);
     }
+  });
+});
+
+describe('glintPose', () => {
+  it('rises off the hull side facing the camera, never standing behind the ship, and is gone when the light is over', () => {
+    for (let i = 0; i < GLINTS; i++) {
+      const g = glintPose('standard', i, 0.5);
+      expect(g.x).toBeLessThan(-0.5);
+      expect(Math.abs(g.z)).toBeLessThanOrEqual(3.4);
+      expect(glintPose('standard', i, 1).alpha).toBe(0);
+      expect(glintPose('standard', i, 0).alpha).toBe(0);
+    }
+    const lit = Array.from({ length: GLINTS }, (_, i) => glintPose('standard', i, 0.5)).filter((g) => g.alpha > 0);
+    expect(lit.length).toBeGreaterThan(GLINTS / 3);
   });
 });

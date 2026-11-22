@@ -38,7 +38,7 @@ export const WORKS_SCRIPT: Readonly<Record<WorksMode, Script>> = {
 };
 
 /** Seconds a piece takes to come up, to come down (the curtain), to go under, and how long the gold light lasts. */
-export const WORKS_PACE = { rise: 0.45, lay: 0.4, unroll: 0.4, fall: 0.32, sink: 0.55, gold: 1.0, splash: 0.7, heapHold: 1.3 } as const;
+export const WORKS_PACE = { rise: 0.45, lay: 0.4, unroll: 0.4, fall: 0.32, sink: 0.55, gold: 1.4, splash: 0.7, heapHold: 1.3 } as const;
 
 export const BAY_COUNT = 4;
 export const POLE_COUNT = 2;
@@ -127,4 +127,44 @@ export const WORKS_GAP = { staging: 0.42, curtain: 0.3 } as const;
 export function worksSides(type: ShipTypeId): { readonly staging: number; readonly curtain: number } {
   const half = HULL_HALF_WIDTH[type];
   return { staging: half + WORKS_GAP.staging, curtain: -(half + WORKS_GAP.curtain) };
+}
+
+/** The glints rising off the hull as the curtain falls (DockWorks' gold light). */
+export const GLINTS = 22;
+/** Seconds one glint takes to rise and fade; the last sets off this long before the light is over. */
+const GLINT_LIFE = 0.85;
+/** The hull's half length the glints are spread along (scene units; the works' bays stand at z -3..3). */
+const GLINT_HALF_LENGTH = 3.4;
+
+export interface GlintPose {
+  /** Ship space, y over the water line. */
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+  readonly size: number;
+  readonly alpha: number;
+}
+
+/** A fraction from 0 to 1 that looks random but is the same every time for the same `i` (golden-ratio steps). */
+const spread = (i: number, step: number): number => (i * step) % 1;
+
+/**
+ * Glint `i` at `gold` (0..1 through the gold light, worksPose's `gold`): it sets off at the hull's side near the water,
+ * drifts up and a little outward, swells and fades. They rise off the side facing the camera (the curtain's side,
+ * -x), spread along the hull and following its taper, so the light plays over the ship and never stands behind it.
+ */
+export function glintPose(type: ShipTypeId, i: number, gold: number): GlintPose {
+  const along = (spread(i, 0.618034) * 2 - 1) * GLINT_HALF_LENGTH;
+  const taper = Math.sqrt(Math.max(0.15, 1 - (along / (GLINT_HALF_LENGTH + 0.6)) ** 2));
+  const delay = spread(i, 0.371) * (WORKS_PACE.gold - GLINT_LIFE);
+  const life = clamp((gold * WORKS_PACE.gold - delay) / GLINT_LIFE);
+  const rise = 1.2 + spread(i, 0.733) * 1.8;
+  const reach = (HULL_HALF_WIDTH[type] + 0.15) * taper + life * 0.5;
+  return {
+    x: -reach,
+    y: 0.3 + ease(life) * rise,
+    z: along,
+    size: (0.6 + spread(i, 0.291) * 0.45) * (0.6 + 0.4 * Math.sin(life * Math.PI)),
+    alpha: life <= 0 || life >= 1 ? 0 : Math.sin(life * Math.PI) ** 1.5,
+  };
 }

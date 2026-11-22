@@ -1,4 +1,4 @@
-import type { WorksMode } from '../scene/ships/dockWorksShow';
+import { WORKS_SCRIPT, type WorksMode } from '../scene/ships/dockWorksShow';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { setInvestStage } from '../analytics/investStage';
 import { GOODS, producedFor, type BuildingId, type GoodId, type MaterialAction, type ShipTypeId } from '../../v07/game';
@@ -88,6 +88,22 @@ const BUBBLE_RISE = 0.12;
 
 /** How long the dock works take to go under when the skill's pick is taken back (ms; dockWorksShow's strike). */
 const STRIKE_MS = 750;
+/** How long the works' whole show takes when a skill is opened (ms; dockWorksShow's build): nothing cuts it short. */
+const BUILD_MS = WORKS_SCRIPT.build.end * 1000;
+
+/** The dock works round the viewer's ship; `settled`: a `build` show has played to its end. */
+interface OwnWorks {
+  readonly mode: WorksMode;
+  readonly key: string;
+  readonly skill: boolean;
+  readonly ship: ShipTypeId;
+  readonly settled?: boolean;
+}
+/** What the step does to the works and the camera once a show that was playing is over. */
+interface HeldMoves {
+  readonly works: OwnWorks | null;
+  readonly lot: boolean;
+}
 
 export function useInvestStep(env: StageEnv | null): StageParts | null {
   const active = env?.request.context.decision.phase === 'invest' ? env : null;
@@ -108,16 +124,33 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   // V0.8 prototype: opening a ship's skill (on its card in the ship pick) raises the dock works round it (the whole
   // show, then they stand open); taking the pick back sends them under again. They belong to that ship: with another
   // ship at the dock they are not on the table, and they stand open when theirs comes back.
-  const [works, setWorks] = useState<{ readonly mode: WorksMode; readonly key: string; readonly skill: boolean; readonly ship: ShipTypeId } | null>(null);
+  const [works, setWorks] = useState<OwnWorks | null>(null);
+  // While the show plays nothing cuts it short: the dock keeps its ship (hovering or picking another card waits), and
+  // a pick taken back or changed, or a look at the lot, is held here and done once the show is over.
+  const showing = works?.mode === 'build' && works.settled !== true;
+  const held = useRef<HeldMoves | null>(null);
   useEffect(() => {
     if (works?.mode !== 'strike') return;
     const timer = setTimeout(() => setWorks(null), STRIKE_MS);
     return () => clearTimeout(timer);
   }, [works]);
-  // The ship at the dock, as the last render knew it: looked away from, a show still playing is over (the works stand open).
+  const showKey = showing ? works.key : null;
+  useEffect(() => {
+    if (showKey === null) return;
+    const timer = setTimeout(() => {
+      const next = held.current;
+      held.current = null;
+      if (next) {
+        setWorks(next.works);
+        setLotLook(next.lot);
+      } else setWorks((w) => (w?.key === showKey ? { ...w, settled: true } : w));
+    }, BUILD_MS);
+    return () => clearTimeout(timer);
+  }, [showKey]);
+  // The ship at the dock, as the last render knew it: looked away from after its show, the works stand open.
   const dockType = useRef<ShipTypeId | undefined>(undefined);
   useEffect(() => {
-    if (works?.mode === 'build' && dockType.current !== works.ship) setWorks({ ...works, mode: 'open', key: `open-${works.key}` });
+    if (works?.mode === 'build' && works.settled === true && dockType.current !== works.ship) setWorks({ ...works, mode: 'open', key: `open-${works.key}` });
   });
   const [shipDecided, setShipDecided] = useState(false);
   // The ship card the pointer is on: the info card describes it, else the one picked.
@@ -149,6 +182,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     setShipDecided(false);
     setPeekShip(null);
     setWorks(null);
+    held.current = null;
     setRevealed(new Set());
     setFreshShip(null);
     setReminding(null);
@@ -234,8 +268,20 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const pickMaterial = (material: MaterialAction | null) => {
     soundEngine.playSfx('role-pick');
     setChoice((c) => withMaterial(options, c, material));
-    setLotLook(material?.kind === 'build');
-    setWorks((w) => (material?.kind === 'open' ? { mode: 'build', key: `build-${Date.now()}`, skill: true, ship: material.ship } : w && w.mode !== 'strike' ? { mode: 'strike', key: `strike-${Date.now()}`, skill: false, ship: w.ship } : w));
+    const lot = material?.kind === 'build';
+    const after = (w: OwnWorks | null): OwnWorks | null =>
+      material?.kind === 'open' ? { mode: 'build', key: `build-${Date.now()}`, skill: true, ship: material.ship } : w && w.mode !== 'strike' ? { mode: 'strike', key: `strike-${Date.now()}`, skill: false, ship: w.ship } : w;
+    if (!showing) {
+      setLotLook(lot);
+      setWorks(after);
+      return;
+    }
+    // The same skill opened again over its own show: nothing to change once it is over.
+    held.current = material?.kind === 'open' && material.ship === works.ship ? null : { works: after({ ...works, settled: true }), lot };
+  };
+  const look = (on: boolean) => {
+    if (showing) held.current = { works: held.current?.works ?? { ...works, settled: true }, lot: on };
+    else setLotLook(on);
   };
   const toggleSkill = (ship: ShipTypeId) => pickMaterial(skills[ship]?.state === 'opening' ? null : { kind: 'open', ship });
   const materialPanelFor = (readOnly: boolean) =>
@@ -250,7 +296,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
         onProtect={(good) => setChoice((c) => ({ ...c, protect: good }))}
         readOnly={readOnly}
         looking={lotLook}
-        onLook={setLotLook}
+        onLook={look}
       />
     ) : null;
   // The gamble's raise, on the ship's note while loading: a declaration about this voyage.
@@ -606,7 +652,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   );
   const shipPicked: ShipPick = shipDecided ? (choice.shipType ?? 'none') : null;
   // The ship on the dock (hovered or picked), so the side shot frames a taller one from further back.
-  const shownShip = typed && (peekShip ?? shipPicked) && (peekShip ?? shipPicked) !== 'none' ? ((peekShip ?? shipPicked) as ShipTypeId) : undefined;
+  const dockPick = peekShip ?? shipPicked;
+  const shownShip = showing ? works.ship : typed && dockPick && dockPick !== 'none' ? (dockPick as ShipTypeId) : undefined;
   // The works stand round their own ship only; back at the dock after their show, they simply stand open.
   dockType.current = shownShip;
   const shownWorks = works && shownShip === works.ship ? works : null;
