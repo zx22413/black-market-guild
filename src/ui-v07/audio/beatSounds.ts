@@ -39,8 +39,8 @@ export function beatSound(beat: ShipBeat, before: BeatView | null, now: BeatView
     const step = beat.steps[now.stepsShown - 1];
     return step ? stepSound(step) : null;
   }
-  // 最後的大市集: the low die knocked away (the pick borrows the card pick's click until it has a sound of its own).
-  if (now.gamble === 'picked' && before?.gamble !== 'picked') return 'card-pick';
+  // 最後的大市集: the low die knocked away and the high one kept.
+  if (now.gamble === 'picked' && before?.gamble !== 'picked') return 'gamble-pick';
   if (now.showStart && !before?.showStart) return 'dice';
   return null;
 }

@@ -15,6 +15,8 @@ export type SfxId =
   | 'match-end-horn'
   // The voyage beat: the die, each modifier, the outcome (beatSounds.ts).
   | 'dice'
+  // 最後的大市集: the low die flicked off the table and the high one kept.
+  | 'gamble-pick'
   | 'guard'
   | 'pirate'
   | 'event-tailwind'
@@ -125,6 +127,7 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   'result-open': 'sfx-result-open.ogg',
   'match-end-horn': 'sfx-match-end-horn.ogg',
   dice: { licensed: 'sfx-dice.ogg', fallback: 'sfx-dice.ogg' },
+  'gamble-pick': 'sfx-gamble-pick.ogg',
   guard: { licensed: 'sfx-guard.ogg', fallback: 'sfx-guard.ogg' },
   pirate: { licensed: 'sfx-pirate.ogg', fallback: 'sfx-pirate.ogg' },
   'event-tailwind': 'sfx-event-tailwind.ogg',

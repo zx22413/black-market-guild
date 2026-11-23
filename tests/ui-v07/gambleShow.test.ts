@@ -128,7 +128,7 @@ describe('the final market in a ship beat', () => {
   it('sounds the dice on the throw and the pick as the low die goes', () => {
     const b = beat({});
     expect(beatSound(b, at(b, 'intro'), at(b, 'start'))).toBe('dice');
-    expect(beatSound(b, at(b, 'start'), at(b, 'gamble'))).toBe('card-pick');
+    expect(beatSound(b, at(b, 'start'), at(b, 'gamble'))).toBe('gamble-pick');
     expect(beatSound(b, at(b, 'gamble'), at(b, 'gamble'))).toBeNull();
   });
 });
