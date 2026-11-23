@@ -55,7 +55,8 @@ function stageOpening(script: TutorialScript, t: Transition): Transition {
 function stageRound(round: RoundScript, state: MatchState): MatchState {
   if (state.phase === 'role-deployment') {
     // The dice were rolled when the investments came in; no one has seen them yet (§4).
-    const ships = state.roundState.ships.map((s) => ({ ...s, rawRoll: round.rolls?.[s.owner] ?? 6 }));
+    // A scripted roll is one die: the dice thrown in a final market (gambleDice) would not agree with it.
+    const ships = state.roundState.ships.map(({ gambleDice: _thrown, ...s }) => ({ ...s, rawRoll: round.rolls?.[s.owner] ?? 6 }));
     return { ...state, roundState: { ...state.roundState, ships } };
   }
   return state;

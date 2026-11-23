@@ -143,7 +143,7 @@ export function voyageModifier(state: MatchState, ship: Ship): VoyageModifier {
   // night keeps it), and with armedMaxFinal only when the final without it would be that low.
   const guard = guarded + armedShift(rules, ship, clamp(base + guarded + pirate + event + island));
   const final = clamp(base + guard + pirate + event + island);
-  return { shipId: ship.id, base, guard, pirate, event, island, final };
+  return { shipId: ship.id, base, ...(ship.gambleDice === undefined ? {} : { dice: ship.gambleDice }), guard, pirate, event, island, final };
 }
 
 export function outcomeOf(state: MatchState, ship: Ship, value: number): VoyageOutcome {
@@ -259,13 +259,13 @@ function lastGambleArrivals(state: MatchState): MatchState {
   let rng = state.rng;
   const ships = state.roundState.ships.map((ship) => {
     if (ship.arriveRound - shipDelay(state.rules, ship.type) < state.round) {
-      let raw = ship.rawRoll;
+      const thrown = [ship.rawRoll];
       for (let k = 1; k < dice; k += 1) {
         const step = nextInt(rng, state.rules.sailing.dieMin, state.rules.sailing.dieMax);
         rng = step.state;
-        raw = Math.max(raw, step.value);
+        thrown.push(step.value);
       }
-      return { ...ship, rawRoll: raw };
+      return { ...ship, rawRoll: Math.max(...thrown), gambleDice: thrown };
     }
     return ship;
   });

@@ -16,7 +16,7 @@ export interface BeatPlayback {
 
 /** `running` false holds the beat at its start (e.g. until the 3D table has loaded). */
 /** What a beat shows before anything happened; also the view when there is no beat at all. */
-const NOTHING_YET: BeatView = { started: 0, showStart: false, stepsShown: 0, die: null, showOutcome: false, showCargo: false, dropsShown: 0, skillsShown: 0, cashShown: 0, goodsShown: 0, done: false };
+const NOTHING_YET: BeatView = { started: 0, showStart: false, stepsShown: 0, die: null, showOutcome: false, showCargo: false, gamble: null, dropsShown: 0, skillsShown: 0, cashShown: 0, goodsShown: 0, done: false };
 
 /** `beat` may be null (no ship to play): the clock then stays idle. */
 export function useBeatPlayback(beat: ShipBeat | null, speed = 1, running = true, money = true): BeatPlayback {

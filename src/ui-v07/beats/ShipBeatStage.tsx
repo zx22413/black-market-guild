@@ -4,6 +4,7 @@ import { ArrowIcon } from '../table3d/icons';
 import { GOODS, type PlayerId, type ShipTypeId } from '../../v07/game';
 import { CASH_REASON_LABELS, ISLAND_LABELS, ROLE_LABELS, SHIP_TYPE_LABELS, VOYAGE_EVENT_LABELS } from '../labels';
 import { FACILITY_LABELS } from '../table/v08Text';
+import { gambleText, type Gamble } from './gambleShow';
 import { shipMeter } from './shipMeter';
 import { dieTop, type BeatView } from './beatTimeline';
 import type { BeatStep, ShipBeat } from './shipBeat';
@@ -94,14 +95,75 @@ function useTumble(value: number | null, rolls: boolean, top: number): number | 
   return face;
 }
 
-export function BeatDie({ value, step, stepsShown, type, top = 6 }: { readonly value: number | null; readonly step: BeatStep | null; readonly stepsShown: number; readonly type: ShipTypeId; readonly top?: number }) {
+/** 最後的大市集: how long after the die before it each die lands, so the eye can follow them one by one. */
+export const GAMBLE_STAGGER_MS = 320;
+
+/** When the last of `count` thrown dice has landed, from the throw. */
+export const gambleLandedMs = (count: number): number => DIE_TUMBLE_MS + (count - 1) * GAMBLE_STAGGER_MS;
+
+/**
+ * 最後的大市集: the dice thrown together. They tumble and land one after the other; once `picked` the high one stays,
+ * lit, and the others are knocked off the table.
+ */
+function GambleDice({ gamble, picked, top }: { readonly gamble: Gamble; readonly picked: boolean; readonly top: number }) {
+  const count = gamble.dice.length;
+  const [landed, setLanded] = useState(picked ? count : 0);
+  const [faces, setFaces] = useState<readonly number[]>(gamble.dice);
+  // Before paint, so a die's real value never flashes ahead of its tumble.
+  useLayoutEffect(() => {
+    // Skipped straight to the pick: the dice are down.
+    if (picked) {
+      setLanded(count);
+      return undefined;
+    }
+    setLanded(0);
+    const spin = () => setFaces((now) => now.map((f) => ((f + Math.floor(Math.random() * (top - 1))) % top) + 1));
+    spin();
+    const tick = setInterval(spin, TUMBLE_FACE_MS);
+    const lands = gamble.dice.map((_, i) => setTimeout(() => setLanded((n) => Math.max(n, i + 1)), DIE_TUMBLE_MS + i * GAMBLE_STAGGER_MS));
+    const stop = setTimeout(() => clearInterval(tick), gambleLandedMs(count));
+    return () => {
+      clearInterval(tick);
+      clearTimeout(stop);
+      lands.forEach(clearTimeout);
+    };
+  }, [gamble, picked, count, top]);
+  return (
+    <div className={`gamble-dice ${picked ? 'picked' : ''}`} role="img" aria-label={picked ? `${gambleText(gamble, true).note}，${gambleText(gamble, true).title}` : gambleText(gamble, false).note}>
+      {gamble.dice.map((d, i) => {
+        const down = i < landed;
+        const state = !down ? 'tumble' : !picked ? 'landed' : i === gamble.kept ? 'kept' : 'dropped';
+        return (
+          <div key={i} className={`beat-die gamble-die ${state}`}>
+            {down ? d : faces[i]}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export interface BeatDieProps {
+  readonly value: number | null;
+  readonly step: BeatStep | null;
+  readonly stepsShown: number;
+  readonly type: ShipTypeId;
+  readonly top?: number;
+  /** 最後的大市集: the dice thrown, while they are the thing on screen (`BeatView.gamble`); the single die otherwise. */
+  readonly gamble?: { readonly dice: Gamble; readonly picked: boolean } | null;
+}
+
+export function BeatDie({ value, step, stepsShown, type, top = 6, gamble = null }: BeatDieProps) {
   const meter = shipMeter(type);
   const sinkMax = Math.max(0, ...meter.filter((c) => c.sinks).map((c) => c.value));
-  const tumbling = useTumble(value, stepsShown === 0, Math.max(top, meter.length));
-  const face = tumbling ?? value;
+  const tumbling = useTumble(value, stepsShown === 0 && !gamble, Math.max(top, meter.length));
+  // While the dice are still in the air the meter says nothing of where they will land.
+  const face = gamble ? (gamble.picked ? gamble.dice.value : null) : (tumbling ?? value);
   return (
     <div className="beat-dice">
-      {tumbling !== null ? (
+      {gamble ? (
+        <GambleDice gamble={gamble.dice} picked={gamble.picked} top={Math.max(top, meter.length)} />
+      ) : tumbling !== null ? (
         <div className="beat-die tumble">{tumbling}</div>
       ) : (
         <div key={`${value}-${stepsShown}`} className={`beat-die ${step ? (step.delta > 0 ? 'up' : 'down') : ''} shake-${Math.min(3, Math.abs(step?.delta ?? 0))}`}>
@@ -132,6 +194,7 @@ export function BeatCard({ beat, playback, names, viewer, onDone }: BeatCardProp
   const current = currentStep(beat, view);
   const lastStep = view.stepsShown > 0 ? beat.steps[view.stepsShown - 1]! : null;
   const sank = beat.outcome === 'sank';
+  const gamble = beat.gamble && view.gamble ? { dice: beat.gamble, picked: view.gamble === 'picked' } : null;
   const owner = names[beat.owner] ?? beat.owner;
   const cargo = GOODS.flatMap((g) => Array.from({ length: beat.cargo[g] }, () => g));
   const advance = () => {
@@ -157,12 +220,18 @@ export function BeatCard({ beat, playback, names, viewer, onDone }: BeatCardProp
           {current && <Actor step={current} />}
           {current?.kind === 'pirate' && <span className="beat-flash" />}
         </div>
-        <BeatDie value={view.die} step={lastStep} stepsShown={view.stepsShown} type={beat.type} top={dieTop(beat)} />
+        <BeatDie value={view.die} step={lastStep} stepsShown={view.stepsShown} type={beat.type} top={dieTop(beat)} gamble={gamble} />
       </div>
 
       <div className="beat-caption" aria-live="polite">
         {!view.showStart && <span className="beat-big">出航</span>}
-        {view.showStart && !lastStep && !view.showOutcome && <span className="beat-big">起始骰值 {beat.start}</span>}
+        {gamble && (
+          <span key={view.gamble} className="beat-big">
+            {gambleText(gamble.dice, gamble.picked).title}
+            <small>{gambleText(gamble.dice, gamble.picked).note}</small>
+          </span>
+        )}
+        {view.showStart && !gamble && !lastStep && !view.showOutcome && <span className="beat-big">起始骰值 {view.die ?? beat.start}</span>}
         {current && (
           <span key={view.stepsShown} className="beat-big">
             {stepTitle(current, names, dieTop(beat)).name} <b className={current.delta > 0 ? 'up' : 'down'}>{signed(current.delta)}</b>
@@ -173,7 +242,7 @@ export function BeatCard({ beat, playback, names, viewer, onDone }: BeatCardProp
       </div>
 
       <p className="beat-trail">
-        起始 {beat.start}
+        起始 {view.gamble === 'thrown' ? '？' : view.gamble === 'picked' ? view.die : beat.start}
         {beat.steps.slice(0, view.stepsShown).map((s, i) => (
           <span key={i}>
             <ArrowIcon />

@@ -3864,3 +3864,104 @@ button .info-tip-anchor {
     min-width: 100%;
   }
 }
+
+/* ---------- 最後的大市集: two dice thrown, the high one kept (GambleDice in ShipBeatStage) ---------- */
+/* The dice sit side by side, a little smaller than the single die, so the one that stays can grow into its place. */
+.gamble-dice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.gamble-dice .gamble-die {
+  width: 68px;
+  height: 68px;
+  font-size: 42px;
+  animation: none;
+  flex: none;
+}
+.beat-tag .gamble-dice .gamble-die {
+  width: 52px;
+  height: 52px;
+  font-size: 32px;
+  border-radius: 13px;
+}
+.gamble-dice .gamble-die.tumble {
+  animation: beat-tumble 130ms linear infinite;
+  color: #6b5a44;
+}
+/* The second die leans the other way while it tumbles: two dice, not one die twice. */
+.gamble-dice .gamble-die.tumble:nth-child(even) {
+  animation-direction: reverse;
+  animation-delay: -65ms;
+}
+.gamble-dice .gamble-die.landed {
+  animation: gamble-land 340ms cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+/* The one that counts: it steps forward, turns gold and stays lit. */
+.gamble-dice .gamble-die.kept {
+  z-index: 1;
+  background: #fff3c4;
+  color: #6a4300;
+  box-shadow: inset 0 -5px 0 #e0b84a, 0 0 0 3px #f2c230, 0 0 22px 6px rgb(255 205 70 / 0.75), 0 6px 14px rgb(0 0 0 / 0.25);
+  animation: gamble-keep 900ms cubic-bezier(0.2, 1.4, 0.4, 1) 260ms both;
+}
+/* The low one: struck grey and knocked off the table. */
+.gamble-dice .gamble-die.dropped {
+  background: #cfc6b0;
+  color: #8a8068;
+  box-shadow: inset 0 -5px 0 #b3a98f;
+  animation: gamble-drop 820ms cubic-bezier(0.5, 0, 0.9, 0.6) 120ms both;
+}
+.gamble-say {
+  color: #7a4b00;
+}
+.gamble-say.picked {
+  color: #1d7a35;
+}
+@keyframes gamble-land {
+  0% {
+    transform: translateY(-16px) rotate(-70deg) scale(0.75);
+  }
+  70% {
+    transform: translateY(2px) rotate(4deg) scale(1.06);
+  }
+}
+@keyframes gamble-keep {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.38) rotate(-4deg);
+  }
+  100% {
+    transform: scale(1.2);
+  }
+}
+@keyframes gamble-drop {
+  0% {
+    transform: none;
+    opacity: 1;
+  }
+  22% {
+    transform: translate(-3px, -9px) rotate(-14deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-10px, 46px) rotate(-80deg) scale(0.55);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gamble-dice .gamble-die.tumble,
+  .gamble-dice .gamble-die.landed {
+    animation: none;
+  }
+  .gamble-dice .gamble-die.kept {
+    animation: none;
+    transform: scale(1.2);
+  }
+  .gamble-dice .gamble-die.dropped {
+    animation: none;
+    opacity: 0.35;
+  }
+}

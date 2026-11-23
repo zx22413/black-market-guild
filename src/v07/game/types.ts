@@ -102,6 +102,11 @@ export interface Ship {
   readonly arriveRound: number;
   /** Hidden raw 1d6. */
   readonly rawRoll: number;
+  /**
+   * 最後的大市集 (game-design.md §12.1): every die thrown for this ship's raw roll, in the order thrown; `rawRoll` is the
+   * highest. Hidden like `rawRoll` until the ship is resolved; absent when one die was rolled.
+   */
+  readonly gambleDice?: readonly number[];
   readonly outcome: VoyageOutcome | null;
   /** V0.8 prototype: a raised gambler. */
   readonly raised?: true;
@@ -332,6 +337,11 @@ export type V08Effect = (typeof V08_EFFECTS)[number];
 export interface VoyageModifier {
   readonly shipId: ShipId;
   readonly base: number;
+  /**
+   * 最後的大市集: the dice thrown for the raw roll, in the order thrown (the highest counted). For the show only; `base`
+   * is what the resolution used (a skill may have changed it since: the breaker's extra die, the standard ship's reroll).
+   */
+  readonly dice?: readonly number[];
   readonly guard: number;
   readonly pirate: number;
   readonly event: number;

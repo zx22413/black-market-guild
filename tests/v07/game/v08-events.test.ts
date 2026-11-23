@@ -155,6 +155,27 @@ describe('V0.8 prototype advance cards', () => {
     expect(sum / n).toBeGreaterThan(4.2);
     expect(sum / n).toBeLessThan(4.75);
   });
+
+  it('最後一搏 keeps both dice on the ship and publishes them with the modifiers, never in a view before', () => {
+    const gamble = at({ finalRound: 1, finalEffect: 'last-gamble' });
+    let state = gamble;
+    for (const id of IDS) {
+      const r = applyAction(state, { type: 'invest', playerId: id, build: null, load: id === 'p1' ? G(1) : G(0), ...(id === 'p1' ? { shipType: 'standard' as const } : {}) });
+      if (!r.ok) throw new Error(r.error.message);
+      state = r.value.state;
+    }
+    const ship = state.roundState.ships.find((s) => s.owner === 'p1')!;
+    expect(ship.gambleDice).toHaveLength(2);
+    expect(Math.max(...ship.gambleDice!)).toBe(ship.rawRoll);
+    expect(JSON.stringify(getPlayerView(state, 'p2'))).not.toMatch(/gambleDice/);
+    expect(JSON.stringify(getPlayerView(state, 'p1'))).not.toMatch(/gambleDice/);
+
+    expect(modifier(playRound(gamble, { loads: { p1: G(1) } }).events).dice).toHaveLength(2);
+    // A plain round rolls one die: nothing to tell apart.
+    const plainRound = playRound(at({}), { loads: { p1: G(1) } });
+    expect(plainRound.state.roundState.ships.every((s) => s.gambleDice === undefined)).toBe(true);
+    expect(modifier(plainRound.events).dice).toBeUndefined();
+  });
 });
 
 describe('V0.8 prototype boss events (phase II)', () => {

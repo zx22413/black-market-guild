@@ -83,13 +83,13 @@ function rollDice(state: MatchState, ships: readonly Ship[]): { ships: Ship[]; r
   const dice = diceToRoll(state.rules, publicEvents(state));
   let rng = state.rng;
   const rolled = ships.map((ship) => {
-    let raw = Number.NEGATIVE_INFINITY;
+    const thrown: number[] = [];
     for (let k = 0; k < dice; k += 1) {
       const step = nextInt(rng, dieMin, dieMax);
       rng = step.state;
-      raw = Math.max(raw, step.value);
+      thrown.push(step.value);
     }
-    return { ...ship, rawRoll: raw };
+    return { ...ship, rawRoll: Math.max(...thrown), ...(thrown.length > 1 ? { gambleDice: thrown } : {}) };
   });
   return { ships: rolled, rng };
 }

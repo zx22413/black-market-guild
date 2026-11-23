@@ -2,6 +2,7 @@ import type { PlayerId } from '../../v07/game';
 import { CASH_REASON_LABELS, SHIP_TYPE_LABELS } from '../labels';
 import { GoodIcon } from '../table3d/GoodIcon';
 import { dieTop, type BeatView } from './beatTimeline';
+import { gambleText } from './gambleShow';
 import { crateStates, type ShipBeat } from './shipBeat';
 import { BeatDie, currentStep, signed, stepTitle } from './ShipBeatStage';
 import './beat.css';
@@ -21,6 +22,9 @@ export function BeatTag({ beat, view, names, viewer }: BeatTagProps) {
   const step = currentStep(beat, view);
   const lastStep = view.stepsShown > 0 ? beat.steps[view.stepsShown - 1]! : null;
   const sank = beat.outcome === 'sank';
+  // 最後的大市集: the dice thrown and the pick take the tag's die and its line while they play.
+  const gamble = beat.gamble && view.gamble ? { dice: beat.gamble, picked: view.gamble === 'picked' } : null;
+  const gambleSay = gamble ? gambleText(gamble.dice, gamble.picked) : null;
   const owner = `${beat.owner === viewer ? '你' : (names[beat.owner] ?? beat.owner)}的${SHIP_TYPE_LABELS[beat.type]}`;
   // V0.8 prototype: a crate the show has dropped into the sea is crossed out where it sat.
   const cargo = crateStates(beat, view.dropsShown);
@@ -32,10 +36,16 @@ export function BeatTag({ beat, view, names, viewer }: BeatTagProps) {
   return (
     <div className="beat-tag" data-focus="beat">
       <div className="beat-tag-top">
-        <BeatDie value={view.die} step={lastStep} stepsShown={view.stepsShown} type={beat.type} top={dieTop(beat)} />
+        <BeatDie value={view.die} step={lastStep} stepsShown={view.stepsShown} type={beat.type} top={dieTop(beat)} gamble={gamble} />
         <div className="beat-tag-say" aria-live="polite">
           <small>{owner}</small>
-          {!view.showOutcome && !step && <b>起始 {beat.start}</b>}
+          {gambleSay && (
+            <b key={view.gamble} className={`beat-pop gamble-say ${gamble?.picked ? 'picked' : ''}`}>
+              {gambleSay.title}
+            </b>
+          )}
+          {gambleSay && <small>{gambleSay.note}</small>}
+          {!gambleSay && !view.showOutcome && !step && <b>起始 {view.die ?? beat.start}</b>}
           {step && (
             <b key={view.stepsShown} className="beat-pop">
               {stepTitle(step, names, dieTop(beat)).name} <span className={step.delta > 0 ? 'up' : 'down'}>{signed(step.delta)}</span>
@@ -55,7 +65,7 @@ export function BeatTag({ beat, view, names, viewer }: BeatTagProps) {
         </p>
       )}
       <p className="beat-tag-trail">
-        {beat.start}
+        {view.gamble === 'thrown' ? '？' : view.gamble === 'picked' ? view.die : beat.start}
         {beat.steps.slice(0, view.stepsShown).map((s, i) => (
           <span key={i}> {signed(s.delta)}</span>
         ))}

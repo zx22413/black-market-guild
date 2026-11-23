@@ -6,7 +6,7 @@ import { SHOW_TEMPO, slowed } from '../scene/showTempo';
 // docs/ui/v07-layout-research.md §6): the start die, then each modifier, then the outcome, the
 // cargo and every payment one by one. Pure, so the order and the pacing are testable.
 
-export type CueKind = 'intro' | 'start' | 'skill' | 'step' | 'outcome' | 'cargo' | 'drop' | 'cash' | 'goods' | 'done';
+export type CueKind = 'intro' | 'start' | 'gamble' | 'skill' | 'step' | 'outcome' | 'cargo' | 'drop' | 'cash' | 'goods' | 'done';
 
 export interface Cue {
   readonly kind: CueKind;
@@ -27,6 +27,12 @@ export const BEAT_PACE = slowed({
   island: 2000,
   outcome: 1300,
   cargo: 1000,
+  /**
+   * 最後的大市集: the dice thrown and landing one after the other (in place of `start`), then the low one knocked away.
+   * Both play in full at any speed, like a skill.
+   */
+  gambleThrow: 1100,
+  gamblePick: 1300,
   /** V0.8 prototype: a ship skill going off on the die (a reroll, the extra die). */
   skill: 1500,
   /** V0.8 prototype: one crate falling into the sea. */
@@ -41,7 +47,7 @@ export const BEAT_PACE = slowed({
  * people read, and it flashed by too quickly when the pace was only divided by the speed.
  */
 export const DIE_HOLD = 1000 * SHOW_TEMPO;
-const DIE_CUES: ReadonlySet<CueKind> = new Set(['start', 'skill', 'step', 'outcome']);
+const DIE_CUES: ReadonlySet<CueKind> = new Set(['start', 'gamble', 'skill', 'step', 'outcome']);
 
 /**
  * `money: false` leaves out the payments: in a full round they wait for the settlement, because
@@ -56,7 +62,12 @@ export function beatCues(beat: ShipBeat, speed = 1, money = true): Cue[] {
     at += DIE_CUES.has(kind) ? Math.max(scaled, hold) : scaled;
   };
   push('intro', 0, BEAT_PACE.intro);
-  push('start', 0, BEAT_PACE.start);
+  if (beat.gamble) {
+    push('start', 0, BEAT_PACE.gambleThrow, BEAT_PACE.gambleThrow);
+    push('gamble', 0, BEAT_PACE.gamblePick, BEAT_PACE.gamblePick);
+  } else {
+    push('start', 0, BEAT_PACE.start);
+  }
   // V0.8 prototype: a skill that changes the die goes off right after the roll, before anything else touches it.
   beat.skills.forEach((skill, i) => {
     if (skill.at === 'die') push('skill', i, BEAT_PACE.skill, BEAT_PACE.skill);
@@ -98,6 +109,11 @@ export interface BeatView {
   readonly die: number | null;
   readonly showOutcome: boolean;
   readonly showCargo: boolean;
+  /**
+   * 最後的大市集: the dice are on the table ('thrown'), then the high one is taken ('picked'); null before the throw,
+   * once anything else has happened to the die, and on a ship that threw one die.
+   */
+  readonly gamble: 'thrown' | 'picked' | null;
   /** V0.8 prototype: lost crates dropped so far (of `beat.dropped`). */
   readonly dropsShown: number;
   /** V0.8 prototype: die skills gone off so far (of the beat's skills that show with the die). */
@@ -124,15 +140,22 @@ export function beatView(beat: ShipBeat, cues: readonly Cue[], started: number):
   const current = stepsShown > 0 ? beat.steps[stepsShown - 1] : undefined;
   const showStart = count('start') > 0;
   const skillsShown = count('skill');
-  const pendingExtra = beat.skills.filter((m) => m.at === 'die').slice(skillsShown).reduce((n, m) => n + m.added, 0);
+  const pending = beat.skills.filter((m) => m.at === 'die').slice(skillsShown);
+  const pendingExtra = pending.reduce((n, m) => n + m.added, 0);
+  // The engine's start is the roll after a reroll; until the reroll goes off the dice thrown are what is on the table.
+  const rolled = beat.gamble && pending.some((m) => m.effect === 'reroll') ? beat.gamble.value : beat.start - pendingExtra;
+  const showOutcome = count('outcome') > 0;
+  const showCargo = count('cargo') > 0;
+  const touched = stepsShown + skillsShown > 0 || showOutcome || showCargo;
   return {
     started,
     showStart,
     stepsShown,
     // Until the extra die goes off the die shows the roll without it (the engine's start already has it added).
-    die: !showStart ? null : current ? Math.min(dieTop(beat), Math.max(1, current.value)) : beat.start - pendingExtra,
-    showOutcome: count('outcome') > 0,
-    showCargo: count('cargo') > 0,
+    die: !showStart ? null : current ? Math.min(dieTop(beat), Math.max(1, current.value)) : rolled,
+    showOutcome,
+    showCargo,
+    gamble: !beat.gamble || !showStart || touched ? null : count('gamble') > 0 ? 'picked' : 'thrown',
     dropsShown: count('drop'),
     skillsShown,
     cashShown: count('cash'),
