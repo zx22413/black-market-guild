@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { GOODS, type GoodId, type MaterialAction, type V08BuildingId } from '../../v07/game';
 import { GOOD_LABELS } from '../labels';
 import type { MaterialCard } from '../table/investChoice';
 import { FACILITY_LABELS, facilityShield, facilityText } from '../table/v08Text';
 import { GoodCount, GoodIcon } from './GoodIcon';
-import { CloseIcon } from './icons';
+import { CloseIcon, HouseIcon } from './icons';
 import { useRules } from './rulesContext';
 import './materialPanel.css';
 
 // V0.8 prototype (an experiment, not rules): the building of the match, beside the ship while loading. Folded to one
-// button until asked for, so the cargo cards are the only thing calling for a click; a card shows the picture, the
+// button until asked for, so the cargo cards are the only thing calling for a click (until a building can be raised:
+// then the button turns brass, says 「材料夠了」 and bobs); a card shows the picture, the
 // name, what it costs in crates and what it does. Picking one again takes it back. Once a building stands the button
 // is gone and the building that stands takes its place (what it is and does), so it can always be looked up; a
 // tradehouse owner names the protected good here. (Ship skills are opened on the ship's own card, in the ship pick:
@@ -32,15 +33,20 @@ export interface MaterialPanelProps {
   /** The camera is at the island's building lot (the close-up), and the switch that sends it there or back to the ship. */
   readonly looking?: boolean;
   readonly onLook?: (on: boolean) => void;
+  /** Counts the times the list was asked to open from outside (the reminder's 「回去補上」 when the building is what is left). */
+  readonly reveal?: number;
   /** Goods a tradehouse owner may protect (empty: no tradehouse), the one named, and the setter. */
   readonly protects: readonly GoodId[];
   readonly protect: GoodId | null;
   readonly onProtect: (good: GoodId) => void;
 }
 
-export function MaterialPanel({ cards, chosen, onPick, owned, protects, protect, onProtect, readOnly = false, looking = false, onLook }: MaterialPanelProps) {
+export function MaterialPanel({ cards, chosen, onPick, owned, protects, protect, onProtect, readOnly = false, looking = false, onLook, reveal = 0 }: MaterialPanelProps) {
   const rules = useRules();
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (reveal > 0) setOpen(true);
+  }, [reveal]);
   const builds = cards.filter((c) => c.material.kind === 'build');
   // A building stands already (one per match): nothing left to offer.
   const offer = owned === null;
@@ -93,10 +99,11 @@ export function MaterialPanel({ cards, chosen, onPick, owned, protects, protect,
       </button>
     );
   };
-  // The switch between the ship and the close-up of the building (the one that stands, or the one picked to be raised).
-  const look = onLook && (
-    <button type="button" className={`mat-look ${looking ? 'on' : ''}`} aria-pressed={looking} onClick={() => onLook(!looking)}>
-      {looking ? '回到船' : '看建築'}
+  // The way to the close-up of the building (the one that stands, or the one picked to be raised). The way back, 「回到船」,
+  // stands under the building itself (useInvestStep's lot pins), where the eyes are by then.
+  const look = onLook && !looking && (
+    <button type="button" className="mat-look" onClick={() => onLook(true)}>
+      看建築
     </button>
   );
   const ownBody = owned && (
@@ -138,8 +145,13 @@ export function MaterialPanel({ cards, chosen, onPick, owned, protects, protect,
       {standing}
       {offer && builds.length > 0 && (
         <button type="button" className={`mat-head ${picked ? 'sel' : ''}`} aria-expanded={open} aria-label={open ? '收起建築' : '展開建築'} onClick={() => setOpen((v) => !v)}>
+          {nudge && (
+            <span className="mat-call">
+              <HouseIcon />
+            </span>
+          )}
           <b>{title}</b>
-          <small>{readOnly ? '裝貨時蓋' : `一局 ${rules.v08.maxBuildings} 棟`}</small>
+          {nudge ? <span className="mat-ready">材料夠了</span> : <small>{readOnly ? '裝貨時蓋' : `一局 ${rules.v08.maxBuildings} 棟`}</small>}
           <span className="mat-fold">{open ? <CloseIcon /> : '＋'}</span>
         </button>
       )}

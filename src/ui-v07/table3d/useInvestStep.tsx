@@ -8,6 +8,7 @@ import { shipPose } from '../../ui/scene/Ships';
 import { BUILDING_LABELS, BUILDING_TEXT, GOOD_LABELS, SHIP_TYPE_LABELS } from '../labels';
 import { around } from '../scene/focusMath';
 import { Facility } from '../scene/Facility';
+import { LotHaze } from '../scene/LotHaze';
 import { MaterialPanel } from './MaterialPanel';
 import { StockPanel } from './StockPanel';
 import { sweptAtRoundEnd } from '../table/tideSweep';
@@ -30,6 +31,7 @@ import {
   NO_LOAD,
   stockSplit,
   todoReminders,
+  reminderReturn,
   unloadOne,
   unloadedBy,
   withBuild,
@@ -37,6 +39,7 @@ import {
   withRaise,
   canRaise,
   materialCards,
+  withCargoAboard,
   shipSkills,
   protectChoices,
   withShipType,
@@ -53,6 +56,7 @@ import { NoteBadge } from './NoteBadge';
 import { RestockTag } from './RestockTag';
 import { nextProductionRound } from '../table/restock';
 import { ArrowIcon, CloseIcon, CrateIcon, Flow, HouseIcon, IconDisc, InfoIcon, tokenIconUrl } from './icons';
+import { FACILITY_LOT } from '../scene/facilityLot';
 import { LockHint } from './LockHint';
 import { usePhone } from './usePhone';
 import { SealSubmit } from './SealSubmit';
@@ -85,6 +89,11 @@ const SHIP_FX_MS = 2600;
 const SHIP_INFO_ROOM = 260;
 /** Each next pop a little higher, like bubbles rising. */
 const BUBBLE_RISE = 0.12;
+
+/** The middle of a building above its lot (island space): where the close-up's clear ring is centred. */
+const LOT_FOCUS_HEIGHT = 3;
+/** Where 「回到船」 stands from the lot's middle, on the ground toward the close-up's camera (island space x, z): under the building on screen. */
+const LOT_BACK_REACH = [1.5, -3] as const;
 
 /** How long the dock works take to go under when the skill's pick is taken back (ms; dockWorksShow's strike). */
 const STRIKE_MS = 750;
@@ -121,6 +130,8 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   // 「回到船」, or taking the pick back. A building that stands can be looked at the same way, in the ship pick too.
   const [lotLook, setLotLook] = useState(false);
   useEffect(() => setLotLook(false), [phase]);
+  // The reminder's 「回去補上」 with only the building left undone opens the list of buildings (MaterialPanel's `reveal`).
+  const [reveal, setReveal] = useState(0);
   // V0.8 prototype: opening a ship's skill (on its card in the ship pick) raises the dock works round it (the whole
   // show, then they stand open); taking the pick back sends them under again. They belong to that ship: with another
   // ship at the dock they are not on the table, and they stand open when theirs comes back.
@@ -186,6 +197,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     setRevealed(new Set());
     setFreshShip(null);
     setReminding(null);
+    setReveal(0);
     setUnloaded(null);
     setMinting(true);
     const timer = setTimeout(() => setMinting(false), MINT_SECONDS * 1000);
@@ -237,13 +249,20 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const summary = investSummary(context, choice);
   const notes = investNotes(context, choice);
   const action = actionFor(options, sent);
-  const todo = investTodo(options, choice, buildDecided);
 
   const send = () => {
     if (!action) return;
     setPicking(false);
     setReminding(null);
     submitAction(action);
+  };
+  // 「回去補上」 goes to what is left undone: the buildings when the ship is loaded and no building is raised, else the
+  // cargo (back at the ship, where the hand is).
+  const goBack = () => {
+    const to = reminderReturn(todo);
+    setReminding(null);
+    look(false);
+    if (to === 'facility') setReveal((n) => n + 1);
   };
   // Something left undone: remind once before submitting, unless the player turned it off.
   const submit = () => {
@@ -259,6 +278,9 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   };
   // V0.8 prototype (not rules): the one material action of the round, and the tradehouse's protected good.
   const materials = materialCards(context);
+  // While loading, a building whose crates went onto the ship is out of reach (the panel says so, and nothing nudges).
+  const offered = withCargoAboard(materials, context.view.myStock, choice.load);
+  const todo = investTodo(options, choice, buildDecided, offered);
   // The gamble's raise is on offer at all this round (its skill open, or being opened now): some legal action carries it.
   const raisable = options.some((a) => a.raise === true);
   const protects = protectChoices(context, choice);
@@ -287,7 +309,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const materialPanelFor = (readOnly: boolean) =>
     materials.length > 0 ? (
       <MaterialPanel
-        cards={materials}
+        cards={readOnly ? materials : offered}
         chosen={choice.material ?? null}
         onPick={pickMaterial}
         owned={me?.facility ?? null}
@@ -297,6 +319,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
         readOnly={readOnly}
         looking={lotLook}
         onLook={look}
+        reveal={readOnly ? 0 : reveal}
       />
     ) : null;
   // The gamble's raise, on the ship's note while loading: a declaration about this voyage.
@@ -580,6 +603,29 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
     ...freshPins,
   ];
 
+  // The building's close-up: everything round the building is dimmed and blurred (a ring that follows the building on
+  // screen), and the way back to the ship stands under the building, from the moment its preview is on the table.
+  const lotPins: TablePin[] =
+    typed && materials.length > 0
+      ? [
+          { id: 'lot-focus', position: islandPoint(home, [FACILITY_LOT[0], LOT_FOCUS_HEIGHT, FACILITY_LOT[2]]), node: <span className={`lot-focus ${lotLook ? 'on' : ''}`} aria-hidden="true" /> },
+          {
+            id: 'lot-back',
+            position: islandPoint(home, [FACILITY_LOT[0] + LOT_BACK_REACH[0], 0, FACILITY_LOT[2] + LOT_BACK_REACH[1]]),
+            hidden: !lotLook,
+            drop: true,
+            dropWide: true,
+            node: (
+              // Keyed by the look, so it pops in each time the camera goes to the lot.
+              <button type="button" key={String(lotLook)} className="lot-back" data-focus="lot-back" onClick={() => look(false)}>
+                <IconDisc src={tokenIconUrl('ship')} />
+                回到船
+              </button>
+            ),
+          },
+        ]
+      : [];
+
   // What a submit seals: kept on the bar under the seal while the others decide.
   const chipsOf = (editable: boolean) => (
     <span className="bar-chips">
@@ -661,7 +707,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   const shipHand = <ShipHand skills={skills} cards={shipOptions} picked={shipPicked} todo={!shipDecided} effect={shipFx} revealed={revealed} fresh={freshShip} onPick={pickShip} onPeek={setPeekShip} arrival={arrival} />;
   return {
     // Ship bays: the ship's note is the only label; the stacks, clocks and warehouse note are on the cargo cards.
-    pins: shipPhase ? [] : typed ? pins.filter((p) => p.id === 'ship-note') : pins,
+    pins: shipPhase ? lotPins : typed ? [...pins.filter((p) => p.id === 'ship-note'), ...lotPins] : pins,
     camera,
     ...(typed ? { ownShip: true } : {}),
     ...(shownWorks ? { ownWorks: shownWorks } : {}),
@@ -689,6 +735,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
             <Facility key={choice.material.building} fresh angle={home} building={choice.material.building} color={seats[laneOf(viewer)]!.color} />
           </Suspense>
         )}
+        {typed && materials.length > 0 && <LotHaze at={islandPoint(home, [FACILITY_LOT[0], LOT_FOCUS_HEIGHT, FACILITY_LOT[2]])} on={lotLook} />}
         {choice.build && !shipPhase && <BuildingPreview angle={home} building={choice.build} color={seats[laneOf(viewer)]!.color} />}
       </>
     ),
@@ -728,7 +775,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
           <ReminderDialog
             title="還沒做完"
             lines={reminding}
-            onBack={() => setReminding(null)}
+            onBack={goBack}
             onConfirm={(skipNext) => {
               if (skipNext) setReminderSkipped('invest-unfinished', true);
               send();

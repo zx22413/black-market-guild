@@ -184,6 +184,14 @@ export function materialCards(context: DecisionContext): MaterialCard[] {
   });
 }
 
+/**
+ * The cards as the loading step shows them: a building whose crates are on the ship (not enough left in the warehouse)
+ * is out of reach until they are taken off. The ship skills are opened before loading and stay as they are.
+ */
+export function withCargoAboard(cards: readonly MaterialCard[], stock: Goods, load: Goods): MaterialCard[] {
+  return cards.map((c) => (c.material.kind === 'build' && c.legal && GOODS.some((g) => stock[g] - load[g] < c.cost[g]) ? { ...c, legal: false, reason: '材料不足：已裝上船' } : c));
+}
+
 /** A ship's skill as the ship pick shows it: `open` since an earlier round, `opening` in this choice, or `closed`. */
 export interface ShipSkill {
   readonly state: 'open' | 'opening' | 'closed';
@@ -338,19 +346,28 @@ export interface InvestTodo {
   readonly build: boolean;
   /** Something could be loaded and the ship is still empty (an empty ship stays in port, §8). */
   readonly cargo: boolean;
+  /** V0.8: a building could be raised this round and the round's material action is still unused. */
+  readonly facility: boolean;
 }
 
-export function investTodo(options: readonly InvestAction[], choice: InvestChoice, buildDecided: boolean): InvestTodo {
+export function investTodo(options: readonly InvestAction[], choice: InvestChoice, buildDecided: boolean, materials: readonly MaterialCard[] = []): InvestTodo {
   return {
     build: !buildDecided && choice.build === null && canBuildAny(options),
     cargo: unitsOf(choice.load) === 0 && GOODS.some((g) => canLoad(options, choice, g)),
+    facility: choice.material == null && materials.some((c) => c.material.kind === 'build' && c.legal),
   };
+}
+
+/** Where 「回去補上」 leads: to the buildings when only the building is left undone, else to the cargo (the default). */
+export function reminderReturn(todo: InvestTodo): 'facility' | 'cargo' {
+  return todo.facility && !todo.cargo ? 'facility' : 'cargo';
 }
 
 /** What the "not finished yet" reminder says before submitting; empty when there is nothing to remind. */
 export function todoReminders(todo: InvestTodo): string[] {
   return [
     ...(todo.build ? ['還沒選建築：會不蓋'] : []),
+    ...(todo.facility ? ['還沒蓋建築：材料夠蓋一棟'] : []),
     ...(todo.cargo ? ['船是空的：不出航，也不付出航成本'] : []),
   ];
 }

@@ -330,12 +330,14 @@ interface SkillRowProps {
 /** V0.8 prototype: the ship's skill on its info card: what it does, whether it is open, and the button that opens it for its crates. */
 function SkillRow({ ship, skill, text, onToggle }: SkillRowProps) {
   const opening = skill.state === 'opening';
+  // Closed and the crates are there: the slot is lit and says so.
+  const can = skill.state === 'closed' && skill.legal && onToggle !== undefined;
   return (
-    <section className={`ship-skill ${skill.state}`} data-focus={`skill-${ship}`} data-done={skill.state !== 'closed'} onClick={(e) => e.stopPropagation()}>
+    <section className={`ship-skill ${skill.state} ${can ? 'can' : ''}`} data-focus={`skill-${ship}`} data-done={skill.state !== 'closed'} onClick={(e) => e.stopPropagation()}>
       <header>
         <small>技能</small>
         <b>{SKILL_LABELS[ship]}</b>
-        <span className="ship-skill-state">{SKILL_STATE[skill.state]}</span>
+        <span className="ship-skill-state">{can ? '可開啟' : SKILL_STATE[skill.state]}</span>
       </header>
       <p>{text}</p>
       {skill.state !== 'open' && onToggle && (

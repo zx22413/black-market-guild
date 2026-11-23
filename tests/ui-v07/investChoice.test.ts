@@ -5,6 +5,7 @@ import {
   canRaise,
   withRaise,
   materialCards,
+  withCargoAboard,
   shipSkills,
   protectChoices,
   withMaterial,
@@ -16,6 +17,7 @@ import {
   investOptions,
   investSummary,
   investTodo,
+  reminderReturn,
   todoReminders,
   loadOne,
   stockSplit,
@@ -192,19 +194,19 @@ describe('investment choice on the island (only legal actions)', () => {
 
   it('marks the building and the cargo as unfinished until the player deals with them', () => {
     const { options } = scenario();
-    expect(investTodo(options, EMPTY_CHOICE, false)).toEqual({ build: true, cargo: true });
+    expect(investTodo(options, EMPTY_CHOICE, false)).toEqual({ build: true, cargo: true, facility: false });
     expect(todoReminders(investTodo(options, EMPTY_CHOICE, false))).toHaveLength(2);
     // Choosing "不蓋" counts as deciding the building.
     expect(investTodo(options, EMPTY_CHOICE, true).build).toBe(false);
     expect(investTodo(options, withBuild(options, EMPTY_CHOICE, 'salvage'), false).build).toBe(false);
     const loaded = loadOne(options, EMPTY_CHOICE, 'spice');
-    expect(investTodo(options, loaded, true)).toEqual({ build: false, cargo: false });
+    expect(investTodo(options, loaded, true)).toEqual({ build: false, cargo: false, facility: false });
     expect(todoReminders(investTodo(options, loaded, true))).toEqual([]);
   });
 
   it('does not nag about what cannot be done', () => {
     const { options } = scenario({ stock: G(0), buildings: ['shipyard', 'insurance'] });
-    expect(investTodo(options, EMPTY_CHOICE, false)).toEqual({ build: false, cargo: false });
+    expect(investTodo(options, EMPTY_CHOICE, false)).toEqual({ build: false, cargo: false, facility: false });
   });
 });
 
@@ -218,6 +220,46 @@ describe('material actions in the invest choice (V0.8 prototype, not rules)', ()
   };
 
   const v08Proto = v08;
+
+  it('reminds of a building that could be raised, and says where going back leads', async () => {
+    const ctx = await v08();
+    const options = investOptions(ctx);
+    const cards = materialCards(ctx);
+    const empty = investTodo(options, { ...EMPTY_CHOICE, shipType: 'standard' }, true, cards);
+    expect(empty.facility).toBe(true);
+    expect(todoReminders(empty)).toContain('還沒蓋建築：材料夠蓋一棟');
+    // Nothing done at all: back to the cargo, the default.
+    expect(reminderReturn(empty)).toBe('cargo');
+    // Cargo aboard, no building: back to the buildings.
+    const loaded = loadOne(options, { ...EMPTY_CHOICE, shipType: 'standard' }, 'wood');
+    expect(investTodo(options, loaded, true, cards)).toEqual({ build: false, cargo: false, facility: true });
+    expect(reminderReturn(investTodo(options, loaded, true, cards))).toBe('facility');
+    // A building picked, nothing aboard: back to the cargo.
+    const building = { ...EMPTY_CHOICE, shipType: 'standard' as const, material: { kind: 'build' as const, building: 'armory' as const } };
+    expect(investTodo(options, building, true, cards).facility).toBe(false);
+    expect(reminderReturn(investTodo(options, building, true, cards))).toBe('cargo');
+    // A skill opened this round is the round's material action; a building that stands, or too few crates: nothing to remind.
+    expect(investTodo(options, { ...EMPTY_CHOICE, material: { kind: 'open', ship: 'gambler' } }, true, cards).facility).toBe(false);
+    const built = await v08({ facility: 'armory' });
+    expect(investTodo(investOptions(built), EMPTY_CHOICE, true, materialCards(built)).facility).toBe(false);
+    const poor = await v08({ stock: G(1, 0, 0, 0) });
+    expect(investTodo(investOptions(poor), EMPTY_CHOICE, true, materialCards(poor)).facility).toBe(false);
+  });
+
+  it('counts a building as out of reach while its crates are on the ship', async () => {
+    const ctx = await v08({ stock: G(2, 2, 1, 1) });
+    const cards = materialCards(ctx);
+    const options = investOptions(ctx);
+    const none = G(0);
+    expect(withCargoAboard(cards, ctx.view.myStock, none)).toEqual(cards);
+    // Both iron crates aboard: no building has its iron left in the warehouse.
+    const aboard = withCargoAboard(cards, ctx.view.myStock, G(0, 2, 0, 1));
+    const builds = aboard.filter((c) => c.material.kind === 'build');
+    expect(builds.every((c) => !c.legal && c.reason === '材料不足：已裝上船')).toBe(true);
+    // The ship skills are opened before loading: left as they were.
+    expect(aboard.filter((c) => c.material.kind === 'open')).toEqual(cards.filter((c) => c.material.kind === 'open'));
+    expect(investTodo(options, { ...EMPTY_CHOICE, shipType: 'standard', load: G(0, 2, 0, 1) }, true, aboard).facility).toBe(false);
+  });
 
   it('offers nothing under the official rules', () => {
     expect(materialCards(contextOf(edit(start(4, RULES_V07, { p1: 'mine' }), 'p1', { cash: 1000 })))).toEqual([]);
