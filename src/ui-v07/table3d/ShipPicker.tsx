@@ -126,6 +126,12 @@ export function ShipHand({ cards, picked, todo, effect, revealed, fresh, onPick,
                 {SKILL_LABELS[c.id]}
               </span>
             )}
+            {/* Closed and the crates are there: the card says so, like the skill's slot on the info card. */}
+            {skills[c.id]?.state === 'closed' && skills[c.id]!.legal && (
+              <span className="ship-skill-mark can" title={`${SKILL_LABELS[c.id]}：可開啟`}>
+                可開啟
+              </span>
+            )}
             <b>{SHIP_TYPE_LABELS[c.id]}</b>
             <span className="dep-fee" title={`船費 ${c.fee} G`}>
               <IconDisc src={tokenIconUrl('coin')} />

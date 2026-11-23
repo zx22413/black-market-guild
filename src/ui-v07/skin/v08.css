@@ -451,6 +451,13 @@
   font-weight: 400;
   text-shadow: none;
 }
+:root:not(.skin-classic) .ship-skill-mark.can {
+  border-color: #5e1810;
+  background: linear-gradient(180deg, #b23a28, #8f2a1c);
+  color: #fff3d6;
+  text-shadow: none;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), 0 2px 0 var(--c-wood-dark), 0 0 8px rgb(255 200 80 / 0.7);
+}
 
 /* ================= a skill going off: the title plaque ================= */
 

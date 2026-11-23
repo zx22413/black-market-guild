@@ -514,6 +514,12 @@
 .ship-skill-mark.opening {
   background: #fff8e8;
 }
+/* The skill can be opened now: a small seal-red tag (the same words as the slot on the info card). */
+.ship-skill-mark.can {
+  border-color: #5e1810;
+  background: #8f2a1c;
+  color: #fff3d6;
+}
 
 /* The ship note while loading: the docked ship's skill, and the gamble's raise (useInvestStep). */
 .inv-skill {
