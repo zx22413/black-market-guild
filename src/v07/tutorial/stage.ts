@@ -1,4 +1,4 @@
-import { ISLAND_IDS, type MatchState, type PrivateEvent, type Transition } from '../game';
+import { ISLAND_IDS, type MatchEvent, type MatchState, type PrivateEvent, type Transition, type V08Card, type VoyageEventId } from '../game';
 import type { RoundScript, TutorialScript } from './types';
 
 // Fixes the tutorial's hidden draws (docs/tutorial-outline.md §9.1): only what no seat has seen
@@ -17,14 +17,31 @@ function offers(script: TutorialScript): Record<string, readonly string[]> {
   );
 }
 
+/**
+ * V0.8 event deck: the scripted cards (advance cards included) on top, keeping the deck's length (it is public), and the
+ * scripted order of the tide candidates (the public 'tide-candidates' event is rewritten with it).
+ */
+function stageEventDeck(script: TutorialScript, state: MatchState, events: readonly MatchEvent[]): { state: MatchState; events: readonly MatchEvent[] } {
+  const ev = state.v08Events;
+  if (ev === undefined) return { state, events };
+  const cards: V08Card[] = script.rounds.map((r) => r.event);
+  const candidates = script.tideCandidates ?? ev.tideCandidates;
+  return {
+    state: { ...state, v08Events: { ...ev, deck: [...cards, ...ev.deck.slice(cards.length)].slice(0, ev.deck.length), tideCandidates: candidates } },
+    events: events.map((e) => (e.type === 'tide-candidates' ? { ...e, candidates } : e)),
+  };
+}
+
 /** Puts the scripted cards on top of each draw pile, keeping the piles' length. */
 function stageOpening(script: TutorialScript, t: Transition): Transition {
-  const { state } = t;
   const demand = script.rounds.map((r) => r.demand);
-  const events = script.rounds.map((r) => r.event);
+  const events = script.rounds.flatMap((r): VoyageEventId[] => (r.event === 'advance' ? [] : [r.event]));
   const islandOffers = offers(script) as MatchState['islandOffers'];
+  const staged = stageEventDeck(script, t.state, t.events);
+  const { state } = staged;
   return {
     ...t,
+    events: staged.events,
     state: {
       ...state,
       islandOffers,

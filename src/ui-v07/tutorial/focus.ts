@@ -32,6 +32,10 @@ export function focusSelector(target: FocusTarget): string {
       return `[data-focus="island-${target.player}"]`;
     case 'plate':
       return `[data-focus="plate-${target.player}"]`;
+    case 'material':
+      return `[data-focus="material-${target.building}"]`;
+    case 'skill':
+      return `[data-focus="skill-${target.ship}"]`;
     default:
       return `[data-focus="${target.kind}"]`;
   }

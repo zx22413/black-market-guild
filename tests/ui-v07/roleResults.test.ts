@@ -38,11 +38,13 @@ describe('role results (stamps)', () => {
             const result = results.get(roleKey(d));
             // A role aimed at a freighter still at sea (game-design.md §8.1) has nothing to show until the freighter arrives.
             const resolved = roundEvents.some((x) => x.type === 'ship-resolved' && x.shipId === d.targetShipId);
-            if (!resolved) {
+            // A diplomat is judged at its own reveal, so it has a stamp even on a freighter still at sea.
+            if (!resolved && d.role !== 'diplomat') {
               expect(result).toBeUndefined();
               continue;
             }
             // Every role ends in a stamp except a diplomat whose guess was voided by nothing (it gets its stamp from the cash it moved).
+            if (!resolved) continue;
             if (d.role !== 'diplomat') expect(result === undefined).toBe(false);
             if (d.role === 'pirate') {
               const looted = roundEvents.some((x) => x.type === 'cash-changed' && x.reason === 'pirate-loot' && x.playerId === d.playerId && x.shipId === d.targetShipId && x.amount > 0);

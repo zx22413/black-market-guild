@@ -3,7 +3,7 @@ import { marketSound } from '../audio/marketSounds';
 import { useSoundOnce } from '../audio/useUiSounds';
 import { soundEngine } from '../audio/soundEngine';
 import type React from 'react';
-import { RULES_V07 } from '../../v07/game';
+import { RULES_CURRENT } from '../../v07/game';
 import { GOOD_LABELS, stepLabel } from '../labels';
 import { GoodIcon } from './GoodIcon';
 import { Flow, TrendIcon } from './icons';
@@ -13,7 +13,7 @@ import type { MarketRow } from './settlementModel';
 // row, appearing one by one — demand (with the brokers' shift), what arrived, and the price move.
 // Arrived more than demand: down; fewer: up; equal: unchanged (§7.3). Spice moves two steps.
 
-const CELLS = Array.from({ length: RULES_V07.price.steps }, (_, i) => i);
+const CELLS = Array.from({ length: RULES_CURRENT.price.steps }, (_, i) => i);
 /** Time one price step takes to climb, and the wait before the climb starts (see .mk-scale in beat.css). */
 const STEP_MS = 260;
 const START_MS = 200;

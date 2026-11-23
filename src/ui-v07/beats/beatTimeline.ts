@@ -1,4 +1,4 @@
-import { RULES_V07, shipFinalCap } from '../../v07/game';
+import { RULES_CURRENT, shipFinalCap } from '../../v07/game';
 import type { ShipBeat } from './shipBeat';
 import { SHOW_TEMPO, slowed } from '../scene/showTempo';
 
@@ -112,9 +112,9 @@ export interface BeatView {
  * meter's top (9). Never below the beat's own final, so an island that lifts the cap still shows what it paid.
  */
 export function dieTop(beat: ShipBeat): number {
-  const cap = shipFinalCap(RULES_V07, beat.type);
-  const meterTop = Math.max(...Object.keys(RULES_V07.ships.types[beat.type].curve).map(Number));
-  return Math.max(Math.min(cap, meterTop), RULES_V07.sailing.dieMax, beat.final);
+  const cap = shipFinalCap(RULES_CURRENT, beat.type);
+  const meterTop = Math.max(...Object.keys(RULES_CURRENT.ships.types[beat.type].curve).map(Number));
+  return Math.max(Math.min(cap, meterTop), RULES_CURRENT.sailing.dieMax, beat.final);
 }
 
 export function beatView(beat: ShipBeat, cues: readonly Cue[], started: number): BeatView {

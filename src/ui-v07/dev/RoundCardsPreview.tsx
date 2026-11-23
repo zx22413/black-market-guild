@@ -3,7 +3,7 @@ import '../beats/beat.css';
 import '../table3d/islandCard.css';
 import '../skin/layers.css';
 import '../skin/v08.css';
-import { RULES_V08_PROTO, type MatchEvent, type TideKind } from '../../v07/game';
+import { RULES_V08, type MatchEvent, type TideKind } from '../../v07/game';
 import { TideChip } from '../table3d/TideChip';
 import { roundCards } from '../table3d/roundCard';
 import { RoundCardShow } from '../table3d/RoundCardShow';
@@ -39,9 +39,9 @@ export function RoundCardsPreview() {
   const [round, setRound] = useState<number | null>(null);
   const [run, setRun] = useState(0);
   const at = round ?? 1;
-  const boss = roundCards(events, at, RULES_V08_PROTO).find((c) => c.kind === 'voyage' && c.boss);
+  const boss = roundCards(events, at, RULES_V08).find((c) => c.kind === 'voyage' && c.boss);
   return (
-    <RulesContext.Provider value={RULES_V08_PROTO}>
+    <RulesContext.Provider value={RULES_V08}>
       <div className="t3-screen" style={{ position: 'fixed', inset: 0, background: '#2f8f9d' }}>
         <div style={{ position: 'absolute', zIndex: 60, bottom: 12, left: 12, display: 'flex', gap: 6 }}>
           {([['暗潮將至', 4], ['暗潮面', 5], ['最後的大市集', 7], ['黑市大開', 8], ['最後一搏', 9], ['回合上限', 10]] as const).map(([label, r]) => (
@@ -64,7 +64,7 @@ export function RoundCardsPreview() {
         {boss?.kind === 'voyage' && <VoyageEventChip event={boss.event} boss={{ title: boss.title, text: boss.lines.join('') }} />}
         <TideChip status={tideStatus(events.filter((e) => !('round' in e) || e.round <= at))} round={at} />
         {at > 4 && <div className="tide-season" aria-hidden="true" />}
-        {round !== null && <RoundCardShow key={run} cards={roundCards(events, round, RULES_V08_PROTO)} onDone={() => setRun((n) => n)} />}
+        {round !== null && <RoundCardShow key={run} cards={roundCards(events, round, RULES_V08)} onDone={() => setRun((n) => n)} />}
       </div>
     </RulesContext.Provider>
   );

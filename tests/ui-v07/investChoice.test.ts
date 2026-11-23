@@ -211,8 +211,8 @@ describe('investment choice on the island (only legal actions)', () => {
 
 describe('material actions in the invest choice (V0.8 prototype, not rules)', () => {
   const v08 = async (patch: Parameters<typeof edit>[2] = {}) => {
-    const { RULES_V08_PROTO } = await import('../../src/v07/game');
-    const state = edit(start(4, RULES_V08_PROTO, { p1: 'mine' }), 'p1', { cash: 1000, stock: G(3, 3, 1, 0), buildings: [], ...patch });
+    const { RULES_V08 } = await import('../../src/v07/game');
+    const state = edit(start(4, RULES_V08, { p1: 'mine' }), 'p1', { cash: 1000, stock: G(3, 3, 1, 0), buildings: [], ...patch });
     const decision = getPendingDecisions(state).find((d) => d.playerId === 'p1')!;
     return { view: getPlayerView(state, 'p1'), decision, legalActions: getLegalActions(state, 'p1') } as DecisionContext;
   };
@@ -271,8 +271,8 @@ describe('material actions in the invest choice (V0.8 prototype, not rules)', ()
   });
 
   it("names the tradehouse's protected good (v08.tradehouse.named, off in the prototype since 2026-11-22)", async () => {
-    const { RULES_V08_PROTO } = await import('../../src/v07/game');
-    const named = { ...RULES_V08_PROTO, v08: { ...RULES_V08_PROTO.v08, tradehouse: { ...RULES_V08_PROTO.v08.tradehouse, named: 1 } } };
+    const { RULES_V08 } = await import('../../src/v07/game');
+    const named = { ...RULES_V08, v08: { ...RULES_V08.v08, tradehouse: { ...RULES_V08.v08.tradehouse, named: 1 } } };
     const v08 = async (patch: Parameters<typeof edit>[2] = {}) => {
       const state = edit(start(4, named, { p1: 'mine' }), 'p1', { cash: 1000, stock: G(3, 3, 1, 0), buildings: [], ...patch });
       const decision = getPendingDecisions(state).find((d) => d.playerId === 'p1')!;
@@ -292,8 +292,8 @@ describe('material actions in the invest choice (V0.8 prototype, not rules)', ()
 
 describe("the gamble's raise in the invest choice (V0.8 prototype, not rules)", () => {
   const v08 = async (patch: Parameters<typeof edit>[2] = {}) => {
-    const { RULES_V08_PROTO } = await import('../../src/v07/game');
-    const state = edit(start(4, RULES_V08_PROTO, { p1: 'mine' }), 'p1', { cash: 1000, stock: G(3, 3, 1, 0), buildings: [], ...patch });
+    const { RULES_V08 } = await import('../../src/v07/game');
+    const state = edit(start(4, RULES_V08, { p1: 'mine' }), 'p1', { cash: 1000, stock: G(3, 3, 1, 0), buildings: [], ...patch });
     const decision = getPendingDecisions(state).find((d) => d.playerId === 'p1')!;
     return { view: getPlayerView(state, 'p1'), decision, legalActions: getLegalActions(state, 'p1') } as DecisionContext;
   };

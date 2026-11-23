@@ -131,7 +131,7 @@ export interface Rules {
     readonly moonlessNight: number;
     readonly blackMarketRushGoodsValue: number;
   };
-  /** V0.8 simulation prototype (v08-rules.ts): experiments, all off outside RULES_V08_PROTO. Not rules. */
+  /** V0.8 simulation prototype (v08-rules.ts): experiments, all off outside RULES_V08. Not rules. */
   readonly v08: V08Rules;
 }
 
@@ -280,7 +280,6 @@ export function shipFinalCap(rules: Rules, type: ShipTypeId): number {
  * actually be filled. The buildings stay in the data (`buildings`) for `RULES_BUILDINGS`, but no building is offered.
  * Islands (§11.2): shipyard island (was the lumber camp), free port, smuggler port and lighthouse work on the ship choice.
  * Decided 2026-11-05: these are the formal rules (the numbers get tuned after human playtests); the economy is not retuned.
- * TODO: the rulebook still teaches RULES_BUILDINGS (the tutorial plays these rules since 2026-11-07).
  */
 export const RULES_V07: Rules = {
   ...RULES_BUILDINGS,
@@ -316,12 +315,14 @@ export function shipTypeAvailable(rules: Rules, type: ShipTypeId, lastLaunched: 
 }
 
 /**
- * V0.8 simulation prototype (v08-rules.ts): RULES_V07 with crate-count voyages, ship skills, buildings bought with
- * materials and the island variants all on. Test values for bot simulations only (`simulate --v08`), NOT rules.
+ * V0.8 (docs/game-design.md, the official rules since 2026-11-23): RULES_V07 with crate-count voyages, ship skills,
+ * one building per match bought with materials, the event deck with the dark tide (6–10 rounds) and the island
+ * changes. The numbers came from bot calibration and get tuned after human playtests. The prototype switches it does
+ * not use (island variants, late cards, levels) stay in v08-rules.ts, off.
  */
-export const RULES_V08_PROTO: Rules = {
+export const RULES_V08: Rules = {
   ...RULES_V07,
-  version: 'V0.8-proto',
+  version: 'V0.8',
   // 2026-11-16 island balance (test values): the free port keeps its full capacity and pays half of every ship's fee
   // (v08.islands.freePortFeePercent below); no other drawback.
   islands: {
@@ -415,3 +416,6 @@ export const RULES_V08_PROTO: Rules = {
     botPirateCrates: 1,
   },
 };
+
+/** The rules a real match plays (local, online, the rulebook and the tutorial): V0.8 since 2026-11-23. */
+export const RULES_CURRENT: Rules = RULES_V08;

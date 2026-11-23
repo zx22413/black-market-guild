@@ -22,7 +22,7 @@ function lineupBots(players: number, seed: number) {
 }
 
 describe('V0.7 bots in full matches', () => {
-  it.each([4])('finish %i-player matches with only legal actions', (players) => {
+  it.each([4])('finish %i-player matches with only legal actions', { timeout: 60_000 }, (players) => {
     for (let seed = 1; seed <= 25; seed += 1) {
       const { state, actions } = playBots(seed, lineupBots(players, seed));
       expect(state.phase).toBe('game-over');

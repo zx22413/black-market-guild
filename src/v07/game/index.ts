@@ -5,7 +5,7 @@ export type { MatchConfig } from './engine';
 export { getPendingDecisions, getLegalActions, buildingCost, GUESSABLE_ROLES } from './decisions';
 export { getPlayerView } from './view';
 export type { PlayerView, PublicPlayer, ViewShip } from './view';
-export { RULES_V07, RULES_BUILDINGS, RULES_V08_PROTO, NEUTRAL_TRAIT, arrivalIncomePercent, shipDelay, shipFinalCap, shipTypeAvailable, shipIncomePercent, shipSinks } from './rules';
+export { RULES_V07, RULES_BUILDINGS, RULES_V08, RULES_CURRENT, NEUTRAL_TRAIT, arrivalIncomePercent, shipDelay, shipFinalCap, shipTypeAvailable, shipIncomePercent, shipSinks } from './rules';
 export type { BuildingRule, IslandTrait, Rules } from './rules';
 export type { CrateTable, V08Rules } from './v08-rules';
 export { V08_OFF } from './v08-rules';

@@ -1,4 +1,4 @@
-import { ROLE_IDS, RULES_V07, cooldownFor, type PlayerId, type Rules } from '../../v07/game';
+import { ROLE_IDS, RULES_CURRENT, cooldownFor, type PlayerId, type Rules } from '../../v07/game';
 import { BUILDING_LABELS, ISLAND_LABELS, ISLAND_TEXT, ROLE_LABELS } from '../labels';
 import type { Board, BoardPlayer } from '../session/board';
 import { GoodsList } from './parts';
@@ -22,7 +22,7 @@ function coolingRoles(board: Board, player: BoardPlayer, rules: Rules) {
 }
 
 /** Everyone's public state: island, cash, buildings, warehouse after production (§4) and cooling roles. */
-export function PlayersPanel({ board, order, nameOf, viewerId, waiting, rules = RULES_V07 }: PlayersPanelProps) {
+export function PlayersPanel({ board, order, nameOf, viewerId, waiting, rules = RULES_CURRENT }: PlayersPanelProps) {
   return (
     <ul className="v7-players">
       {order.map((id) => {

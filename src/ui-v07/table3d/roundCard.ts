@@ -1,6 +1,6 @@
 import { TIDE_CARD, type FinalRoundEffect, type MatchEvent, type Rules, type TideKind, type VoyageEventId } from '../../v07/game';
 import { VOYAGE_EVENT_LABELS, VOYAGE_EVENT_TEXT } from '../labels';
-import { TIDE_LABELS, TIDE_SHIELD, tideText } from './tideModel';
+import { TIDE_LABELS, tideShield, tideText } from './tideModel';
 
 // V0.8 prototype (rules.v08.events, an experiment, not rules): the card a round turns up, as the table shows it at the
 // start of the resolution. Built from public events only; every number in a line is read from `rules`.
@@ -92,7 +92,7 @@ export function roundCards(events: readonly MatchEvent[], round: number, rules: 
             ? ['下回合起進入暗潮季。']
             : [
                 `下回合起每回合：${tideText(rules, tide)}。`,
-                `擋得住的：${TIDE_SHIELD[tide]}。`,
+                `擋得住的：${tideShield(rules, tide)}。`,
                 ...(e.flipOnlyTideCard === 1 ? [flipLine(rules, TIDE_CARD[tide])] : []),
               ]),
         ],

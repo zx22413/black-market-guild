@@ -17,7 +17,7 @@ describe('final result rows (§3, §13)', () => {
       expect(row.cash + row.buildings.reduce((n, b) => n + b.value, 0)).toBe(standing.wealth);
       expect(row.buildingValue).toBe(standing.buildingValue);
       expect(row.winner).toBe(result.winners.includes(row.playerId));
-      expect(row.cashByRound).toHaveLength(RULES_V07.rounds);
+      expect(row.cashByRound).toHaveLength(log.finalState.round);
       expect(row.cashByRound.at(-1)).toBe(row.cash);
       const finalBuildings = log.finalState.players.find((p) => p.id === row.playerId)!.buildings;
       expect(row.buildings.map((b) => b.id).sort()).toEqual([...finalBuildings].sort());

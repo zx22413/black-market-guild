@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { RULES_V07, RULES_V08_PROTO, getPlayerView, type IslandId, type PlayerView, type PublicEvents } from '../../src/v07/game';
+import { RULES_V07, RULES_V08, getPlayerView, type IslandId, type PlayerView, type PublicEvents } from '../../src/v07/game';
 import { sweptAtRoundEnd } from '../../src/ui-v07/table/tideSweep';
 import { G, edit, start } from '../v07/game/helpers';
 
-function viewOf(island: IslandId, darkTide: boolean, rules = RULES_V08_PROTO): PlayerView {
+function viewOf(island: IslandId, darkTide: boolean, rules = RULES_V08): PlayerView {
   const view = getPlayerView(edit(start(4, rules, { p1: island }), 'p1', {}), 'p1');
   return view.events === undefined ? view : { ...view, events: { ...view.events, darkTide } as PublicEvents };
 }
 
 describe('what 暗潮將至 will take from the warehouse (V0.8 prototype, not rules)', () => {
-  const percent = RULES_V08_PROTO.v08.events.warehouseLossPercent;
+  const percent = RULES_V08.v08.events.warehouseLossPercent;
   const share = (n: number) => Math.floor((n * percent) / 100);
 
   it('takes the rules share of each good left, rounded down', () => {

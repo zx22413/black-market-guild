@@ -198,8 +198,8 @@ describe('investment choice with a ship type (only legal actions)', () => {
 
 describe('ship cards (V0.8 prototype crate tables)', () => {
   const v08 = async (patch: Parameters<typeof edit>[2] = {}) => {
-    const { RULES_V08_PROTO } = await import('../../src/v07/game');
-    const base = edit(start(4, RULES_V08_PROTO, { p1: 'mine' }), 'p1', { cash: 1000, stock: G(3, 3, 3, 3), buildings: [], ...patch });
+    const { RULES_V08 } = await import('../../src/v07/game');
+    const base = edit(start(4, RULES_V08, { p1: 'mine' }), 'p1', { cash: 1000, stock: G(3, 3, 3, 3), buildings: [], ...patch });
     return contextOf({ ...base, roundState: { ...base.roundState, voyageEvent: null } });
   };
 

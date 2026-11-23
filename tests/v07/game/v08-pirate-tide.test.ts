@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { RULES_V07, RULES_V08_PROTO, priceAt, type MatchEvent, type MatchState, type V08EventsState } from '../../../src/v07/game';
+import { RULES_V07, RULES_V08, priceAt, type MatchEvent, type MatchState, type V08EventsState } from '../../../src/v07/game';
 import { G, cash, edit, find, plain, playRound, withDemand } from './helpers';
 
 // V0.8 simulation prototype, 海盜潮 without percents (v08.events.tidePirateArrivalCrates; playtest notes §10.14):
 // pirates on an arriving ship take its priciest crate instead of 30 % of the income. NOT rules.
 
-const V08 = RULES_V08_PROTO;
+const V08 = RULES_V08;
 /** The armory with its 海盜潮 shield (the prototype dropped it 2026-11-22, §10.16). */
 const SHIELDED: typeof V08 = { ...V08, v08: { ...V08.v08, armory: { ...V08.v08.armory, immunePirateTide: 1 } } };
 const inPirateTide = (stock = G(3, 3, 1, 1), rules = V08): MatchState => {

@@ -1,6 +1,6 @@
 import {
   GOODS,
-  RULES_V07,
+  RULES_CURRENT,
   buildingCost,
   materialCost,
   type BuildingId,
@@ -83,7 +83,7 @@ export interface Board {
   readonly result: MatchResult | null;
 }
 
-export function initialBoard(playerIds: readonly PlayerId[], startingCash: number, rules: Rules = RULES_V07): Board {
+export function initialBoard(playerIds: readonly PlayerId[], startingCash: number, rules: Rules = RULES_CURRENT): Board {
   return {
     round: 0,
     prices: Object.fromEntries(GOODS.map((g) => [g, rules.price.tracks[g].start])) as unknown as Goods,
@@ -119,7 +119,7 @@ function mapShip(board: Board, id: ShipId, fn: (s: BoardShip) => BoardShip): Boa
   return { ...board, ships: board.ships.map((s) => (s.id === id ? fn(s) : s)) };
 }
 
-export function applyEvent(board: Board, event: MatchEvent, rules: Rules = RULES_V07): Board {
+export function applyEvent(board: Board, event: MatchEvent, rules: Rules = RULES_CURRENT): Board {
   switch (event.type) {
     case 'islands-chosen':
       return Object.entries(event.islands).reduce((b, [id, island]) => mapPlayer(b, id, (p) => ({ ...p, island })), board);
@@ -267,6 +267,6 @@ export function applyEvent(board: Board, event: MatchEvent, rules: Rules = RULES
   }
 }
 
-export function buildBoard(playerIds: readonly PlayerId[], startingCash: number, events: readonly MatchEvent[], rules: Rules = RULES_V07): Board {
+export function buildBoard(playerIds: readonly PlayerId[], startingCash: number, events: readonly MatchEvent[], rules: Rules = RULES_CURRENT): Board {
   return events.reduce((board, event) => applyEvent(board, event, rules), initialBoard(playerIds, startingCash, rules));
 }

@@ -116,13 +116,15 @@ describe('V0.7 online room', () => {
     expect(ended).toMatchObject({ type: 'ended', error: null });
     expect(ended?.type === 'ended' && ended.result?.standings.length).toBe(4);
     const events = ctx.of(GUEST).flatMap((m) => (m.type === 'events' ? m.events : []));
-    expect(events[0]).toMatchObject({ type: 'phase-started', phase: 'island-choice' });
+    // V0.8: the two dark tide candidates are public before the island draft.
+    expect(events[0]).toMatchObject({ type: 'tide-candidates' });
+    expect(events[1]).toMatchObject({ type: 'phase-started', phase: 'island-choice' });
     expect(events.some((e) => e.type === 'islands-chosen')).toBe(true);
     expect(events.at(-1)).toMatchObject({ type: 'match-ended' });
   });
 
-  it('speaks protocol 7 with the V0.7.1 ship-bay rules and the spectator stand', () => {
-    expect(PROTOCOL_VERSION).toBe(8);
+  it('speaks protocol 9 with the V0.8 rules', () => {
+    expect(PROTOCOL_VERSION).toBe(9);
     const ctx = makeRoom();
     ctx.send(HOST, { type: 'hello', token: HOST, protocol: PROTOCOL_VERSION });
     const sync = ctx.last(HOST, 'sync');

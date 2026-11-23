@@ -3,7 +3,7 @@ import { actionKey, getDeciders, getLegalActions } from './decisions';
 import { emptyRound, submitDecision } from './flow';
 import { dealIslandOffers } from './islands';
 import { seedToRngState, shuffle } from './rng';
-import { RULES_V07, type Rules } from './rules';
+import { RULES_CURRENT, type Rules } from './rules';
 import { GOODS } from './types';
 import { buildEventDeck, eventsOn, initialEventsState, roundCap } from './v08-events';
 import { PHASE_ACTION_TYPE, type Action, type MatchEvent, type MatchState, type PrivateEvent, type Result, type RuleErrorCode, type Transition } from './types';
@@ -11,7 +11,7 @@ import { PHASE_ACTION_TYPE, type Action, type MatchEvent, type MatchState, type 
 export interface MatchConfig {
   readonly seed: number;
   readonly players: readonly { readonly id: string; readonly name: string }[];
-  /** Defaults to RULES_V07; simulations may pass alternative rule numbers. */
+  /** Defaults to RULES_CURRENT (V0.8); simulations may pass alternative rule numbers. */
   readonly rules?: Rules;
 }
 
@@ -55,7 +55,7 @@ function validateConfig(config: MatchConfig, rules: Rules): string | null {
 
 /** §3, §11.1: shuffles the decks, deals island offers privately and opens the island draft. */
 export function createMatch(config: MatchConfig): Result<Transition> {
-  const rules = config.rules ?? RULES_V07;
+  const rules = config.rules ?? RULES_CURRENT;
   const problem = validateConfig(config, rules);
   if (problem !== null) {
     return fail('invalid-config', problem);

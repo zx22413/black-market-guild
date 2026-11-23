@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { DecisionContext } from '../../../src/v07/bots';
 import type { Action, MatchEvent } from '../../../src/v07/game';
-import { RULES_V07, createMatch } from '../../../src/v07/game';
+import { RULES_CURRENT, createMatch } from '../../../src/v07/game';
 import {
   BASICS,
   CUSTOMS,
+  GROWTH,
+  TIDE,
   DIPLOMAT,
   GUARD,
   ISLANDS,
@@ -121,12 +123,14 @@ describe('every tutorial', () => {
     }
   });
 
-  it('keeps the numbers of the official ship-bay rules, only fewer rounds', () => {
-    const created = createMatch({ seed: 1, players: [{ id: 'a', name: 'a' }, { id: 'b', name: 'b' }, { id: 'c', name: 'c' }, { id: 'd', name: 'd' }], rules: RULES_V07 });
+  it('keeps the numbers of the official V0.8 rules, only a fixed, shorter length', () => {
+    const created = createMatch({ seed: 1, players: [{ id: 'a', name: 'a' }, { id: 'b', name: 'b' }, { id: 'c', name: 'c' }, { id: 'd', name: 'd' }] });
     expect(created.ok).toBe(true);
+    const official = created.ok ? created.value.state.rules : null;
+    expect(official).toEqual(RULES_CURRENT);
     for (const script of TUTORIALS) {
-      const official = created.ok ? created.value.state.rules : null;
-      expect({ ...script.rules, rounds: 6 }).toEqual(official);
+      // Only the length differs: the event deck's windows (or the deck being off) and the fixed round count.
+      expect({ ...script.rules, rounds: RULES_CURRENT.rounds, v08: { ...script.rules.v08, events: RULES_CURRENT.v08.events } }).toEqual(official);
     }
   });
 });
@@ -198,6 +202,63 @@ describe('basics: the guided match', () => {
         expect(outcome(log.events, 'r3-p1')).toMatchObject({ outcome: 'arrived' });
       }),
     );
+  });
+});
+
+describe('growth: a building and a ship skill (V0.8)', () => {
+  const { events, finalState } = playTutorial(GROWTH);
+  const resolved = (shipId: string) => events.find((e): e is Extract<MatchEvent, { type: 'ship-resolved' }> => e.type === 'ship-resolved' && e.shipId === shipId);
+
+  it('round 1: you build the repairyard, and your 3 loses 1 crate (the arms) instead of 2', () => {
+    expect(events.find((e) => e.type === 'materials-used' && e.round === 1)).toMatchObject({ uses: [{ playerId: 'p1', material: { kind: 'build', building: 'repairyard' } }] });
+    expect(modifiers(events, 1, 'r1-p1')).toMatchObject({ final: 3 });
+    expect(resolved('r1-p1')).toMatchObject({ outcome: 'arrived', lost: { wood: 0, iron: 0, spice: 0, arms: 1 } });
+  });
+
+  it('round 2: you open the gambler, raise, and a 6 sells at ×4', () => {
+    expect(events.find((e) => e.type === 'materials-used' && e.round === 2)).toMatchObject({ uses: [{ playerId: 'p1', material: { kind: 'open', ship: 'gambler' } }] });
+    expect(events.find((e) => e.type === 'ships-launched' && e.round === 2)).toMatchObject({ ships: [expect.objectContaining({ owner: 'p1', type: 'gambler', raised: true })] });
+    expect(resolved('r2-p1')).toMatchObject({ outcome: 'arrived' });
+    expect(finalState.players[0]!.facility).toBe('repairyard');
+  });
+
+  it('every load you may pick still plays to the end', { timeout: 60_000 }, () => {
+    for (const round of [1, 2]) {
+      const choices = everyChoice(GROWTH, round, 'invest');
+      expect(choices.length).toBeGreaterThan(1);
+      choices.forEach((_, i) => expect(playTutorial(GROWTH, pickNth(GROWTH, round, 'invest', i)).finalState.phase).toBe('game-over'));
+    }
+  });
+});
+
+describe('dark tide: the bet and the last market (V0.8)', () => {
+  const { events } = playTutorial(TIDE);
+  const resolved = (shipId: string) => events.find((e): e is Extract<MatchEvent, { type: 'ship-resolved' }> => e.type === 'ship-resolved' && e.shipId === shipId);
+
+  it('shows the scripted candidates, picks the storm tide at 暗潮將至 in round 2 and ends with 最後的大市集 in round 3', () => {
+    expect(events.find((e) => e.type === 'tide-candidates')).toMatchObject({ candidates: ['storm', 'crash'] });
+    expect(events.find((e) => e.type === 'dark-tide-rising')).toMatchObject({ round: 2 });
+    expect(events.find((e) => e.type === 'tide-revealed')).toMatchObject({ round: 2, tide: 'storm' });
+    expect(events.some((e) => e.type === 'voyage-event-revealed' && e.round === 2)).toBe(false);
+    expect(events.find((e) => e.type === 'dark-tide-loss')).toMatchObject({ round: 2 });
+    expect(events.find((e) => e.type === 'final-round')).toMatchObject({ round: 3, effect: 'final-market' });
+  });
+
+  it('round 3: both 3s, the repairyard keeps yours to 1 lost crate while the rival loses all its iron', () => {
+    expect(modifiers(events, 3, 'r3-p1')).toMatchObject({ final: 3 });
+    expect(modifiers(events, 3, 'r3-p2')).toMatchObject({ final: 3 });
+    const mine = resolved('r3-p1')!;
+    expect(mine.outcome).toBe('arrived');
+    expect(Object.values(mine.lost ?? {}).reduce((a, b) => a + b, 0)).toBe(1);
+    expect(resolved('r3-p2')).toMatchObject({ outcome: 'arrived', lost: { wood: 0, iron: 2, spice: 0, arms: 0 } });
+  });
+
+  it('every load you may pick still plays to the end', { timeout: 60_000 }, () => {
+    for (const round of [1, 2, 3]) {
+      const choices = everyChoice(TIDE, round, 'invest');
+      expect(choices.length).toBeGreaterThan(1);
+      choices.forEach((_, i) => expect(playTutorial(TIDE, pickNth(TIDE, round, 'invest', i)).finalState.phase).toBe('game-over'));
+    }
   });
 });
 

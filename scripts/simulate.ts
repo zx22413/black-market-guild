@@ -1,17 +1,17 @@
 /**
- * Runs many V0.7.1 bot-only matches (the ship bays) and prints a Markdown balance report.
+ * Runs many bot-only matches under the official V0.8 rules and prints a Markdown balance report.
  * Usage: npm run simulate -- [--matches 1000] [--players 4] [--seed 1]
  *        [--lineup balanced,cautious,aggressive,builder]
- *        [--set roles.pirate.loot=150 ...] [--summary] [--buildings] [--v08]
+ *        [--set roles.pirate.loot=150 ...] [--summary] [--v07] [--buildings]
  * `--set` overrides any numeric rule (repeatable) to test balance ideas without editing
  * the rules; `--summary` prints one Markdown table row of key metrics instead of a report.
- * `--buildings` plays the old rules with the four buildings (RULES_BUILDINGS) instead of the ship bays.
- * `--v08` plays the V0.8 simulation prototype (RULES_V08_PROTO: crate voyages, ship skills, material buildings; not rules);
- * its numbers are under `v08.` for `--set` (e.g. `--set v08.raise.multiplier=350`).
+ * `--v07` plays the V0.7.1 ship bays (RULES_V07) and `--buildings` the old rules with the four buildings
+ * (RULES_BUILDINGS), for comparison. `--v08` is still accepted (the default since 2026-11-23). The V0.8 numbers are
+ * under `v08.` for `--set` (e.g. `--set v08.raise.multiplier=350`).
  * Seats rotate every match so each strategy plays every seat position.
  */
 import { BOT_STRATEGIES, type BotStrategy } from '../src/v07/bots';
-import { BUILDING_IDS, GOODS, ROLE_IDS, RULES_BUILDINGS, RULES_V07, RULES_V08_PROTO, SHIP_TYPE_IDS, priceAt, v08On, type Rules } from '../src/v07/game';
+import { BUILDING_IDS, GOODS, ROLE_IDS, RULES_BUILDINGS, RULES_V07, RULES_V08, SHIP_TYPE_IDS, priceAt, v08On, type Rules } from '../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../src/v07/match';
 import { addMatch, emptyStats, type SimStats } from './sim-stats';
 
@@ -65,7 +65,7 @@ function parseOptions(): Options {
     seed: Number.parseInt(get('seed') ?? '1', 10),
     lineup,
     overrides,
-    rules: applyOverrides(argv.includes('--v08') ? RULES_V08_PROTO : argv.includes('--buildings') ? RULES_BUILDINGS : RULES_V07, overrides),
+    rules: applyOverrides(argv.includes('--v07') ? RULES_V07 : argv.includes('--buildings') ? RULES_BUILDINGS : RULES_V08, overrides),
     summary: argv.includes('--summary'),
     bets: false,
   };

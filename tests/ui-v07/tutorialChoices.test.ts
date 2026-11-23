@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DecisionContext } from '../../src/v07/bots';
 import { TUTORIALS, allowedFor, playTutorial, scriptedAction, youChoose, type TutorialScript } from '../../src/v07/tutorial';
-import { EMPTY_CHOICE, actionFor, canLoad, investOptions, loadOne, withShipType, type InvestChoice } from '../../src/ui-v07/table/investChoice';
+import { EMPTY_CHOICE, actionFor, canLoad, investOptions, loadOne, withMaterial, withRaise, withShipType, type InvestChoice } from '../../src/ui-v07/table/investChoice';
 import { roleCards, targetsFor } from '../../src/ui-v07/table/deployChoice';
 import { GOODS, type Action } from '../../src/v07/game';
 
@@ -19,18 +19,24 @@ function yourDecisions(script: TutorialScript): DecisionContext[] {
   return seen;
 }
 
-/** Builds the demo investment the way the 3D island does: the ship first, then one crate at a time. */
+/**
+ * Builds the demo investment the way the 3D table does and the lessons' guides ask: the ship first (with its skill opened
+ * on its card, V0.8), then one crate at a time, then the gamble's raise, and a building last.
+ */
 function clickInvest(context: DecisionContext, demo: Action): Action | undefined {
   if (demo.type !== 'invest') return undefined;
   const options = investOptions(context);
   let choice: InvestChoice = EMPTY_CHOICE;
   if (demo.shipType !== undefined) choice = withShipType(options, choice, demo.shipType);
+  if (demo.material?.kind === 'open') choice = withMaterial(options, choice, demo.material);
   for (const g of GOODS) {
     for (let i = 0; i < demo.load[g]; i += 1) {
       if (!canLoad(options, choice, g)) return undefined;
       choice = loadOne(options, choice, g);
     }
   }
+  if (demo.raise === true) choice = withRaise(options, choice, true);
+  if (demo.material?.kind === 'build') choice = withMaterial(options, choice, demo.material);
   return actionFor(options, choice);
 }
 

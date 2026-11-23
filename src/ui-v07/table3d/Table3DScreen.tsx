@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { matchMode } from '../analytics/matchStats';
-import { GOODS, RULES_V07, eventsOn, type Action, type Goods, type PlayerId, type ShipId } from '../../v07/game';
+import { GOODS, RULES_CURRENT, eventsOn, type Action, type Goods, type PlayerId, type ShipId } from '../../v07/game';
 import type { SafeArea } from '../../ui/scene/CameraRig';
 import { soundEngine } from '../audio/soundEngine';
 import { eventBedFor } from '../audio/soundPlan';
@@ -117,11 +117,11 @@ export interface Table3DScreenProps {
   readonly hideEvent?: boolean;
 }
 
-export function Table3DScreen({ session, onExit, rematch, autoplay = false, showResult = true, onShown, onReplaying, rounds = RULES_V07.rounds, skipIslandReveal = false, skipIslandMoments = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdShow = false, holdVoyage = false, onVoyage, onStarted, onCalm, autoAdvanceSeconds, spectator = false }: Table3DScreenProps) {
+export function Table3DScreen({ session, onExit, rematch, autoplay = false, showResult = true, onShown, onReplaying, rounds = RULES_CURRENT.rounds, skipIslandReveal = false, skipIslandMoments = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdShow = false, holdVoyage = false, onVoyage, onStarted, onCalm, autoAdvanceSeconds, spectator = false }: Table3DScreenProps) {
   const snap = useSession(session);
   const [ready, setReady] = useState(false);
   // The match's own rules: the official ones unless the session plays an experiment (the V0.8 prototype).
-  const rules = snap.rules ?? RULES_V07;
+  const rules = snap.rules ?? RULES_CURRENT;
 
   const people = useMemo(() => snap.players.filter((p) => p.kind === 'local-human'), [snap.players]);
   const hotSeat = people.length > 1;

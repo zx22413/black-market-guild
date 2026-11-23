@@ -331,7 +331,7 @@ interface SkillRowProps {
 function SkillRow({ ship, skill, text, onToggle }: SkillRowProps) {
   const opening = skill.state === 'opening';
   return (
-    <section className={`ship-skill ${skill.state}`} data-focus={`skill-${ship}`} onClick={(e) => e.stopPropagation()}>
+    <section className={`ship-skill ${skill.state}`} data-focus={`skill-${ship}`} data-done={skill.state !== 'closed'} onClick={(e) => e.stopPropagation()}>
       <header>
         <small>技能</small>
         <b>{SKILL_LABELS[ship]}</b>

@@ -1,6 +1,7 @@
-import { RULES_V07, priceAt, type BuildingId, type CashReason, type GoodId, type IslandId, type RoleId, type Rules, type ShipTypeId, type VoyageEventId } from '../v07/game';
+import { RULES_CURRENT, eventsOn, priceAt, producedFor, type BuildingId, type CashReason, type GoodId, type IslandId, type RoleId, type Rules, type ShipTypeId, type VoyageEventId } from '../v07/game';
 
-// Names and short texts below restate docs/game-design.md (V0.7.1): §6.1, §9.4, §10.2, §11.2, §12.
+// Names and short texts below restate docs/game-design.md (V0.8): §6.1, §9.4, §10, §11.2, §12. BUILDING_* are the
+// old V0.7 buildings (RULES_BUILDINGS); the V0.8 buildings and ship skills are in table/v08Text.ts.
 // Do not add rules here; change the design document first.
 
 /** The market island at the middle of the table (§1), where every ship sails to sell (§7). */
@@ -22,7 +23,7 @@ export const ROLE_TEXT: Readonly<Record<RoleId, string>> = {
   customs: '指名別人船上的一種貨；船抵達時優先拿走該貨的價值，也抓走私商人。',
   guard: '只守自己的船：目標船 +1。',
   pirate: '目標船 −1。船沉沒、或最終值很低（1、2）而勉強抵達時，鎖定它的海盜分走一部分價值。',
-  smuggler: '搭別人的船夾帶私貨，平安抵達又沒有海關時抽走船東的收入；派在自己的船上則掩護船上的貨不被海關沒收。',
+  smuggler: '搭別人的船夾帶私貨，平安抵達又沒有海關時抽走船東的收入；派在自己的船上則掩護船上的貨不被海關沒收、軍火不被查緝。',
   diplomat: '守自己的船並猜一個角色：猜中則作廢它並向對手拿錢，猜錯退一半部署費。',
 };
 
@@ -36,16 +37,16 @@ export const BUILDING_LABELS: Readonly<Record<BuildingId, string>> = {
 /** §10.2 */
 export const BUILDING_TEXT: Readonly<Record<BuildingId, string>> = {
   shipyard: '每回合可裝貨量 +1。',
-  insurance: `自己的船沉沒時，銀行付 ${RULES_V07.buildings.insurance.payout} G 給你。`,
-  salvage: `別人的船沉沒時，撈到該船上數量最多的貨 ${RULES_V07.buildings.salvage.unitsPerShip} 單位（每回合最多 ${RULES_V07.buildings.salvage.maxPerRound} 艘）。`,
+  insurance: `自己的船沉沒時，銀行付 ${RULES_CURRENT.buildings.insurance.payout} G 給你。`,
+  salvage: `別人的船沉沒時，撈到該船上數量最多的貨 ${RULES_CURRENT.buildings.salvage.unitsPerShip} 單位（每回合最多 ${RULES_CURRENT.buildings.salvage.maxPerRound} 艘）。`,
   exchange: '別人的貨每抵達 1 單位拿 15 G 佣金，每回合最多計 4 單位。',
 };
 
 /** §9.6: what being wanted means, for the hover on the wanted mark. */
-export const wantedText = (lootBonus: number): string => `通緝中：現金最多。海盜取走他船上的貨值時（最終值 1 或 2），另從銀行多拿 ${lootBonus} G`;
+export const wantedText = (lootBonus: number): string => `通緝中：現金最多。海盜從他的船上拿到錢時（沉沒、最終值 1 或 2、海盜潮），另從銀行多拿 ${lootBonus} G`;
 
 /** How the final standing is counted (§13); also what the rules panel says under 計分. */
-export const WEALTH_RULE_TEXT = '總財富 ＝ 現金；倉庫裡的材料與海上的貨不計分。同分並列。';
+export const WEALTH_RULE_TEXT = '總財富 ＝ 現金；倉庫裡的材料、海上的貨、船技能與建築都不計分。同分並列。';
 
 export const ISLAND_LABELS: Readonly<Record<IslandId, string>> = {
   'spice-isles': '香料群島',
@@ -71,16 +72,21 @@ export const ISLAND_TEXT: Readonly<Record<IslandId, { readonly pro: string; read
 };
 
 /**
- * An island's lines under `rules`: §11.2, or for the two islands the V0.8 prototype changes (rules.v08.islands, an
- * experiment, not rules) their prototype lines, worded from the rules' own numbers.
+ * An island's lines under `rules`: ISLAND_TEXT is V0.7.1 (§11.2 before 2026-11-23); the two islands V0.8 changes
+ * (rules.v08.islands) get their V0.8 lines, worded from the rules' own numbers.
  */
 export function islandText(rules: Rules, island: IslandId): { readonly pro: string; readonly con: string } {
   const { freePortFeePercent, ownShipMinRaw } = rules.v08.islands;
   if (island === 'free-port' && freePortFeePercent > 0) {
     return { pro: freePortFeePercent === 50 ? '所有船的船費減半' : `所有船的船費只付 ${freePortFeePercent}%`, con: '沒有缺點' };
   }
+  if (island === 'mine' && eventsOn(rules)) {
+    // The event deck (V0.8) runs up to v08.events.maxRounds, so the wood rounds go on past round 4.
+    const rounds = Array.from({ length: rules.v08.events.maxRounds }, (_, i) => i + 1).filter((r) => producedFor(rules, 'mine', r).wood > 0);
+    return { ...ISLAND_TEXT.mine, con: `木材只在第 ${rounds.join('、')} 回合生產` };
+  }
   if (island === 'lighthouse' && ownShipMinRaw > 0) {
-    return { ...ISLAND_TEXT.lighthouse, pro: `自己的船出航 +1（原始骰要 ${ownShipMinRaw} 以上，骰到更小照樣會沉）；海關免部署費` };
+    return { pro: `自己的船出航 +1（原始骰要 ${ownShipMinRaw} 以上，骰到更小照樣會沉）；海關免部署費`, con: '自己的船最終值最大 5（海嘯號也一樣）' };
   }
   return ISLAND_TEXT[island];
 }
@@ -140,4 +146,4 @@ export const CASH_REASON_LABELS: Readonly<Record<CashReason, string>> = {
 };
 
 /** A good's price-track cell to G per unit: the display of §7.1 (each good has its own track). */
-export const stepLabel = (good: GoodId, step: number): string => String(priceAt(RULES_V07, good, step));
+export const stepLabel = (good: GoodId, step: number): string => String(priceAt(RULES_CURRENT, good, step));

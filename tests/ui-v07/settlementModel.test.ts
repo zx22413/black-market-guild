@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RULES_BUILDINGS, RULES_V08_PROTO, type MatchEvent, type Rules } from '../../src/v07/game';
+import { RULES_BUILDINGS, RULES_V08, type MatchEvent, type Rules } from '../../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../src/v07/match';
 import { cashSoFar, facilityWorks, marketRows, settlementFlights } from '../../src/ui-v07/table3d/settlementModel';
 
@@ -10,12 +10,13 @@ function play(seed: number, rules?: Rules): MatchEvent[] {
   return runMatchSync(setup, setup.bots).events as MatchEvent[];
 }
 
-const SETTLED_REASONS = new Set(['sale', 'smuggling', 'smuggling-fine', 'smuggling-confiscated', 'smuggling-seized', 'goods-confiscated', 'pirate-loot', 'insurance', 'exchange-commission']);
+const SETTLED_REASONS = new Set(['sale', 'smuggling', 'smuggling-fine', 'smuggling-confiscated', 'smuggling-seized', 'goods-confiscated', 'pirate-loot', 'insurance', 'exchange-commission', 'tradehouse-buyout']);
+const lastRound = (events: readonly MatchEvent[]): number => Math.max(...events.flatMap((e) => (e.type === 'market-settled' ? [e.round] : [0])));
 
 describe('settlement flights', () => {
   it.each([1, 2, 3, 7, 11])('move exactly the money of the settlement, every payment once (seed %i)', (seed) => {
     const events = play(seed);
-    for (let round = 1; round <= 6; round++) {
+    for (let round = 1; round <= lastRound(events); round++) {
       const flights = settlementFlights(events, round);
       const start = events.findIndex((e) => e.type === 'market-settled' && e.round === round);
       const settled = events.filter((e, i) => i > start && e.type === 'cash-changed' && e.round === round && SETTLED_REASONS.has(e.reason));
@@ -31,7 +32,7 @@ describe('settlement flights', () => {
 
   it.each([1, 2, 3])('group by ship in resolution order, the rest after, spoiled spice last (seed %i)', (seed) => {
     const events = play(seed);
-    for (let round = 1; round <= 6; round++) {
+    for (let round = 1; round <= lastRound(events); round++) {
       const order = events.flatMap((e) => (e.type === 'ship-resolved' && e.round === round ? [e.shipId] : []));
       const flights = settlementFlights(events, round);
       const ranks = flights.map((f) => (f.shipId === null ? order.length + (f.key.startsWith('spoil-') ? 1 : 0) : order.indexOf(f.shipId)));
@@ -69,7 +70,7 @@ describe("the buildings' shows in the settlement (V0.8 prototype, not rules)", (
   // a batch of matches, at least one show among them. The batch is slow when the whole suite runs at once.
   it('puts every armory and tradehouse effect in once, with its ship, moving no money', { timeout: 30_000 }, () => {
     let seen = 0;
-    for (const [events, round] of Array.from({ length: 12 }, (_, i) => play(i + 1, RULES_V08_PROTO)).flatMap((ev) => Array.from({ length: 12 }, (_, r) => [ev, r + 1] as const))) {
+    for (const [events, round] of Array.from({ length: 12 }, (_, i) => play(i + 1, RULES_V08)).flatMap((ev) => Array.from({ length: 12 }, (_, r) => [ev, r + 1] as const))) {
       const flights = settlementFlights(events, round);
       const works = flights.filter((f) => f.work);
       expect(works.map((f) => f.key).sort()).toEqual(facilityWorks(events, round).map((f) => f.key).sort());

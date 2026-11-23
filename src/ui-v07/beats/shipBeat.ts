@@ -1,4 +1,4 @@
-import { GOODS, RULES_V07, traitOf, type CashReason, type GoodId, type Goods, type IslandId, type MatchEvent, type PlayerId, type RoleId, type ShipId, type ShipTypeId, type VoyageEventId, type VoyageOutcome } from '../../v07/game';
+import { GOODS, RULES_CURRENT, traitOf, type CashReason, type GoodId, type Goods, type IslandId, type MatchEvent, type PlayerId, type RoleId, type ShipId, type ShipTypeId, type VoyageEventId, type VoyageOutcome } from '../../v07/game';
 
 import { skillMoments, type SkillMoment } from './skillShow';
 // One "beat" of the round resolution: everything that happens to one ship, in the order of §9.1
@@ -85,7 +85,7 @@ function modifierSteps(
 ): BeatStep[] {
   const boosted = (actors: readonly PlayerId[], role: 'guard' | 'pirate') =>
     actors.filter((id) => {
-      const trait = traitOf(RULES_V07, islandOf(id));
+      const trait = traitOf(RULES_CURRENT, islandOf(id));
       return (role === 'guard' ? trait.guardModifier : trait.pirateModifier) !== 0;
     });
   const parts: Omit<BeatStep, 'value'>[] = [

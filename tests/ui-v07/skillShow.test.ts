@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RULES_V08_PROTO, type MatchEvent } from '../../src/v07/game';
+import { RULES_V08, type MatchEvent } from '../../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../src/v07/match';
 import { beatCues, beatView } from '../../src/ui-v07/beats/beatTimeline';
 import { buildShipBeat } from '../../src/ui-v07/beats/shipBeat';
@@ -23,7 +23,7 @@ describe('ship skills going off (V0.8 prototype, not rules)', () => {
 
   it.each([1, 2, 3, 4])('plays a die skill as its own cue, the die showing the roll before it (seed %i)', (seed) => {
     const seats: SeatConfig[] = (['aggressive', 'balanced', 'builder', 'balanced'] as const).map((strategy, i) => ({ kind: 'bot', name: `B${i}`, strategy }));
-    const setup = setupFromSeats({ seed, seats, rules: RULES_V08_PROTO });
+    const setup = setupFromSeats({ seed, seats, rules: RULES_V08 });
     const events = runMatchSync(setup, setup.bots).events as MatchEvent[];
     for (const e of events) {
       if (e.type !== 'ship-resolved') continue;

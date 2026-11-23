@@ -56,7 +56,9 @@ describe('ship beat built from public events', () => {
         expect(step?.actors).toContain(d.playerId);
       }
     }
-    const shipCash = events.filter((e) => e.type === 'cash-changed' && e.shipId !== null && e.reason !== 'ship-cost');
+    // A beat plays the money of its resolution round; a diplomat on a freighter is paid at the launch round's reveal.
+    const resolvedIn = new Map(events.flatMap((e) => (e.type === 'ship-resolved' ? [[e.shipId, e.round] as const] : [])));
+    const shipCash = events.filter((e) => e.type === 'cash-changed' && e.shipId !== null && e.reason !== 'ship-cost' && resolvedIn.get(e.shipId) === e.round);
     const beatCash = events.flatMap((e) => (e.type === 'ship-resolved' ? buildShipBeat(events, e.shipId)!.cash : []));
     expect(beatCash.reduce((n, c) => n + c.amount, 0)).toBe(shipCash.reduce((n, e) => n + (e.type === 'cash-changed' ? e.amount : 0), 0));
   });
@@ -95,8 +97,8 @@ describe('beat timeline', () => {
       'intro',
       'start',
       ...beat.steps.map(() => 'step'),
-      'outcome',
-      'cargo',
+      // V0.8: the cargo shows first, then the crates fall off one by one, then the ship arrives.
+      ...(beat.dropped.length > 0 ? ['cargo', ...beat.dropped.map(() => 'drop'), 'outcome'] : ['outcome', 'cargo']),
       ...beat.cash.map(() => 'cash'),
       ...beat.goods.map(() => 'goods'),
       'done',
@@ -115,15 +117,16 @@ describe('beat timeline', () => {
   });
 });
 
-describe('crate losses in a ship beat (V0.8 prototype, not rules)', () => {
+describe('crate losses in a ship beat (V0.8)', () => {
   const playV08 = async (seed: number) => {
-    const { RULES_V08_PROTO } = await import('../../src/v07/game');
-    const setup = setupFromSeats({ seed, seats, rules: RULES_V08_PROTO });
+    const { RULES_V08 } = await import('../../src/v07/game');
+    const setup = setupFromSeats({ seed, seats, rules: RULES_V08 });
     return runMatchSync(setup, setup.bots).events as MatchEvent[];
   };
 
-  it('has no crate data under the official rules', () => {
-    const events = play(1).log.events as MatchEvent[];
+  it('has no crate data under the V0.7.1 rules', () => {
+    const setup = setupFromSeats({ seed: 1, seats, rules: RULES_V07 });
+    const events = runMatchSync(setup, setup.bots).events as MatchEvent[];
     const id = resolvedShips(events, 1)[0]!;
     const beat = buildShipBeat(events, id)!;
     expect(beat.lost).toBeNull();

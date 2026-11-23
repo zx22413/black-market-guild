@@ -2,7 +2,7 @@ import {
   applyAction,
   createMatch,
   RULES_BUILDINGS,
-  RULES_V08_PROTO,
+  RULES_V08,
   type Action,
   type BuildingId,
   type GoodId,
@@ -20,12 +20,12 @@ import {
 export const IDS = ['p1', 'p2', 'p3', 'p4'] as const;
 
 /**
- * V0.8 prototype: RULES_V08_PROTO before the 2026-11-15 simplification (island variants, late cards, all six cards flip
+ * V0.8 prototype: RULES_V08 before the 2026-11-15 simplification (island variants, late cards, all six cards flip
  * in phase II, modifier-only storm and pirate tides, the armory caps only sinking loot). The tests written against those
  * settings are pinned to it.
  */
 /**
- * RULES_V08_PROTO before the 2026-11-15 tide shields (each building ignores its matching tide) and the bots' crate-table
+ * RULES_V08 before the 2026-11-15 tide shields (each building ignores its matching tide) and the bots' crate-table
  * pirate valuation: the settings the simplification tests (v08-simplify.test.ts) were written for.
  */
 /**
@@ -34,13 +34,13 @@ export const IDS = ['p1', 'p2', 'p3', 'p4'] as const;
  * of an arrival (not a crate). The older fixtures below build on it.
  */
 export const RULES_V08_PRE_ARMED: Rules = {
-  ...RULES_V08_PROTO,
+  ...RULES_V08,
   v08: {
-    ...RULES_V08_PROTO.v08,
-    armory: { ...RULES_V08_PROTO.v08.armory, halveAllLoot: 1, refundSunkLoot: 1, armedBonus: 0, armedMaxFinal: 0, counter: 0, counterBlunts: 0, lootPercent: 35, immunePirateTide: 1 },
-    repairyard: { ...RULES_V08_PROTO.v08.repairyard, freighter: 0 },
-    tradehouse: { ...RULES_V08_PROTO.v08.tradehouse, named: 1, buyoutFloor: 0, buyoutFixed: 0 },
-    events: { ...RULES_V08_PROTO.v08.events, tidePirateArrivalCrates: 0 },
+    ...RULES_V08.v08,
+    armory: { ...RULES_V08.v08.armory, halveAllLoot: 1, refundSunkLoot: 1, armedBonus: 0, armedMaxFinal: 0, counter: 0, counterBlunts: 0, lootPercent: 35, immunePirateTide: 1 },
+    repairyard: { ...RULES_V08.v08.repairyard, freighter: 0 },
+    tradehouse: { ...RULES_V08.v08.tradehouse, named: 1, buyoutFloor: 0, buyoutFixed: 0 },
+    events: { ...RULES_V08.v08.events, tidePirateArrivalCrates: 0 },
   },
 };
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { RULES_V07, type Goods, type IslandId, type PlayerId, type ShipId } from '../../v07/game';
+import { RULES_CURRENT, type Goods, type IslandId, type PlayerId, type ShipId } from '../../v07/game';
 import { ISLAND_LABELS, VOYAGE_EVENT_LABELS, VOYAGE_EVENT_TEXT } from '../labels';
 import { eventLine } from '../log';
 import type { GameSession } from '../session/gameSession';
@@ -71,7 +71,7 @@ export function TableScreen({ session, onExit }: TableScreenProps) {
     <div className="v7-table">
       <header className="v7-top">
         <div className="v7-title">
-          <strong>{board.round === 0 ? '選島' : `第 ${board.round} / ${RULES_V07.rounds} 回合`}</strong>
+          <strong>{board.round === 0 ? '選島' : `第 ${board.round} / ${RULES_CURRENT.rounds} 回合`}</strong>
           {phase && <span className="v7-phase">{PHASE_LABELS[phase]}</span>}
         </div>
         {board.voyageEvent && (

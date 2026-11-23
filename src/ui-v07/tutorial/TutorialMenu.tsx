@@ -8,12 +8,13 @@ import './tutorial.css';
 
 export const TUTORIAL_GROUPS: readonly { readonly title: string; readonly ids: readonly TutorialId[] }[] = [
   { title: '基礎', ids: ['basics'] },
+  { title: '成長與暗潮', ids: ['growth', 'tide'] },
   { title: '角色', ids: ['guard', 'pirate', 'customs', 'smuggler', 'diplomat'] },
   { title: '開局', ids: ['islands'] },
 ];
 
 /** The groups are split over pages so the list never needs a scroll bar: the basics and the draft, then the roles side by side. */
-const PAGES: readonly (readonly string[])[] = [['基礎', '開局'], ['角色']];
+const PAGES: readonly (readonly string[])[] = [['基礎', '成長與暗潮', '開局'], ['角色']];
 
 interface TutorialMenuProps {
   readonly onStart: (id: TutorialId) => void;
@@ -37,7 +38,7 @@ export function TutorialMenu({ onStart, onBack }: TutorialMenuProps) {
   return (
     <main className="menu-panel menu-page tut-menu">
       <h2>新手教學</h2>
-      <p className="menu-note">先玩基礎，再一課一課學角色與開局選島。每一課都可以隨時重玩。</p>
+      <p className="menu-note">先玩基礎，再一課一課學成長、暗潮、角色與開局選島。每一課都可以隨時重玩。</p>
       {TUTORIAL_GROUPS.filter((g) => PAGES[page]!.includes(g.title)).map((g) => (
         <section key={g.title}>
           <h3>{g.title}</h3>

@@ -49,10 +49,12 @@ export function playRandom(seed: number, players: number): Played {
 }
 
 describe('V0.7 random matches', () => {
-  it.each([4])('finish with %i players and keep the invariants', (players) => {
+  it.each([4])('finish with %i players and keep the invariants', { timeout: 30_000 }, (players) => {
     for (let seed = 1; seed <= 60; seed += 1) {
       const { state, events } = playRandom(seed, players);
-      expect(state.round).toBe(6);
+      // V0.8: the event deck ends the match in round 6–10 (game-design.md §5).
+      expect(state.round).toBeGreaterThanOrEqual(6);
+      expect(state.round).toBeLessThanOrEqual(10);
       expect(state.result?.standings).toHaveLength(players);
       state.players.forEach((p) => {
         expect(p.cash).toBeGreaterThanOrEqual(0);

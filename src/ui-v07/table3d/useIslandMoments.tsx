@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { buildersOf, skillOpenersOf, materialMoments, mergeMoments } from './facilityShow';
-import { RULES_V07, type IslandId, type MatchEvent, type PlayerId, type Rules } from '../../v07/game';
+import { RULES_CURRENT, type IslandId, type MatchEvent, type PlayerId, type Rules } from '../../v07/game';
 import type { FitPoint } from '../../ui/scene/CameraRig';
 import { PLAYER_ISLAND_RADIUS, seatPosition } from '../../ui/scene/layout';
 import { around } from '../scene/focusMath';
@@ -62,7 +62,7 @@ const chipDelay = (i: number): number => 300 + i * 160;
 /** A cost's chip pops lower than a gain's. */
 const LOSS_PITCH = 0.82;
 
-export function useIslandMoments({ events, board, free, angleOf, skipFirstOpening = false, skip = false, rules = RULES_V07, viewer = null }: MomentsInput): Moments {
+export function useIslandMoments({ events, board, free, angleOf, skipFirstOpening = false, skip = false, rules = RULES_CURRENT, viewer = null }: MomentsInput): Moments {
   const round = board.round;
   const islands = useMemo((): Readonly<Record<PlayerId, IslandId>> | null => {
     const chosen = events.find((e) => e.type === 'islands-chosen');

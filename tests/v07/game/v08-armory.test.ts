@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { RULES_V07, RULES_V08_PROTO, type MatchEvent, type MatchState, type Rules } from '../../../src/v07/game';
+import { RULES_V07, RULES_V08, type MatchEvent, type MatchState, type Rules } from '../../../src/v07/game';
 import { G, cash, edit, find, plain, playRound, withDemand } from './helpers';
 
 // V0.8 simulation prototype, the armed merchant (v08.armory.armedBonus / counter / counterFine / counterBlunts; playtest
 // notes §10.13, §10.15).
 // NOT rules. The event deck is off so the round's card is the neutral one.
 
-const PROTO: Rules = { ...RULES_V08_PROTO, v08: { ...RULES_V08_PROTO.v08, events: { ...RULES_V08_PROTO.v08.events, enabled: 0 } } };
+const PROTO: Rules = { ...RULES_V08, v08: { ...RULES_V08.v08, events: { ...RULES_V08.v08.events, enabled: 0 } } };
 /** The 2026-11-22 armed merchant with its counterattack (§10.13, §10.15), before the plain +1 replaced it. */
 const V08: Rules = {
   ...PROTO,
@@ -26,9 +26,9 @@ const voyage = { loads: { p1: G(2, 0, 0, 1) }, rolls: { p1: 2 } } as const;
 
 describe('V0.8 armed merchant: preset', () => {
   it('is a plain +1 whenever arms are aboard in the prototype (§10.16) and stays off in the live rules', () => {
-    expect(RULES_V08_PROTO.v08.armory).toMatchObject({ armedBonus: 1, armedMaxFinal: 0, counter: 0, halveAllLoot: 0, refundSunkLoot: 0, immunePirateTide: 0 });
+    expect(RULES_V08.v08.armory).toMatchObject({ armedBonus: 1, armedMaxFinal: 0, counter: 0, halveAllLoot: 0, refundSunkLoot: 0, immunePirateTide: 0 });
     // No hidden cap on a sunk ship's loot any more (the old armory's 35 %).
-    expect(RULES_V08_PROTO.v08.armory.lootPercent).toBe(100);
+    expect(RULES_V08.v08.armory.lootPercent).toBe(100);
     expect(RULES_V07.v08.armory).toMatchObject({ armedBonus: 0, counter: 0 });
   });
 
@@ -136,7 +136,7 @@ describe('V0.8 armed merchant: the counterattack only blunts the pirate (counter
       const s = armory(rules);
       return { ...s, v08Events: { ...s.v08Events!, phaseTwoFrom: 1, tide: 'pirate' } };
     };
-    const withDeck = (rules: Rules): Rules => ({ ...rules, v08: { ...rules.v08, events: RULES_V08_PROTO.v08.events } });
+    const withDeck = (rules: Rules): Rules => ({ ...rules, v08: { ...rules.v08, events: RULES_V08.v08.events } });
     const arrive = { ...voyage, rolls: { p1: 6 }, roles: { p2: ['pirate', 'p1'] }, voyageEvent: 'calm-seas' } as const;
     expect(cash(playRound(tide(withDeck(BLUNT)), arrive).events, 'pirate-loot', 'p2')).toBe(0);
     expect(cash(playRound(tide(withDeck(armory_({ armedBonus: 0, immunePirateTide: 0 }))), arrive).events, 'pirate-loot', 'p2')).toBeGreaterThan(0);

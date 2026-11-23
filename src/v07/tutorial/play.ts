@@ -1,5 +1,5 @@
 import type { DecisionContext } from '../bots';
-import { GOODS, type Action, type DecisionPhase, type Goods, type PlayerId, type ShipId } from '../game';
+import { GOODS, type Action, type DecisionPhase, type Goods, type MaterialAction, type PlayerId, type ShipId } from '../game';
 import { runMatchSync, setupFromSeats, type MatchLog, type MatchSetup, type SyncController } from '../match';
 import { tutorialStage } from './stage';
 import { YOU, type SeatPlan, type TutorialScript, type YouPhase } from './types';
@@ -10,6 +10,7 @@ import { YOU, type SeatPlan, type TutorialScript, type YouPhase } from './types'
 const fullGoods = (partial: Partial<Goods> = {}): Goods => ({ wood: 0, iron: 0, spice: 0, arms: 0, ...partial });
 const units = (g: Goods): number => GOODS.reduce((n, k) => n + g[k], 0);
 const sameGoods = (a: Goods, b: Goods): boolean => GOODS.every((g) => a[g] === b[g]);
+const sameMaterial = (a: MaterialAction | undefined, b: MaterialAction | undefined): boolean => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
 /** The ship a player sailed this round, as the views name it. */
 export function shipOf(context: DecisionContext, owner: PlayerId): ShipId | null {
@@ -20,7 +21,13 @@ export function shipOf(context: DecisionContext, owner: PlayerId): ShipId | null
 export function fitsPlan(context: DecisionContext, plan: SeatPlan, action: Action): boolean {
   switch (action.type) {
     case 'invest':
-      return sameGoods(action.load, fullGoods(plan.load)) && (units(action.load) === 0 || (action.shipType ?? 'standard') === (plan.ship ?? 'standard'));
+      return (
+        sameGoods(action.load, fullGoods(plan.load)) &&
+        (units(action.load) === 0 || (action.shipType ?? 'standard') === (plan.ship ?? 'standard')) &&
+        sameMaterial(action.material, plan.material) &&
+        (action.raise === true) === (plan.raise === true) &&
+        action.privateLoad === undefined
+      );
     case 'deploy-role':
       return plan.role === undefined
         ? action.role === null

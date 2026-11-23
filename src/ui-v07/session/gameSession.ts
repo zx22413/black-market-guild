@@ -1,5 +1,5 @@
 import type { DecisionContext } from '../../v07/bots';
-import { RULES_V07, type Rules, type Action, type MatchEvent, type MatchResult, type PlayerId, type PrivateEvent } from '../../v07/game';
+import { RULES_CURRENT, type Rules, type Action, type MatchEvent, type MatchResult, type PlayerId, type PrivateEvent } from '../../v07/game';
 import { botController, runMatch, setupFromSeats, type Controller, type MatchSetup, type RunOptions, type SeatConfig } from '../../v07/match';
 
 /** A decision a local human seat still has to make. */
@@ -87,7 +87,7 @@ export function startSession(
     privateEvents: [],
     requests: [],
     waitingOn: [],
-    startingCash: (setup.rules ?? RULES_V07).startingCash,
+    startingCash: (setup.rules ?? RULES_CURRENT).startingCash,
     ...(setup.rules ? { rules: setup.rules } : {}),
     result: null,
     error: null,

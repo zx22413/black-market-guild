@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { BuildingId, IslandId, MatchEvent, PlayerId, VoyageEventId } from '../../v07/game';
-import { RULES_V07, RULES_V08_PROTO } from '../../v07/game';
+import { RULES_V07, RULES_V08 } from '../../v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../v07/match';
 import type { SafeArea } from '../../ui/scene/CameraRig';
 import { devWeatherOverride } from '../../ui/scene/weather';
@@ -84,7 +84,7 @@ export function Beat3DPreview() {
   const forcedWeather = devWeatherOverride(location.search) as VoyageEventId | null;
   const { beats, events, players } = useMemo(() => {
     // &v08: the V0.8 prototype (an experiment, not rules), to see the crates go overboard.
-    const setup = setupFromSeats({ seed, seats: SEATS, ...(v08 ? { rules: RULES_V08_PROTO } : {}) });
+    const setup = setupFromSeats({ seed, seats: SEATS, ...(v08 ? { rules: RULES_V08 } : {}) });
     const log = runMatchSync(setup, setup.bots);
     const ids = log.events.flatMap((e) => (e.type === 'ship-resolved' ? [e.shipId] : []));
     return {

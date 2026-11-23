@@ -28,8 +28,22 @@ export function tideStatus(events: readonly MatchEvent[]): TideStatus {
 
 export const TIDE_LABELS: Readonly<Record<TideKind, string>> = { storm: '風暴潮', pirate: '海盜潮', inspection: '查緝潮', crash: '崩盤潮' };
 
-/** What stops each tide for its owner (the prototype's buildings; the inspection tide is stopped by cover). */
-export const TIDE_SHIELD: Readonly<Record<TideKind, string>> = { storm: '修船廠', pirate: '軍械庫', inspection: '掩護（走私商人、幽靈號技能）', crash: '商行' };
+/**
+ * What stops a tide for its owner (game-design.md §12.2), read from the rules: the repairyard and the tradehouse when
+ * their shields are on, the armory only if v08.armory.immunePirateTide is (off since 2026-11-22), cover for inspection.
+ */
+export function tideShield(rules: Rules, tide: TideKind): string {
+  switch (tide) {
+    case 'storm':
+      return rules.v08.repairyard.immuneStormTide === 1 ? '修船廠' : '沒有';
+    case 'pirate':
+      return rules.v08.armory.immunePirateTide === 1 ? '軍械庫' : '沒有';
+    case 'inspection':
+      return '掩護（走私商人、幽靈號技能）';
+    case 'crash':
+      return rules.v08.tradehouse.immuneCrashTide === 1 ? '商行' : '沒有';
+  }
+}
 
 /** A tide's effect in every round it acts, with the numbers of `rules` (never written out by hand). */
 export function tideText(rules: Rules, tide: TideKind): string {
@@ -44,7 +58,7 @@ export function tideText(rules: Rules, tide: TideKind): string {
     case 'inspection':
       return `需求以內的軍火也查扣 ${-e.tideInspection} 箱`;
     case 'crash':
-      return `跌價一次跌 ${e.tideDropMultiplier} 格`;
+      return `跌價的格數 ×${e.tideDropMultiplier}`;
   }
 }
 

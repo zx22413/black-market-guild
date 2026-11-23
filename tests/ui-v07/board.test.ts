@@ -30,7 +30,7 @@ describe('ui-v07 board rebuilt from public events', () => {
       expect(board.players[id]!.stock).toEqual(player.stock);
     }
     expect(board.result).toEqual(log.result);
-    expect(board.round).toBe(RULES_V07.rounds);
+    expect(board.round).toBe(log.finalState.round);
   });
 
   it('starts from the rule book: 1000 G, 1 wood, 1 iron, every price on its track\'s starting cell', () => {
@@ -82,12 +82,12 @@ describe('V0.8 prototype material actions on the board (not rules)', () => {
 
 describe('ui-v07 board under the V0.8 prototype (not rules)', () => {
   it.each([1, 2, 3])('matches the engine: cash, warehouse, facility, opened skills (seed %i)', async (seed) => {
-    const { RULES_V08_PROTO } = await import('../../src/v07/game');
+    const { RULES_V08 } = await import('../../src/v07/game');
     const seats: SeatConfig[] = (['aggressive', 'balanced', 'builder', 'balanced'] as const).map((strategy, i) => ({ kind: 'bot', name: `B${i}`, strategy }));
-    const setup = setupFromSeats({ seed, seats, rules: RULES_V08_PROTO });
+    const setup = setupFromSeats({ seed, seats, rules: RULES_V08 });
     const log = runMatchSync(setup, setup.bots);
     const ids = setup.players.map((p) => p.id);
-    const board = buildBoard(ids, RULES_V08_PROTO.startingCash, log.events as MatchEvent[], RULES_V08_PROTO);
+    const board = buildBoard(ids, RULES_V08.startingCash, log.events as MatchEvent[], RULES_V08);
     for (const id of ids) {
       const player = log.finalState.players.find((p) => p.id === id)!;
       expect(board.players[id]!.cash).toBe(player.cash);

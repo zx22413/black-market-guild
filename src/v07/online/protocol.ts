@@ -1,8 +1,8 @@
 import type { DecisionContext } from '../bots';
 import type { Action, DecisionPhase, MatchEvent, MatchResult, PlayerId, PrivateEvent } from '../game';
 
-/** Bumped whenever messages change shape; a stale tab is told to reload. 2 = V0.7 rules, 3 = rematch, 4 = timers and takeover, 5 = shared lobby limit and public clocks, 6 = ship bays (ship types, arriving freighters, island changes), 7 = the spectator stand, 8 = the replay heartbeat. */
-export const PROTOCOL_VERSION = 8;
+/** Bumped whenever messages change shape; a stale tab is told to reload. 2 = V0.7 rules, 3 = rematch, 4 = timers and takeover, 5 = shared lobby limit and public clocks, 6 = ship bays (ship types, arriving freighters, island changes), 7 = the spectator stand, 8 = the replay heartbeat, 9 = the V0.8 rules (crates, ship skills, buildings, the dark tide, 6–10 rounds). */
+export const PROTOCOL_VERSION = 9;
 
 /** Largest client message the server reads; actions are small JSON objects. */
 export const MAX_MESSAGE_BYTES = 16_384;

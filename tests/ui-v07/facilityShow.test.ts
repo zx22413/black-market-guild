@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RULES_V08_PROTO, type MatchEvent } from '../../src/v07/game';
+import { RULES_V08, type MatchEvent } from '../../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../src/v07/match';
 import { ESCORT_EFFECTS, SETTLED_EFFECTS, buildersOf, launchWorks, skillOpenersOf, facilityReactions, materialMoments, mergeMoments, workGoods } from '../../src/ui-v07/table3d/facilityShow';
 
@@ -66,7 +66,7 @@ describe('buildings at work (V0.8 prototype, not rules)', () => {
 
   it.each([1, 2])('only reacts for a player who has that building (seed %i)', (seed) => {
     const seats: SeatConfig[] = (['aggressive', 'balanced', 'builder', 'balanced'] as const).map((strategy, i) => ({ kind: 'bot', name: `B${i}`, strategy }));
-    const setup = setupFromSeats({ seed, seats, rules: RULES_V08_PROTO });
+    const setup = setupFromSeats({ seed, seats, rules: RULES_V08 });
     const log = runMatchSync(setup, setup.bots);
     const events = log.events as MatchEvent[];
     const builtBy = new Map<string, string>();

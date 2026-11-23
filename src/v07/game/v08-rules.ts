@@ -3,7 +3,7 @@ import type { GoodId, Goods, ShipTypeId, V08BuildingId } from './types';
 /**
  * V0.8 simulation prototype (docs/proposals/2026-11-v08-decision-index.md §3.1). NOT rules: every number is a test
  * value for bot simulations, and every switch is 0 (off) in RULES_V07 and RULES_BUILDINGS so the live game is unchanged.
- * RULES_V08_PROTO (rules.ts) turns them all on. All values are plain numbers so `simulate --set v08.…=n` can tune them.
+ * RULES_V08 (rules.ts) turns them all on. All values are plain numbers so `simulate --set v08.…=n` can tune them.
  */
 
 /**

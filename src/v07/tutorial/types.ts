@@ -1,18 +1,22 @@
 import type { DecisionContext } from '../bots';
-import type { Action, DecisionPhase, GoodId, Goods, IslandId, PlayerId, RoleId, Rules, ShipTypeId, VoyageEventId } from '../game';
+import type { Action, DecisionPhase, GoodId, Goods, IslandId, MaterialAction, PlayerId, RoleId, Rules, ShipTypeId, TideKind, V08BuildingId, VoyageEventId } from '../game';
 
 // The beginner tutorial (docs/tutorial-outline.md): a scripted match whose hidden draws are fixed
 // and whose bots follow a plan, so every lesson plays out as written. A script never sets anything
 // public (cash, stock, prices): those still come from real actions through the engine.
 
 /** `trailer` is not a lesson: the promo video's scripted match (src/ui-v07/dev/trailer), never in TUTORIALS. */
-export type TutorialId = 'basics' | 'guard' | 'pirate' | 'customs' | 'smuggler' | 'diplomat' | 'islands' | 'trailer';
+export type TutorialId = 'basics' | 'growth' | 'tide' | 'guard' | 'pirate' | 'customs' | 'smuggler' | 'diplomat' | 'islands' | 'trailer';
 
 /** One seat's choices for one round; anything left out means: stay in port, deploy nothing. */
 export interface SeatPlan {
   /** The ship type it sails; the standard 信天翁號 when left out. */
   readonly ship?: ShipTypeId;
   readonly load?: Partial<Goods>;
+  /** V0.8: the round's material action (open a ship skill or build), none when left out. */
+  readonly material?: MaterialAction;
+  /** V0.8: the gambler's raise (its skill must be open). */
+  readonly raise?: true;
   /** A role and the owner of the ship it targets. */
   readonly role?: readonly [RoleId, PlayerId];
   /** Customs only: the good it names. */
@@ -35,8 +39,8 @@ export interface YouPhase {
 export interface RoundScript {
   /** The demand card turned this round (§7.2). */
   readonly demand: Goods;
-  /** The voyage event drawn this round (§12). */
-  readonly event: VoyageEventId;
+  /** The voyage event drawn this round (§12), or an advance card (暗潮將至, then 最後的大市集) when the event deck is on. */
+  readonly event: VoyageEventId | 'advance';
   /** Raw 1d6 per ship owner; owners left out roll 6. */
   readonly rolls?: Readonly<Record<PlayerId, number>>;
   /** Bot seats' choices by player id. */
@@ -116,6 +120,17 @@ export type FocusTarget =
   | { readonly kind: 'reveal' }
   /** The rules book button. */
   | { readonly kind: 'rules' }
+  /** V0.8: the 「蓋建築」 panel at the loading step, and one building in it. */
+  | { readonly kind: 'materials' }
+  | { readonly kind: 'material'; readonly building: V08BuildingId }
+  /** V0.8: a ship's skill row on its card in the ship pick (with its 「開啟」 button). */
+  | { readonly kind: 'skill'; readonly ship: ShipTypeId }
+  /** V0.8: the gambler's 「加注」 switch on its tag while loading. */
+  | { readonly kind: 'raise' }
+  /** V0.8: the dark tide chip under the voyage event (the candidates, then the tide). */
+  | { readonly kind: 'tide' }
+  /** The warehouse panel beside the ship pick. */
+  | { readonly kind: 'stock' }
   /** A question the table asks before going on (「還沒做完」, submit anyway?). */
   | { readonly kind: 'dialog' };
 
@@ -155,6 +170,11 @@ export interface TutorialScript {
   readonly youDraft?: boolean;
   /** Show the reveal of everyone's islands before round 1 (lessons that are not about islands skip it). */
   readonly showIslandReveal?: boolean;
+  /**
+   * V0.8, a lesson with the event deck on: the two public tide candidates in this order. Which one 暗潮將至 picks
+   * still comes from the match rng, so the lesson's test pins it.
+   */
+  readonly tideCandidates?: readonly [TideKind, TideKind];
 }
 
 export const YOU: PlayerId = 'p1';

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { RULES_V07, RULES_V08_PROTO, getLegalActions, priceAt, type Action, type MatchEvent, type MatchState, type Rules } from '../../../src/v07/game';
+import { RULES_V07, RULES_V08, getLegalActions, priceAt, type Action, type MatchEvent, type MatchState, type Rules } from '../../../src/v07/game';
 import { G, cash, edit, find, plain, playRound, withDemand } from './helpers';
 
 // V0.8 simulation prototype, the tradehouse without naming (v08.tradehouse.named / premiumCrates / buyoutPercent;
 // playtest notes §10.14). NOT rules. The event deck is off so the round's card is the neutral one.
 
-const base: Rules = { ...RULES_V08_PROTO, v08: { ...RULES_V08_PROTO.v08, events: { ...RULES_V08_PROTO.v08.events, enabled: 0 } } };
+const base: Rules = { ...RULES_V08, v08: { ...RULES_V08.v08, events: { ...RULES_V08.v08.events, enabled: 0 } } };
 const withTradehouse = (patch: Partial<Rules['v08']['tradehouse']>): Rules => ({ ...base, v08: { ...base.v08, tradehouse: { ...base.v08.tradehouse, named: 0, buyoutFloor: 0, buyoutFixed: 0, ...patch } } });
 const NAMED = withTradehouse({ named: 1 });
 const FLOOR = withTradehouse({ buyoutFloor: 1 });
@@ -22,7 +22,7 @@ const effects = (events: readonly MatchEvent[], effect: string) => find(events, 
 
 describe('V0.8 tradehouse presets', () => {
   it('buys a leftover crate for a fixed 60 G in the prototype, with no naming; the live rules keep every switch off', () => {
-    expect(RULES_V08_PROTO.v08.tradehouse).toMatchObject({ named: 0, premiumCrates: 0, buyoutPercent: 0, buyoutFloor: 0, buyoutFixed: 60 });
+    expect(RULES_V08.v08.tradehouse).toMatchObject({ named: 0, premiumCrates: 0, buyoutPercent: 0, buyoutFloor: 0, buyoutFixed: 60 });
     expect(RULES_V07.v08.tradehouse).toMatchObject({ named: 1, premiumCrates: 0, buyoutPercent: 0, buyoutFloor: 0, buyoutFixed: 0 });
   });
 

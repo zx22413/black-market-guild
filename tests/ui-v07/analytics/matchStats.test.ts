@@ -29,7 +29,7 @@ describe('match statistics', () => {
     const { setup, log } = playedMatch();
     const ids = setup.players.map((p) => p.id);
     const rounds = roundStats(log.events, ids, RULES_V07.startingCash, 'p1');
-    expect(rounds.map((r) => r.round)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(rounds.map((r) => r.round)).toEqual(Array.from({ length: log.finalState.round }, (_, i) => i + 1));
     rounds.forEach((r) => expect(r.rank).toBeGreaterThanOrEqual(1));
     const final = log.result.standings.find((s) => s.playerId === 'p1')!;
     expect(rounds.at(-1)?.cash).toBe(final.cash);
@@ -38,7 +38,7 @@ describe('match statistics', () => {
     const deployed = log.events.flatMap((e) => (e.type === 'roles-revealed' ? e.deployments.filter((d) => d.playerId === 'p1') : [])).length;
     expect(Object.values(counts).reduce((a, b) => a + (b ?? 0), 0)).toBe(deployed);
 
-    expect(whereInMatch(log.events).round).toBe(6);
+    expect(whereInMatch(log.events).round).toBe(log.finalState.round);
     expect(whereInMatch([])).toEqual({ round: 0, phase: 'start' });
   });
 });

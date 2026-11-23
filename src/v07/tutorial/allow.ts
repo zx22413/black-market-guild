@@ -7,17 +7,20 @@ import { shipOf } from './play';
 
 const units = (g: Goods): number => GOODS.reduce((n, k) => n + g[k], 0);
 
+/** No V0.8 extras (a material action, the gambler's raise, private crates) unless a lesson asks for them. */
+const plain = (action: Extract<Action, { type: 'invest' }>): boolean => action.material === undefined && action.raise !== true && action.privateLoad === undefined;
+
 /** Sail `ship` with at most `max` of each good (at least one crate). */
 export const loadWithin =
   (max: Partial<Goods>, ship: ShipTypeId = 'standard') =>
   (action: Action): boolean =>
-    action.type === 'invest' && (action.shipType ?? 'standard') === ship && units(action.load) > 0 && GOODS.every((g) => action.load[g] <= (max[g] ?? 0));
+    action.type === 'invest' && plain(action) && (action.shipType ?? 'standard') === ship && units(action.load) > 0 && GOODS.every((g) => action.load[g] <= (max[g] ?? 0));
 
 /** Sail `ship` with any load the rules allow (the table picks the ship first, then adds crates one at a time). */
 export const sailing =
   (ship: ShipTypeId) =>
   (action: Action): boolean =>
-    action.type === 'invest' && (action.shipType ?? 'standard') === ship && units(action.load) > 0;
+    action.type === 'invest' && plain(action) && (action.shipType ?? 'standard') === ship && units(action.load) > 0;
 
 /** Deploy `role` on the ship of one of `owners`; `orNone` also keeps deploying nothing. */
 export const roleOn =
@@ -36,7 +39,7 @@ export const customsNaming =
 export const loadWhere =
   (test: (load: Goods) => boolean) =>
   (action: Action): boolean =>
-    action.type === 'invest' && test(action.load);
+    action.type === 'invest' && plain(action) && test(action.load);
 
 export const unitsOf = units;
 

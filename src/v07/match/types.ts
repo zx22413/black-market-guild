@@ -19,7 +19,7 @@ export type SeatConfig =
 export interface SeatSetupInput {
   readonly seed: number;
   readonly seats: readonly SeatConfig[];
-  /** Defaults to the engine's RULES_V07. */
+  /** Defaults to the engine's RULES_CURRENT. */
   readonly rules?: Rules;
 }
 

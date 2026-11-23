@@ -17,7 +17,7 @@ npm run test:coverage                    # 測試＋覆蓋率（src/game、src/b
 npm run typecheck                        # 兩套 tsconfig 的型別檢查
 npm run build                            # typecheck + vite build
 npm run match:log -- 42 4                # 隨機選擇跑一局並印出中文對局紀錄（scripts/print-match.ts）
-npm run simulate -- --matches 2000 --players 4 [--lineup a,b,c,d] [--seed 1]  # V0.7.1 策略 Bot 批量模擬（src/v07，預設船艙規則；加 `--buildings` 用舊建築規則），輸出 Markdown 平衡報表
+npm run simulate -- --matches 2000 --players 4 [--lineup a,b,c,d] [--seed 1]  # 策略 Bot 批量模擬（src/v07，預設 V0.8；`--v07` 用 V0.7.1、`--buildings` 用舊建築規則），輸出 Markdown 平衡報表
 npm run server:dev                       # 本機模擬 Cloudflare Worker，跑 V0.7 房間（先 npm run build；port 8787，`npm run dev` 會把 /api 轉過去）
 npm run online:smoke                     # 對 server:dev（V0.7 房間）跑一局無頭連線測試（兩個連線＋兩個 Bot 座位、中途重連）
 npm run deploy                           # build + wrangler deploy（會中斷進行中的線上對局：先看 /stats 最上面的「目前線上對局」）
@@ -30,7 +30,7 @@ npm run simulate -- --summary --set roles.pirate.loot=200 --set roles.fees.guard
 
 ## 規則來源（最重要）
 
-[`docs/game-design.md`](docs/game-design.md)（V0.7.1：船艙系統取代建築，2026-11-05 起是正式規則；舊建築規則保留為 `RULES_BUILDINGS`，只有教學仍用它）。這份是 gameplay 的**唯一 source of truth**，詳細協作規則見 [`AGENTS.md`](AGENTS.md)。**V0.7.1 已於 2026-11-08 部署上線**（線上房間協定版本 7）。**注意：`src/game` 與 `src/ui` 是封存的 V0.6 實作**（原文封存於 [`docs/archive/game-design-v0.6.md`](docs/archive/game-design-v0.6.md)），現行引擎是 `src/v07`、介面是 `src/ui-v07`；`src/proto/economy` 只是比較用的原型。重點：
+[`docs/game-design.md`](docs/game-design.md)（V0.8：件數制、材料行動〔船技能、建築〕、事件牌庫與暗潮，2026-11-23 起是正式規則，程式是 `RULES_V08`＝`RULES_CURRENT`；V0.7.1 保留為 `RULES_V07`、舊建築版為 `RULES_BUILDINGS`，只給比較用）。這份是 gameplay 的**唯一 source of truth**，詳細協作規則見 [`AGENTS.md`](AGENTS.md)。正式站仍是 2026-11-08 部署的 V0.7.1（線上房間協定版本 7）；V0.8 的協定版本 9 **尚未部署**。**注意：`src/game` 與 `src/ui` 是封存的 V0.6 實作**（原文封存於 [`docs/archive/game-design-v0.6.md`](docs/archive/game-design-v0.6.md)），現行引擎是 `src/v07`、介面是 `src/ui-v07`；`src/proto/economy` 只是比較用的原型。重點：
 
 - 不得自行發明、推定或補完未定案的規則、數值、卡牌、角色能力或結算順序。[`docs/open-questions.md`](docs/open-questions.md) 是待確認清單，不是規則來源；其中的提案與範例數字絕對不可自行採用。
 - 實作遇到未定案規則時：停止具體化該規則，在程式碼中以 `TODO` 記錄問題、影響範圍與待確認決策；必要時設計成可注入的參數／設定，而不是寫死猜測值。

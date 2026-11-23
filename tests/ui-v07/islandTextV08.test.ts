@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RULES_V07, RULES_V08_PROTO } from '../../src/v07/game';
+import { RULES_V07, RULES_V08 } from '../../src/v07/game';
 import { ISLAND_TEXT, islandText } from '../../src/ui-v07/labels';
 import { ISLAND_GLANCE, islandGlance } from '../../src/ui-v07/table/islandGlance';
 import { crateRowText } from '../../src/ui-v07/table3d/ShipPicker';
@@ -12,11 +12,11 @@ describe('island lines by rules', () => {
   });
 
   it('word the two islands the V0.8 prototype changes from its numbers', () => {
-    expect(islandText(RULES_V08_PROTO, 'free-port')).toEqual({ pro: '所有船的船費減半', con: '沒有缺點' });
-    expect(islandText(RULES_V08_PROTO, 'lighthouse').pro).toContain('原始骰要 3 以上');
-    expect(islandGlance(RULES_V08_PROTO, 'free-port').map((i) => i.text)).toEqual(['所有船費減半']);
-    expect(islandGlance(RULES_V08_PROTO, 'lighthouse')[0]!.text).toBe('出航 +1（骰 3 以上）');
-    expect(islandText(RULES_V08_PROTO, 'mine')).toBe(ISLAND_TEXT.mine);
+    expect(islandText(RULES_V08, 'free-port')).toEqual({ pro: '所有船的船費減半', con: '沒有缺點' });
+    expect(islandText(RULES_V08, 'lighthouse').pro).toContain('原始骰要 3 以上');
+    expect(islandGlance(RULES_V08, 'free-port').map((i) => i.text)).toEqual(['所有船費減半']);
+    expect(islandGlance(RULES_V08, 'lighthouse')[0]!.text).toBe('出航 +1（骰 3 以上）');
+    expect(islandText(RULES_V08, 'mine')).toEqual({ ...ISLAND_TEXT.mine, con: '木材只在第 1、4、7、10 回合生產' });
   });
 });
 

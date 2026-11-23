@@ -557,7 +557,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
             </button>
           )}
           {raise && (
-            <button type="button" className={`inv-raise ${raise.on ? 'sel' : ''}`} data-focus="raise" disabled={!raise.can && !raise.on} aria-pressed={raise.on} title={skillText(context.view.rules, 'gambler')} onClick={raise.onToggle}>
+            <button type="button" className={`inv-raise ${raise.on ? 'sel' : ''}`} data-focus="raise" data-done={raise.on} disabled={!raise.can && !raise.on} aria-pressed={raise.on} title={skillText(context.view.rules, 'gambler')} onClick={raise.onToggle}>
               {raise.on ? '已加注' : '加注'} ×{context.view.rules.v08.raise.multiplier / 100}
             </button>
           )}

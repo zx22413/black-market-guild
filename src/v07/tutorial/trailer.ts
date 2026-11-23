@@ -1,5 +1,5 @@
 import { loadWithin, roleOn } from './allow';
-import { BOT, SEATS, goods, shortRules } from './seats';
+import { BOT, SEATS, goods, trailerRules } from './seats';
 import type { TutorialScript } from './types';
 
 // Not a lesson: the scripted match the promo trailer is filmed from (src/ui-v07/dev/trailer,
@@ -16,7 +16,7 @@ export const TRAILER: TutorialScript = {
   title: '宣傳片',
   summary: '宣傳片拍攝用的劇本局（不在教學選單裡）。',
   seed: 80101,
-  rules: shortRules(2),
+  rules: trailerRules(2),
   seats: SEATS,
   rounds: [
     {

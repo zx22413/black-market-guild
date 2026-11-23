@@ -1,6 +1,6 @@
-# `src/v07`｜V0.7.1 規則引擎（搬遷中）
+# `src/v07`｜正式規則引擎（V0.8）
 
-依 [`docs/game-design.md`](../../docs/game-design.md)（V0.7.1）實作的正式引擎，搬遷計畫見 [`docs/v07-migration-plan.md`](../../docs/v07-migration-plan.md)。V0.6 的 `src/game` 與 UI 仍在使用中；全部改接完成後，這裡的程式會移回 `src/game`、`src/bots`。
+依 [`docs/game-design.md`](../../docs/game-design.md)（V0.8）實作的正式引擎，搬遷計畫見 [`docs/v07-migration-plan.md`](../../docs/v07-migration-plan.md)。V0.6 的 `src/game` 與 UI 仍在使用中；全部改接完成後，這裡的程式會移回 `src/game`、`src/bots`。
 
 純度限制與 `src/game` 相同（`tsconfig.engine.json`）：不得使用 DOM 或 Node API；所有隨機性透過 `game/rng.ts`；狀態可 JSON 往返，且不修改傳入物件。
 
@@ -11,7 +11,7 @@
 | 檔案 | 說明 |
 | --- | --- |
 | `types.ts` | 狀態、行動、公開事件、私有事件。 |
-| `rules.ts` | `RULES_V07`（版本字串 V0.7.1）：所有規則數值，各註明設計文件章節；島嶼特色也在這裡。 |
+| `rules.ts` | 所有規則數值，各註明設計文件章節；島嶼特色也在這裡。`RULES_CURRENT`＝`RULES_V08`（版本字串 V0.8，2026-11-23 起的正式規則，`createMatch` 的預設）；`RULES_V07`（V0.7.1 船艙版）與 `RULES_BUILDINGS`（舊建築版）只給比較用的模擬與舊測試。 |
 | `engine.ts` | 建立對局（洗牌、發選島選項）、驗證並套用行動。 |
 | `flow.ts` | 回合狀態機：選島 → 每回合開始（生產、需求卡、通緝、公開航海事件）→ 投資 → 部署 → 自動結算。 |
 | `decisions.ts` | 決策者與合法行動列舉；行動合法性一律以此判定。 |
@@ -26,9 +26,9 @@
 
 測試在 `tests/v07/game/`，依設計文件章節分檔。
 
-## V0.8 模擬原型（`game/v08-rules.ts`、`game/v08.ts`、`bots/v08.ts`）
+## V0.8（`game/v08-rules.ts`、`game/v08.ts`、`bots/v08.ts`）
 
-**實驗，不是規則。** 依 `docs/proposals/2026-11-v08-decision-index.md` §3.1 的討論做成的 Bot 模擬原型，所有數字都是測試值。規則物件多了 `rules.v08`，開關 `crates`、`skills`、`buildings`、`islandVariants` 在 `RULES_V07`、`RULES_BUILDINGS` 都是 0（線上對局行為不變）；`RULES_V08_PROTO` 全開（2026-11-15 簡化後島嶼變體 `islandVariants` 與單面牌 `events.lateCards` 改回 0，程式碼保留；風暴潮、海盜潮改用下表的 `tideStormExtraLoss`、`tidePirateArrivalLoot`，`tideStorm`、`tidePirate` 為 0；只有暗潮對應的牌會翻；軍械庫減半所有搶奪），並帶 2026-11-14～15 調整後的基準（孤注號船費 50 G、巨鯨號船費 75 G、海嘯號 7／8／9+ 倍率 150／200／250% 且巨浪加骰為 1d3、私貨算進到港量且照掉貨表、軍火超量查緝 `v08.inspection`、開啟技能 2 鐵、技能出航 2 次後自動升二級 `v08.levelUp`（不再有材料強化）、幽靈號一級自帶掩護且二級才有 1 件私貨、沉船的貨只能撈一次、修船廠 2 木 1 鐵；見 `docs/proposals/2026-11-playtest-feedback-and-direction.md` §10.9）。`npm run simulate -- --v08` 用它跑，`--set v08.…=數字` 可調任何值（例：`--set v08.raise.multiplier=350`、`--set v08.tables.standard.lose.2=1`）。
+**2026-11-23 起是正式規則**（`docs/game-design.md` V0.8；下面的說明是原型時期寫的沿革，「原型」「測試值」指的是數字來自 Bot 模擬、還沒經過真人試玩）。依 `docs/proposals/2026-11-v08-decision-index.md` §3.1 的討論做成。規則物件多了 `rules.v08`，開關 `crates`、`skills`、`buildings`、`islandVariants` 在 `RULES_V07`、`RULES_BUILDINGS` 都是 0（線上對局行為不變）；`RULES_V08` 全開（2026-11-15 簡化後島嶼變體 `islandVariants` 與單面牌 `events.lateCards` 改回 0，程式碼保留；風暴潮、海盜潮改用下表的 `tideStormExtraLoss`、`tidePirateArrivalLoot`，`tideStorm`、`tidePirate` 為 0；只有暗潮對應的牌會翻；軍械庫減半所有搶奪），並帶 2026-11-14～15 調整後的基準（孤注號船費 50 G、巨鯨號船費 75 G、海嘯號 7／8／9+ 倍率 150／200／250% 且巨浪加骰為 1d3、私貨算進到港量且照掉貨表、軍火超量查緝 `v08.inspection`、開啟技能 2 鐵、技能出航 2 次後自動升二級 `v08.levelUp`（不再有材料強化）、幽靈號一級自帶掩護且二級才有 1 件私貨、沉船的貨只能撈一次、修船廠 2 木 1 鐵；見 `docs/proposals/2026-11-playtest-feedback-and-direction.md` §10.9）。`npm run simulate` 預設就用它跑（`--v07` 改跑 V0.7.1），`--set v08.…=數字` 可調任何值（例：`--set v08.raise.multiplier=350`、`--set v08.tables.standard.lose.2=1`）。
 
 | 開關 | 內容 |
 | --- | --- |
@@ -69,7 +69,7 @@ V0.7 的 Bot，由原型 `src/proto/economy/bots` 移植。介面與 V0.6 相同
 
 ## `match/`
 
-V0.7 的 Match Runner，程式與 `src/match` 相同（說明見 [`src/match/README.md`](../match/README.md)），只改接 `src/v07/game` 與 `src/v07/bots`，預設規則是 `RULES_V07`（版本字串 V0.7.1）：`setupFromSeats`、`runMatchSync`、`runMatch`、`replayMatch`、`botController`。V0.6 的 UI 與連線層仍使用 `src/match`，搬遷到第 4、5 階段時改接這裡。測試在 `tests/v07/match/`。
+V0.7 的 Match Runner，程式與 `src/match` 相同（說明見 [`src/match/README.md`](../match/README.md)），只改接 `src/v07/game` 與 `src/v07/bots`，預設規則是引擎的 `RULES_CURRENT`（V0.8）：`setupFromSeats`、`runMatchSync`、`runMatch`、`replayMatch`、`botController`。V0.6 的 UI 與連線層仍使用 `src/match`，搬遷到第 4、5 階段時改接這裡。測試在 `tests/v07/match/`。
 
 Runner 的可選參數 `RunOptions.stage`：每個轉換（含開局）交給各座位之前先改寫一次，只給新手教學固定還沒公開的隨機結果用；不傳時行為不變。
 
@@ -84,8 +84,10 @@ Runner 的可選參數 `RunOptions.stage`：每個轉換（含開局）交給各
 | `play.ts` | 把計畫變成合法行動（找不到就丟錯，規則變了腳本會先壞）；`allowedFor` 過濾你這一步能選的行動；`isReady` 判斷桌上的選擇是否已經完成（亮起提交）；`playTutorial` 無頭跑完整個腳本（測試用）。 |
 | `allow.ts` | 過濾條件：裝貨上限（保留所有較小的裝法，桌上才能一箱一箱加）、先選船型、指定角色與目標船、重擲與否。 |
 | `coach.ts` | `coachView`：目前該顯示哪個講解步驟、是否擋住你的決定、做決定時要顯示的待辦。 |
-| `seats.ts` | 共用座位（你在林場島）、只減少回合數的規則、講解文字引用的規則數字。 |
-| `basics.ts` | 基礎引導對局（3 回合，船艙版規則 `RULES_V07`）：選船出航、黑市價格、貨物、五種船與孤注號的賭局；角色在單課教。 |
+| `seats.ts` | 共用座位（你在船塢島）、`shortRules`（正式規則 V0.8，關掉決定局長的事件牌庫、固定回合數）、宣傳片用的 `trailerRules`（V0.7.1）、講解文字引用的規則數字、聚焦目標 `F`。 |
+| `basics.ts` | 基礎引導對局（3 回合，件數制）：選船出航、掉貨、黑市價格、貨物、五種船與孤注號的賭局；角色在單課教。 |
+| `growth.ts` | 成長（2 回合）：材料行動、蓋修船廠（骰 3 少掉 1 箱）、開啟孤注號並加注（骰 6 ×4）。 |
+| `tideLesson.ts` | 暗潮（3 回合，事件牌庫打開、窗口縮成第 2、3 回合）：暗潮候選與押注、暗潮將至（倉庫減半）、最後的大市集下風暴潮與修船廠的差別。`stage.ts` 依腳本把牌庫與候選暗潮排好（`RoundScript.event` 可以是 `'advance'`、`TutorialScript.tideCandidates`）。 |
 | `roleScenarios.ts` | 角色單課（各 1 回合）：護衛、海盜、海關、走私商人、外交官。 |
 | `islandsLesson.ts` | 開局選島：你自己 2 選 1，看完同時公開就結束。 |
 
@@ -93,6 +95,6 @@ Runner 的可選參數 `RunOptions.stage`：每個轉換（含開局）交給各
 
 ## `online/`
 
-V0.7 的連線房間，程式與 `src/online` 相同（說明見 [`src/online/README.md`](../online/README.md)），改接 V0.7 的 Runner 與 Bot：`PROTOCOL_VERSION` 為 2、座位數與起始現金取自 `RULES_V07`、空位由 V0.7 個性的 Bot 補上。伺服器入口是 `server/worker-v07.ts`（共用的 Worker／Durable Object 程式在 `server/rooms.ts`），只在本機以 `npm run server:dev:v07`（`wrangler.v07.jsonc`，port 8788）執行，不部署；`npm run online:smoke` 對它跑一局無頭連線測試。測試在 `tests/v07/online/`。
+V0.7 的連線房間，程式與 `src/online` 相同（說明見 [`src/online/README.md`](../online/README.md)），改接 V0.7 的 Runner 與 Bot：`PROTOCOL_VERSION` 為 9（V0.8）、座位數與起始現金取自 `RULES_CURRENT`、空位由 V0.7 個性的 Bot 補上。伺服器入口是 `server/worker-v07.ts`（共用的 Worker／Durable Object 程式在 `server/rooms.ts`），只在本機以 `npm run server:dev:v07`（`wrangler.v07.jsonc`，port 8788）執行，不部署；`npm run online:smoke` 對它跑一局無頭連線測試。測試在 `tests/v07/online/`。
 
 批量模擬：`npm run simulate`（`scripts/simulate.ts`、`scripts/sim-stats.ts`）已改為 V0.7，統計只取自對局紀錄的公開事件與最終狀態。

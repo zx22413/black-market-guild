@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { GOODS, RULES_V07, type GoodId } from '../../v07/game';
+import { GOODS, RULES_CURRENT, type GoodId } from '../../v07/game';
 import { GOOD_LABELS } from '../labels';
 import { goodDetail } from '../table/goodText';
 import { tokenIconUrl } from './icons';
@@ -23,7 +23,7 @@ export function GoodIcon({ good, size = 'md', tip = true }: { readonly good: Goo
     </span>
   );
   return tip ? (
-    <InfoTip title={GOOD_LABELS[good]} text={goodDetail(good, RULES_V07)}>
+    <InfoTip title={GOOD_LABELS[good]} text={goodDetail(good, RULES_CURRENT)}>
       {icon}
     </InfoTip>
   ) : (

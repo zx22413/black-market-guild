@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { GOODS, RULES_V07, SHIP_TYPE_IDS, type IslandId, type RoleId, type VoyageEventId } from '../../v07/game';
-import { GOOD_LABELS, ISLAND_LABELS, ISLAND_TEXT, ROLE_LABELS, SHIP_TYPE_LABELS, VOYAGE_EVENT_LABELS, VOYAGE_EVENT_TEXT, WEALTH_RULE_TEXT } from '../labels';
+import { GOODS, RULES_CURRENT, SHIP_TYPE_IDS, TIDE_CARD, TIDE_KINDS, V08_BUILDING_IDS, eventsOn, type Goods, type IslandId, type RoleId, type Rules, type VoyageEventId } from '../../v07/game';
+import { GOOD_LABELS, ISLAND_LABELS, ROLE_LABELS, SHIP_TYPE_LABELS, VOYAGE_EVENT_LABELS, VOYAGE_EVENT_TEXT, WEALTH_RULE_TEXT, islandText } from '../labels';
 import { soundEngine } from '../audio/soundEngine';
 import { useSoundOnce } from '../audio/useUiSounds';
 import { BrassCorner } from '../skin/ornaments';
 import { goodDetail, marketRule } from '../table/goodText';
 import { roleDetail } from '../table/roleText';
 import { shipDetail, shipRuleIntro } from '../table/shipText';
+import { FACILITY_LABELS, SKILL_LABELS, facilityShield, facilityText, skillText } from '../table/v08Text';
+import { bossText, bossTitle } from './roundCard';
+import { TIDE_LABELS, tideShield, tideText } from './tideModel';
 import { GoodIcon } from './GoodIcon';
 import { CloseIcon, IconDisc } from './icons';
 import { IslandGlance } from './IslandGlance';
@@ -20,12 +23,13 @@ import './rulesBook.css';
 // book's thumb-index tabs are the chapter tabs (rulesBook.css). Every sentence comes from the texts
 // the table already uses (labels.ts, roleText.ts, goodText.ts), so the book can never say something else.
 
-export type RulesTab = 'roles' | 'islands' | 'ships' | 'goods' | 'events' | 'score' | 'online';
+export type RulesTab = 'roles' | 'islands' | 'ships' | 'buildings' | 'goods' | 'events' | 'score' | 'online';
 
 export const RULES_TABS: readonly { readonly id: RulesTab; readonly label: string }[] = [
   { id: 'roles', label: '角色' },
   { id: 'islands', label: '島嶼' },
   { id: 'ships', label: '船' },
+  { id: 'buildings', label: '建築' },
   { id: 'goods', label: '貨品' },
   { id: 'events', label: '事件' },
   { id: 'score', label: '計分' },
@@ -33,6 +37,37 @@ export const RULES_TABS: readonly { readonly id: RulesTab; readonly label: strin
 ];
 
 const keysOf = <K extends string>(record: Readonly<Record<K, unknown>>): K[] => Object.keys(record) as K[];
+
+/** A material cost in words: 「2 木材、1 鐵礦」. */
+const costText = (cost: Goods): string =>
+  GOODS.filter((g) => cost[g] > 0)
+    .map((g) => `${cost[g]} ${GOOD_LABELS[g]}`)
+    .join('、');
+
+/** §8.2, §10: the one material action a round, with the rules' numbers. */
+function materialRule(rules: Rules): string {
+  const v = rules.v08;
+  return `投資時每回合最多做一個材料行動，用倉庫裡的貨付：開啟一種船的技能（${costText(v.costs.open)}，最多 ${v.maxSkills} 種船），或蓋一棟建築（${costText(v.costs.build.repairyard)}，一局只能蓋 ${v.maxBuildings} 棟）。做了什麼在提交後公開，本回合就生效。`;
+}
+
+/** §12.1: the event deck, the two advance cards and the season, with the rules' numbers. */
+function deckRules(rules: Rules): readonly { readonly title: string; readonly text: string }[] {
+  const e = rules.v08.events;
+  return [
+    {
+      title: '事件牌庫與局長',
+      text: `每回合開始時翻一張事件。第 ${e.firstAdvanceFrom}～${e.firstAdvanceTo} 回合之間會翻出「暗潮將至」，第 ${e.secondAdvanceFrom}～${e.secondAdvanceTo} 回合之間翻出「最後的大市集」：翻到它的那回合就是最後一回合。哪一回合是隨機的，不公開。`,
+    },
+    {
+      title: '暗潮將至',
+      text: `這回合沒有一般事件；公開這局的暗潮是兩種候選中的哪一種。這回合結束時，倉庫裡每種貨損失 ${e.warehouseLossPercent}%（無條件捨去）。下一回合起是暗潮季，暗潮每回合都生效到最後。`,
+    },
+    {
+      title: '最後的大市集',
+      text: `最後一回合，沒有一般事件：每種貨需求 +${e.openMarketDemand}、價格不會下跌、每艘船擲 ${e.lastGambleDice} 顆骰取較高的。暗潮照常生效（不跌價蓋過崩盤潮）。這回合不能選巨鯨號。`,
+    },
+  ];
+}
 
 /** The entries of one chapter, as `<li>`s. */
 export function RulesEntries({ tab }: { readonly tab: RulesTab }) {
@@ -46,7 +81,7 @@ export function RulesEntries({ tab }: { readonly tab: RulesTab }) {
                 <IconDisc src={roleIconUrl(role)} badge />
                 {ROLE_LABELS[role]}
               </b>
-              <p className="role-detail">{roleDetail(role, RULES_V07)}</p>
+              <p className="role-detail">{roleDetail(role, RULES_CURRENT)}</p>
             </li>
           ))}
         </>
@@ -59,7 +94,7 @@ export function RulesEntries({ tab }: { readonly tab: RulesTab }) {
               <b>{ISLAND_LABELS[island]}</b>
               <IslandGlance island={island} />
               <p>
-                {ISLAND_TEXT[island].pro}。{ISLAND_TEXT[island].con}。
+                {islandText(RULES_CURRENT, island).pro}。{islandText(RULES_CURRENT, island).con}。
               </p>
             </li>
           ))}
@@ -70,14 +105,39 @@ export function RulesEntries({ tab }: { readonly tab: RulesTab }) {
         <>
           <li>
             <b>選船與出航</b>
-            <p>{shipRuleIntro(RULES_V07)}</p>
+            <p>{shipRuleIntro(RULES_CURRENT)}</p>
           </li>
           {SHIP_TYPE_IDS.map((ship) => (
             <li key={ship}>
               <b>{SHIP_TYPE_LABELS[ship]}</b>
-              <p>{shipDetail(ship, RULES_V07)}</p>
+              <p>{shipDetail(ship, RULES_CURRENT)}</p>
+              {RULES_CURRENT.v08.skills === 1 && (
+                <p>
+                  技能「{SKILL_LABELS[ship]}」：{skillText(RULES_CURRENT, ship)}。
+                </p>
+              )}
             </li>
           ))}
+        </>
+      );
+    case 'buildings':
+      return (
+        <>
+          <li>
+            <b>材料行動</b>
+            <p>{materialRule(RULES_CURRENT)}</p>
+          </li>
+          {V08_BUILDING_IDS.map((building) => {
+            const shield = facilityShield(RULES_CURRENT, building);
+            return (
+              <li key={building}>
+                <b>{FACILITY_LABELS[building]}</b>
+                <p>
+                  {facilityText(RULES_CURRENT, building)}。{shield ? `暗潮季：${shield}。` : ''}
+                </p>
+              </li>
+            );
+          })}
         </>
       );
     case 'goods':
@@ -85,7 +145,7 @@ export function RulesEntries({ tab }: { readonly tab: RulesTab }) {
         <>
           <li>
             <b>黑市價格</b>
-            <p>{marketRule(RULES_V07)}</p>
+            <p>{marketRule(RULES_CURRENT)}</p>
           </li>
           {GOODS.map((good) => (
             <li key={good}>
@@ -93,7 +153,7 @@ export function RulesEntries({ tab }: { readonly tab: RulesTab }) {
                 <GoodIcon good={good} size="lg" tip={false} />
                 {GOOD_LABELS[good]}
               </b>
-              <p>{goodDetail(good, RULES_V07)}</p>
+              <p>{goodDetail(good, RULES_CURRENT)}</p>
             </li>
           ))}
         </>
@@ -101,12 +161,32 @@ export function RulesEntries({ tab }: { readonly tab: RulesTab }) {
     case 'events':
       return (
         <>
+          {eventsOn(RULES_CURRENT) &&
+            deckRules(RULES_CURRENT).map((rule) => (
+              <li key={rule.title}>
+                <b>{rule.title}</b>
+                <p>{rule.text}</p>
+              </li>
+            ))}
           {keysOf<VoyageEventId>(VOYAGE_EVENT_LABELS).map((event) => (
             <li key={event}>
               <b>{VOYAGE_EVENT_LABELS[event]}</b>
               <p>{VOYAGE_EVENT_TEXT[event]}</p>
             </li>
           ))}
+          {eventsOn(RULES_CURRENT) &&
+            TIDE_KINDS.map((tide) => {
+              const card = TIDE_CARD[tide];
+              return (
+                <li key={tide}>
+                  <b>{TIDE_LABELS[tide]}</b>
+                  <p>
+                    暗潮季每回合：{tideText(RULES_CURRENT, tide)}。擋得住的：{tideShield(RULES_CURRENT, tide)}。這局是{TIDE_LABELS[tide]}時，抽到「{VOYAGE_EVENT_LABELS[card]}」會翻成
+                    {bossTitle(card) === VOYAGE_EVENT_LABELS[card] ? '暗潮面' : `「${bossTitle(card)}」`}：{bossText(RULES_CURRENT, card)}
+                  </p>
+                </li>
+              );
+            })}
         </>
       );
     case 'score':

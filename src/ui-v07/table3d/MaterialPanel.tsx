@@ -83,6 +83,7 @@ export function MaterialPanel({ cards, chosen, onPick, owned, protects, protect,
         key={m.building}
         className={`mat-card build ${c.legal ? '' : 'no'} ${on ? 'sel' : ''}`}
         data-focus={`material-${m.building}`}
+        data-done={on}
         disabled={!c.legal && !on}
         aria-pressed={on}
         aria-label={`${name}：${text}${shield ? `；${shield}` : ''}`}
@@ -133,7 +134,7 @@ export function MaterialPanel({ cards, chosen, onPick, owned, protects, protect,
   if (!standing && builds.length === 0 && protects.length === 0) return null;
   const title = picked ? `蓋 ${FACILITY_LABELS[picked]}` : readOnly ? '可蓋的建築' : '蓋建築';
   return (
-    <aside className={`mat-panel ${open || standing ? '' : 'shut'} ${open && offer ? 'listing' : ''} ${nudge ? 'nudge' : ''}`} data-focus="materials">
+    <aside className={`mat-panel ${open || standing ? '' : 'shut'} ${open && offer ? 'listing' : ''} ${nudge ? 'nudge' : ''}`} data-focus="materials" data-done={Boolean(open || picked || standing)}>
       {standing}
       {offer && builds.length > 0 && (
         <button type="button" className={`mat-head ${picked ? 'sel' : ''}`} aria-expanded={open} aria-label={open ? '收起建築' : '展開建築'} onClick={() => setOpen((v) => !v)}>

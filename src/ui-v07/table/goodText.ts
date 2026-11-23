@@ -1,17 +1,19 @@
-import { GOODS, priceAt, producedFor, type GoodId, type Rules } from '../../v07/game';
+import { GOODS, eventsOn, priceAt, producedFor, type GoodId, type Rules } from '../../v07/game';
 import { GOOD_LABELS } from '../labels';
 
 // What each good is for and how it behaves (docs/game-design.md §6.1–§6.3, §7.3), for the
 // rules panel and the goods icons' tips. The numbers come from the rules, so the words never drift
 // from the engine; the rest only restates the design document.
 
-/** What a good can be used for (§6.1). */
-const USE: Readonly<Record<GoodId, string>> = {
-  wood: '只能販售',
-  iron: '只能販售',
-  spice: '只能販售',
-  arms: '只能販售',
-};
+/** What a good can be used for (§6.1): only selling, unless the rules spend it on ship skills or buildings (V0.8). */
+function useOf(good: GoodId, rules: Rules): string {
+  const v = rules.v08;
+  const spent = [
+    v.skills === 1 && v.costs.open[good] > 0 ? '開啟船技能' : '',
+    v.buildings === 1 && Object.values(v.costs.build).some((cost) => cost[good] > 0) ? '蓋建築' : '',
+  ].filter(Boolean);
+  return spent.length === 0 ? '只能販售' : `販售，或用來${spent.join('、')}`;
+}
 
 /** What sets a good apart (§6.1, §6.3); none but the spice (customs name any good, so arms are no longer singled out). */
 const TRAIT: Readonly<Record<GoodId, string | null>> = {
@@ -21,10 +23,21 @@ const TRAIT: Readonly<Record<GoodId, string | null>> = {
   arms: null,
 };
 
+/** V0.8 (§7.4, §10): what else applies to arms, from the rules; '' when nothing does. */
+function armsExtra(rules: Rules): string {
+  const v = rules.v08;
+  return [
+    v.inspection.enabled === 1 ? '軍火的到港量超過需求時，超過的部分被銀行查扣（自己的掩護擋得住，走私港的軍火除外）。' : '',
+    v.buildings === 1 && v.armory.armedBonus > 0 ? `船東有軍械庫時，船上有軍火 +${v.armory.armedBonus}。` : '',
+  ].join('');
+}
+
 /** The rounds an ordinary island makes this good, in words (§6.2): 「每回合」 or 「第 1、3、5 回合」. */
 export function productionRounds(good: GoodId, rules: Rules): string {
-  const rounds = Array.from({ length: rules.rounds }, (_, i) => i + 1).filter((r) => producedFor(rules, null, r)[good] > 0);
-  return rounds.length === rules.rounds ? '每回合' : `第 ${rounds.join('、')} 回合`;
+  // With the event deck (V0.8) the match can run to v08.events.maxRounds.
+  const last = eventsOn(rules) ? rules.v08.events.maxRounds : rules.rounds;
+  const rounds = Array.from({ length: last }, (_, i) => i + 1).filter((r) => producedFor(rules, null, r)[good] > 0);
+  return rounds.length === last ? '每回合' : `第 ${rounds.join('、')} 回合`;
 }
 
 /** One good's description: use, production, how its price moves, and what sets it apart. */
@@ -33,18 +46,19 @@ export function goodDetail(good: GoodId, rules: Rules): string {
   const moves = rules.price.volatility[good];
   const track = rules.price.tracks[good];
   const lines = [
-    `${USE[good]}。`,
+    `${useOf(good, rules)}。`,
     `一般的島${productionRounds(good, rules)}生產 ${made}（島嶼特色可以改變）。`,
     `價格 ${priceAt(rules, good, 0)}～${priceAt(rules, good, rules.price.steps - 1)} G，一格 ${track.step} G，開局 ${priceAt(rules, good, track.start)} G。`,
     `到港量少於需求就漲、多於需求就跌，一次 ${moves} 格。`,
   ];
-  const trait = TRAIT[good];
+  const trait = good === 'arms' ? armsExtra(rules) || null : TRAIT[good];
   return trait ? [...lines, trait].join('') : lines.join('');
 }
 
 /** How the black market prices every good (§7.1, §7.3), for the top of the goods list. */
 export function marketRule(rules: Rules): string {
-  return `每種商品一條 ${rules.price.steps} 格的價格軌（${priceSpreads(rules)}）。航程結算後比較本回合到港量和需求，當回合的貨就用新價格賣。倉庫沒有容量上限，材料可以跨回合保留（香料除外）；玩家之間不能交易材料。`;
+  const arrived = rules.v08.crates === 1 ? '（只算真的抵達的箱，掉進海裡的不算）' : '';
+  return `每種商品一條 ${rules.price.steps} 格的價格軌（${priceSpreads(rules)}）。航程結算後比較本回合到港量${arrived}和需求，當回合的貨就用新價格賣。倉庫沒有容量上限，材料可以跨回合保留（香料除外）；玩家之間不能交易材料。`;
 }
 
 /** The goods grouped by the price range of their tracks: 「木材、鐵礦、香料 75～225 G，軍火 95～305 G」. */

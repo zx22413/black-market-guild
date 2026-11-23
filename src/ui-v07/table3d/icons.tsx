@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { RULES_V07, type GoodId } from '../../v07/game';
+import { RULES_CURRENT, type GoodId } from '../../v07/game';
 import { wantedText } from '../labels';
 import { InfoTip } from './InfoTip';
 
@@ -209,7 +209,7 @@ export function StatusMark({ label }: { readonly label: string }) {
 
 /** A wanted player (§9.6): a red disc with a mark; hover or tap for what it means. */
 export function WantedMark() {
-  const text = wantedText(RULES_V07.wanted.lootBonus);
+  const text = wantedText(RULES_CURRENT.wanted.lootBonus);
   return (
     <InfoTip title="通緝中" text={text}>
       <span className="wanted-mark" role="img" aria-label={text}>

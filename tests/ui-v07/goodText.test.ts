@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GOODS, RULES_BUILDINGS, RULES_V07 } from '../../src/v07/game';
+import { GOODS, RULES_BUILDINGS, RULES_V07, RULES_V08 } from '../../src/v07/game';
 import { goodDetail, marketRule, productionRounds } from '../../src/ui-v07/table/goodText';
 
 describe('goods text', () => {
@@ -31,5 +31,15 @@ describe('goods text', () => {
     expect(goodDetail('arms', RULES_V07)).toContain('價格 95～305 G，一格 35 G，開局 200 G');
     expect(goodDetail('wood', RULES_V07)).toContain('開局 125 G');
     expect(goodDetail('spice', RULES_V07)).toContain('開局 150 G');
+  });
+
+  it('says what V0.8 spends the materials on and what happens to arms (§6.1, §7.4, §10)', () => {
+    expect(goodDetail('wood', RULES_V08)).toContain('販售，或用來蓋建築');
+    expect(goodDetail('iron', RULES_V08)).toContain('販售，或用來開啟船技能、蓋建築');
+    expect(goodDetail('spice', RULES_V08)).toContain('只能販售');
+    expect(goodDetail('arms', RULES_V08)).toContain('超過的部分被銀行查扣');
+    expect(goodDetail('arms', RULES_V08)).toContain('軍械庫');
+    expect(marketRule(RULES_V08)).toContain('掉進海裡的不算');
+    expect(productionRounds('wood', RULES_V08)).toBe('每回合');
   });
 });

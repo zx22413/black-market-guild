@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { RULES_V07, RULES_V08_PROTO, crateTerms, type Rules } from '../../../src/v07/game';
+import { RULES_V07, RULES_V08, crateTerms, type Rules } from '../../../src/v07/game';
 import { facilityText } from '../../../src/ui-v07/table/v08Text';
 
 // V0.8 simulation prototype, the repairyard on the freighter (v08.repairyard.freighter; playtest notes §10.17). NOT rules.
 
-const V08 = RULES_V08_PROTO;
+const V08 = RULES_V08;
 const OFF: Rules = { ...V08, v08: { ...V08.v08, repairyard: { ...V08.v08.repairyard, freighter: 0 } } };
 const plain = { raised: false, level: 0, facility: null, island: null } as const;
 const yard = { ...plain, facility: 'repairyard' } as const;

@@ -1,5 +1,5 @@
 import { createBot, type Bot, type BotStrategy, type DecisionContext } from '../bots';
-import { RULES_V07, type Action, type MatchEvent, type MatchResult, type PlayerId, type PrivateEvent } from '../game';
+import { RULES_CURRENT, type Action, type MatchEvent, type MatchResult, type PlayerId, type PrivateEvent } from '../game';
 import { botController, runMatch, setupFromSeats, type Controller, type SeatConfig } from '../match';
 import {
   DECISION_SECONDS_CHOICES,
@@ -195,8 +195,8 @@ export class Room {
       isHost: token === this.options.hostToken,
       locked: this.locked,
       decisionSeconds: this.lobbySeconds,
-      minSeats: RULES_V07.players.min,
-      maxSeats: RULES_V07.players.max,
+      minSeats: RULES_CURRENT.players.min,
+      maxSeats: RULES_CURRENT.players.max,
       match: this.match ? this.matchFor(token, this.match) : null,
     };
   }
@@ -255,7 +255,7 @@ export class Room {
       this.fail(token, 'locked', '房主已鎖房，無法入座');
       return;
     }
-    if (this.members.length >= RULES_V07.players.max) {
+    if (this.members.length >= RULES_CURRENT.players.max) {
       this.fail(token, 'room-full', '房間已滿');
       return;
     }
@@ -312,7 +312,7 @@ export class Room {
       this.fail(token, 'already-started', '對局已經開始');
       return;
     }
-    const { min, max } = RULES_V07.players;
+    const { min, max } = RULES_CURRENT.players;
     if (seats < Math.max(min, this.members.length) || seats > max) {
       this.fail(token, 'bad-seats', `座位數需介於 ${Math.max(min, this.members.length)} 到 ${max}`);
       return;
@@ -331,7 +331,7 @@ export class Room {
       seed,
       decisionSeconds,
       players: setup.players.map((p, i) => ({ ...p, token: this.members[i]?.token ?? null })),
-      startingCash: (setup.rules ?? RULES_V07).startingCash,
+      startingCash: (setup.rules ?? RULES_CURRENT).startingCash,
       events: [],
       privateEvents: [],
       result: null,
