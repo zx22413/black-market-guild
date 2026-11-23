@@ -134,8 +134,9 @@ function GambleDice({ gamble, picked, top }: { readonly gamble: Gamble; readonly
         const down = i < landed;
         const state = !down ? 'tumble' : !picked ? 'landed' : i === gamble.kept ? 'kept' : 'dropped';
         return (
-          <div key={i} className={`beat-die gamble-die ${state}`}>
-            {down ? d : faces[i]}
+          // The slot is the die's place in the row: a knocked-off die's slot closes, so the kept die ends where the single die sits.
+          <div key={i} className={`gamble-slot ${state}`}>
+            <div className={`beat-die gamble-die ${state}`}>{down ? d : faces[i]}</div>
           </div>
         );
       })}
