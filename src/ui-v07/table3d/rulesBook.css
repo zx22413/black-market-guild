@@ -37,6 +37,8 @@
 }
 .rules-list p {
   margin: 0;
+  /* Rule text breaks its lines where an exception or a second case starts (docs/ui/copy-style.md §1). */
+  white-space: pre-line;
   font-size: var(--fs-body);
   line-height: 1.6;
   color: #3d2f1d;

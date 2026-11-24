@@ -3,20 +3,23 @@ import type { RoleId, Rules } from '../../v07/game';
 // What each role says about itself in the description strip above the hand (§9.4). Built from the
 // rule numbers, so the words never drift from the engine.
 
+const signed = (n: number): string => `${n < 0 ? '−' : '+'}${Math.abs(n)}`;
+
 /** The full description of a role: target, effect and the numbers that matter. */
 export function roleDetail(role: RoleId, rules: Rules): string {
   const { guard, pirate, smuggler, diplomat } = rules.roles;
+  const refund = diplomat.refundPercent === 50 ? '一半' : `${diplomat.refundPercent}%`;
   const pct = (final: number) => pirate.lootPercentByFinal[final] ?? 0;
   switch (role) {
     case 'customs':
-      return '目標：別人出航的船。指名一種貨：船抵達時，海關優先拿走該貨縮放後的整塊價值（船上沒有、或被船東自己的走私商人掩護，就拿不到）。\n也抓走私商人。';
+      return '派到別人出航的船上，指名一種貨。船到港時，這種貨到港幾箱，整筆收入都歸海關；多名海關指名同一種貨就平分。\n拿不到：船上沒有這種貨、這種貨全掉了、貨被掩護，或這是幽靈號。\n也會抓這艘船上的走私商人。';
     case 'guard':
-      return `目標：自己出航的船。目標船 +${guard.modifier}。只守自己，沒有護航費。`;
+      return `只能派到自己出航的船上，這艘船 +${guard.modifier}。\n小心「月黑風高」：有護衛的船 ${signed(rules.voyageEvents.moonlessNight)}。`;
     case 'pirate':
-      return `目標：任一艘出航的船（含自己的）。目標船 ${pirate.modifier < 0 ? '−' : '+'}${Math.abs(pirate.modifier)}。\n船沉沒時，鎖定它的海盜均分貨值的 ${pct(1)}%；\n船抵達時，最終值 1（只有巨鯨號）均分船東收入的 ${pct(1)}%，最終值 2 均分 ${pct(2)}%，3 以上拿不到；\n船東是通緝者時再 +${rules.wanted.lootBonus} G（銀行付）。`;
+      return `派到任一艘出航的船上（自己的也行），這艘船 ${pirate.modifier < 0 ? '−' : '+'}${Math.abs(pirate.modifier)}。\n船沉了：鎖定它的海盜平分貨值的 ${pct(1)}%。\n船到港：最終值 1（只有巨鯨號會）平分船東收入的 ${pct(1)}%，最終值 2 平分 ${pct(2)}%，3 以上拿不到。\n船東是通緝者時，海盜另從銀行 +${rules.wanted.lootBonus} G。`;
     case 'smuggler':
-      return `目標：別人的船，或自己的船（只為掩護）。搭別人的船，平安抵達又沒有海關，抽走船東 ${smuggler.goodsValue} G；有海關就被抓、罰 ${smuggler.fine} G。\n派在自己的船上，海關對這艘船的沒收不生效（走私港的軍火除外）。`;
+      return `派到別人的船上夾帶私貨。船到港、船上沒有海關，就抽走船東 ${smuggler.goodsValue} G；船上有海關就被抓，罰 ${smuggler.fine} G；船沉了又有海盜，私貨歸海盜。\n派到自己的船上是掩護：這艘船的貨不會被海關沒收，軍火也不會被查緝（走私港的軍火除外）。`;
     case 'diplomat':
-      return `目標：自己出航的船。猜一個角色（護衛、海盜、走私商人、海關）會被派來針對這艘船：\n猜中，它的部署作廢，並向每位被作廢的對手拿 ${diplomat.take} G；猜錯，退回一半部署費。`;
+      return `派到自己出航的船上，猜一個角色（護衛、海盜、走私商人、海關）會被派來對付這艘船。\n猜中：那個角色在這艘船上的部署全部作廢，部署費不退，被作廢的對手每人付你 ${diplomat.take} G（最多付到他的現金）。\n猜錯：退你${refund}部署費。`;
   }
 }

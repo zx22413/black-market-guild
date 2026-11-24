@@ -1,4 +1,4 @@
-import type { GoodId, IslandId, RoleId, Rules } from '../../v07/game';
+import { eventsOn, producedFor, type GoodId, type IslandId, type RoleId, type Rules } from '../../v07/game';
 
 // What each island does, as a few icon-and-number items for a quick look. This is only a summary
 // for the screen: the sentences in ISLAND_TEXT (docs/game-design.md §11.2) stay the rule text and
@@ -62,6 +62,13 @@ export function islandGlance(rules: Rules, island: IslandId): readonly GlanceIte
   const { freePortFeePercent, ownShipMinRaw } = rules.v08.islands;
   if (island === 'free-port' && freePortFeePercent > 0) {
     return [{ sign: 1, icon: ship, text: freePortFeePercent === 50 ? '所有船費減半' : `船費只付 ${freePortFeePercent}%` }];
+  }
+  if (island === 'mine' && eventsOn(rules)) {
+    // The event deck runs up to v08.events.maxRounds, so the wood rounds go on past round 4 (labels.ts islandText).
+    const rounds = Array.from({ length: rules.v08.events.maxRounds }, (_, i) => i + 1).filter((r) => producedFor(rules, 'mine', r).wood > 0);
+    const gap = rounds.length > 1 ? rounds[1]! - rounds[0]! : 0;
+    const even = gap > 0 && rounds.every((r, i) => i === 0 || r - rounds[i - 1]! === gap);
+    return ISLAND_GLANCE.mine.map((item) => (item.sign === -1 ? { ...item, text: even ? `每 ${gap} 回合一次` : `只在第 ${rounds.join('、')} 回合` } : item));
   }
   if (island === 'lighthouse' && ownShipMinRaw > 0) {
     return ISLAND_GLANCE.lighthouse.map((item, i) => (i === 0 ? { ...item, text: `出航 +1（骰 ${ownShipMinRaw} 以上）` } : item));

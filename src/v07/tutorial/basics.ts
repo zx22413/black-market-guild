@@ -131,7 +131,7 @@ export const BASICS: TutorialScript = {
 
     // ── Round 2: wanted, goods, a storm ──
     step(invest(2), '通緝令', [F.rank, F.market], [
-      `現金最多的人會被通緝，這回合是你。海盜攔下通緝犯的船，會從銀行多領 ${R.wanted.lootBonus} G。`,
+      `現金最多的人會被通緝，這回合是你。海盜攔下通緝者的船，會從銀行多領 ${R.wanted.lootBonus} G。`,
     ]),
     step(
       invest(2),

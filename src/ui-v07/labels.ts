@@ -119,7 +119,7 @@ export const SHIP_TYPE_TEXT: Readonly<Record<ShipTypeId, string | null>> = {
   gambler: null,
   freighter: '載量 +2；這回合出發，下回合才抵達並結算。',
   hidden: '海關指名這艘船的貨無效。',
-  breaker: '最終值不封頂，加成越疊越賺。',
+  breaker: '最終值不封頂，修正加得越多賺越多。',
 };
 
 export const CASH_REASON_LABELS: Readonly<Record<CashReason, string>> = {

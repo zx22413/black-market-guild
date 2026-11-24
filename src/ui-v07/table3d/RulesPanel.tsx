@@ -47,7 +47,7 @@ const costText = (cost: Goods): string =>
 /** §8.2, §10: the one material action a round, with the rules' numbers. */
 function materialRule(rules: Rules): string {
   const v = rules.v08;
-  return `投資時每回合最多做一個材料行動，用倉庫裡的貨付：開啟一種船的技能（${costText(v.costs.open)}，最多 ${v.maxSkills} 種船），或蓋一棟建築（${costText(v.costs.build.repairyard)}，一局只能蓋 ${v.maxBuildings} 棟）。做了什麼在提交後公開，本回合就生效。`;
+  return `每回合投資時，可以用倉庫裡的貨做一個材料行動：\n開啟一種船的技能：${costText(v.costs.open)}，最多開 ${v.maxSkills} 種船。\n蓋一棟建築：${costText(v.costs.build.repairyard)}，一局只能蓋 ${v.maxBuildings} 棟。\n做了什麼在提交後公開，這回合就生效。`;
 }
 
 /** §12.1: the event deck, the two advance cards and the season, with the rules' numbers. */
@@ -56,15 +56,15 @@ function deckRules(rules: Rules): readonly { readonly title: string; readonly te
   return [
     {
       title: '事件牌庫與局長',
-      text: `每回合開始時翻一張事件。第 ${e.firstAdvanceFrom}～${e.firstAdvanceTo} 回合之間會翻出「暗潮將至」，第 ${e.secondAdvanceFrom}～${e.secondAdvanceTo} 回合之間翻出「最後的大市集」：翻到它的那回合就是最後一回合。哪一回合是隨機的，不公開。`,
+      text: `每回合開始時翻一張事件。「暗潮將至」在第 ${e.firstAdvanceFrom}～${e.firstAdvanceTo} 回合之間翻出，「最後的大市集」在第 ${e.secondAdvanceFrom}～${e.secondAdvanceTo} 回合之間翻出，翻到它的那回合就是最後一回合。\n確切是哪一回合是隨機的，不公開。`,
     },
     {
       title: '暗潮將至',
-      text: `這回合沒有一般事件；公開這局的暗潮是兩種候選中的哪一種。這回合結束時，倉庫裡每種貨損失 ${e.warehouseLossPercent}%（無條件捨去）。下一回合起是暗潮季，暗潮每回合都生效到最後。`,
+      text: `這回合沒有一般事件，改公開這局的暗潮是兩種候選裡的哪一種。\n這回合結束時，倉庫裡每種貨少 ${e.warehouseLossPercent}%（無條件捨去）。\n下一回合起是暗潮季，暗潮每回合生效到最後。`,
     },
     {
       title: '最後的大市集',
-      text: `最後一回合，沒有一般事件：每種貨需求 +${e.openMarketDemand}、價格不會下跌、每艘船擲 ${e.lastGambleDice} 顆骰取較高的。暗潮照常生效（不跌價蓋過崩盤潮）。這回合不能選巨鯨號。`,
+      text: `最後一回合，沒有一般事件。每種貨需求 +${e.openMarketDemand}、價格不會下跌、每艘船擲 ${e.lastGambleDice} 顆骰取高的。\n暗潮照常生效，但崩盤潮被「不會下跌」蓋過。這回合不能選巨鯨號。`,
     },
   ];
 }
@@ -133,7 +133,7 @@ export function RulesEntries({ tab }: { readonly tab: RulesTab }) {
               <li key={building}>
                 <b>{FACILITY_LABELS[building]}</b>
                 <p>
-                  {facilityText(RULES_CURRENT, building)}。{shield ? `暗潮季：${shield}。` : ''}
+                  {facilityText(RULES_CURRENT, building)}。{shield ? `\n暗潮季：${shield}。` : ''}
                 </p>
               </li>
             );
@@ -181,7 +181,7 @@ export function RulesEntries({ tab }: { readonly tab: RulesTab }) {
                 <li key={tide}>
                   <b>{TIDE_LABELS[tide]}</b>
                   <p>
-                    暗潮季每回合：{tideText(RULES_CURRENT, tide)}。擋得住的：{tideShield(RULES_CURRENT, tide)}。這局是{TIDE_LABELS[tide]}時，抽到「{VOYAGE_EVENT_LABELS[card]}」會翻成
+                    暗潮季每回合：{tideText(RULES_CURRENT, tide)}。{'\n'}擋得住：{tideShield(RULES_CURRENT, tide)}。{'\n'}這局是{TIDE_LABELS[tide]}時，抽到「{VOYAGE_EVENT_LABELS[card]}」會翻成
                     {bossTitle(card) === VOYAGE_EVENT_LABELS[card] ? '暗潮面' : `「${bossTitle(card)}」`}：{bossText(RULES_CURRENT, card)}
                   </p>
                 </li>

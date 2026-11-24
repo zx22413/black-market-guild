@@ -7,7 +7,7 @@ import { SHIP_TYPE_TEXT } from '../labels';
 /** How a round of ship choosing works (§8), for the top of the ships chapter. */
 export function shipRuleIntro(rules: Rules): string {
   if (cratesOn(rules)) {
-    return `每名玩家每回合最多派一艘船：投資時先選船型，再從倉庫裝貨，每單位貨是一箱，至少裝 1 箱才出航，基本載量 ${rules.capacity.base} 箱。船費出航時付，沉沒不退。航行骰（1d6，結算前沒有人看得到）加上護衛、海盜、航海事件與島嶼的修正，就是這艘船的最終值；每艘船有一張掉貨表：最終值決定沉沒、或掉幾箱（從變價前最貴的貨先掉），掉進海裡的箱不算到港量。到港的箱數 × 新價格 × 倍率就是收入。`;
+    return `每回合最多派一艘船：投資時先選船型，再從倉庫裝貨，至少 1 箱才能出航。基本載量 ${rules.capacity.base} 箱。船費出航時付，沉了不退。\n航行骰（1d6，結算前沒人看得到）加上護衛、海盜、航海事件與島嶼的修正，就是最終值。最終值對照船的掉貨表，決定沉沒或掉幾箱；先掉變價前最貴的貨，掉進海裡的不算到港量。\n收入 ＝ 到港箱數 × 新價格 × 倍率。`;
   }
   return `每名玩家每回合最多派一艘船：投資時先選船型，再從倉庫裝貨，至少裝 1 單位才出航，基本載量 ${rules.capacity.base} 單位。船費出航時付，沉沒不退。本版沒有建築，材料只用來裝船販售。航行骰（1d6，結算前沒有人看得到）加上護衛、海盜、航海事件與島嶼的修正，就是這艘船的最終值；每艘船各有一條「最終值對應貨物價值比例」的曲線，曲線上收入為 0 就是沉沒。`;
 }
@@ -64,12 +64,12 @@ export function crateText(rules: Rules, type: ShipTypeId): string {
 export function shipDetail(type: ShipTypeId, rules: Rules): string {
   const t = rules.ships.types[type];
   const special = SHIP_TYPE_TEXT[type] ?? '';
-  const lines = [
+  const basics = [
     t.fee === 0 ? '船費 0。' : `船費 ${t.fee} G。`,
     t.capacity > 0 && !special.includes('載量') ? `載量 +${t.capacity}。` : '',
     t.cooldown > 0 ? `用過後休息 ${t.cooldown} 回合。` : '',
-    cratesOn(rules) ? `掉貨表：${crateText(rules, type)}。` : `最終值對應貨物價值：${curveText(rules, type)}。`,
     special,
-  ];
-  return lines.join('');
+  ].join('');
+  const table = cratesOn(rules) ? `掉貨表：${crateText(rules, type)}。` : `最終值對應貨物價值：${curveText(rules, type)}。`;
+  return `${basics}\n${table}`;
 }

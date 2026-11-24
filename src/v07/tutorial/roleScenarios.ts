@@ -114,7 +114,7 @@ export const PIRATE: TutorialScript = scenario({
       [F.hand, F.island(BOT.vande)],
       [
         `海盜讓一艘船 ${pirate.modifier}。船沉了，海盜分走貨值的 ${lootPct(1)}%。`,
-        `最終值 2 還會到港，海盜分走船東收入的 ${lootPct(2)}%，3 以上就拿不到。攔到通緝犯，銀行再多給 ${R.wanted.lootBonus} G。`,
+        `最終值 2 還會到港，海盜分走船東收入的 ${lootPct(2)}%，3 以上就拿不到。攔到通緝者的船，銀行再多給 ${R.wanted.lootBonus} G。`,
       ],
       `派海盜鎖定${vande}的船（部署費 ${fee('pirate')} G）。`,
       [F.role('pirate'), F.target(BOT.vande)],

@@ -47,18 +47,17 @@ export function goodDetail(good: GoodId, rules: Rules): string {
   const track = rules.price.tracks[good];
   const lines = [
     `${useOf(good, rules)}。`,
-    `一般的島${productionRounds(good, rules)}生產 ${made}（島嶼特色可以改變）。`,
-    `價格 ${priceAt(rules, good, 0)}～${priceAt(rules, good, rules.price.steps - 1)} G，一格 ${track.step} G，開局 ${priceAt(rules, good, track.start)} G。`,
-    `到港量少於需求就漲、多於需求就跌，一次 ${moves} 格。`,
+    `一般的島${productionRounds(good, rules)}產 ${made} 箱。`,
+    `價格 ${priceAt(rules, good, 0)}～${priceAt(rules, good, rules.price.steps - 1)} G，一格 ${track.step} G，開局 ${priceAt(rules, good, track.start)} G，漲跌一次 ${moves} 格。`,
   ];
   const trait = good === 'arms' ? armsExtra(rules) || null : TRAIT[good];
-  return trait ? [...lines, trait].join('') : lines.join('');
+  return trait ? `${lines.join('')}\n${trait}` : lines.join('');
 }
 
 /** How the black market prices every good (§7.1, §7.3), for the top of the goods list. */
 export function marketRule(rules: Rules): string {
   const arrived = rules.v08.crates === 1 ? '（只算真的抵達的箱，掉進海裡的不算）' : '';
-  return `每種商品一條 ${rules.price.steps} 格的價格軌（${priceSpreads(rules)}）。航程結算後比較本回合到港量${arrived}和需求，當回合的貨就用新價格賣。倉庫沒有容量上限，材料可以跨回合保留（香料除外）；玩家之間不能交易材料。`;
+  return `每種貨一條 ${rules.price.steps} 格的價格軌（${priceSpreads(rules)}）。航程結算後比較本回合到港量${arrived}和需求：少於需求就漲，多於需求就跌，當回合的貨就用新價格賣。\n倉庫沒有上限，貨可以留到下回合（香料除外）。島嶼特色會改變產量。玩家之間不能交易材料。`;
 }
 
 /** The goods grouped by the price range of their tracks: 「木材、鐵礦、香料 75～225 G，軍火 95～305 G」. */
