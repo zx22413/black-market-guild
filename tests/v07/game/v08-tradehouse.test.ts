@@ -23,8 +23,8 @@ const owner = (rules: Rules) => edit(ready(rules), 'p1', { facility: 'tradehouse
 const effects = (events: readonly MatchEvent[], effect: string) => find(events, 'v08-effect').filter((e) => e.effect === effect);
 
 describe('V0.8 tradehouse presets', () => {
-  it('buys a leftover crate for a fixed 60 G in the prototype, with no naming; the live rules keep every switch off', () => {
-    expect(RULES_V08.v08.tradehouse).toMatchObject({ named: 0, premiumCrates: 0, buyoutPercent: 0, buyoutFloor: 0, buyoutFixed: 60, buyoutChosen: 1 });
+  it('buys the crate the owner names for a fixed 70 G, with no naming; V0.7.1 keeps every switch off', () => {
+    expect(RULES_V08.v08.tradehouse).toMatchObject({ named: 0, premiumCrates: 0, buyoutPercent: 0, buyoutFloor: 0, buyoutFixed: 70, buyoutChosen: 1 });
     expect(RULES_V07.v08.tradehouse).toMatchObject({ named: 1, premiumCrates: 0, buyoutPercent: 0, buyoutFloor: 0, buyoutFixed: 0, buyoutChosen: 0 });
   });
 

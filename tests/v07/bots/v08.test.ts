@@ -44,7 +44,7 @@ describe('V0.8 prototype bots', () => {
   });
 
   it('leave the spice they keep to the tradehouse rather than let it spoil, and keep materials otherwise', () => {
-    // v08.tradehouse.buyoutChosen: spice left in the warehouse is worth nothing next round, 60 G now.
+    // v08.tradehouse.buyoutChosen: spice left in the warehouse is worth nothing next round, the buyout price now.
     const state = withDemand(edit(plain(4, RULES_V08), 'p1', { stock: G(0, 0, 4, 0), facility: 'tradehouse' }), G(1, 1, 1, 1));
     const decide = (s: typeof state) => {
       const [decision] = getPendingDecisions(s);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RULES_V07, shipSinks, type MatchEvent } from '../../src/v07/game';
+import { RULES_V07, type MatchEvent } from '../../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../src/v07/match';
 import { BEAT_PACE, DIE_HOLD, beatCues, beatView, cuesStarted } from '../../src/ui-v07/beats/beatTimeline';
 import { stepTitle } from '../../src/ui-v07/beats/ShipBeatStage';
@@ -30,9 +30,9 @@ describe('ship beat built from public events', () => {
         expect(beat.final).toBe(mod.final);
         // The running total of the steps ends on the final value (clamp included).
         expect(beat.steps.at(-1)?.value ?? beat.start).toBe(mod.final);
-        // Whether it sinks is the ship type's own curve (a launch or an arrival names the type).
-        const type = events.flatMap((x) => (x.type === 'ships-launched' || x.type === 'ships-arriving' ? x.ships : [])).find((x) => x.id === mod.shipId)!.type;
-        expect(beat.outcome).toBe(shipSinks(RULES_V07, type, mod.final) ? 'sank' : 'arrived');
+        // Whether it sank is what the engine resolved (a raised gamble sinks below its top final, which the final value alone does not say).
+        const resolved = events.find((x) => x.type === 'ship-resolved' && x.shipId === mod.shipId);
+        expect(beat.outcome).toBe(resolved?.type === 'ship-resolved' ? resolved.outcome : null);
         const sum = (kind: string) => beat.steps.filter((s) => s.kind === kind).reduce((n, s) => n + s.delta, 0);
         expect(sum('guard')).toBe(mod.guard);
         expect(sum('pirate')).toBe(mod.pirate);
