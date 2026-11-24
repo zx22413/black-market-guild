@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { MatchEvent } from '../../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../src/v07/match';
 import { flightSound } from '../../src/ui-v07/audio/flightSounds';
-import { coveredCrates, inspectedCrates, inspectionLabel, inspectionShow, inspections } from '../../src/ui-v07/table3d/inspectionShow';
+import { coveredCrates, inspectedCrates, inspectionLabel, inspectionNotes, inspectionShow, inspections } from '../../src/ui-v07/table3d/inspectionShow';
 import { CRATE_GAP_SECONDS, flightLaunches, inspectionFlights, marketRows, settlementFlights } from '../../src/ui-v07/table3d/settlementModel';
 
 const seats: SeatConfig[] = ['A', 'B', 'C', 'D'].map((name, i) => ({ kind: 'bot', name, strategy: (['aggressive', 'balanced', 'aggressive', 'builder'] as const)[i]! }));
@@ -64,6 +64,16 @@ describe('軍火查緝 on the table (game-design.md §7.4)', () => {
     expect(flightLaunches(one!)).toEqual([0]);
     // Spoiled spice counts units too, but it does not fly: one thing, as before.
     expect(flightLaunches({ ...three!, kind: 'spoil' })).toEqual([0]);
+  });
+
+  it("notes on your bill what the inspection took from your ships and what your cover kept, not other players'", () => {
+    const other: MatchEvent = { type: 'v08-effect', round: 1, playerId: 'p2', shipId: 's9', effect: 'inspected', crates: 1, value: 165 };
+    const events = [effect(1, 's1', 2, 330), effect(1, 's2', 1, 165, 'inspection-covered'), other, effect(2, 's3', 1, 130)];
+    expect(inspectionNotes(events, 1, 'p1', (id) => `你的${id}`)).toEqual([
+      { text: '你的s1：查扣軍火 2 箱，少賺 330 G', tone: 'loss' },
+      { text: '你的s2：掩護成功，保住軍火 1 箱', tone: 'gain' },
+    ]);
+    expect(inspectionNotes(events, 1, 'p3', (id) => id)).toEqual([]);
   });
 
   it('happens in bot matches', () => {

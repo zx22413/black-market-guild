@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 import type { PlayerId, ShipId } from '../../v07/game';
 import { CASH_REASON_LABELS } from '../labels';
+import type { ReceiptNote } from '../table3d/inspectionShow';
 import type { ReceiptLine } from './shipBeat';
 import './beat.css';
 
@@ -14,8 +15,8 @@ export interface ReceiptCardProps {
   /** A ship's name for its heading on the bill (`shipLabel`). */
   readonly shipName?: (id: ShipId) => string;
   readonly net: number;
-  /** What cost you money without any cash moving (軍火查緝: crates taken, so never sold); under the lines. */
-  readonly notes?: readonly string[];
+  /** What changed your money without any cash moving (軍火查緝: crates taken, so never sold, or kept by your cover); under the lines. */
+  readonly notes?: readonly ReceiptNote[];
   readonly onClose?: () => void;
   /** Online: whole seconds until the card closes by itself, shown on the hint. */
   readonly autoCloseIn?: number | null;
@@ -47,8 +48,8 @@ export function ReceiptCard({ round, lines, shipName, net, notes = [], onClose, 
             </Fragment>
           ))}
           {notes.map((note, i) => (
-            <li key={note} className="receipt-note" style={{ animationDelay: `${(lines.length + i) * 120}ms` }}>
-              {note}
+            <li key={note.text} className={`receipt-note ${note.tone}`} style={{ animationDelay: `${(lines.length + i) * 120}ms` }}>
+              {note.text}
             </li>
           ))}
         </ul>

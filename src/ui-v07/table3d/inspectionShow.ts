@@ -41,6 +41,19 @@ export function coveredCrates(events: readonly MatchEvent[], round: number): num
   return inspectionShow(events, round).reduce((n, i) => n + (i.covered ? i.crates : 0), 0);
 }
 
+/** A line on the bill for something that moved no cash: crates taken (never sold), or crates a cover kept. */
+export interface ReceiptNote {
+  readonly text: string;
+  readonly tone: 'loss' | 'gain';
+}
+
+/** 軍火查緝 on `viewer`'s bill: each of their ships the bank took arms off, and each one their cover kept. */
+export function inspectionNotes(events: readonly MatchEvent[], round: number, viewer: PlayerId, shipName: (id: ShipId) => string): ReceiptNote[] {
+  return inspectionShow(events, round)
+    .filter((i) => i.playerId === viewer)
+    .map((i) => ({ text: `${shipName(i.shipId)}：${inspectionLabel(i)}`, tone: i.covered ? 'gain' : 'loss' }));
+}
+
 /** The line over the ship while its crates are taken, or while its cover holds. */
 export function inspectionLabel(i: Pick<Inspection, 'crates' | 'value'> & { readonly covered?: boolean }): string {
   return i.covered ? `掩護成功，保住軍火 ${i.crates} 箱` : `查扣軍火 ${i.crates} 箱，少賺 ${i.value} G`;

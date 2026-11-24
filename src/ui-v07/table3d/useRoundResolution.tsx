@@ -28,7 +28,7 @@ import { withGoodIcons } from './GoodIcon';
 import { Flow, IconDisc, InfoIcon, tokenIconUrl } from './icons';
 import { LockHint } from './LockHint';
 import { InspectionBanner, RevealChips, SkipButton, StageSteps, WantedBanner, WantedChips } from './ResolveBar';
-import { coveredCrates, inspectedCrates, inspectionLabel, inspections } from './inspectionShow';
+import { coveredCrates, inspectedCrates, inspectionNotes } from './inspectionShow';
 import { WantedFlag } from '../scene/WantedFlag';
 import { RoleArrows } from './RoleArrows';
 import { Spotlight } from '../scene/Spotlight';
@@ -646,7 +646,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
         ) : (
           weather && stage === 'event' && <VoyageEventCard key={round} event={weather} held={holdEvent} hidden={hideEvent} onDone={() => setStage('reveal')} />
         )}
-        {stage === 'receipt' && viewer !== null ? <ReceiptCard round={round!} viewer={viewer} lines={receipt.lines} shipName={(id) => shipLabel(events, round!, id, viewer, nameOf)} net={receipt.net} notes={inspections(events, round!).filter((i) => i.playerId === viewer).map((i) => `${shipLabel(events, round!, i.shipId, viewer, nameOf)}：${inspectionLabel(i)}`)} onClose={finish} autoCloseIn={waitingAt === 'receipt' ? secondsLeft : null} /> : null}
+        {stage === 'receipt' && viewer !== null ? <ReceiptCard round={round!} viewer={viewer} lines={receipt.lines} shipName={(id) => shipLabel(events, round!, id, viewer, nameOf)} net={receipt.net} notes={inspectionNotes(events, round!, viewer, (id) => shipLabel(events, round!, id, viewer, nameOf))} onClose={finish} autoCloseIn={waitingAt === 'receipt' ? secondsLeft : null} /> : null}
       </>
     ),
     onTableClick: stage === 'voyage' && !holdVoyage ? () => (playback.next() ? undefined : nextShip()) : undefined,

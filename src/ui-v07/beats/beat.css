@@ -4087,6 +4087,9 @@ button .info-tip-anchor {
   color: #b2332a;
   font-weight: 700;
 }
+.receipt-lines li.receipt-note.gain {
+  color: #1d7a35;
+}
 @media (prefers-reduced-motion: reduce) {
   .mk-stamp,
   .inspection-stamp,
