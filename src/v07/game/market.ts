@@ -74,21 +74,32 @@ function inspectArms(state: MatchState, ships: readonly Ship[], arrivedArms: num
   const privateSafe = (ship: Ship): boolean =>
     state.rules.v08.hidden.privateSafeFromInspectionL2 === 1 && ship.type === 'hidden' && skillLevel(state.rules, playerOf(state, ship.owner), 'hidden') >= 2;
   const armsOf = (ship: Ship): number => arrivedCrates(ship).arms + (privateSafe(ship) ? 0 : (ship.privateCargo?.arms ?? 0));
-  const left = new Map(ships.map((ship) => [ship.id, armsOf(ship)]));
-  const open = ships.filter((ship) => !covered(state, ship, 'arms'));
-  const taken = new Map<string, number>();
-  for (let remaining = excess; remaining > 0; remaining -= 1) {
-    const pick = open
-      .filter((ship) => (left.get(ship.id) ?? 0) > 0)
-      .sort((a, b) => (left.get(b.id) ?? 0) - (left.get(a.id) ?? 0) || playerOf(state, b.owner).cash - playerOf(state, a.owner).cash)[0];
-    if (pick === undefined) break;
-    left.set(pick.id, (left.get(pick.id) ?? 0) - 1);
-    taken.set(pick.id, (taken.get(pick.id) ?? 0) + 1);
-  }
+  /** Crates taken per ship when the bank may reach `open`. */
+  const takeFrom = (open: readonly Ship[]): Map<string, number> => {
+    const left = new Map(ships.map((ship) => [ship.id, armsOf(ship)]));
+    const taken = new Map<string, number>();
+    for (let remaining = excess; remaining > 0; remaining -= 1) {
+      const pick = open
+        .filter((ship) => (left.get(ship.id) ?? 0) > 0)
+        .sort((a, b) => (left.get(b.id) ?? 0) - (left.get(a.id) ?? 0) || playerOf(state, b.owner).cash - playerOf(state, a.owner).cash)[0];
+      if (pick === undefined) break;
+      left.set(pick.id, (left.get(pick.id) ?? 0) - 1);
+      taken.set(pick.id, (taken.get(pick.id) ?? 0) + 1);
+    }
+    return taken;
+  };
+  const isCovered = (ship: Ship): boolean => covered(state, ship, 'arms');
+  const taken = takeFrom(ships.filter((ship) => !isCovered(ship)));
+  // Report only (the table's show): what a covered ship would have lost had no ship been covered. Nothing is taken from it.
+  const spared = takeFrom(ships);
   const price = priceAt(state.rules, 'arms', prices.after.arms);
   const events = ships.flatMap((ship) => {
     const n = taken.get(ship.id) ?? 0;
-    return n === 0 ? [] : [v08Effect(state, ship.owner, ship.id, 'inspected', n, n * price)];
+    const kept = isCovered(ship) ? (spared.get(ship.id) ?? 0) : 0;
+    return [
+      ...(n === 0 ? [] : [v08Effect(state, ship.owner, ship.id, 'inspected', n, n * price)]),
+      ...(kept === 0 ? [] : [v08Effect(state, ship.owner, ship.id, 'inspection-covered', kept, kept * price)]),
+    ];
   });
   const seized = ships.map((ship): Ship => {
     const n = taken.get(ship.id) ?? 0;

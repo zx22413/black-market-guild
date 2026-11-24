@@ -328,6 +328,8 @@ export const V08_EFFECTS = [
   'pirate-toll',
   'customs-halved',
   'inspected',
+  /** Report only: the owner's cover kept the arms inspection off this ship (`crates` it would have lost, `value` at the new price). */
+  'inspection-covered',
   'level-up',
   'storm-tide',
   'pirate-tide',

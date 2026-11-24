@@ -77,11 +77,12 @@ export function MarketCard({ rows, shown }: { readonly rows: readonly MarketRow[
                 </td>
               </tr>
               {/* 軍火查緝 (§7.4): stamped under the row once its price has moved; the crates go in the settlement. */}
-              {r.seized > 0 && (
+              {(r.seized > 0 || r.covered > 0) && (
                 <tr className="mk-seized" style={{ animationDelay: `${settled + SEIZED_MS}ms` }}>
                   <td colSpan={5}>
                     <b className="mk-stamp" style={{ animationDelay: `${settled + SEIZED_MS}ms` }}>查緝</b>
-                    查扣 {r.seized} 箱，這 {r.seized} 箱賣不到錢
+                    {r.seized > 0 && `查扣 ${r.seized} 箱，這 ${r.seized} 箱賣不到錢`}
+                    {r.covered > 0 && <span className="mk-covered">{r.seized > 0 && '　'}掩護保住 {r.covered} 箱</span>}
                   </td>
                 </tr>
               )}

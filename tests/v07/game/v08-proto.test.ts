@@ -285,8 +285,18 @@ describe('V0.8 prototype: ship skills', () => {
       playRound(edit(state, 'p1', { stock: G(3, 3, 1, 3) }), { loads: { p1: G(0, 0, 0, 2), p2: G(0, 0, 0, 1) }, shipTypes: { p1: 'hidden' }, rolls: { p1: 6, p2: 6 } });
     const opened = edit(ready(), 'p1', { skills: { hidden: 1 } });
     expect(Object.fromEntries(effects(round(opened).events, 'inspected').map((e) => [e.playerId, e.crates]))).toEqual({ p2: 1 });
+    // Reported for the show: with no cover p1 loses 1 (2 → 1), then the tie at 1 goes to p2, the richer owner (the hidden ship cost p1 more).
+    const price = find(round(opened).events, 'market-settled')[0]!.priceAfter.arms;
+    expect(effects(round(opened).events, 'inspection-covered').map((e) => ({ playerId: e.playerId, shipId: e.shipId, crates: e.crates, value: e.value }))).toEqual([
+      { playerId: 'p1', shipId: 'r1-p1', crates: 1, value: priceAt(V08, 'arms', price) },
+    ]);
     const port = edit(opened, 'p1', { island: 'smuggler-port' });
     expect(Object.fromEntries(effects(round(port).events, 'inspected').map((e) => [e.playerId, e.crates]))).toEqual({ p1: 2 });
+    expect(effects(round(port).events, 'inspection-covered')).toEqual([]);
+    // A covered ship the bank would not have reached anyway is not reported: p2 has more arms than the covered p1.
+    const spare = playRound(withDemand(edit(edit(opened, 'p2', { stock: G(3, 3, 1, 3) }), 'p1', { stock: G(3, 3, 1, 3) }), G(0, 0, 0, 2)), { loads: { p1: G(0, 0, 0, 1), p2: G(0, 0, 0, 2) }, shipTypes: { p1: 'hidden' }, rolls: { p1: 6, p2: 6 } });
+    expect(effects(spare.events, 'inspected').map((e) => [e.playerId, e.crates])).toEqual([['p2', 1]]);
+    expect(effects(spare.events, 'inspection-covered')).toEqual([]);
   });
 
   it('rolls the breaker one more die on a 6 (level 2: on a 5 or 6) before the modifiers', () => {

@@ -101,12 +101,15 @@ export function WantedBanner({ seats }: { readonly seats: readonly WantedSeat[] 
 }
 
 /** 軍火查緝 (§7.4): up while the bank takes the arms off the ships, at the start of the settlement. */
-export function InspectionBanner({ crates }: { readonly crates: number }) {
+export function InspectionBanner({ crates, covered = 0 }: { readonly crates: number; readonly covered?: number }) {
   useSoundOnce('wanted');
   return (
-    <div className="wanted-banner inspection-banner" role="status" aria-label={`軍火查緝：查扣 ${crates} 箱`}>
+    <div className="wanted-banner inspection-banner" role="status" aria-label={`軍火查緝：查扣 ${crates} 箱，掩護保住 ${covered} 箱`}>
       <b className="inspection-stamp">查緝</b>
-      <span>軍火太多，查扣 {crates} 箱</span>
+      <span>
+        軍火太多，{crates > 0 ? `查扣 ${crates} 箱` : '查不到貨'}
+        {covered > 0 && <small className="inspection-covered">　掩護保住 {covered} 箱</small>}
+      </span>
     </div>
   );
 }

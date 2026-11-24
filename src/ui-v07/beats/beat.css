@@ -4095,3 +4095,18 @@ button .info-tip-anchor {
     animation: none;
   }
 }
+
+/* 軍火查緝, a cover that held (the owner's smuggler, the ghost ship's skill): green in place of the red. */
+.flight-chip.inspect.cover {
+  border-color: #1d7a35 !important;
+  background: #e6f4e4;
+  color: #14501f;
+  box-shadow: 0 0 0 3px rgb(29 122 53 / 0.3), 0 8px 20px rgb(0 0 0 / 0.4);
+}
+.market-card .mk-covered {
+  color: #9be3a8;
+}
+.inspection-banner .inspection-covered {
+  color: #1d7a35;
+  font-size: var(--fs-body);
+}

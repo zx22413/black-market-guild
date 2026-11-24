@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { marketSound } from '../../src/ui-v07/audio/marketSounds';
 import type { MarketRow } from '../../src/ui-v07/table3d/settlementModel';
 
-const row = (before: number, after: number): MarketRow => ({ good: 'wood', demand: 2, arrived: 1, before, after, seized: 0 });
+const row = (before: number, after: number): MarketRow => ({ good: 'wood', demand: 2, arrived: 1, before, after, seized: 0, covered: 0 });
 const rows = [row(3, 4), row(3, 2), row(3, 3), row(2, 4), row(4, 2)];
 
 describe('sound of each market row as it shows', () => {

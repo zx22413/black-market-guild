@@ -33,6 +33,8 @@ const FLIGHT_SOUND: Readonly<Record<Flight['kind'], SfxId | null>> = {
   facility: null,
   // 軍火查緝: the bank's whistle as the crates are taken.
   inspection: 'settle-caught',
+  // The cover held: the smuggler's quiet coin.
+  'inspection-cover': 'settle-smuggle',
 };
 
 export function flightSound(flight: Flight): SfxId | null {
