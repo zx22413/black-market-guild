@@ -34,7 +34,7 @@ npm run simulate -- --summary --set roles.pirate.loot=200 --set roles.fees.guard
 
 - 不得自行發明、推定或補完未定案的規則、數值、卡牌、角色能力或結算順序。[`docs/open-questions.md`](docs/open-questions.md) 是待確認清單，不是規則來源；其中的提案與範例數字絕對不可自行採用。
 - 實作遇到未定案規則時：停止具體化該規則，在程式碼中以 `TODO` 記錄問題、影響範圍與待確認決策；必要時設計成可注入的參數／設定，而不是寫死猜測值。
-- 規則變更流程：先更新 `docs/game-design.md` → 再改實作 → 再改測試。
+- 規則變更流程：先更新 `docs/game-design.md` → 再改實作 → 再改測試 → 再檢查受影響的玩家文案（教學、規則書、介面說明、開發日誌），寫法照 [`docs/ui/copy-style.md`](docs/ui/copy-style.md)；換掉的舊說法加進 `tests/ui-v07/copyLint.test.ts` 的禁用詞。
 - 目前已定案、可直接依據的內容與數值，以 `docs/game-design.md` 的 V0.7 快照為準；不要以本段摘要、舊 commit、沿革文件或 `docs/proposals/` 補完規則。
 - 設計文件第 14 節列出的範圍外項目（合資、秘密交易、玩家間交易材料等）**不屬於 V0.7 範圍**，不要實作。
 
