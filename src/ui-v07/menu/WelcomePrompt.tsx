@@ -16,13 +16,13 @@ export function WelcomePrompt({ onTutorial, onSkip }: WelcomePromptProps) {
     <div className="menu-welcome" role="dialog" aria-modal="true" aria-labelledby="menu-welcome-title">
       <div className="menu-panel menu-welcome-card">
         <h2 id="menu-welcome-title">第一次遊玩嗎？</h2>
-        <p>要不要先進入新手教學關卡？跟著引導玩幾分鐘，就能學會基本規則。</p>
+        <p>先玩一下新手教學？幾分鐘就能學會基本玩法。</p>
         <div className="menu-actions">
           <button type="button" className="menu-action primary" onClick={onTutorial}>
             進入新手教學
           </button>
           <button type="button" className="menu-action" onClick={onSkip}>
-            我已經熟練
+            我會玩了
           </button>
         </div>
       </div>

@@ -38,7 +38,7 @@ export function TutorialMenu({ onStart, onBack }: TutorialMenuProps) {
   return (
     <main className="menu-panel menu-page tut-menu">
       <h2>新手教學</h2>
-      <p className="menu-note">先玩基礎，再一課一課學成長、暗潮、角色與開局選島。每一課都可以隨時重玩。</p>
+      <p className="menu-note">先玩基礎課，其他課挑想學的玩。每一課都能重玩。</p>
       {TUTORIAL_GROUPS.filter((g) => PAGES[page]!.includes(g.title)).map((g) => (
         <section key={g.title}>
           <h3>{g.title}</h3>

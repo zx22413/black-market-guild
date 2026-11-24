@@ -236,7 +236,7 @@ function welcomeBars(rows: readonly Row[]): Node {
     bars([
       { label: '看到提示', value: shown },
       { label: '進入新手教學', value: num(tutorial?.n), note: `${num(tutorial?.n)}（${pct(num(tutorial?.n), shown)}）` },
-      { label: '我已經熟練', value: num(row('welcome-skip')?.n), note: `${num(row('welcome-skip')?.n)}（${pct(num(row('welcome-skip')?.n), shown)}）` },
+      { label: '我會玩了', value: num(row('welcome-skip')?.n), note: `${num(row('welcome-skip')?.n)}（${pct(num(row('welcome-skip')?.n), shown)}）` },
       { label: '選教學後完成基礎課', value: num(tutorial?.basics), note: `${num(tutorial?.basics)}/${num(tutorial?.n)}` },
     ]),
     el('p', { class: 'sub' }, '人數以瀏覽器計；看到提示但沒回答就離開的人，是「看到」減去兩個答案。'),

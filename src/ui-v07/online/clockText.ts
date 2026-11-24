@@ -24,7 +24,7 @@ export function clockText(secondsLeft: number): string {
 /** What was played for the person when their time ran out. */
 export const TIMEOUT_DEFAULT: Readonly<Record<DecisionPhase, string>> = {
   'island-choice': '由電腦代選了島',
-  invest: '這回合不出航、不建造',
+  invest: '這回合不出航',
   'role-deployment': '這回合不部署角色',
 };
 
@@ -39,14 +39,14 @@ export function onlineRules(): readonly { readonly title: string; readonly text:
   return [
     {
       title: '限時',
-      text: `線上房間的每個決定都有限時，房主開局前選 ${choices} 分鐘（預設 ${DEFAULT_DECISION_SECONDS / 60} 分鐘）。畫面出現決定時才開始倒數，最晚在送出後 ${DECISION_SHOW_CAP_SECONDS} 秒開始。`,
+      text: `線上房間的每個決定都有限時，房主開局前選 ${choices} 分鐘（預設 ${DEFAULT_DECISION_SECONDS / 60} 分鐘）。\n決定出現在畫面上才開始倒數，最晚在伺服器送出後 ${DECISION_SHOW_CAP_SECONDS} 秒開始。`,
     },
-    { title: '時間到', text: '自動略過：不出航、不建造、不部署、不重擲；選島由電腦代選。' },
+    { title: '時間到', text: '投資自動不出航，部署自動不派角色；選島由電腦代選。' },
     {
       title: '託管',
-      text: `連續逾時 ${TAKEOVER_AFTER_TIMEOUTS} 次，或斷線超過 ${DISCONNECT_GRACE_SECONDS} 秒，就由電腦代你決定；回到遊戲按「取消託管」就接回。自己做過一次決定，逾時次數就歸零。`,
+      text: `連續逾時 ${TAKEOVER_AFTER_TIMEOUTS} 次，或斷線超過 ${DISCONNECT_GRACE_SECONDS} 秒，就由電腦代你決定。\n回到遊戲按「取消託管」就接回。自己做完一次決定，逾時次數就歸零。`,
     },
-    { title: '暫停', text: '所有真人都斷線或都在託管中時，對局暫停；有人回來或取消託管才繼續。' },
-    { title: '加入', text: '對局開始後不能再加入新玩家；已經入座的人隨時可以重新連上。單機與同機輪流沒有限時。' },
+    { title: '暫停', text: '所有真人都斷線或都在託管時，對局暫停。有人回來或取消託管就繼續。' },
+    { title: '加入', text: '對局開始後不能再加入新玩家，已經入座的人隨時可以重新連上。\n單機與同機輪流沒有限時。' },
   ];
 }

@@ -125,7 +125,7 @@ function OnlineHome({ onRoom, autoCreate, onBack, onView }: OnlineHomeProps) {
       <h2>線上房間</h2>
       <JoinByCode onRoom={onRoom} />
       <p className="menu-note">朋友傳來的邀請連結，點開就會直接進房。</p>
-      {autoCreate && <p className="menu-note">正在建立房間，進大廳後按「複製邀請連結」傳給朋友，空位由電腦補上。</p>}
+      {autoCreate && <p className="menu-note">正在建立房間。進大廳後按「複製邀請連結」傳給朋友，沒人坐的位子由電腦補上。</p>}
       <HostRoom onRoom={onRoom} autoStart={autoCreate} />
       <div className="menu-foot">
         <button type="button" className="menu-small" onClick={onBack}>
