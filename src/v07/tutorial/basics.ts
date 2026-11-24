@@ -4,7 +4,7 @@ import type { CoachStep, CoachTrigger, FocusTarget, GuideStep, TutorialScript } 
 
 // The guided match (docs/tutorial-outline.md §4): three rounds on the Lumber island that teach
 // sailing, the market, goods and the ship types. Roles have lessons of their own (roleScenarios.ts).
-//   1 sell · 2 wanted, goods, a storm sinks you, crowded wood falls · 3 the five ships, a tailwind
+//   1 sell · 2 wanted, goods, a storm sinks you, crowded wood falls · 3 the gambler against the albatross, a tailwind
 //   and the gambler, the final wealth. V0.8: voyages lose crates (game-design.md §8.1); skills and buildings are the
 //   growth lesson (growth.ts), the dark tide its own lesson (tideLesson.ts).
 
@@ -12,7 +12,6 @@ const ROUNDS = 3;
 const { successMin, dieMax } = R.sailing;
 const ships = R.ships.types;
 const harbourTax = R.islands.traits.lumber.shipCostDelta;
-const yardCapacity = R.capacity.base + R.islands.traits.lumber.capacityDelta;
 const table = R.v08.tables;
 const lose = (ship: keyof typeof ships, final: number): number => table[ship].lose[final] ?? 0;
 const times = (ship: keyof typeof ships, final: number): number => (table[ship].multiplier[final] ?? 100) / 100;
@@ -45,7 +44,7 @@ const step = (
 export const BASICS: TutorialScript = {
   id: 'basics',
   title: '基礎：出航、買賣與選船',
-  summary: '3 回合引導對局：航行骰、黑市價格、貨物與五種船。',
+  summary: '3 回合帶你玩一局：出航、擲骰、黑市價格和選船。',
   seed: 70101,
   rules: shortRules(ROUNDS),
   seats: SEATS,
@@ -87,105 +86,92 @@ export const BASICS: TutorialScript = {
   coach: [
     // ── Round 1: sail and sell ──
     onTable(step(invest(1), '歡迎來到暗潮商戰', [F.round], [
-      '你經營一座島：島上每回合生產材料，你決定要不要選一艘船、裝上貨，運到中央巴扎港的黑市換錢。',
-      `一局打 ${R.v08.events.secondAdvanceFrom}～${R.v08.events.secondAdvanceTo} 回合（事件牌庫決定哪一回合是最後一回合），結束時現金最多的人獲勝。這場教學只打 ${ROUNDS} 回合；成長、暗潮與角色另外有單課。`,
+      '你有一座島，每回合會產貨。把貨裝船運到巴扎港的黑市賣，最後現金最多的人贏。',
+      `這場教學打 ${ROUNDS} 回合。`,
     ])),
     onTable(step(invest(1), '你的島：船塢島', [F.island('p1'), F.plate('p1')], [
-      `船塢島的優點是你的船可以多裝 1 箱（共 ${yardCapacity} 箱），缺點是每艘船出航要另付 ${harbourTax} G 港口稅。`,
-      `開局每個人都有 ${R.startingCash} G、${R.startingStock.wood} 木材、${R.startingStock.iron} 鐵礦；每回合開始時，各島每種貨各生產 1 箱放進倉庫。`,
+      `這是你的島，船塢島。船能多裝 1 箱，但每次出航多付 ${harbourTax} G 港口稅。`,
     ])),
-    onTable(step(invest(1), '黑市：需求卡與價格', [F.market], [
-      '上方黑市列是每種貨的現價。每回合翻開一張需求卡，標出這回合黑市要多少貨。',
-      '所有船靠港後，到港的貨比需求少就漲價、一樣就不變、比需求多就跌價；香料一次漲跌兩格。抵達的船，用變動後的新價格賣貨。',
+    onTable(step(invest(1), '黑市的價格', [F.market], [
+      '上面是黑市的價格，「需」是這回合要收幾箱。',
+      '送來的貨比需求少就漲價，多了就跌價。',
     ])),
     step(
       invest(1),
       '選一艘船',
       [F.hand],
       [
-        '每回合最多派一艘船：先選船型，再從倉庫選貨裝上去，每單位貨是一箱。五種船各有船費、載量與掉貨表，之後會一一介紹；先用最基本的信天翁號。',
-        `信天翁號沒有船費（你的島另收 ${harbourTax} G 港口稅）。最終值 1 會沉；2～3 掉 ${lose('standard', 2)} 箱、4～5 掉 ${lose('standard', 4)} 箱、6 全部到港。掉的是船上最貴的貨。`,
-        '所有人同時、秘密決定：別人只看得到誰出航、開什麼船，看不到船上裝了什麼。',
+        '每回合派一艘船：先挑船，再裝貨。',
+        `信天翁號擲 6 全部送到，擲 1 會沉，中間掉 ${lose('standard', 4)}～${lose('standard', 2)} 箱。`,
+        '大家同時決定，別人看不到你裝了什麼。',
       ],
-      '選信天翁號，按「裝貨」，把 1 木材、1 香料裝上船，然後提交。',
+      '選信天翁號，按「裝貨」，裝 1 木材、1 香料，然後提交。',
       [F.ship('standard'), F.shipNext, F.crate('wood'), F.crate('spice')],
     ),
     {
       ...step(resolving(1), '航行骰', [], [
-        '每艘出航的船擲一顆 1d6，結算時才公開，連船東自己都不知道。',
-        '骰值會被航海事件、角色加減，加減完的最終值，對照船的掉貨表決定結果：沉沒，或掉幾箱。掉進海裡的箱不賣錢，也不算到港量。',
+        '骰子要到結算才翻開，連你都不知道擲了幾。',
+        '事件和角色會加減骰值，算完叫「最終值」，越低掉越多貨。',
       ]),
       diagram: { kind: 'die', successMin, dieMax },
     },
     step(resolving(1), '航海事件', [F.event], [
-      '每回合開始時還會翻開一張航海事件，投資和部署角色之前就公開，影響所有船的最終值。',
-      '這回合是「風平浪靜」，沒有效果。',
+      '每回合開始會翻一張航海事件，做決定前就看得到。這回合風平浪靜，沒事。',
     ]),
     step(resolving(1), '看結算', [F.log, F.rank], [
-      '接下來每艘船依序揭曉骰值與結果，抵達巴扎港的船再到黑市賣貨。',
-      '頂部的日誌鈕可以回看每一筆收支；右上角的排行是目前的總財富。',
+      '船會一艘艘揭曉結果，到港的就賣貨。日誌鈕看收支，右上角看排行。',
     ]),
     step(market(1), '價格怎麼動', [F.marketCard], [
-      `你的船擲出 6，貨全部到港（最終值越低掉越多：2 會掉 ${lose('standard', 2)} 箱）。木材和香料到港的量都比需求少，所以漲價（香料一次漲兩格）；鐵礦到港量剛好等於需求，價格不變。`,
-      '抵達的貨都用變動後的新價格賣出。',
+      '你擲到 6，兩箱都送到了。',
+      '木材、香料送來的比需求少，漲價，香料一次漲兩格；鐵礦剛好，不動。',
     ]),
 
     // ── Round 2: wanted, goods, a storm ──
     step(invest(2), '通緝令', [F.rank, F.market], [
-      '每回合開始時，現金最多的玩家被通緝。你上回合賺最多，所以這回合你被通緝了。',
-      `海盜攔下通緝者的船時，多拿 ${R.wanted.lootBonus} G（銀行付）。海盜在角色單課裡介紹。`,
+      `現金最多的人會被通緝，這回合是你。海盜攔下通緝犯的船，會從銀行多領 ${R.wanted.lootBonus} G。`,
     ]),
     step(
       invest(2),
       '四種貨',
       [F.hand],
       [
-        '每回合每種貨都會再生產 1 箱，倉庫沒有上限。木材、鐵礦除了賣，也能拿來開船技能、蓋建築（成長單課再教）。',
-        '香料放不住：回合結束時還在倉庫裡就壞掉。軍火賣得最貴，但大家運太多（超過需求）時，超過的部分會被查扣。',
-        '這回合的航海事件是暴風雨：所有船 −1。事件在投資前就公開，你可以依它決定開哪艘船、裝什麼。',
+        '每種貨每回合產 1 箱。香料放到回合結束就壞；軍火最貴，但運超過需求會被查扣。',
+        `這回合是暴風雨，每艘船 ${R.voyageEvents.storm}。`,
       ],
-      '一樣用信天翁號，裝 1 木材、1 軍火出航。',
+      '一樣開信天翁號，裝 1 木材、1 軍火出航。',
       [F.ship('standard'), F.shipNext, F.crate('wood'), F.crate('arms')],
     ),
     step(resolving(2), '暴風雨', [F.event], [
-      `暴風雨：所有船 ${R.voyageEvents.storm}。看看你的船撐不撐得住。`,
+      `暴風雨：每艘船 ${R.voyageEvents.storm}。看你的船撐不撐得住。`,
     ]),
     step(voyage(2), '沉船', [F.beat], [
-      `你的船原始骰值是 2，本來能抵達（掉 ${lose('standard', 2)} 箱），暴風雨 ${R.voyageEvents.storm} 後變 1，沉了：信天翁號最終值 1 就沉。沉沒的船貨全沒了，船費也不退。`,
-      '遇到暴風雨，其他船型可能更穩：巨鯨號最終值 1 也不會沉，只是要下一回合才抵達。',
+      '你擲到 2，暴風雨減成 1，信天翁號沉了，貨和船費都沒了。',
+      '巨鯨號就不怕：最終值 1 也不沉，只是晚一回合到。',
     ]),
     step(market(2), '大家都運木材', [F.marketCard], [
-      `${vande}和${tide}都運了木材，暴風雨讓他們各掉了 1 箱，到港的還是超過需求，木材跌價。`,
-      '大家擠同一種貨，價格就會崩：猜別人會運什麼，是這個遊戲的核心。',
+      `${vande}和${tide}都運木材，送到的比需求多，木材跌了。出航前，猜猜別人會運什麼。`,
     ]),
 
-    // ── Round 3: the five ships ──
-    step(invest(3), '五種船', [F.ship('standard'), F.ship('gambler'), F.ship('freighter'), F.ship('hidden'), F.ship('breaker')], [
-      '選船就是決定這回合怎麼賺：求穩、賭一把、多載一點，或躲過海關。前兩回合你開的信天翁號掉貨少、最穩。另外四艘：',
-      `孤注號：擲得好，貨物 ×${times('gambler', 5)}～×${times('gambler', 6)}；擲不好整船沉。用過要休息 ${ships.gambler.cooldown} 回合。`,
-      `巨鯨號：不會沉、多裝 ${ships.freighter.capacity} 箱，但下一回合才到港，路上至少掉 1 箱。`,
-      '幽靈號：被海關指名也扣不走它的貨。',
-      `海嘯號：最終值越高賺越多，加成疊得夠可到 ×${times('breaker', 9)}；但比信天翁號容易掉貨。`,
-      '點船卡可以看它的掉貨表。',
+    // ── Round 3: another ship ──
+    step(invest(3), '換艘船試試', [F.ship('standard'), F.ship('gambler')], [
+      `孤注號比信天翁號刺激：最終值 5 賣 ×${times('gambler', 5)}、6 賣 ×${times('gambler', 6)}，4 以下整艘沉。`,
+      '其他船點船卡就看得到。',
     ]),
     step(
       invest(3),
       '順風下賭一把',
       [F.ship('gambler')],
-      [
-        `這回合是順風：所有船 +${R.voyageEvents.tailwind}。孤注號平常要擲到 5 才不沉，順風下只要原始骰值 4 以上就全到 ×${times('gambler', 5)}，擲 5 以上更是 ×${times('gambler', 6)}。`,
-        '高風險換高報酬：船費貴、沉了貨全沒，但賺得多。',
-      ],
-      '選孤注號，按「裝貨」，裝上你想賣的貨（貨量不限），然後提交。',
+      [`這回合順風，每艘船 +${R.voyageEvents.tailwind}，孤注號擲 4 就保得住。賭一把吧。`],
+      '選孤注號，按「裝貨」，想賣什麼就裝什麼，然後提交。',
       [F.ship('gambler'), F.shipNext, F.crate('arms')],
     ),
-    step(resolving(3), '順風', [F.event], [`順風：所有船 +${R.voyageEvents.tailwind}。看看孤注號的賭局。`]),
+    step(resolving(3), '順風', [F.event], [`順風：每艘船 +${R.voyageEvents.tailwind}。`]),
     step(voyage(3), '賭贏了', [F.beat], [
-      `你的船原始骰值 4，順風 +${R.voyageEvents.tailwind} 變 5，孤注號的貨全部到港，賣 ×${times('gambler', 5)}。要是擲出 3 以下，這艘船就沉了。`,
+      `擲 4 加順風變 5，孤注號全部送到，賣 ×${times('gambler', 5)}。擲 3 以下就沉了。`,
     ]),
     step({ kind: 'end' }, '總財富', [F.rank], [
-      '對局結束時比總財富，也就是現金。倉庫裡剩下的材料不計分，海上還沒抵達的貨也不算。',
-      '基礎到這裡結束。接下來可以從教學選單學成長（船技能與建築）、暗潮與各個角色。',
+      '結束時比現金，倉庫和海上的貨都不算。',
+      '教學選單還有成長、暗潮和角色課。',
     ]),
   ],
 };
