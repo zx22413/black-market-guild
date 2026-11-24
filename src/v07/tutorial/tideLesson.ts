@@ -88,56 +88,55 @@ export const TIDE: TutorialScript = {
   coach: [
     // ── Round 1: the candidates and the bet ──
     step(invest(1), '暗潮候選', [F.tide], [
-      `每局在第 ${R.v08.events.firstAdvanceFrom}～${R.v08.events.firstAdvanceTo} 回合之間會翻出「暗潮將至」：從這裡的兩種候選中選一種，之後每回合都生效到對局結束。`,
-      '這局的候選是風暴潮（最終值 2～3 的船多掉 1 箱）與崩盤潮（跌價加倍）。點晶片可以看效果與擋得住它的東西。這場教學把一局縮成 3 回合。',
+      `每局第 ${R.v08.events.firstAdvanceFrom}～${R.v08.events.firstAdvanceTo} 回合會翻出「暗潮將至」，從這兩種暗潮揭曉一種，生效到最後。`,
+      `這局是風暴潮或崩盤潮，點晶片看效果。教學縮成 ${ROUNDS} 回合，所以來得早。`,
     ]),
     step(
       invest(1),
       '押注：早蓋建築',
       [F.materials],
       [
-        '修船廠擋風暴潮、商行擋崩盤潮。現在蓋，就算押錯也有平常的效果；等揭曉再蓋比較穩，但能用的回合就少了。',
-        '這一課押風暴潮：蓋修船廠。',
+        '修船廠擋風暴潮，商行擋崩盤潮。現在蓋就是押注，押錯也還有平常的效果。',
+        '這課押風暴潮，蓋修船廠。',
       ],
-      '選信天翁號，按「裝貨」，裝上 1 香料、1 軍火；再打開「蓋建築」，選修船廠，然後提交。',
+      '選信天翁號，按「裝貨」，裝 1 香料、1 軍火；再打開「蓋建築」選修船廠，然後提交。',
       [F.ship('standard'), F.shipNext, F.crate('spice'), F.crate('arms'), F.materials, F.material('repairyard')],
     ),
 
     // ── Round 2: 暗潮將至 ──
     step(invest(2), '暗潮將至', [F.tide], [
-      '這回合翻出的是「暗潮將至」：這回合沒有一般事件，這局的暗潮揭曉了：風暴潮。你押對了。',
-      `這回合結束時，每個人倉庫裡每種貨都損失 ${e.warehouseLossPercent}%（無條件捨去）。留在倉庫的貨會少一半，能運的趁現在運出去。`,
+      '「暗潮將至」翻出來了，這局是風暴潮，你押對了。',
+      `這回合結束時，每個倉庫每種貨少 ${e.warehouseLossPercent}%。能運的，趁現在運。`,
     ]),
     step(
       invest(2),
       '趁現在出貨',
       [F.hand],
-      ['暗潮季裡，只有跟這局暗潮同類的那張事件卡會翻成更兇的一面：風暴潮對應暴風雨，翻面後所有船 −2。'],
-      '選信天翁號，裝上你想賣的貨，然後提交。',
+      [`下回合起是暗潮季，暴風雨會更兇，每艘船 ${e.bossStorm}。`],
+      '選信天翁號，裝你想賣的貨，然後提交。',
       [F.ship('standard'), F.shipNext],
     ),
-    step(market(2), '倉庫減半', [F.rank], ['回合結束時，每座倉庫的每種貨都少了一半。下一回合起是暗潮季。']),
+    step(market(2), '倉庫縮水', [F.rank], [`每個倉庫每種貨都少了 ${e.warehouseLossPercent}%。`]),
 
     // ── Round 3: 最後的大市集 ──
     step(invest(3), '最後的大市集', [F.event, F.round], [
-      `第 2 張推進牌「最後的大市集」翻出的回合就是最後一回合（一般在第 ${R.v08.events.secondAdvanceFrom}～${R.v08.events.secondAdvanceTo} 回合之間）。`,
-      `這回合每種貨需求 +${e.openMarketDemand}、價格不會下跌、每艘船擲 ${e.lastGambleDice} 顆骰取較高的。最後一回合不能選巨鯨號（來不及抵達）。`,
+      '「最後的大市集」翻出來，這就是最後一回合。',
+      `每種貨需求 +${e.openMarketDemand}、不會跌價，每艘船擲 ${e.lastGambleDice} 顆骰取高的。巨鯨號來不及到，不能選。`,
     ]),
     step(
       invest(3),
       '最後一次出航',
       [F.hand],
-      ['風暴潮還在：最終值 2～3 的船多掉 1 箱。你有修船廠，風暴潮對你的船無效。'],
-      '選信天翁號，裝上你想賣的貨，然後提交。',
+      [`風暴潮還在，最終值 ${e.tideStormLossFrom}～${e.tideStormLossTo} 的船要多掉 ${e.tideStormExtraLoss} 箱。你有修船廠，不會多掉。`],
+      '選信天翁號，裝你想賣的貨，然後提交。',
       [F.ship('standard'), F.shipNext],
     ),
     step({ kind: 'voyage', round: 3, owners: ['p1', BOT.vande] }, '押對的差別', [F.beat], [
-      `你和${vande}的船最終值都是 3。${vande}沒有修船廠：本來掉 ${stormLoss} 箱，風暴潮再多掉 1 箱，船上的 2 箱鐵全掉了。`,
-      `你有修船廠：風暴潮對你無效，修船廠再少掉 ${v.repairyard.save} 箱，只掉 ${stormLoss - v.repairyard.save} 箱。`,
+      `你和${vande}最終值都是 3。${vande}沒有修船廠，掉 ${stormLoss} 箱再加風暴潮 ${e.tideStormExtraLoss} 箱，2 箱鐵全沒了。`,
+      `你不怕風暴潮，修船廠還幫你少掉 ${v.repairyard.save} 箱，只掉 ${stormLoss - v.repairyard.save} 箱。`,
     ]),
     step({ kind: 'end' }, '暗潮到這裡', [F.rank], [
-      '暗潮一局一種，兩種候選一開局就公開。蓋對應的建築就是押注：早蓋押對最賺，押錯也還有平常的效果。',
-      '查緝潮（需求以內的軍火也查扣 1 箱）靠掩護擋；海盜潮（被海盜鎖定的船到港也被搶最貴的 1 箱）沒有建築擋得住。',
+      '暗潮還有兩種。查緝潮擋得住的是自己的走私商人和幽靈號的技能，海盜潮什麼都擋不住。',
     ]),
   ],
 };

@@ -9,6 +9,8 @@ const ROUND1_DEMAND = goods({ wood: 2, iron: 1, spice: 2, arms: 1 });
 const vande = nameOf(BOT.vande);
 const tide = nameOf(BOT.tide);
 const { guard, pirate, smuggler, diplomat } = R.roles;
+const anchor = nameOf(BOT.anchor);
+const refund = diplomat.refundPercent === 50 ? '一半' : `${diplomat.refundPercent}%`;
 const lootPct = (final: number): number => pirate.lootPercentByFinal[final] ?? 0;
 
 const DEPLOY: CoachTrigger = { kind: 'decision', round: 1, phase: 'role-deployment' };
@@ -33,9 +35,8 @@ const step = (
 
 /** Said before the first role a lesson asks for. */
 const deployIntro = step(DEPLOY, '部署角色', [F.hand], [
-  '投資之後，所有人同時、秘密選一個角色派出去，也可以不派；不出航也能派。角色在大家都決定後一次揭露。',
-  `每個角色有部署費，用過之後要冷卻 ${R.roles.cooldown} 回合才能再派。`,
-  '手牌上方的「你的船上」會列出你這回合裝了什麼貨，選角色之前可以先看一眼。',
+  '出航決定好後，大家偷偷派一個角色，也可以不派，沒出航也能派，最後一起翻開。',
+  `派角色要付部署費，派過要休息 ${R.roles.cooldown} 回合。`,
 ]);
 
 /**
@@ -66,22 +67,22 @@ export const GUARD: TutorialScript = scenario({
     },
   ],
   coach: [
-    step(DEPLOY, '你的船已經出航', [F.island('p1')], ['這一課你的投資已經先做好了：你的船裝著 1 木材、1 香料出航。']),
+    step(DEPLOY, '你的船已經出航', [F.island('p1')], ['這課你的船已經裝好 1 木材、1 香料出航了。']),
     deployIntro,
     step(
       DEPLOY,
       '護衛',
       [F.hand, F.island('p1')],
       [
-        `護衛只能守自己的船，讓它的航行骰 +${guard.modifier}。你看不到自己的骰值，派護衛是押注：只有最終值 1 會沉，加成讓沉船的機會從六分之一降到零，也讓抵達後的收入比例往上跳一級。`,
+        `護衛守自己的船，骰值 +${guard.modifier}。你看不到自己擲幾，但信天翁號只有最終值 1 會沉，加 ${guard.modifier} 就不會沉了。`,
       ],
       `派護衛守自己的船（部署費 ${fee('guard')} G）。`,
       [F.role('guard'), F.target('p1')],
     ),
-    watch([], '角色一次全部揭露，接著看你的船：起始骰值、護衛的加成，再判定抵達或沉沒。'),
+    watch([], '角色翻開後，看你的船：擲幾、護衛加多少、到沒到。'),
     step(voyaged(['p1']), '差一點就沉了', [F.beat], [
-      `你的船原始骰值只有 1，會沉；護衛 +${guard.modifier} 後變 2，剛好抵達。`,
-      '小心航海事件「月黑風高」：被護衛守著的船 −1，正好抵銷護衛。',
+      `你擲到 1，本來會沉；護衛加 ${guard.modifier} 變 2，撐住了。`,
+      `碰上「月黑風高」，有護衛的船 ${R.voyageEvents.moonlessNight}，護衛就白派了。`,
     ]),
     done('下一課：海盜。'),
   ],
@@ -105,23 +106,23 @@ export const PIRATE: TutorialScript = scenario({
     },
   ],
   coach: [
-    step(DEPLOY, '你這回合不出航', [F.island(BOT.vande), F.island(BOT.tide)], [`這一課你留在港裡，只派角色。${vande}和${tide}出航了。`]),
+    step(DEPLOY, '你這回合不出航', [F.island(BOT.vande), F.island(BOT.tide)], [`這課你不出航，只派角色。${vande}和${tide}出航了。`]),
     deployIntro,
     step(
       DEPLOY,
       '海盜',
       [F.hand, F.island(BOT.vande)],
       [
-        `海盜鎖定一艘船，讓它 ${pirate.modifier}。最終值 1 的船沉沒，海盜平分貨值的 ${lootPct(1)}%；最終值 2 的船勉強抵達，海盜從船東的收入裡平分 ${lootPct(2)}%。`,
-        `最終值 3 以上海盜什麼都拿不到。船上載著通緝者的貨時，海盜再多拿 ${R.wanted.lootBonus} G（銀行付）。`,
+        `海盜讓一艘船 ${pirate.modifier}。船沉了，海盜分走貨值的 ${lootPct(1)}%。`,
+        `最終值 2 還會到港，海盜分走船東收入的 ${lootPct(2)}%，3 以上就拿不到。攔到通緝犯，銀行再多給 ${R.wanted.lootBonus} G。`,
       ],
       `派海盜鎖定${vande}的船（部署費 ${fee('pirate')} G）。`,
       [F.role('pirate'), F.target(BOT.vande)],
     ),
-    watch([], `看${vande}的船：海盜的 ${pirate.modifier} 會不會讓它沉下去。`),
+    watch([], `看${vande}的船會不會被海盜的 ${pirate.modifier} 拖下水。`),
     step(voyaged([BOT.vande]), '擊沉', [F.beat], [
-      `${vande}的船原始骰值 2，海盜 ${pirate.modifier} 後變 1，沉沒，貨值的 ${lootPct(1)}% 歸你。`,
-      '小心航海事件「海霧」：被海盜鎖定的船 +1，海盜反而幫了對手。',
+      `${vande}擲到 2，海盜 ${pirate.modifier} 變 1，沉了，貨值的 ${lootPct(1)}% 歸你。`,
+      `碰上「海霧」，被海盜盯上的船反而 +${R.voyageEvents.seaFog}。`,
     ]),
     done('下一課：海關。'),
   ],
@@ -150,21 +151,21 @@ export const CUSTOMS: TutorialScript = scenario({
     },
   ],
   coach: [
-    step(DEPLOY, '你這回合不出航', [F.island(BOT.vande)], [`這一課你留在港裡。${vande}載著貨出航了。`]),
+    step(DEPLOY, '你這回合不出航', [F.island(BOT.vande)], [`這課你不出航。${vande}載著貨出航了。`]),
     deployIntro,
     step(
       DEPLOY,
       '海關',
       [F.hand, F.island(BOT.vande)],
       [
-        `海關只能鎖定別人的船，並指名其中一種貨，部署費 ${fee('customs')} G。船抵達時，海關優先拿走指名那種貨縮放後的整塊價值，指名的貨沒上船就什麼都拿不到。`,
-        `海關也會抓走私商人：罰款 ${smuggler.fine} G，私貨的價值歸海關。你可以從公開的倉庫猜他載了什麼。`,
+        '海關盯一艘別人的船，指名一種貨。那種貨送到港幾箱，錢就全歸你，船上沒有就白派。',
+        `船上的走私商人也會被抓，罰 ${smuggler.fine} G，私貨的錢歸你。`,
       ],
       `派海關鎖定${vande}的船，指名軍火（部署費 ${fee('customs')} G）。`,
       [F.role('customs'), F.target(BOT.vande), F.naming('arms')],
     ),
-    watch([], `看${vande}的船：抵達後，軍火的價值先歸海關。`),
-    step(voyaged([BOT.vande]), '沒收', [F.beat], [`${vande}的船抵達，軍火被你指名沒收；船東只拿到木材的收入。`]),
+    watch([], `看${vande}的船：到港後，軍火的錢先歸你。`),
+    step(voyaged([BOT.vande]), '沒收', [F.beat], [`${vande}的船到港，軍火的錢歸你，${vande}只賣到木材。`]),
     done('下一課：走私商人。'),
   ],
 });
@@ -192,23 +193,23 @@ export const SMUGGLER: TutorialScript = scenario({
     },
   ],
   coach: [
-    step(DEPLOY, '你這回合不出航', [F.island(BOT.vande), F.island(BOT.tide)], [`這一課你留在港裡。${vande}和${tide}出航了。`]),
+    step(DEPLOY, '你這回合不出航', [F.island(BOT.vande), F.island(BOT.tide)], [`這課你不出航。${vande}和${tide}出航了。`]),
     deployIntro,
     step(
       DEPLOY,
       '走私商人',
       [F.hand, F.island(BOT.vande), F.island(BOT.tide)],
       [
-        `走私商人搭別人的船夾帶私貨，不必自己出航，部署費 ${fee('smuggler')} G。船抵達、船上沒有海關時，你從船東的賣貨收入抽走 ${smuggler.goodsValue} G。`,
-        `船上有任何人的海關，你就被抓，罰款 ${smuggler.fine} G；船沉了又遇到海盜，私貨被搶走。`,
+        `走私商人搭別人的船夾帶私貨，自己不用出航。船平安到港、船上沒有海關，你就從船東那裡抽 ${smuggler.goodsValue} G。`,
+        `船上有海關就被抓，罰 ${smuggler.fine} G。船沉了又有海盜，私貨會被搶。`,
       ],
       '選一艘對手的船夾帶私貨。',
       [F.role('smuggler'), [F.target(BOT.vande), F.target(BOT.tide)]],
     ),
-    watch([], '角色揭露時，看看你搭的那艘船上有沒有海關。'),
+    watch([], '角色翻開時，看你搭的船上有沒有海關。'),
     step(voyaged([BOT.vande, BOT.tide]), '揭曉', [F.beat], [
-      `金錨公會派了海關上${tide}的船：選那艘就被抓了。${vande}的船沒有海關，走私成功。`,
-      `這回合的航海事件是「黑市熱絡」：私貨價值從 ${smuggler.goodsValue} G 提高到 ${R.voyageEvents.blackMarketRushGoodsValue} G。`,
+      `${anchor}的海關上了${tide}的船，搭那艘會被抓，搭${vande}的就成功了。`,
+      `這回合「黑市熱絡」，私貨從 ${smuggler.goodsValue} G 漲成 ${R.voyageEvents.blackMarketRushGoodsValue} G。`,
     ]),
     done('下一課：外交官。'),
   ],
@@ -237,21 +238,21 @@ export const DIPLOMAT: TutorialScript = scenario({
     },
   ],
   coach: [
-    step(DEPLOY, '你的船已經出航', [F.island('p1')], ['這一課你的船裝著 1 木材、1 香料出航。']),
+    step(DEPLOY, '你的船已經出航', [F.island('p1')], ['這課你的船已經裝好 1 木材、1 香料出航了。']),
     deployIntro,
     step(
       DEPLOY,
       '外交官',
       [F.hand, F.island('p1')],
       [
-        `外交官只能守自己的船，部署費 ${fee('diplomat')} G。你要猜一個角色：護衛、海盜、走私商人或海關，會不會被派來針對你的船。`,
-        `猜中：那個角色在你船上的部署全部作廢（部署費不退），你向每位被作廢的對手拿 ${diplomat.take} G。猜錯：退你一半部署費。`,
+        '外交官守自己的船，猜哪個角色會被派上來，護衛、海盜、走私商人、海關都能猜。',
+        `猜中，那個角色作廢，被作廢的對手每人付你 ${diplomat.take} G。猜錯，退你${refund}部署費。`,
       ],
       `派外交官守自己的船，猜海盜（部署費 ${fee('diplomat')} G）。`,
       [F.role('diplomat'), F.target('p1'), F.naming('pirate')],
     ),
-    watch([], '角色揭露時，看看有沒有人真的派海盜來。'),
-    step(voyaged(['p1']), '猜中了', [F.beat], [`${tide}派海盜鎖定你的船，被你的外交官作廢：海盜的 ${pirate.modifier} 沒有生效，你還向他拿了 ${diplomat.take} G。`]),
+    watch([], '角色翻開時，看有沒有人真的派海盜來。'),
+    step(voyaged(['p1']), '猜中了', [F.beat], [`${tide}派海盜盯你的船，被你的外交官作廢了，海盜的 ${pirate.modifier} 沒生效，還付你 ${diplomat.take} G。`]),
     done('角色教學到這裡結束。'),
   ],
 });

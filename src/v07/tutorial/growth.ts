@@ -88,23 +88,21 @@ export const GROWTH: TutorialScript = {
   coach: [
     // ── Round 1: build ──
     step(invest(1), '材料不只能賣', [F.stock], [
-      '倉庫裡的木材和鐵礦可以賣，也可以拿來讓自己變強。投資時每回合最多做一個「材料行動」，在裝貨之前從倉庫扣掉。',
-      `材料行動有兩種：開啟一種船的技能（${cost(v.costs.open)}，最多開 ${v.maxSkills} 種船），或蓋一棟建築（${cost(v.costs.build.repairyard)}，一局只能蓋 ${v.maxBuildings} 棟）。做了什麼在提交後公開。`,
+      '木材和鐵礦不一定要賣。每回合可以拿來開一種船的技能，或蓋一棟建築。',
+      `開技能要 ${cost(v.costs.open)}，蓋建築要 ${cost(v.costs.build.repairyard)}。建築一局只能蓋 ${v.maxBuildings} 棟。`,
     ]),
     step(
       invest(1),
       '蓋修船廠',
       [F.materials],
       [
-        '三棟建築各擋一種傷害：修船廠擋天災（骰子），軍械庫擋人禍（海盜），商行擋市場（價格）。',
-        `修船廠讓你的船最終值 ${v.repairyard.fromFinal}～${v.repairyard.toFinal} 時少掉 ${v.repairyard.save} 箱。蓋了就一直有效，這回合出航的船就適用。`,
+        `修船廠讓你的船最終值 ${v.repairyard.fromFinal}～${v.repairyard.toFinal} 時少掉 ${v.repairyard.save} 箱，蓋好這回合就有效。`,
       ],
-      '選信天翁號，按「裝貨」，裝上 1 香料、1 軍火；再打開「蓋建築」，選修船廠，然後提交。',
+      '選信天翁號，按「裝貨」，裝 1 香料、1 軍火；再打開「蓋建築」選修船廠，然後提交。',
       [F.ship('standard'), F.shipNext, F.crate('spice'), F.crate('arms'), F.materials, F.material('repairyard')],
     ),
     step(voyage(1), '少掉 1 箱', [F.beat], [
-      `你的船擲出 3。信天翁號最終值 3 本來掉 ${v.tables.standard.lose[3] ?? 0} 箱，修船廠讓你只掉 ${saved} 箱：掉的是船上最貴的軍火，香料到港。`,
-      '建築要在出事之前蓋：越早蓋，用得越久；但蓋了就少了能賣的材料。',
+      `你擲到 3，本來掉 ${v.tables.standard.lose[3] ?? 0} 箱，修船廠讓你只掉 ${saved} 箱。掉的是最貴的軍火，香料送到了。`,
     ]),
 
     // ── Round 2: a ship skill ──
@@ -113,16 +111,16 @@ export const GROWTH: TutorialScript = {
       '船技能',
       [F.ship('gambler')],
       [
-        '每種船都有一個技能，開了之後，開那種船出航時才有效：信天翁號重擲、孤注號加注、巨鯨號拾荒、幽靈號自帶掩護、海嘯號巨浪。',
-        `孤注號的技能是「加注」：出航時可以宣告加注，只有最終值 ${v.raise.minFinal} 才到港，到港時 ×${v.raise.multiplier / 100}。宣告是公開的，大家都看得到你在賭。`,
+        '每種船有一個技能，開啟後，派那種船出航才用得到。',
+        `孤注號能加注，最終值要 ${v.raise.minFinal} 才到港，到了賣 ×${v.raise.multiplier / 100}。你加注，大家都看得到。`,
       ],
-      `選孤注號，在說明卡的技能列按「開啟」（${cost(v.costs.open)}），按「裝貨」，裝上 1 木材、1 香料、1 軍火，再打開船上的「加注」，然後提交。`,
+      `選孤注號，在說明卡按「開啟」技能（${cost(v.costs.open)}），裝 1 木材、1 香料、1 軍火，再按船上的「加注」，然後提交。`,
       [F.ship('gambler'), F.skill('gambler'), F.shipNext, F.crate('wood'), F.crate('spice'), F.crate('arms'), F.raise],
     ),
-    step(voyage(2), '賭贏了', [F.beat], [`你擲出 6，加注的孤注號全部到港，賣 ×${v.raise.multiplier / 100}。擲出 5 以下的話，這艘船就沉了。`]),
+    step(voyage(2), '賭贏了', [F.beat], [`你擲到 6，加注的孤注號全部送到，賣 ×${v.raise.multiplier / 100}。擲 ${v.raise.minFinal - 1} 以下就沉了。`]),
     step({ kind: 'end' }, '成長到這裡', [F.rank], [
-      '技能是你冒險的方式，建築是你為這局做的準備。開了哪種船的技能、蓋了哪棟建築都公開，可以看對手怎麼押。',
-      '下一課「暗潮」會講建築另一個用處：擋住這局的暗潮。',
+      '開了什麼技能、蓋了什麼建築，大家都看得到，可以看看對手怎麼押。',
+      '下一課「暗潮」會講建築的另一個用處。',
     ]),
   ],
 };

@@ -1,8 +1,12 @@
-import { F, SEATS, goods, shortRules } from './seats';
+import { F, R, SEATS, goods, shortRules } from './seats';
 import type { TutorialScript } from './types';
 
 // The island draft (§11.1, docs/tutorial-outline.md §7): you pick one of two islands, then every
 // island is revealed at once. The lesson ends there, before round 1 is played.
+
+const yard = R.islands.traits.lumber;
+const lighthouse = R.islands.traits.lighthouse;
+const { offered } = R.islands;
 
 export const ISLANDS: TutorialScript = {
   id: 'islands',
@@ -24,11 +28,11 @@ export const ISLANDS: TutorialScript = {
   coach: [
     {
       trigger: { kind: 'decision', round: 0, phase: 'island-choice' },
-      title: '抽 2 選 1',
+      title: `抽 ${offered} 選 1`,
       focus: [F.draft],
       lines: [
-        '開局前，每個人拿到 2 座島，只有自己看得到。每人秘密選 1 座，所有人選定後同時公開；沒選的島不使用。',
-        '選定的島整局生效，第 1 回合的生產就照這座島計算。',
+        `開局每人拿到 ${offered} 座島，只有自己看得到。偷偷選 1 座，大家選好後一起翻開。`,
+        '選好的島整局都有效。',
       ],
     },
     {
@@ -36,8 +40,8 @@ export const ISLANDS: TutorialScript = {
       title: '每座島都有取捨',
       focus: [F.draft],
       lines: [
-        '每座島都有一個優點、一個缺點。點卡片可以看完整說明。',
-        '林場島木材產得多，適合蓋建築；燈塔島自己的船 +1、海關免部署費，但出航成本較高。',
+        '每座島有好處也有代價，點卡片看說明。',
+        `像船塢島，船多裝 ${yard.capacityDelta} 箱，出航卻要多付 ${yard.shipCostDelta} G。燈塔島的船骰 ${R.v08.islands.ownShipMinRaw} 以上會 +${lighthouse.ownShipModifier}，可是最高只到 ${lighthouse.ownShipFinalCap}。`,
       ],
       todo: '選一座島，然後確認。',
     },
@@ -46,8 +50,7 @@ export const ISLANDS: TutorialScript = {
       title: '同時公開',
       focus: [F.reveal, F.rules],
       lines: [
-        '所有人的島同時公開。八座島大致分三類：產能型（林場島、礦山島、香料群島、走私港）、航運型（自由港、燈塔島）、對抗型（海盜灣、要塞島）。',
-        '對局中隨時可以按頂部的書本鈕，查每座島、角色與建築的規則。',
+        '大家的島一起翻開了。之後想查哪座島、角色或建築，按上方的書本鈕。',
       ],
     },
   ],
