@@ -47,6 +47,16 @@ function everyChoice(script: TutorialScript, round: number, phase: string): read
   return options;
 }
 
+/** The round your first decision on the table comes in (0 for the island draft); null when every decision is played for you. */
+function firstDecisionRound(script: TutorialScript): number | null {
+  let first: number | null = null;
+  playTutorial(script, (c) => {
+    first ??= c.view.round;
+    return scriptedAction(script, c);
+  });
+  return first;
+}
+
 describe('every tutorial', () => {
   it.each(TUTORIALS.map((t) => [t.id, t] as const))('%s plays its demo to the end', (_, script) => {
     const log = playTutorial(script);
@@ -66,6 +76,23 @@ describe('every tutorial', () => {
       if (steps.at(-1) !== script.coach.at(-1)) expect(steps.at(-1)?.todo).toBeDefined();
       return demo;
     });
+  });
+
+  // The table does not replay rounds that were over when it came up (src/ui-v07/table3d/replay.ts, for a reload or a
+  // late spectator). A lesson runs until your first decision before the table is up, so rounds that end before it would
+  // never be shown, and a lesson with no decision of yours ends at once with no host step at all.
+  it.each(TUTORIALS.map((t) => [t.id, t] as const))('%s asks for a decision of yours before any round has ended', (_, script) => {
+    expect(firstDecisionRound(script)).toBeLessThanOrEqual(1);
+  });
+
+  it('tells apart a lesson that would play out before the table is up', () => {
+    const played = (rounds: TutorialScript['rounds']): TutorialScript => ({ ...COVER, rounds });
+    const noChoice = COVER.rounds.map((r) => ({ ...r, you: { invest: { demo: r.you!.invest!.demo, choose: false }, 'role-deployment': { demo: r.you!['role-deployment']!.demo, choose: false } } }));
+    expect(firstDecisionRound(played(noChoice))).toBeNull();
+    // Round 1 played for you: your first decision comes once it is over.
+    const [first, ...rest] = BASICS.rounds;
+    const lateStart = { ...BASICS, rounds: [{ ...first!, you: { invest: { ...first!.you!.invest!, choose: false } } }, ...rest] };
+    expect(firstDecisionRound(lateStart)).toBe(2);
   });
 
   it('counts the demo as a complete choice, and an allowed but unfinished one as not yet', () => {
