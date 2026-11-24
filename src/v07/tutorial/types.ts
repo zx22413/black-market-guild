@@ -6,7 +6,7 @@ import type { Action, DecisionPhase, GoodId, Goods, IslandId, MaterialAction, Pl
 // public (cash, stock, prices): those still come from real actions through the engine.
 
 /** `trailer` is not a lesson: the promo video's scripted match (src/ui-v07/dev/trailer), never in TUTORIALS. */
-export type TutorialId = 'basics' | 'growth' | 'tide' | 'guard' | 'pirate' | 'customs' | 'smuggler' | 'diplomat' | 'islands' | 'trailer';
+export type TutorialId = 'basics' | 'growth' | 'tide' | 'guard' | 'pirate' | 'customs' | 'smuggler' | 'cover' | 'diplomat' | 'islands' | 'trailer';
 
 /** One seat's choices for one round; anything left out means: stay in port, deploy nothing. */
 export interface SeatPlan {

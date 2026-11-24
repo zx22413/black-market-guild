@@ -9,7 +9,7 @@ import './tutorial.css';
 export const TUTORIAL_GROUPS: readonly { readonly title: string; readonly ids: readonly TutorialId[] }[] = [
   { title: '基礎', ids: ['basics'] },
   { title: '成長與暗潮', ids: ['growth', 'tide'] },
-  { title: '角色', ids: ['guard', 'pirate', 'customs', 'smuggler', 'diplomat'] },
+  { title: '角色', ids: ['guard', 'pirate', 'customs', 'smuggler', 'cover', 'diplomat'] },
   { title: '開局', ids: ['islands'] },
 ];
 

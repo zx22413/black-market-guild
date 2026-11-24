@@ -15,7 +15,7 @@ export { GROWTH } from './growth';
 export { TIDE } from './tideLesson';
 export { TRAILER } from './trailer';
 export { ISLANDS } from './islandsLesson';
-export { CUSTOMS, DIPLOMAT, GUARD, PIRATE, ROLE_SCENARIOS, SMUGGLER } from './roleScenarios';
+export { COVER, CUSTOMS, DIPLOMAT, GUARD, PIRATE, ROLE_SCENARIOS, SMUGGLER } from './roleScenarios';
 export * from './types';
 
 /** Every lesson in menu order: the guided match, growth and the dark tide (V0.8), the role scenarios, then the island draft. */

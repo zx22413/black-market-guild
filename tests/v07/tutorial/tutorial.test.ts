@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { DecisionContext } from '../../../src/v07/bots';
 import type { Action, MatchEvent } from '../../../src/v07/game';
-import { RULES_CURRENT, createMatch } from '../../../src/v07/game';
+import { RULES_CURRENT, createMatch, priceAt } from '../../../src/v07/game';
 import {
   BASICS,
+  COVER,
   CUSTOMS,
   GROWTH,
   TIDE,
@@ -308,6 +309,22 @@ describe('role scenarios', () => {
     expect(cashFor(playTutorial(SMUGGLER).events, 'smuggling', 'p1')).toBe(SMUGGLER.rules.voyageEvents.blackMarketRushGoodsValue);
   });
 
+  it('cover: your smuggler on your own ship keeps the arms the bank would have seized (§7.4, §9.5)', () => {
+    const choices = everyChoice(COVER, 1, 'role-deployment');
+    expect(choices).toMatchObject([{ type: 'deploy-role', role: 'smuggler', targetShipId: 'r1-p1' }]);
+    const { events } = playTutorial(COVER);
+    const effects = events.flatMap((e) => (e.type === 'v08-effect' ? [e] : []));
+    const settled = events.find((e): e is Extract<MatchEvent, { type: 'market-settled' }> => e.type === 'market-settled')!;
+    // More arms arrive than the market takes, and yours are the ones the bank would reach.
+    expect(settled.arrived.arms).toBeGreaterThan(settled.demand.arms);
+    expect(effects.filter((e) => e.effect === 'inspection-covered')).toMatchObject([{ playerId: 'p1', shipId: 'r1-p1', crates: 1 }]);
+    expect(effects.filter((e) => e.effect === 'inspected')).toEqual([]);
+    // The covered crate sells: your sale is the wood and the arms at the new prices.
+    const price = (good: 'wood' | 'arms') => priceAt(COVER.rules, good, settled.priceAfter[good]);
+    expect(cashFor(events, 'sale', 'p1')).toBe(price('wood') + price('arms'));
+    expect(cashFor(events, 'smuggling', 'p1')).toBe(0);
+  });
+
   it('diplomat: the right guess voids the pirate and takes money from it', () => {
     const { events } = playTutorial(DIPLOMAT);
     expect(modifiers(events, 1, 'r1-p1')).toMatchObject({ pirate: 0 });
@@ -315,7 +332,7 @@ describe('role scenarios', () => {
   });
 
   it('lets you make only the role decision; the investment is played for you', () => {
-    for (const script of [GUARD, PIRATE, CUSTOMS, SMUGGLER, DIPLOMAT]) {
+    for (const script of [GUARD, PIRATE, CUSTOMS, SMUGGLER, COVER, DIPLOMAT]) {
       playTutorial(script, (c) => {
         expect(youChoose(script, c)).toBe(true);
         expect(c.decision.phase).not.toBe('invest');

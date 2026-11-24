@@ -211,6 +211,52 @@ export const SMUGGLER: TutorialScript = scenario({
       `${anchor}的海關上了${tide}的船，搭那艘會被抓，搭${vande}的就成功了。`,
       `這回合「黑市熱絡」，私貨從 ${smuggler.goodsValue} G 漲成 ${R.voyageEvents.blackMarketRushGoodsValue} G。`,
     ]),
+    done('下一課：掩護。'),
+  ],
+});
+
+/** The cover lesson: the market takes no arms this round, so the one crate you carry is over the demand (§7.4). */
+const COVER_DEMAND = goods({ wood: 2, iron: 1, spice: 2, arms: 0 });
+const MARKET: CoachTrigger = { kind: 'market', round: 1 };
+
+export const COVER: TutorialScript = scenario({
+  id: 'cover',
+  title: '掩護',
+  summary: '走私商人派在自己船上，軍火就不會被查扣。',
+  seed: 70206,
+  rounds: [
+    {
+      demand: COVER_DEMAND,
+      event: 'calm-seas',
+      rolls: { p1: 6 },
+      you: {
+        invest: { demo: { load: { wood: 1, arms: 1 } }, choose: false },
+        'role-deployment': { demo: { role: ['smuggler', 'p1'] }, choose: true, allow: roleOn('smuggler', ['p1']) },
+      },
+    },
+  ],
+  coach: [
+    step(DEPLOY, '軍火太多了', [F.island('p1'), F.market], [
+      '這課你的船裝了 1 木材、1 軍火出航。',
+      `軍火這回合「需」是 ${COVER_DEMAND.arms}，你那箱送到就會被查扣。`,
+    ]),
+    deployIntro,
+    step(
+      DEPLOY,
+      '掩護',
+      [F.hand, F.island('p1')],
+      [
+        '走私商人派在自己船上叫「掩護」：船上的軍火不會被查扣，海關也沒收不了。',
+        `掩護不抽錢，部署費 ${fee('smuggler')} G 還是要付。`,
+      ],
+      '派走私商人上自己的船。',
+      [F.role('smuggler'), F.target('p1')],
+    ),
+    watch([], '黑市成交時，看軍火那一列。'),
+    step(MARKET, '掩護成功', [F.marketCard], [
+      '軍火超過需求，查緝來了。你有掩護，那箱軍火保住了，等一下賣得到錢。',
+      '走私港的軍火不能掩護。',
+    ]),
     done('下一課：外交官。'),
   ],
 });
@@ -257,4 +303,4 @@ export const DIPLOMAT: TutorialScript = scenario({
   ],
 });
 
-export const ROLE_SCENARIOS: readonly TutorialScript[] = [GUARD, PIRATE, CUSTOMS, SMUGGLER, DIPLOMAT];
+export const ROLE_SCENARIOS: readonly TutorialScript[] = [GUARD, PIRATE, CUSTOMS, SMUGGLER, COVER, DIPLOMAT];
