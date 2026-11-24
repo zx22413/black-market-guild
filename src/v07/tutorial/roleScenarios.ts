@@ -247,7 +247,7 @@ export const COVER: TutorialScript = scenario({
       [F.hand, F.island('p1')],
       [
         '走私商人派在自己船上叫「掩護」：船上的軍火不會被查扣，海關也沒收不了。',
-        `掩護不抽錢，部署費 ${fee('smuggler')} G 還是要付。`,
+        '掩護不抽錢，也不會被罰。',
       ],
       '派走私商人上自己的船。',
       [F.role('smuggler'), F.target('p1')],
