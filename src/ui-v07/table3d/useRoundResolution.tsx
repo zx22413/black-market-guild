@@ -34,7 +34,7 @@ import { RoleArrows } from './RoleArrows';
 import { Spotlight } from '../scene/Spotlight';
 import { RoleBadges } from './RoleBadges';
 import { roleKey, roleResults } from './roleResults';
-import { cashSoFar, marketRows, settlementFlights, type Flight } from './settlementModel';
+import { cashSoFar, flightLaunches, marketRows, settlementFlights, type Flight } from './settlementModel';
 import { VoyageEventCard, VoyageEventChip } from './VoyageEventCard';
 import type { RoundCard } from './roundCard';
 import { TideIcon } from './tideIcons';
@@ -61,7 +61,7 @@ export type ResolutionStage = 'wanted' | 'event' | 'reveal' | 'voyage' | 'market
 const PACE = { wanted: 3000, revealGroup: 1600, nextShip: 1000, marketRow: 1000, afterMarket: 5000, flight: 1100, afterSettle: 900 } as const;
 /** V0.8 prototype: a building's own show holds the settlement this long (ms), a little past the show itself. */
 const WORK_PACE = WORK_SECONDS * 1000 + 200;
-/** 軍火查緝 (§7.4): each inspected ship holds the settlement this long (ms): the crate leaves, then the line is read. */
+/** 軍火查緝 (§7.4): each inspected ship holds the settlement this long (ms): the crate leaves, then the line is read. A ship that loses several holds a little longer, until its last crate is off (`flightLaunches`). */
 const INSPECTION_PACE = 2800;
 /**
  * The market card stands on the sea off the market island's front right, a bearing no seat's lane
@@ -336,7 +336,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   const rows = useMemo(() => (round === null ? [] : marketRows(events, round, cardDemand)), [events, round, cardDemand]);
   const [rowsShown, setRowsShown] = useTicker(rows.length, PACE.marketRow, stage === 'market', `${round}-market`);
   const flights = useMemo(() => (round === null ? [] : settlementFlights(events, round)), [events, round]);
-  const [flightsShown, setFlightsShown] = useTicker(flights.length, (shown) => (flights[shown - 1]?.work ? WORK_PACE : isInspection(flights[shown - 1]) ? INSPECTION_PACE : PACE.flight), stage === 'settle', `${round}-settle`);
+  const [flightsShown, setFlightsShown] = useTicker(flights.length, (shown) => (flights[shown - 1]?.work ? WORK_PACE : isInspection(flights[shown - 1]) ? INSPECTION_PACE + (flightLaunches(flights[shown - 1]!).at(-1) ?? 0) * 1000 : PACE.flight), stage === 'settle', `${round}-settle`);
   useEffect(() => {
     if (stage === 'market' && rowsShown >= rows.length) {
       if (holdMarket) return undefined;

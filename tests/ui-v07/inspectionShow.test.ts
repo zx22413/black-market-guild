@@ -3,7 +3,7 @@ import type { MatchEvent } from '../../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../src/v07/match';
 import { flightSound } from '../../src/ui-v07/audio/flightSounds';
 import { coveredCrates, inspectedCrates, inspectionLabel, inspectionShow, inspections } from '../../src/ui-v07/table3d/inspectionShow';
-import { marketRows, settlementFlights } from '../../src/ui-v07/table3d/settlementModel';
+import { CRATE_GAP_SECONDS, flightLaunches, inspectionFlights, marketRows, settlementFlights } from '../../src/ui-v07/table3d/settlementModel';
 
 const seats: SeatConfig[] = ['A', 'B', 'C', 'D'].map((name, i) => ({ kind: 'bot', name, strategy: (['aggressive', 'balanced', 'aggressive', 'builder'] as const)[i]! }));
 
@@ -54,6 +54,16 @@ describe('軍火查緝 on the table (game-design.md §7.4)', () => {
     expect(kept).toMatchObject({ kind: 'inspection-cover', from: { kind: 'ship', shipId: 's2' }, to: { kind: 'ship', shipId: 's2' }, good: 'arms', units: 1, amount: null, label: '掩護成功，保住軍火 1 箱' });
     expect(flightSound(kept!)).toBe('settle-smuggle');
     expect(marketRows(events, 1, settled.type === 'market-settled' ? settled.demand : { wood: 0, iron: 0, spice: 0, arms: 0 }).find((r) => r.good === 'arms')).toMatchObject({ seized: 1, covered: 1 });
+  });
+
+  it('sends every seized crate off one after the other, and one thing for any other flight', () => {
+    const events = [effect(1, 's1', 3, 495), effect(1, 's2', 2, 330, 'inspection-covered'), effect(1, 's3', 1, 165)];
+    const [three, two, one] = inspectionFlights(events, 1);
+    expect(flightLaunches(three!)).toEqual([0, CRATE_GAP_SECONDS, 2 * CRATE_GAP_SECONDS]);
+    expect(flightLaunches(two!)).toEqual([0, CRATE_GAP_SECONDS]);
+    expect(flightLaunches(one!)).toEqual([0]);
+    // Spoiled spice counts units too, but it does not fly: one thing, as before.
+    expect(flightLaunches({ ...three!, kind: 'spoil' })).toEqual([0]);
   });
 
   it('happens in bot matches', () => {

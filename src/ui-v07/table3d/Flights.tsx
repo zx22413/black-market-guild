@@ -12,7 +12,7 @@ import { CrateModel } from '../scene/CrateModel';
 import { FACILITY_LOT } from '../scene/facilityLot';
 import { CannonVolley, TollCoins, TradeSeal } from '../scene/FacilityWorks';
 import { islandPoint } from '../scene/TableCanvas';
-import type { Flight, Place } from './settlementModel';
+import { flightLaunches, type Flight, type Place } from './settlementModel';
 
 // The settlement's moving parts on the table: a coin or a crate flies along an arc from where it
 // comes from to where it goes, and a building that does the work (insurance, salvage, exchange)
@@ -53,7 +53,8 @@ export function placePoint(place: Place, ctx: PlaceContext): Vec3 {
   }
 }
 
-function FlyingThing({ flight, ctx }: { readonly flight: Flight; readonly ctx: PlaceContext }) {
+/** One coin or crate of `flight` in the air; `delay` (seconds) holds it back, for the crates of 軍火查緝 that go one by one. */
+function FlyingThing({ flight, ctx, delay = 0 }: { readonly flight: Flight; readonly ctx: PlaceContext; readonly delay?: number }) {
   const from = placePoint(flight.from, ctx);
   const to = placePoint(flight.to, ctx);
   // Keyed by the end points' values: the arrays themselves are rebuilt on every render.
@@ -70,7 +71,8 @@ function FlyingThing({ flight, ctx }: { readonly flight: Flight; readonly ctx: P
     const g = group.current;
     if (!g) return;
     born.current ??= clock.elapsedTime;
-    const k = Math.min(1, (clock.elapsedTime - born.current) / FLIGHT_SECONDS);
+    const since = clock.elapsedTime - born.current - delay;
+    const k = Math.min(1, Math.max(0, since) / FLIGHT_SECONDS);
     if (spoil) {
       // Spoiled spice does not travel: it darkens and shrinks away where it is.
       g.position.set(...from);
@@ -79,11 +81,11 @@ function FlyingThing({ flight, ctx }: { readonly flight: Flight; readonly ctx: P
       g.position.copy(curve.getPoint(k));
       g.rotation.y = k * Math.PI * 4;
     }
-    g.visible = k < 1;
+    g.visible = since >= 0 && k < 1;
   });
   const isCoin = flight.amount !== null && flight.good === null;
   return (
-    <group ref={group} position={from}>
+    <group ref={group} position={from} visible={delay === 0}>
       {isCoin ? (
         <mesh rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[1.8, 1.8, 0.5, 20]} />
@@ -130,10 +132,11 @@ export function Flights({ flights, ctx }: { readonly flights: readonly Flight[];
   // Each flight sounds as it lands: coins into a purse, a crate set down, a whistle. Keyed by the
   // flights' keys, not the array (a new one every render), so a landing is scheduled once.
   const keys = flights.map((f) => f.key).join(',');
-  const landing = useRef<readonly (SfxId | null)[]>([]);
-  landing.current = flights.map(flightSound);
+  // One landing per thing in the air: the crates of 軍火查緝 land one after the other.
+  const landing = useRef<readonly { readonly sound: SfxId | null; readonly at: number }[]>([]);
+  landing.current = flights.flatMap((f) => flightLaunches(f).map((at) => ({ sound: flightSound(f), at })));
   useEffect(() => {
-    const timers = landing.current.flatMap((sound) => (sound ? [setTimeout(() => soundEngine.playSfx(sound), FLIGHT_SECONDS * 1000)] : []));
+    const timers = landing.current.flatMap(({ sound, at }) => (sound ? [setTimeout(() => soundEngine.playSfx(sound), (at + FLIGHT_SECONDS) * 1000)] : []));
     return () => timers.forEach((t) => clearTimeout(t));
   }, [keys]);
   return (
@@ -144,7 +147,9 @@ export function Flights({ flights, ctx }: { readonly flights: readonly Flight[];
             <FacilityWorkShow flight={f} ctx={ctx} />
           ) : (
             <>
-              <FlyingThing flight={f} ctx={ctx} />
+              {flightLaunches(f).map((at) => (
+                <FlyingThing key={at} flight={f} ctx={ctx} delay={at} />
+              ))}
               <BuildingGlow flight={f} ctx={ctx} />
             </>
           )}

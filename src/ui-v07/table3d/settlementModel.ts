@@ -153,6 +153,18 @@ function withWork(flights: readonly Flight[], work: Flight): Flight[] {
   return [...flights.slice(0, at), work, ...flights.slice(at)];
 }
 
+/** 軍火查緝: seconds between one crate leaving the ship and the next. */
+export const CRATE_GAP_SECONDS = 0.35;
+
+/**
+ * When each thing of a flight takes off, in seconds from its start. Every flight is one coin or crate, except 軍火查緝:
+ * each crate taken (or kept by a cover) goes by itself, one after the other.
+ */
+export function flightLaunches(flight: Pick<Flight, 'kind' | 'units'>): number[] {
+  const crates = flight.kind === 'inspection' || flight.kind === 'inspection-cover' ? Math.max(1, flight.units) : 1;
+  return Array.from({ length: crates }, (_, i) => i * CRATE_GAP_SECONDS);
+}
+
 /** Cash each player has gained or lost from the first `shown` flights, for the name plates. */
 export function cashSoFar(flights: readonly Flight[], shown: number): Readonly<Record<PlayerId, number>> {
   const sums: Record<PlayerId, number> = {};
