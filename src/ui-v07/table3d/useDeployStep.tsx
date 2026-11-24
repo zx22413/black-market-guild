@@ -331,7 +331,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
       <>
         {chips}
         <SealSubmit disabled={incomplete} glow={choice.role !== null} onClick={submit} />
-        <LockHint icon={<InfoIcon />} text="提交後不能更改；所有人都提交後，角色一起公開。" />
+        <LockHint icon={<InfoIcon />} text="提交後不能改。大家都提交後，角色一起公開。" />
       </>
     ),
     sealedChips: chips,

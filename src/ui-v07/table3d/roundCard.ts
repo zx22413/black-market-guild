@@ -87,7 +87,7 @@ export function roundCards(events: readonly MatchEvent[], round: number, rules: 
         tide,
         title: '暗潮將至',
         lines: [
-          `這回合結束時，每座倉庫的每種貨損失 ${e.warehouseLossPercent}%（無條件捨去）。`,
+          `這回合結束時，每座倉庫的每種貨少 ${e.warehouseLossPercent}%（無條件捨去）。`,
           ...(tide === null
             ? ['下回合起進入暗潮季。']
             : [

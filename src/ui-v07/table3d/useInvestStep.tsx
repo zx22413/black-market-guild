@@ -759,7 +759,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
       <>
         {chips}
         <SealSubmit disabled={!action} glow={todoReminders(todo).length === 0} onClick={submit} />
-        <LockHint icon={<InfoIcon />} text={typed ? '提交後不能更改；所有人都提交後，出航的船同時公開，船上的貨不公開。' : '提交後不能更改；所有人都提交後，建築與出航同時公開，船上的貨不公開。'} />
+        <LockHint icon={<InfoIcon />} text={typed ? '提交後不能改。大家都提交後，誰出航、開什麼船一起公開，船上的貨不公開。' : '提交後不能改。大家都提交後，建築和誰出航一起公開，船上的貨不公開。'} />
       </>
     ),
     sealedChips: chipsOf(false),

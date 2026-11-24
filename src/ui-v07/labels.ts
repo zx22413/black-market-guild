@@ -6,7 +6,7 @@ import { RULES_CURRENT, eventsOn, priceAt, producedFor, type BuildingId, type Ca
 
 /** The market island at the middle of the table (§1), where every ship sails to sell (§7). */
 export const MARKET_ISLAND_LABEL = '巴扎港';
-export const MARKET_ISLAND_TEXT = '所有出航的船都開往這裡賣貨；黑市價格依各種貨的到港量與當回合需求決定。';
+export const MARKET_ISLAND_TEXT = '所有船都到這裡賣貨。到港的貨比需求少就漲價，多了就跌價。';
 
 export const GOOD_LABELS: Readonly<Record<GoodId, string>> = { wood: '木材', iron: '鐵礦', spice: '香料', arms: '軍火' };
 
@@ -20,11 +20,11 @@ export const ROLE_LABELS: Readonly<Record<RoleId, string>> = {
 
 /** §9.4, one line per role. */
 export const ROLE_TEXT: Readonly<Record<RoleId, string>> = {
-  customs: '指名別人船上的一種貨；船抵達時優先拿走該貨的價值，也抓走私商人。',
-  guard: '只守自己的船：目標船 +1。',
-  pirate: '目標船 −1。船沉沒、或最終值很低（1、2）而勉強抵達時，鎖定它的海盜分走一部分價值。',
-  smuggler: '搭別人的船夾帶私貨，平安抵達又沒有海關時抽走船東的收入；派在自己的船上則掩護船上的貨不被海關沒收、軍火不被查緝。',
-  diplomat: '守自己的船並猜一個角色：猜中則作廢它並向對手拿錢，猜錯退一半部署費。',
+  customs: '指名別人船上的一種貨，那種貨到港的收入歸海關；也抓走私商人。',
+  guard: '守自己的船，這艘船 +1。',
+  pirate: '鎖定一艘船，讓它 −1。船沉了，或最終值 1、2 勉強到港，海盜分走一部分。',
+  smuggler: '搭別人的船夾帶私貨，平安到港又沒有海關，就抽走船東一筆錢。派在自己船上是掩護，擋海關沒收和軍火查緝。',
+  diplomat: '守自己的船，猜誰會派哪個角色來。猜中就作廢它，還向對手拿錢；猜錯退一半部署費。',
 };
 
 export const BUILDING_LABELS: Readonly<Record<BuildingId, string>> = {
@@ -43,7 +43,7 @@ export const BUILDING_TEXT: Readonly<Record<BuildingId, string>> = {
 };
 
 /** §9.6: what being wanted means, for the hover on the wanted mark. */
-export const wantedText = (lootBonus: number): string => `通緝中：現金最多。海盜從他的船上拿到錢時（沉沒、最終值 1 或 2、海盜潮），另從銀行多拿 ${lootBonus} G`;
+export const wantedText = (lootBonus: number): string => `通緝中：現金最多的人。海盜從他的船上拿到錢時，銀行再多給海盜 ${lootBonus} G`;
 
 /** How the final standing is counted (§13); also what the rules panel says under 計分. */
 export const WEALTH_RULE_TEXT = '總財富 ＝ 現金；倉庫裡的材料、海上的貨、船技能與建築都不計分。同分並列。';

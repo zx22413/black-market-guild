@@ -339,7 +339,7 @@ export function investNotes(context: DecisionContext, choice: InvestChoice): Inv
   }
   // §9.6: sinking a ship that carries the wanted player's goods pays the pirates more.
   if (unitsOf(choice.load) > 0 && view.wanted.includes(view.playerId)) {
-    notes.push({ at: 'ship', text: `你被通緝：海盜取走這艘船的貨值時（最終值 1 或 2），另從銀行多拿 ${view.rules.wanted.lootBonus} G`, label: '被通緝', chips: [{ kind: 'wanted' }, { kind: 'role', role: 'pirate' }, { kind: 'coin', text: `+${view.rules.wanted.lootBonus}` }] });
+    notes.push({ at: 'ship', text: `你被通緝：海盜從這艘船拿到錢時，銀行再多給海盜 ${view.rules.wanted.lootBonus} G`, label: '被通緝', chips: [{ kind: 'wanted' }, { kind: 'role', role: 'pirate' }, { kind: 'coin', text: `+${view.rules.wanted.lootBonus}` }] });
   }
   // §6.3: spice left in the warehouse spoils at the end of the round (Spice Isles excepted, §11.2).
   if (split.left.spice > 0 && traitOf(view.rules, player.island).keepsSpice === 0) {

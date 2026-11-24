@@ -33,11 +33,11 @@ const shipArtUrl = (type: ShipTypeId): string => `${import.meta.env.BASE_URL}art
 
 const signed = (n: number): string => `${n > 0 ? '+' : '−'}${Math.abs(n)}`;
 /** What the dice table's two row titles say when they are hovered or tapped (numbers come from the table itself). */
-const FINAL_VALUE_TEXT = '出航時擲一顆骰子，再加上航海事件、島嶼與護衛（+1）、海盜（−1）的修正，就是這艘船的最終值（最低 1）。最終值決定船沉不沉，以及拿到多少貨值。';
+const FINAL_VALUE_TEXT = '出航時擲一顆骰子，加上航海事件、島嶼、護衛（+1）、海盜（−1）的修正，就是最終值（最低 1）。最終值決定這艘船的下場。';
 const CARGO_SHARE_TEXT = '船抵達時，船東拿到船上貨物價值的幾成：100% 是原價，超過 100% 是加成；「沉」代表貨物全損。貨值以抵達那回合的價格計。';
 
 // V0.8 prototype (rules.v08.crates, not rules): the table gives crates lost instead of a share of the cargo's value.
-const CRATE_LOSS_TEXT = '船抵達時掉進海裡的貨箱數，從最貴的開始掉；剩下的箱子照抵達那回合的價格賣。「×」是到港貨箱的加成倍率；「沉」代表貨物全損。';
+const CRATE_LOSS_TEXT = '這個最終值會掉幾箱貨，先掉最貴的，剩下的照到港那回合的價格賣。「×」是加成倍率，「沉」是整船貨都沒了。';
 const times = (percent: number): string => `×${percent / 100}`;
 /** What a row of the crate table pays: 「沉」, 「全到」, 「掉 2」, with the multiplier when it is not 1. */
 export function crateRowText(row: { readonly sinks: boolean; readonly lose: number | null; readonly percent: number }): string {
@@ -139,7 +139,7 @@ export function ShipHand({ cards, picked, todo, effect, revealed, fresh, onPick,
             </span>
             <span
               className="ship-odds"
-              title={`沉船機率 ${c.sinkPercent}%（骰子六面中最終值會沉的比例）${withEffect ? `；加上${partsText(effect)}是 ${c.sinkPercentNow}%` : ''}${c.cooldown > 0 ? `；用過後冷卻 ${c.cooldown} 回合` : ''}`}
+              title={`沉船機率 ${c.sinkPercent}%（擲一顆骰子會沉的機會）${withEffect ? `，算上${partsText(effect)}是 ${c.sinkPercentNow}%` : ''}${c.cooldown > 0 ? `。用過後休息 ${c.cooldown} 回合` : ''}`}
             >
               <span className={withEffect && c.sinkPercent !== c.sinkPercentNow ? 'changed' : ''}>
                 沉 {withEffect ? <SinkChange from={c.sinkPercent} to={c.sinkPercentNow} play={fresh === c.id} /> : `${c.sinkPercent}%`}

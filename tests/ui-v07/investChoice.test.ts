@@ -179,7 +179,7 @@ describe('investment choice on the island (only legal actions)', () => {
     const context = contextOf(state);
     const options = investOptions(context);
     const texts = investNotes(context, loadOne(options, EMPTY_CHOICE, 'wood')).map((n) => n.text);
-    expect(texts).toContain('你被通緝：海盜取走這艘船的貨值時（最終值 1 或 2），另從銀行多拿 100 G');
+    expect(texts).toContain('你被通緝：海盜從這艘船拿到錢時，銀行再多給海盜 100 G');
     expect(texts.some((t) => t.includes('擊沉'))).toBe(false);
   });
 

@@ -18,7 +18,7 @@ describe('round cards (V0.8 prototype, not rules)', () => {
     const [card] = roundCards(events, 4, rules);
     expect(card).toMatchObject({ kind: 'rising', tide: 'crash', candidates: ['storm', 'crash'], title: '暗潮將至' });
     expect(card!.lines).toEqual([
-      `這回合結束時，每座倉庫的每種貨損失 ${rules.v08.events.warehouseLossPercent}%（無條件捨去）。`,
+      `這回合結束時，每座倉庫的每種貨少 ${rules.v08.events.warehouseLossPercent}%（無條件捨去）。`,
       `下回合起每回合：跌價的格數 ×${rules.v08.events.tideDropMultiplier}。`,
       '擋得住的：商行。',
       `之後抽到「風平浪靜」會變成「貨滿為患」：跌價的格數 ×${rules.v08.events.bossDropMultiplier}。`,
