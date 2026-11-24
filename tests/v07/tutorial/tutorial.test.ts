@@ -189,6 +189,24 @@ describe('basics: the guided match', () => {
     expect(outcome(events, 'r3-p1')).toMatchObject({ outcome: 'arrived' });
   });
 
+  it('round 3: you bring 2 arms where the market takes 1, and the bank seizes one crate of yours (§7.4)', () => {
+    const seized = events.filter((e) => e.type === 'v08-effect' && e.round === 3 && e.effect === 'inspected');
+    expect(seized).toMatchObject([{ playerId: 'p1', shipId: 'r3-p1', crates: 1 }]);
+    expect(market(3)).toMatchObject({ demand: { arms: 1 }, arrived: { arms: 2 } });
+    expect(market(3).priceAfter.arms).toBeLessThan(market(3).priceBefore.arms);
+    // Whatever you loaded before, round 3 has the two arms crates to load, and every complete choice gets one seized.
+    const complete: number[] = [];
+    playTutorial(BASICS, (c) => {
+      if (c.view.round === 3) c.legalActions.forEach((action, i) => isReady(BASICS, c, action) && complete.push(i));
+      return scriptedAction(BASICS, c);
+    });
+    expect(complete.length).toBeGreaterThan(1);
+    for (const i of complete) {
+      const log = playTutorial(BASICS, pickNth(BASICS, 3, 'invest', i));
+      expect(log.events.filter((e) => e.type === 'v08-effect' && e.round === 3 && e.effect === 'inspected')).toMatchObject([{ shipId: 'r3-p1', crates: 1 }]);
+    }
+  });
+
   it('holds for every load you may pick: you are wanted in round 2, the gambler affordable in round 3', () => {
     const first = everyChoice(BASICS, 1, 'invest');
     const second = everyChoice(BASICS, 2, 'invest');

@@ -788,3 +788,7 @@
   transform: scale(1.5);
   transform-origin: 50% 28%;
 }
+
+/* 軍火查緝: red ink on the market card's paper, and on the lacquer banner. */
+:root:not(.skin-classic) .market-card tr.mk-seized td { color: #9a2a22; }
+:root:not(.skin-classic) .inspection-banner .inspection-stamp { color: #e2584a; }

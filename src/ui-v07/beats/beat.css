@@ -4007,3 +4007,91 @@ button .info-tip-anchor {
     opacity: 0;
   }
 }
+
+/* 軍火查緝 (game-design.md §7.4): the stamp under the arms row of the market card, the banner and the line at the
+   inspected ship while the bank takes its crates, and the note on your bill. */
+.market-card tr.mk-seized {
+  animation: mk-reveal 240ms ease-out both;
+}
+.market-card tr.mk-seized td {
+  padding-top: 0;
+  color: #ffaa9a;
+  font-weight: 700;
+}
+.mk-stamp,
+.inspection-stamp {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 1px 8px;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  letter-spacing: 0.15em;
+  transform: rotate(-6deg);
+  animation: seize-stamp 420ms cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+@keyframes seize-stamp {
+  0% {
+    opacity: 0;
+    transform: rotate(-16deg) scale(2.6);
+  }
+  60% {
+    opacity: 1;
+    transform: rotate(-4deg) scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(-6deg) scale(1);
+  }
+}
+.wanted-banner.inspection-banner {
+  /* Stays up for as long as the crates are being taken (it is unmounted then), so no fade-out of its own. */
+  animation: inspection-banner 360ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.inspection-banner .inspection-stamp {
+  color: #c0392b;
+  animation-delay: 200ms;
+}
+@keyframes inspection-banner {
+  from {
+    opacity: 0;
+    transform: translateY(-24px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.flight-chip.inspect {
+  padding: 6px 14px;
+  border-color: #c0392b !important;
+  border-radius: 8px;
+  background: #fbe9e3;
+  color: #7a1d16;
+  font-size: var(--fs-title);
+  font-weight: 700;
+  box-shadow: 0 0 0 3px rgb(192 57 43 / 0.3), 0 8px 20px rgb(0 0 0 / 0.4);
+  animation: seize-chip 520ms cubic-bezier(0.2, 1.6, 0.4, 1) backwards;
+}
+@keyframes seize-chip {
+  0% {
+    opacity: 0;
+    transform: scale(1.8) rotate(-5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+.receipt-lines li.receipt-note {
+  display: block;
+  color: #b2332a;
+  font-weight: 700;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mk-stamp,
+  .inspection-stamp,
+  .wanted-banner.inspection-banner,
+  .flight-chip.inspect {
+    animation: none;
+  }
+}

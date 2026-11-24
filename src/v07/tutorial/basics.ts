@@ -5,7 +5,7 @@ import type { CoachStep, CoachTrigger, FocusTarget, GuideStep, TutorialScript } 
 // The guided match (docs/tutorial-outline.md §4): three rounds on the Lumber island that teach
 // sailing, the market, goods and the ship types. Roles have lessons of their own (roleScenarios.ts).
 //   1 sell · 2 wanted, goods, a storm sinks you, crowded wood falls · 3 the gambler against the albatross, a tailwind
-//   and the gambler, the final wealth. V0.8: voyages lose crates (game-design.md §8.1); skills and buildings are the
+//   and the gambler, your second arms crate is seized (§7.4), the final wealth. V0.8: voyages lose crates (game-design.md §8.1); skills and buildings are the
 //   growth lesson (growth.ts), the dark tide its own lesson (tideLesson.ts).
 
 const ROUNDS = 3;
@@ -18,6 +18,9 @@ const lose = (ship: keyof typeof ships, final: number): number => table[ship].lo
 const gamblerSafe = Object.keys(table.gambler.lose).map(Number).filter((f) => (table.gambler.lose[f] ?? -1) >= 0).sort((a, b) => a - b)[0] ?? dieMax;
 const { tailwind } = R.voyageEvents;
 const times = (ship: keyof typeof ships, final: number): number => (table[ship].multiplier[final] ?? 100) / 100;
+/** Round 3: the market takes this many arms and you bring one more, so the lesson shows a crate seized (§7.4). */
+const ARMS_DEMAND = 1;
+const ARMS_LOADED = ARMS_DEMAND + 1;
 const vande = nameOf(BOT.vande);
 const tide = nameOf(BOT.tide);
 
@@ -70,8 +73,9 @@ export const BASICS: TutorialScript = {
       you: { invest: { demo: { load: { wood: 1, arms: 1 } }, choose: true, allow: loadWithin({ wood: 1, arms: 1 }) } },
     },
     {
-      // Round 3: a tailwind lifts your 4 to a 5, and the gambler pays ×1.5.
-      demand: goods({ wood: 1, iron: 1, spice: 2, arms: 2 }),
+      // Round 3: a tailwind lifts your 4 to a 5, and the gambler pays ×1.5. The market takes 1 arms and you bring 2
+      // (no one else brings any): the bank seizes the second crate (game-design.md §7.4).
+      demand: goods({ wood: 1, iron: 1, spice: 2, arms: ARMS_DEMAND }),
       event: 'tailwind',
       rolls: { p1: 4 },
       bots: { [BOT.anchor]: { load: { iron: 1 } } },
@@ -79,9 +83,9 @@ export const BASICS: TutorialScript = {
         invest: {
           demo: { ship: 'gambler', load: { spice: 1, arms: 2 } },
           choose: true,
-          allow: sailing('gambler'),
-          // The gambler with any cargo is enough.
-          ready: sailing('gambler'),
+          // No more arms than the lesson's two, so exactly one crate is seized whatever else you load.
+          allow: (action) => sailing('gambler')(action) && action.type === 'invest' && action.load.arms <= ARMS_LOADED,
+          ready: (action) => sailing('gambler')(action) && action.type === 'invest' && action.load.arms === ARMS_LOADED,
         },
       },
     },
@@ -164,13 +168,20 @@ export const BASICS: TutorialScript = {
       invest(3),
       '順風下賭一把',
       [F.ship('gambler')],
-      [`這回合順風，每艘船 +${tailwind}，孤注號擲 ${gamblerSafe - tailwind} 就保得住。賭一把吧。`],
-      '選孤注號，按「裝貨」，想賣什麼就裝什麼，然後提交。',
-      [F.ship('gambler'), F.shipNext, F.crate('arms')],
+      [
+        `這回合順風，每艘船 +${tailwind}，孤注號擲 ${gamblerSafe - tailwind} 就保得住。賭一把吧。`,
+        `軍火這回合只收 ${ARMS_DEMAND} 箱。${ARMS_LOADED} 箱都裝上去，看多的那箱會怎樣。`,
+      ],
+      `選孤注號，按「裝貨」，裝 ${ARMS_LOADED} 箱軍火，然後提交。`,
+      [F.ship('gambler'), F.shipNext, F.crate('arms', ARMS_LOADED)],
     ),
     step(resolving(3), '順風', [F.event], ['看順風把你的骰子推到幾。']),
     step(voyage(3), '賭贏了', [F.beat], [
       `擲 4 加順風變 5，孤注號全部送到，賣 ×${times('gambler', 5)}。擲 ${gamblerSafe - tailwind - 1} 以下就沉了。`,
+    ]),
+    step(market(3), '軍火被查扣', [F.marketCard], [
+      `軍火只收 ${ARMS_DEMAND} 箱，你送到 ${ARMS_LOADED} 箱。多的 ${ARMS_LOADED - ARMS_DEMAND} 箱被查扣，賣不到錢，價格也跌了。`,
+      '裝軍火前，先看「需」是多少。',
     ]),
     step({ kind: 'end' }, '總財富', [F.rank], [
       '結束時比現金，倉庫和海上的貨都不算。',

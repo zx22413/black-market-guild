@@ -34,7 +34,8 @@ describe('settlement flights', () => {
     const events = play(seed);
     for (let round = 1; round <= lastRound(events); round++) {
       const order = events.flatMap((e) => (e.type === 'ship-resolved' && e.round === round ? [e.shipId] : []));
-      const flights = settlementFlights(events, round);
+      // 軍火查緝 opens the settlement, before any ship is paid (inspectionShow.test.ts).
+      const flights = settlementFlights(events, round).filter((f) => f.kind !== 'inspection');
       const ranks = flights.map((f) => (f.shipId === null ? order.length + (f.key.startsWith('spoil-') ? 1 : 0) : order.indexOf(f.shipId)));
       ranks.slice(1).forEach((r, i) => expect(r).toBeGreaterThanOrEqual(ranks[i]!));
     }

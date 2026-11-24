@@ -2,6 +2,7 @@ import type { BuildingId, CashReason, GoodId, Goods, MatchEvent, PlayerId, ShipI
 import { SETTLED_EFFECTS, WORK_BEFORE, facilityReactions, workGoods, type FacilityReaction } from './facilityShow';
 import { GOODS } from '../../v07/game';
 import { CASH_REASON_LABELS, GOOD_LABELS } from '../labels';
+import { inspectedCrates, inspectionLabel, inspections } from './inspectionShow';
 
 // The round's settlement (docs/ui/v07-event-presentation.md §1.8) as "flights": every payment or
 // good moves from where it comes from to where it goes, one at a time, grouped by ship (the
@@ -23,8 +24,11 @@ export interface FacilityWork extends Pick<FacilityReaction, 'building' | 'effec
 
 export interface Flight {
   readonly key: string;
-  /** What moves it: the cash reason, or insured, salvaged or spoiled goods (its sound). */
-  readonly kind: CashReason | 'salvage' | 'spoil' | 'facility';
+  /**
+   * What moves it: the cash reason, or insured, salvaged or spoiled goods (its sound). 'inspection' is 軍火查緝 (§7.4):
+   * the arms crates the bank takes off a ship, shown before anything is paid.
+   */
+  readonly kind: CashReason | 'salvage' | 'spoil' | 'facility' | 'inspection';
   readonly from: Place;
   readonly to: Place;
   /** Who gains (or, for a fine, loses) the money or goods. */
@@ -96,7 +100,15 @@ export function settlementFlights(events: readonly MatchEvent[], round: number):
   const rank = (f: Flight) => (f.shipId === null ? order.length + (f.key.startsWith('spoil-') ? 1 : 0) : order.indexOf(f.shipId));
   // Stable sort: within a ship (and among the rest) the rules' order is kept.
   const sorted = flights.map((f, i) => ({ f, i })).sort((a, b) => rank(a.f) - rank(b.f) || a.i - b.i).map(({ f }) => f);
-  return facilityWorks(events, round).reduce(withWork, sorted);
+  // The inspection comes before any sale (§5 step 6): its crates are gone by the time the ships are paid.
+  return [...inspectionFlights(events, round), ...facilityWorks(events, round).reduce(withWork, sorted)];
+}
+
+/** 軍火查緝 (§7.4): the arms crates taken off each inspected ship go to the harbor (the bank); no money moves. */
+export function inspectionFlights(events: readonly MatchEvent[], round: number): Flight[] {
+  return inspections(events, round).map(
+    (i): Flight => ({ key: `inspection-${round}-${i.shipId}`, kind: 'inspection', from: ship(i.shipId), to: HARBOR, playerId: i.playerId, amount: null, good: 'arms', units: i.crates, label: inspectionLabel(i), shipId: i.shipId, building: null }),
+  );
 }
 
 /** V0.8 prototype: the buildings' shows of `round` that play in the settlement, in event order. */
@@ -139,6 +151,8 @@ export interface MarketRow {
   readonly arrived: number;
   readonly before: number;
   readonly after: number;
+  /** 軍火查緝 (§7.4): crates of this good the bank took (arms only); they count as arrived but sell for nothing. */
+  readonly seized: number;
 }
 
 /** The market settlement row by row (§7.3); `cardDemand` is the demand card as revealed. */
@@ -151,5 +165,6 @@ export function marketRows(events: readonly MatchEvent[], round: number, cardDem
     arrived: e.arrived[good],
     before: e.priceBefore[good],
     after: e.priceAfter[good],
+    seized: good === 'arms' ? inspectedCrates(events, round) : 0,
   }));
 }

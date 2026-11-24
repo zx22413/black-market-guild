@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { Fragment, useEffect, useRef } from 'react';
 import { marketSound } from '../audio/marketSounds';
 import { useSoundOnce } from '../audio/useUiSounds';
 import { soundEngine } from '../audio/soundEngine';
@@ -17,6 +17,8 @@ const CELLS = Array.from({ length: RULES_CURRENT.price.steps }, (_, i) => i);
 /** Time one price step takes to climb, and the wait before the climb starts (see .mk-scale in beat.css). */
 const STEP_MS = 260;
 const START_MS = 200;
+/** 軍火查緝: the stamp lands this long after the arms price has settled. */
+const SEIZED_MS = 350;
 
 /**
  * The price track as a ruler (§7.1): the old price is filled, then the marker climbs (or falls)
@@ -56,8 +58,10 @@ export function MarketCard({ rows, shown }: { readonly rows: readonly MarketRow[
         <tbody>
           {rows.slice(0, shown).map((r) => {
             const move = r.after - r.before;
+            const settled = START_MS + Math.abs(move) * STEP_MS;
             return (
-              <tr key={r.good} className={`mk-${r.good}`}>
+              <Fragment key={r.good}>
+              <tr className={`mk-${r.good}`}>
                 <th>
                   <GoodIcon good={r.good} size="sm" /> {GOOD_LABELS[r.good]}
                 </th>
@@ -72,6 +76,16 @@ export function MarketCard({ rows, shown }: { readonly rows: readonly MarketRow[
                   <Flow from={stepLabel(r.good, r.before)} to={<b>{stepLabel(r.good, r.after)} G</b>} /> <TrendIcon dir={move > 0 ? 1 : move < 0 ? -1 : 0} />
                 </td>
               </tr>
+              {/* 軍火查緝 (§7.4): stamped under the row once its price has moved; the crates go in the settlement. */}
+              {r.seized > 0 && (
+                <tr className="mk-seized" style={{ animationDelay: `${settled + SEIZED_MS}ms` }}>
+                  <td colSpan={5}>
+                    <b className="mk-stamp" style={{ animationDelay: `${settled + SEIZED_MS}ms` }}>查緝</b>
+                    查扣 {r.seized} 箱，這 {r.seized} 箱賣不到錢
+                  </td>
+                </tr>
+              )}
+              </Fragment>
             );
           })}
         </tbody>

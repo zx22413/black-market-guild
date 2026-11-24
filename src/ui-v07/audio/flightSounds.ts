@@ -31,6 +31,8 @@ const FLIGHT_SOUND: Readonly<Record<Flight['kind'], SfxId | null>> = {
   'tradehouse-buyout': 'settle-coins',
   // A building's own show (scene/FacilityWorks.tsx) sounds for itself.
   facility: null,
+  // 軍火查緝: the bank's whistle as the crates are taken.
+  inspection: 'settle-caught',
 };
 
 export function flightSound(flight: Flight): SfxId | null {

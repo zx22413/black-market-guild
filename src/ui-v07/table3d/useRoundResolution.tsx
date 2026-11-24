@@ -27,7 +27,8 @@ import { revealArrows, revealGroups, type RoleArrow } from './revealModel';
 import { withGoodIcons } from './GoodIcon';
 import { Flow, IconDisc, InfoIcon, tokenIconUrl } from './icons';
 import { LockHint } from './LockHint';
-import { RevealChips, SkipButton, StageSteps, WantedBanner, WantedChips } from './ResolveBar';
+import { InspectionBanner, RevealChips, SkipButton, StageSteps, WantedBanner, WantedChips } from './ResolveBar';
+import { inspectedCrates, inspectionLabel, inspections } from './inspectionShow';
 import { WantedFlag } from '../scene/WantedFlag';
 import { RoleArrows } from './RoleArrows';
 import { Spotlight } from '../scene/Spotlight';
@@ -60,6 +61,8 @@ export type ResolutionStage = 'wanted' | 'event' | 'reveal' | 'voyage' | 'market
 const PACE = { wanted: 3000, revealGroup: 1600, nextShip: 1000, marketRow: 1000, afterMarket: 5000, flight: 1100, afterSettle: 900 } as const;
 /** V0.8 prototype: a building's own show holds the settlement this long (ms), a little past the show itself. */
 const WORK_PACE = WORK_SECONDS * 1000 + 200;
+/** 軍火查緝 (§7.4): each inspected ship holds the settlement this long (ms): the crate leaves, then the line is read. */
+const INSPECTION_PACE = 2800;
 /**
  * The market card stands on the sea off the market island's front right, a bearing no seat's lane
  * takes with three or four players, so it covers neither the island's price board nor a berth.
@@ -330,7 +333,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   const rows = useMemo(() => (round === null ? [] : marketRows(events, round, cardDemand)), [events, round, cardDemand]);
   const [rowsShown, setRowsShown] = useTicker(rows.length, PACE.marketRow, stage === 'market', `${round}-market`);
   const flights = useMemo(() => (round === null ? [] : settlementFlights(events, round)), [events, round]);
-  const [flightsShown, setFlightsShown] = useTicker(flights.length, (shown) => (flights[shown - 1]?.work ? WORK_PACE : PACE.flight), stage === 'settle', `${round}-settle`);
+  const [flightsShown, setFlightsShown] = useTicker(flights.length, (shown) => (flights[shown - 1]?.work ? WORK_PACE : flights[shown - 1]?.kind === 'inspection' ? INSPECTION_PACE : PACE.flight), stage === 'settle', `${round}-settle`);
   useEffect(() => {
     if (stage === 'market' && rowsShown >= rows.length) {
       if (holdMarket) return undefined;
@@ -384,16 +387,19 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
   // Settlement: the flight in the air and its label at the destination.
   const placeCtx: PlaceContext = { angles, laneOf, ships: new Map([...owners].map(([id, owner]) => [id, { owner, state: restingState(id) }])) };
   const flying = stage === 'settle' && flightsShown > 0 ? flights[flightsShown - 1]! : null;
+  // 軍火查緝: the bank taking arms off a ship, the settlement's first flights.
+  const inspecting = flying?.kind === 'inspection';
   const flightPins: TablePin[] = flying
     ? [
         {
           id: `flight-${flying.key}`,
           // A building's show is said under its island, clear of the roof and the ship the show plays over.
-          position: flying.work ? workChipAt(flying, placeCtx) : placePoint(flying.to, placeCtx),
+          // 軍火查緝 is said at the ship the crates leave, not at the harbor they go to.
+          position: flying.work ? workChipAt(flying, placeCtx) : placePoint(inspecting ? flying.from : flying.to, placeCtx),
           // A far-side island sits near the phone's edge and the chip is wider than its room: keep it on screen.
           clamp: true,
           node: (
-            <span key={flying.key} className={`flight-chip ${flying.amount !== null && flying.amount < 0 ? 'down' : ''} ${flying.work ? 'work' : ''}`} style={{ borderColor: colorOf(flying.playerId) }}>
+            <span key={flying.key} className={`flight-chip ${flying.amount !== null && flying.amount < 0 ? 'down' : ''} ${flying.work ? 'work' : ''} ${inspecting ? 'inspect' : ''}`} style={{ borderColor: colorOf(flying.playerId) }}>
               {flying.amount !== null && <b>{flying.amount >= 0 ? '+' : '−'}{Math.abs(flying.amount)} G</b>} {flying.playerId === viewer ? '你' : nameOf(flying.playerId)} · {withGoodIcons(flying.label)}{flying.shipId && <small> · {shipLabel(events, round!, flying.shipId, viewer, nameOf)}</small>}
             </span>
           ),
@@ -518,7 +524,10 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
         ? [...around([0, 0, 0], 20), ...[-MARKET_CARD_HALF, MARKET_CARD_HALF].map((dx) => ({ position: [MARKET_CARD_AT[0] + dx, MARKET_CARD_AT[1], MARKET_CARD_AT[2]] as const, clearance: 220 }))]
         : stage === 'settle' && flying?.work
           ? workCamera(flying, placeCtx)
-          : null;
+          : stage === 'settle' && flying && inspecting
+            ? // The inspected ship up close, with the harbor its crates go to.
+              [...around(placePoint(flying.from, placeCtx), 6), ...around([0, 0, 0], 8)]
+            : null;
 
   // The ship's result card hangs over the ship, in the way of what a building sends across to it: it stands aside meanwhile.
   const crossing = stage === 'voyage' ? (repairs[0] ?? counters[0] ?? escorts[0]) : undefined;
@@ -626,13 +635,14 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
     overlay: (
       <>
         {stage === 'wanted' && <WantedBanner seats={wantedSeats} />}
+        {inspecting && <InspectionBanner key={`inspection-${round}`} crates={inspectedCrates(events, round!)} />}
         {weather && stage !== 'wanted' && stage !== 'event' && stage !== 'receipt' && <VoyageEventChip event={weather} {...(bossCard ? { boss: { title: bossCard.title, text: bossCard.lines.join('') } } : {})} />}
         {stage === 'event' && cards && cards.length > 0 ? (
           <RoundCardShow key={round} cards={cards} onDone={() => setStage('reveal')} />
         ) : (
           weather && stage === 'event' && <VoyageEventCard key={round} event={weather} held={holdEvent} hidden={hideEvent} onDone={() => setStage('reveal')} />
         )}
-        {stage === 'receipt' && viewer !== null ? <ReceiptCard round={round!} viewer={viewer} lines={receipt.lines} shipName={(id) => shipLabel(events, round!, id, viewer, nameOf)} net={receipt.net} onClose={finish} autoCloseIn={waitingAt === 'receipt' ? secondsLeft : null} /> : null}
+        {stage === 'receipt' && viewer !== null ? <ReceiptCard round={round!} viewer={viewer} lines={receipt.lines} shipName={(id) => shipLabel(events, round!, id, viewer, nameOf)} net={receipt.net} notes={inspections(events, round!).filter((i) => i.playerId === viewer).map((i) => `${shipLabel(events, round!, i.shipId, viewer, nameOf)}：${inspectionLabel(i)}`)} onClose={finish} autoCloseIn={waitingAt === 'receipt' ? secondsLeft : null} /> : null}
       </>
     ),
     onTableClick: stage === 'voyage' && !holdVoyage ? () => (playback.next() ? undefined : nextShip()) : undefined,

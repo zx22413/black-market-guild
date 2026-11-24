@@ -14,6 +14,8 @@ export interface ReceiptCardProps {
   /** A ship's name for its heading on the bill (`shipLabel`). */
   readonly shipName?: (id: ShipId) => string;
   readonly net: number;
+  /** What cost you money without any cash moving (軍火查緝: crates taken, so never sold); under the lines. */
+  readonly notes?: readonly string[];
   readonly onClose?: () => void;
   /** Online: whole seconds until the card closes by itself, shown on the hint. */
   readonly autoCloseIn?: number | null;
@@ -21,7 +23,7 @@ export interface ReceiptCardProps {
 
 const money = (n: number): string => `${n >= 0 ? '+' : '−'}${Math.abs(n)} G`;
 
-export function ReceiptCard({ round, lines, shipName, net, onClose, autoCloseIn = null }: ReceiptCardProps) {
+export function ReceiptCard({ round, lines, shipName, net, notes = [], onClose, autoCloseIn = null }: ReceiptCardProps) {
   return (
     <div className="beat-backdrop" onClick={onClose} role="dialog" aria-label={`第 ${round} 回合帳單`}>
       <div className="beat-card receipt">
@@ -43,6 +45,11 @@ export function ReceiptCard({ round, lines, shipName, net, onClose, autoCloseIn 
                 <b className={l.amount >= 0 ? 'up' : 'down'}>{money(l.amount)}</b>
               </li>
             </Fragment>
+          ))}
+          {notes.map((note, i) => (
+            <li key={note} className="receipt-note" style={{ animationDelay: `${(lines.length + i) * 120}ms` }}>
+              {note}
+            </li>
           ))}
         </ul>
         <p className="receipt-net" style={{ animationDelay: `${lines.length * 120 + 200}ms` }}>
