@@ -215,20 +215,24 @@ export const SMUGGLER: TutorialScript = scenario({
   ],
 });
 
-/** The cover lesson: the market takes no arms this round, so the one crate you carry is over the demand (§7.4). */
+/**
+ * The cover lesson: the market takes no arms this round, so the one crate you carry is over the demand (§7.4), and a
+ * rival's customs names it (§9.4). Your smuggler on your own ship keeps it from both (§9.5).
+ */
 const COVER_DEMAND = goods({ wood: 2, iron: 1, spice: 2, arms: 0 });
 const MARKET: CoachTrigger = { kind: 'market', round: 1 };
 
 export const COVER: TutorialScript = scenario({
   id: 'cover',
   title: '掩護',
-  summary: '走私商人派在自己船上，軍火就不會被查扣。',
+  summary: '走私商人派在自己船上，擋海關沒收和軍火查扣。',
   seed: 70206,
   rounds: [
     {
       demand: COVER_DEMAND,
       event: 'calm-seas',
       rolls: { p1: 6 },
+      bots: { [BOT.anchor]: { role: ['customs', 'p1'], named: 'arms' } },
       you: {
         invest: { demo: { load: { wood: 1, arms: 1 } }, choose: false },
         'role-deployment': { demo: { role: ['smuggler', 'p1'] }, choose: true, allow: roleOn('smuggler', ['p1']) },
@@ -252,8 +256,9 @@ export const COVER: TutorialScript = scenario({
       '派走私商人上自己的船。',
       [F.role('smuggler'), F.target('p1')],
     ),
-    watch([], '黑市成交時，看軍火那一列。'),
-    step(MARKET, '掩護成功', [F.marketCard], [
+    watch([], '角色翻開時，看誰盯上你的船。'),
+    step(voyaged(['p1']), '海關落空', [F.beat], [`${anchor}派海關指名你的軍火。你有掩護，他一毛都拿不到。`]),
+    step(MARKET, '查緝也擋下', [F.marketCard], [
       '軍火超過需求，查緝來了。你有掩護，那箱軍火保住了，等一下賣得到錢。',
       '走私港的軍火不能掩護。',
     ]),

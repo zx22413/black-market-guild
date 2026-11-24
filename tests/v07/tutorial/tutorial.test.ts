@@ -323,6 +323,13 @@ describe('role scenarios', () => {
     const price = (good: 'wood' | 'arms') => priceAt(COVER.rules, good, settled.priceAfter[good]);
     expect(cashFor(events, 'sale', 'p1')).toBe(price('wood') + price('arms'));
     expect(cashFor(events, 'smuggling', 'p1')).toBe(0);
+    // A rival's customs names your arms, and the cover leaves it nothing: no confiscation, no fine for your smuggler.
+    const revealed = events.flatMap((e) => (e.type === 'roles-revealed' && e.role === 'customs' ? e.deployments : []));
+    expect(revealed).toMatchObject([{ playerId: 'p4', targetShipId: 'r1-p1', namedGood: 'arms' }]);
+    expect(events.filter((e) => e.type === 'goods-confiscated')).toEqual([]);
+    expect(cashFor(events, 'goods-confiscated', 'p4')).toBe(0);
+    expect(cashFor(events, 'smuggling-fine', 'p1')).toBe(0);
+    expect(cashFor(events, 'role-fee', 'p4')).toBe(-COVER.rules.roles.fees.customs);
   });
 
   it('diplomat: the right guess voids the pirate and takes money from it', () => {
