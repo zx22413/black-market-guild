@@ -33,6 +33,8 @@ export interface CoachView {
   readonly total: number;
   /** Your decision is held back until the steps before it are read. */
   readonly holdsDecision: boolean;
+  /** Your decision stays off the table (the camera on the overview) until the `overview` steps before it are read. */
+  readonly holdsTable: boolean;
   /** The resolution waits (does not play on) while a step about it is on screen. */
   readonly holdsShow: boolean;
   /** The voyage stays on the ship whose result is out until the step about it is read. */
@@ -79,6 +81,8 @@ export function coachView(steps: readonly CoachStep[], read: number, moment: Coa
   const next = steps[read];
   const step = next !== undefined && reached(next.trigger, moment) ? next : null;
   const holdsDecision = steps.slice(read).some((s) => isDecision(s.trigger, moment.decision));
+  // Held before the step shows too, so the camera never dives to the decision and climbs back.
+  const holdsTable = next?.overview === true && isDecision(next.trigger, moment.decision);
   const holdsMarket = steps.slice(read).some((s) => s.trigger.kind === 'market' && s.trigger.round === (moment.marketRound ?? 0));
   // Held from the moment the round's resolution exists, so the card never plays a bit before the step shows.
   const nextTrigger = next?.trigger;
@@ -100,5 +104,5 @@ export function coachView(steps: readonly CoachStep[], read: number, moment: Coa
       ? [{ kind: 'advance' }, { kind: 'tap' }]
       : (step?.focus ?? (last?.focus ?? []));
   const guide = step === null && todo !== null && !ready && last?.guide ? last.guide.map(asGroup) : null;
-  return { step, number: Math.min(read + 1, steps.length), total: steps.length, holdsDecision, holdsMarket, holdsEvent, holdsShow, holdsVoyage, todo, ready, pulse: ready || idle || guide !== null, focus, guide };
+  return { step, number: Math.min(read + 1, steps.length), total: steps.length, holdsDecision, holdsTable, holdsMarket, holdsEvent, holdsShow, holdsVoyage, todo, ready, pulse: ready || idle || guide !== null, focus, guide };
 }

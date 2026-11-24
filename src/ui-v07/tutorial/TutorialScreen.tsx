@@ -126,6 +126,7 @@ export function TutorialScreen({ script, next, onReplay, onNext, onExit }: Tutor
           onCalm={session.setCalm}
           onVoyage={session.setVoyage}
           holdVoyage={coach.holdsVoyage}
+          holdDecision={coach.holdsTable}
           holdShow={coach.holdsShow}
           holdMarket={coach.holdsMarket}
           holdEvent={coach.holdsEvent}

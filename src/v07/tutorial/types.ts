@@ -152,6 +152,11 @@ export interface CoachStep {
    * (then 「提交」 once the choice is complete); without it the step's `focus` stays lit.
    */
   readonly guide?: readonly GuideStep[];
+  /**
+   * Read on the whole table, before your decision comes on it: the camera stays on the overview
+   * (your island, its badge and plate in view) instead of diving to the ship pick first.
+   */
+  readonly overview?: boolean;
 }
 
 export interface TutorialScript {

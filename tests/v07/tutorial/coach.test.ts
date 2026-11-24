@@ -33,6 +33,15 @@ describe('coachView', () => {
     expect(coachView(STEPS, 3, at({ decision: R2, resolvingRound: 1, shownRound: 1 })).step).toBe(STEPS[3]);
   });
 
+  it('keeps your decision off the table while the next step is read on the overview', () => {
+    const steps: readonly CoachStep[] = [{ ...STEPS[0]!, overview: true }, STEPS[1]!];
+    // Before the step shows (the table not calm yet), so the camera never dives first.
+    expect(coachView(steps, 0, at({ decision: R1, calm: false }))).toMatchObject({ step: null, holdsTable: true });
+    expect(coachView(steps, 0, at({ decision: R1 }))).toMatchObject({ step: steps[0], holdsTable: true });
+    expect(coachView(steps, 1, at({ decision: R1 })).holdsTable).toBe(false);
+    expect(coachView(steps, 0, at({ decision: null })).holdsTable).toBe(false);
+  });
+
   it('holds a decision whose steps come after unread ones', () => {
     expect(coachView(STEPS, 2, at({ decision: R2, resolvingRound: 1, shownRound: 1 }))).toMatchObject({ step: STEPS[2], holdsDecision: true });
   });

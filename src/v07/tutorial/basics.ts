@@ -23,6 +23,8 @@ const invest = (round: number): CoachTrigger => ({ kind: 'decision', round, phas
 const resolving = (round: number): CoachTrigger => ({ kind: 'resolution', round });
 const voyage = (round: number): CoachTrigger => ({ kind: 'voyage', round, owners: ['p1'] });
 const market = (round: number): CoachTrigger => ({ kind: 'market', round });
+/** A step read on the whole table, before the camera dives to the ship pick (CoachStep.overview). */
+const onTable = (s: CoachStep): CoachStep => ({ ...s, overview: true });
 
 const step = (
   trigger: CoachTrigger,
@@ -84,18 +86,18 @@ export const BASICS: TutorialScript = {
   ],
   coach: [
     // ── Round 1: sail and sell ──
-    step(invest(1), '歡迎來到暗潮商戰', [F.round], [
+    onTable(step(invest(1), '歡迎來到暗潮商戰', [F.round], [
       '你經營一座島：島上每回合生產材料，你決定要不要選一艘船、裝上貨，運到中央巴扎港的黑市換錢。',
       `一局打 ${R.v08.events.secondAdvanceFrom}～${R.v08.events.secondAdvanceTo} 回合（事件牌庫決定哪一回合是最後一回合），結束時現金最多的人獲勝。這場教學只打 ${ROUNDS} 回合；成長、暗潮與角色另外有單課。`,
-    ]),
-    step(invest(1), '你的島：船塢島', [F.rank], [
+    ])),
+    onTable(step(invest(1), '你的島：船塢島', [F.island('p1'), F.plate('p1')], [
       `船塢島的優點是你的船可以多裝 1 箱（共 ${yardCapacity} 箱），缺點是每艘船出航要另付 ${harbourTax} G 港口稅。`,
       `開局每個人都有 ${R.startingCash} G、${R.startingStock.wood} 木材、${R.startingStock.iron} 鐵礦；每回合開始時，各島每種貨各生產 1 箱放進倉庫。`,
-    ]),
-    step(invest(1), '黑市：需求卡與價格', [F.market], [
+    ])),
+    onTable(step(invest(1), '黑市：需求卡與價格', [F.market], [
       '上方黑市列是每種貨的現價。每回合翻開一張需求卡，標出這回合黑市要多少貨。',
       '所有船靠港後，到港的貨比需求少就漲價、一樣就不變、比需求多就跌價；香料一次漲跌兩格。抵達的船，用變動後的新價格賣貨。',
-    ]),
+    ])),
     step(
       invest(1),
       '選一艘船',
@@ -159,9 +161,12 @@ export const BASICS: TutorialScript = {
 
     // ── Round 3: the five ships ──
     step(invest(3), '五種船', [F.ship('standard'), F.ship('gambler'), F.ship('freighter'), F.ship('hidden'), F.ship('breaker')], [
-      `信天翁號是基準。孤注號船費 ${ships.gambler.fee} G，最終值 4 以下全沉，5 全到 ×${times('gambler', 5)}、6 全到 ×${times('gambler', 6)}，用過要休息 ${ships.gambler.cooldown} 回合。`,
-      `巨鯨號船費 ${ships.freighter.fee} G，不會沉、載量 +${ships.freighter.capacity}，但下一回合才抵達，而且至少掉 1 箱。幽靈號船費 ${ships.hidden.fee} G，海關指名它的貨無效。海嘯號的最終值不封頂，7 以上還有倍率。`,
-      '點每張船卡可以看它的掉貨表；沒有最好的船，要看事件、貨量和對手會派什麼角色。',
+      '選船就是決定這回合怎麼賺：求穩、賭一把、多載一點，或躲過海關。前兩回合你開的信天翁號掉貨少、最穩。另外四艘：',
+      `孤注號：擲得好，貨物 ×${times('gambler', 5)}～×${times('gambler', 6)}；擲不好整船沉。用過要休息 ${ships.gambler.cooldown} 回合。`,
+      `巨鯨號：不會沉、多裝 ${ships.freighter.capacity} 箱，但下一回合才到港，路上至少掉 1 箱。`,
+      '幽靈號：被海關指名也扣不走它的貨。',
+      `海嘯號：最終值越高賺越多，加成疊得夠可到 ×${times('breaker', 9)}；但比信天翁號容易掉貨。`,
+      '點船卡可以看它的掉貨表。',
     ]),
     step(
       invest(3),

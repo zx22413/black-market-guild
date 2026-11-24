@@ -115,9 +115,11 @@ export interface Table3DScreenProps {
   readonly lockSkips?: boolean;
   /** Hide the voyage event card for now (something else is up in the middle of the table). */
   readonly hideEvent?: boolean;
+  /** Keep your decision off the table for now: the camera stays on the overview (the tutorial host is talking about the table). */
+  readonly holdDecision?: boolean;
 }
 
-export function Table3DScreen({ session, onExit, rematch, autoplay = false, showResult = true, onShown, onReplaying, rounds = RULES_CURRENT.rounds, skipIslandReveal = false, skipIslandMoments = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdShow = false, holdVoyage = false, onVoyage, onStarted, onCalm, autoAdvanceSeconds, spectator = false }: Table3DScreenProps) {
+export function Table3DScreen({ session, onExit, rematch, autoplay = false, showResult = true, onShown, onReplaying, rounds = RULES_CURRENT.rounds, skipIslandReveal = false, skipIslandMoments = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdShow = false, holdVoyage = false, holdDecision = false, onVoyage, onStarted, onCalm, autoAdvanceSeconds, spectator = false }: Table3DScreenProps) {
   const snap = useSession(session);
   const [ready, setReady] = useState(false);
   // The match's own rules: the official ones unless the session plays an experiment (the V0.8 prototype).
@@ -172,7 +174,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const nameOf = useCallback((id: PlayerId) => names.get(id) ?? id, [names]);
 
   const phase = request?.context.decision.phase;
-  const free = !holding && !showIslands && unlocked && !autoplay;
+  const free = !holding && !showIslands && unlocked && !autoplay && !holdDecision;
   const drafting = free && phase === 'island-choice' ? request : null;
   // Who still has to confirm the device before their decision shows (hot-seat).
   const handoffTo = hotSeat && request && !unlocked && !holding && !showIslands && !autoplay ? seatOnScreen : null;
@@ -516,7 +518,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   // V0.8 prototype: the building each seat has raised, for the islands.
   const skills = useMemo(() => Object.fromEntries(ids.map((id) => [id, board.players[id]?.skills ?? []])), [ids, board]);
   const facilities = useMemo(() => Object.fromEntries(ids.map((id) => [id, board.players[id]?.facility ?? null])), [ids, board]);
-  const idle = !holding && !step && !finished && !drafting && !showIslands && !handoffTo && !moments.blocking && !sweep.blocking;
+  const idle = !holding && !step && !finished && !drafting && !showIslands && !handoffTo && !moments.blocking && !sweep.blocking && !holdDecision;
 
   return (
     <RulesContext.Provider value={rules}>
