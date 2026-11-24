@@ -39,9 +39,17 @@ export interface MaterialPanelProps {
   readonly protects: readonly GoodId[];
   readonly protect: GoodId | null;
   readonly onProtect: (good: GoodId) => void;
+  /**
+   * v08.tradehouse.buyoutChosen: the goods that may leave one crate for the tradehouse (empty: none to offer), the one
+   * named (null: none), the price it pays, and the setter (null: sell nothing).
+   */
+  readonly sells?: readonly GoodId[];
+  readonly sell?: GoodId | null;
+  readonly sellPrice?: number;
+  readonly onSell?: (good: GoodId | null) => void;
 }
 
-export function MaterialPanel({ cards, chosen, onPick, owned, protects, protect, onProtect, readOnly = false, looking = false, onLook, reveal = 0 }: MaterialPanelProps) {
+export function MaterialPanel({ cards, chosen, onPick, owned, protects, protect, onProtect, sells = [], sell = null, sellPrice = 0, onSell, readOnly = false, looking = false, onLook, reveal = 0 }: MaterialPanelProps) {
   const rules = useRules();
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -138,7 +146,7 @@ export function MaterialPanel({ cards, chosen, onPick, owned, protects, protect,
   );
   // Nothing built yet and one can be raised now: the folded button breathes, so the building is not missed.
   const nudge = !readOnly && offer && !picked && !open && builds.some((c) => c.legal);
-  if (!standing && builds.length === 0 && protects.length === 0) return null;
+  if (!standing && builds.length === 0 && protects.length === 0 && sells.length === 0) return null;
   const title = picked ? `蓋 ${FACILITY_LABELS[picked]}` : readOnly ? '可蓋的建築' : '蓋建築';
   return (
     <aside className={`mat-panel ${open || standing ? '' : 'shut'} ${open && offer ? 'listing' : ''} ${nudge ? 'nudge' : ''}`} data-focus="materials" data-done={Boolean(open || picked || standing)}>
@@ -162,6 +170,21 @@ export function MaterialPanel({ cards, chosen, onPick, owned, protects, protect,
           <span>
             {protects.map((g) => (
               <button type="button" key={g} className={protect === g ? 'sel' : ''} aria-pressed={protect === g} aria-label={`保護${GOOD_LABELS[g]}`} onClick={() => onProtect(g)}>
+                <GoodIcon good={g} size="sm" tip={false} />
+              </button>
+            ))}
+          </span>
+        </div>
+      )}
+      {!readOnly && sells.length > 0 && onSell !== undefined && (
+        <div className="mat-protect mat-sell">
+          <small>交給商行 1 箱（{sellPrice} G，可不交）</small>
+          <span>
+            <button type="button" className={sell === null ? 'sel' : ''} aria-pressed={sell === null} aria-label="不交給商行" onClick={() => onSell(null)}>
+              不交
+            </button>
+            {sells.map((g) => (
+              <button type="button" key={g} className={sell === g ? 'sel' : ''} aria-pressed={sell === g} aria-label={`把 1 箱${GOOD_LABELS[g]}交給商行`} onClick={() => onSell(sell === g ? null : g)}>
                 <GoodIcon good={g} size="sm" tip={false} />
               </button>
             ))}

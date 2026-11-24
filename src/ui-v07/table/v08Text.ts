@@ -33,7 +33,9 @@ function tradehouseText(rules: Rules): string {
   return [
     t.named === 1 ? '每回合指定一種貨，跌價時照原價賣' : '',
     t.premiumCrates > 0 ? `到港時最貴的 ${t.premiumCrates} 箱高一格賣` : '',
-    t.buyoutFixed > 0
+    t.buyoutFixed > 0 && t.buyoutChosen === 1
+      ? `投資時可以指定倉庫裡 1 箱（不指定也行），回合結束時商行收走它，付你 ${t.buyoutFixed} G`
+      : t.buyoutFixed > 0
       ? `每回合結束時，收走倉庫裡最便宜的 1 箱，付你 ${t.buyoutFixed} G`
       : t.buyoutFloor === 1
       ? `每回合結束時，用最低格的價格收走倉庫裡最貴的 1 箱（軍火 ${lowest('arms')} G，其他 ${lowest('wood')} G）`

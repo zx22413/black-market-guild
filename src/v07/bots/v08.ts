@@ -104,6 +104,8 @@ export class V08Cache {
   readonly loads = new Map<string, { readonly income: number; readonly sunk: number; readonly lost: number }>();
   readonly materials = new Map<string, number>();
   readonly prices = new Map<string, number>();
+  /** The voyage and material part of an invest score, shared by the copies of an action that differ only in the crate sold. */
+  readonly voyages = new Map<string, number>();
   /** v08.events.tides: one memo per future-round view (their finals differ from this round's). */
   readonly futures = new Map<string, V08Cache>();
 }
@@ -730,8 +732,22 @@ function behindShare(view: PlayerView): number {
   return top <= 0 ? 0 : Math.max(0, top - me(view).cash) / top;
 }
 
-/** The V0.8 invest score: ship fee, crate outlook, kept goods, material action, raise and protected good. */
+/** The V0.8 invest score: ship fee, crate outlook, kept goods, material action, raise, protected good and the crate sold to the tradehouse. */
 export function scoreInvestV08(view: PlayerView, action: Invest, persona: Personality, cache: V08Cache): number {
+  const { rules } = view;
+  const privateLoad = action.privateLoad ?? { wood: 0, iron: 0, spice: 0, arms: 0 };
+  const spent = action.material === undefined ? view.myStock : subtract(view.myStock, materialCost(rules, action.material));
+  // v08.tradehouse.buyoutChosen: the crate left for the tradehouse is paid now and no longer kept.
+  const stock = action.sell === undefined ? spent : { ...spent, [action.sell]: spent[action.sell] - 1 };
+  const sold = action.sell === undefined ? 0 : rules.v08.tradehouse.buyoutFixed;
+  return voyageScore(view, action, persona, cache) + keptScore(view, action, subtract(stock, add(action.load, privateLoad)), persona, cache) + sold;
+}
+
+/** Ship fee, crate outlook, raise, protected good and material action: the same whichever crate goes to the tradehouse. */
+function voyageScore(view: PlayerView, action: Invest, persona: Personality, cache: V08Cache): number {
+  const key = `${action.material === undefined ? '-' : JSON.stringify(action.material)}|${goodsKey(action.load)}|${action.privateLoad === undefined ? '-' : goodsKey(action.privateLoad)}|${action.shipType ?? '-'}|${action.raise === true ? 1 : 0}|${action.protect ?? '-'}`;
+  const known = cache.voyages.get(key);
+  if (known !== undefined) return known;
   const { rules } = view;
   const player = me(view);
   const trait = traitOf(rules, player.island);
@@ -768,24 +784,32 @@ export function scoreInvestV08(view: PlayerView, action: Invest, persona: Person
       score += (persona.raiseTaste ?? 1) * behindShare(view) * cargo * 0.5;
     }
   }
-  // Kept goods: worth their price later only while later voyages have room for them; spice spoils, nothing counts after the last round.
-  const stock = action.material === undefined ? view.myStock : subtract(view.myStock, materialCost(rules, action.material));
-  const kept = GOODS.reduce((sum, g) => sum + stock[g] - action.load[g] - privateLoad[g], 0);
-  const share = keepShare(view, kept);
+  if (action.material !== undefined) {
+    score += materialWorth(view, action.material, persona, cache);
+  }
+  cache.voyages.set(key, score);
+  return score;
+}
+
+/** Kept goods (`left`: what stays in the warehouse): worth their price later only while later voyages have room for them; spice spoils, nothing counts after the last round. */
+function keptScore(view: PlayerView, action: Invest, left: Goods, persona: Personality, cache: V08Cache): number {
+  const { rules } = view;
+  const player = me(view);
+  const trait = traitOf(rules, player.island);
+  const { skills, facility } = after(view, action.material);
+  const share = keepShare(view, GOODS.reduce((sum, g) => sum + left[g], 0));
   const keepP = typicalShare(
     view,
     { type: 'standard', raised: false, level: skills.standard ?? 0, facility, island: player.island, modifier: ownShipShift(rules, trait.ownShipModifier, view.events), ...stormOf(view, activeTide(view.events)) },
     3,
     cache,
   );
+  let score = 0;
   for (const g of GOODS) {
     const spoils = g === 'spice' && trait.keepsSpice !== 1;
     const keepEach = spoils ? 0 : currentPrice(view, g) * keepP * persona.patience * share;
     // V0.8 prototype (暗潮將至): only what survives this round's warehouse loss is worth keeping.
-    score += survivingUnits(view, stock[g] - action.load[g] - privateLoad[g]) * keepEach;
-  }
-  if (action.material !== undefined) {
-    score += materialWorth(view, action.material, persona, cache);
+    score += survivingUnits(view, left[g]) * keepEach;
   }
   return score;
 }

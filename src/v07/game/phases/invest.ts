@@ -30,8 +30,9 @@ export function resolveInvest(state: MatchState): Step {
   const materials = useMaterials(built.state, actions);
   const sailing = actions.filter((a) => units(a.load) > 0);
   const protect = protections(actions);
+  const sell = sells(actions);
   const launched = chain(
-    { ...materials.state, roundState: { ...materials.state.roundState, builds, ...(protect === null ? {} : { protect }) } },
+    { ...materials.state, roundState: { ...materials.state.roundState, builds, ...(protect === null ? {} : { protect }), ...(sell === null ? {} : { sell }) } },
     sailing.map(sail),
   );
   const rolled = rollDice(
@@ -120,6 +121,12 @@ function useMaterials(state: MatchState, actions: readonly Invest[]): Step {
 /** V0.8 prototype: the tradehouse owners' protected goods, kept secret in the round state until the market settles. */
 function protections(actions: readonly Invest[]): Record<PlayerId, GoodId> | null {
   const named = actions.flatMap((a) => (a.protect === undefined ? [] : [[a.playerId, a.protect] as const]));
+  return named.length === 0 ? null : Object.fromEntries(named);
+}
+
+/** V0.8 (v08.tradehouse.buyoutChosen): the crate each tradehouse owner left for the tradehouse, secret until the market settles. */
+function sells(actions: readonly Invest[]): Record<PlayerId, GoodId> | null {
+  const named = actions.flatMap((a) => (a.sell === undefined ? [] : [[a.playerId, a.sell] as const]));
   return named.length === 0 ? null : Object.fromEntries(named);
 }
 

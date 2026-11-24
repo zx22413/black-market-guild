@@ -42,4 +42,15 @@ describe('V0.8 prototype bots', () => {
     state = apply(state, getLegalActions(state, 'p1')[0]!).state;
     expect(state.roundState.submissions.p1).toBeDefined();
   });
+
+  it('leave the spice they keep to the tradehouse rather than let it spoil, and keep materials otherwise', () => {
+    // v08.tradehouse.buyoutChosen: spice left in the warehouse is worth nothing next round, 60 G now.
+    const state = withDemand(edit(plain(4, RULES_V08), 'p1', { stock: G(0, 0, 4, 0), facility: 'tradehouse' }), G(1, 1, 1, 1));
+    const decide = (s: typeof state) => {
+      const [decision] = getPendingDecisions(s);
+      return createBot('balanced', 5).decide({ view: getPlayerView(s, 'p1'), decision: decision!, legalActions: getLegalActions(s, 'p1') });
+    };
+    const spiceAction = decide(state);
+    expect(spiceAction.type === 'invest' && spiceAction.sell).toBe('spice');
+  });
 });

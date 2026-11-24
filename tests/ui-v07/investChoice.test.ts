@@ -8,6 +8,7 @@ import {
   withCargoAboard,
   shipSkills,
   protectChoices,
+  sellChoices,
   withMaterial,
   EMPTY_CHOICE,
   actionFor,
@@ -329,6 +330,37 @@ describe('material actions in the invest choice (V0.8 prototype, not rules)', ()
     expect(actionFor(options, EMPTY_CHOICE)?.protect).toBe('wood');
     expect(protectChoices(await v08(), EMPTY_CHOICE)).toEqual([]);
     expect(protectChoices(await v08(), { ...EMPTY_CHOICE, material: { kind: 'build', building: 'tradehouse' } })).toEqual(['wood', 'iron', 'spice', 'arms']);
+  });
+});
+
+describe('the crate left for the tradehouse (v08.tradehouse.buyoutChosen, game-design.md §10)', () => {
+  const ctxWith = async (patch: Parameters<typeof edit>[2] = {}) => {
+    const { RULES_V08 } = await import('../../src/v07/game');
+    const state = edit(start(4, RULES_V08, { p1: 'mine' }), 'p1', { cash: 1000, stock: G(3, 3, 1, 0), buildings: [], ...patch });
+    const decision = getPendingDecisions(state).find((d) => d.playerId === 'p1')!;
+    return { view: getPlayerView(state, 'p1'), decision, legalActions: getLegalActions(state, 'p1') } as DecisionContext;
+  };
+
+  it('offers the goods still in the warehouse, sells nothing by default, and drops the crate once its last one is loaded', async () => {
+    const ctx = await ctxWith({ facility: 'tradehouse' });
+    const options = investOptions(ctx);
+    expect(sellChoices(options, EMPTY_CHOICE)).toEqual(['wood', 'iron', 'spice']);
+    expect(actionFor(options, EMPTY_CHOICE)?.sell).toBeUndefined();
+    const spice = { ...EMPTY_CHOICE, sell: 'spice' as const };
+    expect(actionFor(options, spice)?.sell).toBe('spice');
+    // The only spice goes onto the ship: the action sells nothing, and spice is no longer on offer.
+    const loaded = { ...spice, shipType: 'standard' as const, load: G(0, 0, 1, 0) };
+    expect(actionFor(options, loaded)).toBeDefined();
+    expect(actionFor(options, loaded)?.sell).toBeUndefined();
+    expect(sellChoices(options, loaded)).toEqual(['wood', 'iron']);
+  });
+
+  it('offers nothing without a tradehouse, and offers it while raising one', async () => {
+    const ctx = await ctxWith();
+    const options = investOptions(ctx);
+    expect(sellChoices(options, EMPTY_CHOICE)).toEqual([]);
+    // The tradehouse costs 2 wood and 1 iron: what is left is 1 wood, 2 iron, 1 spice.
+    expect(sellChoices(options, { ...EMPTY_CHOICE, material: { kind: 'build', building: 'tradehouse' } })).toEqual(['wood', 'iron', 'spice']);
   });
 });
 

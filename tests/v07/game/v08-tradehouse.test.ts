@@ -9,7 +9,9 @@ const base: Rules = { ...RULES_V08, v08: { ...RULES_V08.v08, events: { ...RULES_
 const withTradehouse = (patch: Partial<Rules['v08']['tradehouse']>): Rules => ({ ...base, v08: { ...base.v08, tradehouse: { ...base.v08.tradehouse, named: 0, buyoutFloor: 0, buyoutFixed: 0, ...patch } } });
 const NAMED = withTradehouse({ named: 1 });
 const FLOOR = withTradehouse({ buyoutFloor: 1 });
-const FIXED = withTradehouse({ buyoutFixed: 60 });
+const FIXED = withTradehouse({ buyoutFixed: 60, buyoutChosen: 0 });
+/** The official V0.8 rule (game-design.md §10): the owner names the crate, or none. */
+const CHOSEN = withTradehouse({ buyoutFixed: 60, buyoutChosen: 1 });
 const PREMIUM = withTradehouse({ premiumCrates: 1 });
 const BUYOUT = withTradehouse({ buyoutPercent: 50 });
 
@@ -22,8 +24,8 @@ const effects = (events: readonly MatchEvent[], effect: string) => find(events, 
 
 describe('V0.8 tradehouse presets', () => {
   it('buys a leftover crate for a fixed 60 G in the prototype, with no naming; the live rules keep every switch off', () => {
-    expect(RULES_V08.v08.tradehouse).toMatchObject({ named: 0, premiumCrates: 0, buyoutPercent: 0, buyoutFloor: 0, buyoutFixed: 60 });
-    expect(RULES_V07.v08.tradehouse).toMatchObject({ named: 1, premiumCrates: 0, buyoutPercent: 0, buyoutFloor: 0, buyoutFixed: 0 });
+    expect(RULES_V08.v08.tradehouse).toMatchObject({ named: 0, premiumCrates: 0, buyoutPercent: 0, buyoutFloor: 0, buyoutFixed: 60, buyoutChosen: 1 });
+    expect(RULES_V07.v08.tradehouse).toMatchObject({ named: 1, premiumCrates: 0, buyoutPercent: 0, buyoutFloor: 0, buyoutFixed: 0, buyoutChosen: 0 });
   });
 
   it('offers no good to name once the naming is off', () => {
@@ -80,7 +82,7 @@ describe('V0.8 tradehouse 收購剩貨 at the lowest cell (buyoutFloor)', () => 
   });
 });
 
-describe('V0.8 tradehouse 收購剩貨 at a fixed price (buyoutFixed)', () => {
+describe('V0.8 tradehouse 收購剩貨 at a fixed price, picked by the tradehouse (buyoutFixed, buyoutChosen 0)', () => {
   it('takes the cheapest warehouse crate for the fixed price', () => {
     // 2 wood, 3 iron, 1 spice, 1 arms left: the cheapest is taken, whatever it is, for 60 G.
     const { state, events } = playRound(owner(FIXED), { loads: { p1: G(1) }, rolls: { p1: 6 } });
@@ -89,5 +91,49 @@ describe('V0.8 tradehouse 收購剩貨 at a fixed price (buyoutFixed)', () => {
     const cheapest = Math.min(...(['wood', 'iron', 'spice', 'arms'] as const).map((g) => priceAt(FIXED, g, state.prices[g])));
     expect(priceAt(FIXED, bought!.good, state.prices[bought!.good])).toBe(cheapest);
     expect(cash(events, 'tradehouse-buyout', 'p1')).toBe(60);
+  });
+});
+
+type Invest = Extract<Action, { type: 'invest' }>;
+const invests = (state: MatchState, playerId = 'p1') => getLegalActions(state, playerId).filter((a): a is Invest => a.type === 'invest');
+
+describe('V0.8 tradehouse 收購剩貨, the crate named by the owner (buyoutChosen, game-design.md §10)', () => {
+  it('buys the named crate for 60 G at the end of the round', () => {
+    const { state, events } = playRound(owner(CHOSEN), { loads: { p1: G(1) }, invest: { p1: { sell: 'iron' } } });
+    expect(find(events, 'leftover-bought')).toEqual([expect.objectContaining({ playerId: 'p1', good: 'iron', value: 60 })]);
+    expect(cash(events, 'tradehouse-buyout', 'p1')).toBe(60);
+    const kept = playRound(owner(CHOSEN), { loads: { p1: G(1) } }).state;
+    const stockOf = (st: MatchState) => st.players.find((p) => p.id === 'p1')!.stock;
+    expect(stockOf(state)).toEqual({ ...stockOf(kept), iron: stockOf(kept).iron - 1 });
+  });
+
+  it('buys nothing when the owner names no crate, so a hoarder keeps every material', () => {
+    const { events } = playRound(owner(CHOSEN), { loads: { p1: G(1) } });
+    expect(find(events, 'leftover-bought')).toEqual([]);
+    expect(cash(events, 'tradehouse-buyout', 'p1')).toBe(0);
+  });
+
+  it('can save a spice crate before it spoils', () => {
+    const { events } = playRound(owner(CHOSEN), { invest: { p1: { sell: 'spice' } } });
+    expect(find(events, 'leftover-bought')).toEqual([expect.objectContaining({ good: 'spice', value: 60 })]);
+  });
+
+  it('offers, for each load, no crate or one of every good still left in the warehouse', () => {
+    const options = invests(owner(CHOSEN));
+    const allWood = options.filter((a) => a.load.wood === 3 && a.load.iron === 0 && a.load.spice === 0 && a.load.arms === 0 && a.shipType === 'standard' && a.material === undefined);
+    expect(allWood.map((a) => a.sell ?? null).sort()).toEqual(['arms', 'iron', 'spice', null].sort());
+  });
+
+  it('offers no crate to players without a tradehouse, and offers one when the tradehouse is built this round', () => {
+    expect(invests(owner(CHOSEN), 'p2').some((a) => a.material?.kind !== 'build' && a.sell !== undefined)).toBe(false);
+    const builder = edit(ready(CHOSEN), 'p2', { stock: G(3, 3, 1, 1) });
+    const built = invests(builder, 'p2').filter((a) => a.material?.kind === 'build' && a.material.building === 'tradehouse');
+    expect(built.some((a) => a.sell !== undefined)).toBe(true);
+    expect(built.filter((a) => a.material !== undefined && a.sell === 'wood' && a.load.wood === 1)).toEqual([]);
+  });
+
+  it('rejects naming a crate that is loaded on the ship', () => {
+    const state = edit(owner(CHOSEN), 'p1', { stock: G(1, 0, 0, 0) });
+    expect(invests(state).some((a) => a.load.wood === 1 && a.sell === 'wood')).toBe(false);
   });
 });

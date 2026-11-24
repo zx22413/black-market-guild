@@ -173,7 +173,7 @@ export interface RoundPlan {
   readonly named?: Readonly<Record<string, GoodId>>;
   readonly voyageEvent?: VoyageEventId;
   /** V0.8 prototype: extra invest fields by player (material action, raise, private crates, protected good). */
-  readonly invest?: Readonly<Record<string, Pick<Extract<Action, { type: 'invest' }>, 'material' | 'raise' | 'privateLoad' | 'protect'>>>;
+  readonly invest?: Readonly<Record<string, Pick<Extract<Action, { type: 'invest' }>, 'material' | 'raise' | 'privateLoad' | 'protect' | 'sell'>>>;
 }
 
 const shipOf = (state: MatchState, owner: string) => `r${state.round}-${owner}`;

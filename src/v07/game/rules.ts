@@ -412,7 +412,7 @@ export const RULES_V08: Rules = {
     repairyard: { ...V08_OFF.repairyard, immuneStormTide: 1, freighter: 1 },
     // 2026-11-22 (user): no naming; 收購剩貨 buys a leftover crate each round with no percent to work out. The track's
     // lowest cell (about 90 G a crate) made it a must-build (§10.14); a fixed 60 G for the cheapest crate is the default.
-    tradehouse: { ...V08_OFF.tradehouse, immuneCrashTide: 1, named: 0, buyoutFixed: 60 },
+    tradehouse: { ...V08_OFF.tradehouse, immuneCrashTide: 1, named: 0, buyoutFixed: 60, buyoutChosen: 1 },
     botPirateCrates: 1,
   },
 };

@@ -151,6 +151,14 @@
   border-color: #c9862b;
   background: #ffe9b8;
 }
+/* The tradehouse buyout (v08.tradehouse.buyoutChosen): 「不交」 is a word, not an icon. */
+.mat-sell button:first-child {
+  width: auto;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4f3a20;
+}
 @media (max-width: 640px) {
   .mat-panel {
     left: 8px;

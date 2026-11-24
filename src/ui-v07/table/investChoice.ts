@@ -18,6 +18,11 @@ export interface InvestChoice {
   readonly material?: MaterialAction | null;
   /** V0.8 prototype: the good a tradehouse owner protects this round; null or absent until one is named (the first is taken then). */
   readonly protect?: GoodId | null;
+  /**
+   * V0.8 (v08.tradehouse.buyoutChosen): the crate a tradehouse owner leaves for the tradehouse to buy; null or absent for
+   * none. Loading the last crate of that good drops it (the action without a crate for the tradehouse is used then).
+   */
+  readonly sell?: GoodId | null;
   /** V0.8 prototype: the gamble declares 「加注」 (its skill open): only the top final arrives, at a multiple. */
   readonly raise?: boolean;
 }
@@ -98,7 +103,16 @@ const sameExtras = (a: InvestAction, choice: InvestChoice): boolean =>
   sameMaterial(a.material, choice.material) && (a.raise === true) === (choice.raise === true) && a.privateLoad === undefined && (choice.protect == null || a.protect === undefined || a.protect === choice.protect);
 
 export function actionFor(options: readonly InvestAction[], choice: InvestChoice): InvestAction | undefined {
-  return options.find((a) => a.build === choice.build && sameGoods(a.load, choice.load) && sameShip(a, choice) && sameExtras(a, choice));
+  const sells = (a: InvestAction, sell: GoodId | null) => (a.sell ?? null) === sell;
+  const base = (a: InvestAction) => a.build === choice.build && sameGoods(a.load, choice.load) && sameShip(a, choice) && sameExtras(a, choice);
+  const exact = options.find((a) => base(a) && sells(a, choice.sell ?? null));
+  // The crate named for the tradehouse went onto the ship (or the tradehouse is no longer in this choice): sell nothing.
+  return exact ?? (choice.sell == null ? undefined : options.find((a) => base(a) && sells(a, null)));
+}
+
+/** v08.tradehouse.buyoutChosen: the goods this choice may leave one crate of for the tradehouse (empty: none, or no tradehouse). */
+export function sellChoices(options: readonly InvestAction[], choice: InvestChoice): GoodId[] {
+  return GOODS.filter((g) => actionFor(options, { ...choice, sell: g })?.sell === g);
 }
 
 /**

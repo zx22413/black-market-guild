@@ -113,6 +113,11 @@ export interface V08Rules {
     readonly buyoutFloor: number;
     /** > 0 = 收購剩貨 takes the cheapest crate at this fixed price (G) instead (wins over buyoutFloor and buyoutPercent). */
     readonly buyoutFixed: number;
+    /**
+     * 1 = the owner names the crate (or none) in the invest submission instead of the tradehouse taking one on its own
+     * (game-design.md §10, 2026-11-24): any good left in the warehouse after loading, paid at the buyout price.
+     */
+    readonly buyoutChosen: number;
   };
   /**
    * `lighthouseFades`: 1 = in phase II an island's own-ship modifier and final-value cap (the lighthouse's +1 and its
@@ -254,7 +259,7 @@ export const V08_OFF: V08Rules = {
   breaker: { extraFromL1: 6, extraFromL2: 5, extraDieSides: 6 },
   repairyard: { fromFinal: 2, toFinal: 3, save: 1, immuneStormTide: 0, freighter: 0 },
   armory: { lootPercent: 35, halveAllLoot: 0, immunePirateTide: 0, pirateToll: 0, halveCustoms: 0, refundSunkLoot: 0, armedBonus: 0, armedMaxFinal: 0, counter: 0, counterFine: 50, counterBlunts: 0, counterArms: 1, counterCharges: 0 },
-  tradehouse: { immuneCrashTide: 0, named: 1, premiumCrates: 0, buyoutPercent: 0, buyoutFloor: 0, buyoutFixed: 0 },
+  tradehouse: { immuneCrashTide: 0, named: 1, premiumCrates: 0, buyoutPercent: 0, buyoutFloor: 0, buyoutFixed: 0, buyoutChosen: 0 },
   islands: { lighthouseFades: 0, freePortGamblerNoRest: 0, lighthouseBeacon: 0, ownShipMinRaw: 0, freePortFeePercent: 0 },
   botPirateCrates: 0,
   inspection: { enabled: 0, allowance: 0 },

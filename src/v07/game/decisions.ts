@@ -109,7 +109,8 @@ function investOptions(state: MatchState, playerId: PlayerId): Action[] {
 /**
  * V0.8 prototype (rules.v08): no material action or one the warehouse can pay for, then any load from what is left, as
  * in the ship bays. A gambler with its skill open may also raise; a hidden ship with its skill open may add private crates
- * from what is left; a tradehouse owner names one good to protect. Skills and buildings count from this submission on.
+ * from what is left; a tradehouse owner names one good to protect, and (v08.tradehouse.buyoutChosen) may leave one crate
+ * of what stays in the warehouse for the tradehouse to buy. Skills and buildings count from this submission on.
  */
 function investOptionsV08(state: MatchState, playerId: PlayerId): Action[] {
   const { rules } = state;
@@ -134,7 +135,8 @@ function investOptionsV08(state: MatchState, playerId: PlayerId): Action[] {
                 arrivesInTime(state, shipDelay(rules, shipType)) &&
                 shipTypeAvailableFor(rules, player.island, shipType, player.lastShip[shipType], state.round),
             ).flatMap((shipType) => shipVariants(state, after, base, shipType));
-      return sails.flatMap((action) => protects.map((protect) => (protect === undefined ? action : { ...action, protect })));
+      const named = sails.flatMap((action) => protects.map((protect) => (protect === undefined ? action : { ...action, protect })));
+      return facility === 'tradehouse' ? named.flatMap((action) => withSells(rules, after, action)) : named;
     });
   });
 }
@@ -157,6 +159,13 @@ function shipVariants(state: MatchState, player: PlayerState, base: InvestAction
 }
 
 const NO_PRIVATE = { wood: 0, iron: 0, spice: 0, arms: 0 } as const;
+
+/** v08.tradehouse.buyoutChosen: the action as is (no crate for the tradehouse), then once per good still left in the warehouse. */
+function withSells(rules: Rules, player: PlayerState, action: InvestAction): InvestAction[] {
+  if (rules.v08.tradehouse.buyoutChosen !== 1 || rules.v08.tradehouse.buyoutFixed <= 0) return [action];
+  const left = subtractGoods(player.stock, addGoods(action.load, action.privateLoad ?? NO_PRIVATE));
+  return [action, ...GOODS.filter((g) => left[g] > 0).map((sell): InvestAction => ({ ...action, sell }))];
+}
 
 /** §9.3: a role used in round r returns in round r + cooldown + 1. */
 export function roleAvailable(state: MatchState, player: PlayerState, role: RoleId): boolean {
@@ -223,5 +232,6 @@ function v08Key(action: Extract<Action, { type: 'invest' }>): string {
   const raise = action.raise === true ? '|raise' : '';
   const privateLoad = action.privateLoad === undefined ? '' : `|p:${GOODS.map((g) => action.privateLoad![g]).join(',')}`;
   const protect = action.protect === undefined ? '' : `|t:${action.protect}`;
-  return material + raise + privateLoad + protect;
+  const sell = action.sell === undefined ? '' : `|s:${action.sell}`;
+  return material + raise + privateLoad + protect + sell;
 }

@@ -68,6 +68,8 @@ export type Action =
       readonly privateLoad?: Goods;
       /** V0.8 prototype: a tradehouse owner's protected good, secret until the market settles. */
       readonly protect?: GoodId;
+      /** V0.8 (v08.tradehouse.buyoutChosen): the crate a tradehouse owner leaves for the tradehouse to buy, secret until the market settles. */
+      readonly sell?: GoodId;
     }
   | {
       readonly type: 'deploy-role';
@@ -180,6 +182,8 @@ export interface RoundState {
   readonly rolesRevealed: boolean;
   /** V0.8 prototype: each tradehouse owner's protected good this round (secret until the market settles). */
   readonly protect?: Readonly<Record<PlayerId, GoodId>>;
+  /** V0.8 (v08.tradehouse.buyoutChosen): each tradehouse owner's crate for the tradehouse this round (secret until the market settles). */
+  readonly sell?: Readonly<Record<PlayerId, GoodId>>;
 }
 
 export interface Standing {

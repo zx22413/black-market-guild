@@ -42,6 +42,7 @@ import {
   withCargoAboard,
   shipSkills,
   protectChoices,
+  sellChoices,
   withShipType,
   type InvestChoice,
 } from '../table/investChoice';
@@ -284,6 +285,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   // The gamble's raise is on offer at all this round (its skill open, or being opened now): some legal action carries it.
   const raisable = options.some((a) => a.raise === true);
   const protects = protectChoices(context, choice);
+  const sells = sellChoices(options, choice);
   const skills = shipSkills(materials, choice);
   // Take a material action (null: none): a building takes the camera to its lot; a skill raises the works round its
   // ship, which is the one at the dock when it is opened from that ship's card.
@@ -316,6 +318,10 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
         protects={protects}
         protect={choice.protect ?? actionFor(options, choice)?.protect ?? null}
         onProtect={(good) => setChoice((c) => ({ ...c, protect: good }))}
+        sells={sells}
+        sell={actionFor(options, choice)?.sell ?? null}
+        sellPrice={context.view.rules.v08.tradehouse.buyoutFixed}
+        onSell={(good) => setChoice((c) => ({ ...c, sell: good }))}
         readOnly={readOnly}
         looking={lotLook}
         onLook={look}
