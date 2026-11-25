@@ -23,7 +23,6 @@ const rules: Rules = {
 };
 
 const invest = (round: number): CoachTrigger => ({ kind: 'decision', round, phase: 'invest' });
-const market = (round: number): CoachTrigger => ({ kind: 'market', round });
 
 const step = (trigger: CoachTrigger, title: string, focus: readonly FocusTarget[], lines: readonly string[], todo?: string, guide?: readonly GuideStep[]): CoachStep => ({
   trigger,
