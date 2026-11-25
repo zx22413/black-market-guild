@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FocusTarget } from '../../v07/tutorial';
 import { isFlying } from '../scene/cameraHandoff';
+import { isLanding } from '../scene/facilityLanding';
 import { currentGuide, easeHole, focusSelectors, holeAround, mergeHoles, type Hole } from './focus';
 
 // The tutorial's spotlight: the screen goes dark except for what the host is talking about. It
@@ -31,7 +32,7 @@ function elementsOf(target: FocusTarget): HTMLElement[] {
  * and the deal. The hand is only see-through then (stepArrival.css), so it would be lit too early.
  */
 const ARRIVING = '.ship-arrival, .step-arrival, .arrival-wait';
-const arriving = (): boolean => isFlying() || document.querySelector(ARRIVING) !== null;
+const arriving = (): boolean => isFlying() || isLanding() || document.querySelector(ARRIVING) !== null;
 
 /** A question the table asks before going on (「還沒做完」): answering it comes before anything else. */
 const DIALOG: FocusTarget = { kind: 'dialog' };

@@ -7,6 +7,7 @@ import { seatPosition } from '../../ui/scene/layout';
 import type { V08BuildingId } from '../../v07/game';
 import { Burst, fan } from './beatFx';
 import { FACILITY_LOT, FACILITY_SCALE } from './facilityLot';
+import { RAISE_SECONDS, markRaising } from './facilityLanding';
 
 // V0.8 prototype (an experiment, not rules): the one building a player raises with materials (修船廠, 軍械庫, 商行),
 // standing on their island. The models are built in Blender (scripts/blender/build-facilities.py, design sheet
@@ -20,7 +21,7 @@ const url = (id: V08BuildingId): string => `${import.meta.env.BASE_URL}models/fa
 const PLATEAU = 2.6;
 const ORIGIN = new Vector3(0, 0, 0);
 /** Seconds the building takes to come down and settle when it is raised on screen. */
-const RAISE = 1.1;
+const RAISE = RAISE_SECONDS;
 const DROP_FROM = 7;
 const HOP = 0.6;
 const DUST = fan(12, Math.PI * 2, 4.2, 3.2, 3);
@@ -57,7 +58,10 @@ export function Facility({ angle, building, color, fresh = false, pulseKey = nul
     let size = 1;
     let glow = -1;
     if (fresh) {
-      raisedAt.current ??= now;
+      if (raisedAt.current === null) {
+        raisedAt.current = now;
+        markRaising();
+      }
       const t = (now - raisedAt.current) / RAISE;
       if (t < 0.45) {
         const k = t / 0.45;
