@@ -52,11 +52,20 @@ function stageOpening(script: TutorialScript, t: Transition): Transition {
   };
 }
 
+/** `count` dice whose highest is `kept`: the others a little lower, the kept one last. */
+export function scriptedDice(count: number, kept: number): readonly number[] {
+  return [...Array.from({ length: Math.max(0, count - 1) }, (_, i) => Math.max(1, kept - 1 - i)), kept];
+}
+
 function stageRound(round: RoundScript, state: MatchState): MatchState {
   if (state.phase === 'role-deployment') {
     // The dice were rolled when the investments came in; no one has seen them yet (§4).
-    // A scripted roll is one die: the dice thrown in a final market (gambleDice) would not agree with it.
-    const ships = state.roundState.ships.map(({ gambleDice: _thrown, ...s }) => ({ ...s, rawRoll: round.rolls?.[s.owner] ?? 6 }));
+    // In a final market every ship throws several dice and keeps the highest: the scripted roll is the one kept, and the
+    // others are made to agree with it (lower ones, the same every time), so the dice show plays what the lesson says.
+    const ships = state.roundState.ships.map((s) => {
+      const rawRoll = round.rolls?.[s.owner] ?? 6;
+      return { ...s, rawRoll, ...(s.gambleDice === undefined ? {} : { gambleDice: scriptedDice(s.gambleDice.length, rawRoll) }) };
+    });
     return { ...state, roundState: { ...state.roundState, ships } };
   }
   return state;
