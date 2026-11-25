@@ -99,6 +99,10 @@ export interface Table3DScreenProps {
   readonly onStarted?: (round: number) => void;
   /** Told whether your decision is up with nothing still playing in front of it. */
   readonly onCalm?: (calm: boolean) => void;
+  /** The round's opening dark-tide sweep has played (tutorial). */
+  readonly onSwept?: (round: number) => void;
+  /** The round's opening cards wait, not shown, while this holds (tutorial); the decision still waits for them. */
+  readonly holdCards?: boolean;
   /** Online rooms: the resolution's presses (「開始航程」, the bill) go on by themselves after this many seconds. */
   readonly autoAdvanceSeconds?: number;
   /** Online spectator stand: every press the show waits for goes on by itself, and no button asks for one. */
@@ -119,7 +123,7 @@ export interface Table3DScreenProps {
   readonly holdDecision?: boolean;
 }
 
-export function Table3DScreen({ session, onExit, rematch, autoplay = false, showResult = true, onShown, onReplaying, rounds = RULES_CURRENT.rounds, skipIslandReveal = false, skipIslandMoments = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdShow = false, holdVoyage = false, holdDecision = false, onVoyage, onStarted, onCalm, autoAdvanceSeconds, spectator = false }: Table3DScreenProps) {
+export function Table3DScreen({ session, onExit, rematch, autoplay = false, showResult = true, onShown, onReplaying, rounds = RULES_CURRENT.rounds, skipIslandReveal = false, skipIslandMoments = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdShow = false, holdVoyage = false, holdDecision = false, onVoyage, onStarted, onCalm, onSwept, holdCards = false, autoAdvanceSeconds, spectator = false }: Table3DScreenProps) {
   const snap = useSession(session);
   const [ready, setReady] = useState(false);
   // The match's own rules: the official ones unless the session plays an experiment (the V0.8 prototype).
@@ -271,6 +275,9 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     rules,
     tide: tideStatus(snap.events).tide,
   });
+  useEffect(() => {
+    if (sweep.swept > 0) onSwept?.(sweep.swept);
+  }, [sweep.swept, onSwept]);
   const [cardRound, setCardRound] = useState(0);
   const cardUp = ready && !holding && !showIslands && !autoplay && !sweep.blocking && startCards.length > 0 && cardRound < board.round;
   // The islands that change production or costs get their moment first: at the round's start and at the launch.
@@ -643,7 +650,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
         {ready && !holding && !finished && board.round > 0 && board.voyageEvent && <VoyageEventChip event={board.voyageEvent} {...(bossNow ? { boss: { title: bossNow.title, text: bossNow.lines.join('') } } : {})} />}
         {ready && !holding && !finished && finalNow && <FinalRoundChip title={finalNow.title} lines={finalNow.lines} />}
       </div>
-      {cardUp && <RoundCardShow key={board.round} cards={startCards} onDone={() => setCardRound(board.round)} />}
+      {cardUp && !holdCards && <RoundCardShow key={board.round} cards={startCards} onDone={() => setCardRound(board.round)} />}
       {ready && !finished && tideSeason && <div className="tide-season" aria-hidden="true" />}
       {/* V0.8 prototype: the dark tide (its two candidates, then the one picked) stays in view the whole match. */}
       {ready && !finished && board.round > 0 && tide.candidates.length > 0 && <TideChip status={tide} round={board.round} />}

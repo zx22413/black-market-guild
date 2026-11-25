@@ -118,7 +118,7 @@ export const TIDE: TutorialScript = {
 
     // ── Round 3: 最後的大市集 ──
     // The tide's sweep plays as round 3 opens (ahead of its card); the host speaks once it has played.
-    step(invest(3), '倉庫縮水', [F.rank], [`每個倉庫每種貨都少了 ${e.warehouseLossPercent}%。`]),
+    step({ kind: 'sweep', round: 3 }, '倉庫縮水', [F.plate('p1'), F.plate(BOT.vande), F.plate(BOT.tide), F.plate(BOT.anchor)], [`每個倉庫每種貨都少了 ${e.warehouseLossPercent}%。`]),
     step(invest(3), '最後的大市集', [F.event, F.round], [
       '「最後的大市集」翻出來，這就是最後一回合。',
       `每種貨需求 +${e.openMarketDemand}、不會跌價，每艘船擲 ${e.lastGambleDice} 顆骰取高的。巨鯨號來不及到，不能選。`,

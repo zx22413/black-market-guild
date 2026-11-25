@@ -15,6 +15,8 @@ export interface CoachMoment {
   readonly marketRound?: number;
   /** The last round whose resolution has got past the wanted flag, to its voyage event card or the role reveal (0 before any). */
   readonly startedRound?: number;
+  /** The last round whose opening dark-tide sweep has played (0 before any). */
+  readonly sweptRound?: number;
   /** The ships whose voyage result has shown, as `round:owner`. */
   readonly shownShips?: readonly string[];
   /** Your decision is up on the table, nothing is still playing in front of it (islands' moments, the reroll's beams). */
@@ -43,6 +45,8 @@ export interface CoachView {
   readonly holdsMarket: boolean;
   /** The voyage event card stays up, un-shrunk, until the step about it is read. */
   readonly holdsEvent: boolean;
+  /** The round's opening cards wait (not shown yet) until the step about the dark-tide sweep is read. */
+  readonly holdsCard: boolean;
   /** What to do for the decision on screen, once its steps are read. */
   readonly todo: string | null;
   /** Your choice is complete: only 「提交」 is lit, to press it. */
@@ -71,6 +75,8 @@ function reached(trigger: CoachTrigger, moment: CoachMoment): boolean {
       return moment.shownRound >= trigger.round || trigger.owners.every((o) => (moment.shownShips ?? []).includes(`${trigger.round}:${o}`));
     case 'market':
       return (moment.marketRound ?? 0) >= trigger.round;
+    case 'sweep':
+      return (moment.sweptRound ?? 0) >= trigger.round;
     case 'end':
       return moment.ended;
   }
@@ -91,6 +97,8 @@ export function coachView(steps: readonly CoachStep[], read: number, moment: Coa
     nextTrigger.kind === 'resolution' &&
     moment.resolvingRound >= nextTrigger.round &&
     steps.slice(read).some((s) => s.trigger.kind === 'resolution' && s.trigger.round === nextTrigger.round && s.focus.some((f) => f.kind === 'event'));
+  // From the round's opening, so the card never shows ahead of the step that explains what the sweep took.
+  const holdsCard = steps.slice(read).some((s) => s.trigger.kind === 'sweep' && moment.decision !== null && moment.decision.round >= s.trigger.round);
   const holdsShow = step !== null && step.trigger.kind === 'resolution';
   const holdsVoyage = step !== null && step.trigger.kind === 'voyage';
   const last = read > 0 ? steps[read - 1] : undefined;
@@ -104,5 +112,5 @@ export function coachView(steps: readonly CoachStep[], read: number, moment: Coa
       ? [{ kind: 'advance' }, { kind: 'tap' }]
       : (step?.focus ?? (last?.focus ?? []));
   const guide = step === null && todo !== null && !ready && last?.guide ? last.guide.map(asGroup) : null;
-  return { step, number: Math.min(read + 1, steps.length), total: steps.length, holdsDecision, holdsTable, holdsMarket, holdsEvent, holdsShow, holdsVoyage, todo, ready, pulse: ready || idle || guide !== null, focus, guide };
+  return { step, number: Math.min(read + 1, steps.length), total: steps.length, holdsDecision, holdsTable, holdsMarket, holdsEvent, holdsShow, holdsVoyage, holdsCard, todo, ready, pulse: ready || idle || guide !== null, focus, guide };
 }

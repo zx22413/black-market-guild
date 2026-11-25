@@ -70,6 +70,8 @@ export type CoachTrigger =
   | { readonly kind: 'voyage'; readonly round: number; readonly owners: readonly PlayerId[] }
   /** When that round's resolution reaches the market card (it waits there until the step is read). */
   | { readonly kind: 'market'; readonly round: number }
+  /** When the dark tide's sweep (what 暗潮將至 took from the warehouses) has played as that round opens; that round's cards wait until the step is read. */
+  | { readonly kind: 'sweep'; readonly round: number }
   /** After the last resolution has played. */
   | { readonly kind: 'end' };
 

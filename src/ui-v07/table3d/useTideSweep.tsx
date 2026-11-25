@@ -37,6 +37,8 @@ export interface TideSweepInput {
 export interface TideSweepShow {
   /** The show is on: the next card, moment and decision wait. */
   readonly blocking: boolean;
+  /** The last round whose opening sweep has played out (0 before any). */
+  readonly swept: number;
   readonly pins: readonly TablePin[];
   readonly scene: ReactNode;
   /**
@@ -47,7 +49,7 @@ export interface TideSweepShow {
   readonly stock: Readonly<Record<PlayerId, Goods>> | null;
 }
 
-const IDLE: TideSweepShow = { blocking: false, pins: [], scene: null, stock: null };
+const IDLE: TideSweepShow = { blocking: false, swept: 0, pins: [], scene: null, stock: null };
 
 export function useTideSweep({ events, round, free, angleOf, ids, startingCash, rules, tide }: TideSweepInput): TideSweepShow {
   const found = useMemo(() => {
@@ -75,10 +77,11 @@ export function useTideSweep({ events, round, free, angleOf, ids, startingCash, 
     return () => timers.forEach(clearTimeout);
   }, [on, round, ms]);
 
-  if (!on || !found) return IDLE;
+  if (!on || !found) return shownRound === 0 ? IDLE : { ...IDLE, swept: shownRound };
   const counted = countedRound >= round;
   return {
     blocking: true,
+    swept: shownRound,
     stock: Object.fromEntries(
       Object.entries(found.before).map(([id, stock]) => {
         const lost = counted ? sweeps.find((s) => s.playerId === id)?.lost : undefined;

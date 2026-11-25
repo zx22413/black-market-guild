@@ -35,6 +35,8 @@ export interface TutorialSession extends GameSession {
   setStarted(round: number): void;
   /** A round's voyage has shown the result of a player's ship. */
   setVoyage(round: number, owner: PlayerId): void;
+  /** A round's opening dark-tide sweep has played. */
+  setSwept(round: number): void;
   /** Your decision is up on the table with nothing still playing in front of it. */
   setCalm(calm: boolean): void;
 }
@@ -50,7 +52,7 @@ function yourSeat(script: TutorialScript, human: Controller): Controller {
 
 const scriptedSeat = (script: TutorialScript): Controller => ({ decide: async (context) => scriptedAction(script, context) });
 
-function momentOf(script: TutorialScript, raw: SessionSnapshot, shownRound: number, ended: boolean, draft: Action | null, marketRound: number, startedRound: number, shownShips: readonly string[], calm: boolean): CoachMoment {
+function momentOf(script: TutorialScript, raw: SessionSnapshot, shownRound: number, ended: boolean, draft: Action | null, marketRound: number, startedRound: number, shownShips: readonly string[], calm: boolean, sweptRound: number): CoachMoment {
   const request = raw.requests[0];
   const resolving = raw.events.reduce((n, e) => (e.type === 'roles-revealed' ? Math.max(n, e.round) : n), 0);
   return {
@@ -62,6 +64,7 @@ function momentOf(script: TutorialScript, raw: SessionSnapshot, shownRound: numb
     startedRound,
     shownShips,
     calm,
+    sweptRound,
     draftReady: request !== undefined && draft !== null && isReady(script, request.context, draft),
   };
 }
@@ -83,10 +86,11 @@ export function startTutorialSession(script: TutorialScript): TutorialSession {
   let started = 0;
   let voyaged: readonly string[] = [];
   let calm = false;
-  let coach = coachView(script.coach, read, momentOf(script, inner.getSnapshot(), 0, false, null, 0, 0, [], false));
+  let swept = 0;
+  let coach = coachView(script.coach, read, momentOf(script, inner.getSnapshot(), 0, false, null, 0, 0, [], false, 0));
 
   const refresh = (): void => {
-    coach = coachView(script.coach, read, momentOf(script, inner.getSnapshot(), shown.round, shown.ended, draft, market, started, voyaged, calm));
+    coach = coachView(script.coach, read, momentOf(script, inner.getSnapshot(), shown.round, shown.ended, draft, market, started, voyaged, calm, swept));
     listeners.forEach((l) => l());
   };
   inner.subscribe(refresh);
@@ -119,6 +123,11 @@ export function startTutorialSession(script: TutorialScript): TutorialSession {
       const key = `${round}:${owner}`;
       if (voyaged.includes(key)) return;
       voyaged = [...voyaged, key];
+      refresh();
+    },
+    setSwept: (round) => {
+      if (round <= swept) return;
+      swept = round;
       refresh();
     },
     setCalm: (value) => {
