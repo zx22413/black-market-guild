@@ -477,8 +477,8 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   const bottomHud = useMemo(() => [dockRef, barRef], []);
   const safe = useHudSafe(topHud, bottomHud, SAFE);
 
-  // The decision is really up (its islands' moments played) for the tutorial host to talk about it.
-  const calm = ready && !holding && !showIslands && !autoplay && !moments.blocking && !sweep.blocking;
+  // The decision is really up (its islands' moments played, the round's cards put away) for the tutorial host to talk about it.
+  const calm = ready && !holding && !showIslands && !autoplay && !moments.blocking && !sweep.blocking && !cardUp;
   useEffect(() => onCalm?.(calm), [onCalm, calm]);
 
   const finished = !holding && snap.result !== null;
