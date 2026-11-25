@@ -281,26 +281,28 @@ describe('dark tide: the bet and the last market (V0.8)', () => {
   const { events } = playTutorial(TIDE);
   const resolved = (shipId: string) => events.find((e): e is Extract<MatchEvent, { type: 'ship-resolved' }> => e.type === 'ship-resolved' && e.shipId === shipId);
 
-  it('shows the scripted candidates, picks the storm tide at 暗潮將至 in round 2 and ends with 最後的大市集 in round 3', () => {
+  it('shows the scripted candidates, picks the storm tide at 暗潮將至 in round 2 and flips 暴風雨 in round 3 and ends with 最後的大市集 in round 4', () => {
     expect(events.find((e) => e.type === 'tide-candidates')).toMatchObject({ candidates: ['storm', 'crash'] });
     expect(events.find((e) => e.type === 'dark-tide-rising')).toMatchObject({ round: 2 });
     expect(events.find((e) => e.type === 'tide-revealed')).toMatchObject({ round: 2, tide: 'storm' });
     expect(events.some((e) => e.type === 'voyage-event-revealed' && e.round === 2)).toBe(false);
     expect(events.find((e) => e.type === 'dark-tide-loss')).toMatchObject({ round: 2 });
-    expect(events.find((e) => e.type === 'final-round')).toMatchObject({ round: 3, effect: 'final-market' });
+    expect(events.find((e) => e.type === 'boss-event')).toMatchObject({ round: 3 });
+    expect(events.find((e) => e.type === 'voyage-event-revealed' && e.round === 3)).toMatchObject({ event: 'storm' });
+    expect(events.find((e) => e.type === 'final-round')).toMatchObject({ round: 4, effect: 'final-market' });
   });
 
   it('round 3: both 3s, the repairyard keeps yours to 1 lost crate while the rival loses all its iron', () => {
-    expect(modifiers(events, 3, 'r3-p1')).toMatchObject({ final: 3 });
-    expect(modifiers(events, 3, 'r3-p2')).toMatchObject({ final: 3 });
-    const mine = resolved('r3-p1')!;
+    expect(modifiers(events, 4, 'r4-p1')).toMatchObject({ final: 3 });
+    expect(modifiers(events, 4, 'r4-p2')).toMatchObject({ final: 3 });
+    const mine = resolved('r4-p1')!;
     expect(mine.outcome).toBe('arrived');
     expect(Object.values(mine.lost ?? {}).reduce((a, b) => a + b, 0)).toBe(1);
-    expect(resolved('r3-p2')).toMatchObject({ outcome: 'arrived', lost: { wood: 0, iron: 2, spice: 0, arms: 0 } });
+    expect(resolved('r4-p2')).toMatchObject({ outcome: 'arrived', lost: { wood: 0, iron: 2, spice: 0, arms: 0 } });
   });
 
   it('every load you may pick still plays to the end', { timeout: 60_000 }, () => {
-    for (const round of [1, 2, 3]) {
+    for (const round of [1, 2, 3, 4]) {
       const choices = everyChoice(TIDE, round, 'invest');
       expect(choices.length).toBeGreaterThan(1);
       choices.forEach((_, i) => expect(playTutorial(TIDE, pickNth(TIDE, round, 'invest', i)).finalState.phase).toBe('game-over'));
