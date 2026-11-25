@@ -88,7 +88,9 @@ export function coachView(steps: readonly CoachStep[], read: number, moment: Coa
   const step = next !== undefined && reached(next.trigger, moment) ? next : null;
   const holdsDecision = steps.slice(read).some((s) => isDecision(s.trigger, moment.decision));
   // Held before the step shows too, so the camera never dives to the decision and climbs back.
-  const holdsTable = next?.overview === true && isDecision(next.trigger, moment.decision);
+  // A sweep step is read before the round's decision too: the table waits on the overview, where the plates it lights are.
+  const holdsTable =
+    next?.overview === true && (isDecision(next.trigger, moment.decision) || (next.trigger.kind === 'sweep' && moment.decision !== null && moment.decision.round >= next.trigger.round));
   const holdsMarket = steps.slice(read).some((s) => s.trigger.kind === 'market' && s.trigger.round === (moment.marketRound ?? 0));
   // Held from the moment the round's resolution exists, so the card never plays a bit before the step shows.
   const nextTrigger = next?.trigger;

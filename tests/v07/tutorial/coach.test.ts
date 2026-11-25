@@ -127,4 +127,13 @@ describe('coachView', () => {
     expect(coachView(steps, 0, at({ decision: R2, sweptRound: 2 }))).toMatchObject({ step: steps[0], holdsCard: true });
     expect(coachView(steps, 1, at({ decision: R2, sweptRound: 2 }))).toMatchObject({ holdsCard: false });
   });
+
+  it('keeps the table on the overview while an overview sweep step waits to be read', () => {
+    const steps: readonly CoachStep[] = [
+      { trigger: { kind: 'sweep', round: 2 }, title: 's', lines: [], focus: [{ kind: 'rank' }], overview: true },
+      { trigger: { kind: 'decision', round: 2, phase: 'invest' }, title: 'd', lines: [], focus: [{ kind: 'log' }] },
+    ];
+    expect(coachView(steps, 0, at({ decision: R2, sweptRound: 1 })).holdsTable).toBe(true);
+    expect(coachView(steps, 1, at({ decision: R2, sweptRound: 2 })).holdsTable).toBe(false);
+  });
 });

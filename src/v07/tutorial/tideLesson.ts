@@ -126,7 +126,8 @@ export const TIDE: TutorialScript = {
 
     // ── Round 3: the flip ──
     // The tide's sweep plays as round 3 opens; the host speaks once it has played.
-    step({ kind: 'sweep', round: 3 }, '倉庫縮水', [F.plate('p1'), F.plate(BOT.vande), F.plate(BOT.tide), F.plate(BOT.anchor)], [`每個倉庫每種貨都少了 ${e.warehouseLossPercent}%。`]),
+    // Read on the overview: the camera stays on the whole table, where the seats' plates are.
+    { ...step({ kind: 'sweep', round: 3 }, '倉庫縮水', [F.plate('p1'), F.plate(BOT.vande), F.plate(BOT.tide), F.plate(BOT.anchor)], [`每個倉庫每種貨都少了 ${e.warehouseLossPercent}%。`]), overview: true },
     step(invest(3), '暗潮季：事件翻面', [F.tide], [
       '暗潮季裡，風暴潮挑中的那張航海事件會翻到暗潮面，效果更兇。',
       `這局是「暴風雨」：一般每艘船 ${R.voyageEvents.storm}，翻面後每艘船 ${e.bossStorm}。`,
