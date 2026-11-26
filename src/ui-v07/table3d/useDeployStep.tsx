@@ -36,6 +36,8 @@ import { DashedArrows } from './RoleArrows';
 import { pickArrows } from './revealModel';
 import { shipName, type StageEnv, type StageParts } from './stage';
 import { cardArtUrl } from './cardArt';
+import { berthsOf } from '../scene/berth';
+import { seaButtonSpot } from './seaTags';
 
 // Role deployment on the whole table (docs/ui/v07-event-presentation.md §1.4): pick a role card
 // from the hand, then click the ship it goes to (customs then names a good, a diplomat guesses a role, in a list at the ship).
@@ -121,7 +123,12 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   // hover or tap. The ship's name shows on hover and is read out for screen readers. Each counts as
   // part of its owner's island for a highlight (the tutorial's focus).
   const typed = context.view.rules.ships.enabled === 1;
+  const berths = berthsOf(board.ships.map((s) => ({ id: s.id, owner: s.owner, state: s.fromEarlier && s.outcome === null ? 'atSea' : 'docked' })));
   const pins: TablePin[] = board.ships.map((ship) => {
+    // A ship that left in an earlier round still rides at sea (it comes in this round): its button and name stand beside
+    // it, where its sea tag would (Table3DScreen puts that tag away), not on top of the docked ship of the same owner.
+    const atSea = ship.fromEarlier && ship.outcome === null;
+    const angle = angles[laneOf(ship.owner)]!;
     const blocked = blockedReason(context, options, choice, ship.id);
     const pickable = targets.has(ship.id);
     const chosen = choice.target === ship.id;
@@ -130,7 +137,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     const rim = seats[laneOf(ship.owner)]?.color ?? '#e0a63c';
     const pin: TablePin = {
       id: `ship-${ship.id}`,
-      position: besideShip(angles[laneOf(ship.owner)]!, 'docked', 7, TAG_HEIGHT),
+      ...(atSea ? seaButtonSpot(angle, berths.get(ship.id) ?? 0) : { position: besideShip(angle, 'docked', 7, TAG_HEIGHT) }),
       node:
         chosen && naming === 'good' ? (
           <ShipBets
@@ -180,10 +187,13 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
           </InfoTip>
         ) : null,
     };
-    // The ship's name and open skill stand on the ship whatever the role does (a name alone when nothing else is on it).
+    // The ship's type and open skill stand on the ship whatever the role does (a name alone when nothing else is on it).
+    // Whose ship it is is its owner's colour and lane, so the tag stays short among the islands' names and plates; the
+    // full name is on the button's tip and read out for screen readers.
     const tag = (
-      <span className="dep-ship-name" data-focus={`island-${ship.owner}`}>
-        {label}
+      <span className="dep-ship-name" style={{ borderLeftColor: rim }} aria-label={label} data-focus={`island-${ship.owner}`}>
+        {typed ? SHIP_TYPE_LABELS[ship.type] : label}
+        {atSea && <small className="dep-ship-when">本回合抵達</small>}
         {skill && (
           <InfoTip title={`技能：${skill.label}`} text={skill.text}>
             <small className="dep-ship-skill">技能・{skill.label}</small>

@@ -417,7 +417,10 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     angles,
     laneOf,
     (id) => berths.get(id as ShipId) ?? 0,
-  ).map((pin) => (closeUp || resolution.pins.some((p) => p.id === `badges-${pin.id.slice(4)}`) ? { ...pin, hidden: true } : pin));
+  ).map((pin) =>
+    // Put away while the round show's badges stand on the ship, or while the step's own tag does (the role buttons).
+    closeUp || resolution.pins.some((p) => p.id === `badges-${pin.id.slice(4)}`) || step?.pins.some((p) => p.id === `ship-${pin.id.slice(4)}`) ? { ...pin, hidden: true } : pin,
+  );
   const pins = [...plates.map(stepAside), ...seaTags, marketBadgePin(), ...badgesNow.map(stepAside), ...moments.pins, ...sweep.pins, ...(step?.pins ?? []), ...resolution.pins, ...marks];
   // Another player's island can be looked at closely (click it) whenever nothing else is steering the camera.
   const canLook = !step?.camera && !moments.blocking && !resolution.camera && !holding && !cardUp && !sweep.blocking && snap.result === null;

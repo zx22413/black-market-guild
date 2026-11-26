@@ -1364,6 +1364,7 @@ button.inv-stack:hover {
 .dep-ship-name {
   display: inline-block;
   padding: 2px 8px;
+  border-left: 4px solid transparent;
   border-radius: 6px;
   background: rgb(245 236 212 / 0.8);
   color: #6b5537;
@@ -3848,6 +3849,9 @@ button .info-tip-anchor {
   flex-direction: column;
   align-items: center;
   gap: 3px;
+}
+.dep-ship-name small.dep-ship-when {
+  display: block;
 }
 .dep-ship-name small.dep-ship-skill {
   display: block;

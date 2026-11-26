@@ -28,6 +28,22 @@ export function seaTagSpot(angle: number, berth: number): { readonly position: V
   return seatZ > 0 ? { position: [at.x - SHIP_HALF_BEAM, 2, at.z + along], side: 'left' } : { position: [at.x + SHIP_HALF_BEAM, 2, at.z + along], side: 'right' };
 }
 
+/**
+ * Where the role buttons of a ship riding at sea stand while roles are deployed (useDeployStep). A lane across the screen has
+ * its docked ship's buttons above the hulls, so these hang below the hull instead; a lane up the screen keeps the sea
+ * tag's spot, pushed off the hull to its side.
+ */
+export function seaButtonSpot(angle: number, berth: number): Pick<TablePin, 'position' | 'drop' | 'dropWide' | 'slide'> {
+  const spot = seaTagSpot(angle, berth);
+  if (spot.side === 'above') {
+    const [x, y, z] = spot.position;
+    return { position: [x, y, z + 2 * SHIP_HALF_BEAM], drop: true, dropWide: true };
+  }
+  return { position: spot.position, slide: spot.side === 'right' ? SIDE_SLIDE : -SIDE_SLIDE };
+}
+/** How far (px) the role buttons of a ship at sea on a lane up the screen stand off the hull, about half their width. */
+const SIDE_SLIDE = 36;
+
 /** A ship on the table, as far as its sea tag cares. */
 export interface SeaTagShip {
   readonly id: string;
