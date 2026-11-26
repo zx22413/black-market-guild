@@ -200,11 +200,13 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
   const shown = peek ?? choice.role;
   const shownCard = shown !== null && shown !== 'none' ? cards.find((c) => c.id === shown) : undefined;
   // The description strip sits above the hand, so the hand itself never moves: it describes the role pointed at or
-  // picked, else it shows the cargo alone.
+  // picked, else it shows the cargo alone. On a wider screen it only floats over the table while a card is pointed at
+  // (`peeking`, beat.css): the camera then frames the table above the hand alone, and the bar keeps the pick and the cargo.
+  const peeking = peek !== null ? 'peeking' : '';
   const strip =
     shown === null ? (
       // Nothing pointed at yet: the strip still says what your ship carries, so a smuggler is chosen knowing it.
-      <div className={`dep-strip idle ${arriveClass}`} {...arrive}>
+      <div className={`dep-strip idle ${noRoleReason ? 'peeking' : ''} ${arriveClass}`} {...arrive}>
         <header>
           <b>你的船上</b>
           <CargoChip cargo={cargo} />
@@ -213,7 +215,7 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
         {noRoleReason && <p className="why">沒有角色可以選：{noRoleReason}，只能「不部署」。</p>}
       </div>
     ) : (
-      <div className={`dep-strip ${stripOpen ? 'open' : ''} ${arriveClass}`} {...arrive} aria-live="polite" onClick={() => setStripOpen((v) => !v)}>
+      <div className={`dep-strip ${peeking} ${stripOpen ? 'open' : ''} ${arriveClass}`} {...arrive} aria-live="polite" onClick={() => setStripOpen((v) => !v)}>
         {shown === 'none' && (
           <>
             <header>
@@ -329,6 +331,10 @@ export function useDeployStep(env: StageEnv | null): StageParts | null {
     ),
     bar: (
       <>
+        {/* What your ship carries, while the strip that also says it is put away (a wider screen, beat.css). */}
+        <span className="bar-cargo">
+          <CargoChip cargo={cargo} />
+        </span>
         {chips}
         <SealSubmit disabled={incomplete} glow={choice.role !== null} onClick={submit} />
         <LockHint icon={<InfoIcon />} text="提交後不能改。大家都提交後，角色一起公開。" />

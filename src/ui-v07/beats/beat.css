@@ -3857,11 +3857,26 @@ button .info-tip-anchor {
   pointer-events: auto;
 }
 
-/* The description strip is never wider than the hand under it: its text wraps there instead of stretching the dock. */
+/* On a wider screen the description strip is a tip: it floats over the table just above the hand (as wide as it) only
+   while a card is pointed at, and is put away otherwise. The camera frames the table above the hand alone (useHudSafe
+   measures the dock), so the islands are not squeezed into the top half by a strip that was mostly empty, and nothing
+   covers the ships while one is picked. The bar keeps the pick and the cargo. A phone keeps the strip in the dock. */
 @media (min-width: 641px) {
   .dep-dock > .dep-strip {
-    width: 0;
-    min-width: 100%;
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 6px);
+    left: 0;
+    min-height: 0;
+    pointer-events: none;
+  }
+  .dep-dock > .dep-strip:not(.peeking) {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .inv-bar .bar-cargo {
+    display: none;
   }
 }
 
