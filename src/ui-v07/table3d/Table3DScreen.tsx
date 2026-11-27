@@ -137,6 +137,8 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, from
 
   const people = useMemo(() => snap.players.filter((p) => p.kind === 'local-human'), [snap.players]);
   const hotSeat = people.length > 1;
+  // Nobody presses anything (the online spectator stand, a local match of bots only): the show plays on by itself.
+  const watching = spectator || (fromStart && !autoplay && people.length === 0);
   const facing = people[0]?.id ?? snap.players[0]?.id ?? null;
 
   // Hot-seat: each decision waits until its player confirms they are the one at the device.
@@ -161,7 +163,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, from
   const [islandsSeen, setIslandsSeen] = useState(skipIslandReveal || resumed.islandsSeen);
   const showIslands = !autoplay && chosen?.type === 'islands-chosen' && !islandsSeen;
   // A spectator presses nothing: the reveal closes by itself.
-  const islandsLeft = useAutoAdvance(spectator && ready && showIslands ? 'islands' : null, SPECTATOR_ISLANDS_SECONDS, () => setIslandsSeen(true));
+  const islandsLeft = useAutoAdvance(watching && ready && showIslands ? 'islands' : null, SPECTATOR_ISLANDS_SECONDS, () => setIslandsSeen(true));
 
   // A round is resolved in one go once the last decision is in; replay it step by step and hold
   // the table until it has been seen.
@@ -240,7 +242,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, from
     weather: weatherEvent?.type === 'voyage-event-revealed' ? weatherEvent.event : null,
     ...(roundCardList.length > 0 ? { cards: roundCardList } : {}),
     onFinish: () => setDismissed((d) => Math.max(d, resolvingRound ?? d)),
-    ...(spectator ? { autoFlow: true, autoAdvanceSeconds: SPECTATOR_REVEAL_SECONDS } : autoAdvanceSeconds === undefined ? {} : { autoAdvanceSeconds }),
+    ...(watching ? { autoFlow: true, autoAdvanceSeconds: SPECTATOR_REVEAL_SECONDS } : autoAdvanceSeconds === undefined ? {} : { autoAdvanceSeconds }),
   });
   // While a decided round waits for its opening, the table stands where its decisions were made: before its roles are revealed.
   const openingCut = useMemo(() => (opening === null ? null : snap.events.findIndex((e) => e.type === 'roles-revealed' && e.round === opening)), [snap.events, opening]);
@@ -671,12 +673,12 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, from
         {ready && !holding && !finished && board.round > 0 && board.voyageEvent && <VoyageEventChip event={board.voyageEvent} {...(bossNow ? { boss: { title: bossNow.title, text: bossNow.lines.join('') } } : {})} />}
         {ready && !holding && !finished && finalNow && <FinalRoundChip title={finalNow.title} lines={finalNow.lines} />}
       </div>
-      {cardUp && !holdCards && <RoundCardShow key={board.round} cards={startCards} onDone={() => setCardRound(board.round)} />}
+      {cardUp && !holdCards && <RoundCardShow key={board.round} cards={startCards} auto={watching} onDone={() => setCardRound(board.round)} />}
       {ready && !finished && tideSeason && <div className="tide-season" aria-hidden="true" />}
       {/* V0.8 prototype: the dark tide (its two candidates, then the one picked) stays in view the whole match. */}
       {ready && !finished && board.round > 0 && tide.candidates.length > 0 && <TideChip status={tide} round={board.round} />}
       {ready && drafting && <IslandDraft key={drafting.id} context={drafting.context} onSubmit={(a) => session.submit(drafting.id, a)} />}
-      {ready && showIslands && chosen?.type === 'islands-chosen' && <IslandReveal islands={chosen.islands} seats={seats} onClose={() => setIslandsSeen(true)} {...(spectator ? { watchingLeft: islandsLeft } : {})} />}
+      {ready && showIslands && chosen?.type === 'islands-chosen' && <IslandReveal islands={chosen.islands} seats={seats} onClose={() => setIslandsSeen(true)} {...(watching ? { watchingLeft: islandsLeft } : {})} />}
       {resultUp && (
         <ResultCard
           rows={rows}

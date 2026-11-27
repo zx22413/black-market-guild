@@ -14,7 +14,7 @@ import { TideIcon } from './tideIcons';
 // (what the round's end takes, then the forecast), so it stays until it is clicked, and so does the last round's card. The first dark-tide side of a
 // match is not dealt face up: the event's plain card comes first and is turned over to its dark side (BossFlip).
 
-/** How long each kind of card holds the screen (ms); 暗潮將至 and the last round's card stay until clicked, so theirs are not used by the show. */
+/** How long each kind of card holds the screen (ms); 暗潮將至 and the last round's card stay until clicked, so theirs are only used when nobody can click (`auto`). */
 export const ROUND_CARD_MS: Readonly<Record<RoundCard['kind'] | 'boss', number>> = { voyage: 3000, boss: 4200, rising: 6500, final: 5200 };
 /** When 暗潮將至 shows which candidate it is (ms into the card); from then on a click closes it. */
 const TIDE_PICK_MS = 1500;
@@ -196,7 +196,8 @@ function CardFx() {
 
 const KIND_TEXT = (card: RoundCard): string => (card.kind === 'voyage' ? (card.boss ? '航海事件・暗潮面' : '航海事件') : card.kind === 'rising' ? '暗潮' : '終局');
 
-export function RoundCardShow({ cards, onDone }: { readonly cards: readonly RoundCard[]; readonly onDone: () => void }) {
+/** `auto`: nobody presses anything here (a spectator), so the cards that wait for a click close by themselves after ROUND_CARD_MS. */
+export function RoundCardShow({ cards, onDone, auto = false }: { readonly cards: readonly RoundCard[]; readonly onDone: () => void; readonly auto?: boolean }) {
   const [at, setAt] = useState(0);
   // A held card (暗潮將至, the last round): 'hold' until it may be closed, 'ready' once a click closes it, 'leave' while it shrinks away.
   const [held, setHeld] = useState<'hold' | 'ready' | 'leave'>('hold');
@@ -208,10 +209,15 @@ export function RoundCardShow({ cards, onDone }: { readonly cards: readonly Roun
     else onDone();
   };
   useEffect(() => {
-    if (!holds || held === 'ready') return undefined;
+    if (!holds) return undefined;
+    if (held === 'ready') {
+      if (!auto || !card) return undefined;
+      const timer = setTimeout(() => setHeld('leave'), ROUND_CARD_MS[card.kind]);
+      return () => clearTimeout(timer);
+    }
     const timer = setTimeout(held === 'hold' ? () => setHeld('ready') : next, held === 'hold' ? (card?.kind === 'final' ? FINAL_READY_MS : TIDE_PICK_MS) : LEAVE_MS);
     return () => clearTimeout(timer);
-  }, [holds, held, at]);
+  }, [holds, held, at, auto]);
   if (!card) return null;
   if (card.kind === 'voyage' && card.boss && card.flipFrom) return <BossFlip key={at} card={card} onDone={next} />;
   if (holds) {

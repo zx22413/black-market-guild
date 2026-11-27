@@ -642,7 +642,7 @@ export function useRoundResolution(input: ResolutionInput): Resolution {
         {inspecting && <InspectionBanner key={`inspection-${round}`} crates={inspectedCrates(events, round!)} covered={coveredCrates(events, round!)} />}
         {weather && stage !== 'wanted' && stage !== 'event' && stage !== 'receipt' && <VoyageEventChip event={weather} {...(bossCard ? { boss: { title: bossCard.title, text: bossCard.lines.join('') } } : {})} />}
         {stage === 'event' && cards && cards.length > 0 ? (
-          <RoundCardShow key={round} cards={cards} onDone={() => setStage('reveal')} />
+          <RoundCardShow key={round} cards={cards} auto={autoFlow} onDone={() => setStage('reveal')} />
         ) : (
           weather && stage === 'event' && <VoyageEventCard key={round} event={weather} held={holdEvent} hidden={hideEvent} onDone={() => setStage('reveal')} />
         )}
