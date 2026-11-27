@@ -25,6 +25,11 @@ const LEAVE_MS = 600;
 /** The first dark-tide side: how long the plain side shows before it is turned over, and the turn itself (ms; roundCard.css). */
 const FLIP_AT_MS = 1500;
 const FLIP_MS = 800;
+/**
+ * Clicks do nothing until the card has turned over (ms): a click left over from the button before (繼續, 全部揭露)
+ * would otherwise end the show before the dark side is ever seen.
+ */
+export const FLIP_LOCK_MS = FLIP_AT_MS + FLIP_MS;
 
 function Rising({ card }: { readonly card: Extract<RoundCard, { kind: 'rising' }> }) {
   const [picked, setPicked] = useState(false);
@@ -101,10 +106,16 @@ function Face({ card }: { readonly card: RoundCard }) {
 
 /**
  * The first dark-tide side of a match: the event's plain card flips in, holds, then turns over to the dark side (the
- * two faces back to back), which holds as long as any dark side does. A click moves on at any time.
+ * two faces back to back), which holds as long as any dark side does. Once it has turned over (FLIP_LOCK_MS), a
+ * click moves on.
  */
 function BossFlip({ card, onDone }: { readonly card: Extract<RoundCard, { kind: 'voyage' }>; readonly onDone: () => void }) {
   const [phase, setPhase] = useState<'front' | 'back' | 'leave'>('front');
+  const [closable, setClosable] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setClosable(true), FLIP_LOCK_MS);
+    return () => clearTimeout(timer);
+  }, []);
   useEffect(() => {
     const [ms, then] = phase === 'front' ? [FLIP_AT_MS, () => setPhase('back')] : phase === 'back' ? [FLIP_MS + ROUND_CARD_MS.boss, () => setPhase('leave')] : [LEAVE_MS, onDone];
     const timer = setTimeout(then, ms);
@@ -116,7 +127,7 @@ function BossFlip({ card, onDone }: { readonly card: Extract<RoundCard, { kind: 
   }, [phase]);
   const plain = card.flipFrom!;
   return (
-    <div className={`event-card-veil round-veil-flip ${phase === 'leave' ? 'event-leave' : 'event-hold'} ${phase === 'front' ? '' : 'turned'}`} data-fx="flip" role="dialog" aria-label={`${KIND_TEXT(card)}：${card.title}`} onClick={onDone}>
+    <div className={`event-card-veil round-veil-flip ${phase === 'leave' ? 'event-leave' : 'event-hold'} ${phase === 'front' ? '' : 'turned'}`} data-fx="flip" role="dialog" aria-label={`${KIND_TEXT(card)}：${card.title}`} onClick={() => closable && onDone()}>
       <CardFx />
       <div className="round-flip" data-focus="event">
         <div className="round-flip-inner">
