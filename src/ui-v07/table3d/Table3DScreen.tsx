@@ -73,6 +73,12 @@ export interface Table3DScreenProps {
   readonly rematch?: Rematch | undefined;
   /** Dev only: answer every decision with its first legal action and skip every show. */
   readonly autoplay?: boolean;
+  /**
+   * The match was just started on this device (a local match), so every round plays from the first one even when the
+   * session is already further on (four bots finish a whole match before the table is up). Without it a table mounted
+   * mid-match (online: a reload, a waking phone) skips what is already over.
+   */
+  readonly fromStart?: boolean;
   /** The result card at the end; the tutorial ends with its host instead. */
   readonly showResult?: boolean;
   /** Told what has finished playing: the last round whose resolution was seen, and the match's end. */
@@ -123,7 +129,7 @@ export interface Table3DScreenProps {
   readonly holdDecision?: boolean;
 }
 
-export function Table3DScreen({ session, onExit, rematch, autoplay = false, showResult = true, onShown, onReplaying, rounds = RULES_CURRENT.rounds, skipIslandReveal = false, skipIslandMoments = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdShow = false, holdVoyage = false, holdDecision = false, onVoyage, onStarted, onCalm, onSwept, holdCards = false, autoAdvanceSeconds, spectator = false }: Table3DScreenProps) {
+export function Table3DScreen({ session, onExit, rematch, autoplay = false, fromStart = false, showResult = true, onShown, onReplaying, rounds = RULES_CURRENT.rounds, skipIslandReveal = false, skipIslandMoments = false, islandMarks = false, onReady, onDraft, onMarket, holdMarket = false, holdEvent = false, lockSkips = false, hideEvent = false, holdShow = false, holdVoyage = false, holdDecision = false, onVoyage, onStarted, onCalm, onSwept, holdCards = false, autoAdvanceSeconds, spectator = false }: Table3DScreenProps) {
   const snap = useSession(session);
   const [ready, setReady] = useState(false);
   // The match's own rules: the official ones unless the session plays an experiment (the V0.8 prototype).
@@ -151,7 +157,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   // Island draft, then everyone's islands revealed at once, before round 1.
   const chosen = snap.events.find((e) => e.type === 'islands-chosen');
   // Mounting into a match already under way (reload, waking phone) skips what is already over.
-  const [resumed] = useState(() => (autoplay ? { roundsSeen: 0, islandsSeen: false } : resumePoint(snap.events)));
+  const [resumed] = useState(() => (autoplay || fromStart ? { roundsSeen: 0, islandsSeen: false } : resumePoint(snap.events)));
   const [islandsSeen, setIslandsSeen] = useState(skipIslandReveal || resumed.islandsSeen);
   const showIslands = !autoplay && chosen?.type === 'islands-chosen' && !islandsSeen;
   // A spectator presses nothing: the reveal closes by itself.
@@ -160,10 +166,16 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   // A round is resolved in one go once the last decision is in; replay it step by step and hold
   // the table until it has been seen.
   const [dismissed, setDismissed] = useState(resumed.roundsSeen);
-  const resolvingRound = useMemo(() => {
+  const decidedRound = useMemo(() => {
     const rounds = snap.events.flatMap((e) => (e.type === 'roles-revealed' && e.round > dismissed ? [e.round] : []));
     return rounds.length > 0 ? Math.min(...rounds) : null;
   }, [snap.events, dismissed]);
+  // A local match: a round's resolution waits for its opening (the island reveal, the islands' moments, the tide's
+  // sweep, the round's cards) to have played. A person's decision keeps that order by itself; a table of bots has
+  // decided rounds ahead, so without this their openings would be skipped (`calm` below opens each round).
+  const [openedRound, setOpenedRound] = useState(0);
+  const opening = fromStart && !autoplay && decidedRound !== null && decidedRound > openedRound ? decidedRound : null;
+  const resolvingRound = opening === null ? decidedRound : null;
   useEffect(() => {
     if (autoplay && resolvingRound !== null) setDismissed(resolvingRound);
   }, [autoplay, resolvingRound]);
@@ -230,7 +242,9 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
     onFinish: () => setDismissed((d) => Math.max(d, resolvingRound ?? d)),
     ...(spectator ? { autoFlow: true, autoAdvanceSeconds: SPECTATOR_REVEAL_SECONDS } : autoAdvanceSeconds === undefined ? {} : { autoAdvanceSeconds }),
   });
-  const events = useMemo(() => snap.events.slice(0, resolution.cutoff), [snap.events, resolution.cutoff]);
+  // While a decided round waits for its opening, the table stands where its decisions were made: before its roles are revealed.
+  const openingCut = useMemo(() => (opening === null ? null : snap.events.findIndex((e) => e.type === 'roles-revealed' && e.round === opening)), [snap.events, opening]);
+  const events = useMemo(() => snap.events.slice(0, openingCut ?? resolution.cutoff), [snap.events, openingCut, resolution.cutoff]);
   useEffect(() => {
     if (resolution.marketDone && resolvingRound !== null) onMarket?.(resolvingRound);
   }, [resolution.marketDone, resolvingRound, onMarket]);
@@ -490,8 +504,12 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, show
   // The decision is really up (its islands' moments played, the round's cards put away) for the tutorial host to talk about it.
   const calm = ready && !holding && !showIslands && !autoplay && !moments.blocking && !sweep.blocking && !cardUp;
   useEffect(() => onCalm?.(calm), [onCalm, calm]);
+  useEffect(() => {
+    if (calm) setOpenedRound((r) => Math.max(r, board.round));
+  }, [calm, board.round]);
 
-  const finished = !holding && snap.result !== null;
+  // Over once every decided round has been seen (a table of bots finishes the match long before its replay does).
+  const finished = decidedRound === null && snap.result !== null;
   useEffect(() => onShown?.(dismissed, finished), [onShown, dismissed, finished]);
   useEffect(() => onReplaying?.(holding), [onReplaying, holding]);
   const resultUp = ready && finished && showResult;

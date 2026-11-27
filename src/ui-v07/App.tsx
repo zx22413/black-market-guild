@@ -176,6 +176,7 @@ function Screen({ mode, setMode, home, launchLocal, startLocal, onView }: Screen
           key={options.seed}
           session={mode.session}
           onExit={home}
+          fromStart
           rematch={{
             kind: 'now',
             onRematch: () => startLocal({ ...options, seed: randomSeed() }),
