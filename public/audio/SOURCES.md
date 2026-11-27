@@ -32,6 +32,23 @@
 | sfx-salute-splash.ogg | 要塞島禮炮：每發落下的落水聲 | a small object dropping into the sea, a short light plop splash, water, outdoors, close. | 72001 | sfx，1.5 秒，cfg 4，negative：music, melody, voice, speech, big splash, waves | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −9 dBFS |
 | sfx-salute-ding.ogg | 要塞島禮炮：每發落下後的「叮」（遊戲以 1、1.12、1.24… 倍速播，一聲比一聲高） | a single small brass bell, struck once, a bright clear high ding ringing out, metal bell, close, light reverb. | 70001 | sfx，2 秒，cfg 4，negative：music, melody, voice, speech, long noise, multiple hits | 切掉頭尾靜音（−55 dB）；250 ms 淡出；峰值 −6.1 dBFS |
 
+## V0.8 的音效（2026-11-29）
+
+AI 部分的生成方式、授權與上表相同（Stable Audio 3 medium，steps 8，cfg 4，sfx 的 negative 一律含 `music, melody, voice, speech`）；疊合用的 Kenney 檔案是 CC0（見下方 Kenney 一節）。剪輯一律切掉頭尾靜音（−55 dB）、250 ms 淡出、峰值 −3 dBFS，48 kHz Ogg Vorbis（quality 0.6）。候選與腳本在 git 排除的 `audio-drafts/v08/`（`make.py`）。
+
+| 檔案 | 用途 | 來源 | Seed | 剪輯 |
+|---|---|---|---|---|
+| sfx-crate-drop.ogg | 結算拍：每掉一箱貨（`CrateDrop` 箱子離開甲板，0.8 秒後落水） | Kenney Impact Sounds `impactWood_light_001.ogg`（0 秒，0.5 倍音量）＋合成水花：白噪音經共振帶通（Q 0.9，中心 5000→900 Hz）、130 ms 指數衰減，疊 2.5 kHz 以上的嘶聲（60 ms，0.35 倍）與短促低音（140→60 Hz 下滑正弦，70 ms，0.32 倍），再加 7 滴水滴（900～1500 Hz 上刷 1.6～2.4 倍的短正弦，30～70 ms）；numpy 亂數 seed 8128 | — | 水花起音對在 0.8 秒；共 2.1 秒；作者自製部分無授權限制 |
+| sfx-skill-omen.ogg | 結算拍：信天翁號「好兆頭」重擲 | 本目錄的 `sfx-reroll.ogg`（Kenney 搖骰＋落骰，0.8 倍音量），0.95 秒疊 AI 幸運閃光：a lucky charm sparkle, a bright magical ascending twinkle of small glass chimes and a soft harp glissando, good fortune, magical, close, light reverb.（negative 另加 dark, scary，2 秒）的前 1.2 秒（0.6 倍） | 82001 | 2.2 秒 |
+| sfx-skill-surge.ogg | 結算拍：海嘯號「巨浪」加擲 1d3 | 合成：白噪音經共振帶通（Q 2，中心 250→2600 Hz）0.85 秒漸強聚浪，0.8 秒接明亮水花（700 Hz～11 kHz 帶通噪音，220 ms 衰減，0.6 倍）與 8 滴水滴；1.1 秒疊 Kenney Casino Audio `die-throw-2.ogg` 的第一下（0.7 倍）；numpy 亂數 seed 8128 | — | 1.9 秒；作者自製部分無授權限制 |
+| sfx-skill-raise-won.ogg | 結算拍：孤注號「加注」成功（取代抵達的鐘聲） | music：Short cheerful jackpot win jingle, bright steel drum and marimba rising run ending on a big happy major chord, with coins jingling, ta-da, clean high quality studio recording.（negative：drums loop, sad, vocals, long, distorted，3 秒） | 84002 | 3.0 秒 |
+| sfx-works-hammer.ogg | 碼頭工事：煙塵裡施工 | shipwrights at work on a wooden dock, quick busy hammering of mallets on timber and a short saw stroke, wood, outdoor harbor, medium close.（negative 另加 power tools, machine，2 秒） | 85002 | 取前 1.2 秒 |
+| sfx-works-cloth.ogg | 碼頭工事：帆布放下 | a large canvas sheet unrolled and dropped down quickly, one soft heavy fabric whoosh and flap, canvas cloth, outdoors, close.（1.5 秒） | 85101 | 取前 0.8 秒 |
+| sfx-works-unveil.ogg | 碼頭工事：揭幕金光 | a grand reveal, a curtain whooshing down followed by a warm golden magical shimmer rising, bright chimes and a soft swell, triumphant, close, light reverb.（negative 另加 dark, scary，2.5 秒） | 85202 | 取前 2.0 秒 |
+| event-omen.ogg | 暗潮將至那一整回合的背景（取代海浪；`TideOmen`） | sfx，cfg 1：deep slow heavy ocean swells rolling in and drawing back along a rocky shore, a low rumbling surge every few seconds, dark water rising, distant wind, wide stereo, no music.（30 秒） | 86001 | 切掉開頭 1 秒；2 秒等功率交叉淡化循環；−21 LUFS；循環 27 秒 |
+
+碼頭工事的木樁落水、平台木板沿用本目錄的 `sfx-salute-splash.ogg`、`sfx-produce.ogg`（`dockWorksSounds.ts`）。
+
 ## 程式合成的音效
 
 | 檔案 | 用途 | 合成方式 |

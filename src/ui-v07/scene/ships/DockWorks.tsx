@@ -1,10 +1,12 @@
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { AdditiveBlending, DoubleSide, type BufferGeometry, type Group, type Mesh, type MeshBasicMaterial, type MeshStandardMaterial } from 'three';
 import { glowTexture } from '../../../ui/scene/Night';
 import { DRAFT, shipPose } from '../../../ui/scene/Ships';
 import type { ShipTypeId } from '../../../v07/game';
+import { dockWorksSounds } from '../../audio/dockWorksSounds';
+import { soundEngine } from '../../audio/soundEngine';
 import { BAY_COUNT, GLINTS, HULL_HALF_WIDTH, POLE_COUNT, glintPose, worksPose, worksSides, type WorksMode } from './dockWorksShow';
 
 // V0.8 prototype (an experiment, not rules): the dock works (the prototype's 造船廠, which every player has): the
@@ -105,6 +107,11 @@ export function DockWorks({ angle, berth = 0, type, color, mode, rate = 1, onSwa
   const glints = useRef<Group>(null);
   const splashes = useRef<(Group | null)[]>([]);
   const heap = useRef<Group>(null);
+  // The show's sounds on its own script, from the moment this mode starts (a new mode starts the script over).
+  useEffect(() => {
+    const timers = dockWorksSounds(mode).map((x) => setTimeout(() => soundEngine.playSfx(x.id, x.rate), (x.at / rate) * 1000));
+    return () => timers.forEach(clearTimeout);
+  }, [mode, rate]);
 
   useFrame(({ clock }) => {
     if (told.current.mode !== mode) {

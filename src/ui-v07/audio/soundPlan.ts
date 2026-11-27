@@ -6,8 +6,11 @@ import type { MenuView } from '../menu/menuSeats';
 
 export type MusicId = 'cover' | 'ingame';
 export type AmbienceId = 'waves' | EventBedId;
-/** What plays under the round's show once its voyage event is out (calm seas keep the waves). */
-export type EventBedId = 'storm' | 'tailwind' | 'fog' | 'moonless' | 'rush';
+/**
+ * What plays under the round's show once its voyage event is out (calm seas keep the waves); `omen` is the high water
+ * breathing round the islands for the whole 暗潮將至 round (scene/TideOmen.tsx).
+ */
+export type EventBedId = 'storm' | 'tailwind' | 'fog' | 'moonless' | 'rush' | 'omen';
 export type SfxId =
   | 'bill-register'
   // The end-of-match card popping up: a steel-drum flourish that closes the match (ResultCard moves to its beats).
@@ -87,7 +90,17 @@ export type SfxId =
   | 'price-up'
   | 'price-down'
   // The market card coming up: a heavy plank set down.
-  | 'market-open';
+  | 'market-open'
+  // V0.8: a lost crate going overboard (scene/CrateDrop.tsx: thrown, then the splash 0.8 s later).
+  | 'crate-drop'
+  // V0.8 ship skills going off in the beat: 好兆頭's reroll, 巨浪's extra die, 加注 coming in.
+  | 'skill-omen'
+  | 'skill-surge'
+  | 'skill-raise-won'
+  // V0.8 dock works raised round a ship whose skill is opened (dockWorksSounds.ts): the hammering, the canvas, the unveiling.
+  | 'works-hammer'
+  | 'works-cloth'
+  | 'works-unveil';
 
 /**
  * `loop`: the track repeats without a break (the menus). `interlude`: the track plays once, then
@@ -123,6 +136,7 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   fog: 'event-fog.ogg',
   moonless: 'event-moonless.ogg',
   rush: 'event-rush.ogg',
+  omen: 'event-omen.ogg',
   'bill-register': { licensed: 'sfx-bill-register.ogg', fallback: 'sfx-bill-register.ogg' },
   'result-open': 'sfx-result-open.ogg',
   'match-end-horn': 'sfx-match-end-horn.ogg',
@@ -185,6 +199,13 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   'price-up': 'sfx-price-up.ogg',
   'price-down': 'sfx-price-down.ogg',
   'market-open': 'sfx-market-open.ogg',
+  'crate-drop': 'sfx-crate-drop.ogg',
+  'skill-omen': 'sfx-skill-omen.ogg',
+  'skill-surge': 'sfx-skill-surge.ogg',
+  'skill-raise-won': 'sfx-skill-raise-won.ogg',
+  'works-hammer': 'sfx-works-hammer.ogg',
+  'works-cloth': 'sfx-works-cloth.ogg',
+  'works-unveil': 'sfx-works-unveil.ogg',
 };
 
 /** Interlude music: seconds of ambience alone between plays, and the fade at the end of a play. */
@@ -245,4 +266,12 @@ const EVENT_BEDS: Readonly<Record<VoyageEventId, EventBedId | null>> = {
  */
 export function eventBedFor(event: VoyageEventId): EventBedId | null {
   return EVENT_BEDS[event];
+}
+
+/**
+ * The bed under the table now: the voyage event's once it is out; in the 暗潮將至 round (`tideRising`) the high
+ * water's slow swells for the whole round, in place of the waves; otherwise none (the waves).
+ */
+export function bedNow(eventBed: EventBedId | null, tideRising: boolean): EventBedId | null {
+  return eventBed ?? (tideRising ? 'omen' : null);
 }

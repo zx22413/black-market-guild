@@ -3,7 +3,7 @@ import { matchMode } from '../analytics/matchStats';
 import { GOODS, RULES_CURRENT, eventsOn, type Action, type Goods, type PlayerId, type ShipId } from '../../v07/game';
 import type { SafeArea } from '../../ui/scene/CameraRig';
 import { soundEngine } from '../audio/soundEngine';
-import { eventBedFor } from '../audio/soundPlan';
+import { bedNow, eventBedFor } from '../audio/soundPlan';
 import { SoundToggle } from '../audio/SoundToggle';
 import { useCountSound } from '../audio/useUiSounds';
 import { eventLine } from '../log';
@@ -523,8 +523,7 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, from
   // Once the voyage event is out its bed replaces the waves (rain and thunder, wind, fog music…)
   // until the round's show is over.
   const eventOut = holding && resolution.stageRound === resolvingRound && resolution.stage !== null && resolution.stage !== 'wanted';
-  const bed = eventOut && weatherEvent?.type === 'voyage-event-revealed' ? eventBedFor(weatherEvent.event) : null;
-  useEffect(() => soundEngine.setEventBed(bed), [bed]);
+  const eventBed = eventOut && weatherEvent?.type === 'voyage-event-revealed' ? eventBedFor(weatherEvent.event) : null;
   useEffect(() => () => soundEngine.setEventBed(null), []);
   const rows = useMemo(() => (snap.result ? resultRows(snap.events, snap.result, snap.startingCash, rules) : []), [snap.result, snap.events, snap.startingCash, rules]);
   const winners = useMemo(() => new Set(snap.result?.winners ?? []), [snap.result]);
@@ -545,6 +544,9 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, from
   // V0.8 prototype: the 暗潮將至 round itself: the sea begins to turn and stands high round the islands until the round's end.
   // It waits for the round's card: the water's colour would give the tide away before the card turns it up.
   const tideRising = tide.risingRound !== null && board.round === tide.risingRound && !finished && (startCards.length === 0 || cardRound >= board.round);
+  // V0.8: the 暗潮將至 round's high water (TideOmen) is heard too, its slow swells in place of the waves.
+  const bed = bedNow(eventBed, tideRising);
+  useEffect(() => soundEngine.setEventBed(bed), [bed]);
   // V0.8 prototype: the building each seat has raised, for the islands.
   const skills = useMemo(() => Object.fromEntries(ids.map((id) => [id, board.players[id]?.skills ?? []])), [ids, board]);
   const facilities = useMemo(() => Object.fromEntries(ids.map((id) => [id, board.players[id]?.facility ?? null])), [ids, board]);

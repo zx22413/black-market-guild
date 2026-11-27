@@ -74,3 +74,39 @@ describe('sound of each moment in a ship beat', () => {
     expect(beatSound(b, null, view({ showStart: true, stepsShown: 2 }))).toBe('pirate');
   });
 });
+
+describe('sound of the V0.8 moments in a ship beat', () => {
+  const skill = (effect: 'reroll' | 'extra-die' | 'raise-won' | 'raise-lost', at: 'die' | 'outcome'): ShipBeat['skills'][number] => ({
+    playerId: 'p1',
+    shipId: 's1',
+    effect,
+    at,
+    name: '',
+    text: '',
+    tone: effect === 'raise-lost' ? 'loss' : 'gain',
+    added: 0,
+  });
+
+  it('splashes each crate that goes overboard', () => {
+    const b = { ...beat([]), dropped: ['wood', 'iron'] as const };
+    const cargo = view({ showStart: true, showCargo: true });
+    expect(beatSound(b, cargo, { ...cargo, dropsShown: 1 })).toBe('crate-drop');
+    expect(beatSound(b, { ...cargo, dropsShown: 1 }, { ...cargo, dropsShown: 2 })).toBe('crate-drop');
+    expect(beatSound(b, { ...cargo, dropsShown: 2 }, { ...cargo, dropsShown: 2 })).toBeNull();
+  });
+
+  it('gives the lucky reroll and the big wave their own sound on the die', () => {
+    const b = { ...beat([]), skills: [skill('reroll', 'die'), skill('extra-die', 'die')] };
+    const rolled = view({ showStart: true });
+    expect(beatSound(b, rolled, { ...rolled, skillsShown: 1 })).toBe('skill-omen');
+    expect(beatSound(b, { ...rolled, skillsShown: 1 }, { ...rolled, skillsShown: 2 })).toBe('skill-surge');
+  });
+
+  it('rings the jackpot for a raise that came in, and sinks one that did not', () => {
+    const shown = view({ showStart: true });
+    const won = { ...beat([]), skills: [skill('raise-won', 'outcome')] };
+    const lost = { ...beat([], 'sank'), skills: [skill('raise-lost', 'outcome')] };
+    expect(beatSound(won, shown, { ...shown, showOutcome: true })).toBe('skill-raise-won');
+    expect(beatSound(lost, shown, { ...shown, showOutcome: true })).toBe('sink');
+  });
+});

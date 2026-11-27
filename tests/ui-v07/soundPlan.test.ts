@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { eventBedFor, musicNow, soundscapeFor } from '../../src/ui-v07/audio/soundPlan';
+import { bedNow, eventBedFor, musicNow, soundscapeFor } from '../../src/ui-v07/audio/soundPlan';
 
 describe('soundscape for each screen', () => {
   it('plays the cover track with no ambience behind every menu page', () => {
@@ -43,5 +43,11 @@ describe('voyage event beds', () => {
     expect(eventBedFor('moonless-night')).toBe('moonless');
     expect(eventBedFor('black-market-rush')).toBe('rush');
     expect(eventBedFor('calm-seas')).toBeNull();
+  });
+
+  it("breathes the high water under the whole 暗潮將至 round, and lets a voyage event's bed take over", () => {
+    expect(bedNow(null, true)).toBe('omen');
+    expect(bedNow(null, false)).toBeNull();
+    expect(bedNow('storm', true)).toBe('storm');
   });
 });
