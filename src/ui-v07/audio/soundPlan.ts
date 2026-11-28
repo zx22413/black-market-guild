@@ -1,16 +1,20 @@
 // What plays when: the menu pages get the cover track, a match screen the in-game track over the
 // waves. Pure, so the choice is tested without an AudioContext.
 
-import type { TideKind, VoyageEventId } from '../../v07/game';
+import { TIDE_CARD, type TideKind, type VoyageEventId } from '../../v07/game';
 import type { MenuView } from '../menu/menuSeats';
 
-export type MusicId = 'cover' | 'ingame';
+/**
+ * `ingame` the match's own track; V0.8 changes it as the match turns: `tide` its dark variation through the dark-tide
+ * season, `final` the last round's dash, `result` under the standings once the winner's horns have sounded.
+ */
+export type MusicId = 'cover' | 'ingame' | 'tide' | 'final' | 'result';
 export type AmbienceId = 'waves' | EventBedId;
 /**
  * What plays under the round's show once its voyage event is out (calm seas keep the waves); `omen` is the high water
  * breathing round the islands for the whole 暗潮將至 round (scene/TideOmen.tsx).
  */
-export type EventBedId = 'storm' | 'tailwind' | 'fog' | 'moonless' | 'rush' | 'omen';
+export type EventBedId = 'storm' | 'tailwind' | 'fog' | 'moonless' | 'rush' | 'omen' | `boss-${TideKind}`;
 export type SfxId =
   | 'bill-register'
   // The end-of-match card popping up: a steel-drum flourish that closes the match (ResultCard moves to its beats).
@@ -146,6 +150,9 @@ export interface LicensedSound {
 export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string | LicensedSound>> = {
   cover: 'music-cover.ogg',
   ingame: 'music-ingame.ogg',
+  tide: 'music-tide.ogg',
+  final: 'music-final.ogg',
+  result: 'music-result.ogg',
   waves: { licensed: 'ambience-waves.ogg', fallback: 'ambience-waves.ogg' },
   storm: 'event-storm.ogg',
   tailwind: 'event-tailwind-shanty.ogg',
@@ -153,6 +160,10 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   moonless: 'event-moonless.ogg',
   rush: 'event-rush.ogg',
   omen: 'event-omen.ogg',
+  'boss-storm': 'event-boss-storm.ogg',
+  'boss-pirate': 'event-boss-pirate.ogg',
+  'boss-inspection': 'event-boss-inspection.ogg',
+  'boss-crash': 'event-boss-crash.ogg',
   'bill-register': { licensed: 'sfx-bill-register.ogg', fallback: 'sfx-bill-register.ogg' },
   'result-open': 'sfx-result-open.ogg',
   'match-end-horn': 'sfx-match-end-horn.ogg',
@@ -297,8 +308,18 @@ const EVENT_BEDS: Readonly<Record<VoyageEventId, EventBedId | null>> = {
  * tailwind a crew's sea shanty, the fog, the moonless night and the market rush have little sound
  * of their own and get music. Calm seas keep the waves.
  */
-export function eventBedFor(event: VoyageEventId): EventBedId | null {
+export function eventBedFor(event: VoyageEventId, boss = false): EventBedId | null {
+  if (boss) {
+    // A dark side: its tide's tense bed (the storm's rain with the strings under it, the ambush, the search, the glut).
+    const tide = (Object.keys(TIDE_CARD) as TideKind[]).find((k) => TIDE_CARD[k] === event);
+    if (tide) return `boss-${tide}`;
+  }
   return EVENT_BEDS[event];
+}
+
+/** The match's track for where it stands (V0.8): the last round's dash, the dark-tide season's variation, or its own. */
+export function matchMusic(state: { readonly tideSeason: boolean; readonly finalRound: boolean }): MusicId {
+  return state.finalRound ? 'final' : state.tideSeason ? 'tide' : 'ingame';
 }
 
 /**

@@ -40,6 +40,10 @@ class SoundEngine {
   /** A round is resolving: interlude music stays out. */
   private held = false;
   private hushed = false;
+  /** The match's track for where it stands (soundPlan's matchMusic), in place of the in-game one; null: its own. */
+  private theme: MusicId | null = null;
+  /** The match is over and its winner announced: the result track loops under the standings. */
+  private resultOn = false;
   /** One-shots asked to be loaded early (`preload`), loaded once the audio is unlocked. */
   private readonly preloading = new Set<SfxId>();
   /** The voyage event's bed, in place of the match's ambience while the round's show runs. */
@@ -53,6 +57,8 @@ class SoundEngine {
       this.wanted = previous.wanted;
       this.held = previous.held;
       this.eventBed = previous.eventBed;
+      this.theme = previous.theme;
+      this.resultOn = previous.resultOn;
     }
   }
 
@@ -118,6 +124,24 @@ class SoundEngine {
   }
 
   /**
+   * The match's track turns with the match (the dark-tide season, the last round): a new one starts on the next play,
+   * without waiting out the rest of the one before. Null goes back to the soundscape's own.
+   */
+  setMatchMusic(id: MusicId | null): void {
+    if (id === this.theme) return;
+    this.theme = id;
+    this.clearRest();
+    this.apply();
+  }
+
+  /** The standings are out and the horns have sounded: the result track loops until the table is left (false). */
+  playResult(on: boolean): void {
+    if (on === this.resultOn) return;
+    this.resultOn = on;
+    this.apply();
+  }
+
+  /**
    * Hush the sea under the table (the waves or the event's bed fade out) while a show carries the sound alone, such as
    * 暗潮將至's card: its own short wave, then the bell and the drops with no waves under them.
    */
@@ -166,7 +190,11 @@ class SoundEngine {
   /** What `slot` should be playing now. */
   private target(slot: Slot): TrackId | null {
     if (!this.wanted) return null;
-    if (slot === 'music') return musicNow(this.wanted, { held: this.held, resting: this.restTimer !== null });
+    if (slot === 'music') {
+      if (this.resultOn && this.wanted.playback === 'interlude') return 'result';
+      const scape = this.theme && this.wanted.music === 'ingame' ? { ...this.wanted, music: this.theme } : this.wanted;
+      return musicNow(scape, { held: this.held, resting: this.restTimer !== null });
+    }
     if (this.hushed) return null;
     return this.wanted.ambience && (this.eventBed ?? this.wanted.ambience);
   }
@@ -204,7 +232,8 @@ class SoundEngine {
     const { ctx, master } = this;
     // Something else was asked for while this one loaded.
     if (!buffer || !ctx || !master || this.layers[slot] || this.target(slot) !== id) return;
-    const once = slot === 'music' && this.wanted?.playback === 'interlude';
+    // The result track loops; the match's own tracks play once and rest between plays.
+    const once = slot === 'music' && this.wanted?.playback === 'interlude' && id !== 'result';
     const gain = ctx.createGain();
     gain.gain.value = 0;
     gain.connect(master);

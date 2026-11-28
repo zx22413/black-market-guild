@@ -15,6 +15,8 @@ import type { ResultRow } from './resultModel';
 
 /** One place every this many ms, last place first; the winner gets a longer pause before it. */
 const ROW_MS = 1300;
+/** The result track's fade-in starts as the victory horns (sfx-match-end-horn, 4.8 s) ring out. */
+const RESULT_MUSIC_MS = 3600;
 const WINNER_PAUSE_MS = 700;
 const COUNT_MS = 700;
 
@@ -162,6 +164,15 @@ export function ResultCard({ rows, nameOf, colorOf, viewer, rounds, onRestart, r
   // The winner is out: the victory horns.
   useEffect(() => {
     if (done) soundEngine.playSfx('match-end-horn');
+  }, [done]);
+  // As the horns die away the result track comes in under the standings, and loops until the table is left.
+  useEffect(() => {
+    if (!done) return undefined;
+    const timer = setTimeout(() => soundEngine.playResult(true), RESULT_MUSIC_MS);
+    return () => {
+      clearTimeout(timer);
+      soundEngine.playResult(false);
+    };
   }, [done]);
   const winners = rows.filter((r) => r.winner).map((r) => (r.playerId === viewer ? '你' : nameOf(r.playerId)));
 

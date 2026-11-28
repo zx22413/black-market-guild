@@ -3,7 +3,7 @@ import { matchMode } from '../analytics/matchStats';
 import { GOODS, RULES_CURRENT, eventsOn, type Action, type Goods, type PlayerId, type ShipId } from '../../v07/game';
 import type { SafeArea } from '../../ui/scene/CameraRig';
 import { soundEngine } from '../audio/soundEngine';
-import { bedNow, eventBedFor } from '../audio/soundPlan';
+import { bedNow, eventBedFor, matchMusic } from '../audio/soundPlan';
 import { SHOW_SOUNDS } from '../audio/roundCardSounds';
 import { SoundToggle } from '../audio/SoundToggle';
 import { useCountSound } from '../audio/useUiSounds';
@@ -524,7 +524,9 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, from
   // Once the voyage event is out its bed replaces the waves (rain and thunder, wind, fog music…)
   // until the round's show is over.
   const eventOut = holding && resolution.stageRound === resolvingRound && resolution.stage !== null && resolution.stage !== 'wanted';
-  const eventBed = eventOut && weatherEvent?.type === 'voyage-event-revealed' ? eventBedFor(weatherEvent.event) : null;
+  // A dark side's round gets its tide's tense bed instead of the plain event's.
+  const bossRound = snap.events.some((e) => e.type === 'boss-event' && e.round === resolvingRound);
+  const eventBed = eventOut && weatherEvent?.type === 'voyage-event-revealed' ? eventBedFor(weatherEvent.event, bossRound) : null;
   useEffect(() => () => soundEngine.setEventBed(null), []);
   // V0.8: the round cards' and the tide's sounds are cut onto their shows' moments, so they are loaded ahead.
   useEffect(() => soundEngine.preload(SHOW_SOUNDS), []);
@@ -550,6 +552,10 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, from
   // V0.8: the 暗潮將至 round's high water (TideOmen) is heard too, its slow swells in place of the waves.
   const bed = bedNow(eventBed, tideRising);
   useEffect(() => soundEngine.setEventBed(bed), [bed]);
+  // V0.8: the match's track turns with it: the dark variation through the dark-tide season, the dash in the last round.
+  const theme = matchMusic({ tideSeason, finalRound: finalNow !== null });
+  useEffect(() => soundEngine.setMatchMusic(theme), [theme]);
+  useEffect(() => () => soundEngine.setMatchMusic(null), []);
   // V0.8 prototype: the building each seat has raised, for the islands.
   const skills = useMemo(() => Object.fromEntries(ids.map((id) => [id, board.players[id]?.skills ?? []])), [ids, board]);
   const facilities = useMemo(() => Object.fromEntries(ids.map((id) => [id, board.players[id]?.facility ?? null])), [ids, board]);
