@@ -395,6 +395,9 @@ export const RULES_V08: Rules = {
       // doubled-again drop mostly ran into the bottom of the price track, while a lower demand makes more goods drop.
       bossDropMultiplier: 1,
       bossDemandShift: -1,
+      // 2026-11-28 (user): 嚴查 also takes one arms crate off each covered ship. With 查緝潮 the allowance is already low
+      // enough that every uncovered arms crate is seized, so lowering it again did nothing in most rounds.
+      bossCoveredArmsLoss: 1,
       finalBoth: 1,
     },
     // 2026-11-16: the lighthouse's +1 needs a raw die of 3 or more (user's idea: a 1 or 2 can still sink you); the

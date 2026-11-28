@@ -3,7 +3,7 @@ import { addGoods, mapGoods, nextPriceStep, only, priceAt, subtractGoods, units 
 import { traitOf } from './islands';
 import { crateContext, effectiveDeployments, termsOf, voyageModifier } from './resolution';
 import { GOODS, type GoodId, type Goods, type MatchEvent, type MatchState, type PlayerId, type RoleId, type Ship, type Step, type V08Effect } from './types';
-import { activeTide, arrivalLoot, crashShieldActs, darkNight, eventPriceStep, inspectionAllowance, publicEvents, rushValue } from './v08-events';
+import { activeTide, arrivalLoot, coveredArmsLoss, crashShieldActs, darkNight, eventPriceStep, inspectionAllowance, publicEvents, rushValue } from './v08-events';
 import { buyLeftover, premiumCrates } from './v08-tradehouse';
 import { crateTerms, facilityOf, hasVariant, protectedGoods, salvageCount, skillLevel, skillsOn, takeHighest } from './v08';
 
@@ -63,14 +63,18 @@ export function settleMarket(state: MatchState): Step {
 
 /**
  * V0.8 prototype, 軍火超量查緝 (v08.inspection): arriving arms beyond demand + allowance are seized by the bank, one crate
- * at a time from the uncovered ship with the most arms left (ties: richer owner first, then ship order). Regular crates
+ * at a time from the uncovered ship with the most arms left (ties: richer owner first, then ship order). Under 嚴查
+ * (v08.events.bossCoveredArmsLoss) each covered ship also loses that many crates, whatever the excess. Regular crates
  * go before private ones; seized crates are added to the ship's lost crates, so the owner, customs and pirates never see them.
  */
 function inspectArms(state: MatchState, ships: readonly Ship[], arrivedArms: number, prices: Prices): { ships: readonly Ship[]; events: MatchEvent[] } {
   const { inspection } = state.rules.v08;
+  const pe = publicEvents(state);
+  const event = state.roundState.voyageEvent;
   // V0.8 prototype (嚴查, v08.events): a phase II black-market rush lowers the allowance.
-  const excess = arrivedArms - state.roundState.demand.arms - inspectionAllowance(state.rules, publicEvents(state), state.roundState.voyageEvent);
-  if (inspection.enabled !== 1 || excess <= 0) return { ships, events: [] };
+  const excess = arrivedArms - state.roundState.demand.arms - inspectionAllowance(state.rules, pe, event);
+  const strict = coveredArmsLoss(state.rules, pe, event);
+  if (inspection.enabled !== 1 || (excess <= 0 && strict <= 0)) return { ships, events: [] };
   // v08.hidden.privateSafeFromInspectionL2: a level-2 hidden ship's private crates are out of reach.
   const privateSafe = (ship: Ship): boolean =>
     state.rules.v08.hidden.privateSafeFromInspectionL2 === 1 && ship.type === 'hidden' && skillLevel(state.rules, playerOf(state, ship.owner), 'hidden') >= 2;
@@ -90,13 +94,15 @@ function inspectArms(state: MatchState, ships: readonly Ship[], arrivedArms: num
     return taken;
   };
   const isCovered = (ship: Ship): boolean => covered(state, ship, 'arms');
-  const taken = takeFrom(ships.filter((ship) => !isCovered(ship)));
-  // Report only (the table's show): what a covered ship would have lost had no ship been covered. Nothing is taken from it.
-  const spared = takeFrom(ships);
+  const uncovered = excess > 0 ? takeFrom(ships.filter((ship) => !isCovered(ship))) : new Map<string, number>();
+  // 嚴查: a covered ship still loses `strict` crates (or what it has).
+  const taken = new Map(ships.map((ship) => [ship.id, isCovered(ship) ? Math.min(strict, armsOf(ship)) : (uncovered.get(ship.id) ?? 0)]));
+  // Report only (the table's show): what a covered ship would have lost had no ship been covered, less what 嚴查 took.
+  const spared = excess > 0 ? takeFrom(ships) : new Map<string, number>();
   const price = priceAt(state.rules, 'arms', prices.after.arms);
   const events = ships.flatMap((ship) => {
     const n = taken.get(ship.id) ?? 0;
-    const kept = isCovered(ship) ? (spared.get(ship.id) ?? 0) : 0;
+    const kept = isCovered(ship) ? Math.max(0, (spared.get(ship.id) ?? 0) - n) : 0;
     return [
       ...(n === 0 ? [] : [v08Effect(state, ship.owner, ship.id, 'inspected', n, n * price)]),
       ...(kept === 0 ? [] : [v08Effect(state, ship.owner, ship.id, 'inspection-covered', kept, kept * price)]),

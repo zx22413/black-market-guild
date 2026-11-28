@@ -24,6 +24,7 @@ const BANNED: readonly { readonly word: string; readonly why: string }[] = [
   { word: '不重擲', why: 'the reroll phase was removed in V0.7.1' },
   { word: '獲利率', why: 'V0.7 share-of-value wording; V0.8 loses crates' },
   { word: '通緝犯', why: 'the term is 通緝者' },
+  { word: '查緝額度', why: '「額度再少 1」reads as a cap players never see; say 需求以內的軍火也查扣 (2026-11-29)' },
   { word: '4 倍', why: '貨滿為患 no longer multiplies 崩盤潮’s drops; it lowers demand (2026-11-28)' },
 ];
 

@@ -38,7 +38,8 @@ export function bossText(rules: Rules, event: VoyageEventId): string {
     case 'moonless-night':
       return '護衛失效。';
     case 'black-market-rush':
-      return `軍火的查緝額度再少 ${-e.bossInspectionAllowance}。`;
+      // v08.events.bossCoveredArmsLoss (2026-11-28): covered ships lose arms crates too.
+      return `需求以內的軍火再多查扣 ${-e.bossInspectionAllowance} 箱${e.bossCoveredArmsLoss > 0 ? `，有掩護的船也扣 ${e.bossCoveredArmsLoss} 箱軍火` : ''}。`;
     case 'calm-seas':
       // v08.events.bossDemandShift (2026-11-28) replaced the doubled drops in the current rules.
       return e.bossDemandShift !== 0 ? `每種貨的需求 ${signed(e.bossDemandShift)}。` : `跌價的格數 ×${e.bossDropMultiplier}。`;

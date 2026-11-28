@@ -35,6 +35,7 @@ import {
   seaFogShift,
   type ViewShip,
   flipCardFor,
+  coveredArmsLoss,
   inspectionAllowance,
   nextRoundTide,
   islandFaded,
@@ -193,7 +194,10 @@ function loadOutlook(view: PlayerView, plan: Plan, load: Goods, privateLoad: Goo
   const secret = rules.ships.types[plan.type].secret === 1;
   // A level-2 hidden ship's private crates are safe from the inspection (v08.hidden.privateSafeFromInspectionL2).
   const privateSafe = rules.v08.hidden.privateSafeFromInspectionL2 === 1 && plan.type === 'hidden' && plan.level >= 2;
-  const inspected = selfCovers(view, plan) ? 0 : inspectionShare(view, load.arms + (privateSafe ? 0 : privateLoad.arms));
+  const inspectedArms = load.arms + (privateSafe ? 0 : privateLoad.arms);
+  // 嚴查 (v08.events.bossCoveredArmsLoss): even a covered ship loses that many arms crates.
+  const strict = Math.min(1, coveredArmsLoss(rules, view.events, view.voyageEvent) / Math.max(1, inspectedArms));
+  const inspected = selfCovers(view, plan) ? strict : inspectionShare(view, inspectedArms);
   // Arms beyond demand may be inspected (v08.inspection), hidden ship or not.
   const kept = (g: GoodId) => (g === 'arms' ? 1 - inspected : 1);
   // v08.tradehouse.immuneCrashTide: this round's crash tide does not deepen the drop on my own crates.

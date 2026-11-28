@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { RULES_V08, type MatchEvent } from '../../src/v07/game';
 import { runMatchSync, setupFromSeats, type SeatConfig } from '../../src/v07/match';
-import { roundCards } from '../../src/ui-v07/table3d/roundCard';
+import { bossText, roundCards } from '../../src/ui-v07/table3d/roundCard';
 
 const rules = RULES_V08;
 const candidates: MatchEvent = { type: 'tide-candidates', candidates: ['storm', 'crash'] };
@@ -24,6 +24,10 @@ describe('round cards (V0.8 prototype, not rules)', () => {
       '擋得住的：商行。',
       '之後抽到「風平浪靜」會變成「貨滿為患」：每種貨的需求 −1。',
     ]);
+  });
+
+  it('words 嚴查 with the crate it takes off covered ships', () => {
+    expect(bossText(rules, 'black-market-rush')).toBe('需求以內的軍火再多查扣 1 箱，有掩護的船也扣 1 箱軍火。');
   });
 
   it('calls a boss side without a name of its own 暗潮面', () => {

@@ -208,6 +208,10 @@ export const rushValue = (rules: Rules, pe: PublicEvents | undefined, event: Voy
 export const inspectionAllowance = (rules: Rules, pe: PublicEvents | undefined, event: VoyageEventId | null): number =>
   rules.v08.inspection.allowance + (boss(pe, event) && event === 'black-market-rush' ? rules.v08.events.bossInspectionAllowance : 0) + tideInspectionShift(rules, activeTide(pe));
 
+/** 嚴查 (v08.events.bossCoveredArmsLoss): arms crates taken off each covered ship this round (0 = covers keep them all). */
+export const coveredArmsLoss = (rules: Rules, pe: PublicEvents | undefined, event: VoyageEventId | null): number =>
+  boss(pe, event) && event === 'black-market-rush' ? rules.v08.events.bossCoveredArmsLoss : 0;
+
 /** 貨滿為患 (phase II calm seas): drops move this many times as many cells; 崩盤潮 multiplies it again. */
 export const dropMultiplier = (rules: Rules, pe: PublicEvents | undefined, event: VoyageEventId | null): number =>
   (boss(pe, event) && event === 'calm-seas' ? rules.v08.events.bossDropMultiplier : 1) * tideDropMultiplier(rules, activeTide(pe));

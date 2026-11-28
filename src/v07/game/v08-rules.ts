@@ -180,6 +180,11 @@ export interface V08EventRules {
   readonly bossPirate: number;
   /** 「嚴查」(black-market rush): added to v08.inspection.allowance. */
   readonly bossInspectionAllowance: number;
+  /**
+   * 「嚴查」(black-market rush, 2026-11-28): arms crates the bank also takes off each covered ship (its own smuggler, the
+   * hidden ship's skill) that round, whatever the allowance; the rest stay covered. 0 = covers keep every crate.
+   */
+  readonly bossCoveredArmsLoss: number;
   /** 「貨滿為患」(calm seas): price drops move this many times as many cells. */
   readonly bossDropMultiplier: number;
   /**
@@ -283,6 +288,7 @@ export const V08_OFF: V08Rules = {
     bossTailwind: 2,
     bossPirate: -2,
     bossInspectionAllowance: -1,
+    bossCoveredArmsLoss: 0,
     bossDropMultiplier: 2,
     bossDemandShift: 0,
     tides: 0,
