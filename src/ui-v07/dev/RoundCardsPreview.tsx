@@ -31,7 +31,7 @@ export function RoundCardsPreview() {
     { type: 'dark-tide-rising', round: 4 },
     { type: 'tide-revealed', round: 4, tide },
     { type: 'voyage-event-revealed', round: 5, event: FLIP[tide] },
-    { type: 'boss-event', round: 5, event: FLIP[tide] },
+    { type: 'boss-event', round: 5, event: FLIP[tide], demand: DEMAND },
     { type: 'final-round', round: 7, effect: 'final-market', demand: DEMAND },
     { type: 'final-round', round: 8, effect: 'open-market', demand: DEMAND },
     { type: 'final-round', round: 9, effect: 'last-gamble', demand: DEMAND },

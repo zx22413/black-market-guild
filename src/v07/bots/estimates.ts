@@ -146,7 +146,8 @@ export function shiftValue(view: PlayerView, good: GoodId, delta: number, mine: 
 export function expectedPrice(view: PlayerView, good: GoodId, mine: number, withoutTide = false): number {
   const arrivals = (othersExpectedLoad(view, good) + mine) * arriveChance(view.rules, 0);
   const raw = Math.max(-1, Math.min(1, view.demand[good] - arrivals)) * view.rules.price.volatility[good];
-  // V0.8 prototype (v08.events): 貨滿為患 doubles drops, 黑市大開 stops them (both 1 / false with the switch off).
+  // V0.8 (v08.events): 貨滿為患 scales drops by bossDropMultiplier (1 in the current rules, where it lowers the demand in
+  // view.demand instead), 黑市大開 stops them (1 / false with the switch off).
   // `withoutTide` (v08.tradehouse.immuneCrashTide): the drop without 崩盤潮's multiplier.
   const multiplier = dropMultiplier(view.rules, view.events, view.voyageEvent) / (withoutTide ? tideDropMultiplier(view.rules, activeTide(view.events)) : 1);
   const delta = raw >= 0 ? raw : noPriceDrop(view.events) ? 0 : raw * multiplier;

@@ -5,6 +5,7 @@ import { roundCards } from '../../src/ui-v07/table3d/roundCard';
 
 const rules = RULES_V08;
 const candidates: MatchEvent = { type: 'tide-candidates', candidates: ['storm', 'crash'] };
+const demand = { wood: 1, iron: 2, spice: 1, arms: 0 };
 
 describe('round cards (V0.8 prototype, not rules)', () => {
   it('shows a plain voyage event as before', () => {
@@ -21,7 +22,7 @@ describe('round cards (V0.8 prototype, not rules)', () => {
       `這回合結束時，每座倉庫的每種貨少 ${rules.v08.events.warehouseLossPercent}%（無條件捨去）。`,
       `下回合起每回合：跌價的格數 ×${rules.v08.events.tideDropMultiplier}。`,
       '擋得住的：商行。',
-      `之後抽到「風平浪靜」會變成「貨滿為患」：跌價的格數 ×${rules.v08.events.bossDropMultiplier}。`,
+      '之後抽到「風平浪靜」會變成「貨滿為患」：每種貨的需求 −1。',
     ]);
   });
 
@@ -31,7 +32,7 @@ describe('round cards (V0.8 prototype, not rules)', () => {
   });
 
   it('shows the boss side of the event that flipped', () => {
-    const events: MatchEvent[] = [candidates, { type: 'voyage-event-revealed', round: 6, event: 'sea-fog' }, { type: 'boss-event', round: 6, event: 'sea-fog' }];
+    const events: MatchEvent[] = [candidates, { type: 'voyage-event-revealed', round: 6, event: 'sea-fog' }, { type: 'boss-event', round: 6, event: 'sea-fog', demand }];
     // The first boss side of a match is turned over from the event's plain side, which it carries for the show.
     expect(roundCards(events, 6, rules)).toEqual([
       { kind: 'voyage', event: 'sea-fog', boss: true, title: '海盜伏擊', lines: [`每名海盜 −${-rules.v08.events.bossPirate}。`], flipFrom: { title: '海霧', lines: ['被海盜鎖定的船 +1。'] } },
@@ -42,16 +43,15 @@ describe('round cards (V0.8 prototype, not rules)', () => {
     const events: MatchEvent[] = [
       candidates,
       { type: 'voyage-event-revealed', round: 6, event: 'sea-fog' },
-      { type: 'boss-event', round: 6, event: 'sea-fog' },
+      { type: 'boss-event', round: 6, event: 'sea-fog', demand },
       { type: 'voyage-event-revealed', round: 7, event: 'sea-fog' },
-      { type: 'boss-event', round: 7, event: 'sea-fog' },
+      { type: 'boss-event', round: 7, event: 'sea-fog', demand },
     ];
     expect(roundCards(events, 6, rules)[0]).toHaveProperty('flipFrom');
     expect(roundCards(events, 7, rules)[0]).not.toHaveProperty('flipFrom');
   });
 
   it('ends the match with 最後的大市集, or plainly at the round cap after the event of that round', () => {
-    const demand = { wood: 1, iron: 1, spice: 1, arms: 1 };
     const [market] = roundCards([{ type: 'final-round', round: 8, effect: 'final-market', demand }], 8, rules);
     expect(market).toMatchObject({ kind: 'final', title: '最後的大市集' });
     expect(market!.lines).toHaveLength(3);

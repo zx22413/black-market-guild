@@ -51,8 +51,8 @@ function revealEventCard(state: MatchState): Step {
   const { demand } = state.roundState;
   const boost = e.openMarketDemand;
   const opens = finalEffect === 'open-market' || finalEffect === 'final-market' || lateCard === 'open-market';
-  const newDemand = opens ? mapGoods((g) => demand[g] + boost) : demand;
-  const next: MatchState = {
+  const opened = opens ? mapGoods((g) => demand[g] + boost) : demand;
+  const drawn: MatchState = {
     ...state,
     rng: tidePick?.state ?? pick?.state ?? state.rng,
     v08Events: {
@@ -65,14 +65,18 @@ function revealEventCard(state: MatchState): Step {
       tide,
       lateCard,
     },
-    roundState: { ...state.roundState, voyageEvent, demand: newDemand },
+    roundState: { ...state.roundState, voyageEvent, demand: opened },
   };
   // v08.events.flipOnlyTideCard: only the tide's matching card shows its boss side.
-  const boss = voyageEvent !== null && bossSide(publicEvents(next), voyageEvent);
+  const boss = voyageEvent !== null && bossSide(publicEvents(drawn), voyageEvent);
+  // v08.events.bossDemandShift: 貨滿為患 lowers every good's demand this round.
+  const glut = boss && voyageEvent === 'calm-seas' ? e.bossDemandShift : 0;
+  const newDemand = glut === 0 ? opened : mapGoods((g) => Math.max(0, opened[g] + glut));
+  const next: MatchState = glut === 0 ? drawn : { ...drawn, roundState: { ...drawn.roundState, demand: newDemand } };
   const events: MatchEvent[] = [
     ...(ev.phaseTwoFrom === state.round ? [{ type: 'phase-two-started' as const, round: state.round }] : []),
     ...(voyageEvent === null ? [] : [{ type: 'voyage-event-revealed' as const, round: state.round, event: voyageEvent }]),
-    ...(boss && voyageEvent !== null ? [{ type: 'boss-event' as const, round: state.round, event: voyageEvent }] : []),
+    ...(boss && voyageEvent !== null ? [{ type: 'boss-event' as const, round: state.round, event: voyageEvent, demand: newDemand }] : []),
     ...(lateCard === null ? [] : [{ type: 'late-card' as const, round: state.round, card: lateCard, demand: newDemand }]),
     ...(darkTide ? [{ type: 'dark-tide-rising' as const, round: state.round }] : []),
     ...(tidePick === null || tide === null ? [] : [{ type: 'tide-revealed' as const, round: state.round, tide }]),

@@ -246,6 +246,9 @@ const BOSS_LABELS: Record<string, string> = {
   'black-market-rush': '嚴查（查緝額度 −1）',
   'calm-seas': '貨滿為患（跌價加倍）',
 };
+/** v08.events.bossDemandShift: 貨滿為患 lowers demand instead of doubling drops (2026-11-28). */
+const bossLabel = (rules: Rules, event: string): string =>
+  event === 'calm-seas' && rules.v08.events.bossDemandShift !== 0 ? `貨滿為患（需求 ${signed(rules.v08.events.bossDemandShift)}）` : BOSS_LABELS[event]!;
 const FINAL_LABELS: Record<string, string> = { 'open-market': '黑市大開', 'last-gamble': '最後一搏', 'final-market': '最後的大市集（兩者皆有）', none: '（回合上限／牌庫用完）' };
 const TIDE_LABELS: Record<string, string> = { storm: '風暴潮（每船 −1）', pirate: '海盜潮（每海盜 −1）', inspection: '查緝潮（查緝額度 −1）', crash: '崩盤潮（跌價 ×2）' };
 const signed = (n: number) => (n < 0 ? `−${-n}` : `+${n}`);
@@ -383,7 +386,7 @@ function eventsSection(s: SimStats, rules: Rules, bets: boolean): string[] {
     '',
     ...table(
       ['首領事件', '原事件', '次數', '每局', '佔首領回合'],
-      Object.keys(VOYAGE_EVENT_LABELS).map((k) => [BOSS_LABELS[k]!, VOYAGE_EVENT_LABELS[k]!, e.boss[k] ?? 0, per(e.boss[k] ?? 0, s.matches), pct(e.boss[k] ?? 0, boss)]),
+      Object.keys(VOYAGE_EVENT_LABELS).map((k) => [bossLabel(rules, k), VOYAGE_EVENT_LABELS[k]!, e.boss[k] ?? 0, per(e.boss[k] ?? 0, s.matches), pct(e.boss[k] ?? 0, boss)]),
     ),
     ...(rules.v08.events.flipOnlyTideCard === 1 ? ['', '- 第二階段只有與暗潮對應的那張事件牌翻成首領版（v08.events.flipOnlyTideCard）；月黑風高、順風不會翻。'] : []),
     ...tideSection(s, rules, bets),

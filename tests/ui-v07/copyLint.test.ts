@@ -24,6 +24,7 @@ const BANNED: readonly { readonly word: string; readonly why: string }[] = [
   { word: '不重擲', why: 'the reroll phase was removed in V0.7.1' },
   { word: '獲利率', why: 'V0.7 share-of-value wording; V0.8 loses crates' },
   { word: '通緝犯', why: 'the term is 通緝者' },
+  { word: '4 倍', why: '貨滿為患 no longer multiplies 崩盤潮’s drops; it lowers demand (2026-11-28)' },
 ];
 
 /** Tutorial steps (copy-style.md §4): a step is read in a glance beside the table. */

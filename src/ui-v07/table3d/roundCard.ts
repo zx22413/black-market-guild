@@ -40,7 +40,8 @@ export function bossText(rules: Rules, event: VoyageEventId): string {
     case 'black-market-rush':
       return `軍火的查緝額度再少 ${-e.bossInspectionAllowance}。`;
     case 'calm-seas':
-      return `跌價的格數 ×${e.bossDropMultiplier}。`;
+      // v08.events.bossDemandShift (2026-11-28) replaced the doubled drops in the current rules.
+      return e.bossDemandShift !== 0 ? `每種貨的需求 ${signed(e.bossDemandShift)}。` : `跌價的格數 ×${e.bossDropMultiplier}。`;
   }
 }
 

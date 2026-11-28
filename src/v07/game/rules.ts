@@ -391,6 +391,10 @@ export const RULES_V08: Rules = {
       tidePirateArrivalLoot: 30,
       // 2026-11-22 (user: percents are hard to work out): the pirate tide takes the priciest crate instead of 30 %.
       tidePirateArrivalCrates: 1,
+      // 2026-11-28 (user): 貨滿為患 lowers every good's demand by 1 instead of doubling drops: on top of 崩盤潮 the
+      // doubled-again drop mostly ran into the bottom of the price track, while a lower demand makes more goods drop.
+      bossDropMultiplier: 1,
+      bossDemandShift: -1,
       finalBoth: 1,
     },
     // 2026-11-16: the lighthouse's +1 needs a raw die of 3 or more (user's idea: a 1 or 2 can still sink you); the

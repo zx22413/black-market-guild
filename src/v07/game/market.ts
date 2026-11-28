@@ -33,7 +33,8 @@ export function settleMarket(state: MatchState): Step {
       ? arrivedShips.reduce((sum, s) => (s.privateCargo === undefined ? sum : addGoods(sum, s.privateCargo)), landed)
       : landed;
   const arrived = claims.reduce((sum, c) => addGoods(sum, c.goods), privateLanded);
-  // V0.8 prototype (v08.events): 貨滿為患 doubles drops, 黑市大開 stops them; off, eventPriceStep is nextPriceStep.
+  // V0.8 (v08.events): 貨滿為患 scales drops by bossDropMultiplier (its demand −1 is already in roundState.demand),
+  // 黑市大開 stops them; off, eventPriceStep is nextPriceStep.
   const pe = publicEvents(state);
   const event = state.roundState.voyageEvent;
   const next = (g: GoodId) => (pe === undefined ? nextPriceStep(rules, g, state.prices[g], arrived[g], demand[g]) : eventPriceStep(rules, pe, event, g, state.prices[g], arrived[g], demand[g]));

@@ -139,6 +139,11 @@ export function applyEvent(board: Board, event: MatchEvent, rules: Rules = RULES
       return Object.entries(event.produced).reduce((b, [id, goods]) => mapPlayer(b, id, (p) => ({ ...p, stock: addTo(p.stock, goods) })), board);
     case 'demand-revealed':
       return { ...board, demand: event.demand, prices: event.prices };
+    // V0.8: the round's card can change this round's demand (貨滿為患 −1, 黑市大開 / 最後的大市集 +1).
+    case 'boss-event':
+    case 'final-round':
+    case 'late-card':
+      return { ...board, demand: event.demand };
     case 'wanted-marked':
       return { ...board, wanted: event.players };
     case 'buildings-built':
@@ -257,12 +262,9 @@ export function applyEvent(board: Board, event: MatchEvent, rules: Rules = RULES
     case 'trade-protected':
     case 'v08-effect':
     case 'dark-tide-rising':
-    case 'final-round':
     case 'phase-two-started':
-    case 'boss-event':
     case 'tide-candidates':
     case 'tide-revealed':
-    case 'late-card':
       return board;
   }
 }

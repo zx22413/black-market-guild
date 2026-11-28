@@ -183,6 +183,11 @@ export interface V08EventRules {
   /** 「貨滿為患」(calm seas): price drops move this many times as many cells. */
   readonly bossDropMultiplier: number;
   /**
+   * 「貨滿為患」(calm seas, 2026-11-28): added to every good's demand that round (floored at 0), so goods that would just
+   * meet demand overshoot it; the reduced demand also sets the arms inspection. 0 = demand unchanged.
+   */
+  readonly bossDemandShift: number;
+  /**
    * 1 = dark tide kinds: two distinct candidates are drawn and made public at match start, and one of them (at random)
    * becomes the tide when 暗潮將至 is revealed; it acts in every round after that (phase II and the final round).
    */
@@ -279,6 +284,7 @@ export const V08_OFF: V08Rules = {
     bossPirate: -2,
     bossInspectionAllowance: -1,
     bossDropMultiplier: 2,
+    bossDemandShift: 0,
     tides: 0,
     tideStorm: -1,
     tideStormExtraLoss: 0,

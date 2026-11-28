@@ -456,8 +456,11 @@ export type MatchEvent =
   | { readonly type: 'late-card'; readonly round: number; readonly card: LateCard; readonly demand: Goods }
   /** V0.8 prototype: the first phase II round opens. */
   | { readonly type: 'phase-two-started'; readonly round: number }
-  /** V0.8 prototype: this round's regular event is its phase II (boss) version. */
-  | { readonly type: 'boss-event'; readonly round: number; readonly event: VoyageEventId }
+  /**
+   * V0.8 prototype: this round's regular event is its phase II (boss) version. `demand`: this round's demand after it
+   * (貨滿為患 lowers it, v08.events.bossDemandShift).
+   */
+  | { readonly type: 'boss-event'; readonly round: number; readonly event: VoyageEventId; readonly demand: Goods }
   /** V0.8 prototype: goods lost from the warehouses at the end of a 「暗潮將至」 round. */
   | { readonly type: 'dark-tide-loss'; readonly round: number; readonly lost: Readonly<Record<PlayerId, Goods>> }
   /** V0.8 prototype (v08.tradehouse buyout): the tradehouse took one crate of `good` from the owner's warehouse for `value` G. */

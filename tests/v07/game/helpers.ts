@@ -31,7 +31,8 @@ export const IDS = ['p1', 'p2', 'p3', 'p4'] as const;
 /**
  * The prototype before the 2026-11-22 changes: the armory halves every pirate take and pays back the half it kept on a
  * sunk ship (no armed merchant), the tradehouse keeps a named good's price (no buyout), and the pirate tide takes 30 %
- * of an arrival (not a crate). The older fixtures below build on it.
+ * of an arrival (not a crate). The older fixtures below build on it. It also keeps 貨滿為患 doubling the drops (before
+ * 2026-11-28, when it became demand −1).
  */
 export const RULES_V08_PRE_ARMED: Rules = {
   ...RULES_V08,
@@ -40,7 +41,7 @@ export const RULES_V08_PRE_ARMED: Rules = {
     armory: { ...RULES_V08.v08.armory, halveAllLoot: 1, refundSunkLoot: 1, armedBonus: 0, armedMaxFinal: 0, counter: 0, counterBlunts: 0, lootPercent: 35, immunePirateTide: 1 },
     repairyard: { ...RULES_V08.v08.repairyard, freighter: 0 },
     tradehouse: { ...RULES_V08.v08.tradehouse, named: 1, buyoutFloor: 0, buyoutFixed: 0 },
-    events: { ...RULES_V08.v08.events, tidePirateArrivalCrates: 0 },
+    events: { ...RULES_V08.v08.events, tidePirateArrivalCrates: 0, bossDropMultiplier: 2, bossDemandShift: 0 },
   },
 };
 
