@@ -57,8 +57,10 @@ AI 部分的生成方式、授權與上表相同（Stable Audio 3 medium，steps
 
 | 檔案 | 用途 | 原始錄音 | 剪輯 |
 |---|---|---|---|
-| licensed/sfx-boss-strike.ogg | 暗潮面翻牌：翻面的「咻」接上閃電（翻面後 0.38 秒）的重擊 | Bluezone《MOVIE TRAILER》`BC0237_transition_whoosh_hit_006`、`BC0237_impact_017` | whoosh-hit 從 0.92 秒起取 1.4 秒（它的重擊落在 0.38 秒），impact 取 0.9 秒放在 0.38 秒；共 1.9 秒；−18 LUFS |
-| licensed/sfx-boss-hit.ogg | 之後的暗潮面出現：卡片落定時的重擊 | 《MOVIE TRAILER》`BC0237_impact_017` | 取 1 秒；−20 LUFS |
+| licensed/sfx-boss-flip-storm.ogg | 第一個暗潮面翻牌（風暴潮）：翻面的「咻」，0.38 秒閃電那一刻接雷聲 | 《MOVIE TRAILER》`BC0237_transition_whoosh_hit_006`（只取到它自己的重擊之前）、`licensed/sfx-storm-bolt.ogg`（Mixkit 雷聲）、`BC0237_impact_017` | 咻 0.42 秒；雷聲從它的第一下取 2.4 秒、疊 0.3 倍重擊；切掉 100 Hz 以下；共 2.8 秒；−18 LUFS；`make12.py` |
+| licensed/sfx-boss-flip-pirate.ogg | 第一個暗潮面翻牌（海盜潮）：霧湧上來，0.38 秒霧裡一聲砲響 | 同上的咻；`licensed/sfx-pirate.ogg`（遠處砲擊） | 咻＋合成的霧（150～900 Hz 帶通噪音，湧到 0.38 秒再慢慢散）；砲擊從它的第一下取 2.2 秒；共 2.8 秒；−18 LUFS；`make12.py` |
+| licensed/sfx-boss-flip-crash.ogg | 第一個暗潮面翻牌（崩盤潮）：0.38 秒玻璃裂開，接著硬幣散落 | 同上的咻；`licensed/sfx-settle-coins.ogg` | 咻＋合成的玻璃裂聲（尖銳的一下＋14 個 2.8～7.5 kHz 的碎響）＋合成硬幣 11 枚（各帶一次彈跳），疊 0.35 倍錄音硬幣；共 2.4 秒；−18 LUFS；`make12.py` |
+| licensed/sfx-boss-hit-storm.ogg、sfx-boss-hit-pirate.ogg、sfx-boss-hit-crash.ogg | 之後的暗潮面（沒有翻牌，卡片落定時）：同一種暗潮的聲音，短一點、沒有咻 | 同上 | 各自的主題從 0 秒開始；海盜潮的霧從湧起之後開始；−20 LUFS；`make12.py` |
 | licensed/sfx-bazaar-crowd.ogg | 最後的大市集：卡片在時的節慶人群（每 9.6 秒接一段，前後淡入淡出互相疊） | West Wolf《Balkan Tribal Festival》`BTF 06 Tribal_05_Bells, Dance, People, Crowd, Ambience_05` | 6 秒起取 10.4 秒，0.4 秒淡入、0.8 秒淡出；−30 LUFS |
 | licensed/sfx-firework-volley.ogg | 最後的大市集：每輪三發煙火（每 2.4 秒一輪，一輪比一輪小聲） | Sound Villain《Fireworks Malta》`006_Strong blast with medium crackles` | 0.18 秒起取 2.8 秒：錄音裡三發的爆點落在 0.30、1.06、1.80 秒，對上畫面的 0.3、1.1、1.9 秒；另切 150 Hz 以下；−21 LUFS |
 | licensed/sfx-sweep-surge.ogg | 暗潮捲走貨：海水漫上島，低音提琴往下滑到第一箱沉下去（2.64 秒） | Bluezone《Splash》`BC0256_water_splash_008`；Articulated Sounds《Special Double Bass Fx》`INSTRU STRING Double Bass, Bowed, Slide Down, High Pitch 02` | 水花取 2.6 秒（1.2 秒淡出）放 0 秒；低音提琴對齊讓最響處落在 2.64 秒，0.7 倍；共 4.2 秒；−20 LUFS |
@@ -72,8 +74,10 @@ AI 部分的生成方式、授權與上表相同（Stable Audio 3 medium，steps
 | sfx-tide-wave.ogg | 暗潮將至：卡片翻進來時一道短浪（使用者要「浪 > 鈴 > 水滴」依序、浪不要長） | 合成：300 Hz～9 kHz 的噪音（稍偏暖），0.5 秒湧到最大（卡片落定後），之後 0.28 秒衰減的水沫；左右各一段；共 1.3 秒；−24 LUFS；numpy 亂數 seed 3600；`make10.py` |
 | sfx-tide-ripple.ogg | 暗潮將至：鈴聲之後的水滴（2.3 秒起，之後每 2.6 秒隨一圈水波紋一聲；遊戲以 1、0.94、1.06 倍速輪播） | 兩滴水滴：900 Hz 往上刷 2.2 倍的正弦（0.12 秒，50 ms 衰減），0.12 秒再一滴（1250 Hz，較小）；−44 LUFS（使用者要水聲小一點）；`make7.py`、`make9.py` |
 | sfx-tide-pick.ogg | 暗潮將至：1.5 秒揭曉時一聲帶迴響的鈴（使用者要「低一點、有點迴響」） | 合成鈴：A5（880 Hz）疊八度與 3 倍頻（0.35、0.15），基音衰減約 0.61 秒、泛音更快，3 ms 起音；乾聲 0.45 倍疊合成殘響 0.75 倍（左右各一段指數衰減 1.2 秒、越後面越暗的噪音脈衝響應，長 4.2 秒）；共 5.8 秒；−23 LUFS；numpy 亂數 seed 1318；`make11.py` |
-| sfx-boss-strike.ogg | 錄音版的備用：翻面＋閃電 | 帶通噪音的「咻」（0.8 秒，0.38 秒最大），0.38 秒接合成雷擊（明亮的瞬間＋隆隆聲）、0.156 秒後第二下、0.4 秒起 9 個玻璃般的碎片聲、低音重擊 |
-| sfx-boss-hit.ogg | 錄音版的備用：之後的暗潮面 | 低音重擊疊短的合成雷擊 |
+| sfx-boss-flip-storm.ogg、sfx-boss-hit-storm.ogg | 錄音版的備用：風暴潮 | 舊的合成翻牌備用聲 `sfx-boss-strike.ogg`（帶通噪音的咻、合成雷擊、玻璃般碎片、低音重擊；已從本目錄移除，見 git 歷史）從 0.36 秒起當雷聲，翻牌版前面接咻 |
+| sfx-boss-flip-pirate.ogg、sfx-boss-hit-pirate.ogg | 錄音版的備用：海盜潮 | 咻＋合成的霧＋本目錄的 AI 砲擊 `sfx-pirate.ogg` |
+| sfx-boss-flip-crash.ogg、sfx-boss-hit-crash.ogg | 錄音版的備用：崩盤潮 | 咻＋合成的玻璃裂聲＋合成硬幣（不疊錄音硬幣） |
+| sfx-boss-flip-inspection.ogg、sfx-boss-hit-inspection.ogg | 暗潮面（查緝潮）：探照燈掃到卡片上（0.38 秒鎖定），蓋章，0.3 秒後一聲哨音；只用本目錄素材，所以沒有 licensed 版 | 本目錄的 `sfx-beam-sweep.ogg`（剪到 0.38 秒鎖定）、`sfx-seal.ogg`（蓋章）；合成哨子（2850 Hz，每秒 32 次顫音，帶氣聲，0.55 秒，0.22 倍）；翻牌版 2.4 秒 −18 LUFS，落定版 1.8 秒 −20 LUFS；`make12.py` |
 | sfx-firework-volley.ogg | 錄音版的備用：一輪三發煙火 | 合成煙火（明亮噪音爆開、輕微低音、40 個細碎劈啪聲）放在 0.3、1.1、1.9 秒 |
 | sfx-sweep-surge.ogg | 錄音版的備用：海水漫上島 | 帶通噪音湧起（200→1800 Hz，0.55 秒）接白色水沫（0.3 秒衰減） |
 | sfx-crate-sink.ogg | 錄音版的備用：每一箱沉下去 | 同 `sfx-crate-drop.ogg` 的合成水花，較輕（0.6 秒） |

@@ -3,10 +3,11 @@ import { FIREWORKS, TIDE_RIPPLE, crowdCue, fireworkCue, roundCardCues, tideRippl
 import { sweepCues } from '../../src/ui-v07/audio/roundCardSounds';
 import { SWEEP } from '../../src/ui-v07/table3d/tideSweepShow';
 import type { RoundCard } from '../../src/ui-v07/table3d/roundCard';
+import { TIDE_CARD, type TideKind, type VoyageEventId } from '../../src/v07/game';
 
-const voyage = (boss: boolean, flip = false): RoundCard => ({
+const voyage = (boss: boolean, flip = false, event: VoyageEventId = 'storm'): RoundCard => ({
   kind: 'voyage',
-  event: 'storm',
+  event,
   boss,
   title: '',
   lines: [],
@@ -30,13 +31,16 @@ describe('sound of the round cards, on their motion', () => {
     expect(new Set([0, 1, 2].map((i) => tideRippleCue(i).rate)).size).toBe(3);
   });
 
-  it('turns a first dark side over into its strike (cut onto the flash)', () => {
+  it("turns a first dark side over into its own tide's sound (cut onto the flash), not a storm for every tide", () => {
     expect(ids(roundCardCues(voyage(true, true), 'show'))).toEqual(['card-in']);
-    expect(roundCardCues(voyage(true, true), 'turn')).toEqual([{ at: 0, id: 'boss-strike', rate: 1 }]);
+    for (const tide of Object.keys(TIDE_CARD) as TideKind[]) {
+      expect(roundCardCues(voyage(true, true, TIDE_CARD[tide]), 'turn')).toEqual([{ at: 0, id: `boss-flip-${tide}`, rate: 1 }]);
+    }
   });
 
-  it('lands a later dark side heavier, and leaves a plain voyage event silent', () => {
-    expect(ids(roundCardCues(voyage(true), 'show'))).toEqual(['card-in', 'boss-hit']);
+  it("lands a later dark side with its tide's sound, and leaves a plain voyage event silent", () => {
+    expect(ids(roundCardCues(voyage(true, false, 'sea-fog'), 'show'))).toEqual(['card-in', 'boss-hit-pirate']);
+    expect(ids(roundCardCues(voyage(true, false, 'calm-seas'), 'show'))).toEqual(['card-in', 'boss-hit-crash']);
     expect(roundCardCues(voyage(false), 'show')).toEqual([]);
   });
 

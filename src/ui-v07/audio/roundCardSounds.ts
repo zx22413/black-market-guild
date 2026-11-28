@@ -4,13 +4,15 @@
 //   a card swinging in (event-card-in, 600 ms, biggest at 60 %): a whoosh landing on a soft knock;
 //   暗潮將至 (roundCard.css `tide`): one after another, a short wave as the card swings in, a bell with its echo on the
 //   pick (1.5 s), then light drops of water (from 2.3 s, every 2.6 s) while it is up;
-//   a first dark side: the whoosh of the turn into a braam on the lightning's flash (0.38 s into the turn);
+//   a first dark side: the whoosh of the turn into its tide's own sound on the flash (0.38 s into the turn): thunder,
+//   a cannon in the fog, a stamp and a whistle, glass cracking and coins spilling; a later one lands with the same;
 //   最後的大市集 (`bazaar`): a festival crowd under the card, three blasts on the three shells (0.3, 1.1, 1.9 s), every
 //   2.4 s while the card is up;
 //   the tide taking the goods: the water over the islands, the low strings falling to the first crate going under.
 // The timings are the shows' own (the CSS keyframes, RoundCardShow's constants, tideSweepShow's SWEEP). Pure, so they
 // are tested without audio.
 
+import { TIDE_CARD, type TideKind, type VoyageEventId } from '../../v07/game';
 import { SWEEP } from '../table3d/tideSweepShow';
 import type { RoundCard } from '../table3d/roundCard';
 import type { SfxId } from './soundPlan';
@@ -36,13 +38,18 @@ const LANDS = 0.34;
 
 const cue = (at: number, id: SfxId): Cue => ({ at, id, rate: 1 });
 
+/** The tide whose dark side `event` is (TIDE_CARD); a storm for an event no tide turns over (it never shows one). */
+export function bossTide(event: VoyageEventId): TideKind {
+  return (Object.keys(TIDE_CARD) as TideKind[]).find((k) => TIDE_CARD[k] === event) ?? 'storm';
+}
+
 /**
  * The cues of a card from the moment it shows (`show`), or, for a first dark side, from the moment it turns over
  * (`turn`); the sounds are cut so their own peaks fall on the show's moments. The ones that last while the card is up
  * are `tideRippleCue`, `fireworkCue` and `crowdCue`.
  */
 export function roundCardCues(card: RoundCard, phase: 'show' | 'turn'): Cue[] {
-  if (phase === 'turn') return card.kind === 'voyage' && card.boss ? [cue(0, 'boss-strike')] : [];
+  if (phase === 'turn') return card.kind === 'voyage' && card.boss ? [cue(0, `boss-flip-${bossTide(card.event)}`)] : [];
   switch (card.kind) {
     case 'rising':
       return [cue(0, 'tide-wave'), cue(TIDE_PICK, 'tide-pick')];
@@ -50,7 +57,7 @@ export function roundCardCues(card: RoundCard, phase: 'show' | 'turn'): Cue[] {
       return card.effect === null ? [] : [cue(0, 'card-in')];
     case 'voyage':
       if (!card.boss) return [];
-      return card.flipFrom ? [cue(0, 'card-in')] : [cue(0, 'card-in'), cue(LANDS, 'boss-hit')];
+      return card.flipFrom ? [cue(0, 'card-in')] : [cue(0, 'card-in'), cue(LANDS, `boss-hit-${bossTide(card.event)}`)];
   }
 }
 
@@ -86,4 +93,14 @@ export function sweepCues(most: number): Cue[] {
 }
 
 /** The sounds above, to load before their first play (soundEngine.preload): each is cut onto its show's moments. */
-export const SHOW_SOUNDS: readonly SfxId[] = ['card-in', 'tide-wave', 'tide-ripple', 'tide-pick', 'boss-strike', 'boss-hit', 'bazaar-crowd', 'firework-volley', 'sweep-surge', 'crate-sink'];
+export const SHOW_SOUNDS: readonly SfxId[] = [
+  'card-in',
+  'tide-wave',
+  'tide-ripple',
+  'tide-pick',
+  ...(Object.keys(TIDE_CARD) as TideKind[]).flatMap((k): SfxId[] => [`boss-flip-${k}`, `boss-hit-${k}`]),
+  'bazaar-crowd',
+  'firework-volley',
+  'sweep-surge',
+  'crate-sink',
+];

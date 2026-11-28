@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { TIDE_CARD, type FinalRoundEffect, type TideKind } from '../../v07/game';
-import { crowdCue, fireworkCue, roundCardCues, tideRippleCue } from '../audio/roundCardSounds';
+import { bossTide, crowdCue, fireworkCue, roundCardCues, tideRippleCue } from '../audio/roundCardSounds';
 import { scheduleCues } from '../audio/scheduleCues';
 import { soundEngine } from '../audio/soundEngine';
 import { bossArtUrl, cardArtUrl, finalArtUrl } from './cardArt';
@@ -129,7 +129,7 @@ function BossFlip({ card, onDone }: { readonly card: Extract<RoundCard, { kind: 
   }, [phase]);
   const plain = card.flipFrom!;
   return (
-    <div className={`event-card-veil round-veil-flip ${phase === 'leave' ? 'event-leave' : 'event-hold'} ${phase === 'front' ? '' : 'turned'}`} data-fx="flip" role="dialog" aria-label={`${KIND_TEXT(card)}：${card.title}`} onClick={() => closable && onDone()}>
+    <div className={`event-card-veil round-veil-flip ${phase === 'leave' ? 'event-leave' : 'event-hold'} ${phase === 'front' ? '' : 'turned'}`} data-fx="flip" data-tide={bossTide(card.event)} role="dialog" aria-label={`${KIND_TEXT(card)}：${card.title}`} onClick={() => closable && onDone()}>
       <CardFx />
       <div className="round-flip" data-focus="event">
         <div className="round-flip-inner">

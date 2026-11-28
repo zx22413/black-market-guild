@@ -1,7 +1,7 @@
 // What plays when: the menu pages get the cover track, a match screen the in-game track over the
 // waves. Pure, so the choice is tested without an AudioContext.
 
-import type { VoyageEventId } from '../../v07/game';
+import type { TideKind, VoyageEventId } from '../../v07/game';
 import type { MenuView } from '../menu/menuSeats';
 
 export type MusicId = 'cover' | 'ingame';
@@ -102,15 +102,17 @@ export type SfxId =
   | 'works-cloth'
   | 'works-unveil'
   // V0.8 round cards and the tide taking the goods, each on its own motion (roundCardSounds.ts): a card swinging in;
-  // 暗潮將至's short wave, its bell on the pick and the drops after it; a dark side's strike on its flash, or a later one landing;
+  // 暗潮將至's short wave, its bell on the pick and the drops after it; a dark side turning over, its tide's own sound on
+  // the flash (風暴潮 thunder, 海盜潮 a cannon in the fog, 查緝潮 the searchlight, stamp and whistle, 崩盤潮 glass cracking
+  // and coins spilling), or a later one landing with the same, shorter;
   // 最後的大市集's festival crowd and its shells, round after round; the water over the islands with the low strings
   // falling, and each crate going under.
   | 'card-in'
   | 'tide-wave'
   | 'tide-ripple'
   | 'tide-pick'
-  | 'boss-strike'
-  | 'boss-hit'
+  | `boss-flip-${TideKind}`
+  | `boss-hit-${TideKind}`
   | 'bazaar-crowd'
   | 'firework-volley'
   | 'sweep-surge'
@@ -225,8 +227,14 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   'tide-wave': 'sfx-tide-wave.ogg',
   'tide-ripple': 'sfx-tide-ripple.ogg',
   'tide-pick': 'sfx-tide-pick.ogg',
-  'boss-strike': { licensed: 'sfx-boss-strike.ogg', fallback: 'sfx-boss-strike.ogg' },
-  'boss-hit': { licensed: 'sfx-boss-hit.ogg', fallback: 'sfx-boss-hit.ogg' },
+  'boss-flip-storm': { licensed: 'sfx-boss-flip-storm.ogg', fallback: 'sfx-boss-flip-storm.ogg' },
+  'boss-flip-pirate': { licensed: 'sfx-boss-flip-pirate.ogg', fallback: 'sfx-boss-flip-pirate.ogg' },
+  'boss-flip-inspection': 'sfx-boss-flip-inspection.ogg',
+  'boss-flip-crash': { licensed: 'sfx-boss-flip-crash.ogg', fallback: 'sfx-boss-flip-crash.ogg' },
+  'boss-hit-storm': { licensed: 'sfx-boss-hit-storm.ogg', fallback: 'sfx-boss-hit-storm.ogg' },
+  'boss-hit-pirate': { licensed: 'sfx-boss-hit-pirate.ogg', fallback: 'sfx-boss-hit-pirate.ogg' },
+  'boss-hit-inspection': 'sfx-boss-hit-inspection.ogg',
+  'boss-hit-crash': { licensed: 'sfx-boss-hit-crash.ogg', fallback: 'sfx-boss-hit-crash.ogg' },
   'bazaar-crowd': { licensed: 'sfx-bazaar-crowd.ogg', fallback: null },
   'firework-volley': { licensed: 'sfx-firework-volley.ogg', fallback: 'sfx-firework-volley.ogg' },
   'sweep-surge': { licensed: 'sfx-sweep-surge.ogg', fallback: 'sfx-sweep-surge.ogg' },

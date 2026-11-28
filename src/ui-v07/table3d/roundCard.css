@@ -496,6 +496,174 @@
   100% { opacity: 0; }
 }
 
+/*
+ * The flip's motif is its tide's (BossFlip's data-tide), so not every dark side reads as a storm. The lightning above
+ * is 風暴潮's; each of the others replaces it, on the same moment (the flash, 380 ms into the turn) as its sound:
+ *   pirate      海盜潮 (海霧): fog rolls in over the table, a cannon's muzzle flash glows out of it, puffs drift away.
+ *   inspection  查緝潮 (黑市熱絡): a searchlight sweeps down onto the card, a red stamp frame slams round it.
+ *   crash       崩盤潮 (風平浪靜): the glass cracks, the price line falls across it, coins spill out and drop.
+ */
+[data-fx='flip'][data-tide='pirate'] .round-fx::before {
+  top: -560px;
+  left: -760px;
+  width: 1520px;
+  height: 1120px;
+  background:
+    radial-gradient(closest-side at 30% 45%, rgb(196 180 196 / 0.7), transparent),
+    radial-gradient(closest-side at 70% 55%, rgb(176 160 184 / 0.65), transparent),
+    radial-gradient(closest-side at 50% 50%, rgb(150 132 158 / 0.55), transparent 80%);
+  -webkit-mask: none;
+  mask: none;
+  filter: blur(18px);
+}
+[data-fx='flip'][data-tide='pirate'].turned .round-fx::before { animation: round-fx-fog 2400ms ease-out 80ms both; }
+@keyframes round-fx-fog {
+  0% { opacity: 0; transform: scale(0.55); }
+  30% { opacity: 0.85; }
+  100% { opacity: 0.55; transform: scale(1.12); }
+}
+[data-fx='flip'][data-tide='pirate'] .round-fx::after {
+  border: none;
+  background: radial-gradient(circle, rgb(255 214 150 / 0.95), rgb(255 140 70 / 0.5) 40%, transparent 70%);
+  box-shadow: none;
+}
+[data-fx='flip'][data-tide='pirate'].turned .round-fx::after { animation: round-fx-muzzle 900ms ease-out 380ms both; }
+@keyframes round-fx-muzzle {
+  0% { opacity: 0; transform: scale(0.4); }
+  12% { opacity: 1; transform: scale(1.3); }
+  100% { opacity: 0; transform: scale(2.4); }
+}
+[data-fx='flip'][data-tide='pirate'] .round-fx i {
+  top: -40px;
+  left: -40px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(205 192 205 / 0.8), transparent 70%);
+  box-shadow: none;
+}
+[data-fx='flip'][data-tide='pirate'].turned .round-fx i { animation: round-fx-puff 2200ms ease-out calc(420ms + var(--d)) both; }
+@keyframes round-fx-puff {
+  0% { opacity: 0; transform: rotate(var(--a)) translateY(-140px) scale(0.6); }
+  20% { opacity: 0.8; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--r) * -1.4)) scale(2.2); }
+}
+.round-veil-flip[data-tide='pirate']::before { background: #ffb070; }
+.round-veil-flip[data-tide='pirate'].turned::before { animation: round-flash-once 600ms ease-out 380ms; }
+.round-veil-flip[data-tide='pirate'].turned .round-flip::after { border-color: #c9a0a8; }
+
+[data-fx='flip'][data-tide='inspection'] .round-fx::before {
+  top: -980px;
+  left: -170px;
+  width: 340px;
+  height: 1260px;
+  background: linear-gradient(to bottom, transparent, rgb(225 235 255 / 0.2) 45%, rgb(232 240 255 / 0.65));
+  clip-path: polygon(47% 0, 53% 0, 100% 100%, 0 100%);
+  -webkit-mask: linear-gradient(to bottom, #000 70%, transparent);
+  mask: linear-gradient(to bottom, #000 70%, transparent);
+  transform-origin: 50% 0;
+}
+[data-fx='flip'][data-tide='inspection'].turned .round-fx::before { animation: round-fx-search 1600ms ease-out both; }
+@keyframes round-fx-search {
+  0% { opacity: 0; rotate: -38deg; }
+  8% { opacity: 0.8; }
+  24% { opacity: 1; rotate: 0deg; }
+  100% { opacity: 0.45; rotate: 3deg; }
+}
+[data-fx='flip'][data-tide='inspection'] .round-fx::after {
+  top: -290px;
+  left: -225px;
+  width: 450px;
+  height: 580px;
+  border: 7px double #d0453a;
+  border-radius: 18px;
+  box-shadow: 0 0 18px rgb(208 69 58 / 0.6), inset 0 0 18px rgb(208 69 58 / 0.4);
+  rotate: -4deg;
+}
+[data-fx='flip'][data-tide='inspection'].turned .round-fx::after { animation: round-fx-stamp 1500ms cubic-bezier(0.2, 0.8, 0.3, 1) 380ms both; }
+@keyframes round-fx-stamp {
+  0% { opacity: 0; transform: scale(1.5); }
+  12% { opacity: 1; transform: scale(1); }
+  70% { opacity: 0.8; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.03); }
+}
+[data-fx='flip'][data-tide='inspection'] .round-fx i {
+  top: -4px;
+  left: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 1px;
+  background: #c9c1b4;
+  box-shadow: none;
+}
+[data-fx='flip'][data-tide='inspection'].turned .round-fx i { animation: round-fx-dust 600ms ease-out calc(400ms + var(--d) / 4) both; }
+@keyframes round-fx-dust {
+  0% { opacity: 0.9; transform: rotate(var(--a)) translateY(-250px); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(-330px) scale(0.5); }
+}
+.round-veil-flip[data-tide='inspection']::before { background: #dfe8ff; }
+.round-veil-flip[data-tide='inspection'].turned::before { animation: round-flash-once 420ms ease-out 380ms; }
+.round-veil-flip[data-tide='inspection'].turned .round-flip::after { border-color: #d0453a; }
+
+[data-fx='flip'][data-tide='crash'] .round-fx::before {
+  top: -460px;
+  left: -460px;
+  width: 920px;
+  height: 920px;
+  background:
+    radial-gradient(circle, transparent 0 150px, rgb(225 255 240 / 0.7) 151px 153px, transparent 154px 250px, rgb(225 255 240 / 0.5) 251px 252px, transparent 253px),
+    repeating-conic-gradient(from 5deg, rgb(235 255 245 / 0.9) 0deg 0.6deg, transparent 0.6deg 23deg, rgb(235 255 245 / 0.75) 23deg 23.4deg, transparent 23.4deg 41deg, rgb(235 255 245 / 0.6) 41deg 41.5deg, transparent 41.5deg 67deg);
+  -webkit-mask: radial-gradient(circle, #000 0, #000 30%, transparent 60%);
+  mask: radial-gradient(circle, #000 0, #000 30%, transparent 60%);
+}
+[data-fx='flip'][data-tide='crash'].turned .round-fx::before { animation: round-fx-crack 1800ms ease-out 380ms both; }
+@keyframes round-fx-crack {
+  0% { opacity: 0; transform: scale(0.94); }
+  4% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.25; transform: scale(1); }
+}
+[data-fx='flip'][data-tide='crash'] .round-fx::after {
+  top: -120px;
+  left: -380px;
+  width: 760px;
+  height: 240px;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 760 240'%3E%3Cpolyline points='10,30 110,50 190,36 290,104 350,86 460,170 540,152 640,214 750,230' fill='none' stroke='%23ff6b5a' stroke-width='9' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  filter: drop-shadow(0 0 8px rgb(255 107 90 / 0.8));
+}
+[data-fx='flip'][data-tide='crash'].turned .round-fx::after { animation: round-fx-fall 1700ms ease-out 400ms both; }
+@keyframes round-fx-fall {
+  0% { opacity: 1; clip-path: inset(0 100% 0 0); }
+  30% { opacity: 1; clip-path: inset(0 0 0 0); }
+  75% { opacity: 0.9; }
+  100% { opacity: 0; clip-path: inset(0 0 0 0); }
+}
+[data-fx='flip'][data-tide='crash'] .round-fx i {
+  top: -11px;
+  left: -11px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff3b8, #e0ac3a 55%, #9c6a1c);
+  box-shadow: 0 0 6px rgb(255 210 100 / 0.7);
+}
+[data-fx='flip'][data-tide='crash'].turned .round-fx i { animation: round-fx-coin 1400ms cubic-bezier(0.3, 0, 0.7, 1) calc(440ms + var(--d)) both; }
+@keyframes round-fx-coin {
+  0% { opacity: 1; transform: translate(calc(var(--x) * 120px), -200px) rotate(0deg) scaleX(1); }
+  35% { transform: translate(calc(var(--x) * 300px + var(--bw) * 2), -330px) rotate(240deg) scaleX(0.3); }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(var(--x) * 420px + var(--bw) * 3), 460px) rotate(620deg) scaleX(1); }
+}
+.round-veil-flip[data-tide='crash']::before { background: #9fe0b8; }
+.round-veil-flip[data-tide='crash'].turned::before { animation: round-flash-once 380ms ease-out 380ms; }
+.round-veil-flip[data-tide='crash'].turned .round-flip::after { border-color: #6fe0a8; }
+@keyframes round-flash-once {
+  0% { opacity: 0.4; }
+  100% { opacity: 0; }
+}
+
 /* ---------- bazaar (最後的大市集): fireworks ---------- */
 [data-fx='bazaar'] .round-fx::before {
   top: -420px;
