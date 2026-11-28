@@ -26,13 +26,14 @@ const FLIGHT_SOUND: Readonly<Record<Flight['kind'], SfxId | null>> = {
   // V0.8 simulation prototype only (never in the live rules).
   'salvage-sale': 'settle-salvage',
   'pirate-toll': null,
-  'armory-refund': 'settle-coins',
-  'armory-fine': 'settle-coins',
-  'tradehouse-buyout': 'settle-coins',
+  'armory-refund': 'settle-armory',
+  'armory-fine': 'settle-armory',
+  // The trade house takes its crate: set down on the counter, paid out, a small till bell.
+  'tradehouse-buyout': 'settle-tradehouse',
   // A building's own show (scene/FacilityWorks.tsx) sounds for itself.
   facility: null,
-  // 軍火查緝: the bank's whistle as the crates are taken.
-  inspection: 'settle-caught',
+  // 軍火查緝: the arms over demand shut away in an iron box and locked.
+  inspection: 'settle-inspection',
   // The cover held: the smuggler's quiet coin.
   'inspection-cover': 'settle-smuggle',
 };

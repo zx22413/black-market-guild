@@ -290,7 +290,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
   // Take a material action (null: none): a building takes the camera to its lot; a skill raises the works round its
   // ship, which is the one at the dock when it is opened from that ship's card.
   const pickMaterial = (material: MaterialAction | null) => {
-    soundEngine.playSfx('role-pick');
+    soundEngine.playSfx(material?.kind === 'build' ? 'pick-build' : material?.kind === 'open' ? 'pick-skill' : 'role-pick');
     setChoice((c) => withMaterial(options, c, material));
     const lot = material?.kind === 'build';
     const after = (w: OwnWorks | null): OwnWorks | null =>
@@ -337,7 +337,7 @@ export function useInvestStep(env: StageEnv | null): StageParts | null {
           why: canRaise(options, choice) ? null : choice.material?.kind !== 'open' && canRaise(options, { ...choice, material: { kind: 'open', ship: 'gambler' } }) ? '要先開啟孤注號的技能（換船，在船卡上開啟）' : '先裝貨才能加注',
           on: sent.raise === true,
           onToggle: () => {
-            soundEngine.playSfx('role-pick');
+            soundEngine.playSfx('pick-raise');
             setChoice((c) => withRaise(options, c, c.raise !== true));
           },
         }

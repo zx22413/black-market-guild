@@ -90,7 +90,7 @@ describe('軍火查緝 on the table (game-design.md §7.4)', () => {
       for (const [i, f] of shows.entries()) {
         expect(f).toMatchObject({ from: { kind: 'ship', shipId: found[i]!.shipId }, to: { kind: 'harbor' }, good: 'arms', units: found[i]!.crates, amount: null, playerId: found[i]!.playerId });
         expect(f.label).toBe(inspectionLabel(found[i]!));
-        expect(flightSound(f)).toBe('settle-caught');
+        expect(flightSound(f)).toBe('settle-inspection');
       }
     }
   });

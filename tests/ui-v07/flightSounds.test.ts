@@ -31,6 +31,13 @@ describe('sound of each settlement flight', () => {
     expect(flightSound(flight('pirate-loot'))).toBe('settle-loot');
   });
 
+  it("gives V0.8's own moments their own sounds, not the borrowed whistle or coins", () => {
+    expect(flightSound(flight('inspection', null))).toBe('settle-inspection');
+    expect(flightSound(flight('tradehouse-buyout'))).toBe('settle-tradehouse');
+    expect(flightSound(flight('armory-refund'))).toBe('settle-armory');
+    expect(flightSound(flight('armory-fine', -100))).toBe('settle-armory');
+  });
+
   it('sounds the goods: confiscated goods, insurance, salvaged cargo, spoiled spice', () => {
     expect(flightSound(flight('goods-confiscated'))).toBe('settle-arms');
     expect(flightSound(flight('insurance'))).toBe('settle-insurance');

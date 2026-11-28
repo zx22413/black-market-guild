@@ -84,8 +84,18 @@ export type SfxId =
   | 'ui-leave'
   // The last seconds of an online decision's time limit (online/MatchClock).
   | 'ui-tick'
-  // Picking a role card from the hand (useDeployStep).
+  // Picking a role card from the hand (useDeployStep), or a ship.
   | 'role-pick'
+  // V0.8 investing (useInvestStep): a building picked (its plans laid down, two mallet taps), a ship's skill opened (a
+  // sail shaken out, a rising two-note chime), the gamble's raise (a stack of chips pushed in, a coin hopping off).
+  | 'pick-build'
+  | 'pick-skill'
+  | 'pick-raise'
+  // V0.8 settlement flights: 軍火查緝 taking the arms over demand (an iron box shut, a buckle, a lock clicking), the
+  // trade house buying its crate (set on the counter, coins, a small till bell), the armory's refund or fine.
+  | 'settle-inspection'
+  | 'settle-tradehouse'
+  | 'settle-armory'
   // A production count popping up over a warehouse stack (useInvestStep), higher for each next one.
   | 'bubble'
   // An island's trait notice popping up (useIslandMoments): a low, big bubble.
@@ -221,6 +231,12 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   'ui-leave': 'sfx-ui-leave.ogg',
   'ui-tick': 'sfx-ui-tick.ogg',
   'role-pick': 'sfx-role-pick.ogg',
+  'pick-build': 'sfx-pick-build.ogg',
+  'pick-skill': 'sfx-pick-skill.ogg',
+  'pick-raise': 'sfx-pick-raise.ogg',
+  'settle-inspection': 'sfx-settle-inspection.ogg',
+  'settle-tradehouse': 'sfx-settle-tradehouse.ogg',
+  'settle-armory': 'sfx-settle-armory.ogg',
   bubble: 'sfx-bubble.ogg',
   'island-pop': 'sfx-island-pop.ogg',
   'price-up': 'sfx-price-up.ogg',

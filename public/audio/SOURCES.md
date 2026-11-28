@@ -45,6 +45,12 @@ AI 部分的生成方式、授權與上表相同（Stable Audio 3 medium，steps
 | sfx-works-hammer.ogg | 碼頭工事：煙塵裡施工 | shipwrights at work on a wooden dock, quick busy hammering of mallets on timber and a short saw stroke, wood, outdoor harbor, medium close.（negative 另加 power tools, machine，2 秒） | 85002 | 取前 1.2 秒 |
 | sfx-works-cloth.ogg | 碼頭工事：帆布放下 | a large canvas sheet unrolled and dropped down quickly, one soft heavy fabric whoosh and flap, canvas cloth, outdoors, close.（1.5 秒） | 85101 | 取前 0.8 秒 |
 | sfx-works-unveil.ogg | 碼頭工事：揭幕金光 | a grand reveal, a curtain whooshing down followed by a warm golden magical shimmer rising, bright chimes and a soft swell, triumphant, close, light reverb.（negative 另加 dark, scary，2.5 秒） | 85202 | 取前 2.0 秒 |
+| sfx-pick-build.ogg | 投資：選蓋建築（`useInvestStep`） | Kenney RPG Audio `bookPlace1.ogg`（設計圖攤上桌，0.8 倍）、Impact Sounds `impactWood_light_001.ogg`（0.16 秒、0.32 秒兩下木槌，第二下快 1.12 倍） | — | −21 LUFS；`make13.py` 的 B |
+| sfx-pick-skill.ogg | 投資：開啟船技能 | Kenney RPG Audio `cloth1.ogg`（帆布一揚）；合成小鈴 D6、G6（0.22、0.36 秒，各帶八度） | — | −20 LUFS；`make13.py` 的 B |
+| sfx-pick-raise.ogg | 投資：孤注號加注 | Kenney Casino `chips-stack-2.ogg`（籌碼推出去）；RPG Audio `handleCoins2.ogg` 前 0.15 秒快 1.3 倍（0.16 秒，一枚錢幣彈起） | — | 峰值 −1 dBFS；`make13.py` 的 B |
+| sfx-settle-inspection.ogg | 結算：軍火查緝，超過需求的軍火被收走（取代走私被抓的哨音） | Kenney RPG Audio `metalLatch.ogg`（鐵箱扣上）、`beltHandle1.ogg`（0.1 秒，扣環）、`metalClick.ogg`（0.28 秒，鎖上） | — | 峰值 −1 dBFS；`make13.py` 的 B |
+| sfx-settle-tradehouse.ogg | 結算：商行收購那箱貨（取代一般錢袋聲） | Kenney Impact Sounds `impactPlank_medium_002.ogg`（箱子放上櫃台）、RPG Audio `handleCoins2.ogg`（0.18 秒）；本目錄的 `sfx-bill-register.ogg`（0.42 秒，0.35 倍，收銀機小叮） | — | 峰值 −1 dBFS；`make13.py` 的 B |
+| sfx-settle-armory.ogg | 結算：軍械庫退費／罰款（取代一般錢袋聲） | Kenney RPG Audio `handleCoins2.ogg`、`drawKnife2.ogg`（0.1 秒，0.5 倍，刀械金屬響） | — | −18 LUFS；`make13.py` |
 | event-omen.ogg | 暗潮將至那一整回合的背景（取代海浪；`TideOmen`） | sfx，cfg 1：deep slow heavy ocean swells rolling in and drawing back along a rocky shore, a low rumbling surge every few seconds, dark water rising, distant wind, wide stereo, no music.（30 秒） | 86001 | 切掉開頭 1 秒；2 秒等功率交叉淡化循環；−21 LUFS；循環 27 秒 |
 
 碼頭工事的木樁落水、平台木板沿用本目錄的 `sfx-salute-splash.ogg`、`sfx-produce.ogg`（`dockWorksSounds.ts`）。
