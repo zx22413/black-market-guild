@@ -4,6 +4,7 @@ import { GOODS, RULES_CURRENT, eventsOn, type Action, type Goods, type PlayerId,
 import type { SafeArea } from '../../ui/scene/CameraRig';
 import { soundEngine } from '../audio/soundEngine';
 import { bedNow, eventBedFor } from '../audio/soundPlan';
+import { SHOW_SOUNDS } from '../audio/roundCardSounds';
 import { SoundToggle } from '../audio/SoundToggle';
 import { useCountSound } from '../audio/useUiSounds';
 import { eventLine } from '../log';
@@ -525,6 +526,8 @@ export function Table3DScreen({ session, onExit, rematch, autoplay = false, from
   const eventOut = holding && resolution.stageRound === resolvingRound && resolution.stage !== null && resolution.stage !== 'wanted';
   const eventBed = eventOut && weatherEvent?.type === 'voyage-event-revealed' ? eventBedFor(weatherEvent.event) : null;
   useEffect(() => () => soundEngine.setEventBed(null), []);
+  // V0.8: the round cards' and the tide's sounds are cut onto their shows' moments, so they are loaded ahead.
+  useEffect(() => soundEngine.preload(SHOW_SOUNDS), []);
   const rows = useMemo(() => (snap.result ? resultRows(snap.events, snap.result, snap.startingCash, rules) : []), [snap.result, snap.events, snap.startingCash, rules]);
   const winners = useMemo(() => new Set(snap.result?.winners ?? []), [snap.result]);
 

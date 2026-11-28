@@ -49,6 +49,35 @@ AI 部分的生成方式、授權與上表相同（Stable Audio 3 medium，steps
 
 碼頭工事的木樁落水、平台木板沿用本目錄的 `sfx-salute-splash.ogg`、`sfx-produce.ogg`（`dockWorksSounds.ts`）。
 
+## V0.8 回合卡與暗潮捲走貨（2026-11-29）
+
+聲音照動畫的動作拆成小段，由遊戲在動畫的時間點觸發（`src/ui-v07/audio/roundCardSounds.ts`）；錄音剪輯時讓重音落在動畫的那一刻。曲風由使用者選定：暗潮將至＝電影式緊張、暗潮面＝管弦樂重音、最後的大市集＝市集喧鬧＋煙火、捲走貨＝水聲＋低沉弦樂。腳本在 git 排除的 `audio-drafts/v08/`（`make4.py` 合成、`make5.py` 錄音剪輯），下載的原始錄音在 `audio-drafts/sonniss-raw/`（清單 `SOURCES.txt`，取自 ftpmirror.your.org 的 Sonniss GDC 2016／2018／2019／2020 `individual/` 目錄，2026-11-29）。
+
+**錄音剪輯（`licensed/`，不進 git，授權同下方 Sonniss 一節）**：第三版「太磅礡」又「破音」，量出來是 80 Hz 以下的超低音太多（筆電、手機喇叭放不出來就破），所以每段都切掉 100 Hz 以下（兩個 12 dB/oct 高通疊成 24 dB/oct；低音提琴切在 70 Hz），換掉 Braam 與預告片 Downer 這類最誇張的素材、尾巴剪短；音量以響度對齊（EBU R128，`make6.py`），峰值不超過 −1 dBFS。重取樣 48 kHz 立體聲、Ogg Vorbis quality 0.6。
+
+| 檔案 | 用途 | 原始錄音 | 剪輯 |
+|---|---|---|---|
+| licensed/sfx-boss-strike.ogg | 暗潮面翻牌：翻面的「咻」接上閃電（翻面後 0.38 秒）的重擊 | Bluezone《MOVIE TRAILER》`BC0237_transition_whoosh_hit_006`、`BC0237_impact_017` | whoosh-hit 從 0.92 秒起取 1.4 秒（它的重擊落在 0.38 秒），impact 取 0.9 秒放在 0.38 秒；共 1.9 秒；−18 LUFS |
+| licensed/sfx-boss-hit.ogg | 之後的暗潮面出現：卡片落定時的重擊 | 《MOVIE TRAILER》`BC0237_impact_017` | 取 1 秒；−20 LUFS |
+| licensed/sfx-bazaar-crowd.ogg | 最後的大市集：卡片在時的節慶人群（每 9.6 秒接一段，前後淡入淡出互相疊） | West Wolf《Balkan Tribal Festival》`BTF 06 Tribal_05_Bells, Dance, People, Crowd, Ambience_05` | 6 秒起取 10.4 秒，0.4 秒淡入、0.8 秒淡出；−30 LUFS |
+| licensed/sfx-firework-volley.ogg | 最後的大市集：每輪三發煙火（每 2.4 秒一輪，一輪比一輪小聲） | Sound Villain《Fireworks Malta》`006_Strong blast with medium crackles` | 0.18 秒起取 2.8 秒：錄音裡三發的爆點落在 0.30、1.06、1.80 秒，對上畫面的 0.3、1.1、1.9 秒；另切 150 Hz 以下；−21 LUFS |
+| licensed/sfx-sweep-surge.ogg | 暗潮捲走貨：海水漫上島，低音提琴往下滑到第一箱沉下去（2.64 秒） | Bluezone《Splash》`BC0256_water_splash_008`；Articulated Sounds《Special Double Bass Fx》`INSTRU STRING Double Bass, Bowed, Slide Down, High Pitch 02` | 水花取 2.6 秒（1.2 秒淡出）放 0 秒；低音提琴對齊讓最響處落在 2.64 秒，0.7 倍；共 4.2 秒；−20 LUFS |
+| licensed/sfx-crate-sink.ogg | 暗潮捲走貨：每一箱沉下去（一箱一聲，錯開 0.14 秒） | Bluezone《Splash》`BC0256_water_splash_drop_006` | 取 0.9 秒；−24 LUFS（幾箱會疊在一起） |
+
+**沒有 `licensed/` 時的合成備用版（作者自製，無授權限制；numpy 亂數 seed 8128）**
+
+| 檔案 | 用途 | 合成方式 |
+|---|---|---|
+| sfx-card-in.ogg | 回合卡翻進來（0.6 秒，0.36 秒時最大）：咻一聲落在桌上 | 帶通噪音（Q 1.2，400→3000 Hz）音量隨動作先升後降、0.3 秒最大，0.34 秒疊一聲短促的低音敲擊（180→90 Hz 正弦，50 ms）與紙張拍擊（1.8 kHz 以上噪音，10 ms） |
+| sfx-tide-wave.ogg | 暗潮將至：卡片翻進來時一道短浪（使用者要「浪 > 鈴 > 水滴」依序、浪不要長） | 合成：300 Hz～9 kHz 的噪音（稍偏暖），0.5 秒湧到最大（卡片落定後），之後 0.28 秒衰減的水沫；左右各一段；共 1.3 秒；−24 LUFS；numpy 亂數 seed 3600；`make10.py` |
+| sfx-tide-ripple.ogg | 暗潮將至：鈴聲之後的水滴（2.3 秒起，之後每 2.6 秒隨一圈水波紋一聲；遊戲以 1、0.94、1.06 倍速輪播） | 兩滴水滴：900 Hz 往上刷 2.2 倍的正弦（0.12 秒，50 ms 衰減），0.12 秒再一滴（1250 Hz，較小）；−44 LUFS（使用者要水聲小一點）；`make7.py`、`make9.py` |
+| sfx-tide-pick.ogg | 暗潮將至：1.5 秒揭曉時一聲帶迴響的鈴（使用者要「低一點、有點迴響」） | 合成鈴：A5（880 Hz）疊八度與 3 倍頻（0.35、0.15），基音衰減約 0.61 秒、泛音更快，3 ms 起音；乾聲 0.45 倍疊合成殘響 0.75 倍（左右各一段指數衰減 1.2 秒、越後面越暗的噪音脈衝響應，長 4.2 秒）；共 5.8 秒；−23 LUFS；numpy 亂數 seed 1318；`make11.py` |
+| sfx-boss-strike.ogg | 錄音版的備用：翻面＋閃電 | 帶通噪音的「咻」（0.8 秒，0.38 秒最大），0.38 秒接合成雷擊（明亮的瞬間＋隆隆聲）、0.156 秒後第二下、0.4 秒起 9 個玻璃般的碎片聲、低音重擊 |
+| sfx-boss-hit.ogg | 錄音版的備用：之後的暗潮面 | 低音重擊疊短的合成雷擊 |
+| sfx-firework-volley.ogg | 錄音版的備用：一輪三發煙火 | 合成煙火（明亮噪音爆開、輕微低音、40 個細碎劈啪聲）放在 0.3、1.1、1.9 秒 |
+| sfx-sweep-surge.ogg | 錄音版的備用：海水漫上島 | 帶通噪音湧起（200→1800 Hz，0.55 秒）接白色水沫（0.3 秒衰減） |
+| sfx-crate-sink.ogg | 錄音版的備用：每一箱沉下去 | 同 `sfx-crate-drop.ogg` 的合成水花，較輕（0.6 秒） |
+
 ## 程式合成的音效
 
 | 檔案 | 用途 | 合成方式 |

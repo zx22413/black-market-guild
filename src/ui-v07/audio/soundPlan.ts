@@ -100,7 +100,21 @@ export type SfxId =
   // V0.8 dock works raised round a ship whose skill is opened (dockWorksSounds.ts): the hammering, the canvas, the unveiling.
   | 'works-hammer'
   | 'works-cloth'
-  | 'works-unveil';
+  | 'works-unveil'
+  // V0.8 round cards and the tide taking the goods, each on its own motion (roundCardSounds.ts): a card swinging in;
+  // 暗潮將至's short wave, its bell on the pick and the drops after it; a dark side's strike on its flash, or a later one landing;
+  // 最後的大市集's festival crowd and its shells, round after round; the water over the islands with the low strings
+  // falling, and each crate going under.
+  | 'card-in'
+  | 'tide-wave'
+  | 'tide-ripple'
+  | 'tide-pick'
+  | 'boss-strike'
+  | 'boss-hit'
+  | 'bazaar-crowd'
+  | 'firework-volley'
+  | 'sweep-surge'
+  | 'crate-sink';
 
 /**
  * `loop`: the track repeats without a break (the menus). `interlude`: the track plays once, then
@@ -206,6 +220,17 @@ export const SOUND_FILES: Readonly<Record<MusicId | AmbienceId | SfxId, string |
   'works-hammer': 'sfx-works-hammer.ogg',
   'works-cloth': 'sfx-works-cloth.ogg',
   'works-unveil': 'sfx-works-unveil.ogg',
+  'card-in': 'sfx-card-in.ogg',
+  // Sonniss recordings cut to the shows (public/audio/SOURCES.md); the fallbacks are the synthesised versions.
+  'tide-wave': 'sfx-tide-wave.ogg',
+  'tide-ripple': 'sfx-tide-ripple.ogg',
+  'tide-pick': 'sfx-tide-pick.ogg',
+  'boss-strike': { licensed: 'sfx-boss-strike.ogg', fallback: 'sfx-boss-strike.ogg' },
+  'boss-hit': { licensed: 'sfx-boss-hit.ogg', fallback: 'sfx-boss-hit.ogg' },
+  'bazaar-crowd': { licensed: 'sfx-bazaar-crowd.ogg', fallback: null },
+  'firework-volley': { licensed: 'sfx-firework-volley.ogg', fallback: 'sfx-firework-volley.ogg' },
+  'sweep-surge': { licensed: 'sfx-sweep-surge.ogg', fallback: 'sfx-sweep-surge.ogg' },
+  'crate-sink': { licensed: 'sfx-crate-sink.ogg', fallback: 'sfx-crate-sink.ogg' },
 };
 
 /** Interlude music: seconds of ambience alone between plays, and the fade at the end of a play. */

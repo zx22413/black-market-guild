@@ -39,6 +39,9 @@ class SoundEngine {
   private readonly lastSfx = new Map<SfxId, number>();
   /** A round is resolving: interlude music stays out. */
   private held = false;
+  private hushed = false;
+  /** One-shots asked to be loaded early (`preload`), loaded once the audio is unlocked. */
+  private readonly preloading = new Set<SfxId>();
   /** The voyage event's bed, in place of the match's ambience while the round's show runs. */
   private eventBed: EventBedId | null = null;
   /** Interlude music finished a play and waits out its rest. */
@@ -62,6 +65,7 @@ class SoundEngine {
       this.master.gain.value = isMuted() ? 0 : 1;
       this.master.connect(this.ctx.destination);
       this.unsubscribeMute = subscribeMuted(() => this.applyMute());
+      for (const id of this.preloading) void this.sound(id);
     }
     void this.ctx.resume().then(() => this.apply());
   }
@@ -104,6 +108,25 @@ class SoundEngine {
     this.apply();
   }
 
+  /**
+   * Load these one-shots ahead of their first play, so a sound cut onto a show's moment is not late on its fetch the
+   * first time (now if the audio is unlocked, else as soon as it is).
+   */
+  preload(ids: readonly SfxId[]): void {
+    for (const id of ids) this.preloading.add(id);
+    if (this.ctx) for (const id of ids) void this.sound(id);
+  }
+
+  /**
+   * Hush the sea under the table (the waves or the event's bed fade out) while a show carries the sound alone, such as
+   * 暗潮將至's card: its own short wave, then the bell and the drops with no waves under them.
+   */
+  hushAmbience(hushed: boolean): void {
+    if (hushed === this.hushed) return;
+    this.hushed = hushed;
+    this.apply();
+  }
+
   /** The voyage event is out (its bed replaces the waves) or the round's show is over (null). */
   setEventBed(bed: EventBedId | null): void {
     if (bed === this.eventBed) return;
@@ -113,8 +136,8 @@ class SoundEngine {
     this.apply();
   }
 
-  /** `rate` above 1 plays it faster and higher (a run of pops that climbs). */
-  playSfx(id: SfxId, rate = 1): void {
+  /** `rate` above 1 plays it faster and higher (a run of pops that climbs); `level` times its usual level. */
+  playSfx(id: SfxId, rate = 1, level = 1): void {
     const { ctx, master } = this;
     if (!ctx || !master || ctx.state !== 'running' || isMuted()) return;
     const giveWay = SFX_GIVE_WAY[id];
@@ -123,7 +146,7 @@ class SoundEngine {
     void this.sound(id).then((buffer) => {
       if (!buffer) return;
       const gain = ctx.createGain();
-      gain.gain.value = SFX_GAIN[id] ?? MIX.sfx;
+      gain.gain.value = (SFX_GAIN[id] ?? MIX.sfx) * level;
       gain.connect(master);
       const source = ctx.createBufferSource();
       source.buffer = buffer;
@@ -144,6 +167,7 @@ class SoundEngine {
   private target(slot: Slot): TrackId | null {
     if (!this.wanted) return null;
     if (slot === 'music') return musicNow(this.wanted, { held: this.held, resting: this.restTimer !== null });
+    if (this.hushed) return null;
     return this.wanted.ambience && (this.eventBed ?? this.wanted.ambience);
   }
 

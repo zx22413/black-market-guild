@@ -8,6 +8,9 @@ import { CannonVolley, RepairRun, TollCoins, TradeSeal } from '../scene/Facility
 import { shipPoint } from '../scene/spotlightMath';
 import { TableCanvas } from '../scene/TableCanvas';
 import { TideSweep } from '../scene/TideSweep';
+import { sweepCues } from '../audio/roundCardSounds';
+import { scheduleCues } from '../audio/scheduleCues';
+import { soundEngine } from '../audio/soundEngine';
 import { TIDE_WATER } from '../scene/tideLook';
 import type { TideKind } from '../../v07/game';
 
@@ -67,7 +70,16 @@ export function FacilitiesPreview() {
         <button type="button" data-omen onClick={() => setOmen((on) => !on)}>
           前兆
         </button>
-        <button type="button" data-sweep onClick={() => setSweep((n) => n + 1)}>
+        <button
+          type="button"
+          data-sweep
+          onClick={() => {
+            // The sweep's sounds as in a match (useTideSweep), the longest row here being 8 crates.
+            soundEngine.unlock();
+            scheduleCues(sweepCues(8));
+            setSweep((n) => n + 1);
+          }}
+        >
           捲走
         </button>
         <span style={{ color: '#fff' }}>{islands.join('、')}</span>

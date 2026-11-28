@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { GOODS, type Goods, type MatchEvent, type PlayerId, type Rules, type TideKind } from '../../v07/game';
 import { seatPosition } from '../../ui/scene/layout';
-import { soundEngine } from '../audio/soundEngine';
+import { sweepCues } from '../audio/roundCardSounds';
+import { scheduleCues } from '../audio/scheduleCues';
 import type { TablePin } from '../scene/TableCanvas';
 import { TideSweep } from '../scene/TideSweep';
 import { PLAIN_TIDE_WATER, TIDE_WATER, mixHex } from '../scene/tideLook';
@@ -67,14 +68,16 @@ export function useTideSweep({ events, round, free, angleOf, ids, startingCash, 
   const ms = sweepMs(sweeps);
   useEffect(() => {
     if (!on) return undefined;
-    // The wave breaks low over the islands, then the crates go under.
-    soundEngine.playSfx('salute-splash', 0.55);
+    // The water comes up over the islands, carries the crates out, and each in the longest row goes under (roundCardSounds.ts).
+    const stopSounds = scheduleCues(sweepCues(Math.max(0, ...sweeps.map((sw) => sw.crates.length))));
     const timers = [
-      setTimeout(() => soundEngine.playSfx('salute-splash', 0.8), (SWEEP.surge * 0.6 + SWEEP.drift) * 1000),
       setTimeout(() => setCountedRound(round), SWEEP.surge * 1000),
       setTimeout(() => setShownRound(round), ms),
     ];
-    return () => timers.forEach(clearTimeout);
+    return () => {
+      stopSounds();
+      timers.forEach(clearTimeout);
+    };
   }, [on, round, ms]);
 
   if (!on || !found) return shownRound === 0 ? IDLE : { ...IDLE, swept: shownRound };

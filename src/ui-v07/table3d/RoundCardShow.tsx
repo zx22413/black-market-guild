@@ -1,5 +1,7 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { TIDE_CARD, type FinalRoundEffect, type TideKind } from '../../v07/game';
+import { crowdCue, fireworkCue, roundCardCues, tideRippleCue } from '../audio/roundCardSounds';
+import { scheduleCues } from '../audio/scheduleCues';
 import { soundEngine } from '../audio/soundEngine';
 import { bossArtUrl, cardArtUrl, finalArtUrl } from './cardArt';
 import type { RoundCard } from './roundCard';
@@ -34,10 +36,8 @@ export const FLIP_LOCK_MS = FLIP_AT_MS + FLIP_MS;
 function Rising({ card }: { readonly card: Extract<RoundCard, { kind: 'rising' }> }) {
   const [picked, setPicked] = useState(false);
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setPicked(true);
-      soundEngine.playSfx('island-pop', 0.6);
-    }, TIDE_PICK_MS);
+    // The gong of the pick is in the card's own sound (roundCardSounds.ts), timed to TIDE_PICK_MS.
+    const timer = setTimeout(() => setPicked(true), TIDE_PICK_MS);
     return () => clearTimeout(timer);
   }, []);
   const kinds: readonly TideKind[] = card.candidates.length > 0 ? card.candidates : card.tide ? [card.tide] : [];
@@ -123,7 +123,9 @@ function BossFlip({ card, onDone }: { readonly card: Extract<RoundCard, { kind: 
     // `onDone` is the caller's current closure each render; the phase alone drives the show.
   }, [phase]);
   useEffect(() => {
-    if (phase === 'back') soundEngine.playSfx('island-pop', 0.7);
+    // The turn, then the strike on the lightning's flash (roundCardSounds.ts).
+    if (phase !== 'back') return undefined;
+    return scheduleCues(roundCardCues(card, 'turn'));
   }, [phase]);
   const plain = card.flipFrom!;
   return (
@@ -218,6 +220,28 @@ export function RoundCardShow({ cards, onDone, auto = false }: { readonly cards:
     const timer = setTimeout(held === 'hold' ? () => setHeld('ready') : next, held === 'hold' ? (card?.kind === 'final' ? FINAL_READY_MS : TIDE_PICK_MS) : LEAVE_MS);
     return () => clearTimeout(timer);
   }, [holds, held, at, auto]);
+  // Each card's sounds on its own motion (roundCardSounds.ts): the swing in and what follows; 暗潮將至's drops and
+  // 最後的大市集's shells go on while the card is up and stop as it leaves. A first dark side's turn is BossFlip's.
+  // Scheduled once per card (`at`): a held card going back to 'hold' after it left must not start them again.
+  const stopSounds = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    if (!card) return undefined;
+    const runs = card.kind === 'rising' ? [tideRippleCue] : card.kind === 'final' && card.effect !== null ? [fireworkCue, crowdCue] : [];
+    const cues = scheduleCues(roundCardCues(card, 'show'), ...runs);
+    // 暗潮將至 carries its own short wave: the sea under the table fades out under it, so after the bell only the drops.
+    const hush = card.kind === 'rising';
+    if (hush) soundEngine.hushAmbience(true);
+    const stop = () => {
+      cues();
+      if (hush) soundEngine.hushAmbience(false);
+    };
+    stopSounds.current = stop;
+    return stop;
+  }, [at]);
+  const leaving = holds && held === 'leave';
+  useEffect(() => {
+    if (leaving) stopSounds.current?.();
+  }, [leaving]);
   if (!card) return null;
   if (card.kind === 'voyage' && card.boss && card.flipFrom) return <BossFlip key={at} card={card} onDone={next} />;
   if (holds) {

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { SHOW_SOUNDS } from '../audio/roundCardSounds';
+import { soundEngine } from '../audio/soundEngine';
 import '../beats/beat.css';
 import '../table3d/islandCard.css';
 import '../skin/layers.css';
@@ -45,7 +47,7 @@ export function RoundCardsPreview() {
       <div className="t3-screen" style={{ position: 'fixed', inset: 0, background: '#2f8f9d' }}>
         <div style={{ position: 'absolute', zIndex: 60, bottom: 12, left: 12, display: 'flex', gap: 6 }}>
           {([['暗潮將至', 4], ['暗潮面', 5], ['最後的大市集', 7], ['黑市大開', 8], ['最後一搏', 9], ['回合上限', 10]] as const).map(([label, r]) => (
-            <button key={r} type="button" onClick={() => { setRound(r); setRun((n) => n + 1); }}>
+            <button key={r} type="button" onClick={() => { soundEngine.unlock(); soundEngine.preload(SHOW_SOUNDS); setRound(r); setRun((n) => n + 1); }}>
               {label}
             </button>
           ))}
